@@ -13,39 +13,11 @@ body {
     justify-content: center;
     align-items: center;
 
-    background-image: url("bg.png");
+    /* 背景（ここ重要） */
+    background-image: url("./bg.png");
     background-size: cover;
-    background-position: center top; /* ←ここ重要 */
+    background-position: center;
     background-repeat: no-repeat;
-}
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    /* 背景画像（ここに差し替え） */
-    background: url("bg.png") no-repeat center center fixed;
-    background-size: cover;
-}
-
-/* ボタン */
-button {
-    padding: 40px 120px;
-    font-size: 40px;
-
-    color: white;
-    background: rgba(0,0,0,0.5);
-    border: 3px solid white;
-    border-radius: 15px;
-
-    cursor: pointer;
-
-    text-shadow: 2px 2px 6px black;
-}
-
-.button:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
 }
 </style>
 
@@ -53,7 +25,18 @@ button {
 
 <body>
 
-<button class="button" onclick="location.href='kishinseki.html'">
+<button 
+onclick="location.href='kishinseki.html'"
+style="
+    padding: 60px 180px;
+    font-size: 50px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    border: 3px solid white;
+    border-radius: 15px;
+    cursor: pointer;
+    text-shadow: 2px 2px 6px black;
+">
     鬼神石
 </button>
 
