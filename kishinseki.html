@@ -67,8 +67,28 @@ button.active{
   background:#1e2f1e;
   font-weight:bold;
 }
-* {
-    cursor: pointer !important;
+
+/* ★追加：ソート列（縦） */
+.sorted-col-1 td:nth-child(1),
+.sorted-col-2 td:nth-child(2),
+.sorted-col-3 td:nth-child(3),
+.sorted-col-4 td:nth-child(4),
+.sorted-col-5 td:nth-child(5),
+.sorted-col-6 td:nth-child(6),
+.sorted-col-7 td:nth-child(7),
+.sorted-col-8 td:nth-child(8),
+.sorted-col-9 td:nth-child(9),
+.sorted-col-10 td:nth-child(10),
+.sorted-col-11 td:nth-child(11),
+.sorted-col-12 td:nth-child(12),
+.sorted-col-13 td:nth-child(13),
+.sorted-col-14 td:nth-child(14){
+  background:#2f3b2f !important;
+}
+
+/* カーソル */
+*{
+  cursor:pointer !important;
 }
 </style>
 </head>
@@ -3738,8 +3758,9 @@ let mainStat=null;
 let subStat=null;
 let thirdStat=null;
 
-let sortKey=null;
-let sortAsc=false;
+/* ★修正：初期ソート */
+let sortKey="番号";
+let sortAsc=true;
 
 const stats=["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 
@@ -3908,6 +3929,10 @@ function render(){
     return compare(a,b);
   });
 
+  /* ★追加：列番号マッピング */
+  const colIndexMap = {"番号":1,"鬼神の力":2,"入手":3};
+  stats.forEach((s,i)=>{ colIndexMap[s]=i+4; });
+
   /* 一覧 */
   let html="<tr>";
   html+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
@@ -3923,19 +3948,21 @@ function render(){
 
     html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
 
-    const numClass = (sortKey==="番号")?"sorted":"";
-    html+=`<td class="${numClass}">${d["番号"]}</td>`;
-    html+=`<td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
-
+    html+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
     stats.forEach(s=>{
-      const sortedClass = (sortKey===s)?"sorted":"";
-      html+=`<td class="${sortedClass}" style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+      html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
-
     html+="</tr>";
   });
 
   table.innerHTML=html;
+
+  /* ★追加：列ハイライト適用 */
+  if(sortKey){
+    table.className="sorted-col-"+colIndexMap[sortKey];
+  }else{
+    table.className="";
+  }
 
   /* 上8個 */
   let html2="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
