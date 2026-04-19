@@ -3747,9 +3747,9 @@ const statColors={
   "土":"#d19a66","水":"#4f6fa8","火":"#b35f7a","風":"#9ccc65"
 };
 
+/* データ読込 */
 function loadFromHTML(){
-  const table=document.querySelector("#rawData table");
-  const rows=table.querySelectorAll("tr");
+  const rows=document.querySelectorAll("#rawData table tr");
   const headers=[];
 
   rows[0].querySelectorAll("td").forEach(td=>{
@@ -3776,6 +3776,7 @@ function getVal(d,key){
   return isNaN(v)?0:v;
 }
 
+/* ボタン */
 function makeBtns(){
   stats.forEach(s=>{
     mainBtns.innerHTML+=`<button style="color:${statColors[s]}" onclick="setMain('${s}')">${s}</button>`;
@@ -3796,22 +3797,12 @@ function updateBtnState(){
   });
 }
 
+/* ★優先（元機能維持） */
 function setMain(s){mainStat=s;updateBtnState();showTop();}
 function setSub(s){subStat=s;updateBtnState();showTop();}
 function setThird(s){thirdStat=s;updateBtnState();showTop();}
 
-/* ★ソート */
-function setSort(key){
-  if(sortKey===key){
-    sortAsc=!sortAsc;
-  }else{
-    sortKey=key;
-    sortAsc=false;
-  }
-  render();
-}
-
-/* 優先比較 */
+/* 自動8個 */
 function compare(a,b){
   const priority=[mainStat,subStat,thirdStat,"生命"].filter(Boolean);
   for(let key of priority){
@@ -3823,16 +3814,29 @@ function compare(a,b){
 
 function showTop(){
   const sorted=[...baseData].sort(compare);
-  selected = sorted.slice(0,8).map(d=>d["番号"]);
-  replaceTarget = null;
+  selected=sorted.slice(0,8).map(d=>d["番号"]);
+  replaceTarget=null;
   render();
-}/* 入替対象選択 */
+}
+
+/* ソート */
+function setSort(key){
+  if(sortKey===key){
+    sortAsc=!sortAsc;
+  }else{
+    sortKey=key;
+    sortAsc=false;
+  }
+  render();
+}
+
+/* ★入替対象 */
 function setReplace(id){
   replaceTarget = (replaceTarget===id)?null:id;
   render();
 }
 
-/* トグル＆入替 */
+/* ★入替ロジック（核心） */
 function toggle(id){
 
   if(replaceTarget!=null){
@@ -3846,6 +3850,7 @@ function toggle(id){
     if(selected.includes(id)) return;
 
     const idx=selected.indexOf(replaceTarget);
+
     if(idx!=-1){
       selected[idx]=id;
     }
@@ -3867,6 +3872,7 @@ function toggle(id){
   render();
 }
 
+/* 合計 */
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -3920,7 +3926,7 @@ function render(){
 
   table.innerHTML=html;
 
-  /* 上8個 */
+  /* 上8個（←ここ重要：setReplace） */
   let html2="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+="</tr>";
