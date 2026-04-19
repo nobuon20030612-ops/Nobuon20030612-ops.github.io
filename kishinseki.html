@@ -3749,6 +3749,12 @@ const statColors={
   "土":"#d19a66","水":"#4f6fa8","火":"#b35f7a","風":"#9ccc65"
 };
 
+/* ★追加：矢印 */
+function getArrow(key){
+  if(sortKey!==key) return "";
+  return sortAsc ? " ▲" : " ▼";
+}
+
 /* データ読込 */
 function loadFromHTML(){
   const rows=document.querySelectorAll("#rawData table tr");
@@ -3904,10 +3910,10 @@ function render(){
 
   /* 一覧 */
   let html="<tr>";
-  html+=`<th onclick="setSort('番号')">番号</th>`;
+  html+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>鬼神の力</th><th>入手</th>`;
   stats.forEach(s=>{
-    html+=`<th onclick="setSort('${s}')">${s}</th>`;
+    html+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
   html+="</tr>";
 
@@ -3915,13 +3921,17 @@ function render(){
     const sel=selected.includes(d["番号"])?"selected":"";
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
-    /* ★修正① */
     html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
 
-    html+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
+    const numClass = (sortKey==="番号")?"sorted":"";
+    html+=`<td class="${numClass}">${d["番号"]}</td>`;
+    html+=`<td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
+
     stats.forEach(s=>{
-      html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+      const sortedClass = (sortKey===s)?"sorted":"";
+      html+=`<td class="${sortedClass}" style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
+
     html+="</tr>";
   });
 
@@ -3938,13 +3948,13 @@ function render(){
 
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
-    /* ★修正② */
     html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
 
     html2+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
+
     html2+="</tr>";
   });
 
