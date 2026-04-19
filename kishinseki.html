@@ -15,13 +15,6 @@ body{
   text-align:center;
   font-size:28px;
   margin:10px 0;
-  color:#ccc;
-
-  text-shadow:
-    -1px -1px 0 #000,
-     1px -1px 0 #000,
-    -1px  1px 0 #000,
-     1px  1px 0 #000;
 }
 
 table{
@@ -34,15 +27,6 @@ th,td{
   padding:3px;
   text-align:center;
   font-size:11px;
-
-  cursor: default;
-  user-select: text;
-
-  text-shadow:
-    -1px -1px 0 #000,
-     1px -1px 0 #000,
-    -1px  1px 0 #000,
-     1px  1px 0 #000;
 }
 
 tr{
@@ -92,9 +76,10 @@ button.active{
 <h3>一覧</h3>
 <table id="table"></table>
 
-<!-- 👇ここにLibreOfficeの表を貼る -->
+<!-- 👇 Excelデータ埋め込み -->
 <div style="display:none;">
 <table id="sourceTable">
+
 <tr>
 <th>番号</th><th>鬼神の力</th><th>入手</th>
 <th>生命</th><th>気合</th><th>腕力</th><th>耐久</th>
@@ -102,17 +87,8 @@ button.active{
 <th>土</th><th>水</th><th>火</th><th>風</th>
 </tr>
 
-<!-- ★ここにデータ貼る（例） --><tr><td>1</td><td>不壊金剛</td><td>もののふ討伐録：イベント</td><td>2500</td><td>0</td><td>0</td><td>200</td><td>0</td><td>0</td><td>50</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>2</td><td>御所の威厳</td><td></td><td>2000</td><td>0</td><td>0</td><td>100</td><td>0</td><td>0</td><td>60</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>3</td><td>白鳥天翔</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>200</td><td>0</td><td>80</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>4</td><td>礼魂覚醒</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>300</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>5</td><td>忠魂覚醒</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>0</td><td>150</td><td>0</td><td>0</td><td>150</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>6</td><td>禄存の輝光</td><td>星海の荒石</td><td>2000</td><td>0</td><td>0</td><td>200</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>7</td><td>義魂覚醒</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>250</td><td>0</td><td>50</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td>8</td><td>悌魂覚醒</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>100</td><td>200</td><td>200</td><td>200</td><td>200</td></tr>
-<tr><td>9</td><td>智魂覚醒</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>0</td><td>0</td><td>0</td><td>250</td><td>0</td><td>50</td><td>50</td><td>50</td><td>50</td></tr>
-<tr><td>10</td><td>潜龍在淵</td><td>招福の小槌：イベント</td><td>2000</td><td>0</td><td>0</td><td>200</td><td>0</td><td>80</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-
+<!-- ★ここにExcelの<tr>全部貼る -->
+<!-- LibreOffice / Excel HTMLから<tr>だけコピペ -->
 
 </table>
 </div>
@@ -149,17 +125,37 @@ function getArrow(key){
   return sortAsc ? " ↑" : " ↓";
 }
 
+function compare(a,b){
+  const priority=[];
+  if(mainStat) priority.push(mainStat);
+  if(subStat) priority.push(subStat);
+  if(thirdStat) priority.push(thirdStat);
+  priority.push("生命");
+
+  for(let key of priority){
+    let diff=getVal(b,key)-getVal(a,key);
+    if(diff!==0) return diff;
+  }
+
+  return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+}
+
 function setSort(key){
-  if(sortKey===key){ sortAsc=!sortAsc; }
-  else{ sortKey=key; sortAsc=false; }
+  if(sortKey===key){
+    sortAsc=!sortAsc;
+  }else{
+    sortKey=key;
+    sortAsc=false;
+  }
   render();
 }
 
 function makeBtns(){
   stats.forEach(s=>{
-    mainBtns.innerHTML+=`<button onclick="setMain('${s}')">${s}</button>`;
-    subBtns.innerHTML+=`<button onclick="setSub('${s}')">${s}</button>`;
-    thirdBtns.innerHTML+=`<button onclick="setThird('${s}')">${s}</button>`;
+    const c=statColors[s];
+    mainBtns.innerHTML+=`<button style="color:${c}" onclick="setMain('${s}')">${s}</button>`;
+    subBtns.innerHTML+=`<button style="color:${c}" onclick="setSub('${s}')">${s}</button>`;
+    thirdBtns.innerHTML+=`<button style="color:${c}" onclick="setThird('${s}')">${s}</button>`;
   });
 }
 
@@ -175,50 +171,158 @@ function updateBtnState(){
   });
 }
 
-function setMain(s){ mainStat=s; updateBtnState(); }
-function setSub(s){ subStat=s; updateBtnState(); }
-function setThird(s){ thirdStat=s; updateBtnState(); }
+function setMain(s){ mainStat=s; updateBtnState(); showTop(); }
+function setSub(s){ subStat=s; updateBtnState(); showTop(); }
+function setThird(s){ thirdStat=s; updateBtnState(); showTop(); }
+
+function showTop(){
+  if(baseData.length===0)return;
+  const sorted=[...baseData].sort(compare);
+  selected=sorted.slice(0,8).map(d=>d["番号"]);
+  render();
+}
+
+function calcTotals(){
+  let t={};
+  stats.forEach(s=>t[s]=0);
+
+  selected.forEach(id=>{
+    const d=baseData.find(x=>x["番号"]===id);
+    if(!d)return;
+    stats.forEach(s=>{
+      t[s]+=getVal(d,s);
+    });
+  });
+
+  return t;
+}
+
+function setReplace(id){
+  replaceTarget = (replaceTarget===id)?null:id;
+  render();
+}
+
+function toggle(id){
+
+  if(replaceTarget!==null){
+    const idx=selected.indexOf(replaceTarget);
+    if(idx!==-1){
+      selected[idx]=id;
+    }
+    replaceTarget=null;
+    render();
+    return;
+  }
+
+  const i=selected.indexOf(id);
+
+  if(i>=0){
+    selected.splice(i,1);
+  }else{
+    if(selected.length>=8)return;
+    selected.push(id);
+  }
+
+  render();
+}
 
 function render(){
 
   let list=[...baseData];
 
-  let head="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
-  stats.forEach(s=>{ head+=`<th>${s}</th>`; });
+  if(sortKey){
+    list.sort((a,b)=>{
+      let av,bv;
+      if(sortKey==="番号"){
+        av=parseInt(a["番号"])||0;
+        bv=parseInt(b["番号"])||0;
+      }else{
+        av=getVal(a,sortKey);
+        bv=getVal(b,sortKey);
+      }
+      return sortAsc ? av-bv : bv-av;
+    });
+  }
+
+  let head="<tr>";
+  head+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  head+="<th>鬼神の力</th><th>入手</th>";
+
+  stats.forEach(s=>{
+    head+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
+  });
+
   head+="</tr>";
 
   let html=head;
 
   list.forEach(d=>{
-    html+="<tr>";
+    const sel=selected.includes(d["番号"])?"selected":"";
+
+    html+=`<tr class="${sel}" onclick="toggle(${d["番号"]})">`;
     html+=`<td>${d["番号"]}</td>`;
-    html+=`<td>${d["鬼神の力"]}</td>`;
-    html+=`<td>${d["入手"]}</td>`;
+    html+=`<td>${d["鬼神の力"]||""}</td>`;
+    html+=`<td>${d["入手"]||""}</td>`;
+
     stats.forEach(s=>{
-      html+=`<td>${getVal(d,s)}</td>`;
+      html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
+
     html+="</tr>";
   });
 
   table.innerHTML=html;
+
+  let html2=head;
+
+  selected.forEach(id=>{
+    const d=baseData.find(x=>x["番号"]===id);
+    if(!d)return;
+
+    const sel=(replaceTarget===id)?"selected":"";
+
+    html2+=`<tr class="${sel}" onclick="setReplace(${id})">`;
+    html2+=`<td>${d["番号"]}</td>`;
+    html2+=`<td>${d["鬼神の力"]||""}</td>`;
+    html2+=`<td>${d["入手"]||""}</td>`;
+
+    stats.forEach(s=>{
+      html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+    });
+
+    html2+="</tr>";
+  });
+
+  const t=calcTotals();
+
+  html2+="<tr class='totalRow'>";
+  html2+="<td colspan='3'>合計</td>";
+
+  stats.forEach(s=>{
+    html2+=`<td style="color:${statColors[s]}">${t[s]}</td>`;
+  });
+
+  html2+="</tr>";
+
+  selectedTable.innerHTML=html2;
 }
 
-window.onload=function(){
+window.onload = function(){
 
   makeBtns();
   updateBtnState();
 
-  const rows=document.querySelectorAll("#sourceTable tr");
+  const rows = document.querySelectorAll("#sourceTable tr");
 
   rows.forEach((tr,i)=>{
     if(i===0)return;
 
-    const td=tr.children;
+    const td = tr.children;
 
     baseData.push({
-      番号: td[0].textContent,
-      鬼神の力: td[1].textContent,
-      入手: td[2].textContent,
+      番号: td[0].textContent.trim(),
+      鬼神の力: td[1].textContent.trim(),
+      入手: td[2].textContent.trim(),
       生命: td[3].textContent,
       気合: td[4].textContent,
       腕力: td[5].textContent,
@@ -231,6 +335,7 @@ window.onload=function(){
       火: td[12].textContent,
       風: td[13].textContent
     });
+
   });
 
   render();
