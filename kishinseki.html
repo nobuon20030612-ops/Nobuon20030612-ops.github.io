@@ -52,6 +52,16 @@ tr{
   box-shadow: inset 0 0 6px rgba(255,255,255,0.2);
 }
 
+/* ★追加 */
+.replaceTarget{
+  outline:2px solid #fff;
+  background:#3a3a3a !important;
+}
+
+.sortCol{
+  background:#1f2a38 !important;
+}
+
 button{
   background:#222;
   color:#aaa;
@@ -79,7 +89,6 @@ button.active{
 </head>
 
 <body>
-
 <h1 class="title">鬼神石</h1>
 
 <!-- 🔽 ここにデータを入れる -->
@@ -3717,9 +3726,7 @@ const statColors={
   "風":"#9ccc65"
 };
 
-/* ===== ここだけ追加（データ読込） ===== */
 function loadFromHTML(){
-
   const table = document.querySelector("#rawData table");
   if(!table) return;
 
@@ -3743,7 +3750,6 @@ function loadFromHTML(){
     baseData.push(obj);
   }
 }
-/* =================================== */
 
 function getVal(d,key){
   let v=d[key];
@@ -3752,8 +3758,9 @@ function getVal(d,key){
   return isNaN(v)?0:v;
 }
 
+/* ★変更 */
 function getArrow(key){
-  if(sortKey!==key) return "";
+  if(sortKey!==key) return " ↑↓";
   return sortAsc ? " ↑" : " ↓";
 }
 
@@ -3834,6 +3841,7 @@ function setReplace(id){
   render();
 }
 
+/* ★変更 */
 function toggle(id){
 
   if(replaceTarget!==null){
@@ -3850,6 +3858,11 @@ function toggle(id){
 
   if(i>=0){
     selected.splice(i,1);
+
+    if(replaceTarget===id){
+      replaceTarget=null;
+    }
+
   }else{
     if(selected.length>=8)return;
     selected.push(id);
@@ -3877,11 +3890,12 @@ function render(){
   }
 
   let head="<tr>";
-  head+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  head+=`<th class="${sortKey==='番号'?'sortCol':''}" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   head+="<th>鬼神の力</th><th>入手</th>";
 
   stats.forEach(s=>{
-    head+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
+    const cls = (sortKey===s) ? "class='sortCol'" : "";
+    head+=`<th ${cls} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
 
   head+="</tr>";
@@ -3890,14 +3904,16 @@ function render(){
 
   list.forEach(d=>{
     const sel=selected.includes(d["番号"])?"selected":"";
+    const replaceClass = (replaceTarget===d["番号"]) ? "replaceTarget" : "";
 
-    html+=`<tr class="${sel}" onclick="toggle(${d["番号"]})">`;
+    html+=`<tr class="${sel} ${replaceClass}" onclick="toggle(${d["番号"]})">`;
     html+=`<td>${d["番号"]}</td>`;
     html+=`<td>${d["鬼神の力"]||""}</td>`;
     html+=`<td>${d["入手"]||""}</td>`;
 
     stats.forEach(s=>{
-      html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+      const bg = (sortKey===s) ? "background:#1f2a38;" : "";
+      html+=`<td style="color:${statColors[s]};${bg}">${getVal(d,s)}</td>`;
     });
 
     html+="</tr>";
@@ -3911,9 +3927,9 @@ function render(){
     const d=baseData.find(x=>x["番号"]==id);
     if(!d)return;
 
-    const sel=(replaceTarget===id)?"selected":"";
+    const selClass = (replaceTarget===id) ? "replaceTarget" : "";
 
-    html2+=`<tr class="${sel}" onclick="setReplace(${id})">`;
+    html2+=`<tr class="${selClass}" onclick="setReplace(${id})">`;
     html2+=`<td>${d["番号"]}</td>`;
     html2+=`<td>${d["鬼神の力"]||""}</td>`;
     html2+=`<td>${d["入手"]||""}</td>`;
@@ -3939,7 +3955,6 @@ function render(){
   selectedTable.innerHTML=html2;
 }
 
-/* 初期化 */
 makeBtns();
 updateBtnState();
 loadFromHTML();
