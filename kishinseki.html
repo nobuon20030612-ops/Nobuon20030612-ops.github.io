@@ -3886,7 +3886,6 @@ function calcTotals(){
   return t;
 }
 
-/* 描画 */
 function render(){
 
   let list=[...baseData];
@@ -3914,7 +3913,9 @@ function render(){
     const sel=selected.includes(d["番号"])?"selected":"";
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
-    html+=`<tr class="${sel} ${rep}" onclick="toggle(${d["番号"]})">`;
+    /* ★ 修正①ここ */
+    html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
+
     html+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
 
     stats.forEach(s=>{
@@ -3926,7 +3927,7 @@ function render(){
 
   table.innerHTML=html;
 
-  /* 上8個（←ここ重要：setReplace） */
+  /* 上8個 */
   let html2="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+="</tr>";
@@ -3937,7 +3938,9 @@ function render(){
 
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
-    html2+=`<tr class="${rep}" onclick="setReplace(${id})">`;
+    /* ★ 修正②ここ */
+    html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
+
     html2+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
 
     stats.forEach(s=>{
@@ -3956,6 +3959,8 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
+}/* 描画 */
+
 }
 
 /* 初期化 */
