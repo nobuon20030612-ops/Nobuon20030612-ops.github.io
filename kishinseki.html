@@ -35,6 +35,8 @@ tr.selected{
 
 button{
   margin:2px;
+  padding:5px 10px;
+  font-size:14px;
 }
 </style>
 </head>
@@ -43,6 +45,7 @@ button{
 
 <h1 class="title">鬼神石</h1>
 
+<!-- ▼データ（ここはそのまま維持） -->
 <!-- ▼ここに元HTML貼る（そのまま） -->
 <div id="rawData" style="display:none;">
 <table cellspacing="0" border="0">
@@ -3631,10 +3634,35 @@ button{
 		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFFFFF" sdval="13" sdnum="1041;"><font color="#000000">13</font></td>
 	</tr>
 </table>
+</div>	
+<!-- ▼操作 -->
+<div style="text-align:center; margin:10px;">
+
+<b>属性フィルタ</b><br>
+<button onclick="filterType('火')">火</button>
+<button onclick="filterType('水')">水</button>
+<button onclick="filterType('風')">風</button>
+<button onclick="filterType('土')">土</button>
+<button onclick="filterType('ALL')">全部</button>
+
+<br><br>
+
+<b>並び替え</b><br>
+<button onclick="sortBy('生命')">生命</button>
+<button onclick="sortBy('気合')">気合</button>
+<button onclick="sortBy('腕力')">腕力</button>
+<button onclick="sortBy('耐久')">耐久</button>
+<button onclick="sortBy('器用')">器用</button>
+<button onclick="sortBy('知力')">知力</button>
+<button onclick="sortBy('魅力')">魅力</button>
+
 </div>
 
 <h3>選択（8個）</h3>
 <table id="selectedTable"></table>
+
+<h3>合計</h3>
+<div id="total"></div>
 
 <h3>一覧</h3>
 <table id="table"></table>
@@ -3642,24 +3670,23 @@ button{
 <script>
 let baseData=[];
 let selected=[];
+let currentFilter="ALL";
 
 const stats=["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 
 /* =========================
-   ★ HTML → データ変換
+   HTML → データ変換
 ========================= */
 function loadFromHTML(){
 
   const table = document.querySelector("#rawData table");
   const rows = table.querySelectorAll("tr");
 
-  // ヘッダ取得
   const headers=[];
   rows[0].querySelectorAll("td").forEach(td=>{
     headers.push(td.innerText.trim());
   });
 
-  // データ生成
   for(let i=1;i<rows.length;i++){
     const tds = rows[i].querySelectorAll("td");
     if(tds.length===0) continue;
@@ -3674,16 +3701,24 @@ function loadFromHTML(){
   }
 }
 
-/* =========================
-   数値取得
-========================= */
+/* 数値 */
 function getVal(d,key){
   return parseInt(d[key])||0;
 }
 
-/* =========================
-   クリック選択
-========================= */
+/* フィルター */
+function filterType(type){
+  currentFilter=type;
+  render();
+}
+
+/* ソート */
+function sortBy(key){
+  baseData.sort((a,b)=> getVal(b,key)-getVal(a,key));
+  render();
+}
+
+/* 選択 */
 function toggle(id){
 
   const i=selected.indexOf(id);
@@ -3698,16 +3733,20 @@ function toggle(id){
   render();
 }
 
-/* =========================
-   描画
-========================= */
+/* 描画 */
 function render(){
+
+  let view=baseData;
+
+  if(currentFilter!=="ALL"){
+    view=baseData.filter(d=> d["鬼神の力"].includes(currentFilter));
+  }
 
   let html="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
   stats.forEach(s=>html+=`<th>${s}</th>`);
   html+="</tr>";
 
-  baseData.forEach(d=>{
+  view.forEach(d=>{
     const id=d["番号"];
     const sel=selected.includes(id)?"selected":"";
 
@@ -3745,11 +3784,29 @@ function render(){
   });
 
   selectedTable.innerHTML=html2;
+
+  /* 合計 */
+  let totalStats={};
+  stats.forEach(s=>totalStats[s]=0);
+
+  selected.forEach(id=>{
+    const d=baseData.find(x=>x["番号"]==id);
+    if(!d)return;
+
+    stats.forEach(s=>{
+      totalStats[s]+=getVal(d,s);
+    });
+  });
+
+  let tHTML="";
+  stats.forEach(s=>{
+    tHTML+=`${s}:${totalStats[s]}　`;
+  });
+
+  total.innerHTML=tHTML;
 }
 
-/* =========================
-   初期化
-========================= */
+/* 初期化 */
 loadFromHTML();
 render();
 
