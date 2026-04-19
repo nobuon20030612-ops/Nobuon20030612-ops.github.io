@@ -11,13 +11,18 @@ body{
   font-family:sans-serif;
 }
 
-/* タイトル（大きく） */
+/* タイトル（2倍強制） */
 .title{
   text-align:center;
-  font-size:28px;
+  font-size:40px !important;
   margin:12px 0;
   color:#ddd;
-  text-shadow:0 0 4px rgba(255,255,255,0.2);
+}
+
+/* 見出し */
+h3{
+  font-size:24px !important;
+  margin-top:16px;
 }
 
 /* テーブル */
@@ -38,20 +43,20 @@ th,td{
   background:#2a2a2a;
 }
 
-/* 入替対象 */
+/* 入替対象（確実に見える） */
 .replaceTarget{
-  outline:3px solid #fff;
-  background:#3a3a3a !important;
+  outline:3px solid #fff !important;
+  background:#444 !important;
 }
 
-/* ボタン（大きく） */
+/* ボタン（2倍強制） */
 button{
   background:#222;
   color:#aaa;
   border:1px solid #444;
   margin:4px;
-  padding:8px 14px;
-  font-size:14px;
+  padding:12px 20px !important;
+  font-size:18px !important;
   cursor:pointer;
 }
 
@@ -60,7 +65,7 @@ button.active{
   color:#fff;
 }
 
-/* 合計（目に優しい） */
+/* 合計 */
 .totalRow{
   background:#1e2f1e;
   font-weight:bold;
@@ -3776,21 +3781,7 @@ function getVal(d,key){
   return isNaN(v)?0:v;
 }
 
-function getArrow(key){
-  if(sortKey!==key)return " ↑↓";
-  return sortAsc?" ↑":" ↓";
-}
-
-function setSort(key){
-  if(sortKey===key){
-    sortAsc=!sortAsc;
-  }else{
-    sortKey=key;
-    sortAsc=false;
-  }
-  render();
-}
-
+/* ▼ボタン生成 */
 function makeBtns(){
   stats.forEach(s=>{
     mainBtns.innerHTML+=`<button style="color:${statColors[s]}" onclick="setMain('${s}')">${s}</button>`;
@@ -3815,6 +3806,7 @@ function setMain(s){mainStat=s;updateBtnState();showTop();}
 function setSub(s){subStat=s;updateBtnState();showTop();}
 function setThird(s){thirdStat=s;updateBtnState();showTop();}
 
+/* ▼ソート */
 function compare(a,b){
   const priority=[mainStat,subStat,thirdStat,"生命"].filter(Boolean);
 
@@ -3822,7 +3814,6 @@ function compare(a,b){
     let diff=getVal(b,key)-getVal(a,key);
     if(diff!==0)return diff;
   }
-
   return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
 }
 
@@ -3832,6 +3823,7 @@ function showTop(){
   render();
 }
 
+/* ▼合計 */
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -3845,20 +3837,31 @@ function calcTotals(){
   return t;
 }
 
-/* 上で解除対象選択 */
+/* ▼上クリック → 入替対象 */
 function setReplace(id){
   replaceTarget = (replaceTarget===id)?null:id;
   render();
 }
 
-/* 入替 */
+/* ▼入替ロジック */
 function toggle(id){
 
-  if(replaceTarget!==null){
+  if(replaceTarget!=null){
+
+    if(id==replaceTarget){
+      replaceTarget=null;
+      render();
+      return;
+    }
+
+    if(selected.includes(id)) return;
+
     const idx=selected.indexOf(replaceTarget);
-    if(idx!==-1){
+
+    if(idx!=-1){
       selected[idx]=id;
     }
+
     replaceTarget=null;
     render();
     return;
@@ -3876,33 +3879,21 @@ function toggle(id){
   render();
 }
 
+/* ▼描画 */
 function render(){
 
   let list=[...baseData];
 
-  if(sortKey){
-    list.sort((a,b)=>{
-      let av=(sortKey==="番号")?parseInt(a["番号"])||0:getVal(a,sortKey);
-      let bv=(sortKey==="番号")?parseInt(b["番号"])||0:getVal(b,sortKey);
-      return sortAsc?av-bv:bv-av;
-    });
-  }
+  list.sort(compare);
 
-  let head="<tr>";
-  head+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
-  head+="<th>鬼神の力</th><th>入手</th>";
-
-  stats.forEach(s=>{
-    head+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
-  });
-
-  head+="</tr>";
-
-  let html=head;
+  /* 一覧 */
+  let html="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
+  stats.forEach(s=>html+=`<th>${s}</th>`);
+  html+="</tr>";
 
   list.forEach(d=>{
     const sel=selected.includes(d["番号"])?"selected":"";
-    const rep=(replaceTarget===d["番号"])?"replaceTarget":"";
+    const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
     html+=`<tr class="${sel} ${rep}" onclick="toggle(${d["番号"]})">`;
     html+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
@@ -3916,6 +3907,7 @@ function render(){
 
   table.innerHTML=html;
 
+  /* 上8個 */
   let html2="<tr><th>番号</th><th>鬼神の力</th><th>入手</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+="</tr>";
@@ -3924,7 +3916,7 @@ function render(){
     const d=baseData.find(x=>x["番号"]==id);
     if(!d)return;
 
-    const rep=(replaceTarget===id)?"replaceTarget":"";
+    const rep=(replaceTarget==id)?"replaceTarget":"";
 
     html2+=`<tr class="${rep}" onclick="setReplace(${id})">`;
     html2+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
@@ -3947,6 +3939,7 @@ function render(){
   selectedTable.innerHTML=html2;
 }
 
+/* 初期化 */
 makeBtns();
 updateBtnState();
 loadFromHTML();
