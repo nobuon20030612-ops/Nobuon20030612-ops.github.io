@@ -3796,9 +3796,9 @@ function updateBtnState(){
   });
 }
 
-function setMain(s){mainStat=s;updateBtnState();render();}
-function setSub(s){subStat=s;updateBtnState();render();}
-function setThird(s){thirdStat=s;updateBtnState();render();}
+function setMain(s){mainStat=s;updateBtnState();showTop();}
+function setSub(s){subStat=s;updateBtnState();showTop();}
+function setThird(s){thirdStat=s;updateBtnState();showTop();}
 
 /* ★ソート */
 function setSort(key){
@@ -3821,7 +3821,12 @@ function compare(a,b){
   return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
 }
 
-/* 入替対象選択 */
+function showTop(){
+  const sorted=[...baseData].sort(compare);
+  selected = sorted.slice(0,8).map(d=>d["番号"]);
+  replaceTarget = null;
+  render();
+}/* 入替対象選択 */
 function setReplace(id){
   replaceTarget = (replaceTarget===id)?null:id;
   render();
