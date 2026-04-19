@@ -3711,7 +3711,6 @@ button.active{
 	</tr>
 </table>
 </div>
-
 <h3>第1優先</h3>
 <div id="mainBtns"></div>
 
@@ -3750,8 +3749,9 @@ const statColors={
 /* データ読込 */
 function loadFromHTML(){
   const rows=document.querySelectorAll("#rawData table tr");
-  const headers=[];
+  if(!rows.length)return;
 
+  const headers=[];
   rows[0].querySelectorAll("td").forEach(td=>{
     headers.push(td.innerText.trim());
   });
@@ -3797,7 +3797,7 @@ function updateBtnState(){
   });
 }
 
-/* ★優先（元機能維持） */
+/* 優先 */
 function setMain(s){mainStat=s;updateBtnState();showTop();}
 function setSub(s){subStat=s;updateBtnState();showTop();}
 function setThird(s){thirdStat=s;updateBtnState();showTop();}
@@ -3830,13 +3830,13 @@ function setSort(key){
   render();
 }
 
-/* ★入替対象 */
+/* 入替対象 */
 function setReplace(id){
   replaceTarget = (replaceTarget===id)?null:id;
   render();
 }
 
-/* ★入替ロジック（核心） */
+/* 入替＋選択 */
 function toggle(id){
 
   if(replaceTarget!=null){
@@ -3886,6 +3886,7 @@ function calcTotals(){
   return t;
 }
 
+/* 描画 */
 function render(){
 
   let list=[...baseData];
@@ -3902,26 +3903,22 @@ function render(){
   let html="<tr>";
   html+=`<th onclick="setSort('番号')">番号</th>`;
   html+=`<th>鬼神の力</th><th>入手</th>`;
-
   stats.forEach(s=>{
     html+=`<th onclick="setSort('${s}')">${s}</th>`;
   });
-
   html+="</tr>";
 
   list.forEach(d=>{
     const sel=selected.includes(d["番号"])?"selected":"";
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
-    /* ★ 修正①ここ */
+    /* ★修正① */
     html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
 
     html+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
-
     stats.forEach(s=>{
       html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
-
     html+="</tr>";
   });
 
@@ -3938,15 +3935,13 @@ function render(){
 
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
-    /* ★ 修正②ここ */
+    /* ★修正② */
     html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
 
     html2+=`<td>${d["番号"]}</td><td>${d["鬼神の力"]||""}</td><td>${d["入手"]||""}</td>`;
-
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
-
     html2+="</tr>";
   });
 
@@ -3959,8 +3954,6 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
-}/* 描画 */
-
 }
 
 /* 初期化 */
