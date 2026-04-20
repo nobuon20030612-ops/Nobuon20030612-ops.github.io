@@ -57,7 +57,6 @@ body{ background:#000; }
 
 .sub-h{ background:#ff8800; color:#000; }
 
-/* ★ここだけ：親セルの色をそのまま表示 */
 .input{
   width:100%;
   height:100%;
@@ -95,23 +94,30 @@ body{ background:#000; }
   <div class="cell top-h">火</div><div class="cell top-h">風</div>
 
   <div class="cell label"></div>
-  <div class="cell top-h total-0"></div>
-  <div class="cell top-h total-1"></div>
-  <div class="cell top-h total-2"></div>
-  <div class="cell top-h total-3"></div>
-  <div class="cell top-h total-4"></div>
-  <div class="cell top-h total-5"></div>
-  <div class="cell top-h total-6"></div>
-  <div class="cell top-h total-7"></div>
-  <div class="cell top-h total-8"></div>
-  <div class="cell top-h total-9"></div>
-  <div class="cell top-h total-10"></div>
+  <div class="cell top-h total-0">0</div>
+  <div class="cell top-h total-1">0</div>
+  <div class="cell top-h total-2">0</div>
+  <div class="cell top-h total-3">0</div>
+  <div class="cell top-h total-4">0</div>
+  <div class="cell top-h total-5">0</div>
+  <div class="cell top-h total-6">0</div>
+  <div class="cell top-h total-7">0</div>
+  <div class="cell top-h total-8">0</div>
+  <div class="cell top-h total-9">0</div>
+  <div class="cell top-h total-10">0</div>
 
   <div class="cell label">残</div>
-  <div class="cell top-v">65535</div><div class="cell top-v">65535</div><div class="cell top-v">8000</div>
-  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
-  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
-  <div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+  <div class="cell top-v remain-0">65535</div>
+  <div class="cell top-v remain-1">65535</div>
+  <div class="cell top-v remain-2">8000</div>
+  <div class="cell top-v remain-3">8000</div>
+  <div class="cell top-v remain-4">8000</div>
+  <div class="cell top-v remain-5">8000</div>
+  <div class="cell top-v remain-6">8000</div>
+  <div class="cell top-v remain-7">8000</div>
+  <div class="cell top-v remain-8">8000</div>
+  <div class="cell top-v remain-9">8000</div>
+  <div class="cell top-v remain-10">8000</div>
 </div>
 
 <!-- 家臣能力 -->
@@ -185,16 +191,38 @@ createSection("左手：","left", true);
 </div>
 
 <script>
+// 全角→半角変換
+function toHalfWidth(str){
+  return str
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[－ー]/g, "-");
+}
+
 function calc(){
   for(let i=0;i<11;i++){
     let sum = 0;
+
     document.querySelectorAll(".col-"+i).forEach(el=>{
-      sum += Number(el.value) || 0;
+      const val = toHalfWidth(el.value);
+      sum += Number(val) || 0;
     });
+
     document.querySelector(".total-"+i).textContent = sum;
+
+    const max = (i === 0 || i === 1) ? 65535 : 8000;
+    document.querySelector(".remain-"+i).textContent = max - sum;
   }
 }
-document.addEventListener("input", calc);
+
+// 入力時に自動変換
+document.addEventListener("input", e=>{
+  if(e.target.classList.contains("input")){
+    e.target.value = toHalfWidth(e.target.value);
+    calc();
+  }
+});
+
+calc();
 </script>
 
 </body>
