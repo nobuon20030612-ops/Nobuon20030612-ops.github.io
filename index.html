@@ -2,6 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+
+<!-- ★これが超重要 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>たいらの野望Online</title>
 
 <style>
@@ -29,7 +33,7 @@ body {
     cursor: pointer;
 }
 
-/* 画像（PC） */
+/* PCサイズ */
 .imgbtn img {
     width: 18vw;
     max-width: 240px;
@@ -44,17 +48,18 @@ body {
     gap: 5vw;
 }
 
-/* 📱スマホ */
+/* スマホ */
 @media (max-width: 600px) {
 
+    /* 上 */
     .imgbtn img {
-        width: 180vw;        /* ←ちょい大きく */
-        max-width: 180px;   /* ←デカすぎ防止 */
+        width: 32vw;
+        max-width: none;
     }
 
+    /* 下 */
     .bottom .imgbtn img {
-        width: 180vw;        /* ←2つ並べてもいいサイズ */
-        max-width: 180px;
+        width: 42vw;
     }
 }
 </style>
@@ -62,12 +67,12 @@ body {
 
 <body>
 
-<!-- 上 -->
+<!-- 上：家臣計算機 -->
 <button class="imgbtn" onclick="location.href='kashin.html'">
     <img src="kashin.png" alt="家臣計算機">
 </button>
 
-<!-- 下 -->
+<!-- 下：鬼神石 + 九十九 -->
 <div class="bottom">
 
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
