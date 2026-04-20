@@ -1,14 +1,3 @@
-
-
-画像をアップロードしました
-画像をアップロードしました
-1枚目の画像と同じ感じで
-2枚目の画像の人物で再現して
-背景完全透過
-
-編集
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -35,6 +24,7 @@ body {
 
 <body>
 
+<!-- 鬼神石（元のまま） -->
 <button 
 onclick="location.href='kishinseki.html'"
 style="
@@ -50,169 +40,20 @@ style="
     鬼神石
 </button>
 
+<!-- 家臣計算機（画像ボタン） -->
 <button 
 onclick="location.href='kashin.html'"
 style="
-    padding: 3.5vh 10vw;
-    font-size: 3.8vw;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    border: 4px solid white;
-    border-radius: 20px;
+    border: none;
+    background: none;
+    padding: 0;
     cursor: pointer;
-    text-shadow: 2px 2px 6px black;
 ">
-    家臣計算機
+    <img src="kashin.png" style="
+        width: 20vw;
+        display: block;
+    ">
 </button>
 
 </body>
 </html>
-鬼神石ボタンを指定の画像に変更したい
-
-OK、やりたいことは
-👉「鬼神石」ボタンを“画像ボタン”にする」だね。
-
-やり方はシンプルで、buttonの中を画像に置き換えるだけでOK。
-
-✅ 修正コード（鬼神石だけ変更）
-<button onclick="location.href='kishinseki.html'" style="border:none; background:none; padding:0; cursor:pointer;">
-    <img src="kishinseki.png" style="width:20vw;">
-</button>
-🔧 ポイント
-kishinseki.png ← ここに使いたい画像ファイル名
-
-width:20vw ← サイズ調整（大きすぎたらここ変える）
-
-ボタンの枠や背景は消してる（画像だけにするため）
-
-🎯 全体コード（差し替え済み）
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>たいらの野望Online</title>
-
-<style>
-body {
-    margin: 0;
-    height: 100vh;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3vw;
-
-    background: url("bg.png") no-repeat center;
-    background-size: cover;
-    background-color: black;
-}
-</style>
-
-</head>
-
-<body>
-
-<!-- 鬼神石（画像ボタン） -->
-<button onclick="location.href='kishinseki.html'" style="border:none; background:none; padding:0; cursor:pointer;">
-    <img src="kishinseki.png" style="width:20vw;">
-</button>
-
-<!-- 家臣計算機（そのまま） -->
-<button 
-onclick="location.href='kashin.html'"
-style="
-    padding: 3.5vh 10vw;
-    font-size: 3.8vw;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    border: 4px solid white;
-    border-radius: 20px;
-    cursor: pointer;
-    text-shadow: 2px 2px 6px black;
-">
-    家臣計算機
-</button>
-
-</body>
-</html>
-👍 もしやりたいなら
-ホバーで光る
-
-押したときに縮む
-
-スマホ用にサイズ最適化
-
-とかもできるから、次やる？
-
-
-家臣計算機ボタンも指定の画像にしたい
-
-OK、じゃあ両方とも画像ボタンに統一しよう 👍
-
-✅ 修正ポイント
-「家臣計算機」も <img> に置き換えるだけ
-
-画像ファイルを別に用意（例：kashin.png）
-
-🎯 完全コード（両方画像ボタン）
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>たいらの野望Online</title>
-
-<style>
-body {
-    margin: 0;
-    height: 100vh;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3vw;
-
-    background: url("bg.png") no-repeat center;
-    background-size: cover;
-    background-color: black;
-}
-</style>
-
-</head>
-
-<body>
-
-<!-- 鬼神石 -->
-<button onclick="location.href='kishinseki.html'" style="border:none; background:none; padding:0; cursor:pointer;">
-    <img src="kishinseki.png" style="width:20vw;">
-</button>
-
-<!-- 家臣計算機 -->
-<button onclick="location.href='kashin.html'" style="border:none; background:none; padding:0; cursor:pointer;">
-    <img src="kashin.png" style="width:20vw;">
-</button>
-
-</body>
-</html>
-🔧 画像ファイル
-kishinseki.png → 鬼神石ボタン画像
-
-kashin.png → 家臣計算機ボタン画像
-
-👍 ちょい強化（おすすめ）
-押した感出すなら👇追加
-
-<img src="kashin.png" style="width:20vw; transition:0.1s;"
-onmousedown="this.style.transform='scale(0.95)'"
-onmouseup="this.style.transform='scale(1)'">
-必要なら👇もできる
-
-画像に文字を重ねる
-
-ホバーで発光
-
-スマホで縦並び
-
-次どこまで作る？
-
-
-
