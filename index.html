@@ -44,7 +44,7 @@ body {
     width: 14vw;
 }
 
-/* 動画オーバーレイ */
+/* 動画 */
 #videoOverlay {
     position: fixed;
     inset: 0;
@@ -55,24 +55,10 @@ body {
     z-index: 9999;
 }
 
-/* 動画 */
 #videoOverlay video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-/* 閉じるボタン */
-#closeBtn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 24px;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    border: none;
-    padding: 10px 16px;
-    cursor: pointer;
 }
 </style>
 </head>
@@ -94,7 +80,7 @@ body {
     </button>
 </div>
 
-<!-- 下（nopush） -->
+<!-- 下 -->
 <button class="imgbtn nopush" onclick="playVideo()">
     <img src="nopush.png">
 </button>
@@ -102,37 +88,33 @@ body {
 <!-- 動画 -->
 <div id="videoOverlay">
     <video id="video" src="video.mp4"></video>
-    <button id="closeBtn" onclick="closeVideo()">×</button>
 </div>
 
 <script>
-function playVideo() {
-    const overlay = document.getElementById("videoOverlay");
-    const video = document.getElementById("video");
+const video = document.getElementById("video");
+const overlay = document.getElementById("videoOverlay");
 
+function playVideo() {
     overlay.style.display = "flex";
 
     video.currentTime = 0;
     video.muted = false;
     video.play();
 
-    // フルスクリーン
     if (video.requestFullscreen) {
         video.requestFullscreen();
     }
 }
 
-function closeVideo() {
-    const overlay = document.getElementById("videoOverlay");
-    const video = document.getElementById("video");
-
+/* ★ここが追加（自動で戻る） */
+video.addEventListener("ended", () => {
     video.pause();
     overlay.style.display = "none";
 
     if (document.fullscreenElement) {
         document.exitFullscreen();
     }
-}
+});
 </script>
 
 </body>
