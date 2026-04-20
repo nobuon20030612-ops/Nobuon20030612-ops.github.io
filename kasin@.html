@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>完全再現</title>
+
+<style>
+html, body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:"MS Gothic", sans-serif;
+}
+
+body{
+  background:#000;
+}
+
+.table{
+  display:grid;
+  grid-template-columns:80px repeat(11, 58px);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.06) 0px,
+      rgba(255,255,255,0.06) 26px,
+      transparent 26px,
+      transparent 52px
+    );
+}
+
+.cell{
+  border:1px solid #111;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+
+  background:#000; /* ←追加（これだけ） */
+}
+
+.label{
+  justify-content:flex-end;
+  padding-right:6px;
+  border:none;
+  position:relative;
+  background:#000 !important;
+}
+
+/* ★追加：1段下に重ねる */
+.shift-row{
+  position:relative;
+  top:26px;
+  z-index:1;
+}
+
+.nine-inline{
+  position:absolute;
+  left:4px;
+  font-size:11px;
+}
+
+.top-h{ background:#e8a0a0; color:#000; }
+.top-v{ background:#333; color:#ff4444; }
+
+.sub-h{ background:#ff8800; color:#000; }
+
+.input{
+  width:100%;
+  height:100%;
+  background:#ff8800;
+  color:#000;
+  border:none;
+  text-align:center;
+}
+
+.head  .cell{ background:#5c7fb8; }
+.body  .cell{ background:#3f9b3f; }
+.right .cell{ background:#b5b300; }
+.left  .cell{ background:#c03a6b; }
+
+.head .label,
+.body .label,
+.right .label,
+.left .label{
+  background:#000 !important;
+}
+
+.section{ margin-top:16px; }
+.flex{ display:flex; gap:16px; }
+</style>
+</head>
+
+<body>
+
+<!-- 合計能力 -->
+<div class="table">
+  <div class="cell label shift-row">合計能力</div>
+  <div class="cell top-h">生命</div><div class="cell top-h">気合</div><div class="cell top-h">腕力</div>
+  <div class="cell top-h">耐久</div><div class="cell top-h">器用</div><div class="cell top-h">知力</div>
+  <div class="cell top-h">魅力</div><div class="cell top-h">土</div><div class="cell top-h">水</div>
+  <div class="cell top-h">火</div><div class="cell top-h">風</div>
+
+  <div class="cell label"></div>
+  <div class="cell top-h"></div><div class="cell top-h"></div><div class="cell top-h"></div>
+  <div class="cell top-h"></div><div class="cell top-h"></div><div class="cell top-h"></div>
+  <div class="cell top-h"></div><div class="cell top-h"></div><div class="cell top-h"></div>
+  <div class="cell top-h"></div><div class="cell top-h"></div>
+
+  <div class="cell label">残</div>
+  <div class="cell top-v">65535</div><div class="cell top-v">65535</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+</div>
+
+<!-- 家臣能力 -->
+<div class="table section">
+  <div class="cell label shift-row">家臣能力</div>
+
+  <div class="cell sub-h">生命</div><div class="cell sub-h">気合</div><div class="cell sub-h">腕力</div>
+  <div class="cell sub-h">耐久</div><div class="cell sub-h">器用</div><div class="cell sub-h">知力</div>
+  <div class="cell sub-h">魅力</div><div class="cell sub-h">土</div><div class="cell sub-h">水</div>
+  <div class="cell sub-h">火</div><div class="cell sub-h">風</div>
+
+  <div class="cell label"></div>
+  <script>
+    for(let i=0;i<11;i++){
+      document.write('<div class="cell"><input class="input"></div>');
+    }
+  </script>
+</div>
+
+<script>
+const baseRows = ["付与石1","付与石2","神器石1","神器石2"];
+const powerRows = ["1","2","3","4","5","6","7","8"];
+const ninetyNine = ["","","","九","十","九","",""];
+
+function createSection(title, cls, has99=false){
+  document.write(`<div class="table ${cls}">`);
+
+  document.write(`<div class="cell label"></div>`);
+  ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"]
+    .forEach(t => document.write(`<div class="cell">${t}</div>`));
+
+  document.write(`<div class="cell label">${title}付与</div>`);
+  for(let i=0;i<11;i++){
+    document.write(`<div class="cell"></div>`);
+  }
+
+  baseRows.forEach(r=>{
+    document.write(`<div class="cell label">${r}</div>`);
+    for(let j=0;j<11;j++){
+      document.write(`<div class="cell"></div>`);
+    }
+  });
+
+  if(has99){
+    powerRows.forEach((r,i)=>{
+      let extra = ninetyNine[i] ? `<span class="nine-inline">${ninetyNine[i]}</span>` : "";
+      document.write(`<div class="cell label">${extra}${r}</div>`);
+      for(let j=0;j<11;j++){
+        document.write(`<div class="cell"></div>`);
+      }
+    });
+  }
+
+  document.write(`</div>`);
+}
+</script>
+
+<div class="flex section">
+<script>
+createSection("頭：","head", false);
+createSection("胴：","body", false);
+</script>
+</div>
+
+<div class="flex section">
+<script>
+createSection("右手：","right", true);
+createSection("左手：","left", true);
+</script>
+</div>
+
+</body>
+</html>
