@@ -20,7 +20,7 @@ body {
     background-color: black;
 }
 
-/* ボタン共通 */
+/* 画像ボタン */
 .imgbtn {
     border: none;
     background: none;
@@ -30,34 +30,49 @@ body {
 
 .imgbtn img {
     width: 20vw;
+    min-width: 140px;
+    height: auto;
     display: block;
 }
 
-/* 下段2つ */
+/* 下段 */
 .bottom {
     display: flex;
     gap: 6vw;
 }
-</style>
 
+/* スマホ対応 */
+@media (max-width: 600px) {
+
+    .imgbtn img {
+        width: 40vw;
+    }
+
+    .bottom {
+        gap: 4vw;
+    }
+}
+</style>
 </head>
 
 <body>
 
 <!-- 上：家臣計算機 -->
 <button class="imgbtn" onclick="location.href='kashin.html'">
-    <img src="kashin.png">
+    <img src="kashin.png" alt="家臣計算機">
 </button>
 
 <!-- 下：鬼神石 + 九十九 -->
 <div class="bottom">
+
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png">
+        <img src="kishinseki.png" alt="鬼神石">
     </button>
 
     <button class="imgbtn" onclick="location.href='tsukumogami.html'">
-        <img src="tsukumogami.png">
+        <img src="tsukumogami.png" alt="九十九">
     </button>
+
 </div>
 
 </body>
