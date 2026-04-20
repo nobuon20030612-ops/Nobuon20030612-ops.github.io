@@ -33,13 +33,11 @@ body {
     display: block;
 }
 
-/* 下段 */
 .bottom {
     display: flex;
     gap: 5vw;
 }
 
-/* nopush */
 .nopush img {
     width: 14vw;
 }
@@ -55,38 +53,37 @@ body {
     z-index: 9999;
 }
 
+/* ★操作完全無効 */
 #videoOverlay video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none; /* ←クリック無効 */
 }
 </style>
 </head>
 
 <body>
 
-<!-- 上 -->
-<button class="imgbtn">
+<button class="imgbtn" onclick="location.href='kashin.html'">
     <img src="kashin.png">
 </button>
 
-<!-- 中 -->
 <div class="bottom">
-    <button class="imgbtn">
+    <button class="imgbtn" onclick="location.href='kishinseki.html'">
         <img src="kishinseki.png">
     </button>
-    <button class="imgbtn">
+    <button class="imgbtn" onclick="location.href='tsukumogami.html'">
         <img src="tsukumogami.png">
     </button>
 </div>
 
-<!-- 下 -->
 <button class="imgbtn nopush" onclick="playVideo()">
     <img src="nopush.png">
 </button>
 
-<!-- 動画 -->
 <div id="videoOverlay">
+    <!-- controls無しでUI消える -->
     <video id="video" src="video.mp4"></video>
 </div>
 
@@ -106,7 +103,7 @@ function playVideo() {
     }
 }
 
-/* ★ここが追加（自動で戻る） */
+/* 自動で戻る */
 video.addEventListener("ended", () => {
     video.pause();
     overlay.style.display = "none";
