@@ -16,7 +16,7 @@ body{ background:#000; }
 
 .table{
   display:grid;
-  grid-template-columns:70px repeat(11, 50px);
+  grid-template-columns:80px repeat(11, 58px);
   background:
     repeating-linear-gradient(
       to bottom,
@@ -34,7 +34,6 @@ body{ background:#000; }
   align-items:center;
   justify-content:center;
   font-size:13px;
-  background:#000;
 }
 
 .label{
@@ -58,11 +57,12 @@ body{ background:#000; }
 
 .sub-h{ background:#ff8800; color:#000; }
 
+/* ★ここだけ：親セルの色をそのまま表示 */
 .input{
   width:100%;
   height:100%;
   background:transparent;
-  color:#000;
+  color:inherit;
   border:none;
   text-align:center;
 }
@@ -89,42 +89,30 @@ body{ background:#000; }
 <!-- 合計能力 -->
 <div class="table">
   <div class="cell label shift-row">合計能力</div>
-
   <div class="cell top-h">生命</div><div class="cell top-h">気合</div><div class="cell top-h">腕力</div>
   <div class="cell top-h">耐久</div><div class="cell top-h">器用</div><div class="cell top-h">知力</div>
   <div class="cell top-h">魅力</div><div class="cell top-h">土</div><div class="cell top-h">水</div>
   <div class="cell top-h">火</div><div class="cell top-h">風</div>
 
   <div class="cell label"></div>
-  <div class="cell top-h total hp"></div>
-  <div class="cell top-h total mp"></div>
-  <div class="cell top-h total str"></div>
-  <div class="cell top-h total vit"></div>
-  <div class="cell top-h total dex"></div>
-  <div class="cell top-h total int"></div>
-  <div class="cell top-h total cha"></div>
-  <div class="cell top-h total earth"></div>
-  <div class="cell top-h total water"></div>
-  <div class="cell top-h total fire"></div>
-  <div class="cell top-h total wind"></div>
+  <div class="cell top-h total-0"></div>
+  <div class="cell top-h total-1"></div>
+  <div class="cell top-h total-2"></div>
+  <div class="cell top-h total-3"></div>
+  <div class="cell top-h total-4"></div>
+  <div class="cell top-h total-5"></div>
+  <div class="cell top-h total-6"></div>
+  <div class="cell top-h total-7"></div>
+  <div class="cell top-h total-8"></div>
+  <div class="cell top-h total-9"></div>
+  <div class="cell top-h total-10"></div>
 
   <div class="cell label">残</div>
-  <div class="cell top-v rest hp">65535</div>
-  <div class="cell top-v rest mp">65535</div>
-  <div class="cell top-v rest str">8000</div>
-  <div class="cell top-v rest vit">8000</div>
-  <div class="cell top-v rest dex">8000</div>
-  <div class="cell top-v rest int">8000</div>
-  <div class="cell top-v rest cha">8000</div>
-  <div class="cell top-v rest earth">8000</div>
-  <div class="cell top-v rest water">8000</div>
-  <div class="cell top-v rest fire">8000</div>
-  <div class="cell top-v rest wind">8000</div>
+  <div class="cell top-v">65535</div><div class="cell top-v">65535</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div><div class="cell top-v">8000</div>
+  <div class="cell top-v">8000</div><div class="cell top-v">8000</div>
 </div>
-
-<script>
-const classes = ["hp","mp","str","vit","dex","int","cha","earth","water","fire","wind"];
-</script>
 
 <!-- 家臣能力 -->
 <div class="table section">
@@ -138,7 +126,7 @@ const classes = ["hp","mp","str","vit","dex","int","cha","earth","water","fire",
   <div class="cell label"></div>
   <script>
     for(let i=0;i<11;i++){
-      document.write(`<div class="cell"><input class="input ${classes[i]}"></div>`);
+      document.write('<div class="cell"><input class="input col-'+i+'"></div>');
     }
   </script>
 </div>
@@ -156,14 +144,15 @@ function createSection(title, cls, has99=false){
     .forEach(t => document.write(`<div class="cell">${t}</div>`));
 
   document.write(`<div class="cell label">${title}付与</div>`);
+
   for(let i=0;i<11;i++){
-    document.write(`<div class="cell"><input class="input ${classes[i]}"></div>`);
+    document.write('<div class="cell"><input class="input col-'+i+'"></div>');
   }
 
   baseRows.forEach(r=>{
     document.write(`<div class="cell label">${r}</div>`);
     for(let j=0;j<11;j++){
-      document.write(`<div class="cell"><input class="input ${classes[j]}"></div>`);
+      document.write('<div class="cell"><input class="input col-'+j+'"></div>');
     }
   });
 
@@ -172,7 +161,7 @@ function createSection(title, cls, has99=false){
       let extra = ninetyNine[i] ? `<span class="nine-inline">${ninetyNine[i]}</span>` : "";
       document.write(`<div class="cell label">${extra}${r}</div>`);
       for(let j=0;j<11;j++){
-        document.write(`<div class="cell"><input class="input ${classes[j]}"></div>`);
+        document.write('<div class="cell"><input class="input col-'+j+'"></div>');
       }
     });
   }
@@ -196,25 +185,15 @@ createSection("左手：","left", true);
 </div>
 
 <script>
-const limits = {
-  hp:65535, mp:65535,
-  str:8000, vit:8000, dex:8000, int:8000, cha:8000,
-  earth:8000, water:8000, fire:8000, wind:8000
-};
-
 function calc(){
-  classes.forEach(c=>{
+  for(let i=0;i<11;i++){
     let sum = 0;
-
-    document.querySelectorAll("input."+c).forEach(el=>{
+    document.querySelectorAll(".col-"+i).forEach(el=>{
       sum += Number(el.value) || 0;
     });
-
-    document.querySelector(".total."+c).textContent = sum;
-    document.querySelector(".rest."+c).textContent = limits[c] - sum;
-  });
+    document.querySelector(".total-"+i).textContent = sum;
+  }
 }
-
 document.addEventListener("input", calc);
 </script>
 
