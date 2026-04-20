@@ -13,6 +13,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
     gap: 3vh;
 
     background: url("bg.png") no-repeat center;
@@ -20,7 +21,7 @@ body {
     background-color: black;
 }
 
-/* 画像ボタン */
+/* ボタン */
 .imgbtn {
     border: none;
     background: none;
@@ -28,9 +29,11 @@ body {
     cursor: pointer;
 }
 
+/* 画像（PC） */
 .imgbtn img {
-    width: 20vw;
-    min-width: 140px;
+    width: 18vw;
+    max-width: 240px;
+    min-width: 120px;
     height: auto;
     display: block;
 }
@@ -38,18 +41,20 @@ body {
 /* 下段 */
 .bottom {
     display: flex;
-    gap: 6vw;
+    gap: 5vw;
 }
 
-/* スマホ対応 */
+/* 📱スマホ */
 @media (max-width: 600px) {
 
     .imgbtn img {
-        width: 40vw;
+        width: 30vw;        /* ←ちょい大きく */
+        max-width: 180px;   /* ←デカすぎ防止 */
     }
 
-    .bottom {
-        gap: 4vw;
+    .bottom .imgbtn img {
+        width: 42vw;        /* ←2つ並べてもいいサイズ */
+        max-width: 180px;
     }
 }
 </style>
@@ -57,12 +62,12 @@ body {
 
 <body>
 
-<!-- 上：家臣計算機 -->
+<!-- 上 -->
 <button class="imgbtn" onclick="location.href='kashin.html'">
     <img src="kashin.png" alt="家臣計算機">
 </button>
 
-<!-- 下：鬼神石 + 九十九 -->
+<!-- 下 -->
 <div class="bottom">
 
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
