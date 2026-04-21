@@ -10,7 +10,6 @@
 
 <meta name="keywords" content="九十九,九十九ツール,鬼神石,鬼神石計算,家臣計算機,信長の野望オンライン">
 
-
 <style>
 .sr-only{
     position:absolute !important;
@@ -56,7 +55,7 @@ body {
     transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-/* ★中央3つ並び */
+/* ★中央並び */
 .middle {
     display: flex;
     gap: 4vw;
@@ -136,8 +135,10 @@ body {
 </head>
 
 <body>
+
 <h1 style="position:absolute; left:-9999px;">
 信長の野望オンラインの攻略サイト
+</h1>
 <h1 class="sr-only">信長の野望オンラインの攻略サイト</h1>
 
 <p class="sr-only">
@@ -146,37 +147,48 @@ body {
 </p>
 
 <div class="sr-only">
-    <a href="tsukumogami.html">九十九ツール 組み合わせ一覧と最適構成</a><br>
-    <a href="kishinseki.html">鬼神石ツール 計算と組み合わせ一覧</a><br>
-    <a href="kashin.html">家臣計算機 家臣ステータス計算ツール</a>
+    <a href="tsukumogami.html">九十九ツール</a><br>
+    <a href="kishinseki.html">鬼神石ツール</a><br>
+    <a href="kashin.html">家臣計算機</a>
 </div>
 
-<div class="middle">  
-    <!-- 上 -->
-<button class="imgbtn" onclick="location.href='kashin.html'">
-    <img src="kashin.png" alt="家臣計算機　家臣のステータス計算ツール">
-</button>
+<!-- 上段：公式 / 攻略 -->
+<div class="middle">
+    <a href="https://www.gamecity.ne.jp/nol/index.htm"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="imgbtn">
+        <img src="koushiki.png" alt="koushiki">
+    </a>
 
-<!-- 中央3つ -->
+    <a href="https://wiki.ohmynobu.net/nol/"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="imgbtn">
+        <img src="wiki.png" alt="wiki">
+    </a>
+</div>
+
+<!-- 中段：鬼神石 / YouTube / 九十九 -->
 <div class="middle">
 
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png" alt="鬼神石の計算ツール　組み合わせと一覧">
+        <img src="kishinseki.png" alt="鬼神石の計算ツール">
     </button>
 
     <a href="https://www.youtube.com/@%E3%81%9F%E3%81%84%E3%82%89%E3%81%AEzzz"
        target="_blank"
        class="imgbtn youtube">
-        <img src="youtube_btn.png" alt="youtube　たいらの　チャンネルリンク">
+        <img src="youtube_btn.png" alt="youtube">
     </a>
 
     <button class="imgbtn" onclick="location.href='tsukumogami.html'">
-        <img src="tsukumogami.png" alt="九十九の計算ツール　組み合わせと一覧">
+        <img src="tsukumogami.png" alt="九十九ツール">
     </button>
 
 </div>
 
-<!-- 下 -->
+<!-- 下段：nopush -->
 <button class="imgbtn nopush" onclick="playVideo()">
     <img src="nopush.png">
 </button>
