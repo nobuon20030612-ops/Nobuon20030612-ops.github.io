@@ -2,227 +2,139 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>家臣計算機</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>たいらの野望Online</title>
 
 <style>
-html, body{
-  margin:0;
-  background:#000;
-  color:#fff;
-  font-family:"MS Gothic", sans-serif;
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 3vh;
+    background: url("bg.png") no-repeat center;
+    background-size: cover;
 }
 
-body{ background:#000; }
-
-.table{
-  display:grid;
-  grid-template-columns:80px repeat(11, 49px);
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(255,255,255,0.06) 0px,
-      rgba(255,255,255,0.06) 26px,
-      transparent 26px,
-      transparent 52px
-    );
+/* ボタン */
+.imgbtn {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
 }
 
-.cell{
-  border:1px solid #111;
-  height:26px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:13px;
+/* 画像 */
+.imgbtn img {
+    width: 18vw;
+    max-width: 240px;
+    min-width: 120px;
+    display: block;
+    transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.label{
-  justify-content:flex-end;
-  padding-right:6px;
-  border:none;
-  position:relative;
-  background:#000 !important;
+/* 下段 */
+.bottom {
+    display: flex;
+    gap: 5vw;
 }
 
-.shift-row{ position:relative; top:26px; z-index:1; }
-
-.nine-inline{
-  position:absolute;
-  left:4px;
-  font-size:11px;
+/* nopush */
+.nopush img {
+    width: 14vw;
 }
 
-.top-h{ background:#e8a0a0; color:#000; }
-.top-v{ background:#333; color:#ff4444; }
-
-.sub-h{ background:#ff8800; color:#000; }
-
-.input{
-  width:100%;
-  height:100%;
-  background:transparent;
-  color:inherit;
-  border:none;
-  text-align:center;
+/* ★ホバーで軽く光る */
+.imgbtn:hover img {
+    filter: brightness(1.15);
+    transform: scale(1.04);
 }
 
-.head  .cell{ background:#5c7fb8; }
-.body  .cell{ background:#3f9b3f; }
-.right .cell{ background:#b5b300; }
-.left  .cell{ background:#c03a6b; }
-
-.head .label,
-.body .label,
-.right .label,
-.left .label{
-  background:#000 !important;
+/* ★押したとき強く光る */
+.imgbtn:active img {
+    filter:
+        brightness(1.35)
+        drop-shadow(0 0 8px rgba(255,255,180,0.9))
+        drop-shadow(0 0 18px rgba(255,230,120,0.8))
+        drop-shadow(0 0 28px rgba(255,200,80,0.7));
+    transform: scale(0.96);
 }
 
-.section{ margin-top:16px; }
-.flex{ display:flex; gap:16px; }
+/* 動画 */
+#videoOverlay {
+    position: fixed;
+    inset: 0;
+    background: black;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* 操作禁止 */
+#videoOverlay video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
 </style>
 </head>
 
 <body>
 
-<!-- 合計能力 -->
-<div class="table">
-  <div class="cell label shift-row">合計能力</div>
-  <div class="cell top-h">生命</div><div class="cell top-h">気合</div><div class="cell top-h">腕力</div>
-  <div class="cell top-h">耐久</div><div class="cell top-h">器用</div><div class="cell top-h">知力</div>
-  <div class="cell top-h">魅力</div><div class="cell top-h">土</div><div class="cell top-h">水</div>
-  <div class="cell top-h">火</div><div class="cell top-h">風</div>
+<!-- 上 -->
+<button class="imgbtn" onclick="location.href='kashin.html'">
+    <img src="kashin.png">
+</button>
 
-  <div class="cell label"></div>
-  <div class="cell top-h total-0">0</div>
-  <div class="cell top-h total-1">0</div>
-  <div class="cell top-h total-2">0</div>
-  <div class="cell top-h total-3">0</div>
-  <div class="cell top-h total-4">0</div>
-  <div class="cell top-h total-5">0</div>
-  <div class="cell top-h total-6">0</div>
-  <div class="cell top-h total-7">0</div>
-  <div class="cell top-h total-8">0</div>
-  <div class="cell top-h total-9">0</div>
-  <div class="cell top-h total-10">0</div>
-
-  <div class="cell label">残</div>
-  <div class="cell top-v remain-0">65535</div>
-  <div class="cell top-v remain-1">65535</div>
-  <div class="cell top-v remain-2">8000</div>
-  <div class="cell top-v remain-3">8000</div>
-  <div class="cell top-v remain-4">8000</div>
-  <div class="cell top-v remain-5">8000</div>
-  <div class="cell top-v remain-6">8000</div>
-  <div class="cell top-v remain-7">8000</div>
-  <div class="cell top-v remain-8">8000</div>
-  <div class="cell top-v remain-9">8000</div>
-  <div class="cell top-v remain-10">8000</div>
+<!-- 中 -->
+<div class="bottom">
+    <button class="imgbtn" onclick="location.href='kishinseki.html'">
+        <img src="kishinseki.png">
+    </button>
+    <button class="imgbtn" onclick="location.href='tsukumogami.html'">
+        <img src="tsukumogami.png">
+    </button>
 </div>
 
-<!-- 家臣能力 -->
-<div class="table section">
-  <div class="cell label shift-row">家臣能力</div>
+<!-- 下 -->
+<button class="imgbtn nopush" onclick="playVideo()">
+    <img src="nopush.png">
+</button>
 
-  <div class="cell sub-h">生命</div><div class="cell sub-h">気合</div><div class="cell sub-h">腕力</div>
-  <div class="cell sub-h">耐久</div><div class="cell sub-h">器用</div><div class="cell sub-h">知力</div>
-  <div class="cell sub-h">魅力</div><div class="cell sub-h">土</div><div class="cell sub-h">水</div>
-  <div class="cell sub-h">火</div><div class="cell sub-h">風</div>
+<!-- 動画 -->
+<div id="videoOverlay">
+    <video id="video" src="video.mp4"></video>
+</div>
 
-  <div class="cell label"></div>
-  <script>
-    for(let i=0;i<11;i++){
-      document.write('<div class="cell"><input class="input col-'+i+'"></div>');
+<script>
+const video = document.getElementById("video");
+const overlay = document.getElementById("videoOverlay");
+
+function playVideo() {
+    overlay.style.display = "flex";
+
+    video.currentTime = 0;
+    video.muted = false;
+    video.play();
+
+    if (video.requestFullscreen) {
+        video.requestFullscreen();
     }
-  </script>
-</div>
+}
 
-<script>
-const baseRows = ["付与石1","付与石2","神器石1","神器石2"];
-const powerRows = ["1","2","3","4","5","6","7","8"];
-const ninetyNine = ["","","","九","十","九","",""];
+/* 自動で戻る */
+video.addEventListener("ended", () => {
+    video.pause();
+    overlay.style.display = "none";
 
-function createSection(title, cls, has99=false){
-  document.write(`<div class="table ${cls}">`);
-
-  document.write(`<div class="cell label"></div>`);
-  ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"]
-    .forEach(t => document.write(`<div class="cell">${t}</div>`));
-
-  document.write(`<div class="cell label">${title}付与</div>`);
-
-  for(let i=0;i<11;i++){
-    document.write('<div class="cell"><input class="input col-'+i+'"></div>');
-  }
-
-  baseRows.forEach(r=>{
-    document.write(`<div class="cell label">${r}</div>`);
-    for(let j=0;j<11;j++){
-      document.write('<div class="cell"><input class="input col-'+j+'"></div>');
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
     }
-  });
-
-  if(has99){
-    powerRows.forEach((r,i)=>{
-      let extra = ninetyNine[i] ? `<span class="nine-inline">${ninetyNine[i]}</span>` : "";
-      document.write(`<div class="cell label">${extra}${r}</div>`);
-      for(let j=0;j<11;j++){
-        document.write('<div class="cell"><input class="input col-'+j+'"></div>');
-      }
-    });
-  }
-
-  document.write(`</div>`);
-}
-</script>
-
-<div class="flex section">
-<script>
-createSection("頭：","head", false);
-createSection("胴：","body", false);
-</script>
-</div>
-
-<div class="flex section">
-<script>
-createSection("右手：","right", true);
-createSection("左手：","left", true);
-</script>
-</div>
-
-<script>
-// 全角→半角変換
-function toHalfWidth(str){
-  return str
-    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[－ー]/g, "-");
-}
-
-function calc(){
-  for(let i=0;i<11;i++){
-    let sum = 0;
-
-    document.querySelectorAll(".col-"+i).forEach(el=>{
-      const val = toHalfWidth(el.value);
-      sum += Number(val) || 0;
-    });
-
-    document.querySelector(".total-"+i).textContent = sum;
-
-    const max = (i === 0 || i === 1) ? 65535 : 8000;
-    document.querySelector(".remain-"+i).textContent = max - sum;
-  }
-}
-
-// 入力時に自動変換
-document.addEventListener("input", e=>{
-  if(e.target.classList.contains("input")){
-    e.target.value = toHalfWidth(e.target.value);
-    calc();
-  }
 });
-
-calc();
 </script>
 
 </body>
