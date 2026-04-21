@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nobuon20030612-ops.github.io/sitemap.xml
