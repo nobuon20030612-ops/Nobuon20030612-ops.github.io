@@ -36,7 +36,6 @@ body {
     background-color: black;
 }
 
-/* ボタン */
 .imgbtn {
     border: none;
     background: none;
@@ -46,7 +45,6 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 画像 */
 .imgbtn img {
     width: 16vw;
     max-width: 220px;
@@ -55,26 +53,22 @@ body {
     transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-/* ★中央並び */
 .middle {
     display: flex;
     gap: 4vw;
     align-items: center;
 }
 
-/* nopush */
 .nopush img {
     width: 14vw;
     max-width: 180px;
 }
 
-/* YouTube少し大きめ */
 .youtube img {
     width: 18vw;
     max-width: 260px;
 }
 
-/* 光る */
 .imgbtn:hover img {
     transform: scale(1.05);
     filter:
@@ -94,7 +88,6 @@ body {
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
 }
 
-/* 動画 */
 #videoOverlay {
     position: fixed;
     inset: 0;
@@ -112,7 +105,6 @@ body {
     pointer-events: none;
 }
 
-/* スマホ */
 @media (max-width: 600px) {
     .imgbtn img {
         width: 28vw;
@@ -136,64 +128,56 @@ body {
 
 <body>
 
-<h1 style="position:absolute; left:-9999px;">
-信長の野望オンラインの攻略サイト
-</h1>
+<h1 style="position:absolute; left:-9999px;">信長の野望オンラインの攻略サイト</h1>
 <h1 class="sr-only">信長の野望オンラインの攻略サイト</h1>
 
 <p class="sr-only">
 九十九・鬼神石・家臣計算機などをまとめた攻略サイト。
-九十九と鬼神石の組み合わせ・家臣能力の計算を簡単に確認できます。
 </p>
 
-<div class="sr-only">
-    <a href="tsukumogami.html">九十九ツール</a><br>
-    <a href="kishinseki.html">鬼神石ツール</a><br>
-    <a href="kashin.html">家臣計算機</a>
-</div>
-
-<!-- 上段：公式 / 攻略 -->
+<!-- 上段 -->
 <div class="middle">
-    <a href="https://www.gamecity.ne.jp/nol/index.htm"
-       target="_blank"
-       rel="noopener noreferrer"
-       class="imgbtn">
-        <img src="koushiki.png" alt="koushiki">
+    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" class="imgbtn">
+        <img src="koushiki.png">
     </a>
 
-    <a href="https://wiki.ohmynobu.net/nol/"
-       target="_blank"
-       rel="noopener noreferrer"
-       class="imgbtn">
-        <img src="wiki.png" alt="wiki">
+    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" class="imgbtn">
+        <img src="wiki.png">
     </a>
 </div>
 
-<!-- 中段：鬼神石 / YouTube / 九十九 -->
+<!-- 中段 -->
 <div class="middle">
 
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png" alt="鬼神石の計算ツール">
+        <img src="kishinseki.png">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='kashin.html'">
+        <img src="kashin.png">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='tsukumogami.html'">
+        <img src="tsukumogami.png">
+    </button>
+
+</div>
+
+<!-- 下段 -->
+<div class="middle">
+
+    <button class="imgbtn nopush" onclick="playVideo()">
+        <img src="nopush.png">
     </button>
 
     <a href="https://www.youtube.com/@%E3%81%9F%E3%81%84%E3%82%89%E3%81%AEzzz"
        target="_blank"
        class="imgbtn youtube">
-        <img src="youtube_btn.png" alt="youtube">
+        <img src="youtube_btn.png">
     </a>
-
-    <button class="imgbtn" onclick="location.href='tsukumogami.html'">
-        <img src="tsukumogami.png" alt="九十九ツール">
-    </button>
 
 </div>
 
-<!-- 下段：nopush -->
-<button class="imgbtn nopush" onclick="playVideo()">
-    <img src="nopush.png">
-</button>
-
-<!-- 動画 -->
 <div id="videoOverlay">
     <video id="video" src="video.mp4"></video>
 </div>
@@ -204,9 +188,7 @@ const overlay = document.getElementById("videoOverlay");
 
 function playVideo() {
     overlay.style.display = "flex";
-
     video.currentTime = 0;
-    video.muted = false;
     video.play();
 
     if (video.requestFullscreen) {
@@ -223,7 +205,6 @@ video.addEventListener("ended", () => {
     }
 });
 
-/* スマホでも光る */
 document.querySelectorAll('.imgbtn').forEach(btn => {
     btn.addEventListener('touchstart', () => {
         btn.classList.add('active');
