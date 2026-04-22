@@ -8,7 +8,7 @@
 
 <meta name="description" content="信長の野望オンラインの九十九ツール・鬼神石計算・家臣計算機をまとめた攻略サイト。九十九の組み合わせや能力比較、最適構成を簡単に確認できます。">
 
-<meta name="keywords" content="九十九,九十九ツール,鬼神石,鬼神石計算,家臣計算機,信長の野望オンライン">
+<meta name="keywords" content="九十九,九十九ツール,鬼神石,鬼神石計算,家臣計算機,信長の野望オンライン,魔導結晶">
 
 <style>
 .sr-only{
@@ -57,6 +57,12 @@ body {
     display: flex;
     gap: 4vw;
     align-items: center;
+}
+
+/* ★4ボタン中央固定（右寄り防止） */
+.middle.tools-row {
+    justify-content: center;
+    flex-wrap: nowrap;
 }
 
 .nopush img {
@@ -115,6 +121,16 @@ body {
         width: 30vw;
     }
 
+    .middle.tools-row {
+        gap: 3vw;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .middle.tools-row .imgbtn img {
+        width: 22vw;
+    }
+
     .youtube img {
         width: 34vw;
     }
@@ -146,19 +162,24 @@ body {
     </a>
 </div>
 
-<!-- 中段 -->
-<div class="middle">
+<!-- 中段（4ボタン） -->
+<div class="middle tools-row">
 
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png">
+        <img src="kishinseki.png" alt="鬼神石">
     </button>
 
     <button class="imgbtn" onclick="location.href='kashin.html'">
-        <img src="kashin.png">
+        <img src="kashin.png" alt="家臣計算機">
     </button>
 
     <button class="imgbtn" onclick="location.href='tsukumogami.html'">
-        <img src="tsukumogami.png">
+        <img src="tsukumogami.png" alt="九十九">
+    </button>
+
+    <!-- ★ここが魔導結晶（画像差し替えOK） -->
+    <button class="imgbtn" onclick="location.href='madoukesshou.html'">
+        <img src="madoukesshou.png" alt="魔導結晶">
     </button>
 
 </div>
