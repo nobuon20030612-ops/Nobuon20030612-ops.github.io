@@ -60,7 +60,7 @@ body {
     align-items: center;
 }
 
-/* ★4ボタン中央固定（右寄り防止） */
+/* ★4ボタン中央固定 */
 .middle.tools-row {
     justify-content: center;
     flex-wrap: nowrap;
@@ -112,19 +112,6 @@ body {
     pointer-events: none;
 }
 
-.site-text {
-    position: absolute;
-    left: 50%;
-    bottom: 18px;
-    transform: translateX(-50%);
-    color: rgba(255,255,255,0.88);
-    font-size: 14px;
-    text-align: center;
-    line-height: 1.6;
-    text-shadow: 0 0 4px rgba(0,0,0,0.9);
-    padding: 0 12px;
-}
-
 @media (max-width: 600px) {
     .imgbtn img {
         width: 28vw;
@@ -152,11 +139,6 @@ body {
     .nopush img {
         width: 24vw;
     }
-
-    .site-text {
-        font-size: 12px;
-        bottom: 10px;
-    }
 }
 </style>
 </head>
@@ -169,9 +151,17 @@ body {
 たいらの野望は、信長の野望オンラインの九十九・鬼神石・家臣計算機などをまとめた攻略サイトです。
 </p>
 
-<div class="site-text">
-たいらの野望｜信長の野望オンライン攻略
+<!-- 上段 -->
+<div class="middle">
+    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" class="imgbtn">
+        <img src="koushiki.png" alt="信長の野望オンライン公式サイト">
+    </a>
 </div>
+
+<!-- ここに他のボタンを続ける -->
+
+</body>
+</html>
 
 <!-- ここに既存のボタン群をそのまま配置 -->
 
