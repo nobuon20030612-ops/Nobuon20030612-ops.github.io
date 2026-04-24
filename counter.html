@@ -45,14 +45,26 @@ body {
     width: 200px;
     transition: transform 0.15s, filter 0.15s;
 }
-/* 戻るボタンだけ小さくする */
-.back-btn img {
+
+/* ▼追加：修羅の下の3つ */
+.sub-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* ▼追加：戻るボタン右下固定 */
+.back-fixed {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+.back-fixed img {
     width: 120px;
 }
-.back-btn {
-    margin-top: 20px; /* ←ここを調整 */
-}
-    /* ホバー時（トップと同じ発光） */
+
+/* ホバー */
 .imgbtn:hover img {
     transform: scale(1.05);
     filter:
@@ -62,7 +74,7 @@ body {
         drop-shadow(0 0 24px rgba(255,200,80,0.8));
 }
 
-/* 押したとき（スマホ含む） */
+/* 押下 */
 .imgbtn:active img,
 .imgbtn.active img {
     transform: scale(0.96);
@@ -71,10 +83,6 @@ body {
         drop-shadow(0 0 10px rgba(255,255,220,1))
         drop-shadow(0 0 22px rgba(255,230,120,1))
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
-}
-
-.imgbtn:active img {
-    transform: scale(0.95);
 }
 </style>
 </head>
@@ -90,17 +98,25 @@ body {
         </button>
     </div>
 
-    <!-- 真ん中（修羅＋戻る） -->
+    <!-- 真ん中（修羅＋下に3つ） -->
     <div class="btn-group">
 
         <button class="imgbtn" onclick="location.href='shura.html'">
             <img src="shura.png" alt="修羅の間">
         </button>
 
-        <!-- 戻る（ここが修羅の下） -->
-      <button class="imgbtn back-btn" onclick="location.href='index.html'">
-    <img src="back.png" alt="戻る">
-</button>
+        <!-- ▼ここ追加 -->
+        <div class="sub-buttons">
+            <button class="imgbtn">
+                <img src="btn1.png" alt="">
+            </button>
+            <button class="imgbtn">
+                <img src="btn2.png" alt="">
+            </button>
+            <button class="imgbtn">
+                <img src="btn3.png" alt="">
+            </button>
+        </div>
 
     </div>
 
@@ -112,6 +128,11 @@ body {
     </div>
 
 </div>
+
+<!-- ▼ここに移動（menuの外） -->
+<button class="imgbtn back-fixed" onclick="location.href='index.html'">
+    <img src="back.png" alt="戻る">
+</button>
 
 </body>
 </html>
