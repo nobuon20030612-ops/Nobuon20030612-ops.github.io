@@ -90,7 +90,16 @@ body{ background:#000; }
     0 0 12px rgba(255,230,120,0.7);
 }
 
-/* 選択中：常時発光 */
+
+/* 空セルだけホバーで光る */
+.cell:hover:not(.label):not(.filled){
+  filter: brightness(1.2);
+  box-shadow:
+    inset 0 0 8px rgba(255,255,200,0.6),
+    0 0 12px rgba(255,230,120,0.6);
+}
+
+/* 選択中セルは常時光る */
 .cell.active{
   background:#444 !important;
   box-shadow:
@@ -98,15 +107,20 @@ body{ background:#000; }
     0 0 10px rgba(255,230,120,0.7);
 }
 
-/* 選択中＋ホバー：さらに発光 */
+/* 選択中セルにホバーしたらさらに光る */
 .cell.active:hover{
   filter: brightness(1.4);
   box-shadow:
     inset 0 0 14px rgba(255,255,200,1),
-    0 0 18px rgba(255,230,120,1),
-    0 0 30px rgba(255,200,80,0.9);
+    0 0 16px rgba(255,230,120,0.9),
+    0 0 28px rgba(255,200,80,0.8);
 }
-  
+
+/* 入力済みセルは光らない */
+.cell.filled{
+  box-shadow:none !important;
+  filter:none !important;
+}  
 </style>
 </head>
 
@@ -250,11 +264,25 @@ function calc(){
 }
 
 // 入力時に自動変換
-document.addEventListener("input", e=>{
-  if(e.target.classList.contains("input")){
-    e.target.value = toHalfWidth(e.target.value);
-    calc();
-  }
+document.querySelectorAll(".cell").forEach(cell=>{
+  cell.addEventListener("click", (e)=>{
+
+    // ラベルは対象外
+    if(cell.classList.contains("label")) return;
+
+    const input = cell.querySelector("input");
+
+    // ★値が入ってたら選択不可
+    if(input && input.value.trim() !== "") return;
+
+    // 他の選択を全部解除
+    document.querySelectorAll(".cell.active").forEach(c=>{
+      c.classList.remove("active");
+    });
+
+    // 今のセルだけ光る
+    cell.classList.add("active");
+  });
 });
 
 calc();
