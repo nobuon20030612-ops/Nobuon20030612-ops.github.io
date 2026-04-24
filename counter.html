@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>カウンター</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+
+    /* ★ここが背景指定 */
+    background: url("bg_counter.png") no-repeat center;
+    background-size: cover;
+    background-color: black;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    color: white;
+    font-family: sans-serif;
+}
+
+/* 数字表示 */
+#count {
+    font-size: 8vw;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+/* ボタン */
+.imgbtn {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.imgbtn img {
+    width: 200px;
+    transition: transform 0.15s, filter 0.15s;
+}
+
+.imgbtn:hover img {
+    filter: brightness(1.2);
+}
+
+.imgbtn:active img {
+    transform: scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div id="count">0</div>
+
+<!-- 戻るボタン -->
+<button class="imgbtn" onclick="location.href='index.html'">
+    <img src="back.png" alt="戻る">
+</button>
+
+<script>
+let count = localStorage.getItem("counter");
+
+if (count === null) {
+    count = 0;
+} else {
+    count = parseInt(count);
+}
+
+document.getElementById("count").textContent = count;
+
+function addCount() {
+    count++;
+    localStorage.setItem("counter", count);
+    document.getElementById("count").textContent = count;
+}
+</script>
+
+</body>
+</html>
