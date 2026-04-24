@@ -78,11 +78,24 @@ tr:hover{
 .selected{
   background:#2a2a2a;
 }
-.selected:hover{
+
+/* 選択中の一覧行を常時光らせる */
+tr.selected{
+  background:#302000 !important;
   box-shadow:
-    0 0 8px rgba(255,255,200,0.6),
-    0 0 20px rgba(255,230,120,0.6);
+    inset 0 0 10px rgba(255,230,120,0.8),
+    0 0 10px rgba(255,230,120,0.7);
 }
+
+/* 選択中の行にカーソルを置いた時は少し強く光る */
+tr.selected:hover{
+  background:#4a3300 !important;
+  box-shadow:
+    inset 0 0 14px rgba(255,255,200,1),
+    0 0 16px rgba(255,230,120,0.9),
+    0 0 28px rgba(255,200,80,0.8);
+}
+
 .replaceTarget{
   outline:3px solid #fff;
   background:#444 !important;
