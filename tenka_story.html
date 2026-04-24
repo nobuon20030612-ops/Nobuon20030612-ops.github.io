@@ -46,7 +46,16 @@ body {
     bottom: 20px;
     right: 20px;
 }
+/* 左下固定（TOPに戻るボタン） */
+.home-fixed {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+}
 
+.home-fixed img {
+    width: 120px;
+}
 .back-fixed img {
     width: 120px;
 }
@@ -105,7 +114,10 @@ body {
     </button>
 
 </div>
-
+<!-- TOPに戻る -->
+<button class="imgbtn home-fixed" onclick="location.href='index.html'">
+    <img src="kitan_top.png" alt="TOPに戻る">
+</button>
 <!-- 戻る -->
 <button class="imgbtn back-fixed" onclick="location.href='counter.html'">
     <img src="kitanback.png" alt="戻る">
