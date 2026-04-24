@@ -291,24 +291,38 @@ function calc(){
   }
 }
 
-// 入力時に自動変換
+// 入力時に自動変換＋計算
+document.addEventListener("input", e=>{
+  if(e.target.classList.contains("input")){
+    e.target.value = toHalfWidth(e.target.value);
+
+    const cell = e.target.closest(".cell");
+
+    if(e.target.value.trim() !== ""){
+      cell.classList.add("filled");
+      cell.classList.remove("active");
+    }else{
+      cell.classList.remove("filled");
+    }
+
+    calc();
+  }
+});
+
+// セルクリック選択
 document.querySelectorAll(".cell").forEach(cell=>{
   cell.addEventListener("click", (e)=>{
 
-    // ラベルは対象外
     if(cell.classList.contains("label")) return;
 
     const input = cell.querySelector("input");
 
-    // ★値が入ってたら選択不可
     if(input && input.value.trim() !== "") return;
 
-    // 他の選択を全部解除
     document.querySelectorAll(".cell.active").forEach(c=>{
       c.classList.remove("active");
     });
 
-    // 今のセルだけ光る
     cell.classList.add("active");
   });
 });
