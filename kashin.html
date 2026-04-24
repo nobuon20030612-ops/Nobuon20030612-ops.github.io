@@ -5,7 +5,23 @@
 <title>家臣計算機</title>
 
 <style>
-html, body{
+.top-back{
+  position: fixed;
+  top: 12px;
+  right: 20px;
+
+  padding: 10px 20px;
+  font-size: 20px;
+
+  border: 2px solid #ff3b3b;
+  color: #ff3b3b;
+  background: rgba(0,0,0,0.6);
+
+  cursor: pointer;
+  transition: all 0.2s;
+}
+  
+  html, body{
   margin:0;
   background:#000;
   color:#fff;
@@ -125,7 +141,9 @@ body{ background:#000; }
 </head>
 
 <body>
-
+<div class="top-back" onclick="location.href='index.html'">
+  戻る
+</div>
 <!-- 合計能力 -->
 <div class="table">
   <div class="cell label shift-row">合計能力</div>
