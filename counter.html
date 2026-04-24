@@ -13,17 +13,18 @@ body {
     background: url("bg_counter.png") no-repeat center;
     background-size: cover;
     background-color: black;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-/* 横並び中央 */
+/* ▼ここが一番重要（位置制御） */
 .menu-buttons {
     display: flex;
     align-items: flex-start;
     gap: 3vw;
+
+    position: fixed;
+    left: 50%;
+    top: 58%; /* ←ここで上下調整（重要） */
+    transform: translate(-50%, -50%);
 }
 
 /* 各ボタンブロック */
@@ -46,16 +47,7 @@ body {
     transition: transform 0.15s, filter 0.15s;
 }
 
-/* ▼追加：修羅の下の3つ */
-.sub-buttons {
-    display: flex;
-    gap: 10px;
-
-    margin-top: 20px; /* 少しだけ残す */
-    transform: translateY(160px); /* ←これで確実に下に移動 */
-}
-
-/* ▼追加：戻るボタン右下固定 */
+/* ▼戻るボタン右下固定 */
 .back-fixed {
     position: fixed;
     bottom: 20px;
@@ -100,26 +92,11 @@ body {
         </button>
     </div>
 
-    <!-- 真ん中（修羅＋下に3つ） -->
+    <!-- 真ん中 -->
     <div class="btn-group">
-
         <button class="imgbtn" onclick="location.href='shura.html'">
             <img src="shura.png" alt="修羅の間">
         </button>
-
-        <!-- ▼ここ追加 -->
-        <div class="sub-buttons">
-            <button class="imgbtn">
-                <img src="btn1.png" alt="">
-            </button>
-            <button class="imgbtn">
-                <img src="btn2.png" alt="">
-            </button>
-            <button class="imgbtn">
-                <img src="btn3.png" alt="">
-            </button>
-        </div>
-
     </div>
 
     <!-- 右 -->
@@ -131,7 +108,7 @@ body {
 
 </div>
 
-<!-- ▼ここに移動（menuの外） -->
+<!-- 戻る（右下固定） -->
 <button class="imgbtn back-fixed" onclick="location.href='index.html'">
     <img src="back.png" alt="戻る">
 </button>
