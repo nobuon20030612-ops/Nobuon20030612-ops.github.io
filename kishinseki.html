@@ -67,17 +67,22 @@ th{
 }
 
 /* ★ここに追加 */
-th:hover{
-  background:#444;
+tr:hover{
+  background:#222;
+
   box-shadow:
-    0 0 6px rgba(255,255,200,0.6),
-    0 0 12px rgba(255,230,120,0.6);
+    0 0 6px rgba(255,255,200,0.5),
+    0 0 12px rgba(255,230,120,0.5);
 }
 
 .selected{
   background:#2a2a2a;
 }
-
+.selected:hover{
+  box-shadow:
+    0 0 8px rgba(255,255,200,0.6),
+    0 0 20px rgba(255,230,120,0.6);
+}
 .replaceTarget{
   outline:3px solid #fff;
   background:#444 !important;
