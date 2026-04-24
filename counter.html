@@ -4,14 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>カウンター</title>
+<title>メニュー</title>
 
 <style>
 body {
     margin: 0;
     height: 100vh;
-
-    /* ★ここが背景指定 */
     background: url("bg_counter.png") no-repeat center;
     background-size: cover;
     background-color: black;
@@ -20,19 +18,10 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 30px;
-    color: white;
-    font-family: sans-serif;
+    gap: 20px;
 }
 
-/* 数字表示 */
-#count {
-    font-size: 8vw;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(0,0,0,0.8);
-}
-
-/* ボタン */
+/* ボタン共通 */
 .imgbtn {
     border: none;
     background: none;
@@ -52,35 +41,38 @@ body {
 .imgbtn:active img {
     transform: scale(0.95);
 }
+
+/* ボタン列 */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 </style>
 </head>
 
 <body>
 
-<div id="count">0</div>
+<div class="menu-buttons">
 
-<!-- 戻るボタン -->
+    <button class="imgbtn" onclick="location.href='tenka_story.html'">
+        <img src="tenka_story.png" alt="天下統一奇譚">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='tenka_taikai.html'">
+        <img src="tenka_taikai.png" alt="天下武技大会">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='shura.html'">
+        <img src="shura.png" alt="修羅の間">
+    </button>
+
+</div>
+
+<!-- 戻る -->
 <button class="imgbtn" onclick="location.href='index.html'">
     <img src="back.png" alt="戻る">
 </button>
-
-<script>
-let count = localStorage.getItem("counter");
-
-if (count === null) {
-    count = 0;
-} else {
-    count = parseInt(count);
-}
-
-document.getElementById("count").textContent = count;
-
-function addCount() {
-    count++;
-    localStorage.setItem("counter", count);
-    document.getElementById("count").textContent = count;
-}
-</script>
 
 </body>
 </html>
