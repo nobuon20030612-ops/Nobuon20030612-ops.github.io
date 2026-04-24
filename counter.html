@@ -15,13 +15,25 @@ body {
     background-color: black;
 
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 20px;
 }
 
-/* ボタン共通 */
+/* 横並び中央 */
+.menu-buttons {
+    display: flex;
+    align-items: flex-start;
+    gap: 3vw;
+}
+
+/* 各ボタンブロック */
+.btn-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ボタン */
 .imgbtn {
     border: none;
     background: none;
@@ -41,13 +53,6 @@ body {
 .imgbtn:active img {
     transform: scale(0.95);
 }
-
-/* ボタン列 */
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
 </style>
 </head>
 
@@ -55,24 +60,35 @@ body {
 
 <div class="menu-buttons">
 
-    <button class="imgbtn" onclick="location.href='tenka_story.html'">
-        <img src="tenka_story.png" alt="天下統一奇譚">
-    </button>
+    <!-- 左 -->
+    <div class="btn-group">
+        <button class="imgbtn" onclick="location.href='tenka_story.html'">
+            <img src="tenka_story.png" alt="天下統一奇譚">
+        </button>
+    </div>
 
-    <button class="imgbtn" onclick="location.href='tenka_taikai.html'">
-        <img src="tenka_taikai.png" alt="天下武技大会">
-    </button>
+    <!-- 真ん中（修羅＋戻る） -->
+    <div class="btn-group">
 
-    <button class="imgbtn" onclick="location.href='shura.html'">
-        <img src="shura.png" alt="修羅の間">
-    </button>
+        <button class="imgbtn" onclick="location.href='shura.html'">
+            <img src="shura.png" alt="修羅の間">
+        </button>
+
+        <!-- 戻る（ここが修羅の下） -->
+        <button class="imgbtn" onclick="location.href='index.html'">
+            <img src="back.png" alt="戻る">
+        </button>
+
+    </div>
+
+    <!-- 右 -->
+    <div class="btn-group">
+        <button class="imgbtn" onclick="location.href='tenka_taikai.html'">
+            <img src="tenka_taikai.png" alt="天下武技大会">
+        </button>
+    </div>
 
 </div>
-
-<!-- 戻る -->
-<button class="imgbtn" onclick="location.href='index.html'">
-    <img src="back.png" alt="戻る">
-</button>
 
 </body>
 </html>
