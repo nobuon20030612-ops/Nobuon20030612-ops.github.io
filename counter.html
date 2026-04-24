@@ -45,7 +45,10 @@ body {
     width: 200px;
     transition: transform 0.15s, filter 0.15s;
 }
-
+/* 戻るボタンだけ小さくする */
+.back-btn img {
+    width: 120px;
+}
 .imgbtn:hover img {
     filter: brightness(1.2);
 }
@@ -75,9 +78,9 @@ body {
         </button>
 
         <!-- 戻る（ここが修羅の下） -->
-        <button class="imgbtn" onclick="location.href='index.html'">
-            <img src="back.png" alt="戻る">
-        </button>
+      <button class="imgbtn back-btn" onclick="location.href='index.html'">
+    <img src="back.png" alt="戻る">
+</button>
 
     </div>
 
