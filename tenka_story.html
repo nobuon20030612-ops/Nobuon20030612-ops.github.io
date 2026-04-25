@@ -9,19 +9,23 @@
 <style>
 body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+
     background: url("bg_kitan.png") no-repeat center top;
-    background-size: 100% auto;
+    background-size: cover;
     background-color: black;
 }
 
 /* 6個ボタン配置 */
 .stage-buttons {
     display: grid;
+
+    /* PC */
     grid-template-columns: repeat(3, 200px);
     gap: 35px 45px;
 
-    position: fixed;
+    position: absolute;
     left: 50%;
     top: 55%;
     transform: translate(-50%, -50%);
@@ -37,25 +41,24 @@ body {
 
 .imgbtn img {
     width: 200px;
+    max-width: 100%;
     transition: transform 0.15s, filter 0.15s;
 }
 
-/* 戻るボタン右下固定 */
-.back-fixed {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-}
-/* 左下固定（TOPに戻るボタン） */
+/* 左右下ボタン */
 .home-fixed {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    bottom: 15px;
+    left: 15px;
 }
 
-.home-fixed img {
-    width: 120px;
+.back-fixed {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
 }
+
+.home-fixed img,
 .back-fixed img {
     width: 120px;
 }
@@ -71,14 +74,35 @@ body {
 }
 
 /* 押下 */
-.imgbtn:active img,
-.imgbtn.active img {
+.imgbtn:active img {
     transform: scale(0.96);
     filter:
         brightness(1.35)
         drop-shadow(0 0 10px rgba(255,255,220,1))
         drop-shadow(0 0 22px rgba(255,230,120,1))
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
+}
+
+/* ▼ スマホ対応 */
+@media (max-width: 768px) {
+
+    .stage-buttons {
+        /* 2列に変更 */
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+
+        width: 90%;
+        top: 52%;
+    }
+
+    .imgbtn img {
+        width: 100%; /* 自動縮小 */
+    }
+
+    .home-fixed img,
+    .back-fixed img {
+        width: 90px; /* 小さく */
+    }
 }
 </style>
 </head>
@@ -87,41 +111,39 @@ body {
 
 <div class="stage-buttons">
 
-    <!-- 上段 -->
     <button class="imgbtn" onclick="location.href='okehazama.html'">
-        <img src="okehazama.png" alt="桶狭間">
+        <img src="okehazama.png">
     </button>
 
     <button class="imgbtn" onclick="location.href='fuji.html'">
-        <img src="fuji_chikadouana.png" alt="富士地下洞穴">
+        <img src="fuji_chikadouana.png">
     </button>
 
     <button class="imgbtn" onclick="location.href='kyouto.html'">
-        <img src="kyoto.png" alt="京都">
+        <img src="kyoto.png">
     </button>
 
-    <!-- 下段 -->
     <button class="imgbtn" onclick="location.href='shizugatake.html'">
-        <img src="shizugatake.png" alt="賤ヶ岳">
+        <img src="shizugatake.png">
     </button>
 
     <button class="imgbtn" onclick="location.href='hieizan.html'">
-        <img src="hieizan.png" alt="比叡山">
+        <img src="hieizan.png">
     </button>
 
     <button class="imgbtn" onclick="location.href='nijojo.html'">
-        <img src="nijojo.png" alt="二条城">
+        <img src="nijojo.png">
     </button>
 
 </div>
-<!-- TOPに戻る -->
+
 <button class="imgbtn home-fixed" onclick="location.href='index.html'">
-    <img src="kitan_top.png" alt="TOPに戻る">
+    <img src="kitan_top.png">
 </button>
-<!-- 戻る -->
-<button class="imgbtn back-fixed" onclick="location.href='tenka_story.html'">
-    <img src="kitanback.png" alt="戻る">
+
+<button class="imgbtn back-fixed" onclick="location.href='counter.html'">
+    <img src="kitanback.png">
 </button>
-    
+
 </body>
 </html>
