@@ -1,28 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
+  <!-- TOP -->
   <url>
     <loc>https://nobuon20030612-ops.github.io/</loc>
   </url>
 
+  <!-- メニュー -->
   <url>
-    <loc>https://nobuon20030612-ops.github.io/index.html</loc>
+    <loc>https://nobuon20030612-ops.github.io/counter.html</loc>
+  </url>
+
+  <!-- 天下統一奇譚 -->
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/tenka_story.html</loc>
+  </url>
+
+  <!-- 各ステージ -->
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/okehazama.html</loc>
   </url>
 
   <url>
-    <loc>https://nobuon20030612-ops.github.io/kashin.html</loc>
+    <loc>https://nobuon20030612-ops.github.io/fuji.html</loc>
   </url>
 
   <url>
-    <loc>https://nobuon20030612-ops.github.io/kishinseki.html</loc>
+    <loc>https://nobuon20030612-ops.github.io/kyoto.html</loc>
   </url>
 
   <url>
-    <loc>https://nobuon20030612-ops.github.io/tsukumogami.html</loc>
+    <loc>https://nobuon20030612-ops.github.io/shizugatake.html</loc>
   </url>
 
   <url>
-    <loc>https://nobuon20030612-ops.github.io/madoukesshou.html</loc>
+    <loc>https://nobuon20030612-ops.github.io/hieizan.html</loc>
+  </url>
+
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/nijojo.html</loc>
+  </url>
+
+  <!-- 天下武技大会 -->
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/tenka_taikai.html</loc>
+  </url>
+
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/ten.html</loc>
+  </url>
+
+  <url>
+    <loc>https://nobuon20030612-ops.github.io/chi.html</loc>
   </url>
 
 </urlset>
