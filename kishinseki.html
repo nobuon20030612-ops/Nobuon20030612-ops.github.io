@@ -45,6 +45,23 @@ body{
 
   transform: scale(1.05);
 }
+	.side-info-img{
+  position: fixed;
+  right: 25px;
+  top: 105px;
+
+  width: 360px;
+  height: auto;
+
+  object-fit: contain;
+  z-index: 5;
+}
+
+@media (max-width: 900px){
+  .side-info-img{
+    display: none;
+  }
+}
 h3{
   font-size:24px;
   margin-top:16px;
@@ -171,9 +188,13 @@ button:active{
 <body>
 
 <h1 class="title">鬼神石</h1>
+
 <div class="top-back" onclick="location.href='index.html'">
   戻る
 </div>
+
+<img class="side-info-img" src="kishinseki_info.jpg" alt="鬼神石 価値による最低発現数">
+
 <div id="rawData" style="display:none;">
 <table cellspacing="0" border="0">
 
