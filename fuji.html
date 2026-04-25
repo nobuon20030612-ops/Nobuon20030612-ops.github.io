@@ -9,17 +9,22 @@
 <style>
 body {
     margin: 0;
-    height: 100vh;
 
-    /* ▼ 下のボタンに被らないように高さ調整 */
+    /* スクロール可能に */
+    min-height: 100vh;
+    overflow-y: auto;
+
+    /* 背景（PCは高さ基準） */
     background: url("bg_fuji.png") no-repeat center top;
     background-size: auto calc(100vh - 90px);
 
     background-color: black;
+    padding-bottom: 90px; /* ボタンに被らない */
 }
 
 /* 共通ボタン */
 .imgbtn {
+    position: fixed;
     border: none;
     background: none;
     padding: 0;
@@ -34,14 +39,12 @@ body {
 
 /* 左下（TOP） */
 .home-fixed {
-    position: fixed;
     bottom: 2px;
     left: 5px;
 }
 
 /* 右下（戻る） */
 .back-fixed {
-    position: fixed;
     bottom: 2px;
     right: 5px;
 }
@@ -64,6 +67,18 @@ body {
         drop-shadow(0 0 10px rgba(255,255,220,1))
         drop-shadow(0 0 22px rgba(255,230,120,1))
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
+}
+
+/* ▼ スマホ用調整 */
+@media (max-width: 768px) {
+    body {
+        /* 横優先にして見やすく */
+        background-size: 95% auto;
+    }
+
+    .imgbtn img {
+        width: 90px; /* ボタン少し小さく */
+    }
 }
 </style>
 </head>
