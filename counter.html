@@ -9,32 +9,32 @@
 <style>
 body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+
     background: url("bg_counter.png") no-repeat center top;
-    background-size: 100% auto;
+    background-size: cover;
     background-color: black;
 }
 
-/* ▼ここが一番重要（位置制御） */
+/* メニューボタン */
 .menu-buttons {
     display: flex;
     align-items: flex-start;
     gap: 3vw;
 
-    position: fixed;
+    position: absolute;
     left: 50%;
-    top: 58%; /* ←ここで上下調整（重要） */
+    top: 58%;
     transform: translate(-50%, -50%);
 }
 
-/* 各ボタンブロック */
 .btn-group {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* ボタン */
 .imgbtn {
     border: none;
     background: none;
@@ -47,11 +47,11 @@ body {
     transition: transform 0.15s, filter 0.15s;
 }
 
-/* ▼戻るボタン右下固定 */
+/* 戻るボタン */
 .back-fixed {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 15px;
+    right: 15px;
 }
 
 .back-fixed img {
@@ -78,6 +78,30 @@ body {
         drop-shadow(0 0 22px rgba(255,230,120,1))
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
 }
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+    body {
+        background-size: cover;
+        padding-bottom: 90px;
+    }
+
+    .menu-buttons {
+        flex-direction: column;
+        gap: 18px;
+
+        width: 80%;
+        top: 52%;
+    }
+
+    .imgbtn img {
+        width: 100%;
+    }
+
+    .back-fixed img {
+        width: 90px;
+    }
+}
 </style>
 </head>
 
@@ -85,21 +109,18 @@ body {
 
 <div class="menu-buttons">
 
-    <!-- 左 -->
     <div class="btn-group">
         <button class="imgbtn" onclick="location.href='tenka_story.html'">
             <img src="tenka_story.png" alt="天下統一奇譚">
         </button>
     </div>
 
-    <!-- 真ん中 -->
     <div class="btn-group">
         <button class="imgbtn" onclick="location.href='shura.html'">
             <img src="shura.png" alt="修羅の間">
         </button>
     </div>
 
-    <!-- 右 -->
     <div class="btn-group">
         <button class="imgbtn" onclick="location.href='tenka_taikai.html'">
             <img src="tenka_taikai.png" alt="天下武技大会">
@@ -108,7 +129,6 @@ body {
 
 </div>
 
-<!-- 戻る（右下固定） -->
 <button class="imgbtn back-fixed" onclick="location.href='index.html'">
     <img src="back.png" alt="戻る">
 </button>
