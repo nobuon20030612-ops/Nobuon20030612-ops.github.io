@@ -208,16 +208,21 @@ function playVideo() {
     // 👇ここ追加（10回に1回 video2）
     const selectedVideo = Math.random() < 0.1 ? "video2.mp4" : "video.mp4";
 
-    video.src = selectedVideo;
+  video.src = selectedVideo;
 
-    overlay.style.display = "flex";
-    video.currentTime = 0;
-    video.play();
+overlay.style.display = "flex";
+video.currentTime = 0;
 
-    if (video.requestFullscreen) {
-        video.requestFullscreen();
-    }
+// 👇追加（再生バーを強制非表示）
+video.controls = false;
+
+// 👇順番を変更（先にフルスクリーン）
+if (video.requestFullscreen) {
+    video.requestFullscreen();
 }
+
+// 👇最後に再生
+video.play();
 
 video.addEventListener("ended", () => {
     video.pause();
