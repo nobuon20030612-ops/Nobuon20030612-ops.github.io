@@ -214,22 +214,15 @@ function playVideo() {
     video.currentTime = 0;
 
     video.play();
-
-    if (video.requestFullscreen) {
-        video.requestFullscreen();
-    }
+ 
 }
 
-// 👇最後に再生
-video.play();
 
 video.addEventListener("ended", () => {
     video.pause();
     overlay.style.display = "none";
 
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
-    }
+   
 });
 
 document.querySelectorAll('.imgbtn').forEach(btn => {
