@@ -31,11 +31,9 @@ body{
 .top-back{
   padding: 10px 20px;
   font-size: 20px;
-
   border: 2px solid #ff3b3b;
   color: #ff3b3b;
   background: rgba(0,0,0,0.6);
-
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -44,13 +42,16 @@ body{
 .top-back:hover{
   color: #fff;
   border-color: #ff0000;
-
   box-shadow:
     0 0 8px rgba(255,80,80,0.9),
     0 0 20px rgba(255,0,0,0.9),
     0 0 40px rgba(255,0,0,0.8);
-
   transform: scale(1.05);
+}
+
+h3{
+  font-size:24px;
+  margin-top:16px;
 }
 
 table{
@@ -65,21 +66,116 @@ th,td{
   font-size:11px;
 }
 
+th{
+  cursor:pointer;
+}
+
 tr:hover{
   background:#222;
+  box-shadow:
+    0 0 6px rgba(255,255,200,0.5),
+    0 0 12px rgba(255,230,120,0.5);
+}
+
+.selected{
+  background:#2a2a2a;
+}
+
+tr.selected{
+  background:#302000 !important;
+  box-shadow:
+    inset 0 0 10px rgba(255,230,120,0.8),
+    0 0 10px rgba(255,230,120,0.7);
+}
+
+tr.selected:hover{
+  background:#4a3300 !important;
+  box-shadow:
+    inset 0 0 14px rgba(255,255,200,1),
+    0 0 16px rgba(255,230,120,0.9),
+    0 0 28px rgba(255,200,80,0.8);
+}
+
+.replaceTarget{
+  outline:3px solid #fff;
+  background:#444 !important;
+}
+
+button{
+  background:#222;
+  color:#aaa;
+  border:1px solid #444;
+  margin:4px;
+  padding:12px 20px;
+  font-size:18px;
+  cursor:pointer;
+}
+
+button:hover{
+  transform: scale(1.05);
+  filter:
+    brightness(1.2)
+    drop-shadow(0 0 6px rgba(255,255,200,0.9))
+    drop-shadow(0 0 14px rgba(255,230,120,0.9))
+    drop-shadow(0 0 24px rgba(255,200,80,0.8));
+}
+
+button.active{
+  background:#444;
+  color:#fff;
+  box-shadow:
+    0 0 10px rgba(255,255,200,1),
+    0 0 20px rgba(255,230,120,0.9),
+    0 0 40px rgba(255,200,80,0.8);
+  transform: scale(1.03);
+}
+
+button:active{
+  transform: scale(0.95);
+  filter:
+    brightness(1.4)
+    drop-shadow(0 0 10px rgba(255,255,200,1))
+    drop-shadow(0 0 20px rgba(255,200,80,1));
+}
+
+.totalRow{
+  background:#1e2f1e;
+  font-weight:bold;
+}
+
+.sorted-col-1 td:nth-child(1),
+.sorted-col-2 td:nth-child(2),
+.sorted-col-3 td:nth-child(3),
+.sorted-col-4 td:nth-child(4),
+.sorted-col-5 td:nth-child(5),
+.sorted-col-6 td:nth-child(6),
+.sorted-col-7 td:nth-child(7),
+.sorted-col-8 td:nth-child(8),
+.sorted-col-9 td:nth-child(9),
+.sorted-col-10 td:nth-child(10),
+.sorted-col-11 td:nth-child(11),
+.sorted-col-12 td:nth-child(12),
+.sorted-col-13 td:nth-child(13),
+.sorted-col-14 td:nth-child(14){
+  background:#2f3b2f !important;
+}
+
+*{
+  cursor:pointer !important;
 }
 </style>
+	
 </head>
 
 <body>
-
+<h1 class="title">魔導結晶</h1>	
 
 <!-- 🔥 保存・戻る -->
 <div class="top-buttons no-capture">
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
-<h1 class="title">魔導結晶</h1>	
+
 <div id="rawData" style="display:none;">
 <table cellspacing="0" border="0">
 	<tr><td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="65" align="center" valign=bottom bgcolor="#FFFFFF" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;番号&quot;}"><font face="Noto Serif JP Black">番号</font></td>
@@ -1553,6 +1649,8 @@ render();
 <!-- ▼ここに追加（ページの一番下） -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 <script>
 function downloadScreen() {
   html2canvas(document.body, {
@@ -1571,6 +1669,9 @@ function downloadScreen() {
   });
 }
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
