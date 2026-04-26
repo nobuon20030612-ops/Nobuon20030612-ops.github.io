@@ -1547,7 +1547,7 @@ loadFromHTML();
 render();
 </script>
 
-<!-- 👇ここに追加 -->
+<!-- ▼ここに追加（ページの一番下） -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
@@ -1555,12 +1555,8 @@ function downloadScreen() {
   html2canvas(document.body, {
     backgroundColor: "#000000",
     scale: 2,
-
     width: window.innerWidth,
     height: window.innerHeight,
-    windowWidth: window.innerWidth,
-    windowHeight: window.innerHeight,
-
     ignoreElements: (el) => el.classList.contains("no-capture")
   }).then(canvas => {
     const link = document.createElement("a");
