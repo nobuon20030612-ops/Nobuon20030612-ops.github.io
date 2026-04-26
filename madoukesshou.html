@@ -1656,10 +1656,15 @@ function downloadScreen() {
   html2canvas(document.body, {
     backgroundColor: "#000000",
     scale: 2,
+
+    x: window.scrollX,
+    y: window.scrollY,
+
     width: window.innerWidth,
     height: window.innerHeight,
     windowWidth: window.innerWidth,
     windowHeight: window.innerHeight,
+
     ignoreElements: (el) => el.classList.contains("no-capture")
   }).then(canvas => {
     const link = document.createElement("a");
