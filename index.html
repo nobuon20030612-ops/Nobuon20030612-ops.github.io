@@ -205,6 +205,11 @@ const video = document.getElementById("video");
 const overlay = document.getElementById("videoOverlay");
 
 function playVideo() {
+    // 👇ここ追加（10回に1回 video2）
+    const selectedVideo = Math.random() < 0.1 ? "video2.mp4" : "video.mp4";
+
+    video.src = selectedVideo;
+
     overlay.style.display = "flex";
     video.currentTime = 0;
     video.play();
