@@ -7,8 +7,17 @@
 <title>メニュー</title>
 
 <style>
+body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-y: auto;
 
     background-color: black;
+
+    /* ←ここはCSSで固定（重要） */
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
 }
 
 /* メニューボタン */
@@ -76,7 +85,6 @@
 /* スマホ対応 */
 @media (max-width: 768px) {
     body {
-        background-size: cover;
         padding-bottom: 90px;
     }
 
@@ -126,17 +134,19 @@
 <button class="imgbtn back-fixed" onclick="location.href='index.html'">
     <img src="back.png" alt="戻る">
 </button>
+
+<!-- 🔥 背景切替JS（ここが重要） -->
 <script>
 const bg1 = "bg_counter.png";
 const bg2 = "bg_counter2.png";
 
 let lastBg = localStorage.getItem("menu_bg");
-
 let nextBg = (lastBg === bg1) ? bg2 : bg1;
 
-document.body.style.background = `url(${nextBg}) no-repeat center top`;
-document.body.style.backgroundSize = "cover";
+// 👇背景“画像だけ”変更（レイアウト崩れ防止）
+document.body.style.backgroundImage = `url(${nextBg})`;
 
+// 保存
 localStorage.setItem("menu_bg", nextBg);
 </script>
 
