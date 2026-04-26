@@ -18,7 +18,6 @@ body{
   color:#ddd;
 }
 
-/* 🔥 右上ボタン（保存＋戻る） */
 .top-buttons{
   position: fixed;
   top: 12px;
@@ -32,21 +31,25 @@ body{
 .top-back{
   padding: 10px 20px;
   font-size: 20px;
+
   border: 2px solid #ff3b3b;
   color: #ff3b3b;
   background: rgba(0,0,0,0.6);
+
   cursor: pointer;
   transition: all 0.2s;
 }
- 
+
 .top-save:hover,
 .top-back:hover{
   color: #fff;
   border-color: #ff0000;
+
   box-shadow:
     0 0 8px rgba(255,80,80,0.9),
     0 0 20px rgba(255,0,0,0.9),
     0 0 40px rgba(255,0,0,0.8);
+
   transform: scale(1.05);
 }
 
@@ -1557,6 +1560,8 @@ function downloadScreen() {
     scale: 2,
     width: window.innerWidth,
     height: window.innerHeight,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
     ignoreElements: (el) => el.classList.contains("no-capture")
   }).then(canvas => {
     const link = document.createElement("a");
@@ -1568,4 +1573,4 @@ function downloadScreen() {
 </script>
 
 </body>
-</html>>
+</html>
