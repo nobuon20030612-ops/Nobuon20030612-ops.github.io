@@ -205,20 +205,19 @@ const video = document.getElementById("video");
 const overlay = document.getElementById("videoOverlay");
 
 function playVideo() {
-    // 👇ここ追加（10回に1回 video2）
     const selectedVideo = Math.random() < 0.1 ? "video2.mp4" : "video.mp4";
 
-  video.src = selectedVideo;
+    video.src = selectedVideo;
+    video.controls = false;
 
-overlay.style.display = "flex";
-video.currentTime = 0;
+    overlay.style.display = "flex";
+    video.currentTime = 0;
 
-// 👇追加（再生バーを強制非表示）
-video.controls = false;
+    video.play();
 
-// 👇順番を変更（先にフルスクリーン）
-if (video.requestFullscreen) {
-    video.requestFullscreen();
+    if (video.requestFullscreen) {
+        video.requestFullscreen();
+    }
 }
 
 // 👇最後に再生
