@@ -73,7 +73,6 @@ body {
 .youtube img {
     width: 18vw;
     max-width: 240px;
-
 }
 
 .imgbtn:hover img {
@@ -112,6 +111,21 @@ body {
     pointer-events: none;
 }
 
+/* ★追加：左上ダウンロードボタン */
+#downloadBtn{
+    position: fixed;
+    top: 10px;
+    left: 15px;
+    padding: 8px 14px;
+    font-size: 14px;
+    border: 2px solid #ff3b3b;
+    color: #ff3b3b;
+    background: rgba(0,0,0,0.6);
+    cursor: pointer;
+    z-index: 9999;
+    display: none;
+}
+
 @media (max-width: 600px) {
     .imgbtn img {
         width: 28vw;
@@ -145,6 +159,9 @@ body {
 
 <body>
 
+<!-- ★追加：ダウンロードボタン -->
+<button id="downloadBtn">Excelダウンロード</button>
+
 <h1 class="sr-only">たいらの野望｜信長の野望オンライン攻略サイト</h1>
 
 <p class="sr-only">
@@ -162,7 +179,7 @@ body {
     </a>
 </div>
 
-<!-- 中段（4ボタン） -->
+<!-- 中段 -->
 <div class="middle tools-row">
     <button class="imgbtn" onclick="location.href='kishinseki.html'">
         <img src="kishinseki.png" alt="鬼神石">
@@ -214,15 +231,11 @@ function playVideo() {
     video.currentTime = 0;
 
     video.play();
- 
 }
-
 
 video.addEventListener("ended", () => {
     video.pause();
     overlay.style.display = "none";
-
-   
 });
 
 document.querySelectorAll('.imgbtn').forEach(btn => {
@@ -236,6 +249,21 @@ document.querySelectorAll('.imgbtn').forEach(btn => {
         }, 150);
     });
 });
+
+/* ★追加：ファイル存在チェック */
+const downloadBtn = document.getElementById("downloadBtn");
+const filePath = "test.xlsx";
+
+fetch(filePath, { method: "HEAD" })
+  .then(res => {
+    if (res.ok) {
+      downloadBtn.style.display = "block";
+      downloadBtn.onclick = () => {
+        window.location.href = filePath;
+      };
+    }
+  })
+  .catch(() => {});
 </script>
 
 </body>
