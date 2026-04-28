@@ -137,31 +137,34 @@ body {
 }
 
 @media (max-width: 600px) {
+    body {
+        justify-content: flex-start;
+        padding-top: 12vh;
+        gap: 4vh;
+
+        background-size: auto 100%;
+        background-position: center top;
+    }
+
+    .middle {
+        gap: 3vw;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
     .imgbtn img {
-        width: 28vw;
+        width: 26vw;
+        min-width: 0;
         max-width: none;
     }
 
-    .middle .imgbtn img {
-        width: 30vw;
-    }
-
-    .middle.tools-row {
-        gap: 3vw;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
     .middle.tools-row .imgbtn img {
-        width: 22vw;
-    }
-
-    .youtube img {
-        width: 34vw;
-    }
-
-    .nopush img {
         width: 24vw;
+    }
+
+    .nopush img,
+    .youtube img {
+        width: 28vw;
     }
 }
 </style>
