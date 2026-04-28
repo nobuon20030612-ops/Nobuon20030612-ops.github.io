@@ -24,16 +24,25 @@
     border:0 !important;
 }
 
-body {
+html, body {
     margin: 0;
+    padding: 0;
+    width: 100vw;
     height: 100vh;
+    overflow: hidden;
+}
+
+body {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 3vh;
-    background: url("bg.png") no-repeat center;
-    background-size: 100% 100%;
+
+    background-image: url("bg.png");
+    background-repeat: no-repeat;
+    background-position: left top;
+    background-size: 100vw 100vh;
     background-color: black;
 }
 
