@@ -33,7 +33,7 @@ body {
     align-items: center;
     gap: 3vh;
     background: url("bg.png") no-repeat center;
-    background-size: cover;
+    background-size: 100% 100%;
     background-color: black;
 }
 
@@ -272,21 +272,6 @@ fetch(filePath, { method: "HEAD" })
   })
   .catch(() => {});
 </script>
-<script>
-function fitSheet(){
-  const sheet = document.getElementById("sheet");
-  const viewport = document.getElementById("viewport");
 
-  const scaleX = viewport.clientWidth / 1559;
-  const scaleY = viewport.clientHeight / 780;
-
-  const scale = Math.min(scaleX, scaleY);
-
-  sheet.style.transform = "scale(" + scale + ")";
-}
-
-window.addEventListener("resize", fitSheet);
-window.addEventListener("load", fitSheet);
-</script>
 </body>
 </html>
