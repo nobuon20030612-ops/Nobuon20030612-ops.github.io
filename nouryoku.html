@@ -57,6 +57,7 @@ table{
 td{
   min-width:0;
 }
+/* ▼元の入力欄 */
 .sheet-input{
   width:100%;
   height:100%;
@@ -71,6 +72,33 @@ td{
   padding:0;
   margin:0;
   box-sizing:border-box;
+}
+
+/* ▼ホバー発光 */
+.sheet-input:hover {
+    box-shadow:
+        0 0 6px rgba(255,255,200,0.9),
+        0 0 12px rgba(255,230,120,0.9),
+        0 0 20px rgba(255,200,80,0.8);
+    transition: box-shadow 0.2s;
+}
+
+/* ▼クリック時 */
+.sheet-input:focus {
+    outline: none;
+
+    box-shadow:
+        0 0 8px rgba(255,255,220,1),
+        0 0 18px rgba(255,230,120,1),
+        0 0 30px rgba(255,190,60,0.95);
+
+    transform: scale(0.96);
+
+    filter:
+        brightness(1.35)
+        drop-shadow(0 0 10px rgba(255,255,220,1))
+        drop-shadow(0 0 22px rgba(255,230,120,1))
+        drop-shadow(0 0 40px rgba(255,190,60,0.95));
 }
 .sheet-check{
   appearance:none;
