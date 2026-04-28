@@ -95,6 +95,23 @@ body {
 
 .imgbtn:active img,
 .imgbtn.active img {
+ /* ▼入力欄ホバー発光 */
+input:hover {
+    box-shadow:
+        0 0 6px rgba(255,255,200,0.9),
+        0 0 12px rgba(255,230,120,0.9),
+        0 0 20px rgba(255,200,80,0.8);
+    transition: box-shadow 0.2s;
+}
+
+/* ▼フォーカス時（クリック時）も光る */
+input:focus {
+    outline: none;
+    box-shadow:
+        0 0 8px rgba(255,255,220,1),
+        0 0 18px rgba(255,230,120,1),
+        0 0 30px rgba(255,190,60,0.95);
+
     transform: scale(0.96);
     filter:
         brightness(1.35)
