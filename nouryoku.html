@@ -31,14 +31,17 @@ html,body{
   margin:0;
   padding:0;
   width:100%;
-  height:100%;
-  overflow:hidden;
+  min-height:100%;
+  overflow-x:hidden;
+  overflow-y:auto;
   background:#000;
 }
+
 #viewport{
-  position:fixed;
-  inset:0;
-  overflow:hidden;
+  position:relative;
+  width:100%;
+  min-height:100vh;
+  overflow:visible;
   background:#000;
 }
 #sheet{
@@ -178,6 +181,12 @@ td{
     0 0 40px rgba(255,0,0,0.8);
 
   transform: scale(1.05);
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #sheet{
+    margin-top:60px;
+    margin-bottom:40px;
+  }
 }
 </style>
 </head>
