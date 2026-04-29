@@ -79,11 +79,14 @@ td{
 
 /* ▼ホバー発光 */
 .sheet-input:hover {
+    background: rgba(255,255,180,0.15); /* ←追加 */
+
     box-shadow:
         0 0 6px rgba(255,255,200,0.9),
         0 0 12px rgba(255,230,120,0.9),
         0 0 20px rgba(255,200,80,0.8);
-    transition: box-shadow 0.2s;
+
+    transition: all 0.2s;
 }
 
 /* ▼クリック時 */
