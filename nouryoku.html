@@ -419,8 +419,14 @@ window.addEventListener("load", recalcAll);
 <script>
 function fit(){
   const sheet = document.getElementById('sheet');
-  const scale = Math.min(window.innerWidth / 1559, window.innerHeight / 780);
+
+  // 横幅に合わせるだけにする
+  const scale = window.innerWidth / 1559;
+
   sheet.style.transform = 'scale(' + scale + ')';
+
+  // 縮小後の高さに合わせて余計な下スクロールを減らす
+  sheet.style.height = (780 * scale) + 'px';
 }
 window.addEventListener('load', fit);
 window.addEventListener('resize', fit);
