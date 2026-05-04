@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>食料</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  font-family:sans-serif;
+
+  /* ★背景画像 */
+  background-image:url("bg_shokuryou.png");
+  background-repeat:no-repeat;
+  background-position:center top;
+  background-size:contain;
+}
+
+/* ★戻るボタン（共通仕様） */
+.top-back{
+  position:fixed;
+  top:15px;
+  right:20px;
+  padding:10px 20px;
+  font-size:20px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.6);
+  cursor:pointer;
+  z-index:9999;
+}
+
+.top-back:hover{
+  color:#fff;
+  border-color:#ff0000;
+  box-shadow:
+    0 0 8px rgba(255,80,80,0.9),
+    0 0 20px rgba(255,0,0,0.9),
+    0 0 40px rgba(255,0,0,0.8);
+}
+
+/* ★背景と被らないための余白 */
+.content{
+  padding-top:120px;
+  text-align:center;
+  color:white;
+  font-size:24px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-back" onclick="goBack()">戻る</div>
+
+<div class="content">
+  <!-- 必要ならここに追加 -->
+</div>
+
+<script>
+function goBack(){
+    location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
