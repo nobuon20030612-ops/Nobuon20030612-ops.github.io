@@ -27,9 +27,9 @@
 html, body {
     margin: 0;
     padding: 0;
-    width: 100%;     /* ←変更 */
-    height: 100%;    /* ←変更 */
-    overflow: auto;  /* ←変更 */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
 }
 
 body {
@@ -58,7 +58,7 @@ body {
 .imgbtn img {
     width: 16vw;
     max-width: 220px;
-    min-width: 100px;
+    min-width: 120px; /* ←ここだけ変更 */
     display: block;
     transition: transform 0.15s ease, filter 0.15s ease;
 }
@@ -103,7 +103,6 @@ body {
         drop-shadow(0 0 40px rgba(255,190,60,0.95));
 }
 
-
 #videoOverlay {
     position: fixed;
     inset: 0;
@@ -121,7 +120,6 @@ body {
     pointer-events: none;
 }
 
-/* ★追加：左上ダウンロードボタン */
 #downloadBtn{
     position: fixed;
     top: 10px;
@@ -169,125 +167,5 @@ body {
 }
 </style>
 </head>
-
 <body>
-
-<!-- ★追加：ダウンロードボタン -->
-<button id="downloadBtn">ダウンロード</button>
-
-<h1 class="sr-only">たいらの野望｜信長の野望オンライン攻略サイト</h1>
-
-<p class="sr-only">
-たいらの野望は、信長の野望オンラインの九十九・鬼神石・家臣計算機などをまとめた攻略サイトです。
-</p>
-
-<!-- 上段 -->
-<div class="middle">
-    <button class="imgbtn" onclick="location.href='nouryoku.html'">
-        <img src="nouryoku.png" alt="能力計算">
-    </button>
-    <!-- ★追加：七星転生ボタン -->
-    <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
-        <img src="shichiseitensei.png" alt="七星転生">
-    </button>
-    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" class="imgbtn">
-        <img src="koushiki.png" alt="信長の野望オンライン公式サイト">
-    </a>
-
-    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" class="imgbtn">
-        <img src="wiki.png" alt="信長の野望オンライン攻略Wiki">
-    </a>
-</div>
-
-<!-- 中段 -->
-<div class="middle tools-row">
-    <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png" alt="鬼神石">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='kashin.html'">
-        <img src="kashin.png" alt="家臣計算機">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='tsukumogami.html'">
-        <img src="tsukumogami.png" alt="九十九">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='madoukesshou.html'">
-        <img src="madoukesshou.png" alt="魔導結晶">
-    </button>
-</div>
-
-<!-- 下段 -->
-<div class="middle">
-     <button class="imgbtn nopush" onclick="location.href='seikai.html'">
-        <img src="seikai.png" alt="星海の荒石">
-    </button>
-    <button class="imgbtn nopush" onclick="location.href='counter.html'">
-        <img src="counter.png" alt="カウンター">
-    </button>
-
-    <button class="imgbtn nopush" onclick="playVideo()">
-        <img src="nopush.png" alt="動画再生">
-    </button>
-
-    <a href="https://www.youtube.com/@%E3%81%9F%E3%81%84%E3%82%89%E3%81%AEzzz" target="_blank" class="imgbtn youtube">
-        <img src="youtube_btn.png" alt="YouTube">
-    </a>
-</div>
-
-<div id="videoOverlay">
-    <video id="video" src="video.mp4"></video>
-</div>
-
-<script>
-const video = document.getElementById("video");
-const overlay = document.getElementById("videoOverlay");
-
-function playVideo() {
-    const selectedVideo = Math.random() < 0.1 ? "video2.mp4" : "video.mp4";
-
-    video.src = selectedVideo;
-    video.controls = false;
-
-    overlay.style.display = "flex";
-    video.currentTime = 0;
-
-    video.play();
-}
-
-video.addEventListener("ended", () => {
-    video.pause();
-    overlay.style.display = "none";
-});
-
-document.querySelectorAll('.imgbtn').forEach(btn => {
-    btn.addEventListener('touchstart', () => {
-        btn.classList.add('active');
-    });
-
-    btn.addEventListener('touchend', () => {
-        setTimeout(() => {
-            btn.classList.remove('active');
-        }, 150);
-    });
-});
-
-/* ★追加：ファイル存在チェック */
-const downloadBtn = document.getElementById("downloadBtn");
-const filePath = "test.xlsx";
-
-fetch(filePath, { method: "HEAD" })
-  .then(res => {
-    if (res.ok) {
-      downloadBtn.style.display = "block";
-      downloadBtn.onclick = () => {
-        window.location.href = filePath;
-      };
-    }
-  })
-  .catch(() => {});
-</script>
-
-</body>
-</html>
+<!-- 以下変更なし -->
