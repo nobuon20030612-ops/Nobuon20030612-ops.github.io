@@ -64,14 +64,22 @@ body {
 }
 
 .middle {
-    display: flex;
+    display: grid;
     gap: 4vw;
     align-items: center;
+    justify-content: center;
 }
 
 .middle.tools-row {
-    justify-content: center;
-    flex-wrap: nowrap;
+    grid-template-columns: repeat(4, auto);
+}
+
+.top-row {
+    grid-template-columns: repeat(2, auto);
+}
+
+.bottom-row {
+    grid-template-columns: repeat(3, auto);
 }
 
 .nopush img {
@@ -181,13 +189,7 @@ body {
 </p>
 
 <!-- 上段 -->
-<div class="middle">
-    <button class="imgbtn" onclick="location.href='nouryoku.html'">
-        <img src="nouryoku.png" alt="能力計算">
-    </button>
-    <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
-        <img src="shichiseitensei.png" alt="七星転生">
-    </button>
+<div class="middle top-row">
     <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" class="imgbtn">
         <img src="koushiki.png" alt="信長の野望オンライン公式サイト">
     </a>
@@ -197,14 +199,33 @@ body {
     </a>
 </div>
 
-<!-- 中段 -->
+<!-- 2段目 -->
 <div class="middle tools-row">
-    <button class="imgbtn" onclick="location.href='kishinseki.html'">
-        <img src="kishinseki.png" alt="鬼神石">
+    <button class="imgbtn" onclick="location.href='nouryoku.html'">
+        <img src="nouryoku.png" alt="能力計算">
     </button>
 
     <button class="imgbtn" onclick="location.href='kashin.html'">
         <img src="kashin.png" alt="家臣計算機">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
+        <img src="shichiseitensei.png" alt="七星転生">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='shokuryou.html'">
+        <img src="shokuryou.png" alt="食料">
+    </button>
+</div>
+
+<!-- 3段目 -->
+<div class="middle tools-row">
+    <button class="imgbtn nopush" onclick="location.href='seikai.html'">
+        <img src="seikai.png" alt="星海の荒石">
+    </button>
+
+    <button class="imgbtn" onclick="location.href='kishinseki.html'">
+        <img src="kishinseki.png" alt="鬼神石">
     </button>
 
     <button class="imgbtn" onclick="location.href='tsukumogami.html'">
@@ -217,10 +238,7 @@ body {
 </div>
 
 <!-- 下段 -->
-<div class="middle">
-     <button class="imgbtn nopush" onclick="location.href='seikai.html'">
-        <img src="seikai.png" alt="星海の荒石">
-    </button>
+<div class="middle bottom-row">
     <button class="imgbtn nopush" onclick="location.href='counter.html'">
         <img src="counter.png" alt="カウンター">
     </button>
