@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>星海の荒石</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  font-family:sans-serif;
+}
+
+.title{
+  text-align:center;
+  font-size:36px;
+  color:white;
+  margin:10px 0;
+}
+
+.button-area{
+  display:flex;
+}
+
+.button-area button{
+  flex:1;
+  height:60px;
+  border:none;
+  font-size:18px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.bukyoku{background:red;color:black;}
+.rokuzon{background:#4da6ff;color:black;} /* ★一致 */
+.hagun{background:green;color:black;}
+.monkyoku{background:yellow;color:black;}
+.rentei{background:purple;color:black;}
+.kyomon{background:pink;color:black;}
+.tanrou{background:white;color:black;}
+
+.button-area button:hover{
+  filter:brightness(1.6);
+  box-shadow:
+    0 0 12px #fff,
+    0 0 24px currentColor,
+    0 0 48px currentColor,
+    0 0 80px currentColor;
+  transform:scale(1.05);
+}
+
+.top-back{
+  position:fixed;
+  top:12px;
+  right:20px;
+  padding:10px 20px;
+  font-size:20px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.6);
+  cursor:pointer;
+}
+
+.top-back:hover{
+  color:#fff;
+  border-color:#ff0000;
+  box-shadow:
+    0 0 8px rgba(255,80,80,0.9),
+    0 0 20px rgba(255,0,0,0.9),
+    0 0 40px rgba(255,0,0,0.8);
+}
+
+.display{
+  width:100%;
+}
+
+.main-header{
+  text-align:center;
+  font-size:38px;
+  font-weight:bold;
+  padding:10px;
+  color:black;
+}
+
+.red-text{
+  text-align:center;
+  color:red;
+  font-size:22px;
+  font-weight:bold;
+  margin:10px 0;
+}
+
+.gold-material-row{
+  display:flex;
+}
+
+.gold-material{
+  flex:1;
+  margin:5px;
+  text-align:center;
+  padding:10px;
+  font-weight:bold;
+}
+
+.status-row,
+.gold-row{
+  display:grid;
+  grid-template-columns:2fr repeat(11,1fr);
+  text-align:center;
+  font-weight:bold;
+}
+
+.status-row div,
+.gold-row div{
+  border:1px solid #333;
+  padding:8px;
+  background:black;
+}
+
+.status-row div:first-child,
+.gold-row div:first-child{
+  color:white;
+}
+
+.grid{
+  display:flex;
+}
+
+.box{
+  flex:1;
+  margin:5px;
+  text-align:center;
+}
+
+.box div{
+  padding:8px;
+  font-weight:bold;
+}
+
+.mid{
+  background:#ccc;
+  color:black;
+}
+
+.silver-list{
+  display:grid;
+  grid-template-columns:1fr;
+}
+
+.silver-list.four{
+  grid-template-columns:1fr 1fr;
+}
+</style>
+</head>
+
+<body>
+
+<div class="title">星海の荒石</div>
+
+<div class="button-area">
+  <button class="bukyoku" onclick="show(23)">武曲</button>
+  <button class="rokuzon" onclick="show(24)">禄存</button>
+  <button class="hagun" onclick="show(25)">破軍</button>
+  <button class="monkyoku" onclick="show(26)">文曲</button>
+  <button class="rentei" onclick="show(27)">廉貞</button>
+  <button class="kyomon" onclick="show(28)">巨門</button>
+  <button class="tanrou" onclick="show(29)">貪狼</button>
+</div>
+
+<div class="top-back" onclick="goBack()">戻る</div>
+
+<div class="display" id="display"></div>
+
+<script>
+
+const names={
+  0:"虹彩",1:"梅染",2:"薄墨",3:"紺碧",4:"山吹",5:"浅葱",6:"常盤",
+  7:"濡羽",8:"似桃",9:"朽葉",10:"銀朱",11:"菖蒲",12:"竜胆",13:"灰桜",
+  14:"緋",15:"杏",16:"藍",17:"青",18:"緑",19:"黄",20:"紫",21:"紅",22:"蒼",
+  23:"武曲",24:"禄存",25:"破軍",26:"文曲",27:"廉貞",28:"巨門",29:"貪狼"
+};
+
+const colors={
+  0:"#eee",1:"red",2:"#888",3:"blue",4:"gold",5:"#00e5ff",6:"green",
+  7:"black",8:"deeppink",9:"#8b5a2b",10:"red",11:"purple",
+  12:"#3f51b5", /* 竜胆 */
+  13:"violet",
+  14:"#f5b7b1",15:"orange",16:"#00bcd4",17:"#6a5acd",18:"#7CFC00",19:"#fff176",
+  20:"purple",21:"red",22:"#b19cd9"
+};
+
+function getTextColor(i){
+  return i===7 ? "white" : "black";
+}
+
+const goldRecipe={
+  0:[14,15,16,22],1:[18,20],2:[14,17],3:[16,17],4:[15,19],5:[15,17],
+  6:[18,22],7:[19,20],8:[14,21],9:[19,22],10:[16,21],11:[16,20],12:[14,18],13:[20,21]
+};
+
+const topRecipe={
+  23:[8,10,12,13],
+  24:[0,2,3,5],
+  25:[1,6,8,12],
+  26:[3,4,7,9],
+  27:[0,3,9,11],
+  28:[1,4,10,13],
+  29:[2,6,7,11]
+};
+
+/* ★ここが修正ポイント */
+const topColors={
+  23:"red",
+  24:"#4da6ff", /* ←一致 */
+  25:"green",
+  26:"yellow",
+  27:"purple",
+  28:"pink",
+  29:"white"
+};
+
+const statusData={
+  23:[1500,0,250,0,0,0,0,0,0,0,0],
+  24:[2000,0,0,200,0,0,0,0,0,0,0],
+  25:[1500,0,0,0,250,0,0,0,0,0,0],
+  26:[1500,0,0,0,0,250,0,0,0,0,0],
+  27:[1500,0,0,0,0,0,250,0,0,0,0],
+  28:[1500,0,0,0,0,0,125,125,125,125,125],
+  29:[1500,0,125,125,125,125,125,0,0,0,0]
+};
+
+const statusColors=[
+  "#ffffff","#66ccff","#ff6666","#6699ff","#66ff99",
+  "#ffff99","#cc99ff","#ffcc99","#6699ff","#ff99aa","#99ff99"
+];
+
+function show(id){
+  const display=document.getElementById("display");
+  const list=topRecipe[id];
+  const st=statusData[id];
+  const headerColor=topColors[id];
+
+  let html="";
+
+  html+=`
+    <div class="main-header" style="background:${headerColor};">
+      ${names[id]}の輝光　合成早見表
+    </div>
+  `;
+
+  html+=`<div class="red-text">以下4個を合成</div>`;
+
+  html+=`<div class="gold-material-row">`;
+  list.forEach(g=>{
+    html+=`
+      <div class="gold-material" style="background:${colors[g]};color:${getTextColor(g)}">
+        ${names[g]}の星光(金)
+      </div>
+    `;
+  });
+  html+=`</div>`;
+
+  html+=`
+    <div class="status-row">
+      <div>鬼神の力</div>
+      ${["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"]
+        .map((t,i)=>`<div style="color:${statusColors[i]}">${t}</div>`).join("")}
+    </div>
+  `;
+
+  html+=`
+    <div class="gold-row">
+      <div>${names[id]}の輝光(黄金)</div>
+      ${st.map((v,i)=>`<div style="color:${statusColors[i]}">${v}</div>`).join("")}
+    </div>
+  `;
+
+  html+=`<div class="red-text">以下2～4個合成</div>`;
+
+  html+=`<div class="grid">`;
+
+  list.forEach(g=>{
+    const silvers=goldRecipe[g];
+    const four=silvers.length===4 ? " four" : "";
+
+    html+=`
+      <div class="box">
+        <div style="background:${colors[g]};color:${getTextColor(g)}">
+          ${names[g]}の星光(金)
+        </div>
+
+        <div class="mid">↓以下を合成</div>
+
+        <div class="silver-list${four}">
+    `;
+
+    silvers.forEach(s=>{
+      html+=`
+        <div style="background:${colors[s]};color:${getTextColor(s)}">
+          ${names[s]}の微光(銀)
+        </div>
+      `;
+    });
+
+    html+=`</div></div>`;
+  });
+
+  html+=`</div>`;
+
+  display.innerHTML=html;
+}
+
+function goBack(){
+  document.getElementById("display").innerHTML="";
+}
+</script>
+
+</body>
+</html>
