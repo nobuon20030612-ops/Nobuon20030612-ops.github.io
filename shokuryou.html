@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>食料計算機</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  font-family:sans-serif;
+  color:white;
+}
+
+.top-back{
+  position:fixed;
+  top:15px;
+  right:20px;
+  padding:10px 20px;
+  font-size:22px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.75);
+  cursor:pointer;
+  z-index:9999;
+}
+
+.panel{
+  padding:80px 20px 30px;
+}
+
+.notice{
+  color:red;
+  font-size:22px;
+  font-weight:bold;
+  margin-bottom:15px;
+}
+
+.input-area{
+  display:flex;
+  gap:12px;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:20px;
+}
+
+label{
+  font-size:26px;
+  font-weight:bold;
+  color:white;
+}
+
+input,select,button{
+  font-size:22px;
+  padding:5px 8px;
+  color:black;
+}
+
+input:hover,
+select:hover,
+button:hover,
+.top-back:hover{
+  box-shadow:
+    0 0 18px #ff3b3b,
+    0 0 36px #ff3b3b,
+    0 0 60px #ff3b3b,
+    0 0 90px #ff3b3b;
+  filter:brightness(1.7);
+}
+
+#lv{
+  width:60px;
+}
+
+#latent{
+  width:70px;
+}
+
+#hourInput{
+  width:60px;
+}
+
+.time-box{
+  color:white;
+  font-weight:bold;
+  font-size:26px;
+}
+
+#calcBtn{
+  background:#ff3b3b;
+  color:white;
+  font-weight:bold;
+  border:2px solid #ff0000;
+  border-radius:6px;
+  font-size:42px;
+  padding:18px 36px;
+}
+
+#calcBtn:hover{
+  background:#ff0000;
+  box-shadow:
+    0 0 20px #ff0000,
+    0 0 40px #ff0000,
+    0 0 80px #ff0000;
+}
+
+.result{
+  font-size:26px;
+  margin:15px 0;
+  line-height:1.7;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.result-columns{
+  display:flex;
+  gap:20px;
+  align-items:flex-start;
+}
+
+.block{
+  flex:1;
+  background:#111;
+  padding:12px;
+  border:1px solid #444;
+}
+
+.block h2{
+  margin-top:0;
+  color:#ffcc66;
+  text-align:center;
+}
+
+.result-table{
+  width:100%;
+  border-collapse:collapse;
+  background:#f8d2c8;
+  color:black;
+  font-size:17px;
+  margin-bottom:12px;
+}
+
+.result-table th,
+.result-table td{
+  border:1px solid #333;
+  padding:5px;
+  text-align:center;
+  white-space:nowrap;
+  color:black;
+}
+
+.result-table th{
+  background:#888;
+}
+
+.rank-title{
+  color:#ffd966;
+  font-size:22px;
+  font-weight:bold;
+  margin:12px 0 6px;
+}
+
+.combo-total{
+  background:#222;
+  color:white;
+  padding:6px;
+  margin-bottom:12px;
+  font-size:16px;
+  white-space:nowrap;
+  overflow-x:auto;
+}
+
+.food-area{
+  margin-top:30px;
+}
+
+.filter-area{
+  margin:10px 0;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+#townFilterText{
+  color:#ffcc66;
+  font-weight:bold;
+  margin:8px 0;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#f8d2c8;
+  color:black;
+  font-size:17px;
+}
+
+th,td{
+  border:1px solid #333;
+  padding:6px;
+  text-align:center;
+  white-space:nowrap;
+  color:black;
+}
+
+th{
+  background:#888;
+}
+
+.town-link{
+  color:#005eff;
+  cursor:pointer;
+  text-decoration:underline;
+  font-weight:bold;
+}
+
+@media (max-width:800px){
+  .input-area{
+    flex-wrap:wrap;
+  }
+
+  .result-columns{
+    flex-direction:column;
+  }
+
+  .block{
+    width:100%;
+    box-sizing:border-box;
+  }
+}
+/* 横スクロール防止：全体を少し縮小 */
+body{
+  overflow-x:hidden;
+}
+
+.panel{
+  transform:scale(0.85);
+  transform-origin:top center;
+  width:117.6%;
+  margin-left:-8.8%;
+}</style>
+</head>
+
+<body>
+
+<div class="top-back" onclick="location.href='index.html'">戻る</div>
+
+<div class="panel">
+
+  <div class="notice">計算ボタン押下後は計算に少し時間がかかる場合があります</div>
+
+  <div class="input-area">
+    <label>LV <input id="lv" type="number" value="85" min="1"></label>
+    <label>潜在能力【腹持ち要素】 <input id="latent" type="number" value="5" min="0" max="5" step="1"></label>
+    <span class="time-box">時間</span>
+    <input id="hourInput" type="number" value="1" min="1">
+    <button onclick="calc()" id="calcBtn">計算</button>
+  </div>
+
+  <div id="result" class="result"></div>
+
+  <div class="result-columns">
+    <div class="block">
+      <h2>最安ベスト10</h2>
+      <div id="cheap"></div>
+    </div>
+
+    <div class="block">
+      <h2>最小個数ベスト10</h2>
+      <div id="few"></div>
+    </div>
+
+    <div class="block">
+      <h2>種類が少ないベスト10</h2>
+      <div id="typeFew"></div>
+    </div>
+  </div>
+
+  <div class="food-area">
+    <h2>食料一覧</h2>
+
+    <div class="filter-area">
+      地域：
+      <select id="regionFilter" onchange="drawFoodTable()">
+        <option value="">すべて</option>
+      </select>
+
+      <button onclick="clearTownFilter()">町絞り込み解除</button>
+    </div>
+
+    <div id="townFilterText"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>価値</th>
+          <th>名称</th>
+          <th>地域</th>
+          <th>町</th>
+          <th>値段</th>
+        </tr>
+      </thead>
+      <tbody id="foodTable"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const foods = [
+  {v:1,n:"おむすび",region:"全国",town:"茶店",price:"4文",p:4},
+  {v:2,n:"団子",region:"全国",town:"茶店",price:"4文",p:4},
+  {v:3,n:"蒸かし薩摩芋",region:"九州三国志",town:"島津家・猿渡信光",price:"6文",p:6},
+  {v:4,n:"ころ柿",region:"甲斐",town:"甲府",price:"4文",p:4},
+  {v:5,n:"そば",region:"全国",town:"茶店",price:"6文",p:6},
+  {v:6,n:"塩辛",region:"相模",town:"小田原",price:"8文",p:8},
+  {v:6,n:"ういろう",region:"尾張",town:"那古野",price:"6文",p:6},
+  {v:6,n:"わらすぼの干物",region:"九州三国志",town:"龍造寺家・有馬晴信",price:"10文",p:10},
+  {v:7,n:"安倍川もち",region:"駿河",town:"駿府",price:"8文",p:8},
+  {v:7,n:"くるみゆべし",region:"陸奥",town:"仙台",price:"8文",p:8},
+  {v:7,n:"野沢菜漬",region:"信濃",town:"真田庄",price:"8文",p:8},
+  {v:8,n:"あわ雪",region:"三河",town:"岡崎",price:"10文",p:10},
+  {v:8,n:"笹団子",region:"越後",town:"春日山",price:"12文",p:12},
+  {v:8,n:"桜餅",region:"武蔵",town:"川越",price:"10文",p:10},
+  {v:8,n:"れんこん",region:"加賀",town:"金沢",price:"10文",p:10},
+  {v:8,n:"赤こんにゃく",region:"近江",town:"小谷",price:"10文",p:10},
+  {v:8,n:"九条ねぎ",region:"山城",town:"京都",price:"10文",p:10},
+  {v:8,n:"みかん",region:"紀伊",town:"雑賀郷",price:"10文",p:10},
+  {v:8,n:"浅草のり",region:"武蔵",town:"川越",price:"12文",p:12},
+  {v:8,n:"鮒",region:"伊勢",town:"一乗谷",price:"10文",p:10},
+  {v:8,n:"赤米",region:"伊賀",town:"伊賀郷",price:"10文",p:10},
+  {v:8,n:"ふき",region:"摂津和泉",town:"大坂",price:"10文",p:10},
+  {v:9,n:"焼き饅頭",region:"上野",town:"前橋",price:"14文",p:14},
+  {v:9,n:"藤団子",region:"尾張",town:"那古野",price:"14文",p:14},
+  {v:9,n:"呼子のイカ",region:"九州三国志",town:"大友家・高橋紹運",price:"25文",p:25},
+  {v:9,n:"はも",region:"伊予",town:"松島五大堂",price:"25文",p:25},
+  {v:10,n:"弁当",region:"全国",town:"茶店",price:"19文",p:19},
+  {v:10,n:"金蝶まんじゅう",region:"美濃",town:"稲葉山",price:"16文",p:16},
+  {v:10,n:"鹿せんべい",region:"大和",town:"奈良",price:"19文",p:19},
+  {v:10,n:"大きんつば",region:"信濃",town:"松本・山賊町",price:"22文",p:22},
+  {v:10,n:"伊勢エビ",region:"伊勢",town:"長島・海賊町",price:"19文",p:19},
+  {v:10,n:"兎耳にぎり",region:"山城",town:"妙院郷",price:"100文",p:100,trade:false},
+  {v:10,n:"いわしのつみいれ",region:"複数",town:"小田原・浜松・岡崎",price:"83文",p:83},
+  {v:11,n:"竹筒飯",region:"共通生産",town:"生産",price:"8文",p:8},
+  {v:11,n:"おやき",region:"信濃",town:"松本・山賊町",price:"26文",p:26},
+  {v:11,n:"ずんだ餅",region:"陸奥",town:"仙台",price:"26文",p:26},
+  {v:11,n:"こねつけ餅",region:"信濃",town:"真田庄",price:"26文",p:26},
+  {v:12,n:"柿ようかん",region:"美濃",town:"稲葉山",price:"36文",p:36},
+  {v:12,n:"温泉たまご",region:"相模",town:"小田原",price:"36文",p:36},
+  {v:12,n:"へぎそば",region:"越後",town:"春日山",price:"36文",p:36},
+  {v:12,n:"越中みそ",region:"越中",town:"富山",price:"42文",p:42},
+  {v:12,n:"伏見ようかん",region:"山城",town:"京都",price:"42文",p:42},
+  {v:12,n:"みむろ",region:"大和",town:"奈良",price:"42文",p:42},
+  {v:12,n:"博多明太子",region:"九州三国志",town:"大友家・高橋紹運",price:"42文",p:42},
+  {v:12,n:"おむすび竹皮包み",region:"複数",town:"甲府・松本・山賊町・真田庄",price:"166文",p:166},
+  {v:13,n:"かまぼこ",region:"相模",town:"小田原",price:"50文",p:50},
+  {v:13,n:"きしめん",region:"尾張",town:"那古野",price:"86文",p:86},
+  {v:13,n:"山菜おむすび",region:"複数",town:"甲府・昇仙峡",price:"60文",p:60},
+  {v:13,n:"浜納豆",region:"遠江",town:"浜松",price:"72文",p:72},
+  {v:13,n:"くわい",region:"加賀",town:"金沢",price:"60文",p:60},
+  {v:13,n:"鮒寿司",region:"近江",town:"小谷",price:"60文",p:60},
+  {v:13,n:"カステラ",region:"摂津和泉",town:"堺",price:"60文",p:60},
+  {v:14,n:"きしめん",region:"尾張",town:"那古野",price:"86文",p:86},
+  {v:14,n:"豆腐",region:"山城",town:"京都",price:"60文",p:60},
+  {v:14,n:"南高梅干し",region:"紀伊",town:"雑賀郷",price:"60文",p:60},
+  {v:14,n:"水なす",region:"摂津和泉",town:"大坂",price:"60文",p:60},
+  {v:14,n:"ズワイガニ",region:"越前",town:"一乗谷",price:"60文",p:60},
+  {v:14,n:"かたやき",region:"伊賀",town:"伊賀郷",price:"60文",p:60},
+  {v:14,n:"がに漬け",region:"九州三国志",town:"龍造寺家・有馬晴信",price:"60文",p:60},
+  {v:14,n:"笹かまぼこ",region:"陸奥",town:"松島五大堂",price:"60文",p:60},
+  {v:14,n:"日野菜漬",region:"近江",town:"安土",price:"60文",p:60},
+  {v:15,n:"煮味噌",region:"三河",town:"岡崎",price:"102文",p:102},
+  {v:15,n:"上覧幕の内",region:"山城",town:"妙院郷",price:"90文",p:90,trade:false},
+  {v:15,n:"かき氷",region:"山城",town:"真夏之演(2008)",price:"86文",p:86,trade:false},
+  {v:16,n:"子ゆず",region:"遠江",town:"浜松",price:"146文",p:146},
+  {v:16,n:"笹寿司",region:"越後",town:"春日山",price:"122文",p:122},
+  {v:16,n:"薩摩大根の煮付け",region:"九州三国志",town:"島津家・猿渡信光",price:"120文",p:120},
+  {v:16,n:"しじみ釜飯",region:"近江",town:"安土",price:"140文",p:140},
+  {v:17,n:"ひもの",region:"駿河",town:"駿府",price:"208文",p:208},
+  {v:17,n:"ボーロ",region:"山城",town:"南蛮街",price:"250文",p:250,trade:false},
+  {v:17,n:"餅",region:"複数",town:"川越・大坂・堺",price:"666文",p:666},
+  {v:17,n:"さんまの塩焼き",region:"複数",town:"那古野・長島・海賊町・雑賀郷",price:"1貫111文",p:1111},
+  {v:17,n:"おくずかけ",region:"陸奥",town:"仙台",price:"212文",p:212},
+  {v:17,n:"戸隠そば",region:"信濃",town:"真田庄",price:"212文",p:212},
+  {v:18,n:"行李飯",region:"共通生産",town:"生産",price:"78文",p:78},
+  {v:18,n:"ほたるいか",region:"越中",town:"富山",price:"249文",p:249},
+  {v:18,n:"ハマグリ",region:"伊勢",town:"長島・海賊町",price:"249文",p:249},
+  {v:18,n:"信州そば",region:"複数",town:"松本・山賊町",price:"298文",p:298},
+  {v:18,n:"御岳そば",region:"複数",town:"昇仙峡",price:"261文",p:261},
+  {v:19,n:"小豆饅頭",region:"武蔵",town:"川越",price:"428文",p:428},
+  {v:19,n:"岩魚",region:"上野",town:"前橋",price:"514文",p:514},
+  {v:19,n:"わらび餅",region:"越前",town:"一乗谷",price:"616文",p:616},
+  {v:19,n:"近江米",region:"近江",town:"小谷",price:"616文",p:616},
+  {v:19,n:"氷室饅頭",region:"加賀",town:"金沢",price:"616文",p:616},
+  {v:19,n:"あん入り餅",region:"摂津和泉",town:"大坂",price:"616文",p:616},
+  {v:19,n:"小田原梅",region:"相模",town:"小田原",price:"616文",p:616},
+  {v:19,n:"八ツ橋",region:"山城",town:"京都",price:"616文",p:616},
+  {v:20,n:"岩魚",region:"上野",town:"前橋",price:"514文",p:514},
+  {v:20,n:"かきもち",region:"越中",town:"富山",price:"616文",p:616},
+  {v:20,n:"カボチャ",region:"摂津和泉",town:"堺",price:"616文",p:616},
+  {v:20,n:"金山寺みそ",region:"紀伊",town:"雑賀郷",price:"616文",p:616},
+  {v:20,n:"ほうとう",region:"甲斐",town:"甲府・昇仙峡",price:"616文",p:616},
+  {v:20,n:"要肝漬",region:"伊賀",town:"伊賀郷",price:"616文",p:616},
+  {v:20,n:"おでん",region:"複数",town:"富山・金沢・仙台・真田庄",price:"1貫166文",p:1166},
+  {v:20,n:"鹿肉の味噌漬け",region:"複数",town:"春日山・前橋",price:"666文",p:666},
+  {v:20,n:"赤飯",region:"複数",town:"一乗谷・小谷",price:"1貫305文",p:1305},
+  {v:21,n:"味噌煮込みうどん",region:"三河",town:"岡崎",price:"885文",p:885},
+  {v:21,n:"パエリヤ",region:"山城",town:"南蛮街",price:"1貫",p:1000},
+  {v:22,n:"鮎の塩焼き",region:"美濃",town:"稲葉山",price:"1貫273文",p:1273},
+  {v:23,n:"うな重",region:"遠江",town:"浜松",price:"1貫832文",p:1832},
+  {v:24,n:"釜飯",region:"上野",town:"前橋",price:"2貫198文",p:2198},
+  {v:24,n:"興津鯛",region:"駿河",town:"駿府",price:"2貫636文",p:2636},
+  {v:24,n:"関さば",region:"九州三国志",town:"大友家・高橋紹運",price:"2貫800文",p:2800},
+  {v:24,n:"たいらぎの貝柱",region:"九州三国志",town:"龍造寺家・有馬晴信",price:"2貫800文",p:2800},
+  {v:24,n:"磯釣りの石鯛",region:"九州三国志",town:"島津家・猿渡信光",price:"2貫800文",p:2800},
+  {v:24,n:"かき",region:"陸奥",town:"松島五大堂",price:"2貫800文",p:2800},
+  {v:25,n:"あんころもち",region:"伊勢",town:"長島・海賊町",price:"3貫795文",p:3795},
+  {v:25,n:"柿の葉寿司",region:"大和",town:"奈良",price:"3貫795文",p:3795},
+  {v:25,n:"天ぷら",region:"摂津和泉",town:"堺",price:"3貫795文",p:3795},
+  {v:25,n:"鱒寿司",region:"越中",town:"富山",price:"2貫754文",p:2754},
+  {v:25,n:"はらこ飯",region:"陸奥",town:"仙台",price:"1貫133文",p:1133},
+  {v:25,n:"だんご汁",region:"信濃",town:"真田庄",price:"1貫133文",p:1133},
+  {v:33,n:"もろこ甘露煮",region:"近江",town:"安土",price:"4貫",p:4000}
+];
+
+let selectedTown = "";
+
+function formatMoney(mon){
+  const kan = Math.floor(mon / 1000);
+  const bun = mon % 1000;
+  if(kan > 0 && bun > 0) return `${kan}貫${bun}文`;
+  if(kan > 0 && bun === 0) return `${kan}貫`;
+  return `${bun}文`;
+}
+
+function calc(){
+  const lv = Number(document.getElementById("lv").value);
+  let latent = Number(document.getElementById("latent").value);
+  let hour = Number(document.getElementById("hourInput").value);
+
+  if(latent < 0) latent = 0;
+  if(latent > 5) latent = 5;
+  if(hour < 1) hour = 1;
+
+  const base = Math.floor((lv * lv) / 50);
+  const target = Math.floor(base * (1 - latent * 0.1));
+  const oneHourValue = target * 3;
+
+  document.getElementById("result").innerHTML =
+    `LV${lv} 基礎消費価値：<b>${base}</b><br>` +
+    `潜在能力【腹持ち要素】${latent}マス：${latent * 10}%減少<br>` +
+    `1回消費価値：<b style="color:red;">${target}</b><br>` +
+    `1時間：消費価値：<b style="color:red;">${oneHourValue}</b>`;
+
+  const combos = makeCombos(target);
+
+  drawCombos("cheap", [...combos].sort((a,b)=>a.cost-b.cost || a.count-b.count || countTypes(a)-countTypes(b)).slice(0,10), hour);
+  drawCombos("few", [...combos].sort((a,b)=>a.count-b.count || a.cost-b.cost || countTypes(a)-countTypes(b)).slice(0,10), hour);
+  drawCombos("typeFew", [...combos].sort((a,b)=>countTypes(a)-countTypes(b) || maxValue(b)-maxValue(a) || a.cost-b.cost || a.count-b.count).slice(0,10), hour);
+}
+
+function getBestFoodByValue(){
+  const map = {};
+  foods.forEach(f=>{
+    if(f.n === "竹筒飯" || f.n === "行李飯") return;
+    if(f.trade === false) return;
+    if(!map[f.v] || f.p < map[f.v].p) map[f.v] = f;
+  });
+  return Object.values(map).sort((a,b)=>a.v-b.v);
+}
+
+function makeCombos(target){
+  const calcFoods = getBestFoodByValue();
+  const dp = Array.from({length:target + 1},()=>[]);
+  dp[0] = [{items:[], cost:0, count:0, key:""}];
+
+  calcFoods.forEach(food=>{
+    for(let sum=food.v; sum<=target; sum++){
+      dp[sum - food.v].forEach(prev=>{
+        const items = prev.items.concat(food);
+        dp[sum].push({
+          items:items,
+          cost:prev.cost + food.p,
+          count:prev.count + 1,
+          key:makeComboKey(items)
+        });
+      });
+      dp[sum] = trimComboList(dp[sum]);
+    }
+  });
+
+  return dp[target];
+}
+
+function makeComboKey(items){
+  const count = {};
+  items.forEach(f=>count[f.v] = (count[f.v] || 0) + 1);
+  return Object.keys(count).sort((a,b)=>Number(a)-Number(b)).map(v=>`${v}x${count[v]}`).join("|");
+}
+
+function trimComboList(list){
+  const seen = new Set();
+  const merged = [];
+
+  function addSorted(arr){
+    arr.forEach(c=>{
+      if(!seen.has(c.key)){
+        seen.add(c.key);
+        merged.push(c);
+      }
+    });
+  }
+
+  addSorted([...list].sort((a,b)=>a.cost-b.cost || a.count-b.count).slice(0,20));
+  addSorted([...list].sort((a,b)=>a.count-b.count || a.cost-b.cost).slice(0,20));
+  addSorted([...list].sort((a,b)=>countTypes(a)-countTypes(b) || maxValue(b)-maxValue(a) || a.cost-b.cost).slice(0,20));
+
+  return merged;
+}
+
+function countTypes(combo){
+  return new Set(combo.items.map(f=>f.v)).size;
+}
+
+function maxValue(combo){
+  return Math.max(...combo.items.map(f=>f.v));
+}
+
+function comboRegionText(food){
+  return food.region === "九州三国志" ? "" : food.region;
+}
+
+function drawCombos(id, list, hour){
+  const box = document.getElementById(id);
+  box.innerHTML = "";
+
+  if(list.length === 0){
+    box.innerHTML = "該当なし";
+    return;
+  }
+
+  list.forEach((combo,index)=>{
+    const map = {};
+    combo.items.forEach(f=>{
+      const key = f.v + "_" + f.n + "_" + f.town;
+      if(!map[key]) map[key] = {food:f, count:0};
+      map[key].count++;
+    });
+
+    let rows = "";
+    Object.values(map).sort((a,b)=>b.food.v-a.food.v).forEach(x=>{
+      rows += `
+        <tr>
+          <td>${x.food.v}</td>
+          <td>${x.food.n}</td>
+          <td>${comboRegionText(x.food)}</td>
+          <td>${x.food.town}</td>
+          <td>${x.food.price}</td>
+          <td>${x.count}</td>
+        </tr>
+      `;
+    });
+
+    const hourCount = combo.count * hour * 3;
+    const hourCost = combo.cost * hour * 3;
+
+    box.innerHTML += `
+      <div class="rank-title">${index + 1}位</div>
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th>価値</th>
+            <th>名称</th>
+            <th>地域</th>
+            <th>町</th>
+            <th>値段</th>
+            <th>個数</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="combo-total">
+        合計：${formatMoney(combo.cost)}　個数：${combo.count}　種類：${countTypes(combo)}<br>
+        ${hour}時間：${formatMoney(hourCost)}　個数：${hourCount}
+      </div>
+    `;
+  });
+}
+
+function setupRegionFilter(){
+  const select = document.getElementById("regionFilter");
+  const regions = [...new Set(foods.map(f=>f.region))].sort((a,b)=>a.localeCompare(b,"ja"));
+  regions.forEach(region=>{
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    select.appendChild(option);
+  });
+}
+
+function drawFoodTable(){
+  const tbody = document.getElementById("foodTable");
+  const region = document.getElementById("regionFilter").value;
+  const townText = document.getElementById("townFilterText");
+
+  tbody.innerHTML = "";
+  let list = foods;
+
+  if(region) list = list.filter(f=>f.region === region);
+
+  if(selectedTown){
+    list = list.filter(f=>f.town === selectedTown);
+    townText.textContent = "町絞り込み中：" + selectedTown;
+  }else{
+    townText.textContent = "";
+  }
+
+  list.sort((a,b)=>a.v-b.v || a.p-b.p || a.n.localeCompare(b.n,"ja")).forEach(f=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${f.v}</td>
+        <td>${f.n}</td>
+        <td>${f.region}</td>
+        <td><span class="town-link" data-town="${f.town}" onclick="filterByTown(this.dataset.town)">${f.town}</span></td>
+        <td>${f.price}</td>
+      </tr>
+    `;
+  });
+}
+
+function filterByTown(town){
+  selectedTown = town;
+  drawFoodTable();
+}
+
+function clearTownFilter(){
+  selectedTown = "";
+  drawFoodTable();
+}
+
+setupRegionFilter();
+drawFoodTable();
+</script>
+
+</body>
+</html>
