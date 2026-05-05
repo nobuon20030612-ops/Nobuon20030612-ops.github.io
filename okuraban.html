@@ -76,21 +76,19 @@ img{
   width:auto;
   height:auto;
   max-width:100%;
-  min-height:120vh; /* ←ここが重要 */
   display:block;
 }
 @media (orientation: landscape){
 
-  img{
-    width:auto;
-    height:calc(100vh - 70px);
-    max-width:100%;
-    min-height:unset;
+  .wrapper{
+    height:100vh;
+    padding-top:70px;
   }
 
-  .wrapper{
-    transform: scale(0.8);
-    transform-origin: top center;
+  img{
+    height:calc(100vh - 70px); /* ←これで必ず収まる */
+    width:auto;
+    max-width:none; /* ←これ重要（横制限解除） */
   }
 
 }
