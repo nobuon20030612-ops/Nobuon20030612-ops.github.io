@@ -73,10 +73,22 @@ img{
   height:auto;
 }
 
-@media (orientation: landscape){
+@media (max-height: 500px){
+  .wrapper{
+    padding-top:50px;
+    padding-bottom:120px;
+  }
+
   img{
-    width:70%;
+    width:55% !important;
+    max-width:55% !important;
+    height:auto !important;
     margin:0 auto;
+  }
+
+  html, body{
+    overflow-y:scroll !important;
+    -webkit-overflow-scrolling:touch;
   }
 }
 </style>
