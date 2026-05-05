@@ -9,10 +9,8 @@
 body{
   margin:0;
   background:black;
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow:hidden;
 }
-
 /* 戻るボタン（右上） */
 .back-btn{
   position:fixed;
@@ -63,7 +61,9 @@ body{
 /* 画像表示 */
 .wrapper{
   width:100%;
-  min-height:100vh;
+  height:100vh;
+  overflow-y:scroll;
+  overflow-x:hidden;
   display:flex;
   justify-content:center;
   align-items:flex-start;
@@ -71,26 +71,18 @@ body{
   box-sizing:border-box;
 }
 
-/* 横100%表示 */
 img{
-  width:auto;
+  width:100%;
   height:auto;
-  max-width:100%;
   display:block;
 }
 @media (orientation: landscape){
-
-  .wrapper{
-    height:100vh;
-    padding-top:70px;
-  }
-
   img{
-    height:calc(100vh - 70px); /* ←これで必ず収まる */
     width:auto;
-    max-width:none; /* ←これ重要（横制限解除） */
+    height:auto;
+    max-height:none;
+    max-width:80%;
   }
-
 }
 </style>
 </head>
