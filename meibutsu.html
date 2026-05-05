@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>名物一覧</title>
+
+<style>
+html, body{
+  margin:0;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+}
+
+/* 戻るボタン */
+.back-btn{
+  position:fixed;
+  top:14px;
+  right:18px;
+  padding:10px 22px;
+  font-size:24px;
+  font-weight:bold;
+  color:#ff3333;
+  background:#111;
+  border:3px solid #ff3333;
+  cursor:pointer;
+  z-index:9999;
+}
+
+/* スクロール */
+.wrapper{
+  position:fixed;
+  top:70px;
+  left:0;
+  right:0;
+  bottom:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:flex;
+  justify-content:center;
+}
+
+/* サイズは触らない（重要） */
+.scale{
+  zoom:0.90;
+  padding-bottom:40px;
+}
+
+/* 🔥ここだけ調整（マス縮小） */
+td, th{
+  padding:0 1px !important;     /* 横詰め */
+  line-height:0.9 !important;   /* 行間を詰める */
+  height:20px !important;       /* 高さを小さく */
+}
+
+/* ❌ font-sizeは触らない（元に戻る） */
+</style>
+</head>
+
+<body>
+
+<button class="back-btn" onclick="location.href='okurabann.html'">戻る</button>
+
+<div class="wrapper">
+<div class="scale">
+<table cellspacing="0" border="0">
+	<colgroup width="310"></colgroup>
+	<colgroup width="569"></colgroup>
+	<colgroup width="416"></colgroup>
+	<colgroup width="324"></colgroup>
+	<colgroup span="2" width="303"></colgroup>
+	<colgroup width="112"></colgroup>
+	<colgroup width="256"></colgroup>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=7 rowspan=2 height="120" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;地域特産&quot;}"><font face="Noto Serif JP Black" size=6>地域特産</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;地域&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">地域</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;町&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">町</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=4 align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;アイテム名&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">アイテム名</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;種類&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">種類</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;越後&quot;}"><font face="Noto Serif JP Black" size=3>越後</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;春日山&quot;}"><font face="Noto Serif JP Black" size=3>春日山</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;笹団子&quot;}"><font face="Noto Serif JP Black" size=3>笹団子</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;笹寿司&quot;}"><font face="Noto Serif JP Black" size=3>笹寿司</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;へぎそば&quot;}"><font face="Noto Serif JP Black" size=3>へぎそば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;上野&quot;}"><font face="Noto Serif JP Black" size=3>上野</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;前橋&quot;}"><font face="Noto Serif JP Black" size=3>前橋</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;釜飯&quot;}"><font face="Noto Serif JP Black" size=3>釜飯</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;岩魚&quot;}"><font face="Noto Serif JP Black" size=3>岩魚</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;焼き饅頭&quot;}"><font face="Noto Serif JP Black" size=3>焼き饅頭</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;武蔵&quot;}"><font face="Noto Serif JP Black" size=3>武蔵</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;川越&quot;}"><font face="Noto Serif JP Black" size=3>川越</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;桜餅&quot;}"><font face="Noto Serif JP Black" size=3>桜餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;小豆饅頭&quot;}"><font face="Noto Serif JP Black" size=3>小豆饅頭</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;浅草のり&quot;}"><font face="Noto Serif JP Black" size=3>浅草のり</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲斐&quot;}"><font face="Noto Serif JP Black" size=3>甲斐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲府&quot;}"><font face="Noto Serif JP Black" size=3>甲府</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ほうとう&quot;}"><font face="Noto Serif JP Black" size=3>ほうとう</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ころ柿&quot;}"><font face="Noto Serif JP Black" size=3>ころ柿</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;山菜おむすび&quot;}"><font face="Noto Serif JP Black" size=3>山菜おむすび</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;信濃&quot;}"><font face="Noto Serif JP Black" size=3>信濃</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;松本･山賊町&quot;}"><font face="Noto Serif JP Black" size=3>松本･山賊町</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;信州そば&quot;}"><font face="Noto Serif JP Black" size=3>信州そば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;大きんつば&quot;}"><font face="Noto Serif JP Black" size=3>大きんつば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おやき&quot;}"><font face="Noto Serif JP Black" size=3>おやき</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;相模&quot;}"><font face="Noto Serif JP Black" size=3>相模</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;小田原&quot;}"><font face="Noto Serif JP Black" size=3>小田原</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;小田原梅&quot;}"><font face="Noto Serif JP Black" size=3>小田原梅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;塩辛&quot;}"><font face="Noto Serif JP Black" size=3>塩辛</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;温泉たまご&quot;}"><font face="Noto Serif JP Black" size=3>温泉たまご</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かまぼこ&quot;}"><font face="Noto Serif JP Black" size=3>かまぼこ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;駿河&quot;}"><font face="Noto Serif JP Black" size=3>駿河</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;駿府&quot;}"><font face="Noto Serif JP Black" size=3>駿府</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;興津鯛&quot;}"><font face="Noto Serif JP Black" size=3>興津鯛</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ひもの&quot;}"><font face="Noto Serif JP Black" size=3>ひもの</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;安倍川もち&quot;}"><font face="Noto Serif JP Black" size=3>安倍川もち</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;遠江&quot;}"><font face="Noto Serif JP Black" size=3>遠江</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;浜松&quot;}"><font face="Noto Serif JP Black" size=3>浜松</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;子ゆず&quot;}"><font face="Noto Serif JP Black" size=3>子ゆず</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;うな重&quot;}"><font face="Noto Serif JP Black" size=3>うな重</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;浜納豆&quot;}"><font face="Noto Serif JP Black" size=3>浜納豆</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;三河&quot;}"><font face="Noto Serif JP Black" size=3>三河</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;岡崎&quot;}"><font face="Noto Serif JP Black" size=3>岡崎</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;味噌煮込みうどん&quot;}"><font face="Noto Serif JP Black" size=3>味噌煮込みうどん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;あわ雪&quot;}"><font face="Noto Serif JP Black" size=3>あわ雪</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;煮味噌&quot;}"><font face="Noto Serif JP Black" size=3>煮味噌</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;尾張&quot;}"><font face="Noto Serif JP Black" size=3>尾張</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;那古野&quot;}"><font face="Noto Serif JP Black" size=3>那古野</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ういろう&quot;}"><font face="Noto Serif JP Black" size=3>ういろう</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;籐団子&quot;}"><font face="Noto Serif JP Black" size=3>籐団子</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;きしめん&quot;}"><font face="Noto Serif JP Black" size=3>きしめん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;美濃&quot;}"><font face="Noto Serif JP Black" size=3>美濃</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;稲葉山&quot;}"><font face="Noto Serif JP Black" size=3>稲葉山</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;金蝶まんじゅう&quot;}"><font face="Noto Serif JP Black" size=3>金蝶まんじゅう</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鮎の塩焼き&quot;}"><font face="Noto Serif JP Black" size=3>鮎の塩焼き</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;柿ようかん&quot;}"><font face="Noto Serif JP Black" size=3>柿ようかん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;越中&quot;}"><font face="Noto Serif JP Black" size=3>越中</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;富山&quot;}"><font face="Noto Serif JP Black" size=3>富山</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かきもち&quot;}"><font face="Noto Serif JP Black" size=3>かきもち</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;越中みそ&quot;}"><font face="Noto Serif JP Black" size=3>越中みそ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ほたるいか&quot;}"><font face="Noto Serif JP Black" size=3>ほたるいか</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鱒寿司&quot;}"><font face="Noto Serif JP Black" size=3>鱒寿司</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;加賀&quot;}"><font face="Noto Serif JP Black" size=3>加賀</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;金沢&quot;}"><font face="Noto Serif JP Black" size=3>金沢</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;氷室饅頭&quot;}"><font face="Noto Serif JP Black" size=3>氷室饅頭</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;くわい&quot;}"><font face="Noto Serif JP Black" size=3>くわい</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;れんこん&quot;}"><font face="Noto Serif JP Black" size=3>れんこん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;越前&quot;}"><font face="Noto Serif JP Black" size=3>越前</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;一乗谷&quot;}"><font face="Noto Serif JP Black" size=3>一乗谷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鯖&quot;}"><font face="Noto Serif JP Black" size=3>鯖</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ズワイガニ&quot;}"><font face="Noto Serif JP Black" size=3>ズワイガニ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;わらび餅&quot;}"><font face="Noto Serif JP Black" size=3>わらび餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;近江&quot;}"><font face="Noto Serif JP Black" size=3>近江</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;小谷&quot;}"><font face="Noto Serif JP Black" size=3>小谷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;近江米&quot;}"><font face="Noto Serif JP Black" size=3>近江米</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鮒寿司&quot;}"><font face="Noto Serif JP Black" size=3>鮒寿司</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;赤こんにゃく&quot;}"><font face="Noto Serif JP Black" size=3>赤こんにゃく</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊勢&quot;}"><font face="Noto Serif JP Black" size=3>伊勢</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;長島･海賊町&quot;}"><font face="Noto Serif JP Black" size=3>長島･海賊町</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;あんころもち&quot;}"><font face="Noto Serif JP Black" size=3>あんころもち</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ハマグリ&quot;}"><font face="Noto Serif JP Black" size=3>ハマグリ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊勢エビ&quot;}"><font face="Noto Serif JP Black" size=3>伊勢エビ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊賀&quot;}"><font face="Noto Serif JP Black" size=3>伊賀</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊賀郷&quot;}"><font face="Noto Serif JP Black" size=3>伊賀郷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かたやき&quot;}"><font face="Noto Serif JP Black" size=3>かたやき</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;赤米&quot;}"><font face="Noto Serif JP Black" size=3>赤米</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;養肝漬&quot;}"><font face="Noto Serif JP Black" size=3>養肝漬</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;山城&quot;}"><font face="Noto Serif JP Black" size=3>山城</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;京都&quot;}"><font face="Noto Serif JP Black" size=3>京都</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伏見ようかん&quot;}"><font face="Noto Serif JP Black" size=3>伏見ようかん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;八ッ橋&quot;}"><font face="Noto Serif JP Black" size=3>八ッ橋</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;九条ねぎ&quot;}"><font face="Noto Serif JP Black" size=3>九条ねぎ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;豆腐&quot;}"><font face="Noto Serif JP Black" size=3>豆腐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;摂津和泉&quot;}"><font face="Noto Serif JP Black" size=3>摂津和泉</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;大坂･堺&quot;}"><font face="Noto Serif JP Black" size=3>大坂･堺</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;水なす&quot;}"><font face="Noto Serif JP Black" size=3>水なす</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;あん入り餅&quot;}"><font face="Noto Serif JP Black" size=3>あん入り餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ふき&quot;}"><font face="Noto Serif JP Black" size=3>ふき</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;大和&quot;}"><font face="Noto Serif JP Black" size=3>大和</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;奈良&quot;}"><font face="Noto Serif JP Black" size=3>奈良</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鹿せんべい&quot;}"><font face="Noto Serif JP Black" size=3>鹿せんべい</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;三輪そうめん&quot;}"><font face="Noto Serif JP Black" size=3>三輪そうめん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;みむろ&quot;}"><font face="Noto Serif JP Black" size=3>みむろ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;柿の葉寿司&quot;}"><font face="Noto Serif JP Black" size=3>柿の葉寿司</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;紀伊&quot;}"><font face="Noto Serif JP Black" size=3>紀伊</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;雑賀郷&quot;}"><font face="Noto Serif JP Black" size=3>雑賀郷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;南高梅干し&quot;}"><font face="Noto Serif JP Black" size=3>南高梅干し</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;みかん&quot;}"><font face="Noto Serif JP Black" size=3>みかん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;金山寺みそ&quot;}"><font face="Noto Serif JP Black" size=3>金山寺みそ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堺&quot;}"><font face="Noto Serif JP Black" size=3>堺</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堺(商人街)&quot;}"><font face="Noto Serif JP Black" size=3>堺(商人街)</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;天ぷら&quot;}"><font face="Noto Serif JP Black" size=3>天ぷら</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;カステラ&quot;}"><font face="Noto Serif JP Black" size=3>カステラ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;カボチャ&quot;}"><font face="Noto Serif JP Black" size=3>カボチャ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;昇仙峡&quot;}"><font face="Noto Serif JP Black" size=3>昇仙峡</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;昇仙峡(御岳屋)&quot;}"><font face="Noto Serif JP Black" size=3>昇仙峡(御岳屋)</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;御岳そば&quot;}"><font face="Noto Serif JP Black" size=3>御岳そば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堺南蛮街&quot;}"><font face="Noto Serif JP Black" size=3>堺南蛮街</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堺南蛮街(ビセンテの店)&quot;}"><font face="Noto Serif JP Black" size=3>堺南蛮街(ビセンテの店)</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ボーロ&quot;}"><font face="Noto Serif JP Black" size=3>ボーロ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;パエリャ&quot;}"><font face="Noto Serif JP Black" size=3>パエリャ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="2" sdnum="1041;"><font face="Noto Serif JP Black" size=3>2</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;陸奥&quot;}"><font face="Noto Serif JP Black" size=3>陸奥</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;仙台&quot;}"><font face="Noto Serif JP Black" size=3>仙台</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;くるみゆべし&quot;}"><font face="Noto Serif JP Black" size=3>くるみゆべし</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ずんだ餅&quot;}"><font face="Noto Serif JP Black" size=3>ずんだ餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おくずかけ&quot;}"><font face="Noto Serif JP Black" size=3>おくずかけ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;はらこ飯&quot;}"><font face="Noto Serif JP Black" size=3>はらこ飯</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;真田庄&quot;}"><font face="Noto Serif JP Black" size=3>真田庄</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;上田&quot;}"><font face="Noto Serif JP Black" size=3>上田</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;戸隠そば&quot;}"><font face="Noto Serif JP Black" size=3>戸隠そば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;だんご汁&quot;}"><font face="Noto Serif JP Black" size=3>だんご汁</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;野沢菜漬&quot;}"><font face="Noto Serif JP Black" size=3>野沢菜漬</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;こねつけ餅&quot;}"><font face="Noto Serif JP Black" size=3>こねつけ餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;摂津和泉&quot;}"><font face="Noto Serif JP Black" size=3>摂津和泉</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堺：商人街･塩屋宗悦の店&quot;}"><font face="Noto Serif JP Black" size=3>堺：商人街･塩屋宗悦の店</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;金平糖&quot;}"><font face="Noto Serif JP Black" size=3>金平糖</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=3 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;※買い物した際にたまにおまけでもらえる&quot;}"><font face="Noto Serif JP Black" size=3 color="#FF0000">※買い物した際にたまにおまけでもらえる</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;全国の茶店&quot;}"><font face="Noto Serif JP Black" size=3>全国の茶店</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おむすび&quot;}"><font face="Noto Serif JP Black" size=3>おむすび</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;団子&quot;}"><font face="Noto Serif JP Black" size=3>団子</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;そば&quot;}"><font face="Noto Serif JP Black" size=3>そば</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;弁当&quot;}"><font face="Noto Serif JP Black" size=3>弁当</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="4" sdnum="1041;"><font face="Noto Serif JP Black" size=3>4</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;松島五大堂&quot;}"><font face="Noto Serif JP Black" size=3>松島五大堂</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;はも&quot;}"><font face="Noto Serif JP Black" size=3>はも</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;笹かまぼこ&quot;}"><font face="Noto Serif JP Black" size=3>笹かまぼこ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かき&quot;}"><font face="Noto Serif JP Black" size=3>かき</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="3" sdnum="1041;"><font face="Noto Serif JP Black" size=3>3</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;合計&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">合計</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFFFFF" sdval="86" sdnum="1041;"><font face="Noto Serif JP Black" size=3 color="#000000">86</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=7 rowspan=2 height="148" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;生産品＆旧知行加工品&quot;}"><font face="Noto Serif JP Black" size=6>生産品＆旧知行加工品</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=4 align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;アイテム名&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">アイテム名</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;種類&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">種類</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;生産品&quot;}"><font face="Noto Serif JP Black" size=3>生産品</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;共通生産&quot;}"><font face="Noto Serif JP Black" size=3>共通生産</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;行李飯&quot;}"><font face="Noto Serif JP Black" size=3>行李飯</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;竹筒飯&quot;}"><font face="Noto Serif JP Black" size=3>竹筒飯</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="2" sdnum="1041;"><font face="Noto Serif JP Black" size=3>2</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;町&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">町</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=4 align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;アイテム名&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">アイテム名</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;種類&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">種類</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;川越 or 大坂 or 堺&quot;}"><font face="Noto Serif JP Black" size=3>川越 or 大坂 or 堺</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;餅&quot;}"><font face="Noto Serif JP Black" size=3>餅</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;小田原 or 浜松 or 岡崎&quot;}"><font face="Noto Serif JP Black" size=3>小田原 or 浜松 or 岡崎</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;いわしのつみいれ&quot;}"><font face="Noto Serif JP Black" size=3>いわしのつみいれ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;富山 or 金沢 or 仙台 or 上田&quot;}"><font face="Noto Serif JP Black" size=3>富山 or 金沢 or 仙台 or 上田</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おでん&quot;}"><font face="Noto Serif JP Black" size=3>おでん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;那古野 or 長島 or 海賊町 or 雑賀郷&quot;}"><font face="Noto Serif JP Black" size=3>那古野 or 長島 or 海賊町 or 雑賀郷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;さんまの塩焼き&quot;}"><font face="Noto Serif JP Black" size=3>さんまの塩焼き</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;一乗谷 or 小谷&quot;}"><font face="Noto Serif JP Black" size=3>一乗谷 or 小谷</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;赤飯&quot;}"><font face="Noto Serif JP Black" size=3>赤飯</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom bgcolor="#FFFFFF" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;春日山 or 前橋&quot;}"><font face="Noto Serif JP Black" size=3>春日山 or 前橋</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鹿肉の味噌漬け&quot;}"><font face="Noto Serif JP Black" size=3>鹿肉の味噌漬け</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲府 or 松本 or 山賊町 or 上田&quot;}"><font face="Noto Serif JP Black" size=3>甲府 or 松本 or 山賊町 or 上田</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おむすび竹皮包み&quot;}"><font face="Noto Serif JP Black" size=3>おむすび竹皮包み</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;合計&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">合計</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFFFFF" sdval="9" sdnum="1041;" data-sheets-formula="=SUM(R[-9]C:R[-1]C)"><font face="Noto Serif JP Black" size=3 color="#000000">9</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=7 rowspan=2 height="148" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;NPCドロップ&quot;}"><font face="Noto Serif JP Black" size=6>NPCドロップ</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;地域&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">地域</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;出現&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">出現</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;NPC&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">NPC</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ドロップ：アイテム名&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">ドロップ：アイテム名</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊勢&quot;}"><font face="Noto Serif JP Black" size=3>伊勢</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ほ－ヘ、ち－ホ、り－ホ &quot;}"><font face="Noto Serif JP Black" size=3>ほ－ヘ、ち－ホ、り－ホ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;トモカズキ&quot;}"><font face="Noto Serif JP Black" size=3>トモカズキ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;鮑&quot;}"><font face="Noto Serif JP Black" size=3>鮑</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊勢&quot;}"><font face="Noto Serif JP Black" size=3>伊勢</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;は－ホ、い－へ &quot;}"><font face="Noto Serif JP Black" size=3>は－ホ、い－へ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;堕落采女&quot;}"><font face="Noto Serif JP Black" size=3>堕落采女</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;海鮮食膳&quot;}"><font face="Noto Serif JP Black" size=3>海鮮食膳</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;越中&quot;}"><font face="Noto Serif JP Black" size=3>越中</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;へ－イ&quot;}"><font face="Noto Serif JP Black" size=3>へ－イ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;梅干し婆&quot;}"><font face="Noto Serif JP Black" size=3>梅干し婆</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;すっぱい梅干し&quot;}"><font face="Noto Serif JP Black" size=3>すっぱい梅干し</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;相模&quot;}"><font face="Noto Serif JP Black" size=3>相模</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;と－チ&quot;}"><font face="Noto Serif JP Black" size=3>と－チ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;黒浜坊主&quot;}"><font face="Noto Serif JP Black" size=3>黒浜坊主</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かに肉&quot;}"><font face="Noto Serif JP Black" size=3>かに肉</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;遠江&quot;}"><font face="Noto Serif JP Black" size=3>遠江</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;りーハ：浜名湖周辺&quot;}"><font face="Noto Serif JP Black" size=3>りーハ：浜名湖周辺</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;浜名湖の大鰻&quot;}"><font face="Noto Serif JP Black" size=3>浜名湖の大鰻</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;特上のうな丼&quot;}"><font face="Noto Serif JP Black" size=3>特上のうな丼</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;信濃&quot;}"><font face="Noto Serif JP Black" size=3>信濃</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;る－ホ&quot;}"><font face="Noto Serif JP Black" size=3>る－ホ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おいてけぼり&quot;}"><font face="Noto Serif JP Black" size=3>おいてけぼり</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;雪鱒&quot;}"><font face="Noto Serif JP Black" size=3>雪鱒</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" rowspan=2 height="148" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲斐&quot;}"><font face="Noto Serif JP Black" size=3>甲斐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" rowspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;は－イ&quot;}"><font face="Noto Serif JP Black" size=3>は－イ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" rowspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;涙婆&quot;}"><font face="Noto Serif JP Black" size=3>涙婆</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;たまねぎ&quot;}"><font face="Noto Serif JP Black" size=3>たまねぎ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;にんにく&quot;}"><font face="Noto Serif JP Black" size=3>にんにく</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;駿河&quot;}"><font face="Noto Serif JP Black" size=3>駿河</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;  ほ－ト  ：富士地下洞穴&quot;}"><font face="Noto Serif JP Black" size=3>  ほ－ト  ：富士地下洞穴</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;喰屍鬼&quot;}"><font face="Noto Serif JP Black" size=3>喰屍鬼</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;腐った肉塊&quot;}"><font face="Noto Serif JP Black" size=3>腐った肉塊</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;美濃&quot;}"><font face="Noto Serif JP Black" size=3>美濃</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ち－ヲ、ちーワ&quot;}"><font face="Noto Serif JP Black" size=3>ち－ヲ、ちーワ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;猪野谷へんべ&quot;}"><font face="Noto Serif JP Black" size=3>猪野谷へんべ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;へんべの南瓜&quot;}"><font face="Noto Serif JP Black" size=3>へんべの南瓜</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;相模&quot;}"><font face="Noto Serif JP Black" size=3>相模</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;はーホ &quot;}"><font face="Noto Serif JP Black" size=3>はーホ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;かま風&quot;}"><font face="Noto Serif JP Black" size=3>かま風</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 rowspan=4 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;油揚げ&quot;}"><font face="Noto Serif JP Black" size=3>油揚げ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲斐&quot;}"><font face="Noto Serif JP Black" size=3>甲斐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;はーロ &quot;}"><font face="Noto Serif JP Black" size=3>はーロ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;妖狐&quot;}"><font face="Noto Serif JP Black" size=3>妖狐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;武藏&quot;}"><font face="Noto Serif JP Black" size=3>武藏</font></td>
+		<td align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ぬーホ（夜のみ） &quot;}"><font face="Noto Serif JP Black" size=3>ぬーホ（夜のみ） </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;月踊り&quot;}"><font face="Noto Serif JP Black" size=3>月踊り</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;尾張：三河&quot;}"><font face="Noto Serif JP Black" size=3>尾張：三河</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;とーヘ：ちーハ&quot;}"><font face="Noto Serif JP Black" size=3>とーヘ：ちーハ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;おとら狐&quot;}"><font face="Noto Serif JP Black" size=3>おとら狐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲斐&quot;}"><font face="Noto Serif JP Black" size=3>甲斐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;昇仙峡： ほ－ヘ &quot;}"><font face="Noto Serif JP Black" size=3>昇仙峡： ほ－ヘ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;月見狐&quot;}"><font face="Noto Serif JP Black" size=3>月見狐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;月見うどん&quot;}"><font face="Noto Serif JP Black" size=3>月見うどん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;甲斐&quot;}"><font face="Noto Serif JP Black" size=3>甲斐</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;昇仙峡： ほ－ヘ &quot;}"><font face="Noto Serif JP Black" size=3>昇仙峡： ほ－ヘ </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;清流蛇&quot;}"><font face="Noto Serif JP Black" size=3>清流蛇</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;珍味な獣肉&quot;}"><font face="Noto Serif JP Black" size=3>珍味な獣肉</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;陸奥&quot;}"><font face="Noto Serif JP Black" size=3>陸奥</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;れーニ&quot;}"><font face="Noto Serif JP Black" size=3>れーニ</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;たんころりん&quot;}"><font face="Noto Serif JP Black" size=3>たんころりん</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;風味のよい柿&quot;}"><font face="Noto Serif JP Black" size=3>風味のよい柿</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;合計&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">合計</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFFFFF" sdval="17" sdnum="1041;" data-sheets-formula="=SUM(R[-17]C:R[-1]C)"><font face="Noto Serif JP Black" size=3>17</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;地域&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">地域</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;出現&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">出現</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;NPC&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">NPC</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;貰える：アイテム名&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">貰える：アイテム名</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000"><br></font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;陸奥&quot;}"><font face="Noto Serif JP Black" size=3>陸奥</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;ろート&quot;}"><font face="Noto Serif JP Black" size=3>ろート</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;疾風の勘太郎&quot;}"><font face="Noto Serif JP Black" size=3>疾風の勘太郎</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;美味しいかたやき&quot;}"><font face="Noto Serif JP Black" size=3>美味しいかたやき</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFD8CE" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;陸奥&quot;}"><font face="Noto Serif JP Black" size=3>陸奥</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;仙台のお堀周り&quot;}"><font face="Noto Serif JP Black" size=3>仙台のお堀周り</font></td>
+		<td align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;芭蕉 &quot;}"><font size=3>芭蕉 </font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" colspan=2 align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;伊達巻&quot;}"><font face="Noto Serif JP Black" size=3>伊達巻</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#E0C2CD" sdval="1" sdnum="1041;"><font face="Noto Serif JP Black" size=3>1</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+	<tr>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" height="74" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#000000" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><font face="Noto Serif JP Black" size=3><br></font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#808080" data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;合計&quot;}"><font face="Noto Serif JP Black" size=3 color="#000000">合計</font></td>
+		<td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000" align="center" valign=middle bgcolor="#FFFFFF" sdval="2" sdnum="1041;"><font face="Noto Serif JP Black" size=3>2</font></td>
+		<td align="left" valign=bottom data-sheets-value="{ &quot;1&quot;: 2, &quot;2&quot;: &quot;&quot;}"><br></td>
+	</tr>
+</table>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>御蔵番</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  overflow:hidden; /* スクロールなし */
+}
+
+/* 戻るボタン（右上） */
+.back-btn{
+  position:fixed;
+  top:14px;
+  right:18px;
+  padding:10px 22px;
+  font-size:24px;
+  font-weight:bold;
+  color:#ff3333;
+  background:#111;
+  border:3px solid #ff3333;
+  cursor:pointer;
+  z-index:9999;
+}
+
+.back-btn:hover{
+  box-shadow:
+    0 0 18px #ff3333,
+    0 0 36px #ff3333,
+    0 0 70px #ff3333;
+}
+
+/* 名物ボタン（右下・被らない位置） */
+.meibutsu-btn{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  z-index:9999;
+
+  padding:14px 28px;
+  font-size:22px;
+  font-weight:bold;
+
+  color:#fff;
+  background:#ff3b3b;
+  border:2px solid #ff0000;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.meibutsu-btn:hover{
+  box-shadow:
+    0 0 20px #ff0000,
+    0 0 40px #ff0000,
+    0 0 80px #ff0000;
+}
+
+/* 画像表示 */
+.wrapper{
+  width:100%;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding-top:70px; /* 戻るボタン回避 */
+  box-sizing:border-box;
+}
+
+/* 横100%表示 */
+img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+</style>
+</head>
+
+<body>
+
+<button class="back-btn" onclick="location.href='index.html'">戻る</button>
+
+<button class="meibutsu-btn" onclick="location.href='meibutsu.html'">名物</button>
+
+<div class="wrapper">
+  <img src="okuraban.png">
+</div>
+
+</body>
+</html>
