@@ -8,7 +8,8 @@
 body{
   margin:0;
   background:black;
-  overflow:auto; /* ←これに変更 */
+  overflow-y:auto;
+  overflow-x:hidden;
 }
 
 /* 戻るボタン（右上） */
@@ -61,11 +62,11 @@ body{
 /* 画像表示 */
 .wrapper{
   width:100%;
-  height:100vh;
+  min-height:100vh;
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  padding-top:70px; /* 戻るボタン回避 */
+  padding-top:70px;
   box-sizing:border-box;
 }
 
