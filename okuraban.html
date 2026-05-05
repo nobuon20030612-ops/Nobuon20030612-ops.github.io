@@ -78,6 +78,18 @@ img{
   min-height:120vh; /* ←ここが重要 */
   display:block;
 }
+@media (max-width: 900px) and (orientation: landscape){
+  img{
+    width:100%;
+    height:auto;
+    min-height:auto; /* ←これで強制スクロール解除 */
+  }
+
+  .wrapper{
+    min-height:auto; /* ←これも解除 */
+    padding-top:60px;
+  }
+}
 </style>
 </head>
 
