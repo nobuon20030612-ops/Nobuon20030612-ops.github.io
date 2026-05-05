@@ -57,13 +57,14 @@ html, body{
   margin:0;
   padding:0;
   background:black;
-  overflow-y:auto;
+  overflow-y:scroll; /* ←強制スクロール */
   overflow-x:hidden;
 }
 
 .wrapper{
   width:100%;
   padding-top:70px;
+  padding-bottom:200px; /* ←これ追加（重要） */
   box-sizing:border-box;
 }
 
