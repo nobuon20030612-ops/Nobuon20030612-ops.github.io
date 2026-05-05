@@ -80,14 +80,15 @@ img{
 }
 @media (max-width: 900px) and (orientation: landscape){
   img{
-    width:100%;
-    height:auto;
-    min-height:auto; /* ←これで強制スクロール解除 */
+    width:auto;
+    height:calc(100vh - 70px); /* ←これが重要 */
+    max-width:100%;
+    min-height:unset;
   }
 
   .wrapper{
-    min-height:auto; /* ←これも解除 */
-    padding-top:60px;
+    min-height:auto;
+    padding-top:70px;
   }
 }
 </style>
