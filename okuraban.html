@@ -70,26 +70,23 @@ html, body{
 
 img{
   display:block;
-  width:auto;
-  height:120vh; /* ←これが重要 */
+  width:100%;
+  height:auto;
 }
 
-@media (max-height: 500px){
+@media (orientation: landscape){
   .wrapper{
-    padding-top:50px;
-    padding-bottom:120px;
+    height:100vh;
+    padding-top:70px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
   }
 
   img{
-    width:55% !important;
-    max-width:55% !important;
-    height:auto !important;
-    margin:0 auto;
-  }
-
-  html, body{
-    overflow-y:scroll !important;
-    -webkit-overflow-scrolling:touch;
+    width:auto;
+    height:calc(100vh - 70px); /* ←ここが最重要 */
+    max-width:100%;
   }
 }
 </style>
