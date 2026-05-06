@@ -481,17 +481,24 @@ body.attendance-mode {
   padding-top: 92px;
 }
 
-  .share-message {
-    top: 8px;
-    left: 6px;
-    right: 98px;
-    transform: none;
-    font-size: 13px;
-    padding: 5px 6px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.2;
-  }
+.share-message {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 120px;
+  transform: none;
+  z-index: 1000;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ff0000;
+  background: #ffd6e4;
+  border: 3px solid #4a2633;
+  border-radius: 12px;
+  padding: 8px 10px;
+  white-space: normal;
+  line-height: 1.2;
+  pointer-events: none;
+}
 /* スマホ出欠ページ調整 */
 @media (max-width: 900px) {
   html.attendance-mode,
