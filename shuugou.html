@@ -476,6 +476,21 @@ body.attendance-mode {
 #copyUrlBtn:hover {
   box-shadow: 0 0 16px rgba(255, 80, 140, 0.9);
 }
+ .share-message {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 998;
+  font-size: 28px;
+  font-weight: 900;
+  color: #ff0000;
+  background: #ffd6e4;
+  border: 3px solid #4a2633;
+  border-radius: 12px;
+  padding: 10px 24px;
+  white-space: nowrap;
+} 
 </style>
 </head>
 
@@ -851,7 +866,12 @@ function renderAttendancePage(data, scheduleId) {
     }).join("");
 
     document.body.innerHTML = `
-      <div class="att-page">
+    <div class="att-page">
+  <div class="share-message">
+    URLを他のメンバーに教えてご使用ください
+  </div>
+
+  <div class="att-box">
 <div class="copy-url-area">
   <button id="copyUrlBtn" class="small-btn">URLコピー</button>
 </div>       
