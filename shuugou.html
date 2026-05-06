@@ -497,7 +497,50 @@ body.attendance-mode {
   white-space: nowrap;
   pointer-events: none;
 }
-</style>
+/* スマホ出欠ページ調整 */
+@media (max-width: 900px) {
+  html.attendance-mode,
+  body.attendance-mode {
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+  }
+
+  .att-page {
+    width: max-content;
+    min-width: 100%;
+    padding-top: 68px;
+    padding-bottom: 40px;
+    overflow: visible;
+  }
+
+  .share-message {
+    top: 8px;
+    font-size: 15px;
+    padding: 6px 10px;
+    max-width: calc(100vw - 120px);
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .copy-url-area {
+    top: 8px;
+    right: 6px;
+  }
+
+  #copyUrlBtn {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .att-section-title {
+    font-size: 28px !important;
+  }
+}  
 </style>
 </head>
 
