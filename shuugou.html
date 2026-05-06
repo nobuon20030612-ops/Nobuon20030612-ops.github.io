@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>徒党予定</title>
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #000;
+  color: #000;
+  overflow: hidden;
+}
+
+.page {
+  height: 100vh;
+  padding: 8px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.header { text-align: center; line-height: 1.1; }
+
+.header h1 {
+  margin: 0;
+  font-size: 20px;
+  color: #ffd6e4;
+}
+
+.header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #000;
+}
+
+.main-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.card {
+  min-height: 0;
+  background: #ffeef4;
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  border-left: 5px solid #ff6fa3;
+  padding-left: 7px;
+}
+
+/* 出欠ページだけ大きくする */
+.att-box h2 {
+  font-size: 26px !important;
+  text-align: center;
+}
+
+.att-section-title {
+  text-align: center !important;
+  font-size: 48px !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+  margin: 0 0 8px !important;
+}
+
+.purpose-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 3px;
+  font-size: 12px;
+  color: #000;
+}
+
+input[type="text"], input[type="time"], textarea, select {
+  width: 100%;
+  border: 1px solid #4a2633;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 13px;
+  background: #ffeef4;
+  color: #000;
+}
+
+textarea {
+  height: 60px;
+  min-height: 60px;
+  resize: none;
+}
+.form-group { margin-bottom: 3px; }
+
+.calendar-card {
+  grid-row: span 2;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.calendar-submit-area {
+  margin-top: 8px;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 64px;
+  border: none;
+  background: #ff4f91;
+  color: #fff;
+  border-radius: 14px;
+  font-size: 23px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #7a0030;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.month-title {
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  flex: 1;
+}
+
+.month-btn {
+  border: none;
+  background: #b00045;
+  color: #fff;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.month-btn:disabled {
+  background: #b8c1d1;
+  cursor: not-allowed;
+}
+
+.calendar {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: auto repeat(6, 1fr);
+  gap: 3px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 800;
+  color: #000;
+  font-size: 12px;
+}
+
+.day {
+  border: 1px solid #4a2633;
+  border-radius: 7px;
+  background: #ffeef4;
+  padding: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: #000;
+}
+
+.day.empty { background: transparent; border: none; cursor: default; }
+.day.past { opacity: 0.32; background: #eef1f6; }
+.day.today { border: 3px solid #ff8a00; background: #fff4e5; font-weight: 900; }
+.day.selected { background: #e8f0ff; border: 3px solid #2f6fed; }
+
+.selected-mark {
+  display: block;
+  margin-top: 1px;
+  font-size: 9px;
+  color: #ffd6e4;
+  font-weight: 800;
+}
+
+.time-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  height: 100%;
+}
+
+.time-card p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #000;
+}
+
+.time-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.85fr auto 0.85fr auto;
+  align-items: center;
+  gap: 5px;
+  background: #ffdce7;
+  border: 1px solid #4a2633;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.date-label {
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.remove-btn {
+  border: none;
+  background: #5a001f;
+  color: #fff;
+  border-radius: 7px;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bottom-area {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 8px;
+  min-height: 92px;
+}
+
+.submit-card {
+  display: flex;
+  align-items: center;
+}
+
+.preview-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.preview {
+  overflow-y: auto;
+  background: #ffdce7;
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid #4a2633;
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: #000;
+}
+
+/* 出欠表ページ */
+.att-page {
+  min-height: 100vh;
+  padding: 6px;
+  background: #000;
+  overflow: auto;
+}
+
+.att-box {
+  background: #ffeef4;
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.att-title {
+  margin: 0;
+  color: #000;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.att-desc {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  color: #000;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.att-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.att-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.att-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  background: #ffeef4;
+  font-size: 15px;
+  color: #000;
+}
+
+.att-table th,
+.att-table td {
+  border: 1px solid #4a2633;
+  padding: 6px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  color: #000;
+  font-weight: 700;
+}
+.att-table th {
+  background: #ffd6e4;
+  font-weight: 900;
+}
+
+.party-row {
+  background: #ffeef4;
+}
+
+.reserve-row {
+  background: #ffe0ea;
+}
+
+.small-btn {
+  border: none;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.add-btn { background: #b00045; color: #fff; }
+.edit-btn { background: #b00045; color: #fff; }
+.delete-btn { background: #5a001f; color: #fff; }
+.save-btn { background: #ff4f91; color: #fff; }
+
+.status-select {
+  min-width: 80px;
+  height: 36px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.comment-cell {
+  max-width: none;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.comment-row td {
+  text-align: left;
+  background: #ffdce7;
+  white-space: nowrap;
+  font-weight: 700;
+  color: #000;
+}
+
+@media (max-width: 900px) {
+  html, body { overflow: auto; height: auto; }
+  .page { height: auto; min-height: 100vh; }
+  .main-grid, .bottom-area { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .calendar-card { grid-row: auto; min-height: 500px; }
+  .att-form { grid-template-columns: 1fr; }
+}
+
+.status-button-group {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.status-btn {
+  width: 44px;
+  height: 44px;
+  border: 2px solid #ccd3df;
+  background: #ffeef4;
+  color: #000;
+  border-radius: 10px;
+  font-size: 26px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.status-btn.selected {
+  color: #fff;
+  border-color: #2f6fed;
+  background: #b00045;
+}
+
+.status-btn span {
+  display: inline-block;
+  line-height: 1;
+  transform: none;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+html.attendance-mode,
+body.attendance-mode {
+  height: auto;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.status-date-card {
+  padding: 8px;
+  border: 2px solid #4a2633;
+  border-radius: 12px;
+  background: #ffeef4;
+}
+
+.status-date-card:nth-child(even) {
+  background: #ffe0ea;
+}
+
+.att-status-mark {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 出欠記号だけ色指定 */
+.att-status-mark.status-〇 { color: #2f6fed; }
+.att-status-mark.status-✕ { color: #e94b4b; }
+.att-status-mark.status-△ { color: #00a86b; }
+
+.copy-url-area {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 999;
+}
+/* URLコピーボタン 強調 */
+#copyUrlBtn {
+  font-size: 20px;
+  padding: 14px 22px;
+  font-weight: 900;
+  background: #ff4f91;
+  color: #fff;
+  border-radius: 12px;
+}
+
+#copyUrlBtn:hover {
+  box-shadow: 0 0 16px rgba(255, 80, 140, 0.9);
+}
+</style>
+</head>
+
+<body>
+<main class="page">
+  <section class="header">
+    <h1>徒党予定</h1>
+    <p></p>
+  </section>
+
+  <div class="main-grid">
+    <section class="card purpose-card">
+      <h2>目的</h2>
+      <div class="form-group">
+        <label for="purpose">目的</label>
+        <input id="purpose" type="text" placeholder="徒党目的など入力して下さい" />
+      </div>
+      <div class="form-group">
+        <label for="description">目的の説明</label>
+        <textarea id="description" placeholder="入力しなくてもOK：参加できる日時を選んでください。"></textarea>
+      </div>
+    </section>
+
+    <section class="card calendar-card">
+      <h2>日程候補</h2>
+      <div class="calendar-header">
+        <button id="prevMonth" class="month-btn" type="button">← 前月</button>
+        <div id="monthTitle" class="month-title"></div>
+        <button id="nextMonth" class="month-btn" type="button">翌月 →</button>
+      </div>
+      <div id="calendar" class="calendar"></div>
+
+      <div class="calendar-submit-area">
+        <button id="createButton" class="submit-btn" type="button">徒党予定を作成する</button>
+      </div>
+    </section>
+
+    <section class="card time-card">
+      <h2>時刻設定</h2>
+      <p>候補日をクリックすると、ここに日付と曜日が追加されます。</p>
+      <div id="timeList" class="time-list"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const calendarEl = document.getElementById("calendar");
+const monthTitleEl = document.getElementById("monthTitle");
+const prevMonthBtn = document.getElementById("prevMonth");
+const nextMonthBtn = document.getElementById("nextMonth");
+const timeListEl = document.getElementById("timeList");
+const createButton = document.getElementById("createButton");
+const purposeInput = document.getElementById("purpose");
+const descriptionInput = document.getElementById("description");
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const startYear = today.getFullYear();
+const startMonth = today.getMonth();
+const maxDate = new Date(startYear, startMonth + 12, 1);
+
+let currentYear = startYear;
+let currentMonth = startMonth;
+const selectedDates = new Map();
+
+const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+const jobs = ["侍", "僧", "神職", "陰陽師", "忍者", "鍛冶屋", "薬師", "傾奇者"];
+
+const specializations = {
+  "侍": ["武士道", "軍学", "武芸"],
+  "僧": ["僧兵", "仏門", "密教"],
+  "神職": ["神道", "古神道", "雅楽"],
+  "陰陽師": ["陰陽道", "仙道", "召喚術"],
+  "忍者": ["忍法", "暗殺術", "忍術"],
+  "鍛冶屋": ["刀鍛冶", "鎧鍛冶", "鉄砲鍛冶"],
+  "薬師": ["医学", "神通力", "修験道"],
+  "傾奇者": ["演舞", "能楽", "殺陣"]
+};
+
+function createTimeOptions(selected) {
+  let options = "";
+  for (let h = 0; h <= 24; h++) {
+    const val = String(h).padStart(2, "0") + ":00";
+    options += `<option value="${val}" ${val === selected ? "selected" : ""}>${val}</option>`;
+  }
+  return options;
+}
+
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatJapaneseDate(date) {
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${weekdays[date.getDay()]}）`;
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderCalendar() {
+  calendarEl.innerHTML = "";
+  monthTitleEl.textContent = `${currentYear}年 ${currentMonth + 1}月`;
+
+  weekdays.forEach(w => {
+    const el = document.createElement("div");
+    el.className = "weekday";
+    el.textContent = w;
+    calendarEl.appendChild(el);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  let usedCells = 0;
+
+  for (let i = 0; i < firstDay.getDay(); i++) {
+    const empty = document.createElement("div");
+    empty.className = "day empty";
+    calendarEl.appendChild(empty);
+    usedCells++;
+  }
+
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const key = formatDateKey(date);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "day";
+    btn.innerHTML = `<strong>${day}</strong>`;
+
+    if (date < today) btn.classList.add("past");
+    if (date.getTime() === today.getTime()) btn.classList.add("today");
+
+    if (selectedDates.has(key)) {
+      btn.classList.add("selected");
+      btn.innerHTML += `<span class="selected-mark">候補日</span>`;
+    }
+
+    btn.addEventListener("click", () => {
+      if (date < today) return;
+
+      if (selectedDates.has(key)) {
+        selectedDates.delete(key);
+      } else {
+        selectedDates.set(key, {
+          date: new Date(date),
+          startTime: "20:00",
+          endTime: "24:00"
+        });
+      }
+
+      renderCalendar();
+      renderTimeList();
+    });
+
+    calendarEl.appendChild(btn);
+    usedCells++;
+  }
+
+  while (usedCells < 42) {
+    const empty = document.createElement("div");
+    empty.className = "day empty";
+    calendarEl.appendChild(empty);
+    usedCells++;
+  }
+
+  const currentDateForLimit = new Date(currentYear, currentMonth, 1);
+  const minDateForLimit = new Date(startYear, startMonth, 1);
+
+  prevMonthBtn.disabled = currentDateForLimit <= minDateForLimit;
+  nextMonthBtn.disabled = currentDateForLimit >= maxDate;
+}
+
+function renderTimeList() {
+  timeListEl.innerHTML = "";
+
+  if (selectedDates.size === 0) {
+    timeListEl.innerHTML = "<p>まだ候補日が選択されていません。</p>";
+    return;
+  }
+
+  const sortedDates = Array.from(selectedDates.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+  sortedDates.forEach(([dateKey, item]) => {
+    const row = document.createElement("div");
+    row.className = "time-row";
+
+    row.innerHTML = `
+      <div class="date-label">${formatJapaneseDate(item.date)}</div>
+      <select>${createTimeOptions(item.startTime)}</select>
+      <div style="text-align:center;font-weight:800;">〜</div>
+      <select>${createTimeOptions(item.endTime)}</select>
+      <button type="button" class="remove-btn">削除</button>
+    `;
+
+    const selects = row.querySelectorAll("select");
+
+    selects[0].addEventListener("change", () => {
+      item.startTime = selects[0].value;
+    });
+
+    selects[1].addEventListener("change", () => {
+      item.endTime = selects[1].value;
+    });
+
+    row.querySelector(".remove-btn").addEventListener("click", () => {
+      selectedDates.delete(dateKey);
+      renderCalendar();
+      renderTimeList();
+    });
+
+    timeListEl.appendChild(row);
+  });
+}
+
+prevMonthBtn.addEventListener("click", () => {
+  currentMonth--;
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  }
+  renderCalendar();
+});
+
+nextMonthBtn.addEventListener("click", () => {
+  currentMonth++;
+  if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
+  renderCalendar();
+});
+
+createButton.addEventListener("click", () => {
+  const purpose = purposeInput.value.trim();
+  const description = descriptionInput.value.trim();
+
+  if (!purpose) {
+    alert("目的を入力してください。");
+    return;
+  }
+
+  if (selectedDates.size === 0) {
+    alert("日程候補を1つ以上選択してください。");
+    return;
+  }
+
+  const sortedDates = Array.from(selectedDates.values()).sort((a, b) => a.date - b.date);
+
+  const data = {
+    purpose,
+    description,
+    dates: sortedDates.map(d => ({
+      label: formatJapaneseDate(d.date),
+      start: d.startTime,
+      end: d.endTime
+    })),
+    members: []
+  };
+
+  const id = "schedule_" + crypto.randomUUID();
+  localStorage.setItem(id, JSON.stringify(data));
+  location.href = location.pathname + "?id=" + id;
+});
+
+function getQueryId() {
+  return new URLSearchParams(location.search).get("id");
+}
+
+function saveSchedule(scheduleId, data) {
+  localStorage.setItem(scheduleId, JSON.stringify(data));
+}
+
+function renderAttendancePage(data, scheduleId) {
+  document.documentElement.classList.add("attendance-mode");
+  document.body.classList.add("attendance-mode");
+
+  function renderSpecializationOptions(job, selected) {
+    const list = specializations[job] || [];
+    let options = `<option value="">特化</option>`;
+
+    list.forEach(sp => {
+      options += `<option value="${escapeHtml(sp)}" ${sp === selected ? "selected" : ""}>${escapeHtml(sp)}</option>`;
+    });
+
+    if (selected && !list.includes(selected)) {
+      options += `<option value="${escapeHtml(selected)}" selected>${escapeHtml(selected)}</option>`;
+    }
+
+    return options;
+  }
+
+  function renderJobOptions(selected) {
+    let options = `<option value="">職業</option>`;
+    jobs.forEach(job => {
+      options += `<option value="${escapeHtml(job)}" ${job === selected ? "selected" : ""}>${escapeHtml(job)}</option>`;
+    });
+    return options;
+  }
+
+  function draw() {
+    const dateHeaders = data.dates.map(d => {
+  const shortLabel = d.label.replace(/^\d{4}年/, "");
+  return `<th>${escapeHtml(shortLabel)}<br>${escapeHtml(d.start)}〜${escapeHtml(d.end)}</th>`;
+}).join("");
+
+    let rows = "";
+
+    for (let i = 0; i < 10; i++) {
+      const member = data.members[i];
+      const rowClass = i < 7 ? "party-row" : "reserve-row";
+      const roleLabel = i < 7 ? "徒党" : "控え";
+
+      if (!member) {
+        rows += `
+          <tr class="${rowClass}">
+            <td>${i + 1}</td>
+            <td>${roleLabel}</td>
+            <td>未登録</td>
+            <td></td>
+            <td></td>
+            ${data.dates.map(() => `<td></td>`).join("")}
+            <td></td>
+          </tr>
+          <tr class="${rowClass} comment-row">
+            <td colspan="${6 + data.dates.length}">コメント：</td>
+          </tr>
+        `;
+      } else {
+        rows += `
+          <tr class="${rowClass}">
+            <td>${i + 1}</td>
+            <td>${roleLabel}</td>
+            <td>${escapeHtml(member.name)}</td>
+            <td>${escapeHtml(member.job)}</td>
+            <td>${escapeHtml(member.specialization)}</td>
+            ${member.statuses.map(s => `
+              <td class="att-status-mark status-${s}">
+                ${escapeHtml(s)}
+              </td>
+            `).join("")}
+            <td>
+              <button type="button" class="small-btn edit-btn" data-edit="${i}">編集</button>
+              <button type="button" class="small-btn delete-btn" data-delete="${i}">削除</button>
+            </td>
+          </tr>
+          <tr class="${rowClass} comment-row">
+            <td colspan="${6 + data.dates.length}">コメント：${escapeHtml(member.comment)}</td>
+          </tr>
+        `;
+      }
+    }
+
+    const statusInputs = data.dates.map((d, index) => {
+      return `
+        <div class="status-date-card">
+          <label>${escapeHtml(d.label)} ${escapeHtml(d.start)}〜${escapeHtml(d.end)}</label>
+          <div class="status-button-group" data-status-index="${index}">
+            <button type="button" class="status-btn" data-status-value="〇"><span>〇</span></button>
+            <button type="button" class="status-btn" data-status-value="△"><span>△</span></button>
+            <button type="button" class="status-btn" data-status-value="✕"><span>✕</span></button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    document.body.innerHTML = `
+      <div class="att-page">
+<div class="copy-url-area">
+  <button id="copyUrlBtn" class="small-btn">URLコピー</button>
+</div>       
+ <div class="att-box">
+          <h1 class="att-title">${escapeHtml(data.purpose)}</h1>
+          <p class="att-desc">${escapeHtml(data.description)}</p>
+        </div>
+
+        <div class="att-box">
+          <h2 class="att-section-title">徒党登録</h2>
+          <div class="att-form">
+            <div>
+              <label for="memberName">名前</label>
+              <input id="memberName" type="text" placeholder="名前" />
+            </div>
+
+            <div>
+              <label for="memberJob">職業</label>
+              <select id="memberJob">
+                ${renderJobOptions("")}
+              </select>
+            </div>
+
+            <div>
+              <label for="memberSpec">特化</label>
+              <select id="memberSpec">
+                <option value="">特化</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="memberComment">コメント</label>
+              <input id="memberComment" type="text" placeholder="コメント" />
+            </div>
+
+            <button id="addMemberButton" type="button" class="small-btn add-btn">登録</button>
+          </div>
+
+          <div style="margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px;">
+            ${statusInputs}
+          </div>
+        </div>
+
+        <div class="att-box">
+          <h2 class="att-section-title">徒党一覧</h2>
+          <div class="att-table-wrap">
+          <table class="att-table">
+            <thead>
+              <tr>
+                <th>番号</th>
+                <th>区分</th>
+                <th>名前</th>
+                <th>職業</th>
+                <th>特化</th>
+                ${dateHeaders}
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    const memberJob = document.getElementById("memberJob");
+    const memberSpec = document.getElementById("memberSpec");
+
+    memberJob.addEventListener("change", () => {
+      memberSpec.innerHTML = renderSpecializationOptions(memberJob.value, "");
+    });
+
+    document.querySelectorAll(".status-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const group = btn.closest(".status-button-group");
+        group.dataset.selected = btn.dataset.statusValue;
+
+        group.querySelectorAll(".status-btn").forEach(b => {
+          b.classList.remove("selected");
+        });
+
+        btn.classList.add("selected");
+      });
+    });
+
+    document.getElementById("addMemberButton").addEventListener("click", () => {
+      if (data.members.length >= 10) {
+        alert("登録できる人数は最大10人までです。");
+        return;
+      }
+
+      const name = document.getElementById("memberName").value.trim();
+      const job = document.getElementById("memberJob").value;
+      const specialization = document.getElementById("memberSpec").value;
+      const comment = document.getElementById("memberComment").value.trim();
+      const statusGroups = document.querySelectorAll(".status-button-group");
+      const statuses = Array.from(statusGroups).map(group => group.dataset.selected || "");
+
+      if (!name) {
+        alert("名前を入力してください。");
+        return;
+      }
+
+      if (statuses.some(s => !s)) {
+        alert("各日程ごとに 〇 / △ / ✕ を選択してください。");
+        return;
+      }
+
+      data.members.push({
+        name,
+        job,
+        specialization,
+        comment,
+        statuses
+      });
+
+      saveSchedule(scheduleId, data);
+      draw();
+    });
+
+    document.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.delete);
+        if (!confirm("この登録を削除しますか？")) return;
+
+        data.members.splice(index, 1);
+        saveSchedule(scheduleId, data);
+        draw();
+      });
+    });
+
+    document.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.edit);
+        const member = data.members[index];
+
+        const newName = prompt("名前を編集", member.name);
+        if (newName === null) return;
+
+        const newJob = prompt("職業を編集", member.job);
+        if (newJob === null) return;
+
+        const newSpecialization = prompt("特化を編集", member.specialization);
+        if (newSpecialization === null) return;
+
+        const newComment = prompt("コメントを編集", member.comment);
+        if (newComment === null) return;
+
+        member.name = newName.trim();
+        member.job = newJob.trim();
+        member.specialization = newSpecialization.trim();
+        member.comment = newComment.trim();
+
+        saveSchedule(scheduleId, data);
+        draw();
+      });
+    });
+  }
+
+  draw();
+// URLコピーボタン処理
+  setTimeout(() => {
+    const btn = document.getElementById("copyUrlBtn");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(location.href);
+        btn.textContent = "コピー完了";
+        setTimeout(() => {
+          btn.textContent = "URLコピー";
+        }, 1500);
+      });
+    }
+  }, 0);
+
+}
+
+const scheduleId = getQueryId();
+
+if (scheduleId) {
+  const saved = localStorage.getItem(scheduleId);
+  if (saved) {
+    renderAttendancePage(JSON.parse(saved), scheduleId);
+  } else {
+    alert("出欠表データが見つかりません。");
+  }
+} else {
+  renderCalendar();
+  renderTimeList();
+}
+</script>
+</body>
+</html>
