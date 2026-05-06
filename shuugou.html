@@ -542,7 +542,25 @@ body.attendance-mode {
   .att-section-title {
     font-size: 28px !important;
   }
-}  
+}
+/* 編集中の入力箇所を光らせる */
+.editing-field {
+  box-shadow: 0 0 14px rgba(255, 79, 145, 0.95);
+  border: 3px solid #ff4f91 !important;
+  background: #fff7fb !important;
+}
+
+.editing-status {
+  box-shadow: 0 0 14px rgba(255, 79, 145, 0.95);
+  border-radius: 14px;
+  padding: 4px;
+} 
+/* 編集中の保存ボタンを強調 */
+.editing-save-btn {
+  box-shadow: 0 0 18px rgba(255, 79, 145, 1);
+  border: 3px solid #ff4f91 !important;
+  transform: scale(1.1);
+} 
 </style>
 </head>
 
@@ -844,6 +862,8 @@ function renderAttendancePage(data, scheduleId) {
   document.documentElement.classList.add("attendance-mode");
   document.body.classList.add("attendance-mode");
 
+  let editingIndex = null;
+
   function renderSpecializationOptions(job, selected) {
     const list = specializations[job] || [];
     let options = `<option value="">特化</option>`;
@@ -1026,7 +1046,7 @@ function renderAttendancePage(data, scheduleId) {
     });
 
     document.getElementById("addMemberButton").addEventListener("click", () => {
-      if (data.members.length >= 10) {
+            if (editingIndex === null && data.members.length >= 10) {
         alert("登録できる人数は最大10人までです。");
         return;
       }
@@ -1048,13 +1068,20 @@ function renderAttendancePage(data, scheduleId) {
         return;
       }
 
-      data.members.push({
+           const memberData = {
         name,
         job,
         specialization,
         comment,
         statuses
-      });
+      };
+
+      if (editingIndex === null) {
+        data.members.push(memberData);
+      } else {
+        data.members[editingIndex] = memberData;
+        editingIndex = null;
+      }
 
       saveSchedule(scheduleId, data);
       draw();
@@ -1071,30 +1098,47 @@ function renderAttendancePage(data, scheduleId) {
       });
     });
 
-    document.querySelectorAll("[data-edit]").forEach(btn => {
+        document.querySelectorAll("[data-edit]").forEach(btn => {
       btn.addEventListener("click", () => {
         const index = Number(btn.dataset.edit);
         const member = data.members[index];
 
-        const newName = prompt("名前を編集", member.name);
-        if (newName === null) return;
+        editingIndex = index;
 
-        const newJob = prompt("職業を編集", member.job);
-        if (newJob === null) return;
+        document.getElementById("memberName").value = member.name;
+        document.getElementById("memberJob").value = member.job;
 
-        const newSpecialization = prompt("特化を編集", member.specialization);
-        if (newSpecialization === null) return;
+        memberSpec.innerHTML = renderSpecializationOptions(member.job, member.specialization);
+        document.getElementById("memberSpec").value = member.specialization;
 
-        const newComment = prompt("コメントを編集", member.comment);
-        if (newComment === null) return;
+        document.getElementById("memberComment").value = member.comment;
 
-        member.name = newName.trim();
-        member.job = newJob.trim();
-        member.specialization = newSpecialization.trim();
-        member.comment = newComment.trim();
+        document.querySelectorAll(".status-button-group").forEach((group, statusIndex) => {
+          const value = member.statuses[statusIndex];
+          group.dataset.selected = value;
 
-        saveSchedule(scheduleId, data);
-        draw();
+          group.querySelectorAll(".status-btn").forEach(b => {
+            b.classList.remove("selected");
+            if (b.dataset.statusValue === value) {
+              b.classList.add("selected");
+            }
+          });
+        });
+
+       document.getElementById("memberName").classList.add("editing-field");
+document.getElementById("memberJob").classList.add("editing-field");
+document.getElementById("memberSpec").classList.add("editing-field");
+document.getElementById("memberComment").classList.add("editing-field");
+
+document.querySelectorAll(".status-date-card").forEach(card => {
+  card.classList.add("editing-status");
+});
+
+const addBtn = document.getElementById("addMemberButton");
+
+addBtn.textContent = "保存";
+addBtn.classList.add("editing-save-btn");
+window.scrollTo(0, 0);
       });
     });
   }
