@@ -542,8 +542,22 @@ body.attendance-mode {
     </section>
   </div>
 </main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDqVhm8z0YJtrEeGZHN1llg9OV0g_-JtFw",
+  authDomain: "totouyakusoku.firebaseapp.com",
+  projectId: "totouyakusoku",
+  storageBucket: "totouyakusoku.firebasestorage.app",
+  messagingSenderId: "527790264853",
+  appId: "1:527790264853:web:ceb411252d82b57783b41c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const calendarEl = document.getElementById("calendar");
 const monthTitleEl = document.getElementById("monthTitle");
 const prevMonthBtn = document.getElementById("prevMonth");
@@ -766,9 +780,11 @@ createButton.addEventListener("click", () => {
     members: []
   };
 
-  const id = "schedule_" + crypto.randomUUID();
-  localStorage.setItem(id, JSON.stringify(data));
-  location.href = location.pathname + "?id=" + id;
+    const id = crypto.randomUUID();
+
+  db.collection("schedules").doc(id).set(data).then(() => {
+    location.href = location.pathname + "?id=" + id;
+  });
 });
 
 function getQueryId() {
@@ -776,7 +792,7 @@ function getQueryId() {
 }
 
 function saveSchedule(scheduleId, data) {
-  localStorage.setItem(scheduleId, JSON.stringify(data));
+  return db.collection("schedules").doc(scheduleId).set(data);
 }
 
 function renderAttendancePage(data, scheduleId) {
@@ -1058,12 +1074,13 @@ function renderAttendancePage(data, scheduleId) {
 const scheduleId = getQueryId();
 
 if (scheduleId) {
-  const saved = localStorage.getItem(scheduleId);
-  if (saved) {
-    renderAttendancePage(JSON.parse(saved), scheduleId);
-  } else {
-    alert("出欠表データが見つかりません。");
-  }
+  db.collection("schedules").doc(scheduleId).get().then(doc => {
+    if (doc.exists) {
+      renderAttendancePage(doc.data(), scheduleId);
+    } else {
+      alert("出欠表データが見つかりません。");
+    }
+  });
 } else {
   renderCalendar();
   renderTimeList();
