@@ -830,7 +830,7 @@ function getQueryId() {
 }
 
 function saveSchedule(scheduleId, data) {
-  return db.collection("schedules").doc(scheduleId).set(data);
+  return db.collection("schedules").doc(scheduleId).set(data, { merge: true });
 }
 
 function renderAttendancePage(data, scheduleId) {
