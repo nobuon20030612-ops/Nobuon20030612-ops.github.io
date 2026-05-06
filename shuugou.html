@@ -830,19 +830,25 @@ createButton.addEventListener("click", () => {
     return;
   }
 
-  const sortedDates = Array.from(selectedDates.values()).sort((a, b) => a.date - b.date);
 
-  const data = {
-    purpose,
-    description,
-    dates: sortedDates.map(d => ({
-      label: formatJapaneseDate(d.date),
-      start: d.startTime,
-      end: d.endTime
-    })),
-    members: []
-  };
+   const sortedDates = Array.from(selectedDates.values()).sort((a, b) => a.date - b.date);
+  const lastDate = sortedDates[sortedDates.length - 1].date;
 
+const expiresAt = new Date(lastDate);
+expiresAt.setDate(expiresAt.getDate() + 3);
+expiresAt.setHours(23, 59, 59, 999);
+
+const data = {
+  purpose,
+  description,
+  expiresAt: expiresAt.getTime(),
+  dates: sortedDates.map(d => ({
+    label: formatJapaneseDate(d.date),
+    start: d.startTime,
+    end: d.endTime
+  })),
+  members: []
+};
     const id = crypto.randomUUID();
 
   db.collection("schedules").doc(id).set(data).then(() => {
@@ -1159,13 +1165,70 @@ window.scrollTo(0, 0);
   }, 0);
 
 }
+function getAdminMode() {
+  return new URLSearchParams(location.search).get("admin") === "1";
+}
 
+function renderAdminPage() {
+  document.documentElement.classList.add("attendance-mode");
+  document.body.classList.add("attendance-mode");
+
+  document.body.innerHTML = `
+    <div class="att-page">
+      <div class="att-box">
+        <h1 class="att-title">期限切れ予定 管理画面</h1>
+        <p class="att-desc">期限切れになった予定をまとめて削除できます。</p>
+        <button id="deleteExpiredAllBtn" type="button" class="small-btn delete-btn">
+          期限切れ予定を一括削除
+        </button>
+        <div id="expiredList" style="margin-top:12px;font-weight:800;"></div>
+      </div>
+    </div>
+  `;
+
+  const listEl = document.getElementById("expiredList");
+
+  db.collection("schedules")
+    .where("expiresAt", "<", Date.now())
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        listEl.textContent = "期限切れ予定はありません。";
+        return;
+      }
+
+      listEl.innerHTML = `期限切れ予定：${snapshot.size}件`;
+
+      document.getElementById("deleteExpiredAllBtn").addEventListener("click", () => {
+        if (!confirm(`${snapshot.size}件の期限切れ予定を削除しますか？`)) return;
+
+        const batch = db.batch();
+
+        snapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+
+        batch.commit().then(() => {
+          alert("期限切れ予定を削除しました。");
+          location.reload();
+        });
+      });
+    });
+}
 const scheduleId = getQueryId();
 
-if (scheduleId) {
-  db.collection("schedules").doc(scheduleId).get().then(doc => {
+if (getAdminMode()) {
+  renderAdminPage();
+} else if (scheduleId) { 
+ db.collection("schedules").doc(scheduleId).get().then(doc => {
     if (doc.exists) {
-      renderAttendancePage(doc.data(), scheduleId);
+      const data = doc.data();
+
+      if (data.expiresAt && Date.now() > data.expiresAt) {
+        renderExpiredPage(scheduleId);
+      } else {
+        renderAttendancePage(data, scheduleId);
+      }
     } else {
       alert("出欠表データが見つかりません。");
     }
@@ -1174,6 +1237,32 @@ if (scheduleId) {
   renderCalendar();
   renderTimeList();
 }
-</script>
+function renderExpiredPage(scheduleId) {
+  document.documentElement.classList.add("attendance-mode");
+  document.body.classList.add("attendance-mode");
+
+  document.body.innerHTML = `
+    <div class="att-page">
+      <div class="att-box">
+        <h1 class="att-title">この予定は期限切れです</h1>
+        <p class="att-desc">不要な場合は下のボタンで完全に削除できます。</p>
+        <button id="deleteExpiredScheduleBtn" type="button" class="small-btn delete-btn">
+          この期限切れ予定を削除
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("deleteExpiredScheduleBtn").addEventListener("click", () => {
+    if (!confirm("この予定を完全に削除しますか？")) return;
+
+    db.collection("schedules").doc(scheduleId).delete().then(() => {
+      alert("削除しました");
+      location.href = location.pathname;
+    });
+  });
+}
+
+ </script>
 </body>
 </html>
