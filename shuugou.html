@@ -476,12 +476,17 @@ body.attendance-mode {
 #copyUrlBtn:hover {
   box-shadow: 0 0 16px rgba(255, 80, 140, 0.9);
 }
- .share-message {
+ /* URL案内文字の分だけ、出欠ページ上部に余白を作る */
+.att-page {
+  padding-top: 92px;
+}
+
+.share-message {
   position: fixed;
-  top: 18px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 998;
+  z-index: 1000;
   font-size: 28px;
   font-weight: 900;
   color: #ff0000;
@@ -490,7 +495,9 @@ body.attendance-mode {
   border-radius: 12px;
   padding: 10px 24px;
   white-space: nowrap;
-} 
+  pointer-events: none;
+}
+</style>
 </style>
 </head>
 
