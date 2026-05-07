@@ -384,16 +384,23 @@ textarea {
 }
 
 @media (max-width: 900px) and (orientation: portrait) {
-  html, body {
-    overflow: auto;
+  html,
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
     height: auto;
+    min-height: 100%;
   }
 
   .page {
     height: auto;
     min-height: 100vh;
-    padding: 4px;
-    gap: 4px;
+    padding: 4px 4px 8px;
+    display: block;
+  }
+
+  .header {
+    margin-bottom: 4px;
   }
 
   .header h1 {
@@ -414,9 +421,9 @@ textarea {
     margin-bottom: 3px;
   }
 
-  textarea {
-    height: 38px;
-    min-height: 38px;
+  label {
+    font-size: 11px;
+    margin-bottom: 2px;
   }
 
   input[type="text"],
@@ -427,17 +434,18 @@ textarea {
     font-size: 12px;
   }
 
+  textarea {
+    height: 34px;
+    min-height: 34px;
+  }
+
   .calendar-card {
-    min-height: 0;
-    height: auto;
     display: block;
+    height: auto;
+    min-height: 0;
     overflow: visible;
   }
 
-  #calendar {
-    height: auto !important;
-    max-height: none !important;
-  }
   .calendar-header {
     margin-bottom: 3px;
   }
@@ -451,54 +459,217 @@ textarea {
     font-size: 12px;
   }
 
-   .calendar {
-    grid-template-rows: auto repeat(6, 22px);
+  #calendar {
+    height: auto !important;
+    max-height: none !important;
+    grid-template-rows: auto repeat(6, 28px) !important;
     gap: 1px;
   }
 
+  .weekday {
+    font-size: 10px;
+  }
+
   .day {
-    min-height: 22px;
-    padding: 0;
-    font-size: 9px;
+    min-height: 28px;
+    height: 28px;
+    padding: 1px;
+    font-size: 10px;
   }
 
   .selected-mark {
     font-size: 8px;
+    margin-top: 0;
+  }
+
+  .calendar-submit-area {
+    position: static;
+    margin-top: 5px;
+    padding: 0;
+    background: #ffeef4;
+  }
+
+  .submit-btn {
+    height: 48px;
+    font-size: 17px;
+  }
+
+  .time-card {
+    height: auto;
+    margin-bottom: 0;
   }
 
   .time-card p {
     display: none;
   }
 
-    .time-row {
+  .time-list {
+    max-height: 120px;
+  }
+
+  .time-row {
     grid-template-columns: 1fr 0.8fr auto 0.8fr auto;
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .date-label {
+    font-size: 11px;
+  }
+
+  .remove-btn {
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+
+  .att-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  html,
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .page {
+    height: auto;
+    min-height: 100vh;
+    padding: 4px;
+    display: block;
+  }
+
+  .header {
+    margin-bottom: 3px;
+  }
+
+  .header h1 {
+    font-size: 14px;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.15fr 1fr;
+    grid-template-rows: auto;
+    gap: 5px;
+    align-items: start;
+  }
+
+  .card {
+    padding: 4px;
+    margin-bottom: 0;
+  }
+
+  .card h2 {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  label {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  input[type="text"],
+  input[type="time"],
+  textarea,
+  select {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  textarea {
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .purpose-card,
+  .calendar-card,
+  .time-card {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .calendar-card {
+    grid-row: auto;
+  }
+
+  .calendar-header {
+    margin-bottom: 2px;
+    gap: 4px;
+  }
+
+  .month-title {
+    font-size: 13px;
+  }
+
+  .month-btn {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  #calendar {
+    height: auto !important;
+    max-height: none !important;
+    grid-template-rows: auto repeat(6, 20px) !important;
+    gap: 1px;
+  }
+
+  .weekday {
+    font-size: 9px;
+  }
+
+  .day {
+    min-height: 20px;
+    height: 20px;
+    padding: 0;
+    font-size: 9px;
+  }
+
+  .selected-mark {
+    font-size: 7px;
+    margin-top: 0;
+  }
+
+  .calendar-submit-area {
+    position: static;
+    margin-top: 4px;
+    padding: 0;
+    background: #ffeef4;
+  }
+
+  .submit-btn {
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .time-card p {
+    display: none;
+  }
+
+  .time-list {
+    max-height: 160px;
+  }
+
+  .time-row {
+    grid-template-columns: 1fr 0.75fr auto 0.75fr auto;
     padding: 2px;
     gap: 2px;
   }
 
-   .submit-btn {
-    height: 48px;
-    font-size: 17px;
+  .date-label {
+    font-size: 10px;
   }
 
-  .calendar-submit-area {
-    position: fixed;
-    left: 4px;
-    right: 4px;
-    bottom: 4px;
-    z-index: 9999;
-    background: #ffeef4;
-    padding: 4px;
-    border-radius: 12px;
-  }
-
-  .time-card {
-    margin-bottom: 64px;
-  }
-
-
-  .att-form {
-    grid-template-columns: 1fr;
+  .remove-btn {
+    padding: 4px 5px;
+    font-size: 10px;
   }
 }
 
@@ -743,16 +914,6 @@ const timeListEl = document.getElementById("timeList");
 const createButton = document.getElementById("createButton");
 const purposeInput = document.getElementById("purpose");
 const descriptionInput = document.getElementById("description");
-function updatePhonePortraitClass() {
-  const isPhonePortrait =
-    window.matchMedia("(orientation: portrait) and (hover: none) and (pointer: coarse)").matches;
-
-  document.body.classList.toggle("phone-portrait", isPhonePortrait);
-}
-
-updatePhonePortraitClass();
-window.addEventListener("resize", updatePhonePortraitClass);
-window.addEventListener("orientationchange", updatePhonePortraitClass);
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
@@ -872,29 +1033,8 @@ function renderCalendar() {
     usedCells++;
   }
 
-    const currentDateForLimit = new Date(currentYear, currentMonth, 1);
+  const currentDateForLimit = new Date(currentYear, currentMonth, 1);
   const minDateForLimit = new Date(startYear, startMonth, 1);
-
-    const isPortraitPhone =
-    window.matchMedia("(orientation: portrait)").matches &&
-    Math.min(
-      window.innerWidth,
-      document.documentElement.clientWidth,
-      window.visualViewport ? window.visualViewport.width : window.innerWidth
-    ) <= 900;
-
-  if (isPortraitPhone) {
-    calendarEl.style.gridTemplateRows = "auto repeat(6, 18px)";
-    calendarEl.style.gap = "0";
-
-    calendarEl.querySelectorAll(".day").forEach(dayEl => {
-      dayEl.style.minHeight = "18px";
-      dayEl.style.height = "18px";
-      dayEl.style.padding = "0";
-      dayEl.style.fontSize = "8px";
-      dayEl.style.lineHeight = "1";
-    });
-  }
 
   prevMonthBtn.disabled = currentDateForLimit <= minDateForLimit;
   nextMonthBtn.disabled = currentDateForLimit >= maxDate;
