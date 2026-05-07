@@ -685,6 +685,39 @@ body.attendance-mode {
   border: 3px solid #ff4f91 !important;
   transform: scale(1.1);
 } 
+  /* スマホ1ページ目：作成ボタンを必ず画面下に表示 */
+@media (hover: none) and (pointer: coarse) {
+
+  body:not(.attendance-mode) {
+    overflow-y: auto !important;
+    height: auto !important;
+    padding-bottom: 76px !important;
+  }
+
+  body:not(.attendance-mode) .page {
+    height: auto !important;
+    min-height: 100vh !important;
+    padding-bottom: 76px !important;
+  }
+
+  body:not(.attendance-mode) .calendar-submit-area {
+    position: fixed !important;
+    left: 6px !important;
+    right: 6px !important;
+    bottom: 6px !important;
+    z-index: 99999 !important;
+    background: #ffeef4 !important;
+    padding: 6px !important;
+    border-radius: 14px !important;
+  }
+
+  body:not(.attendance-mode) #createButton {
+    display: block !important;
+    width: 100% !important;
+    height: 56px !important;
+    font-size: 18px !important;
+  }
+}
 </style>
 </head>
 
