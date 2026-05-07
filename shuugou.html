@@ -428,10 +428,16 @@ textarea {
   }
 
   .calendar-card {
-    min-height: auto;
+    min-height: 0;
+    height: auto;
     display: block;
+    overflow: visible;
   }
 
+  #calendar {
+    height: auto !important;
+    max-height: none !important;
+  }
   .calendar-header {
     margin-bottom: 3px;
   }
@@ -887,9 +893,13 @@ function renderCalendar() {
     const currentDateForLimit = new Date(currentYear, currentMonth, 1);
   const minDateForLimit = new Date(startYear, startMonth, 1);
 
-  const isPortraitPhone =
-    window.innerWidth <= 900 &&
-    window.innerHeight > window.innerWidth;
+    const isPortraitPhone =
+    window.matchMedia("(orientation: portrait)").matches &&
+    Math.min(
+      window.innerWidth,
+      document.documentElement.clientWidth,
+      window.visualViewport ? window.visualViewport.width : window.innerWidth
+    ) <= 900;
 
   if (isPortraitPhone) {
     calendarEl.style.gridTemplateRows = "auto repeat(6, 18px)";
