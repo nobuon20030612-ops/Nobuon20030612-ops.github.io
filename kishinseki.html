@@ -88,15 +88,12 @@ body{
   z-index: 5;
 }
 
-@media screen and (max-width: 900px) {
+@media screen and (max-width: 950px),
+       screen and (orientation: portrait),
+       screen and (orientation: landscape) and (max-height: 500px) {
 
   img.side-info-img{
     display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    pointer-events: none !important;
   }
 
 }
