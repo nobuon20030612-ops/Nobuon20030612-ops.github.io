@@ -384,50 +384,20 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  html, body { overflow: auto; height: auto; }
-  .page { height: auto; min-height: 100vh; }
-  .main-grid, .bottom-area { grid-template-columns: 1fr; grid-template-rows: auto; }
-  .calendar-card { grid-row: auto; min-height: 500px; }
-  .att-form { grid-template-columns: 1fr; }
-
-  .main-grid {
-    display: block;
-  }
-
-  .card {
-    margin-bottom: 8px;
-  }
-
-  .calendar-card {
-    min-height: auto;
-  }
-
-  .calendar {
-    grid-template-rows: auto repeat(6, 56px);
-  }
-
-  .day {
-    min-height: 56px;
-    font-size: 12px;
-  }
-
-  .submit-btn {
-    height: 58px;
-    font-size: 20px;
-  }
-}
- 
-  @media (orientation: landscape) and (max-width: 950px) {
-
   html, body {
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
     height: auto;
   }
 
   .page {
     height: auto;
     min-height: 100vh;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .header h1 {
+    font-size: 16px;
   }
 
   .main-grid {
@@ -435,21 +405,102 @@ textarea {
   }
 
   .card {
-    margin-bottom: 8px;
+    padding: 4px;
+    margin-bottom: 5px;
+  }
+
+  .card h2 {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  textarea {
+    height: 38px;
+    min-height: 38px;
+  }
+
+  input[type="text"],
+  input[type="time"],
+  textarea,
+  select {
+    padding: 5px 7px;
+    font-size: 12px;
+  }
+
+  .calendar-card {
+    min-height: auto;
+    display: block;
+  }
+
+  .calendar-header {
+    margin-bottom: 3px;
+  }
+
+  .month-title {
+    font-size: 15px;
+  }
+
+  .month-btn {
+    padding: 5px 7px;
+    font-size: 12px;
   }
 
   .calendar {
-    grid-template-rows: auto repeat(6, 72px);
+    grid-template-rows: auto repeat(6, 38px);
+    gap: 2px;
   }
 
   .day {
-    min-height: 72px;
+    min-height: 38px;
+    padding: 2px;
+    font-size: 11px;
+  }
+
+  .selected-mark {
+    font-size: 8px;
+  }
+
+  .time-card p {
+    display: none;
+  }
+
+  .time-row {
+    grid-template-columns: 1fr 0.8fr auto 0.8fr auto;
+    padding: 4px;
+    gap: 3px;
   }
 
   .submit-btn {
+    height: 48px;
+    font-size: 17px;
+  }
+
+  .calendar-submit-area {
     position: sticky;
     bottom: 0;
     z-index: 50;
+    background: #ffeef4;
+    padding-top: 4px;
+  }
+
+  .att-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 950px) {
+  .calendar {
+    grid-template-rows: auto repeat(6, 34px);
+  }
+
+  .day {
+    min-height: 34px;
+    font-size: 10px;
+  }
+
+  .submit-btn {
+    height: 44px;
+    font-size: 16px;
   }
 }
 
