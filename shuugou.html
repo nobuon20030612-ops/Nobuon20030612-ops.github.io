@@ -389,7 +389,71 @@ textarea {
   .main-grid, .bottom-area { grid-template-columns: 1fr; grid-template-rows: auto; }
   .calendar-card { grid-row: auto; min-height: 500px; }
   .att-form { grid-template-columns: 1fr; }
+
+  .main-grid {
+    display: block;
+  }
+
+  .card {
+    margin-bottom: 8px;
+  }
+
+  .calendar-card {
+    min-height: auto;
+  }
+
+  .calendar {
+    grid-template-rows: auto repeat(6, 56px);
+  }
+
+  .day {
+    min-height: 56px;
+    font-size: 12px;
+  }
+
+  .submit-btn {
+    height: 58px;
+    font-size: 20px;
+  }
 }
+ 
+  @media (orientation: landscape) and (max-width: 950px) {
+
+  html, body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+  }
+
+  .page {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .main-grid {
+    display: block;
+  }
+
+  .card {
+    margin-bottom: 8px;
+  }
+
+  .calendar {
+    grid-template-rows: auto repeat(6, 72px);
+  }
+
+  .day {
+    min-height: 72px;
+  }
+
+  .submit-btn {
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+  }
+}
+
+
 
 .status-button-group {
   display: flex;
