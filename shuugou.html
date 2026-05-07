@@ -383,7 +383,8 @@ textarea {
   color: #000;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px),
+       (orientation: landscape) and (max-height: 500px) {
   html, body {
     overflow: auto;
     height: auto;
@@ -475,12 +476,19 @@ textarea {
     font-size: 17px;
   }
 
-  .calendar-submit-area {
-    position: sticky;
-    bottom: 0;
-    z-index: 50;
+    .calendar-submit-area {
+    position: fixed;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    z-index: 9999;
     background: #ffeef4;
-    padding-top: 4px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .time-card {
+    margin-bottom: 64px;
   }
 
   .att-form {
@@ -615,7 +623,8 @@ body.attendance-mode {
   pointer-events: none;
 }
 /* スマホ出欠ページ調整 */
-@media (max-width: 900px) {
+@media (max-width: 900px),
+       (orientation: landscape) and (max-height: 500px) {
   html.attendance-mode,
   body.attendance-mode {
     width: 100%;
