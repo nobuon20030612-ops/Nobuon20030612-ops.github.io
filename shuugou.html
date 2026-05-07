@@ -781,6 +781,56 @@ body.mobile-view:not(.attendance-mode) #createButton {
   }
 
 }
+  /* スマホ縦画面だけ：1ページ目を圧縮して作成ボタンを見える位置へ */
+@media (orientation: portrait) {
+
+  body.mobile-view:not(.attendance-mode) {
+    overflow-y: auto !important;
+    height: auto !important;
+    padding-bottom: 80px !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) .page {
+    height: auto !important;
+    min-height: 100vh !important;
+    display: block !important;
+    padding: 4px 4px 80px !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) .purpose-card {
+    display: block !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) textarea {
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) .calendar {
+    grid-template-rows: auto repeat(6, 30px) !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) .day {
+    min-height: 30px !important;
+    font-size: 10px !important;
+    padding: 1px !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) .calendar-submit-area {
+    position: fixed !important;
+    left: 4px !important;
+    right: 4px !important;
+    bottom: 4px !important;
+    z-index: 999999 !important;
+    background: #ffeef4 !important;
+    padding: 4px !important;
+  }
+
+  body.mobile-view:not(.attendance-mode) #createButton {
+    height: 54px !important;
+    font-size: 18px !important;
+  }
+}
 </style>
 </head>
 
