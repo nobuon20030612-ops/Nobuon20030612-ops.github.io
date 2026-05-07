@@ -827,6 +827,117 @@ body.attendance-mode {
   transform: scale(1.1);
 } 
 
+
+/* ===== 最終スマホ制御：スクロール復旧＋作成ボタン常時表示 =====
+   PCには効かせず、JSで body に付ける mobile-device / portrait-layout / landscape-layout だけを対象にする */
+body.mobile-device:not(.attendance-mode) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 100% !important;
+}
+
+html:has(body.mobile-device:not(.attendance-mode)) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100% !important;
+}
+
+body.mobile-device:not(.attendance-mode) .page {
+  height: auto !important;
+  min-height: 100svh !important;
+  overflow: visible !important;
+  padding-bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+}
+
+body.mobile-device:not(.attendance-mode) .calendar-submit-area {
+  position: fixed !important;
+  left: 6px !important;
+  right: 6px !important;
+  bottom: calc(6px + env(safe-area-inset-bottom)) !important;
+  z-index: 2147483647 !important;
+  margin: 0 !important;
+  padding: 6px !important;
+  background: #ffeef4 !important;
+  border: 2px solid #4a2633 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 -4px 14px rgba(0,0,0,0.25) !important;
+}
+
+body.mobile-device:not(.attendance-mode) #createButton {
+  display: block !important;
+  width: 100% !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  font-size: 18px !important;
+}
+
+body.mobile-device.portrait-layout:not(.attendance-mode) .main-grid {
+  display: block !important;
+}
+
+body.mobile-device.portrait-layout:not(.attendance-mode) #calendar {
+  height: auto !important;
+  min-height: 0 !important;
+  grid-template-rows: auto repeat(6, 30px) !important;
+  gap: 1px !important;
+}
+
+body.mobile-device.portrait-layout:not(.attendance-mode) .day {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 1px !important;
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .page {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .main-grid {
+  display: grid !important;
+  grid-template-columns: 0.75fr 1.25fr !important;
+  grid-template-rows: auto auto !important;
+  gap: 4px !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .purpose-card {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .calendar-card {
+  grid-column: 2 !important;
+  grid-row: 1 / span 2 !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .time-card {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) #calendar {
+  height: auto !important;
+  min-height: 0 !important;
+  grid-template-rows: auto repeat(6, 22px) !important;
+  gap: 1px !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) .day {
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+body.mobile-device.landscape-layout:not(.attendance-mode) #createButton {
+  min-height: 42px !important;
+  height: 42px !important;
+  font-size: 16px !important;
+}
+
 </style>
 </head>
 
@@ -895,6 +1006,23 @@ const timeListEl = document.getElementById("timeList");
 const createButton = document.getElementById("createButton");
 const purposeInput = document.getElementById("purpose");
 const descriptionInput = document.getElementById("description");
+
+function updateMobileLayoutClass() {
+  const isTouchDevice =
+    navigator.maxTouchPoints > 0 ||
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+
+  document.body.classList.toggle("mobile-device", isTouchDevice);
+  document.body.classList.toggle("portrait-layout", isTouchDevice && isPortrait);
+  document.body.classList.toggle("landscape-layout", isTouchDevice && !isPortrait);
+}
+
+updateMobileLayoutClass();
+window.addEventListener("resize", updateMobileLayoutClass);
+window.addEventListener("orientationchange", updateMobileLayoutClass);
+
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
