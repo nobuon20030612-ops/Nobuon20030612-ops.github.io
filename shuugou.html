@@ -938,10 +938,43 @@ body.mobile-device.landscape-layout:not(.attendance-mode) #createButton {
   font-size: 16px !important;
 }
 
+
+/* 戻るボタン：翌月ボタンに被らないよう画面右上に固定 */
+.page-back-btn {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  z-index: 2147483646;
+  border: 2px solid #ffd6e4;
+  background: #5a001f;
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #2a0010;
+}
+
+.page-back-btn:hover,
+.page-back-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 18px rgba(255, 79, 145, 1), 0 3px 0 #2a0010;
+  border-color: #ff4f91;
+}
+
+body.mobile-device:not(.attendance-mode) .page-back-btn {
+  top: 6px;
+  right: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
 </style>
 </head>
 
 <body>
+<button id="backButton" class="page-back-btn" type="button">戻る</button>
 <main class="page">
   <section class="header">
     <h1>徒党予定</h1>
@@ -1006,6 +1039,15 @@ const timeListEl = document.getElementById("timeList");
 const createButton = document.getElementById("createButton");
 const purposeInput = document.getElementById("purpose");
 const descriptionInput = document.getElementById("description");
+const backButton = document.getElementById("backButton");
+
+backButton.addEventListener("click", () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    location.href = location.pathname;
+  }
+});
 
 function updateMobileLayoutClass() {
   const isTouchDevice =
