@@ -446,15 +446,15 @@ textarea {
     font-size: 12px;
   }
 
-    .calendar {
-    grid-template-rows: auto repeat(6, 26px);
+   .calendar {
+    grid-template-rows: auto repeat(6, 22px);
     gap: 1px;
   }
 
   .day {
-    min-height: 26px;
-    padding: 1px;
-    font-size: 10px;
+    min-height: 22px;
+    padding: 0;
+    font-size: 9px;
   }
 
   .selected-mark {
@@ -465,15 +465,15 @@ textarea {
     display: none;
   }
 
-  .time-row {
+    .time-row {
     grid-template-columns: 1fr 0.8fr auto 0.8fr auto;
-    padding: 4px;
-    gap: 3px;
+    padding: 2px;
+    gap: 2px;
   }
 
   .submit-btn {
-    height: 48px;
-    font-size: 17px;
+    height: 42px;
+    font-size: 15px;
   }
 
      .calendar-submit-area {
@@ -682,152 +682,7 @@ body.attendance-mode {
   border: 3px solid #ff4f91 !important;
   transform: scale(1.1);
 } 
-  /* スマホ1ページ目：作成ボタンを必ず画面下に表示 */
-@media (hover: none) and (pointer: coarse) {
 
-  body:not(.attendance-mode) {
-    overflow-y: auto !important;
-    height: auto !important;
-    padding-bottom: 76px !important;
-  }
-
-  body:not(.attendance-mode) .page {
-    height: auto !important;
-    min-height: 100vh !important;
-    padding-bottom: 76px !important;
-  }
-
-  body:not(.attendance-mode) .calendar-submit-area {
-    position: fixed !important;
-    left: 6px !important;
-    right: 6px !important;
-    bottom: 6px !important;
-    z-index: 99999 !important;
-    background: #ffeef4 !important;
-    padding: 6px !important;
-    border-radius: 14px !important;
-  }
-
-  body:not(.attendance-mode) #createButton {
-    display: block !important;
-    width: 100% !important;
-    height: 56px !important;
-    font-size: 18px !important;
-  }
-}
-  body.mobile-view:not(.attendance-mode) {
-  overflow-y: auto !important;
-  height: auto !important;
-  padding-bottom: 90px !important;
-}
-
-body.mobile-view:not(.attendance-mode) .page {
-  height: auto !important;
-  min-height: 100vh !important;
-  padding-bottom: 90px !important;
-}
-
-body.mobile-view:not(.attendance-mode) .calendar-submit-area {
-  position: fixed !important;
-  left: 6px !important;
-  right: 6px !important;
-  bottom: 6px !important;
-  z-index: 99999 !important;
-  background: #ffeef4 !important;
-  padding: 6px !important;
-  border-radius: 14px !important;
-}
-
-body.mobile-view:not(.attendance-mode) #createButton {
-  display: block !important;
-  width: 100% !important;
-  height: 58px !important;
-  font-size: 18px !important;
-}
-  /* スマホ縦画面だけ：1ページ目の作成ボタンを見える位置に固定 */
-@media (orientation: portrait) and (max-width: 900px) {
-
-  body:not(.attendance-mode) {
-    overflow-y: auto !important;
-    height: auto !important;
-    padding-bottom: 90px !important;
-  }
-
-  body:not(.attendance-mode) .page {
-    height: auto !important;
-    min-height: 100vh !important;
-    padding-bottom: 90px !important;
-  }
-
-  body:not(.attendance-mode) .calendar-submit-area {
-    position: fixed !important;
-    left: 6px !important;
-    right: 6px !important;
-    bottom: 6px !important;
-    z-index: 99999 !important;
-    background: #ffeef4 !important;
-    padding: 6px !important;
-    border-radius: 14px !important;
-  }
-
-  body:not(.attendance-mode) #createButton {
-    display: block !important;
-    width: 100% !important;
-    height: 58px !important;
-    font-size: 18px !important;
-  }
-
-}
-  /* スマホ縦画面だけ：1ページ目を圧縮して作成ボタンを見える位置へ */
-@media (orientation: portrait) {
-
-  body.mobile-view:not(.attendance-mode) {
-    overflow-y: auto !important;
-    height: auto !important;
-    padding-bottom: 80px !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) .page {
-    height: auto !important;
-    min-height: 100vh !important;
-    display: block !important;
-    padding: 4px 4px 80px !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) .purpose-card {
-    display: block !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) textarea {
-    height: 32px !important;
-    min-height: 32px !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) .calendar {
-    grid-template-rows: auto repeat(6, 30px) !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) .day {
-    min-height: 30px !important;
-    font-size: 10px !important;
-    padding: 1px !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) .calendar-submit-area {
-    position: fixed !important;
-    left: 4px !important;
-    right: 4px !important;
-    bottom: 4px !important;
-    z-index: 999999 !important;
-    background: #ffeef4 !important;
-    padding: 4px !important;
-  }
-
-  body.mobile-view:not(.attendance-mode) #createButton {
-    height: 54px !important;
-    font-size: 18px !important;
-  }
-}
 </style>
 </head>
 
