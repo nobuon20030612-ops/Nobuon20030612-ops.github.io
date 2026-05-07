@@ -718,6 +718,35 @@ body.attendance-mode {
     font-size: 18px !important;
   }
 }
+  body.mobile-view:not(.attendance-mode) {
+  overflow-y: auto !important;
+  height: auto !important;
+  padding-bottom: 90px !important;
+}
+
+body.mobile-view:not(.attendance-mode) .page {
+  height: auto !important;
+  min-height: 100vh !important;
+  padding-bottom: 90px !important;
+}
+
+body.mobile-view:not(.attendance-mode) .calendar-submit-area {
+  position: fixed !important;
+  left: 6px !important;
+  right: 6px !important;
+  bottom: 6px !important;
+  z-index: 99999 !important;
+  background: #ffeef4 !important;
+  padding: 6px !important;
+  border-radius: 14px !important;
+}
+
+body.mobile-view:not(.attendance-mode) #createButton {
+  display: block !important;
+  width: 100% !important;
+  height: 58px !important;
+  font-size: 18px !important;
+}
 </style>
 </head>
 
