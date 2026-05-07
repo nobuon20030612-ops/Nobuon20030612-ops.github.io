@@ -88,10 +88,17 @@ body{
   z-index: 5;
 }
 
-@media (max-width: 900px), (hover: none) and (pointer: coarse) {
-  .side-info-img{
+@media screen and (max-width: 900px) {
+
+  img.side-info-img{
     display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
   }
+
 }
 
 h3{
