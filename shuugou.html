@@ -383,7 +383,7 @@ textarea {
   color: #000;
 }
 
-@media (max-width: 900px) and (orientation: portrait) {
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
   html,
   body {
     height: auto;
@@ -395,7 +395,7 @@ textarea {
   .page {
     height: auto;
     min-height: 100svh;
-    padding: 4px;
+    padding: 4px 4px 66px;
     display: block;
   }
 
@@ -409,17 +409,17 @@ textarea {
 
   .card {
     padding: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
   .card h2 {
     font-size: 13px;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   textarea {
-    height: 38px;
-    min-height: 38px;
+    height: 34px;
+    min-height: 34px;
   }
 
   input[type="text"],
@@ -453,37 +453,26 @@ textarea {
   #calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: auto repeat(6, 30px);
-    gap: 2px;
-    height: auto;
-    min-height: 0;
+    grid-template-rows: auto repeat(6, 26px);
+    gap: 1px;
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   .weekday {
-    font-size: 11px;
-  }
-
-  .day {
-    height: 30px;
-    min-height: 30px;
-    padding: 1px;
     font-size: 10px;
   }
 
+  .day {
+    height: 26px;
+    min-height: 26px;
+    padding: 1px;
+    font-size: 9px;
+    line-height: 1.05;
+  }
+
   .selected-mark {
-    font-size: 8px;
-  }
-
-  .calendar-submit-area {
-    position: static;
-    margin-top: 6px;
-    padding: 0;
-    background: transparent;
-  }
-
-  .submit-btn {
-    height: 50px;
-    font-size: 18px;
+    font-size: 7px;
   }
 
   .time-card {
@@ -497,8 +486,25 @@ textarea {
 
   .time-row {
     grid-template-columns: 1fr 0.8fr auto 0.8fr auto;
-    padding: 3px;
-    gap: 3px;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .calendar-submit-area {
+    position: fixed;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    z-index: 99999;
+    margin: 0;
+    padding: 4px;
+    background: #ffeef4;
+    border-radius: 12px;
+  }
+
+  .submit-btn {
+    height: 50px;
+    font-size: 18px;
   }
 
   .att-form {
@@ -518,17 +524,17 @@ textarea {
   .page {
     height: auto;
     min-height: 100svh;
-    padding: 4px;
+    padding: 4px 4px 54px;
     display: block;
   }
 
   .header h1 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .main-grid {
     display: grid;
-    grid-template-columns: 0.78fr 1.22fr;
+    grid-template-columns: 0.75fr 1.25fr;
     grid-template-rows: auto auto;
     gap: 4px;
   }
@@ -540,7 +546,7 @@ textarea {
 
   .card h2 {
     font-size: 12px;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
   }
 
   .purpose-card {
@@ -566,8 +572,8 @@ textarea {
   }
 
   textarea {
-    height: 32px;
-    min-height: 32px;
+    height: 30px;
+    min-height: 30px;
   }
 
   input[type="text"],
@@ -594,37 +600,26 @@ textarea {
   #calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: auto repeat(6, 24px);
+    grid-template-rows: auto repeat(6, 20px);
     gap: 1px;
-    height: auto;
-    min-height: 0;
+    height: auto !important;
+    min-height: 0 !important;
   }
 
   .weekday {
-    font-size: 10px;
-  }
-
-  .day {
-    height: 24px;
-    min-height: 24px;
-    padding: 1px;
     font-size: 9px;
   }
 
-  .selected-mark {
-    font-size: 7px;
-  }
-
-  .calendar-submit-area {
-    position: static;
-    margin-top: 4px;
+  .day {
+    height: 20px;
+    min-height: 20px;
     padding: 0;
-    background: transparent;
+    font-size: 8px;
+    line-height: 1;
   }
 
-  .submit-btn {
-    height: 40px;
-    font-size: 15px;
+  .selected-mark {
+    font-size: 6px;
   }
 
   .time-card p {
@@ -633,8 +628,25 @@ textarea {
 
   .time-row {
     grid-template-columns: 1fr 0.8fr auto 0.8fr auto;
-    padding: 2px;
+    padding: 1px;
     gap: 2px;
+  }
+
+  .calendar-submit-area {
+    position: fixed;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    z-index: 99999;
+    margin: 0;
+    padding: 4px;
+    background: #ffeef4;
+    border-radius: 12px;
+  }
+
+  .submit-btn {
+    height: 40px;
+    font-size: 16px;
   }
 
   .att-form {
@@ -1004,7 +1016,8 @@ function renderCalendar() {
 
     const currentDateForLimit = new Date(currentYear, currentMonth, 1);
   const minDateForLimit = new Date(startYear, startMonth, 1);
-prevMonthBtn.disabled = currentDateForLimit <= minDateForLimit;
+
+  prevMonthBtn.disabled = currentDateForLimit <= minDateForLimit;
   nextMonthBtn.disabled = currentDateForLimit >= maxDate;
 }
 
