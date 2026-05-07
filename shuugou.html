@@ -686,7 +686,19 @@ body.attendance-mode {
   border: 3px solid #ff4f91 !important;
   transform: scale(1.1);
 } 
+/* スマホ縦だけ：カレンダーを強制的に小さくする */
+body.phone-portrait:not(.attendance-mode) .calendar {
+  grid-template-rows: auto repeat(6, 18px) !important;
+  gap: 0 !important;
+}
 
+body.phone-portrait:not(.attendance-mode) .day {
+  min-height: 18px !important;
+  height: 18px !important;
+  padding: 0 !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
 </style>
 </head>
 
@@ -755,7 +767,16 @@ const timeListEl = document.getElementById("timeList");
 const createButton = document.getElementById("createButton");
 const purposeInput = document.getElementById("purpose");
 const descriptionInput = document.getElementById("description");
+function updatePhonePortraitClass() {
+  const isPhonePortrait =
+    window.matchMedia("(orientation: portrait) and (hover: none) and (pointer: coarse)").matches;
 
+  document.body.classList.toggle("phone-portrait", isPhonePortrait);
+}
+
+updatePhonePortraitClass();
+window.addEventListener("resize", updatePhonePortraitClass);
+window.addEventListener("orientationchange", updatePhonePortraitClass);
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
