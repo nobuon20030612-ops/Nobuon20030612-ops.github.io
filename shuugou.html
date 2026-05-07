@@ -686,19 +686,7 @@ body.attendance-mode {
   border: 3px solid #ff4f91 !important;
   transform: scale(1.1);
 } 
-/* スマホ縦だけ：カレンダーを強制的に小さくする */
-body.phone-portrait:not(.attendance-mode) .calendar {
-  grid-template-rows: auto repeat(6, 18px) !important;
-  gap: 0 !important;
-}
 
-body.phone-portrait:not(.attendance-mode) .day {
-  min-height: 18px !important;
-  height: 18px !important;
-  padding: 0 !important;
-  font-size: 8px !important;
-  line-height: 1 !important;
-}
 </style>
 </head>
 
@@ -896,8 +884,25 @@ function renderCalendar() {
     usedCells++;
   }
 
-  const currentDateForLimit = new Date(currentYear, currentMonth, 1);
+    const currentDateForLimit = new Date(currentYear, currentMonth, 1);
   const minDateForLimit = new Date(startYear, startMonth, 1);
+
+  const isPortraitPhone =
+    window.innerWidth <= 900 &&
+    window.innerHeight > window.innerWidth;
+
+  if (isPortraitPhone) {
+    calendarEl.style.gridTemplateRows = "auto repeat(6, 18px)";
+    calendarEl.style.gap = "0";
+
+    calendarEl.querySelectorAll(".day").forEach(dayEl => {
+      dayEl.style.minHeight = "18px";
+      dayEl.style.height = "18px";
+      dayEl.style.padding = "0";
+      dayEl.style.fontSize = "8px";
+      dayEl.style.lineHeight = "1";
+    });
+  }
 
   prevMonthBtn.disabled = currentDateForLimit <= minDateForLimit;
   nextMonthBtn.disabled = currentDateForLimit >= maxDate;
