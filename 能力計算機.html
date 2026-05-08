@@ -818,6 +818,16 @@ function getTsukumoConfig(){
     };
   }
 
+  if(tsukumoTarget === "left" || tsukumoTarget === "right"){
+    return {
+      csv:"./九十九.csv",
+      error:"九十九.csvを読み込めませんでした",
+      nameLabel:"九十九の力",
+      nameKeys:["九十九の力","名前"],
+      useExclude:true
+    };
+  }
+
   return {
     csv:"./九十九.csv",
     error:"九十九.csvを読み込めませんでした",
@@ -1206,9 +1216,15 @@ function applyTsukumoSelection(){
     });
   });
 
-  let rowLabel = "右手：九十九";
+  let rowLabel = "";
+  if(tsukumoTarget === "right") rowLabel = "右手：九十九";
   if(tsukumoTarget === "left") rowLabel = "左手：九十九";
   if(tsukumoTarget === "neck") rowLabel = "首：魔導結晶";
+
+  if(!rowLabel){
+    alert("反映先が不明です");
+    return;
+  }
 
   applyStatsToRow(rowLabel, total);
   closeTsukumoPicker();
