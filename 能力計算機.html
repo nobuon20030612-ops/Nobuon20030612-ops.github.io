@@ -479,48 +479,97 @@ td{
   background:#444 !important;
 }
 
-#tsukumoSelectedTable th:nth-child(1),
-#tsukumoSelectedTable td:nth-child(1){
-  width:50px;
-}
-
-#tsukumoSelectedTable th:nth-child(2),
-#tsukumoSelectedTable td:nth-child(2){
-  width:180px;
-}
-
-#tsukumoSelectedTable th:nth-child(3),
-#tsukumoSelectedTable td:nth-child(3){
-  width:180px;
-}
-
-#tsukumoSelectedTable th:nth-child(n+4),
-#tsukumoSelectedTable td:nth-child(n+4){
-  width:55px;
-}
-
-#tsukumoPickerTable{
+#tsukumoPickerTable,
+#tsukumoSelectedTable{
+  width:100%;
   table-layout:fixed;
 }
 
+#tsukumoPickerTable th,
+#tsukumoPickerTable td,
+#tsukumoSelectedTable th,
+#tsukumoSelectedTable td{
+  overflow:hidden;
+  text-overflow:clip;
+  white-space:nowrap;
+  padding:2px;
+  font-size:10px;
+}
+
 #tsukumoPickerTable th:nth-child(1),
-#tsukumoPickerTable td:nth-child(1){
-  width:50px;
+#tsukumoPickerTable td:nth-child(1),
+#tsukumoSelectedTable th:nth-child(1),
+#tsukumoSelectedTable td:nth-child(1){
+  width:6px;
+  min-width:6px;
+  max-width:6px;
 }
 
 #tsukumoPickerTable th:nth-child(2),
-#tsukumoPickerTable td:nth-child(2){
-  width:180px;
+#tsukumoPickerTable td:nth-child(2),
+#tsukumoSelectedTable th:nth-child(2),
+#tsukumoSelectedTable td:nth-child(2){
+  width:45px;
+  min-width:45px;
+  max-width:45px;
 }
 
 #tsukumoPickerTable th:nth-child(3),
-#tsukumoPickerTable td:nth-child(3){
-  width:180px;
+#tsukumoPickerTable td:nth-child(3),
+#tsukumoPickerTable th:nth-child(4),
+#tsukumoPickerTable td:nth-child(4),
+#tsukumoPickerTable th:nth-child(5),
+#tsukumoPickerTable td:nth-child(5),
+#tsukumoPickerTable th:nth-child(6),
+#tsukumoPickerTable td:nth-child(6),
+#tsukumoPickerTable th:nth-child(7),
+#tsukumoPickerTable td:nth-child(7),
+#tsukumoPickerTable th:nth-child(8),
+#tsukumoPickerTable td:nth-child(8),
+#tsukumoPickerTable th:nth-child(9),
+#tsukumoPickerTable td:nth-child(9),
+#tsukumoPickerTable th:nth-child(10),
+#tsukumoPickerTable td:nth-child(10),
+#tsukumoPickerTable th:nth-child(11),
+#tsukumoPickerTable td:nth-child(11),
+#tsukumoPickerTable th:nth-child(12),
+#tsukumoPickerTable td:nth-child(12),
+#tsukumoPickerTable th:nth-child(13),
+#tsukumoPickerTable td:nth-child(13),
+#tsukumoSelectedTable th:nth-child(3),
+#tsukumoSelectedTable td:nth-child(3),
+#tsukumoSelectedTable th:nth-child(4),
+#tsukumoSelectedTable td:nth-child(4),
+#tsukumoSelectedTable th:nth-child(5),
+#tsukumoSelectedTable td:nth-child(5),
+#tsukumoSelectedTable th:nth-child(6),
+#tsukumoSelectedTable td:nth-child(6),
+#tsukumoSelectedTable th:nth-child(7),
+#tsukumoSelectedTable td:nth-child(7),
+#tsukumoSelectedTable th:nth-child(8),
+#tsukumoSelectedTable td:nth-child(8),
+#tsukumoSelectedTable th:nth-child(9),
+#tsukumoSelectedTable td:nth-child(9),
+#tsukumoSelectedTable th:nth-child(10),
+#tsukumoSelectedTable td:nth-child(10),
+#tsukumoSelectedTable th:nth-child(11),
+#tsukumoSelectedTable td:nth-child(11),
+#tsukumoSelectedTable th:nth-child(12),
+#tsukumoSelectedTable td:nth-child(12),
+#tsukumoSelectedTable th:nth-child(13),
+#tsukumoSelectedTable td:nth-child(13){
+  width:12px;
+  min-width:12px;
+  max-width:12px;
 }
 
-#tsukumoPickerTable th:nth-child(n+4),
-#tsukumoPickerTable td:nth-child(n+4){
-  width:55px;
+#tsukumoPickerTable th:nth-child(14),
+#tsukumoPickerTable td:nth-child(14),
+#tsukumoSelectedTable th:nth-child(14),
+#tsukumoSelectedTable td:nth-child(14){
+  width:120px;
+  min-width:120px;
+  max-width:120px;
 }
 
 .tsukumo-select-btn:hover,
@@ -1491,11 +1540,16 @@ function renderTsukumoSelectedTable(){
   if(!table) return;
 
   const config = getTsukumoConfig();
-  let html = `<tr><th>番号</th><th>${config.nameLabel}</th><th>入手</th>`;
-  TSUKUMO_STATS.forEach(s => {
-    html += `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
-  });
-  html += "</tr>";
+  let html = "<tr>";
+html += "<th style='width:42px; white-space:nowrap;'>番号</th>";
+html += "<th>九十九の力</th>";
+
+TSUKUMO_STATS.forEach(s => {
+  html += `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
+});
+
+html += "<th style='width:70px; white-space:nowrap;'>入手</th>";
+html += "</tr>";
 
   tsukumoSelected.forEach(id => {
     const d = tsukumoData.find(x => x["番号"] == id);
@@ -1503,21 +1557,23 @@ function renderTsukumoSelectedTable(){
 
     const repClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
     html += `<tr class="${repClass}" onclick="setTsukumoReplace('${id}')">`;
-    html += `<td>${d["番号"] || ""}</td>`;
-    html += `<td>${getTsukumoName(d)}</td>`;
-    html += `<td>${d["入手"] || ""}</td>`;
-    TSUKUMO_STATS.forEach(s => {
-      html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
-    });
+    html += `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td>`;
+html += `<td>${d["九十九の力"] || ""}</td>`;
+
+TSUKUMO_STATS.forEach(s => {
+  html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
+});
+
+html += `<td style="white-space:nowrap;">${d["入手"] || ""}</td>`;
     html += "</tr>";
   });
 
   const total = calcTsukumoTotals();
-  html += `<tr class="totalRow"><td colspan="3">合計</td>`;
+  html += `<tr class="totalRow"><td colspan="2">合計</td>`;
   TSUKUMO_STATS.forEach(s => {
     html += `<td style="color:${tsukumoStatColors[s]}">${total[s]}</td>`;
   });
-  html += "</tr>";
+  html += `<td></td>`;
 
   table.innerHTML = html;
 }
@@ -1545,21 +1601,14 @@ function renderTsukumoPicker(){
   const config = getTsukumoConfig();
 
   let html = "<tr>";
-  html += `<th onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`;
-  html += `<th>${config.nameLabel}</th>`;
-  html += `<th>入手</th>`;
+  html += `<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`;
+html += `<th>九十九の力</th>`;
 
-  TSUKUMO_STATS.forEach(s => {
-    html += `
-      <th
-        onclick="sortTsukumo('${s}')"
-        style="color:${tsukumoStatColors[s]}"
-      >
-        ${s}${getTsukumoArrow(s)}
-      </th>
-    `;
-  });
+TSUKUMO_STATS.forEach(s => {
+  html += `<th onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;
+});
 
+html += `<th style="width:70px; white-space:nowrap;">入手</th>`;
   html += "</tr>";
 
   list.forEach(d => {
@@ -1575,13 +1624,14 @@ function renderTsukumoPicker(){
       >
     `;
 
-    html += `<td>${d["番号"] || ""}</td>`;
-    html += `<td>${getTsukumoName(d)}</td>`;
-    html += `<td>${d["入手"] || ""}</td>`;
+   html += `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td>`;
+html += `<td>${d["九十九の力"] || ""}</td>`;
 
-    TSUKUMO_STATS.forEach(s => {
-      html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
-    });
+TSUKUMO_STATS.forEach(s => {
+  html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
+});
+
+html += `<td style="white-space:nowrap;">${d["入手"] || ""}</td>`;
 
     html += "</tr>";
   });
