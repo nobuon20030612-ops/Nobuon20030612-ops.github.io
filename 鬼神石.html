@@ -2,10 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>九十九ツール 組み合わせ一覧と最適構成 | 信長の野望オンライン攻略</title>
-
-<meta name="description" content="信長の野望オンラインの九十九ツール。九十九の組み合わせ一覧、能力比較、最適構成の確認ができます。">
-
+<title>鬼神石ツール</title>
 
 <style>
 body{
@@ -20,43 +17,91 @@ body{
   margin:12px 0;
   color:#ddd;
 }
-
-.top-buttons{
+/* ★ここに追加（戻るボタン） */
+.top-back{
   position: fixed;
   top: 12px;
   right: 20px;
-  display: flex;
-  gap: 10px;
-  z-index: 9999;
-}
 
-.top-save,
-.top-back{
   padding: 10px 20px;
   font-size: 20px;
+
   border: 2px solid #ff3b3b;
   color: #ff3b3b;
   background: rgba(0,0,0,0.6);
+
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.top-save:hover,
 .top-back:hover{
   color: #fff;
   border-color: #ff0000;
+
   box-shadow:
     0 0 8px rgba(255,80,80,0.9),
     0 0 20px rgba(255,0,0,0.9),
     0 0 40px rgba(255,0,0,0.8);
+
   transform: scale(1.05);
+}
+
+/* ▼ここ追加：保存ボタン */
+.top-save{
+  position: fixed;
+  top: 12px;
+  right: 120px;
+
+  padding: 10px 20px;
+  font-size: 20px;
+
+  border: 2px solid #ff3b3b;
+  color: #ff3b3b;
+  background: rgba(0,0,0,0.6);
+
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 9999;
+}
+
+.top-save:hover{
+  color: #fff;
+  border-color: #ff0000;
+
+  box-shadow:
+    0 0 8px rgba(255,80,80,0.9),
+    0 0 20px rgba(255,0,0,0.9),
+    0 0 40px rgba(255,0,0,0.8);
+
+  transform: scale(1.05);
+}
+/* ▲ここまで追加 */
+.side-info-img{
+  position: absolute;
+  right: 25px;
+  top: 110px;
+
+  width: 180px;
+  height: auto;
+
+  object-fit: contain;
+  z-index: 5;
+}
+
+@media screen and (max-width: 950px),
+       screen and (orientation: portrait),
+       screen and (orientation: landscape) and (max-height: 500px) {
+
+  img.side-info-img{
+    display: none !important;
+  }
+
 }
 
 h3{
   font-size:24px;
   margin-top:16px;
 }
-
 table{
   width:100%;
   border-collapse:collapse;
@@ -73,8 +118,10 @@ th{
   cursor:pointer;
 }
 
+/* ★ここに追加 */
 tr:hover{
   background:#222;
+
   box-shadow:
     0 0 6px rgba(255,255,200,0.5),
     0 0 12px rgba(255,230,120,0.5);
@@ -84,6 +131,7 @@ tr:hover{
   background:#2a2a2a;
 }
 
+/* 選択中の一覧行を常時光らせる */
 tr.selected{
   background:#302000 !important;
   box-shadow:
@@ -91,26 +139,13 @@ tr.selected{
     0 0 10px rgba(255,230,120,0.7);
 }
 
+/* 選択中の行にカーソルを置いた時は少し強く光る */
 tr.selected:hover{
   background:#4a3300 !important;
   box-shadow:
     inset 0 0 14px rgba(255,255,200,1),
     0 0 16px rgba(255,230,120,0.9),
     0 0 28px rgba(255,200,80,0.8);
-}
-
-label.activeLabel{
-  color:#fff;
-  border-color:#ffd966;
-  background:#3a2a00;
-  box-shadow:
-    0 0 8px rgba(255,255,180,0.95),
-    0 0 18px rgba(255,220,80,0.9);
-}
-
-tr.excluded{
-  opacity:0.25;
-  text-decoration:line-through;
 }
 
 .replaceTarget{
@@ -135,17 +170,18 @@ button:hover{
     drop-shadow(0 0 14px rgba(255,230,120,0.9))
     drop-shadow(0 0 24px rgba(255,200,80,0.8));
 }
-
 button.active{
   background:#444;
   color:#fff;
+
   box-shadow:
     0 0 10px rgba(255,255,200,1),
     0 0 20px rgba(255,230,120,0.9),
     0 0 40px rgba(255,200,80,0.8);
-  transform: scale(1.03);
-}
 
+  transform: scale(1.03);
+}	
+/* ★クリック時 */
 button:active{
   transform: scale(0.95);
   filter:
@@ -159,6 +195,7 @@ button:active{
   font-weight:bold;
 }
 
+/* ★追加：ソート列（縦） */
 .sorted-col-1 td:nth-child(1),
 .sorted-col-2 td:nth-child(2),
 .sorted-col-3 td:nth-child(3),
@@ -176,44 +213,28 @@ button:active{
   background:#2f3b2f !important;
 }
 
+/* カーソル */
 *{
   cursor:pointer !important;
 }
 </style>
-
-
 </head>
-
 
 <body>
 
+<h1 class="title">鬼神石</h1>
 
-<h1 class="title">九十九</h1>
-<div class="top-buttons no-capture">
-  <div class="top-save" onclick="downloadScreen()">保存</div>
-  <div class="top-back" onclick="location.href='index.html'">戻る</div>
+<!-- ▼ここ追加：保存ボタン -->
+<div class="top-save no-capture" onclick="downloadScreen()">
+  保存
 </div>
-<div style="text-align:center; margin:10px 0;">
+<!-- ▲ここまで追加 -->
 
-  <div style="font-size:14px; margin-bottom:6px;">
-    除外可能な九十九 系統
-  </div>
-
-  <label id="excludeLabelA">
-    <input type="checkbox" id="excludeA">
-    開運系・九十九
-  </label>
-
-  <label id="excludeLabelB" style="margin-left:20px;">
-    <input type="checkbox" id="excludeB">
-    英雄系・九十九
-  </label>
-
-  <label id="excludeLabelC" style="margin-left:20px;">
-    <input type="checkbox" id="excludeC">
-    上覧系・九十九
-  </label>
+<div class="top-back no-capture" onclick="location.href='index.html'">
+  戻る
 </div>
+
+<img class="side-info-img" src="kishinseki_info.jpg" alt="鬼神石 価値による最低発現数">
 
 <div id="rawData" style="display:none;">
   <table id="csvTable" cellspacing="0" border="0"></table>
@@ -259,47 +280,8 @@ function getArrow(key){
   if(sortKey!==key) return "";
   return sortAsc ? " ▲" : " ▼";
 }
-
-/* ★追加：除外判定 */
-function isExcluded(num){
-  num = parseInt(num,10) || 0;
-
-  if(document.getElementById("excludeA").checked){
-    if([1,9,10,30].includes(num)) return true;
-  }
-  if(document.getElementById("excludeB").checked){
-    if([2,29].includes(num)) return true;
-  }
-  if(document.getElementById("excludeC").checked){
-    if([17,18,19,149,150,151].includes(num)) return true;
-  }
-
-  return false;
-}
-
-/* ★追加：除外に合わせて選択解除 */
-function syncExcludedSelected(){
-  selected = selected.filter(id => !isExcluded(id));
-  if(replaceTarget!=null && isExcluded(replaceTarget)){
-    replaceTarget = null;
-  }
-}
-
-/* ★追加：ラベル色更新 */
-function updateExcludeLabels(){
-  document.getElementById("excludeLabelA").classList.toggle("activeLabel", document.getElementById("excludeA").checked);
-  document.getElementById("excludeLabelB").classList.toggle("activeLabel", document.getElementById("excludeB").checked);
-  document.getElementById("excludeLabelC").classList.toggle("activeLabel", document.getElementById("excludeC").checked);
-}
-
-/* ★追加：除外UI変更時 */
-function onExcludeChange(){
-  syncExcludedSelected();
-  updateExcludeLabels();
-  showTop();
-}
 async function loadCSV() {
-  const response = await fetch("./九十九.csv");
+  const response = await fetch("./鬼神石.csv");
 
   if (!response.ok) {
     throw new Error("CSV読み込み失敗: " + response.status);
@@ -331,7 +313,8 @@ async function loadCSV() {
 
     csvTable.appendChild(tr);
   });
-}/* データ読込 */
+}
+/* データ読込 */
 function loadFromHTML(){
   const rows=document.querySelectorAll("#rawData table tr");
   if(!rows.length)return;
@@ -398,7 +381,7 @@ function compare(a,b){
 }
 
 function showTop(){
-  const sorted=[...baseData].filter(d=>!isExcluded(d["番号"])).sort(compare);
+  const sorted=[...baseData].sort(compare);
   selected=sorted.slice(0,8).map(d=>d["番号"]);
   replaceTarget=null;
   render();
@@ -417,15 +400,12 @@ function setSort(key){
 
 /* 入替対象 */
 function setReplace(id){
-  if(isExcluded(id)) return;
   replaceTarget = (replaceTarget===id)?null:id;
   render();
 }
 
 /* 入替＋選択 */
 function toggle(id){
-
-  if(isExcluded(id)) return;
 
   if(replaceTarget!=null){
 
@@ -477,12 +457,9 @@ function calcTotals(){
 /* 描画 */
 function render(){
 
-  syncExcludedSelected();
-
   let list=[...baseData];
 
   list.sort((a,b)=>{
-
     if(sortKey){
       let diff=getVal(a,sortKey)-getVal(b,sortKey);
       return sortAsc ? diff : -diff;
@@ -490,13 +467,13 @@ function render(){
     return compare(a,b);
   });
 
-  const colIndexMap = {"番号":1,"九十九の力":2};
+  const colIndexMap = {"番号":1,"鬼神の力":2};
   stats.forEach((s,i)=>{ colIndexMap[s]=i+3; });
   colIndexMap["入手"]=14;
 
   let html="<tr>";
   html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
-  html+=`<th>九十九の力</th>`;
+  html+=`<th>鬼神の力</th>`;
   stats.forEach(s=>{
     html+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
@@ -506,11 +483,10 @@ function render(){
   list.forEach(d=>{
     const sel=selected.includes(d["番号"])?"selected":"";
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
-    const exc=isExcluded(d["番号"])?"excluded":"";
 
-    html+=`<tr class="${sel} ${rep} ${exc}" onclick="toggle('${d["番号"]}')">`;
+    html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
 
-    html+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["鬼神の力"]||""}</td>`;
     stats.forEach(s=>{
       html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
@@ -526,7 +502,7 @@ function render(){
     table.className="";
   }
 
-  let html2="<tr><th>番号</th><th>九十九の力</th>";
+  let html2="<tr><th style='width:42px; white-space:nowrap;'>番号</th><th>鬼神の力</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html2+="</tr>";
@@ -539,7 +515,7 @@ function render(){
 
     html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
 
-    html2+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["鬼神の力"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
@@ -566,20 +542,16 @@ updateBtnState();
 
 loadCSV().then(() => {
   loadFromHTML();
-  updateExcludeLabels();
-
-  document.getElementById("excludeA").addEventListener("change", onExcludeChange);
-  document.getElementById("excludeB").addEventListener("change", onExcludeChange);
-  document.getElementById("excludeC").addEventListener("change", onExcludeChange);
-
   render();
-});</script>
+});
+</script>
 
+<!-- ▼ここ追加：表示中の画面だけ保存 -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-function downloadScreen() { 
- html2canvas(document.body, {
+function downloadScreen() {
+  html2canvas(document.body, {
     backgroundColor: "#000000",
     scale: 2,
 
@@ -594,12 +566,13 @@ function downloadScreen() {
     ignoreElements: (el) => el.classList.contains("no-capture")
   }).then(canvas => {
     const link = document.createElement("a");
-    link.download = "九十九.png";
+    link.download = "鬼神石.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   });
 }
 </script>
+<!-- ▲ここまで追加 -->
 
 </body>
 </html>
