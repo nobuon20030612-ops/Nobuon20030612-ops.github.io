@@ -458,40 +458,109 @@ body{ background:#000; }
   height:100%;
   border:2px solid #ffcc33;
   border-radius:6px;
-  background:linear-gradient(to bottom,#5a4200 0%,#2d1d00 55%,#140d00 100%);
+  background:
+    linear-gradient(to bottom,#5a4200 0%,#2d1d00 55%,#140d00 100%);
   color:#fff4b0;
   font-size:13px;
   font-weight:900;
   letter-spacing:0.5px;
   cursor:pointer;
+
   box-shadow:
     inset 0 2px 0 rgba(255,255,255,0.28),
     inset 0 -3px 0 rgba(0,0,0,0.85),
     0 0 10px rgba(255,200,50,0.55),
     0 3px 0 #120900;
-  transition:transform 0.08s, box-shadow 0.12s, filter 0.12s, background 0.12s;
+
+  transition:
+    transform 0.08s,
+    box-shadow 0.12s,
+    filter 0.12s,
+    background 0.12s;
 }
+
 .tsukumo-select-btn:hover{
   color:#ffffff;
   border-color:#ffe27a;
-  background:linear-gradient(to bottom,#7a5a00 0%,#3b2600 55%,#1c1200 100%);
+  background:
+    linear-gradient(to bottom,#7a5a00 0%,#3b2600 55%,#1c1200 100%);
+
   transform:translateY(-1px) scale(1.03);
+
   box-shadow:
     inset 0 2px 0 rgba(255,255,255,0.38),
     inset 0 -3px 0 rgba(0,0,0,0.9),
     0 0 16px rgba(255,240,120,0.95),
     0 0 34px rgba(255,180,40,0.8),
     0 5px 0 #120900;
+
   filter:brightness(1.18);
 }
+
 .tsukumo-select-btn:active{
   transform:translateY(2px) scale(0.98);
+
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.15),
     inset 0 -1px 0 rgba(0,0,0,0.95),
     0 0 10px rgba(255,180,40,0.6),
     0 1px 0 #120900;
 }
+
+.souseki-select-btn{
+  width:100%;
+  height:100%;
+  border:2px solid #33cfff;
+  border-radius:6px;
+  background:
+    linear-gradient(to bottom,#004b66 0%,#002c44 55%,#001322 100%);
+  color:#bff4ff;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:0.5px;
+  cursor:pointer;
+
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.28),
+    inset 0 -3px 0 rgba(0,0,0,0.85),
+    0 0 10px rgba(60,210,255,0.55),
+    0 3px 0 #00101c;
+
+  transition:
+    transform 0.08s,
+    box-shadow 0.12s,
+    filter 0.12s,
+    background 0.12s;
+}
+
+.souseki-select-btn:hover{
+  color:#ffffff;
+  border-color:#8eeaff;
+  background:
+    linear-gradient(to bottom,#006f95 0%,#003a5f 55%,#001b30 100%);
+
+  transform:translateY(-1px) scale(1.03);
+
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.38),
+    inset 0 -3px 0 rgba(0,0,0,0.9),
+    0 0 16px rgba(130,240,255,0.95),
+    0 0 34px rgba(40,180,255,0.8),
+    0 5px 0 #00101c;
+
+  filter:brightness(1.18);
+}
+
+.souseki-select-btn:active{
+  transform:translateY(2px) scale(0.98);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    inset 0 -1px 0 rgba(0,0,0,0.95),
+    0 0 10px rgba(40,180,255,0.6),
+    0 1px 0 #00101c;
+}
+
 .tsukumo-modal{
   position:fixed;
   inset:30px;
@@ -502,7 +571,28 @@ body{ background:#000; }
   padding:12px;
   color:#ccc;
 }
-.tsukumo-modal.hidden{ display:none; }
+
+.tsukumo-modal.hidden{
+  display:none;
+}
+
+.tsukumo-modal table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.tsukumo-modal th,
+.tsukumo-modal td{
+  border:1px solid #333;
+  padding:4px;
+  text-align:center;
+  font-size:11px;
+}
+
+.tsukumo-modal tr.selected{
+  background:#302000 !important;
+}
+
 .tsukumo-actions{
   background:#050505;
   padding:8px;
@@ -512,6 +602,7 @@ body{ background:#000; }
   gap:14px;
   flex-wrap:wrap;
 }
+
 .tsukumo-apply-btn{
   background:#b00000 !important;
   color:#ffffff !important;
@@ -521,21 +612,77 @@ body{ background:#000; }
   font-weight:900 !important;
   border-radius:4px;
   cursor:pointer;
-  box-shadow:0 0 10px rgba(255,60,60,0.95),0 0 24px rgba(255,0,0,0.9),0 0 42px rgba(255,0,0,0.75);
+  box-shadow:
+    0 0 10px rgba(255,60,60,0.95),
+    0 0 24px rgba(255,0,0,0.9),
+    0 0 42px rgba(255,0,0,0.75);
 }
+
 .tsukumo-apply-btn:hover{
   background:#ff0000 !important;
   color:#ffffff !important;
   transform:scale(1.04);
   filter:brightness(1.25);
-  box-shadow:0 0 14px rgba(255,120,120,1),0 0 30px rgba(255,0,0,1),0 0 58px rgba(255,0,0,0.9);
+  box-shadow:
+    0 0 14px rgba(255,120,120,1),
+    0 0 30px rgba(255,0,0,1),
+    0 0 58px rgba(255,0,0,0.9);
 }
+
 .tsukumo-close-btn{
   margin-left:42px !important;
   padding:8px 16px !important;
   font-size:18px !important;
   font-weight:800 !important;
 }
+.tsukumo-priority-area{
+  margin-top:8px;
+  font-size:12px;
+  color:#ccc;
+}
+
+.tsukumo-priority-area button{
+  margin:2px;
+  padding:3px 6px;
+  background:#111;
+  border:1px solid #555;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.tsukumo-priority-wrap{
+  display:block;
+}
+
+.tsukumo-selected-area{
+  margin-top:12px;
+  color:#ddd;
+  font-size:12px;
+}
+
+.tsukumo-selected-title{
+  font-weight:bold;
+  margin:10px 0 4px;
+}
+
+.tsukumo-list-title{
+  font-weight:bold;
+  margin:12px 0 4px;
+  color:#ddd;
+  font-size:12px;
+}
+
+.tsukumo-priority-area button.active{
+  color:#fff !important;
+  border-color:#ffd966;
+  background:#3a2a00;
+  box-shadow:
+    0 0 8px rgba(255,255,180,0.95),
+    0 0 18px rgba(255,220,80,0.9),
+    0 0 32px rgba(255,170,40,0.8);
+  filter:brightness(1.45);
+}
+
 .tsukumo-exclude-area{
   margin:6px 0 8px 0;
   display:flex;
@@ -545,47 +692,160 @@ body{ background:#000; }
   font-size:12px;
   color:#ccc;
 }
-.tsukumo-exclude-area label{ border:1px solid #444; background:#111; padding:3px 6px; font-weight:bold; }
-.tsukumo-exclude-area label.activeLabel{ color:#fff; border-color:#ffd966; background:#3a2a00; box-shadow:0 0 8px rgba(255,255,180,0.95),0 0 18px rgba(255,220,80,0.9); }
-.tsukumo-priority-area{ margin-top:8px; font-size:12px; color:#ccc; }
-.tsukumo-priority-area button{ margin:2px; padding:3px 6px; background:#111; border:1px solid #555; font-weight:bold; cursor:pointer; }
-.tsukumo-priority-area button.active{ color:#fff !important; border-color:#ffd966; background:#3a2a00; box-shadow:0 0 8px rgba(255,255,180,0.95),0 0 18px rgba(255,220,80,0.9),0 0 32px rgba(255,170,40,0.8); filter:brightness(1.45); }
-.tsukumo-selected-area{ margin-top:12px; color:#ddd; font-size:12px; }
-.tsukumo-selected-title,.tsukumo-list-title{ font-weight:bold; margin:10px 0 4px; color:#ddd; font-size:12px; }
-#tsukumoSelectedTable,#tsukumoPickerTable{ width:100%; border-collapse:collapse; table-layout:fixed; }
-#tsukumoSelectedTable th,#tsukumoSelectedTable td,#tsukumoPickerTable th,#tsukumoPickerTable td{ border:1px solid #333; padding:3px; text-align:center; font-size:10px; }
-#tsukumoSelectedTable tr.totalRow{ background:#1e2f1e; font-weight:bold; }
-#tsukumoSelectedTable tr.replaceTarget{ outline:2px solid #fff; background:#444 !important; }
-#tsukumoPickerTable tr.selected{ background:#302000 !important; }
-#tsukumoPickerTable tr.excluded{ opacity:0.25; text-decoration:line-through; }
-#tsukumoPickerTable tr:hover td{ background:#241800; box-shadow:inset 0 0 8px rgba(255,220,80,0.75),0 0 10px rgba(255,170,40,0.55); filter:brightness(1.25); }
 
-#tsukumoSelectedTable th:nth-child(1),
-#tsukumoSelectedTable td:nth-child(1),
+.tsukumo-exclude-area label{
+  border:1px solid #444;
+  background:#111;
+  padding:3px 6px;
+  font-weight:bold;
+}
+
+.tsukumo-exclude-area label.activeLabel{
+  color:#fff;
+  border-color:#ffd966;
+  background:#3a2a00;
+  box-shadow:
+    0 0 8px rgba(255,255,180,0.95),
+    0 0 18px rgba(255,220,80,0.9);
+}
+
+.tsukumo-modal tr.excluded{
+  opacity:0.25;
+  text-decoration:line-through;
+}
+
+#tsukumoSelectedTable{
+  width:100%;
+  table-layout:fixed;
+}
+
+#tsukumoSelectedTable th,
+#tsukumoSelectedTable td{
+  font-size:10px;
+  padding:3px;
+}
+
+#tsukumoSelectedTable tr.totalRow{
+  background:#1e2f1e;
+  font-weight:bold;
+}
+
+#tsukumoSelectedTable tr.replaceTarget{
+  outline:2px solid #fff;
+  background:#444 !important;
+}
+
+#tsukumoPickerTable,
+#tsukumoSelectedTable{
+  width:100%;
+  table-layout:fixed;
+}
+
+#tsukumoPickerTable th,
+#tsukumoPickerTable td,
+#tsukumoSelectedTable th,
+#tsukumoSelectedTable td{
+  overflow:hidden;
+  text-overflow:clip;
+  white-space:nowrap;
+  padding:2px;
+  font-size:10px;
+}
+
 #tsukumoPickerTable th:nth-child(1),
-#tsukumoPickerTable td:nth-child(1){
-  width:50px;
+#tsukumoPickerTable td:nth-child(1),
+#tsukumoSelectedTable th:nth-child(1),
+#tsukumoSelectedTable td:nth-child(1){
+  width:6px;
+  min-width:6px;
+  max-width:6px;
 }
 
-#tsukumoSelectedTable th:nth-child(2),
-#tsukumoSelectedTable td:nth-child(2),
 #tsukumoPickerTable th:nth-child(2),
-#tsukumoPickerTable td:nth-child(2){
-  width:180px;
+#tsukumoPickerTable td:nth-child(2),
+#tsukumoSelectedTable th:nth-child(2),
+#tsukumoSelectedTable td:nth-child(2){
+  width:45px;
+  min-width:45px;
+  max-width:45px;
 }
 
+#tsukumoPickerTable th:nth-child(3),
+#tsukumoPickerTable td:nth-child(3),
+#tsukumoPickerTable th:nth-child(4),
+#tsukumoPickerTable td:nth-child(4),
+#tsukumoPickerTable th:nth-child(5),
+#tsukumoPickerTable td:nth-child(5),
+#tsukumoPickerTable th:nth-child(6),
+#tsukumoPickerTable td:nth-child(6),
+#tsukumoPickerTable th:nth-child(7),
+#tsukumoPickerTable td:nth-child(7),
+#tsukumoPickerTable th:nth-child(8),
+#tsukumoPickerTable td:nth-child(8),
+#tsukumoPickerTable th:nth-child(9),
+#tsukumoPickerTable td:nth-child(9),
+#tsukumoPickerTable th:nth-child(10),
+#tsukumoPickerTable td:nth-child(10),
+#tsukumoPickerTable th:nth-child(11),
+#tsukumoPickerTable td:nth-child(11),
+#tsukumoPickerTable th:nth-child(12),
+#tsukumoPickerTable td:nth-child(12),
+#tsukumoPickerTable th:nth-child(13),
+#tsukumoPickerTable td:nth-child(13),
 #tsukumoSelectedTable th:nth-child(3),
 #tsukumoSelectedTable td:nth-child(3),
-#tsukumoPickerTable th:nth-child(3),
-#tsukumoPickerTable td:nth-child(3){
-  width:180px;
+#tsukumoSelectedTable th:nth-child(4),
+#tsukumoSelectedTable td:nth-child(4),
+#tsukumoSelectedTable th:nth-child(5),
+#tsukumoSelectedTable td:nth-child(5),
+#tsukumoSelectedTable th:nth-child(6),
+#tsukumoSelectedTable td:nth-child(6),
+#tsukumoSelectedTable th:nth-child(7),
+#tsukumoSelectedTable td:nth-child(7),
+#tsukumoSelectedTable th:nth-child(8),
+#tsukumoSelectedTable td:nth-child(8),
+#tsukumoSelectedTable th:nth-child(9),
+#tsukumoSelectedTable td:nth-child(9),
+#tsukumoSelectedTable th:nth-child(10),
+#tsukumoSelectedTable td:nth-child(10),
+#tsukumoSelectedTable th:nth-child(11),
+#tsukumoSelectedTable td:nth-child(11),
+#tsukumoSelectedTable th:nth-child(12),
+#tsukumoSelectedTable td:nth-child(12),
+#tsukumoSelectedTable th:nth-child(13),
+#tsukumoSelectedTable td:nth-child(13){
+  width:12px;
+  min-width:12px;
+  max-width:12px;
 }
 
-#tsukumoSelectedTable th:nth-child(n+4),
-#tsukumoSelectedTable td:nth-child(n+4),
-#tsukumoPickerTable th:nth-child(n+4),
-#tsukumoPickerTable td:nth-child(n+4){
-  width:55px;
+#tsukumoPickerTable th:nth-child(14),
+#tsukumoPickerTable td:nth-child(14),
+#tsukumoSelectedTable th:nth-child(14),
+#tsukumoSelectedTable td:nth-child(14){
+  width:120px;
+  min-width:120px;
+  max-width:120px;
+}
+
+.tsukumo-select-btn:hover,
+.tsukumo-priority-area button:hover{
+  color:#fff;
+  border-color:#ffd966;
+  background:#2a2200;
+  box-shadow:
+    0 0 8px rgba(255,255,180,0.95),
+    0 0 18px rgba(255,220,80,0.9),
+    0 0 32px rgba(255,170,40,0.8);
+  filter:brightness(1.35);
+}
+
+#tsukumoPickerTable tr:hover td{
+  background:#241800;
+  box-shadow:
+    inset 0 0 8px rgba(255,220,80,0.75),
+    0 0 10px rgba(255,170,40,0.55);
+  filter:brightness(1.25);
 }
 
 /* ▼家臣能力の入力欄だけ、上段見出しと同じオレンジ系にする */
@@ -1163,8 +1423,21 @@ function applyFuyoSelected(){
 
 <script>
 const KASHIN_TSUKUMO_STATS = ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
-const KASHIN_TSUKUMO_STORAGE_KEY = "kashin_tsukumo_state_v2_initial_clear";
-const kashinTsukumoStatColors = {"生命":"#ddd","気合":"#7fbfd6","腕力":"#cc6666","耐久":"#5f7fbf","器用":"#6fbf6f","知力":"#d6d67f","魅力":"#a87fd6","土":"#d19a66","水":"#4f6fa8","火":"#b35f7a","風":"#9ccc65"};
+const KASHIN_TSUKUMO_STORAGE_KEY = "kashin_tsukumo_state_v3_ability_match";
+const kashinTsukumoStatColors = {
+  "生命":"#ddd",
+  "気合":"#7fbfd6",
+  "腕力":"#cc6666",
+  "耐久":"#5f7fbf",
+  "器用":"#6fbf6f",
+  "知力":"#d6d67f",
+  "魅力":"#a87fd6",
+  "土":"#d19a66",
+  "水":"#4f6fa8",
+  "火":"#b35f7a",
+  "風":"#9ccc65"
+};
+
 let tsukumoData = [];
 let tsukumoDataLoaded = false;
 let tsukumoTargetSection = "";
@@ -1177,37 +1450,99 @@ let tsukumoSubStat = null;
 let tsukumoThirdStat = null;
 let tsukumoReplaceTarget = null;
 let tsukumoSavedState = loadKashinTsukumoSavedStateAll();
+
 function kashinTsukumoNum(value){
-  const n = Number(String(value || "").replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー]/g, "-").replace(/,/g, "").replace(/[^0-9.\-]/g, "").trim());
+  const n = Number(String(value || "")
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[－ー]/g, "-")
+    .replace(/,/g, "")
+    .replace(/[^0-9.\-]/g, "")
+    .trim());
   return Number.isFinite(n) ? n : 0;
 }
-function getKashinTsukumoName(row){ return row["九十九の力"] || row["名前"] || ""; }
-function getKashinTsukumoColor(stat){ return kashinTsukumoStatColors[stat] || "#ddd"; }
-function getKashinTsukumoArrow(key){ if(tsukumoSortKey === key){ return tsukumoSortAsc ? " ▲" : " ▼"; } return " ⇅"; }
-function loadKashinTsukumoSavedStateAll(){ try{ return JSON.parse(localStorage.getItem(KASHIN_TSUKUMO_STORAGE_KEY) || "{}"); }catch(e){ return {}; } }
-function writeKashinTsukumoSavedStateAll(){ try{ localStorage.setItem(KASHIN_TSUKUMO_STORAGE_KEY, JSON.stringify(tsukumoSavedState)); }catch(e){} }
+
+function getKashinTsukumoName(row){
+  return row["九十九の力"] || row["名前"] || "";
+}
+
+function getKashinTsukumoColor(stat){
+  return kashinTsukumoStatColors[stat] || "#ddd";
+}
+
+function getKashinTsukumoArrow(key){
+  if(tsukumoSortKey === key){
+    return tsukumoSortAsc ? " ▲" : " ▼";
+  }
+  return " ⇅";
+}
+
+function loadKashinTsukumoSavedStateAll(){
+  try{
+    return JSON.parse(localStorage.getItem(KASHIN_TSUKUMO_STORAGE_KEY) || "{}");
+  }catch(e){
+    return {};
+  }
+}
+
+function writeKashinTsukumoSavedStateAll(){
+  try{
+    localStorage.setItem(KASHIN_TSUKUMO_STORAGE_KEY, JSON.stringify(tsukumoSavedState));
+  }catch(e){}
+}
+
+function normalizeKashinTsukumoSelected(selected){
+  if(!Array.isArray(selected)) return [];
+  return selected.map(item => {
+    if(item && typeof item === "object") return String(item["番号"] || "");
+    return String(item || "");
+  }).filter(Boolean);
+}
+
 function saveKashinTsukumoCurrentState(){
   if(!tsukumoTargetSection) return;
-  tsukumoSavedState[tsukumoTargetSection] = { selected: JSON.parse(JSON.stringify(tsukumoSelected)), main: tsukumoMainStat, sub: tsukumoSubStat, third: tsukumoThirdStat };
+  tsukumoSavedState[tsukumoTargetSection] = {
+    selected: tsukumoSelected.slice(),
+    main: tsukumoMainStat,
+    sub: tsukumoSubStat,
+    third: tsukumoThirdStat
+  };
   writeKashinTsukumoSavedStateAll();
 }
+
 function loadKashinTsukumoTargetState(sectionClass){
   const saved = tsukumoSavedState[sectionClass] || {};
-  tsukumoSelected = Array.isArray(saved.selected) ? JSON.parse(JSON.stringify(saved.selected)) : [];
+  tsukumoSelected = normalizeKashinTsukumoSelected(saved.selected);
   tsukumoMainStat = saved.main || null;
   tsukumoSubStat = saved.sub || null;
   tsukumoThirdStat = saved.third || null;
   tsukumoReplaceTarget = null;
 }
+
 async function loadKashinTsukumoCSV(){
   const response = await fetch("./九十九.csv");
-  if(!response.ok){ alert("九十九.csvを読み込めませんでした"); return; }
+  if(!response.ok){
+    alert("九十九.csvを読み込めませんでした");
+    return;
+  }
+
   const text = (await response.text()).replace(/^\uFEFF/, "");
-  const rows = text.trim().split(/\r?\n/).map(row => row.split(",").map(col => { let value = col.trim(); if(value.startsWith('"') && value.endsWith('"')){ value = value.slice(1, -1).replace(/""/g, '"'); } return value; }));
+  const rows = text.trim().split(/\r?\n/).map(row => row.split(",").map(col => {
+    let value = col.trim();
+    if(value.startsWith('"') && value.endsWith('"')){
+      value = value.slice(1, -1).replace(/""/g, '"');
+    }
+    return value;
+  }));
+
   const headers = rows[0] || [];
-  tsukumoData = rows.slice(1).map(cols => { const obj = {}; headers.forEach((h, i) => obj[h] = cols[i] || ""); return obj; });
+  tsukumoData = rows.slice(1).map(cols => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || "");
+    return obj;
+  });
   tsukumoDataLoaded = true;
 }
+
 function isKashinTsukumoExcluded(num){
   num = parseInt(num, 10) || 0;
   const excludeA = document.getElementById("tsukumoExcludeA");
@@ -1218,21 +1553,49 @@ function isKashinTsukumoExcluded(num){
   if(excludeC && excludeC.checked && [17,18,19,149,150,151].includes(num)) return true;
   return false;
 }
+
 function updateKashinTsukumoExcludeLabels(){
-  ["A","B","C"].forEach(code => { const checkbox = document.getElementById(`tsukumoExclude${code}`); const label = document.getElementById(`tsukumoExcludeLabel${code}`); if(checkbox && label){ label.classList.toggle("activeLabel", checkbox.checked); } });
+  ["A","B","C"].forEach(code => {
+    const checkbox = document.getElementById(`tsukumoExclude${code}`);
+    const label = document.getElementById(`tsukumoExcludeLabel${code}`);
+    if(checkbox && label){
+      label.classList.toggle("activeLabel", checkbox.checked);
+    }
+  });
 }
+
 function syncKashinTsukumoExcludedSelected(){
-  tsukumoSelected = tsukumoSelected.filter(row => !isKashinTsukumoExcluded(row["番号"]));
+  tsukumoSelected = tsukumoSelected.filter(id => !isKashinTsukumoExcluded(id));
+  if(tsukumoReplaceTarget != null && isKashinTsukumoExcluded(tsukumoReplaceTarget)){
+    tsukumoReplaceTarget = null;
+  }
 }
+
 function onTsukumoExcludeChange(){
   syncKashinTsukumoExcludedSelected();
   updateKashinTsukumoExcludeLabels();
   showKashinTsukumoTop();
 }
+
 function makeTsukumoPriorityBtns(){
-  const areas = [{id:"tsukumoMainBtns",type:"main",active:tsukumoMainStat},{id:"tsukumoSubBtns",type:"sub",active:tsukumoSubStat},{id:"tsukumoThirdBtns",type:"third",active:tsukumoThirdStat}];
-  areas.forEach(area => { const box = document.getElementById(area.id); if(!box) return; let html = ""; KASHIN_TSUKUMO_STATS.forEach(stat => { const active = area.active === stat ? " active" : ""; html += `<button class="${active}" style="color:${getKashinTsukumoColor(stat)}" onclick="setTsukumoPriority('${area.type}', '${stat}')">${stat}</button>`; }); box.innerHTML = html; });
+  const areas = [
+    {id:"tsukumoMainBtns", type:"main", active:tsukumoMainStat},
+    {id:"tsukumoSubBtns", type:"sub", active:tsukumoSubStat},
+    {id:"tsukumoThirdBtns", type:"third", active:tsukumoThirdStat}
+  ];
+
+  areas.forEach(area => {
+    const box = document.getElementById(area.id);
+    if(!box) return;
+    let html = "";
+    KASHIN_TSUKUMO_STATS.forEach(stat => {
+      const active = area.active === stat ? " active" : "";
+      html += `<button class="${active}" style="color:${getKashinTsukumoColor(stat)}" onclick="setTsukumoPriority('${area.type}', '${stat}')">${stat}</button>`;
+    });
+    box.innerHTML = html;
+  });
 }
+
 function compareKashinTsukumoPriority(a, b){
   const priority = [tsukumoMainStat, tsukumoSubStat, tsukumoThirdStat, "生命"].filter(Boolean);
   for(const key of priority){
@@ -1241,15 +1604,18 @@ function compareKashinTsukumoPriority(a, b){
   }
   return (parseInt(a["番号"], 10) || 0) - (parseInt(b["番号"], 10) || 0);
 }
+
 function showKashinTsukumoTop(){
-  const sorted = tsukumoData
+  const sorted = [...tsukumoData]
     .filter(row => !isKashinTsukumoExcluded(row["番号"]))
     .sort(compareKashinTsukumoPriority);
-  tsukumoSelected = sorted.slice(0, 8);
+
+  tsukumoSelected = sorted.slice(0, 8).map(row => String(row["番号"] || ""));
   tsukumoReplaceTarget = null;
   saveKashinTsukumoCurrentState();
   renderTsukumoPicker();
 }
+
 function setTsukumoPriority(type, stat){
   if(type === "main") tsukumoMainStat = stat;
   if(type === "sub") tsukumoSubStat = stat;
@@ -1257,66 +1623,239 @@ function setTsukumoPriority(type, stat){
   makeTsukumoPriorityBtns();
   showKashinTsukumoTop();
 }
-function sortTsukumo(key){ if(tsukumoSortKey === key){ tsukumoSortAsc = !tsukumoSortAsc; }else{ tsukumoSortKey = key; tsukumoSortAsc = true; } renderTsukumoPicker(); }
-function getTsukumoRankValue(row){ let value = 0; if(tsukumoMainStat) value += kashinTsukumoNum(row[tsukumoMainStat]) * 1000000; if(tsukumoSubStat) value += kashinTsukumoNum(row[tsukumoSubStat]) * 1000; if(tsukumoThirdStat) value += kashinTsukumoNum(row[tsukumoThirdStat]); return value; }
+
+function sortTsukumo(key){
+  if(tsukumoSortKey === key){
+    tsukumoSortAsc = !tsukumoSortAsc;
+  }else{
+    tsukumoSortKey = key;
+    tsukumoSortAsc = false;
+  }
+  renderTsukumoPicker();
+}
+
 function getTsukumoSortedData(){
-  const data = tsukumoData.slice();
-  data.sort((a, b) => { if(tsukumoMainStat || tsukumoSubStat || tsukumoThirdStat){ const rankDiff = compareKashinTsukumoPriority(a, b); if(rankDiff !== 0) return rankDiff; } const av = tsukumoSortKey === "九十九の力" ? getKashinTsukumoName(a) : kashinTsukumoNum(a[tsukumoSortKey]); const bv = tsukumoSortKey === "九十九の力" ? getKashinTsukumoName(b) : kashinTsukumoNum(b[tsukumoSortKey]); if(typeof av === "string" || typeof bv === "string"){ return tsukumoSortAsc ? String(av).localeCompare(String(bv), "ja") : String(bv).localeCompare(String(av), "ja"); } return tsukumoSortAsc ? av - bv : bv - av; });
+  const data = [...tsukumoData];
+  data.sort((a, b) => {
+    if(tsukumoSortKey){
+      const diff = kashinTsukumoNum(a[tsukumoSortKey]) - kashinTsukumoNum(b[tsukumoSortKey]);
+      return tsukumoSortAsc ? diff : -diff;
+    }
+    return compareKashinTsukumoPriority(a, b);
+  });
   return data;
 }
-function updateTsukumoCount(){ const count = document.getElementById("tsukumoCount"); if(count){ count.textContent = `選択数：${tsukumoSelected.length} / 8`; } }
+
+function updateTsukumoCount(){
+  const count = document.getElementById("tsukumoCount");
+  if(count){
+    count.textContent = `選択数：${tsukumoSelected.length} / 8`;
+  }
+}
+
 function renderTsukumoSelectedTable(){
-  const table = document.getElementById("tsukumoSelectedTable"); if(!table) return;
-  let html = "<tr><th>順</th><th>番号</th><th>九十九の力</th>";
-  KASHIN_TSUKUMO_STATS.forEach(stat => html += `<th style="color:${getKashinTsukumoColor(stat)}">${stat}</th>`);
-  html += "</tr>";
-  const total = {}; KASHIN_TSUKUMO_STATS.forEach(stat => total[stat] = 0);
-  tsukumoSelected.forEach((row, index) => { const replaceClass = tsukumoReplaceTarget === index ? " class=\"replaceTarget\"" : ""; html += `<tr${replaceClass} onclick="setTsukumoReplaceTarget(${index})"><td>${index + 1}</td><td>${row["番号"] || ""}</td><td>${getKashinTsukumoName(row)}</td>`; KASHIN_TSUKUMO_STATS.forEach(stat => { const value = kashinTsukumoNum(row[stat]); total[stat] += value; html += `<td style="color:${getKashinTsukumoColor(stat)}">${value || ""}</td>`; }); html += "</tr>"; });
-  html += `<tr class="totalRow"><td colspan="3">合計</td>`; KASHIN_TSUKUMO_STATS.forEach(stat => { html += `<td style="color:${getKashinTsukumoColor(stat)}">${total[stat] || ""}</td>`; }); html += "</tr>";
-  table.innerHTML = html;
-}
-function setTsukumoReplaceTarget(index){ tsukumoReplaceTarget = tsukumoReplaceTarget === index ? null : index; renderTsukumoPicker(); }
-function toggleTsukumo(rowIndex){
-  const row = tsukumoData[rowIndex]; if(!row) return;
-  const num = String(row["番号"] || ""); if(isKashinTsukumoExcluded(num)) return;
-  const selectedIndex = tsukumoSelected.findIndex(item => String(item["番号"] || "") === num);
-  if(selectedIndex >= 0){ tsukumoSelected.splice(selectedIndex, 1); }
-  else if(tsukumoReplaceTarget !== null && tsukumoSelected[tsukumoReplaceTarget]){ tsukumoSelected[tsukumoReplaceTarget] = row; tsukumoReplaceTarget = null; }
-  else{ if(tsukumoSelected.length >= 8){ alert("選択できる九十九は8個までです"); return; } tsukumoSelected.push(row); }
-  saveKashinTsukumoCurrentState(); renderTsukumoPicker();
-}
-function renderTsukumoPicker(){
-  makeTsukumoPriorityBtns(); renderTsukumoSelectedTable(); updateTsukumoCount(); updateKashinTsukumoExcludeLabels();
-  const table = document.getElementById("tsukumoPickerTable"); if(!table) return;
+  const table = document.getElementById("tsukumoSelectedTable");
+  if(!table) return;
+
   let html = "<tr>";
-  html += `<th onclick="sortTsukumo('番号')">番号${getKashinTsukumoArrow('番号')}</th>`;
-  html += `<th onclick="sortTsukumo('九十九の力')">九十九の力${getKashinTsukumoArrow('九十九の力')}</th>`;
-  html += `<th onclick="sortTsukumo('入手')">入手${getKashinTsukumoArrow('入手')}</th>`;
-  KASHIN_TSUKUMO_STATS.forEach(stat => { html += `<th style="color:${getKashinTsukumoColor(stat)}" onclick="sortTsukumo('${stat}')">${stat}${getKashinTsukumoArrow(stat)}</th>`; });
+  html += "<th style='width:42px; white-space:nowrap;'>番号</th>";
+  html += "<th>九十九の力</th>";
+
+  KASHIN_TSUKUMO_STATS.forEach(stat => {
+    html += `<th style="color:${getKashinTsukumoColor(stat)}">${stat}</th>`;
+  });
+
+  html += "<th style='width:70px; white-space:nowrap;'>入手</th>";
   html += "</tr>";
-  const sorted = getTsukumoSortedData();
-  sorted.forEach(row => { const originalIndex = tsukumoData.indexOf(row); const num = String(row["番号"] || ""); const selected = tsukumoSelected.some(item => String(item["番号"] || "") === num); const excluded = isKashinTsukumoExcluded(num); const className = selected ? "selected" : (excluded ? "excluded" : ""); html += `<tr class="${className}" onclick="toggleTsukumo(${originalIndex})">`; html += `<td>${row["番号"] || ""}</td><td>${getKashinTsukumoName(row)}</td><td>${row["入手"] || ""}</td>`; KASHIN_TSUKUMO_STATS.forEach(stat => { const value = kashinTsukumoNum(row[stat]); html += `<td style="color:${getKashinTsukumoColor(stat)}">${value || ""}</td>`; }); html += "</tr>"; });
+
+  const total = {};
+  KASHIN_TSUKUMO_STATS.forEach(stat => total[stat] = 0);
+
+  tsukumoSelected.forEach(id => {
+    const row = tsukumoData.find(x => String(x["番号"] || "") === String(id));
+    if(!row) return;
+
+    const replaceClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
+    html += `<tr class="${replaceClass}" onclick="setTsukumoReplace('${id}')">`;
+    html += `<td style="width:42px; white-space:nowrap;">${row["番号"] || ""}</td>`;
+    html += `<td>${getKashinTsukumoName(row)}</td>`;
+
+    KASHIN_TSUKUMO_STATS.forEach(stat => {
+      const value = kashinTsukumoNum(row[stat]);
+      total[stat] += value;
+      html += `<td style="color:${getKashinTsukumoColor(stat)}">${value || ""}</td>`;
+    });
+
+    html += `<td style="white-space:nowrap;">${row["入手"] || ""}</td>`;
+    html += "</tr>";
+  });
+
+  html += `<tr class="totalRow"><td colspan="2">合計</td>`;
+  KASHIN_TSUKUMO_STATS.forEach(stat => {
+    html += `<td style="color:${getKashinTsukumoColor(stat)}">${total[stat] || ""}</td>`;
+  });
+  html += `<td></td>`;
+  html += "</tr>";
+
   table.innerHTML = html;
 }
-function openTsukumoPicker(sectionClass, label){
-  tsukumoTargetSection = sectionClass; tsukumoTargetLabel = label; loadKashinTsukumoTargetState(sectionClass);
-  const modal = document.getElementById("tsukumoModal"); const targetLabel = document.getElementById("tsukumoTargetLabel");
-  if(targetLabel) targetLabel.textContent = label; if(modal) modal.classList.remove("hidden");
-  if(tsukumoDataLoaded){ renderTsukumoPicker(); }else{ loadKashinTsukumoCSV().then(() => renderTsukumoPicker()); }
+
+function setTsukumoReplace(id){
+  if(isKashinTsukumoExcluded(id)) return;
+  tsukumoReplaceTarget = (tsukumoReplaceTarget === id) ? null : id;
+  renderTsukumoPicker();
 }
-function closeTsukumoPicker(){ saveKashinTsukumoCurrentState(); const modal = document.getElementById("tsukumoModal"); if(modal) modal.classList.add("hidden"); tsukumoTargetSection = ""; tsukumoTargetLabel = ""; tsukumoReplaceTarget = null; updateTsukumoCount(); }
+
+function toggleTsukumo(id){
+  if(isKashinTsukumoExcluded(id)) return;
+
+  if(tsukumoReplaceTarget != null){
+    if(id == tsukumoReplaceTarget){
+      tsukumoReplaceTarget = null;
+      renderTsukumoPicker();
+      return;
+    }
+
+    if(tsukumoSelected.includes(id)) return;
+
+    const idx = tsukumoSelected.indexOf(tsukumoReplaceTarget);
+    if(idx !== -1){
+      tsukumoSelected[idx] = id;
+    }
+
+    tsukumoReplaceTarget = null;
+    saveKashinTsukumoCurrentState();
+    renderTsukumoPicker();
+    return;
+  }
+
+  const i = tsukumoSelected.indexOf(id);
+
+  if(i >= 0){
+    tsukumoSelected.splice(i, 1);
+  }else{
+    if(tsukumoSelected.length >= 8) return;
+    tsukumoSelected.push(id);
+  }
+
+  saveKashinTsukumoCurrentState();
+  renderTsukumoPicker();
+}
+
+function renderTsukumoPicker(){
+  makeTsukumoPriorityBtns();
+  syncKashinTsukumoExcludedSelected();
+  updateTsukumoCount();
+  updateKashinTsukumoExcludeLabels();
+  renderTsukumoSelectedTable();
+
+  const table = document.getElementById("tsukumoPickerTable");
+  if(!table) return;
+
+  let html = "<tr>";
+  html += `<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getKashinTsukumoArrow('番号')}</th>`;
+  html += `<th>九十九の力</th>`;
+
+  KASHIN_TSUKUMO_STATS.forEach(stat => {
+    html += `<th style="color:${getKashinTsukumoColor(stat)}" onclick="sortTsukumo('${stat}')">${stat}${getKashinTsukumoArrow(stat)}</th>`;
+  });
+
+  html += `<th style="width:70px; white-space:nowrap;">入手</th>`;
+  html += "</tr>";
+
+  const sorted = getTsukumoSortedData();
+  sorted.forEach(row => {
+    const id = String(row["番号"] || "");
+    const selectedClass = tsukumoSelected.includes(id) ? "selected" : "";
+    const replaceClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
+    const excludedClass = isKashinTsukumoExcluded(id) ? "excluded" : "";
+
+    html += `<tr class="${selectedClass} ${replaceClass} ${excludedClass}" onclick="toggleTsukumo('${id}')">`;
+    html += `<td style="width:42px; white-space:nowrap;">${row["番号"] || ""}</td>`;
+    html += `<td>${getKashinTsukumoName(row)}</td>`;
+
+    KASHIN_TSUKUMO_STATS.forEach(stat => {
+      const value = kashinTsukumoNum(row[stat]);
+      html += `<td style="color:${getKashinTsukumoColor(stat)}">${value || ""}</td>`;
+    });
+
+    html += `<td style="white-space:nowrap;">${row["入手"] || ""}</td>`;
+    html += "</tr>";
+  });
+
+  table.innerHTML = html;
+}
+
+function openTsukumoPicker(sectionClass, label){
+  tsukumoTargetSection = sectionClass;
+  tsukumoTargetLabel = label;
+  loadKashinTsukumoTargetState(sectionClass);
+
+  const modal = document.getElementById("tsukumoModal");
+  const targetLabel = document.getElementById("tsukumoTargetLabel");
+
+  if(targetLabel) targetLabel.textContent = label;
+  if(modal) modal.classList.remove("hidden");
+
+  makeTsukumoPriorityBtns();
+  updateKashinTsukumoExcludeLabels();
+
+  if(tsukumoDataLoaded){
+    renderTsukumoPicker();
+  }else{
+    loadKashinTsukumoCSV().then(() => renderTsukumoPicker());
+  }
+}
+
+function closeTsukumoPicker(){
+  saveKashinTsukumoCurrentState();
+  const modal = document.getElementById("tsukumoModal");
+  if(modal) modal.classList.add("hidden");
+  tsukumoTargetSection = "";
+  tsukumoTargetLabel = "";
+  tsukumoReplaceTarget = null;
+  updateTsukumoCount();
+}
+
 function getKashinTsukumoRowInputs(sectionClass, index){
-  const section = document.querySelector(`.table.${sectionClass}`); if(!section) return [];
+  const section = document.querySelector(`.table.${sectionClass}`);
+  if(!section) return [];
   const labelCell = section.querySelector(`.kashin-tsukumo-detail-label[data-tsukumo-section="${sectionClass}"][data-tsukumo-index="${index}"]`);
   if(!labelCell) return [];
   return getKashinInputsAfterLabelCell(labelCell);
 }
-function clearKashinTsukumoRows(sectionClass){ for(let i=0; i<8; i++){ const inputs = getKashinTsukumoRowInputs(sectionClass, i); if(inputs.length === 11){ setKashinFuyoInputs(inputs, {}); } } }
-function makeKashinTsukumoRowTotal(row){ const total = makeKashinFuyoTotal(); KASHIN_TSUKUMO_STATS.forEach(stat => { total[stat] = kashinTsukumoNum(row[stat]); }); return total; }
+
+function clearKashinTsukumoRows(sectionClass){
+  for(let i=0; i<8; i++){
+    const inputs = getKashinTsukumoRowInputs(sectionClass, i);
+    if(inputs.length === 11){
+      setKashinFuyoInputs(inputs, {});
+    }
+  }
+}
+
+function makeKashinTsukumoRowTotal(row){
+  const total = makeKashinFuyoTotal();
+  KASHIN_TSUKUMO_STATS.forEach(stat => {
+    total[stat] = kashinTsukumoNum(row[stat]);
+  });
+  return total;
+}
+
 function applyTsukumoSelection(){
-  if(!tsukumoTargetSection){ alert("反映先が不明です"); return; }
+  if(!tsukumoTargetSection){
+    alert("反映先が不明です");
+    return;
+  }
+
   clearKashinTsukumoRows(tsukumoTargetSection);
-  tsukumoSelected.slice(0, 8).forEach((row, index) => { const inputs = getKashinTsukumoRowInputs(tsukumoTargetSection, index); setKashinFuyoInputs(inputs, makeKashinTsukumoRowTotal(row)); });
+  tsukumoSelected.slice(0, 8).forEach((id, index) => {
+    const row = tsukumoData.find(x => String(x["番号"] || "") === String(id));
+    if(!row) return;
+    const inputs = getKashinTsukumoRowInputs(tsukumoTargetSection, index);
+    setKashinFuyoInputs(inputs, makeKashinTsukumoRowTotal(row));
+  });
+
   saveKashinTsukumoCurrentState();
   if(typeof calc === "function") calc();
   closeTsukumoPicker();
