@@ -99,6 +99,20 @@ tr.selected:hover{
     0 0 28px rgba(255,200,80,0.8);
 }
 
+label.activeLabel{
+  color:#fff;
+  border-color:#ffd966;
+  background:#3a2a00;
+  box-shadow:
+    0 0 8px rgba(255,255,180,0.95),
+    0 0 18px rgba(255,220,80,0.9);
+}
+
+tr.excluded{
+  opacity:0.25;
+  text-decoration:line-through;
+}
+
 .replaceTarget{
   outline:3px solid #fff;
   background:#444 !important;
@@ -108,12 +122,11 @@ button{
   background:#222;
   color:#aaa;
   border:1px solid #444;
-  margin:4px;
-  padding:12px 20px;
-  font-size:18px;
+  margin:2px;
+  padding:6px 10px;
+  font-size:9px;
   cursor:pointer;
 }
-
 button:hover{
   transform: scale(1.05);
   filter:
@@ -283,7 +296,7 @@ function updateExcludeLabels(){
 function onExcludeChange(){
   syncExcludedSelected();
   updateExcludeLabels();
-  render();
+  showTop();
 }
 async function loadCSV() {
   const response = await fetch("./九十九.csv");
@@ -483,8 +496,8 @@ function render(){
 
   /* 一覧 */
   let html="<tr>";
-  html+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
-  html+=`<th>九十九の力</th><th>入手</th>`;
+  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th>九十九の力</th><th style="width:70px; white-space:nowrap;">入手</th>`;
   stats.forEach(s=>{
     html+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
@@ -497,7 +510,7 @@ function render(){
 
     html+=`<tr class="${sel} ${rep} ${exc}" onclick="toggle('${d["番号"]}')">`;
 
-    html+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td><td>${d["入手"]||""}</td>`;
+    html+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td><td style="white-space:nowrap;">${d["入手"]||""}</td>`;
     stats.forEach(s=>{
       html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
@@ -514,7 +527,7 @@ function render(){
   }
 
   /* 上8個 */
-  let html2="<tr><th>番号</th><th>九十九の力</th><th>入手</th>";
+  let html2="<tr><th>番号</th><th>九十九の力</th><th style='width:70px;'>入手</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+="</tr>";
 
@@ -526,7 +539,7 @@ function render(){
 
     html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
 
-    html2+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td><td>${d["入手"]||""}</td>`;
+    html2+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td><td style="white-space:nowrap;">${d["入手"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
