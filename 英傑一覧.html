@@ -191,6 +191,17 @@ function cellValue(d,h){
   if(s==="?" || s==="？" || s==="undefined" || s==="null") return "";
   return s;
 }
+function escapeHTML(s){
+  return String(s).replace(/[&<>"]/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
+}
+function getSkillTextStat(txt){
+  const s=String(txt||"");
+  for(const stat of stats){
+    const words=statSkillWords[stat]||[stat];
+    if(words.some(w=>s.includes(w))) return stat;
+  }
+  return null;
+}
 function isNumericColumn(key){return Object.values(statKeyMap).includes(key)||key==="番号"||key==="コスト";}
 function renderRows(list,withRank=false){
   let html="<tr>";
@@ -206,8 +217,11 @@ function renderRows(list,withRank=false){
     html+="<tr>";
     if(withRank) html+=`<td>${idx+1}</td>`;
     viewColumns.forEach(c=>{
-      const style=c.stat?` style="color:${statColors[c.stat]}"`:"";
-      html+=`<td${style}>${cellValue(d,c.key)}</td>`;
+      const value=cellValue(d,c.key);
+      const skillStat=skillCols.includes(c.key)?getSkillTextStat(value):null;
+      const colorStat=c.stat||skillStat;
+      const style=colorStat?` style="color:${statColors[colorStat]}"`:"";
+      html+=`<td${style}>${escapeHTML(value)}</td>`;
     });
     html+="</tr>";
   });
