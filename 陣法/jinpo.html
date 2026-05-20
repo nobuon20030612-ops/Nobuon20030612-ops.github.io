@@ -4678,18 +4678,6 @@ function splitDbFormations(form){
   if(!v) return [""];
   return v.split(/[\/／,、\s]+/).map(x=>x.trim()).filter(Boolean);
 }
-function dbRowExternalIds(row){
-  const raw = row?.eiketsu_position_key || row?.eiketsu_set_key || row?.ids || row?.member_ids || row?.members_id || "";
-  if(Array.isArray(raw)) return raw.map(v=>String(v ?? "").trim()).filter(Boolean);
-  return String(raw)
-    .split(/[|,、\s]+/)
-    .map(x=>x.trim())
-    .filter(Boolean);
-}
-function dbRowFormations(row){
-  const forms = splitDbFormations(row?.formation || row?.form || row?.陣形 || "");
-  return forms.length ? forms : [""];
-}
 function currentHeroNameKey(){
   const names = [1,2,3,4,5,6].map(s=>placement[s]?.["英傑名"] || "");
   if(names.some(n=>!n)) return "";
@@ -4757,12 +4745,7 @@ async function loadResultDbAuto(){
       const bonus = await window.JinpoActivationEngine.loadCSV("data/formation_bonus.csv");
       loadFormationBonus(bonus);
     }catch(e){}
-    if(status){
-      const db7 = resultDbByBondCount.get(7)?.length || 0;
-      const db8 = resultDbByBondCount.get(8)?.length || 0;
-      const db9 = resultDbByBondCount.get(9)?.length || 0;
-      status.textContent = `実数値DB: ${resultDbRows.length}件 読込済 / 7因縁:${db7}件 / 8因縁:${db8}件 / 9因縁:${db9}件`;
-    }
+    if(status) status.textContent = `実数値DB: ${resultDbRows.length}件 読込済`;
     renderDbCountButtons();
     renderDbStatButtons();
     renderDbFormationList();
@@ -11880,3 +11863,120 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   document.addEventListener("DOMContentLoaded",bindApply56);
 })();
 </script>
+
+
+<script id="nobol-formations-merge-search">
+/* 2026-05-21: nobol_formations 3000件を35万DB検索へ統合。既存検索仕様は変更しない。 */
+(function(){
+  const NOBOL_FORMATION_FILES = [
+    "data/cache/nobol_formations.json.gz",
+    "data/nobol_formations.json.gz",
+    "data/cache/nobol_formations.json",
+    "data/nobol_formations.json"
+  ];
+  const NOBOL_STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  let nobolFormationsLoaded = false;
+
+  function decodeBytesToText(bytes){
+    if(bytes && bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b && typeof DecompressionStream !== "undefined"){
+      const stream = new Response(bytes).body.pipeThrough(new DecompressionStream("gzip"));
+      return new Response(stream).text();
+    }
+    return Promise.resolve(new TextDecoder("utf-8").decode(bytes));
+  }
+
+  async function fetchNobolFormationJson(){
+    let lastError = null;
+    for(const file of NOBOL_FORMATION_FILES){
+      try{
+        const res = await fetch(file, {cache:"no-store"});
+        if(!res.ok) throw new Error(`${file}: ${res.status}`);
+        const bytes = new Uint8Array(await res.arrayBuffer());
+        const text = await decodeBytesToText(bytes);
+        const data = JSON.parse(text);
+        return {file, data};
+      }catch(e){
+        lastError = e;
+      }
+    }
+    throw lastError || new Error("nobol_formations読込失敗");
+  }
+
+  function normalizeNobolFormationName(f){
+    const v = String(f || "").trim();
+    if(v === "gyorin") return "魚鱗/方円";
+    if(v === "hoen") return "方円";
+    if(v === "kakuyoku") return "鶴翼";
+    if(v === "kouyaku") return "衡軛";
+    return v || "";
+  }
+
+  function nobolFormationToResultRow(row, idx){
+    const members = Array.isArray(row.m) ? row.m : [];
+    const bonds = Array.isArray(row.i) ? row.i : [];
+    const stats = Array.isArray(row.s) ? row.s : [];
+    const out = {
+      result_id: `nobol_${idx + 1}`,
+      source: "nobol_formations",
+      source_type: "nobol_formations",
+      formation: normalizeNobolFormationName(row.f),
+      bond_count: Number(row.ic || bonds.length || 0),
+      ic: Number(row.ic || bonds.length || 0),
+      eiketsu_ids: members.join("|"),
+      members: members.join("|"),
+      bond_ids: bonds.join("|"),
+      inen: bonds.join("|"),
+      nobol_r: Array.isArray(row.r) ? row.r.join("|") : "",
+      nobol_b: Array.isArray(row.b) ? row.b.join("|") : "",
+      nobol_ns: row.ns ?? ""
+    };
+    NOBOL_STAT_KEYS.forEach((k, i)=>{
+      out[k] = Number(stats[i] ?? 0) || 0;
+      const shortKey = k.replace("属性","");
+      out[shortKey] = out[k];
+    });
+    return out;
+  }
+
+  async function loadNobolFormationsIntoResultDb(){
+    if(nobolFormationsLoaded) return;
+    if(typeof resultDbRows === "undefined") return;
+    const status = document.getElementById("resultDbStatus");
+    try{
+      const pack = await fetchNobolFormationJson();
+      const list = Array.isArray(pack.data?.formations) ? pack.data.formations : [];
+      const converted = list.map(nobolFormationToResultRow).filter(r=>r.bond_count > 0 && r.eiketsu_ids);
+      const exists = new Set((resultDbRows || []).map(r=>String(r.result_id || r.id || "")));
+      const addRows = converted.filter(r=>!exists.has(String(r.result_id)));
+      resultDbRows = (Array.isArray(resultDbRows) ? resultDbRows : []).concat(addRows);
+      nobolFormationsLoaded = true;
+
+      if(typeof rebuildResultDbIndex === "function") rebuildResultDbIndex();
+
+      const db7 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(7)) ? resultDbByBondCount.get(7).length : 0;
+      const db8 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(8)) ? resultDbByBondCount.get(8).length : 0;
+      const db9 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(9)) ? resultDbByBondCount.get(9).length : 0;
+      if(status){
+        const base = String(status.textContent || "").trim();
+        status.textContent = `${base}${base ? " / " : ""}nobol_formations:${addRows.length}件 統合 / 7因縁:${db7}件 / 8因縁:${db8}件 / 9因縁:${db9}件`;
+      }
+
+      if(typeof renderDbCountButtons === "function") renderDbCountButtons();
+      if(typeof renderDbStatButtons === "function") renderDbStatButtons();
+      if(typeof renderDbFormationList === "function") renderDbFormationList();
+    }catch(e){
+      console.error("nobol_formations統合失敗", e);
+      if(status){
+        const base = String(status.textContent || "").trim();
+        status.textContent = `${base}${base ? " / " : ""}nobol_formations未読込`;
+      }
+    }
+  }
+
+  window.loadNobolFormationsIntoResultDb = loadNobolFormationsIntoResultDb;
+  window.addEventListener("load", ()=>setTimeout(loadNobolFormationsIntoResultDb, 300));
+  setTimeout(loadNobolFormationsIntoResultDb, 1500);
+  setTimeout(loadNobolFormationsIntoResultDb, 4000);
+})();
+</script>
+
