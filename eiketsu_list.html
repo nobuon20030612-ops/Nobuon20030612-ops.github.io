@@ -1,0 +1,22 @@
+# 重複配置禁止＋数値計算列名修正レポート
+
+## 修正内容
+- 同じ英傑を複数スロットに配置できないように修正
+- 既に配置済みの英傑は選択モーダルから非表示
+- クリック時にも重複チェックを実施
+- 英傑ステータス列名を実CSV基準で読む `heroStatValue()` を追加
+- `耐久力/器用さ/土属性/水属性/火属性/風属性` を正しく参照
+- 因縁倍率マスター読込を維持
+
+## 確認した英傑CSV列
+internal_id, external_id, image_external_id, image_file, image_path, image_url, ID方式, external_id状態, 英傑名, 職, コスト, 因子1, 因子2, 因子3, 因子4, 生命, 気合, 腕力, 耐久力, 器用さ, 知力, 魅力, 土属性, 水属性, 火属性, 風属性, ID対応状況, ID対応方法, ID元英傑名, 育成技能1, 育成技能2, 育成技能3, 追加更新, 技能, 詳細, 確認状態, 主キー運用, external_id運用メモ
+
+## 検証
+- hero_csv_exists: OK
+- hero_cols_checked: OK
+- heroStatValue_added: OK
+- uses_robust_stat: OK
+- duplicate_guard_added: OK
+- modal_filters_used: OK
+- click_guard: OK
+- multiplier_master_load: OK
