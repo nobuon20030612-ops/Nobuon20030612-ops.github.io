@@ -4678,6 +4678,18 @@ function splitDbFormations(form){
   if(!v) return [""];
   return v.split(/[\/／,、\s]+/).map(x=>x.trim()).filter(Boolean);
 }
+function dbRowExternalIds(row){
+  const raw = row?.eiketsu_position_key || row?.eiketsu_set_key || row?.ids || row?.member_ids || row?.members_id || "";
+  if(Array.isArray(raw)) return raw.map(v=>String(v ?? "").trim()).filter(Boolean);
+  return String(raw)
+    .split(/[|,、\s]+/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+}
+function dbRowFormations(row){
+  const forms = splitDbFormations(row?.formation || row?.form || row?.陣形 || "");
+  return forms.length ? forms : [""];
+}
 function currentHeroNameKey(){
   const names = [1,2,3,4,5,6].map(s=>placement[s]?.["英傑名"] || "");
   if(names.some(n=>!n)) return "";
@@ -4745,7 +4757,12 @@ async function loadResultDbAuto(){
       const bonus = await window.JinpoActivationEngine.loadCSV("data/formation_bonus.csv");
       loadFormationBonus(bonus);
     }catch(e){}
-    if(status) status.textContent = `実数値DB: ${resultDbRows.length}件 読込済`;
+    if(status){
+      const db7 = resultDbByBondCount.get(7)?.length || 0;
+      const db8 = resultDbByBondCount.get(8)?.length || 0;
+      const db9 = resultDbByBondCount.get(9)?.length || 0;
+      status.textContent = `実数値DB: ${resultDbRows.length}件 読込済 / 7因縁:${db7}件 / 8因縁:${db8}件 / 9因縁:${db9}件`;
+    }
     renderDbCountButtons();
     renderDbStatButtons();
     renderDbFormationList();
