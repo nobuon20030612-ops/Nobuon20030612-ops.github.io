@@ -1,0 +1,29 @@
+{
+  "source_zip": "350693.zip",
+  "source_json_in_zip": "新しいフォルダー/nobol_all_350693.json",
+  "total_meta": 350693,
+  "rows_read": 350693,
+  "generated_at": "2026-05-16T00:46:52",
+  "ic_counts": {
+    "7": 346265,
+    "8": 4412,
+    "9": 16
+  },
+  "formation_counts": {
+    "": 350693
+  },
+  "bond_types": 1,
+  "bond_combination_types": 1,
+  "hero_types": 366,
+  "high_counts": {
+    "7plus": 350693,
+    "8plus": 4428,
+    "9": 16
+  },
+  "files": {
+    "result_db_lookup_350693.csv": "result_db_lookup_350693.csv",
+    "nobol_350693_flat.csv": "nobol_350693_flat.csv",
+    "nobol_350693_high8plus.csv": "nobol_350693_high8plus.csv",
+    "nobol_350693_9inen.csv": "nobol_350693_9inen.csv"
+  }
+}
