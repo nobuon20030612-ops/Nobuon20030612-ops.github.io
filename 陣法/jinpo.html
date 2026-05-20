@@ -3190,7 +3190,7 @@ body{
   </div>
   <div id="totalStatResult" class="totalStatGrid"></div>
 </section>
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="index.html">戻る</a>
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="index.htmlへ戻る">戻る</a>
 
 <!-- 機能維持用: 非表示にしている結果欄。calculate/renderResults が参照するため削除禁止。 -->
 <div id="summary" class="hiddenNoise"></div>
@@ -4020,23 +4020,74 @@ function buildReachOnlyCandidates(result){
   return rows.slice(0,120);
 }
 
+
+function normalizeReachDbHeroName(name){
+  return String(name ?? "")
+    .trim()
+    .replace(/[・･]/g, "")
+    .replace(/[（）()]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/　+/g, "");
+}
+function dbRowMembersForReachMatch(row){
+  return String(row?.eiketsu_ids || row?.members || row?.m || "")
+    .split("|")
+    .map(x=>x.trim())
+    .filter(Boolean);
+}
+function sameReachHeroNameSet(a, b){
+  const aa = a.map(normalizeReachDbHeroName).sort().join("|");
+  const bb = b.map(normalizeReachDbHeroName).sort().join("|");
+  return !!aa && aa === bb;
+}
+function dbRowFormationMatchesReach(row, formation){
+  const f = String(row?.formation || row?.form || row?.陣形 || row?.f || "").trim();
+  const current = String(formation || "").trim();
+  if(!current) return true;
+  if(!f) return true;
+  if(f.includes(current)) return true;
+  if((current === "魚鱗" || current === "方円") && f.includes("魚鱗") && f.includes("方円")) return true;
+  return false;
+}
+
 function findResultDbRowForPlacementState(targetPlacement, targetResult){
   const formation = String(formationSelect.value || "").trim();
   const names = [1,2,3,4,5,6].map(s=>heroName(targetPlacement[s]) || "");
   if(names.some(n=>!n)) return null;
 
-  const nameKey = makeHeroNameKey(names);
-  const candidates = firstNonEmptyCandidateList(
-    resultDbByHeroNamesFormation.get(`${formation}||${nameKey}`),
-    resultDbByHeroNames.get(nameKey)
-  );
-  if(!candidates.length) return null;
-
   const expectedBondCount = Number((targetResult?.activated || []).length || 0);
-  const sameCount = expectedBondCount
-    ? candidates.find(row => Number(row.bond_count || row.ic || 0) === expectedBondCount)
-    : null;
-  return sameCount || candidates[0] || null;
+  const nameKey = makeHeroNameKey(names);
+  const formationKeys = [formation];
+  if(formation === "魚鱗" || formation === "方円") formationKeys.push("魚鱗/方円");
+
+  let candidates = [];
+  for(const f of formationKeys){
+    candidates = candidates.concat(resultDbByHeroNamesFormation.get(`${f}||${nameKey}`) || []);
+  }
+  candidates = candidates.concat(resultDbByHeroNames.get(nameKey) || []);
+
+  let matched = candidates.filter(row=>{
+    const countOk = expectedBondCount ? Number(row.bond_count || row.ic || 0) === expectedBondCount : true;
+    return countOk && dbRowFormationMatchesReach(row, formation);
+  });
+
+  if(!matched.length){
+    const source = Array.isArray(resultDbRows) ? resultDbRows : [];
+    matched = source.filter(row=>{
+      const countOk = expectedBondCount ? Number(row.bond_count || row.ic || 0) === expectedBondCount : true;
+      if(!countOk) return false;
+      if(!dbRowFormationMatchesReach(row, formation)) return false;
+      return sameReachHeroNameSet(dbRowMembersForReachMatch(row), names);
+    });
+  }
+
+  if(!matched.length && candidates.length){
+    matched = expectedBondCount
+      ? candidates.filter(row => Number(row.bond_count || row.ic || 0) === expectedBondCount)
+      : candidates.slice();
+  }
+
+  return matched[0] || null;
 }
 
 
@@ -4102,6 +4153,7 @@ function applyReachSwapCandidate(slot, afterId){
 
   placement = nextPlacement;
   selectedDbResultId = dbRow ? String(dbRow.result_id || dbRow.id || "") : "";
+  window.__lastReachAppliedDbRow = dbRow || null;
   if(typeof clearAppliedDbRowDisplay === "function") clearAppliedDbRowDisplay();
 
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){ console.error(e); }
@@ -4128,8 +4180,11 @@ function applyReachSwapCandidate(slot, afterId){
   try{
     if(dbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
       renderRealtimeTotalStatsFromReachDbRow(dbRow);
+      setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 0);
+      setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 80);
     }else if(nextResult && typeof renderRealtimeTotalStats === "function"){
       renderRealtimeTotalStats(nextResult);
+      setTimeout(()=>renderRealtimeTotalStats(nextResult), 0);
     }
   }catch(e){
     console.error("リーチ適用後のトータル表示更新失敗", e);
@@ -12040,6 +12095,25 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   window.clearAppliedDbRowDisplay = hideAppliedBoxFinal;
   document.addEventListener("DOMContentLoaded", hideAppliedBoxFinal);
   window.addEventListener("load", hideAppliedBoxFinal);
+})();
+</script>
+
+
+
+<script id="reach-total-final-restore">
+/* 2026-05-21: リーチ適用後のトータル表示を最後にDB行で復元。その他変更なし。 */
+(function(){
+  const oldRenderRealtimeTotalStats = window.renderRealtimeTotalStats;
+  if(typeof oldRenderRealtimeTotalStats === "function" && !window.__reachTotalRestoreInstalled){
+    window.__reachTotalRestoreInstalled = true;
+    window.renderRealtimeTotalStats = function(result){
+      const ret = oldRenderRealtimeTotalStats.apply(this, arguments);
+      if(window.__lastReachAppliedDbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
+        setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(window.__lastReachAppliedDbRow), 0);
+      }
+      return ret;
+    };
+  }
 })();
 </script>
 
