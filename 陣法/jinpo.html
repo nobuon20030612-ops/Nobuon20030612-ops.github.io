@@ -4039,6 +4039,25 @@ function findResultDbRowForPlacementState(targetPlacement, targetResult){
   return sameCount || candidates[0] || null;
 }
 
+
+function renderRealtimeTotalStatsFromReachDbRow(row){
+  const box = document.getElementById("totalStatResult");
+  const mode = document.getElementById("totalStatMode");
+  if(!box || !row) return false;
+  const keys = Array.isArray(REALTIME_STAT_KEYS) ? REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  box.innerHTML = keys.map(k=>{
+    const v = row[k] ?? row[k.replace("属性","")] ?? "—";
+    const zero = (v === "—" || Number(v) === 0);
+    return `
+      <div class="totalStatItem ${zero ? "zero" : ""}">
+        <div class="statName">${esc(k)}</div>
+        <div class="statVal">${esc(v)}</div>
+      </div>`;
+  }).join("");
+  if(mode) mode.textContent = "実数値DB一致 / リーチ適用";
+  return true;
+}
+
 function applyReachSwapCandidate(slot, afterId){
   const s = Number(slot);
   const hero = eiketsuMaster.find(e=>String(e.internal_id) === String(afterId));
@@ -4068,17 +4087,24 @@ function applyReachSwapCandidate(slot, afterId){
 
   placement = nextPlacement;
   selectedDbResultId = dbRow ? String(dbRow.result_id || dbRow.id || "") : "";
-  if(dbRow && typeof renderAppliedDbRowDisplay === "function") renderAppliedDbRowDisplay(dbRow);
+  clearAppliedDbRowDisplay();
+
+  renderSlots();
+  if(typeof renderHeroCards === "function") renderHeroCards();
 
   if(typeof calculate === "function"){
     calculate();
   }else{
-    renderSlots();
-    if(typeof renderHeroCards === "function") renderHeroCards();
     renderFormation(nextResult);
     renderResults(nextResult);
     renderRealtimeTotalStats(nextResult);
     renderMasterResult();
+  }
+
+  if(dbRow){
+    renderRealtimeTotalStatsFromReachDbRow(dbRow);
+  }else if(nextResult && typeof renderRealtimeTotalStats === "function"){
+    renderRealtimeTotalStats(nextResult);
   }
 }
 window.applyReachSwapCandidate = applyReachSwapCandidate;
@@ -4690,18 +4716,6 @@ function addResultDbIndex(map, key, row){
   if(list) list.push(row);
   else map.set(key, [row]);
 }
-
-function dbRowExternalIds(row){
-  const raw = row?.eiketsu_position_key || row?.eiketsu_set_key || row?.eiketsu_ids || row?.ids || row?.member_ids || row?.members_id || row?.members || "";
-  if(Array.isArray(raw)) return raw.map(v=>String(v ?? "").trim()).filter(Boolean);
-  return String(raw).split(/[|,、\s]+/).map(x=>x.trim()).filter(Boolean);
-}
-function dbRowFormations(row){
-  const v = String(row?.formation || row?.form || row?.陣形 || row?.f || "").trim();
-  if(!v) return [""];
-  return v.split(/[\/／,、\s]+/).map(x=>x.trim()).filter(Boolean);
-}
-
 function rebuildResultDbIndex(){
   resultDbRows = Array.isArray(resultDbRows) ? resultDbRows : [];
   resultDbByPosition.clear();
@@ -5770,28 +5784,17 @@ function renderDbFormationList(){
 
 function clearAppliedDbRowDisplay(){
   const box = document.getElementById("appliedDbRowDisplay");
-  if(!box) return;
-  box.style.display = "none";
-  box.innerHTML = "";
+  if(box){
+    box.style.display = "none";
+    box.innerHTML = "";
+  }
 }
 function renderAppliedDbRowDisplay(row){
   const box = document.getElementById("appliedDbRowDisplay");
-  if(!box || !row){
-    clearAppliedDbRowDisplay();
-    return;
+  if(box){
+    box.style.display = "none";
+    box.innerHTML = "";
   }
-  const members = dbRowMembers(row);
-  const bonds = dbRowBondList(row);
-  const stats = REALTIME_STAT_KEYS.map(k=>`${k}:${row[k] ?? row[k.replace("属性","")] ?? ""}`).join(" / ");
-  box.style.display = "block";
-  box.innerHTML = `<div class="appliedDbRowInner">
-    <strong>適用中</strong>
-    <span class="badge">因縁数 ${esc(row.bond_count || row.ic || "")}</span>
-    <span class="badge">陣形 ${esc(row.formation || row.form || row.陣形 || "")}</span>
-    <div class="small">英傑: ${esc(members.join(" / "))}</div>
-    <div class="small">因縁: ${esc(bonds.join(" / "))}</div>
-    <div class="small">総合値: ${esc(stats)}</div>
-  </div>`;
 }
 
 function applyDbFormationRow(row){
@@ -11881,10 +11884,10 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 /* 2026-05-21: nobol_formations 3000件を35万DB検索へ統合。既存検索仕様は変更しない。 */
 (function(){
   const NOBOL_FORMATION_FILES = [
-    "data/cache/nobol_formations.json",
     "data/cache/nobol_formations.json.gz",
-    "data/nobol_formations.json",
-    "data/nobol_formations.json.gz"
+    "data/nobol_formations.json.gz",
+    "data/cache/nobol_formations.json",
+    "data/nobol_formations.json"
   ];
   const NOBOL_STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
   let nobolFormationsLoaded = false;
@@ -11989,6 +11992,28 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   window.addEventListener("load", ()=>setTimeout(loadNobolFormationsIntoResultDb, 300));
   setTimeout(loadNobolFormationsIntoResultDb, 1500);
   setTimeout(loadNobolFormationsIntoResultDb, 4000);
+})();
+</script>
+
+
+
+<script id="reach-apply-total-final-guard">
+/* 2026-05-21: リーチ適用後のトータル更新固定。陣形ライン下の適用中表示は非表示。 */
+(function(){
+  function hideAppliedBoxFinal(){
+    const box = document.getElementById("appliedDbRowDisplay");
+    if(box){
+      box.style.display = "none";
+      box.innerHTML = "";
+    }
+  }
+  const oldRenderApplied = window.renderAppliedDbRowDisplay;
+  window.renderAppliedDbRowDisplay = function(row){
+    hideAppliedBoxFinal();
+  };
+  window.clearAppliedDbRowDisplay = hideAppliedBoxFinal;
+  document.addEventListener("DOMContentLoaded", hideAppliedBoxFinal);
+  window.addEventListener("load", hideAppliedBoxFinal);
 })();
 </script>
 
