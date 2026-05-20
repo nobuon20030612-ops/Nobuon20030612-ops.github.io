@@ -3132,6 +3132,31 @@ body{
 }
 
 
+
+/* 2026-05-20 required visibility fixes */
+.totalStatPanel,
+#totalStatPanel{
+  display:block !important;
+  visibility:visible !important;
+}
+#appliedDbRowDisplay{
+  margin:8px 0 0 0 !important;
+  padding:8px !important;
+  border:1px solid rgba(231,189,92,.45) !important;
+  border-radius:10px !important;
+  background:rgba(0,0,0,.22) !important;
+}
+#appliedDbRowDisplay .appliedDbRowInner strong{
+  color:#ffe1a1;
+  margin-right:8px;
+}
+.ownedHeroSelectedInfo{
+  margin-top:6px;
+  color:#ffe1a1;
+  font-size:12px;
+  line-height:1.4;
+}
+
 </style>
 
 <meta name="description" content="英傑を選んで因縁発動・リーチ・陣形ラインを確認できます。">
@@ -3190,6 +3215,7 @@ body{
     <button id="ownedHeroSlotBtn2" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="1" onpointerdown="window.__ownedHeroActualOpen&&window.__ownedHeroActualOpen(1,event)" onclick="window.__ownedHeroActualOpen&&window.__ownedHeroActualOpen(1,event)">所持英傑2：未選択</button>
     <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onpointerdown="window.__ownedHeroActualOpen&&window.__ownedHeroActualOpen(2,event)" onclick="window.__ownedHeroActualOpen&&window.__ownedHeroActualOpen(2,event)">所持英傑3：未選択</button>
     <button id="ownedHeroClearBtn" type="button" class="ownedHeroClearBtn">解除</button>
+    <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">所持英傑：未選択</div>
   </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
 
@@ -3197,9 +3223,9 @@ body{
   <h2>陣形ライン</h2>
   <div id="formationView" class="formation"></div>
 </section>
+<div id="appliedDbRowDisplay" class="appliedDbRowDisplay" style="display:none"></div>
 
 </div>
-<div id="appliedDbRowDisplay" class="appliedDbRowDisplay" style="display:none"></div>
 <h2></h2>
 <div id="dbStatButtons" class="dbStatButtonBar"></div>
   <div class="dbPriorityControls">
@@ -4055,6 +4081,7 @@ function applyReachSwapCandidate(slot, afterId){
     renderMasterResult();
   }
 }
+window.applyReachSwapCandidate = applyReachSwapCandidate;
 function bindReachApplyButtons(){
   const root = document.getElementById("reachList");
   if(!root) return;
@@ -5338,6 +5365,22 @@ function dbRowAllHeroesCost6OrLess(row){
     return Number.isFinite(cost) && cost <= 6;
   });
 }
+
+function updateOwnedHeroSelectedInfo(){
+  const box = document.getElementById("ownedHeroSelectedInfo");
+  if(!box) return;
+  const names = [];
+  [1,2,3].forEach(i=>{
+    const btn = document.getElementById(`ownedHeroSlotBtn${i}`);
+    const label = String(btn?.textContent || "").trim();
+    const m = label.match(/所持英傑\d+：(.+)$/);
+    if(m && m[1] && m[1] !== "未選択") names.push(m[1]);
+  });
+  box.textContent = names.length ? `所持英傑選択中：${names.join(" / ")}` : "所持英傑：未選択";
+}
+window.updateOwnedHeroSelectedInfo = updateOwnedHeroSelectedInfo;
+setInterval(updateOwnedHeroSelectedInfo, 1000);
+
 function handleDbCountButtonClick(count){
   selectedDbListBondCount = Number(count) || null;
   const status = document.getElementById("dbListStatus");
@@ -5729,23 +5772,14 @@ function renderAppliedDbRowDisplay(row){
   const bonds = dbRowBondList(row);
   const stats = REALTIME_STAT_KEYS.map(k=>`${k}:${row[k] ?? row[k.replace("属性","")] ?? ""}`).join(" / ");
   box.style.display = "block";
-  box.innerHTML = `
-    <div class="appliedDbRowTitle">適用中の欄</div>
-    <table class="dbListTable dbListTwoRow">
-      <thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead>
-      <tbody>
-        <tr class="dbMainRow">
-          <td><span class="badge">適用中</span></td>
-          <td>${esc(row.bond_count || row.ic || selectedDbListBondCount || "")}</td>
-          <td>${esc(row.formation || row.form || row.陣形 || "")}</td>
-          <td><div class="dbPlacementMini">${members.map((m,i)=>`<span>${i+1}. ${esc(m)}</span>`).join("")}</div></td>
-          <td class="dbListBondsCell"><div class="dbListBonds">${bonds.map(b=>`<span class="badge">${esc(b)}</span>`).join("")}</div></td>
-        </tr>
-        <tr class="dbStatRow">
-          <td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">${esc(stats)}</span></td>
-        </tr>
-      </tbody>
-    </table>`;
+  box.innerHTML = `<div class="appliedDbRowInner">
+    <strong>適用中</strong>
+    <span class="badge">因縁数 ${esc(row.bond_count || row.ic || "")}</span>
+    <span class="badge">陣形 ${esc(row.formation || row.form || row.陣形 || "")}</span>
+    <div class="small">英傑: ${esc(members.join(" / "))}</div>
+    <div class="small">因縁: ${esc(bonds.join(" / "))}</div>
+    <div class="small">総合値: ${esc(stats)}</div>
+  </div>`;
 }
 
 function applyDbFormationRow(row){
