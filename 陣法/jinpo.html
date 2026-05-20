@@ -4690,6 +4690,18 @@ function addResultDbIndex(map, key, row){
   if(list) list.push(row);
   else map.set(key, [row]);
 }
+
+function dbRowExternalIds(row){
+  const raw = row?.eiketsu_position_key || row?.eiketsu_set_key || row?.eiketsu_ids || row?.ids || row?.member_ids || row?.members_id || row?.members || "";
+  if(Array.isArray(raw)) return raw.map(v=>String(v ?? "").trim()).filter(Boolean);
+  return String(raw).split(/[|,、\s]+/).map(x=>x.trim()).filter(Boolean);
+}
+function dbRowFormations(row){
+  const v = String(row?.formation || row?.form || row?.陣形 || row?.f || "").trim();
+  if(!v) return [""];
+  return v.split(/[\/／,、\s]+/).map(x=>x.trim()).filter(Boolean);
+}
+
 function rebuildResultDbIndex(){
   resultDbRows = Array.isArray(resultDbRows) ? resultDbRows : [];
   resultDbByPosition.clear();
@@ -11869,10 +11881,10 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 /* 2026-05-21: nobol_formations 3000件を35万DB検索へ統合。既存検索仕様は変更しない。 */
 (function(){
   const NOBOL_FORMATION_FILES = [
-    "data/cache/nobol_formations.json.gz",
-    "data/nobol_formations.json.gz",
     "data/cache/nobol_formations.json",
-    "data/nobol_formations.json"
+    "data/cache/nobol_formations.json.gz",
+    "data/nobol_formations.json",
+    "data/nobol_formations.json.gz"
   ];
   const NOBOL_STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
   let nobolFormationsLoaded = false;
