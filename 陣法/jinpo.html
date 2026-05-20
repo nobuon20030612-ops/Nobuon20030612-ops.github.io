@@ -4664,6 +4664,7 @@ function addResultDbIndex(map, key, row){
   else map.set(key, [row]);
 }
 function rebuildResultDbIndex(){
+  resultDbRows = Array.isArray(resultDbRows) ? resultDbRows : [];
   resultDbByPosition.clear();
   resultDbByPositionFormation.clear();
   resultDbByHeroNames.clear();
@@ -4671,24 +4672,21 @@ function rebuildResultDbIndex(){
   resultDbByBondCount.clear();
 
   for(const r of resultDbRows){
-    const posKey = String(r.eiketsu_position_key || "").trim();
-    const idsKey = String(r.eiketsu_ids || "").trim();
-    const members = idsKey ? idsKey.split("|") : [];
-    const nameKey = members.length === 6 ? makeHeroNameKey(members) : "";
-    const formations = splitDbFormations(r.formation || r.form || r.陣形 || "");
-    const bc = Number(r.bond_count || r.ic || 0) || 0;
-    if(bc){
-      const list = resultDbByBondCount.get(bc);
-      if(list) list.push(r);
-      else resultDbByBondCount.set(bc, [r]);
-    }
+    const bc = Number(r.bond_count || r.ic || 0);
+    if(Number.isFinite(bc) && bc > 0) addResultDbIndex(resultDbByBondCount, bc, r);
 
-    addResultDbIndex(resultDbByPosition, posKey, r);
-    addResultDbIndex(resultDbByHeroNames, nameKey, r);
+    const ids = dbRowExternalIds(r);
+    const posKey = makePipeKey(ids);
+    const members = dbRowMembers(r);
+    const nameKey = makeHeroNameKey(members);
+    const formations = dbRowFormations(r);
+
+    if(posKey) addResultDbIndex(resultDbByPosition, posKey, r);
+    if(nameKey) addResultDbIndex(resultDbByHeroNames, nameKey, r);
 
     for(const formation of formations){
-      addResultDbIndex(resultDbByPositionFormation, `${formation}||${posKey}`, r);
-      addResultDbIndex(resultDbByHeroNamesFormation, `${formation}||${nameKey}`, r);
+      if(posKey) addResultDbIndex(resultDbByPositionFormation, `${formation}||${posKey}`, r);
+      if(nameKey) addResultDbIndex(resultDbByHeroNamesFormation, `${formation}||${nameKey}`, r);
     }
   }
 }
@@ -5340,29 +5338,36 @@ function dbRowAllHeroesCost6OrLess(row){
     return Number.isFinite(cost) && cost <= 6;
   });
 }
+function handleDbCountButtonClick(count){
+  selectedDbListBondCount = Number(count) || null;
+  const status = document.getElementById("dbListStatus");
+  if(status) status.textContent = `${selectedDbListBondCount}因縁を検索中。数分お待ちください。`;
+  renderDbCountButtons();
+  setTimeout(()=>renderDbFormationList(), 0);
+}
+window.handleDbCountButtonClick = handleDbCountButtonClick;
+
 function renderDbCountButtons(){
   const box = document.getElementById("dbCountButtons");
   if(!box) return;
   const activeClass = grade3Cost6OnlyEnabled ? "active" : "";
   box.innerHTML = `
     <button class="dbGradeToggleBtn ${activeClass}" data-grade3-toggle="1" type="button">等級3以下${grade3Cost6OnlyEnabled ? " ON" : " OFF"}</button>
-    <button class="dbCountBtn ${selectedDbListBondCount===5?"active":""}" data-count="5">5因縁</button>
-    <button class="dbCountBtn ${selectedDbListBondCount===6?"active":""}" data-count="6">6因縁</button>
-    <button class="dbCountBtn ${selectedDbListBondCount===7?"active":""}" data-count="7">7因縁</button>
-    <button class="dbCountBtn ${selectedDbListBondCount===8?"active":""}" data-count="8">8因縁</button>
-    <button class="dbCountBtn ${selectedDbListBondCount===9?"active":""}" data-count="9">9因縁</button>`;
+    <button class="dbCountBtn ${selectedDbListBondCount===5?"active":""}" data-count="5" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(5)">5因縁</button>
+    <button class="dbCountBtn ${selectedDbListBondCount===6?"active":""}" data-count="6" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(6)">6因縁</button>
+    <button class="dbCountBtn ${selectedDbListBondCount===7?"active":""}" data-count="7" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(7)">7因縁</button>
+    <button class="dbCountBtn ${selectedDbListBondCount===8?"active":""}" data-count="8" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(8)">8因縁</button>
+    <button class="dbCountBtn ${selectedDbListBondCount===9?"active":""}" data-count="9" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(9)">9因縁</button>`;
   box.querySelector("[data-grade3-toggle]")?.addEventListener("click", ()=>{
     grade3Cost6OnlyEnabled = !grade3Cost6OnlyEnabled;
     renderDbCountButtons();
     renderDbFormationList();
   });
   box.querySelectorAll("button[data-count]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      selectedDbListBondCount = Number(btn.dataset.count) || null;
-      const status = document.getElementById("dbListStatus");
-      if(status) status.textContent = `${selectedDbListBondCount}因縁を検索中。数分お待ちください。`;
-      renderDbCountButtons();
-      renderDbFormationList();
+    btn.addEventListener("click", (event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      handleDbCountButtonClick(btn.dataset.count);
     });
   });
 }
