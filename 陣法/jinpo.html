@@ -4060,12 +4060,19 @@ function renderRealtimeTotalStatsFromReachDbRow(row){
 
 function applyReachSwapCandidate(slot, afterId){
   const s = Number(slot);
-  const hero = eiketsuMaster.find(e=>String(e.internal_id) === String(afterId));
+  const afterKey = String(afterId ?? "").trim();
+  const hero = eiketsuMaster.find(e=>
+    String(e.internal_id ?? "") === afterKey ||
+    String(e.id ?? "") === afterKey ||
+    String(e["番号"] ?? "") === afterKey ||
+    String(e["英傑名"] ?? "") === afterKey ||
+    String(e.name ?? "") === afterKey
+  );
   if(!s || !hero){
     alert("差し替え対象の英傑が見つかりません");
     return;
   }
-  if(isHeroAlreadyPlaced(hero.internal_id, s)){
+  if(typeof isHeroAlreadyPlaced === "function" && isHeroAlreadyPlaced(hero.internal_id, s)){
     alert("同じ英傑は複数配置できません");
     return;
   }
@@ -4073,6 +4080,7 @@ function applyReachSwapCandidate(slot, afterId){
   const nextPlacement = {...placement, [s]:hero};
   let nextResult = null;
   let dbRow = null;
+
   try{
     nextResult = window.JinpoActivationEngine.calculateFormation(
       nextPlacement,
@@ -4080,31 +4088,51 @@ function applyReachSwapCandidate(slot, afterId){
       inenMaster,
       window.JINPO_FORMATION_CONFIG
     );
-    dbRow = findResultDbRowForPlacementState(nextPlacement, nextResult);
   }catch(e){
-    console.error(e);
+    console.error("リーチ適用後の因縁計算失敗", e);
+  }
+
+  try{
+    if(nextResult && typeof findResultDbRowForPlacementState === "function"){
+      dbRow = findResultDbRowForPlacementState(nextPlacement, nextResult);
+    }
+  }catch(e){
+    console.error("リーチ適用後のDB照合失敗", e);
   }
 
   placement = nextPlacement;
   selectedDbResultId = dbRow ? String(dbRow.result_id || dbRow.id || "") : "";
-  clearAppliedDbRowDisplay();
+  if(typeof clearAppliedDbRowDisplay === "function") clearAppliedDbRowDisplay();
 
-  renderSlots();
-  if(typeof renderHeroCards === "function") renderHeroCards();
+  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){ console.error(e); }
+  try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){ console.error(e); }
 
-  if(typeof calculate === "function"){
-    calculate();
-  }else{
-    renderFormation(nextResult);
-    renderResults(nextResult);
-    renderRealtimeTotalStats(nextResult);
-    renderMasterResult();
+  try{
+    if(typeof calculate === "function"){
+      calculate();
+    }else if(nextResult){
+      if(typeof renderFormation === "function") renderFormation(nextResult);
+      if(typeof renderResults === "function") renderResults(nextResult);
+      if(typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(nextResult);
+      if(typeof renderMasterResult === "function") renderMasterResult();
+    }
+  }catch(e){
+    console.error("リーチ適用後の再描画失敗", e);
+    if(nextResult){
+      try{ if(typeof renderFormation === "function") renderFormation(nextResult); }catch(_){}
+      try{ if(typeof renderResults === "function") renderResults(nextResult); }catch(_){}
+      try{ if(typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(nextResult); }catch(_){}
+    }
   }
 
-  if(dbRow){
-    renderRealtimeTotalStatsFromReachDbRow(dbRow);
-  }else if(nextResult && typeof renderRealtimeTotalStats === "function"){
-    renderRealtimeTotalStats(nextResult);
+  try{
+    if(dbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
+      renderRealtimeTotalStatsFromReachDbRow(dbRow);
+    }else if(nextResult && typeof renderRealtimeTotalStats === "function"){
+      renderRealtimeTotalStats(nextResult);
+    }
+  }catch(e){
+    console.error("リーチ適用後のトータル表示更新失敗", e);
   }
 }
 window.applyReachSwapCandidate = applyReachSwapCandidate;
@@ -4117,8 +4145,7 @@ function bindReachApplyButtons(){
     btn.addEventListener("click", (ev)=>{
       ev.preventDefault();
       ev.stopPropagation();
-      if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-      applyReachSwapCandidate(btn.dataset.reachSlot, btn.dataset.reachAfter);
+      window.applyReachSwapCandidate(btn.dataset.reachSlot, btn.dataset.reachAfter);
     }, true);
   });
 }
@@ -4168,7 +4195,7 @@ function renderResults(result){
                 ? `${c.added.length ? `増加 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 消滅 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`
                 : `${c.added.length ? `変更後 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 変更前 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`)}
           </td>
-          <td><button type="button" class="applyBtn reachApplyBtn ${c.hasDbStats ? "dbHit" : "dbMissing"}" data-reach-slot="${esc(c.slot)}" data-reach-after="${esc(c.afterId)}" title="${esc(c.dbStatusText || "")}">${c.hasDbStats ? "適用" : "登録外適用"}</button></td>
+          <td><button type="button" class="applyBtn reachApplyBtn ${c.hasDbStats ? "dbHit" : "dbMissing"}" data-reach-slot="${esc(c.slot)}" data-reach-after="${esc(c.afterId)}" onclick="window.applyReachSwapCandidate&&window.applyReachSwapCandidate(this.dataset.reachSlot,this.dataset.reachAfter)" title="${esc(c.dbStatusText || "")}">${c.hasDbStats ? "適用" : "登録外適用"}</button></td>
         </tr>
       `).join("")}
       </tbody>
@@ -4196,8 +4223,7 @@ document.addEventListener("click", function(ev){
   if(!btn) return;
   ev.preventDefault();
   ev.stopPropagation();
-  if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-  applyReachSwapCandidate(btn.dataset.reachSlot, btn.dataset.reachAfter);
+  window.applyReachSwapCandidate(btn.dataset.reachSlot, btn.dataset.reachAfter);
 }, true);
 
 function getHeroId(h){
