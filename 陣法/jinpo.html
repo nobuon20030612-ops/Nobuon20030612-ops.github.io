@@ -3145,7 +3145,6 @@ body{
 
 
 
-    <link rel="icon" type="image/png" href="favicon_jinpo.png">
 </head>
 <body>
 <header>
@@ -3166,7 +3165,7 @@ body{
   </div>
   <div id="totalStatResult" class="totalStatGrid"></div>
 </section>
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="index.html" aria-label="index.htmlへ戻る">戻る</a>
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="index.htmlへ戻る">戻る</a>
 
 <!-- 機能維持用: 非表示にしている結果欄。calculate/renderResults が参照するため削除禁止。 -->
 <div id="summary" class="hiddenNoise"></div>
@@ -5360,6 +5359,8 @@ function renderDbCountButtons(){
   box.querySelectorAll("button[data-count]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       selectedDbListBondCount = Number(btn.dataset.count) || null;
+      const status = document.getElementById("dbListStatus");
+      if(status) status.textContent = `${selectedDbListBondCount}因縁を検索中。数分お待ちください。`;
       renderDbCountButtons();
       renderDbFormationList();
     });
@@ -5525,7 +5526,7 @@ function dbRowMatchesSelectedFormation(row){
 
 
 let dbFormationListRenderToken = 0;
-const DB_SEARCH_PROGRESS_CHUNK = 500;
+const DB_SEARCH_PROGRESS_CHUNK = 5000;
 function formatDbSearchSeconds(sec){
   if(!Number.isFinite(sec) || sec < 0) return "計算中";
   sec = Math.ceil(sec);
@@ -5647,8 +5648,6 @@ function renderDbFormationList(){
         }
         return (Number(a.result_id||a.id||0)||0)-(Number(b.result_id||b.id||0)||0);
       });
-    }else{
-      rows.sort((a,b)=>(Number(a.result_id||a.id||0)||0)-(Number(b.result_id||b.id||0)||0));
     }
     if(token !== dbFormationListRenderToken) return;
 
