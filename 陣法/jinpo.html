@@ -4109,6 +4109,23 @@ function renderRealtimeTotalStatsFromReachDbRow(row){
   return true;
 }
 
+
+function clearReachTotalStatsForUnregistered(){
+  window.__lastReachAppliedDbRow = null;
+  selectedDbResultId = "";
+  const box = document.getElementById("totalStatResult");
+  const mode = document.getElementById("totalStatMode");
+  const keys = Array.isArray(REALTIME_STAT_KEYS) ? REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  if(box){
+    box.innerHTML = keys.map(k=>`
+      <div class="totalStatItem zero">
+        <div class="statName">${esc(k)}</div>
+        <div class="statVal">—</div>
+      </div>`).join("");
+  }
+  if(mode) mode.textContent = "登録外 / ステータス未登録";
+}
+
 function applyReachSwapCandidate(slot, afterId){
   const s = Number(slot);
   const afterKey = String(afterId ?? "").trim();
@@ -4182,9 +4199,10 @@ function applyReachSwapCandidate(slot, afterId){
       renderRealtimeTotalStatsFromReachDbRow(dbRow);
       setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 0);
       setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 80);
-    }else if(nextResult && typeof renderRealtimeTotalStats === "function"){
-      renderRealtimeTotalStats(nextResult);
-      setTimeout(()=>renderRealtimeTotalStats(nextResult), 0);
+    }else{
+      clearReachTotalStatsForUnregistered();
+      setTimeout(clearReachTotalStatsForUnregistered, 0);
+      setTimeout(clearReachTotalStatsForUnregistered, 80);
     }
   }catch(e){
     console.error("リーチ適用後のトータル表示更新失敗", e);
@@ -4250,7 +4268,7 @@ function renderResults(result){
                 ? `${c.added.length ? `増加 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 消滅 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`
                 : `${c.added.length ? `変更後 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 変更前 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`)}
           </td>
-          <td><button type="button" class="applyBtn reachApplyBtn ${c.hasDbStats ? "dbHit" : "dbMissing"}" data-reach-slot="${esc(c.slot)}" data-reach-after="${esc(c.afterId)}" onclick="window.applyReachSwapCandidate&&window.applyReachSwapCandidate(this.dataset.reachSlot,this.dataset.reachAfter)" title="${esc(c.dbStatusText || "")}">${c.hasDbStats ? "適用" : "登録外適用"}</button></td>
+          <td><button type="button" class="applyBtn reachApplyBtn ${c.hasDbStats ? "dbHit" : "dbMissing"}" data-reach-slot="${esc(c.slot)}" data-reach-after="${esc(c.afterId)}" onclick="window.applyReachSwapCandidate&&window.applyReachSwapCandidate(this.dataset.reachSlot,this.dataset.reachAfter)" title="${esc(c.dbStatusText || "")}">${c.hasDbStats ? "適用" : "登録外"}</button></td>
         </tr>
       `).join("")}
       </tbody>
@@ -12117,3 +12135,15 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 })();
 </script>
 
+
+<style id="reach-unregistered-red-button-style">
+
+/* 2026-05-21 リーチ登録外ボタン: ステータス未登録は赤表示 */
+.reachApplyBtn.dbMissing{
+  background:linear-gradient(#8b1f1f,#3a0808) !important;
+  border-color:#ff5a5a !important;
+  color:#fff4f4 !important;
+  box-shadow:0 0 10px rgba(255,70,70,.55) !important;
+}
+
+</style>
