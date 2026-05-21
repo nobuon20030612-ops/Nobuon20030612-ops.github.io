@@ -12238,6 +12238,13 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   var CACHE_PREFIX_79 = "jinpo_final_7_9_finish_v1@@";
   var loadingCounts = Object.create(null);
 
+  function isMobileNineGuardTarget(){
+    try{
+      return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || "") ||
+        (window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    }catch(e){ return false; }
+  }
+
   function selectedCount(){
     try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; }
   }
@@ -12271,7 +12278,7 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 
   window.renderDbFormationList = async function(){
     var count = selectedCount();
-    if(count >= 7 && count <= 9){
+    if(isMobileNineGuardTarget() && count >= 7 && count <= 9){
       clearStaleCache79();
       if(indexedCount(count) < 10 && typeof window.loadNobolFormationsIntoResultDb === "function" && !loadingCounts[count]){
         loadingCounts[count] = true;
@@ -12377,6 +12384,13 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   if(window.__mobile9BondFinalGuardInstalled) return;
   window.__mobile9BondFinalGuardInstalled = true;
 
+  function isMobileNineGuardTarget(){
+    try{
+      return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || "") ||
+        (window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    }catch(e){ return false; }
+  }
+
   function selectedCount(){
     try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; }
   }
@@ -12391,6 +12405,7 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   }
   async function ensureNobolForSelectedCount(){
     var count = selectedCount();
+    if(!isMobileNineGuardTarget()) return false;
     if(count < 7 || count > 9) return false;
     if(indexedCount(count) >= 10) return false;
     if(typeof window.loadNobolFormationsIntoResultDb !== 'function') return false;
@@ -12410,6 +12425,7 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     [600, 1800, 4200].forEach(function(ms){
       setTimeout(async function(){
         var count = selectedCount();
+        if(!isMobileNineGuardTarget()) return;
         if(count < 7 || count > 9) return;
         var before = indexedCount(count);
         try{ await ensureNobolForSelectedCount(); }catch(e){ console.error('nobol ensure failed', e); }
@@ -12429,7 +12445,7 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     window.renderDbFormationList = function(){
       var ret = previousRenderDbFormationList.apply(this, arguments);
       var count = selectedCount();
-      if(count >= 7 && count <= 9){
+      if(isMobileNineGuardTarget() && count >= 7 && count <= 9){
         scheduleCheck(previousRenderDbFormationList);
       }
       return ret;
