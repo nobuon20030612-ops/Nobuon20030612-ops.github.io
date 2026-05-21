@@ -12790,3 +12790,189 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   }
 })();
 </script>
+
+
+<script id="absolute-last-9inen-actual-render-guard">
+/* 2026-05-22 最終末尾ガード: 9因縁だけ、全後付けscriptの後で実データから直接描画する。
+   変更対象: 9因縁ボタン押下時の読込順・描画元のみ。
+   変更禁止対象: 5/6因縁、7/8因縁、リーチ、適用、CSS、レイアウト。 */
+(function(){
+  if(window.__absoluteLast9InenActualRenderGuardInstalled) return;
+  window.__absoluteLast9InenActualRenderGuardInstalled = true;
+
+  var PREV_RENDER_ABS9 = window.renderDbFormationList;
+  var PREV_HANDLE_ABS9 = window.handleDbCountButtonClick;
+  var MAX_ABS9 = 300;
+  var CACHE_PREFIXES_ABS9 = [
+    "jinpo_final_7_9_finish_v1@@",
+    "jinpo_db_list_cache_v2::",
+    "jinpo_exact_count_v2@@"
+  ];
+
+  function el9(id){ return document.getElementById(id); }
+  function esc9(v){
+    try{ if(typeof esc === "function") return esc(v); }catch(e){}
+    return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
+  }
+  function split9(v){ return String(v == null ? "" : v).split(/[|,、/／\s]+/).map(function(x){return x.trim();}).filter(Boolean); }
+  function selectedCount9(){ try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; } }
+  function setSelectedCount9(n){ try{ selectedDbListBondCount = Number(n) || null; }catch(e){ window.selectedDbListBondCount = Number(n) || null; } }
+  function selectedForms9(){
+    try{ if(typeof selectedFormationFilterNames === "function") return selectedFormationFilterNames(); }catch(e){}
+    var sel = el9("formationSelect");
+    var txt = sel ? String(sel.value || "") + " " + String(sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].textContent : "") : "";
+    if(txt.indexOf("魚鱗") !== -1 || txt.indexOf("方円") !== -1) return ["魚鱗/方円"];
+    if(txt.indexOf("鶴翼") !== -1) return ["鶴翼"];
+    if(txt.indexOf("衡軛") !== -1) return ["衡軛"];
+    return [];
+  }
+  function formText9(row){ return String(row && (row.formation || row.form || row["陣形"] || "") || ""); }
+  function rowMatchesForm9(row){
+    var targets = selectedForms9();
+    if(!targets.length) return false;
+    var txt = formText9(row);
+    if(!txt) return false;
+    return targets.some(function(t){
+      if(t === "魚鱗/方円") return txt.indexOf("魚鱗") !== -1 || txt.indexOf("方円") !== -1;
+      return txt.indexOf(t) !== -1;
+    });
+  }
+  function rowBondCount9(row){
+    var direct = row && (row.bond_count != null ? row.bond_count : (row.ic != null ? row.ic : row["因縁数"]));
+    var n = Number(direct);
+    if(Number.isFinite(n) && n > 0) return n;
+    return split9(row && (row.bond_ids || row.inen || row["因縁"] || row["因縁名"] || "")).length || 0;
+  }
+  function rowId9(row, idx){ return String((row && (row.result_id || row.id || row.eiketsu_position_key || row.eiketsu_ids)) || ("abs9_"+idx)); }
+  function members9(row){ try{ if(typeof dbRowMembers === "function") return dbRowMembers(row); }catch(e){} return split9(row && (row.eiketsu_ids || row.members || row["英傑"] || "")); }
+  function bonds9(row){ try{ if(typeof dbRowBondList === "function") return dbRowBondList(row); }catch(e){} return split9(row && (row.bond_ids || row.inen || row["因縁"] || row["因縁名"] || "")); }
+  function statKeys9(){ try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){} return ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"]; }
+  function statVal9(row, stat){
+    try{ if(typeof dbStatValue === "function") return dbStatValue(row, stat); }catch(e){}
+    return Number(row && (row[stat] != null ? row[stat] : row[String(stat).replace("属性","")]) || 0) || 0;
+  }
+  function rules9(){ try{ if(typeof getDbPriorityRules === "function") return getDbPriorityRules(); }catch(e){} return []; }
+  function ownedOk9(row){ try{ if(typeof dbRowMatchesOwnedHeroes === "function") return dbRowMatchesOwnedHeroes(row); }catch(e){} return true; }
+  function costOk9(row){ try{ if(typeof dbRowAllHeroesCost6OrLess === "function") return dbRowAllHeroesCost6OrLess(row); }catch(e){} return true; }
+  function clearCache9(){
+    try{
+      var ks=[];
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        if(k && CACHE_PREFIXES_ABS9.some(function(p){return k.indexOf(p)===0;})) ks.push(k);
+      }
+      ks.forEach(function(k){localStorage.removeItem(k);});
+    }catch(e){}
+  }
+  function sourceRows9(){
+    var seen = Object.create(null), out = [];
+    function add(row, idx){
+      if(!row || rowBondCount9(row) !== 9) return;
+      var id = rowId9(row, idx);
+      if(seen[id]) return;
+      seen[id] = true;
+      out.push(row);
+    }
+    try{ (resultDbByBondCount && resultDbByBondCount.get(9) || []).forEach(add); }catch(e){}
+    try{ (Array.isArray(resultDbRows) ? resultDbRows : []).forEach(add); }catch(e){}
+    return out;
+  }
+  async function ensureNobol9(){
+    clearCache9();
+    var before = sourceRows9().length;
+    if(before >= 50) return before;
+    if(typeof window.loadNobolFormationsIntoResultDb === "function"){
+      var status = el9("dbListStatus"), box = el9("dbFormationList");
+      if(status) status.textContent = "9因縁データ読込中。数分お待ちください。";
+      if(box) box.innerHTML = '<div class="dbListNote">読込中です。数分お待ちください。</div>';
+      try{ await window.loadNobolFormationsIntoResultDb(); }catch(e){ console.error("9因縁 nobol_formations 読込失敗", e); }
+    }
+    clearCache9();
+    return sourceRows9().length;
+  }
+  function table9(rows){
+    var keys = statKeys9();
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row, idx){
+      var rid = rowId9(row, idx);
+      var mem = members9(row);
+      var bon = bonds9(row);
+      var stats = keys.map(function(k){ return k+":"+(row[k] != null ? row[k] : (row[String(k).replace("属性","")] != null ? row[String(k).replace("属性","")] : "")); }).join(" / ");
+      return '<tr class="dbMainRow">'+
+        '<td><button class="applyBtn" data-result-id="'+esc9(rid)+'" type="button">適用</button></td>'+
+        '<td>'+esc9(rowBondCount9(row))+'</td>'+
+        '<td>'+esc9(formText9(row))+'</td>'+
+        '<td><div class="dbPlacementMini">'+mem.map(function(m,i){ return '<span>'+esc9(i+1)+'. '+esc9(m)+'</span>'; }).join('')+'</div></td>'+ 
+        '<td class="dbListBondsCell"><div class="dbListBonds">'+bon.map(function(b){ return '<span class="badge">'+esc9(b)+'</span>'; }).join('')+'</div></td>'+ 
+        '</tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc9(stats)+'</span></td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+  function bindApply9(rows){
+    var box = el9("dbFormationList");
+    if(!box) return;
+    window.__absoluteLast9ShownRows = rows;
+    box.onclick = function(ev){
+      var btn = ev.target && ev.target.closest && ev.target.closest("button[data-result-id]");
+      if(!btn) return;
+      var rid = String(btn.getAttribute("data-result-id") || "");
+      var row = (window.__absoluteLast9ShownRows || []).find(function(r, i){ return rowId9(r, i) === rid; });
+      if(row && typeof applyDbFormationRow === "function") applyDbFormationRow(row);
+    };
+  }
+  async function render9(){
+    var box = el9("dbFormationList"), status = el9("dbListStatus");
+    if(!box || !status) return;
+    var forms = selectedForms9();
+    if(!forms.length){ status.textContent = "陣形を選択してください。"; box.innerHTML = '<div class="dbListNote">陣形選択後、9因縁ボタンで一覧を表示します。</div>'; return; }
+    await ensureNobol9();
+    var all = sourceRows9();
+    var ruleList = rules9();
+    var rows = all.filter(function(row){
+      if(!rowMatchesForm9(row)) return false;
+      if(!ownedOk9(row)) return false;
+      try{ if(grade3Cost6OnlyEnabled && !costOk9(row)) return false; }catch(e){}
+      for(var i=0;i<ruleList.length;i++){
+        var rule = ruleList[i];
+        if(rule.threshold !== null && Number.isFinite(rule.threshold) && statVal9(row, rule.stat) < rule.threshold) return false;
+      }
+      return true;
+    });
+    rows.sort(function(a,b){
+      for(var i=0;i<ruleList.length;i++){ var d = statVal9(b, ruleList[i].stat) - statVal9(a, ruleList[i].stat); if(d) return d; }
+      return 0;
+    });
+    var shown = rows.slice(0, MAX_ABS9);
+    status.innerHTML = forms.join("/") + " / 9因縁: DB全体 " + all.length.toLocaleString() + "件 / 絞り込み " + rows.length.toLocaleString() + "件 / 表示 " + shown.length.toLocaleString() + "件（最大" + MAX_ABS9 + "件） / 検索結果記録済み";
+    box.innerHTML = shown.length ? table9(shown) : '<div class="dbListNote">該当行なし。確認: 9因縁のDB全体候補は '+esc9(all.length)+'件。</div>';
+    bindApply9(shown);
+    try{ if(typeof hideDbSearchProgress === "function") hideDbSearchProgress(); }catch(e){}
+  }
+
+  window.renderDbFormationList = function(){
+    if(selectedCount9() === 9) return render9();
+    if(typeof PREV_RENDER_ABS9 === "function") return PREV_RENDER_ABS9.apply(this, arguments);
+  };
+  window.handleDbCountButtonClick = function(count){
+    var n = Number(count) || 0;
+    if(n === 9){
+      setSelectedCount9(9);
+      clearCache9();
+      try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+      return render9();
+    }
+    if(typeof PREV_HANDLE_ABS9 === "function") return PREV_HANDLE_ABS9.apply(this, arguments);
+    setSelectedCount9(n);
+    return window.renderDbFormationList();
+  };
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest && ev.target.closest('#dbCountButtons button[data-count="9"]');
+    if(!btn) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    setSelectedCount9(9);
+    clearCache9();
+    try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+    render9();
+  }, true);
+})();
+</script>
