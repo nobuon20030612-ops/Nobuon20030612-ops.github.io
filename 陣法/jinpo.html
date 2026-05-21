@@ -3257,7 +3257,7 @@ body{
   </div>
   <div id="totalStatResult" class="totalStatGrid"></div>
 </section>
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="../index.html">戻る</a>
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="トップへ戻る">戻る</a>
 
 <!-- 機能維持用: 非表示にしている結果欄。calculate/renderResults が参照するため削除禁止。 -->
 <div id="summary" class="hiddenNoise"></div>
@@ -10526,10 +10526,10 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     var btn = document.getElementById('jinpoBackBtn');
     if(!btn || btn.__jinpoBackReady) return;
     btn.__jinpoBackReady = true;
-    btn.setAttribute('href','index.html');
+    btn.setAttribute('href','../index.html');
     btn.addEventListener('click', function(ev){
       ev.preventDefault();
-      window.location.assign('index.html');
+      window.location.assign('../index.html');
     });
   }
   if(document.readyState === 'loading'){
