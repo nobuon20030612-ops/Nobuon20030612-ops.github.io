@@ -184,85 +184,85 @@ body {
 <!-- 最上段 -->
 <div class="middle top-extra-row">
     <button class="imgbtn" onclick="location.href='陣法/jinpo.html'">
-        <img src="陣法.png" alt="陣法">
+        <img decoding="async" loading="eager" fetchpriority="high" src="陣法.png" alt="陣法">
     </button>
 </div>
 
 <!-- 上段 -->
 <div class="middle top-row">
       <button class="imgbtn" onclick="location.href='英傑一覧.html'">
-        <img src="英傑一覧.png" alt="英傑一覧">
+        <img decoding="async" loading="lazy" src="英傑一覧.png" alt="英傑一覧">
     </button>
     <button class="imgbtn" onclick="location.href='shuugou.html'">
-        <img src="btn_shuugou.png" alt="徒党登録">
+        <img decoding="async" loading="lazy" src="btn_shuugou.png" alt="徒党登録">
     </button>
-    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" class="imgbtn">
-        <img src="koushiki.png" alt="信長の野望オンライン公式サイト">
+    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" rel="noopener" class="imgbtn">
+        <img decoding="async" loading="lazy" src="koushiki.png" alt="信長の野望オンライン公式サイト">
     </a>
 
-    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" class="imgbtn">
-        <img src="wiki.png" alt="信長の野望オンライン攻略Wiki">
+    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" rel="noopener" class="imgbtn">
+        <img decoding="async" loading="lazy" src="wiki.png" alt="信長の野望オンライン攻略Wiki">
     </a>
 </div>
 
 <!-- 2段目 -->
 <div class="middle tools-row">
     <button class="imgbtn" onclick="location.href='能力計算機.html'">
-        <img src="nouryoku.png" alt="能力計算">
+        <img decoding="async" loading="lazy" src="nouryoku.png" alt="能力計算">
     </button>
 
     <button class="imgbtn" onclick="location.href='家臣計算機.html'">
-        <img src="kashin.png" alt="家臣計算機">
+        <img decoding="async" loading="lazy" src="kashin.png" alt="家臣計算機">
     </button>
 
     <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
-        <img src="shichiseitensei.png" alt="七星転生">
+        <img decoding="async" loading="lazy" src="shichiseitensei.png" alt="七星転生">
     </button>
 
     <button class="imgbtn" onclick="location.href='shokuryou.html'">
-        <img src="shokuryou.png" alt="食料">
+        <img decoding="async" loading="lazy" src="shokuryou.png" alt="食料">
     </button>
 </div>
 
 <!-- 3段目 -->
 <div class="middle tools-row">
     <button class="imgbtn nopush" onclick="location.href='seikai.html'">
-        <img src="seikai.png" alt="星海の荒石">
+        <img decoding="async" loading="lazy" src="seikai.png" alt="星海の荒石">
     </button>
 
     <button class="imgbtn" onclick="location.href='鬼神石.html'">
-        <img src="kishinseki.png" alt="鬼神石">
+        <img decoding="async" loading="lazy" src="kishinseki.png" alt="鬼神石">
     </button>
 
     <button class="imgbtn" onclick="location.href='九十九.html'">
-        <img src="tsukumogami.png" alt="九十九">
+        <img decoding="async" loading="lazy" src="tsukumogami.png" alt="九十九">
     </button>
 
     <button class="imgbtn" onclick="location.href='魔導結晶.html'">
-        <img src="madoukesshou.png" alt="魔導結晶">
+        <img decoding="async" loading="lazy" src="madoukesshou.png" alt="魔導結晶">
     </button>
 </div>
 
 <!-- 下段 -->
 <div class="middle bottom-row">
     <button class="imgbtn nopush" onclick="location.href='counter.html'">
-        <img src="counter.png" alt="カウンター">
+        <img decoding="async" loading="lazy" src="counter.png" alt="カウンター">
     </button>
 
     <button class="imgbtn nopush" onclick="playVideo()">
-        <img src="nopush.png" alt="動画再生">
+        <img decoding="async" loading="lazy" src="nopush.png" alt="動画再生">
     </button>
 
     <a href="https://www.youtube.com/@%E3%81%9F%E3%81%84%E3%82%89%E3%81%AEzzz" target="_blank" class="imgbtn youtube">
-        <img src="youtube_btn.png" alt="YouTube">
+        <img decoding="async" loading="lazy" src="youtube_btn.png" alt="YouTube">
     </a>
 <button class="imgbtn nopush" onclick="location.href='okuraban.html'">
-        <img src="btn_okuraban.png" alt="御蔵番拡張">
+        <img decoding="async" loading="lazy" src="btn_okuraban.png" alt="御蔵番拡張">
     </button>
 </div>
 
 <div id="videoOverlay">
-    <video id="video" src="video.mp4"></video>
+    <video id="video" preload="none"></video>
 </div>
 
 <script>
@@ -289,28 +289,38 @@ video.addEventListener("ended", () => {
 document.querySelectorAll('.imgbtn').forEach(btn => {
     btn.addEventListener('touchstart', () => {
         btn.classList.add('active');
-    });
+    }, { passive: true });
 
     btn.addEventListener('touchend', () => {
         setTimeout(() => {
             btn.classList.remove('active');
         }, 150);
-    });
+    }, { passive: true });
 });
 
 const downloadBtn = document.getElementById("downloadBtn");
 const filePath = "test.xlsx";
 
-fetch(filePath, { method: "HEAD" })
-  .then(res => {
-    if (res.ok) {
-      downloadBtn.style.display = "block";
-      downloadBtn.onclick = () => {
-        window.location.href = filePath;
-      };
+function checkDownloadFile() {
+    fetch(filePath, { method: "HEAD" })
+      .then(res => {
+        if (res.ok) {
+          downloadBtn.style.display = "block";
+          downloadBtn.onclick = () => {
+            window.location.href = filePath;
+          };
+        }
+      })
+      .catch(() => {});
+}
+
+window.addEventListener("load", () => {
+    if ("requestIdleCallback" in window) {
+        requestIdleCallback(checkDownloadFile);
+    } else {
+        setTimeout(checkDownloadFile, 500);
     }
-  })
-  .catch(() => {});
+});
 </script>
 
 </body>
