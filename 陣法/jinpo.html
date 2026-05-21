@@ -3157,6 +3157,73 @@ body{
   line-height:1.4;
 }
 
+
+
+/* 2026-05-21 iPhone12 scroll crash/display disappear guard: mobile only */
+@media (max-width: 900px){
+  html,
+  body{
+    height:auto !important;
+    min-height:100% !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:auto !important;
+    overscroll-behavior:none;
+  }
+
+  .totalStatPanel,
+  #totalStatPanel{
+    position:sticky !important;
+    top:0 !important;
+    left:auto !important;
+    right:auto !important;
+    width:100% !important;
+    transform:none !important;
+    will-change:auto !important;
+    contain:layout paint !important;
+    -webkit-transform:translateZ(0);
+    backface-visibility:hidden;
+  }
+
+  body{
+    padding-top:0 !important;
+  }
+
+  main{
+    transform:none !important;
+    will-change:auto !important;
+    contain:none !important;
+  }
+
+  .formation,
+  #formationView,
+  .formationMiniPanel{
+    overflow:hidden !important;
+    transform:none !important;
+    will-change:auto !important;
+  }
+
+  .dbListBox{
+    -webkit-overflow-scrolling:auto !important;
+    transform:none !important;
+    will-change:auto !important;
+  }
+}
+
+@supports (-webkit-touch-callout: none){
+  @media (max-width: 900px){
+    .totalStatPanel,
+    #totalStatPanel{
+      position:sticky !important;
+      top:0 !important;
+    }
+    .dbListTable,
+    .reachSwapTable{
+      transform:none !important;
+      will-change:auto !important;
+    }
+  }
+}
+
 </style>
 
 <meta name="description" content="英傑を選んで因縁発動・リーチ・陣形ラインを確認できます。">
@@ -4997,7 +5064,6 @@ async function loadInenMultiplierMaster(){
   const ms = document.getElementById("multiplierStatus");
   if(ms) ms.textContent = "";
 }
-
 
 function normKeyText(v){
   return String(v ?? "")
