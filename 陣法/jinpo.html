@@ -4992,14 +4992,10 @@ let inenMultiplierRows = [];
 let inenMultiplierMap = new Map();
 
 async function loadInenMultiplierMaster(){
-  try{
-    inenMultiplierRows = await window.JinpoActivationEngine.loadCSV("data/jinpo_single_inen_multiplier_master.csv?v=20260517_single");
-    rebuildInenMultiplierMap();
-    const ms = document.getElementById("multiplierStatus");
-    if(ms) ms.textContent = `単独因縁倍率: ${inenMultiplierRows.length}行 読込済`;
-  }catch(e){
-    console.error("単独因縁倍率読込失敗", e);
-  }
+  inenMultiplierRows = [];
+  inenMultiplierMap.clear();
+  const ms = document.getElementById("multiplierStatus");
+  if(ms) ms.textContent = "";
 }
 
 
@@ -6043,8 +6039,7 @@ async function init(){
   inenMaster = await window.JinpoActivationEngine.loadCSV("data/jinpo_inen_master.csv?v=20260515154758");
   standardInenMaster = inenMaster.slice();
   await loadResultDbAuto();
-  // DB未一致かつ単独因縁1件のみ、画像逆算倍率でリアルタイム表示する
-  await loadInenMultiplierMaster();
+  
   document.getElementById("status").innerHTML = `internal_id英傑 <b>${eiketsuMaster.length}</b>件 / 因縁 <b>${inenMaster.length}</b>件 読込完了`;
   renderSlots();
   setupCardFilters();
