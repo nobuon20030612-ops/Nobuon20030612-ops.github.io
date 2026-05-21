@@ -3190,7 +3190,7 @@ body{
   </div>
   <div id="totalStatResult" class="totalStatGrid"></div>
 </section>
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="../index.html">戻る</a>
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="index.htmlへ戻る">戻る</a>
 
 <!-- 機能維持用: 非表示にしている結果欄。calculate/renderResults が参照するため削除禁止。 -->
 <div id="summary" class="hiddenNoise"></div>
@@ -4126,6 +4126,46 @@ function clearReachTotalStatsForUnregistered(){
   if(mode) mode.textContent = "登録外 / ステータス未登録";
 }
 
+
+function renderReachAppliedCandidateBox(row, result){
+  const box = document.getElementById("appliedDbRowDisplay");
+  if(!box || !row) return;
+  const bonds = typeof dbRowBondList === "function" ? dbRowBondList(row) : String(row?.bond_ids || row?.inen || "").split("|").filter(Boolean);
+  const members = typeof dbRowMembers === "function" ? dbRowMembers(row) : String(row?.eiketsu_ids || row?.members || "").split("|").filter(Boolean);
+  const count = Number(row?.bond_count || row?.ic || bonds.length || result?.activated?.length || 0) || 0;
+  const formation = String(row?.formation || row?.form || row?.陣形 || formationSelect.value || "");
+  const stats = typeof getStatsFromMasterHit === "function" ? getStatsFromMasterHit({raw:row}) : {};
+  const statKeys = Array.isArray(REALTIME_STAT_KEYS) ? REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  const totalText = statKeys.map(k=>{
+    const v = stats[k] ?? row?.[k] ?? row?.[k.replace("属性","")] ?? "—";
+    return `${k}:${v}`;
+  }).join(" / ");
+  box.style.display = "";
+  box.innerHTML = `
+    <div class="appliedDbRowTitle">適用中の候補</div>
+    <div class="appliedDbRowGrid">
+      <div class="appliedDbRowCell"><div class="appliedDbRowLabel">因縁数</div><div class="appliedDbRowValue">${esc(count)}</div></div>
+      <div class="appliedDbRowCell"><div class="appliedDbRowLabel">陣形</div><div class="appliedDbRowValue">${esc(formation)}</div></div>
+      <div class="appliedDbRowCell appliedDbRowWide"><div class="appliedDbRowLabel">英傑</div><div class="appliedDbRowValue">${members.map((n,i)=>`<span class="badge">${i+1}. ${esc(n)}</span>`).join(" ")}</div></div>
+      <div class="appliedDbRowCell appliedDbRowWide"><div class="appliedDbRowLabel">因縁</div><div class="appliedDbRowValue">${bonds.map(n=>`<span class="badge">${esc(n)}</span>`).join(" ")}</div></div>
+      <div class="appliedDbRowCell appliedDbRowFull"><div class="appliedDbRowLabel">総合値</div><div class="appliedDbRowValue">${esc(totalText)}</div></div>
+    </div>`;
+}
+function renderReachAppliedCandidateUnregistered(result){
+  const box = document.getElementById("appliedDbRowDisplay");
+  if(!box) return;
+  const bonds = (result?.activated || []).map(a=>a.name).filter(Boolean);
+  box.style.display = "";
+  box.innerHTML = `
+    <div class="appliedDbRowTitle">適用中の候補</div>
+    <div class="appliedDbRowGrid">
+      <div class="appliedDbRowCell"><div class="appliedDbRowLabel">因縁数</div><div class="appliedDbRowValue">${esc((result?.activated || []).length)}</div></div>
+      <div class="appliedDbRowCell"><div class="appliedDbRowLabel">陣形</div><div class="appliedDbRowValue">${esc(formationSelect.value || "")}</div></div>
+      <div class="appliedDbRowCell appliedDbRowWide"><div class="appliedDbRowLabel">因縁</div><div class="appliedDbRowValue">${bonds.map(n=>`<span class="badge">${esc(n)}</span>`).join(" ")}</div></div>
+      <div class="appliedDbRowCell appliedDbRowFull"><div class="appliedDbRowLabel">総合値</div><div class="appliedDbRowValue">登録外 / ステータス未登録</div></div>
+    </div>`;
+}
+
 function applyReachSwapCandidate(slot, afterId){
   const s = Number(slot);
   const afterKey = String(afterId ?? "").trim();
@@ -4197,12 +4237,14 @@ function applyReachSwapCandidate(slot, afterId){
   try{
     if(dbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
       renderRealtimeTotalStatsFromReachDbRow(dbRow);
-      setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 0);
-      setTimeout(()=>renderRealtimeTotalStatsFromReachDbRow(dbRow), 80);
+      if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult);
+      setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 0);
+      setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 80);
     }else{
       clearReachTotalStatsForUnregistered();
-      setTimeout(clearReachTotalStatsForUnregistered, 0);
-      setTimeout(clearReachTotalStatsForUnregistered, 80);
+      if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult);
+      setTimeout(()=>{ clearReachTotalStatsForUnregistered(); if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult); }, 0);
+      setTimeout(()=>{ clearReachTotalStatsForUnregistered(); if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult); }, 80);
     }
   }catch(e){
     console.error("リーチ適用後のトータル表示更新失敗", e);
@@ -5889,6 +5931,10 @@ function clearAppliedDbRowDisplay(){
   }
 }
 function renderAppliedDbRowDisplay(row){
+  if(row && typeof renderReachAppliedCandidateBox === "function"){
+    renderReachAppliedCandidateBox(row, null);
+    return;
+  }
   const box = document.getElementById("appliedDbRowDisplay");
   if(box){
     box.style.display = "none";
@@ -12097,22 +12143,15 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 
 
 <script id="reach-apply-total-final-guard">
-/* 2026-05-21: リーチ適用後のトータル更新固定。陣形ライン下の適用中表示は非表示。 */
+/* 2026-05-21: リーチ適用時の適用中候補は表示、通常クリア時だけ非表示。 */
 (function(){
-  function hideAppliedBoxFinal(){
+  window.clearAppliedDbRowDisplay = function(){
     const box = document.getElementById("appliedDbRowDisplay");
     if(box){
       box.style.display = "none";
       box.innerHTML = "";
     }
-  }
-  const oldRenderApplied = window.renderAppliedDbRowDisplay;
-  window.renderAppliedDbRowDisplay = function(row){
-    hideAppliedBoxFinal();
   };
-  window.clearAppliedDbRowDisplay = hideAppliedBoxFinal;
-  document.addEventListener("DOMContentLoaded", hideAppliedBoxFinal);
-  window.addEventListener("load", hideAppliedBoxFinal);
 })();
 </script>
 
@@ -12147,3 +12186,15 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 }
 
 </style>
+
+
+<style id="reach-applied-candidate-realtime-style">
+/* 2026-05-21 リーチ適用時: 適用中候補をリアルタイム更新 */
+.appliedDbRowTitle{font-weight:900;color:#ffe9a8;margin:0 0 8px 0;}
+.appliedDbRowGrid{display:grid;grid-template-columns:140px 160px 1fr 1fr;gap:8px;}
+.appliedDbRowCell{border:1px solid rgba(214,164,69,.55);border-radius:10px;padding:8px 10px;background:rgba(0,0,0,.22);}
+.appliedDbRowFull{grid-column:1 / -1;}
+.appliedDbRowLabel{color:#e0b85a;font-size:13px;margin-bottom:4px;}
+.appliedDbRowValue{color:#fff4d5;font-weight:800;white-space:normal;}
+</style>
+
