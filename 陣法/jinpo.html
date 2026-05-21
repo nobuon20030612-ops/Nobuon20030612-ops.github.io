@@ -12285,3 +12285,89 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 .appliedDbRowValue{color:#fff4d5;font-weight:800;white-space:normal;}
 </style>
 
+
+
+<!-- 2026-05-21 mobile 9-bond list visibility/data completion guard: other behavior unchanged -->
+<style id="mobile-9bond-list-visible-final-guard">
+@media (max-width: 900px){
+  #dbFormationList.dbListBox{
+    max-height:none !important;
+    overflow:visible !important;
+    -webkit-overflow-scrolling:auto !important;
+  }
+  #dbFormationList .dbListTable{
+    display:table !important;
+    width:100% !important;
+  }
+  #dbFormationList .dbListTable thead{display:table-header-group !important;}
+  #dbFormationList .dbListTable tbody{display:table-row-group !important;}
+  #dbFormationList .dbListTable tr{display:table-row !important;}
+  #dbFormationList .dbListTable th,
+  #dbFormationList .dbListTable td{display:table-cell !important;}
+}
+</style>
+<script id="mobile-9bond-data-complete-final-guard">
+(function(){
+  if(window.__mobile9BondFinalGuardInstalled) return;
+  window.__mobile9BondFinalGuardInstalled = true;
+
+  function selectedCount(){
+    try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; }
+  }
+  function indexedCount(count){
+    try{
+      var rows = resultDbByBondCount && resultDbByBondCount.get(Number(count));
+      return Array.isArray(rows) ? rows.length : 0;
+    }catch(e){ return 0; }
+  }
+  function visibleMainRows(){
+    try{ return document.querySelectorAll('#dbFormationList tr.dbMainRow').length; }catch(e){ return 0; }
+  }
+  async function ensureNobolForSelectedCount(){
+    var count = selectedCount();
+    if(count < 7 || count > 9) return false;
+    if(indexedCount(count) >= 10) return false;
+    if(typeof window.loadNobolFormationsIntoResultDb !== 'function') return false;
+    var status = document.getElementById('dbListStatus');
+    if(status) status.textContent = count + '因縁データ読込中。数分お待ちください。';
+    await window.loadNobolFormationsIntoResultDb();
+    return indexedCount(count) >= 10;
+  }
+  function rerenderOnce(prev){
+    if(window.__mobile9BondRerendering) return;
+    window.__mobile9BondRerendering = true;
+    try{ prev.apply(window, []); }
+    catch(e){ console.error('mobile 9-bond rerender failed', e); }
+    setTimeout(function(){ window.__mobile9BondRerendering = false; }, 300);
+  }
+  function scheduleCheck(prev){
+    [600, 1800, 4200].forEach(function(ms){
+      setTimeout(async function(){
+        var count = selectedCount();
+        if(count < 7 || count > 9) return;
+        var before = indexedCount(count);
+        try{ await ensureNobolForSelectedCount(); }catch(e){ console.error('nobol ensure failed', e); }
+        var after = indexedCount(count);
+        var visible = visibleMainRows();
+        if(after >= 10 && visible <= 1){
+          rerenderOnce(prev);
+        }else if(before < 10 && after >= 10){
+          rerenderOnce(prev);
+        }
+      }, ms);
+    });
+  }
+
+  var previousRenderDbFormationList = window.renderDbFormationList;
+  if(typeof previousRenderDbFormationList === 'function'){
+    window.renderDbFormationList = function(){
+      var ret = previousRenderDbFormationList.apply(this, arguments);
+      var count = selectedCount();
+      if(count >= 7 && count <= 9){
+        scheduleCheck(previousRenderDbFormationList);
+      }
+      return ret;
+    };
+  }
+})();
+</script>
