@@ -3190,7 +3190,7 @@ body{
   </div>
   <div id="totalStatResult" class="totalStatGrid"></div>
 </section>
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="../index.html">戻る</a>
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="index.htmlへ戻る">戻る</a>
 
 <!-- 機能維持用: 非表示にしている結果欄。calculate/renderResults が参照するため削除禁止。 -->
 <div id="summary" class="hiddenNoise"></div>
@@ -5548,11 +5548,14 @@ function updateOwnedHeroSelectedInfo(){
 window.updateOwnedHeroSelectedInfo = updateOwnedHeroSelectedInfo;
 setInterval(updateOwnedHeroSelectedInfo, 1000);
 
-function handleDbCountButtonClick(count){
+async function handleDbCountButtonClick(count){
   selectedDbListBondCount = Number(count) || null;
   const status = document.getElementById("dbListStatus");
   if(status) status.textContent = `${selectedDbListBondCount}因縁を検索中。数分お待ちください。`;
   renderDbCountButtons();
+  if(selectedDbListBondCount >= 7 && selectedDbListBondCount <= 9 && typeof window.loadNobolFormationsIntoResultDb === "function"){
+    await window.loadNobolFormationsIntoResultDb();
+  }
   setTimeout(()=>renderDbFormationList(), 0);
 }
 window.handleDbCountButtonClick = handleDbCountButtonClick;
@@ -5831,6 +5834,15 @@ function renderDbFormationList(){
       status.textContent = "陣形を選択してください。";
       box.innerHTML = `<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>`;
       return;
+    }
+
+    if(selectedDbListBondCount >= 7 && selectedDbListBondCount <= 9 && typeof window.loadNobolFormationsIntoResultDb === "function"){
+      const beforeNobolCount = (resultDbByBondCount.get(selectedDbListBondCount) || []).length;
+      if(beforeNobolCount < 10){
+        status.textContent = `${selectedDbListBondCount}因縁データ読込中。数分お待ちください。`;
+        await window.loadNobolFormationsIntoResultDb();
+        if(token !== dbFormationListRenderToken) return;
+      }
     }
 
     const startTime = performance.now();
@@ -12029,10 +12041,10 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 /* 2026-05-21: nobol_formations 3000件を35万DB検索へ統合。既存検索仕様は変更しない。 */
 (function(){
   const NOBOL_FORMATION_FILES = [
-    "data/cache/nobol_formations.json.gz",
-    "data/nobol_formations.json.gz",
     "data/cache/nobol_formations.json",
-    "data/nobol_formations.json"
+    "data/cache/nobol_formations.json.gz",
+    "data/nobol_formations.json",
+    "data/nobol_formations.json.gz"
   ];
   const NOBOL_STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
   let nobolFormationsLoaded = false;
@@ -12049,11 +12061,17 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     let lastError = null;
     for(const file of NOBOL_FORMATION_FILES){
       try{
-        const res = await fetch(file, {cache:"no-store"});
+        const url = `${file}${file.includes("?") ? "&" : "?"}_=${Date.now()}`;
+        const res = await fetch(url, {cache:"no-store"});
         if(!res.ok) throw new Error(`${file}: ${res.status}`);
         const bytes = new Uint8Array(await res.arrayBuffer());
         const text = await decodeBytesToText(bytes);
         const data = JSON.parse(text);
+        const list = Array.isArray(data?.formations) ? data.formations : [];
+        const count9 = list.filter(x=>Number(x?.ic || x?.bond_count || 0) === 9).length;
+        if(list.length < 100 || count9 < 10){
+          throw new Error(`${file}: nobol_formations件数不足 formations=${list.length} 9因縁=${count9}`);
+        }
         return {file, data};
       }catch(e){
         lastError = e;
@@ -12099,38 +12117,46 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   }
 
   async function loadNobolFormationsIntoResultDb(){
-    if(nobolFormationsLoaded) return;
+    const current9 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(9)) ? resultDbByBondCount.get(9).length : 0;
+    if(nobolFormationsLoaded && current9 >= 10) return;
+    if(window.__nobolMergePromise) return window.__nobolMergePromise;
     if(typeof resultDbRows === "undefined") return;
     const status = document.getElementById("resultDbStatus");
-    try{
-      const pack = await fetchNobolFormationJson();
-      const list = Array.isArray(pack.data?.formations) ? pack.data.formations : [];
-      const converted = list.map(nobolFormationToResultRow).filter(r=>r.bond_count > 0 && r.eiketsu_ids);
-      const exists = new Set((resultDbRows || []).map(r=>String(r.result_id || r.id || "")));
-      const addRows = converted.filter(r=>!exists.has(String(r.result_id)));
-      resultDbRows = (Array.isArray(resultDbRows) ? resultDbRows : []).concat(addRows);
-      nobolFormationsLoaded = true;
 
-      if(typeof rebuildResultDbIndex === "function") rebuildResultDbIndex();
+    window.__nobolMergePromise = (async()=>{
+      try{
+        const pack = await fetchNobolFormationJson();
+        const list = Array.isArray(pack.data?.formations) ? pack.data.formations : [];
+        const converted = list.map(nobolFormationToResultRow).filter(r=>r.bond_count > 0 && r.eiketsu_ids);
+        const exists = new Set((resultDbRows || []).map(r=>String(r.result_id || r.id || "")));
+        const addRows = converted.filter(r=>!exists.has(String(r.result_id)));
+        resultDbRows = (Array.isArray(resultDbRows) ? resultDbRows : []).concat(addRows);
+        nobolFormationsLoaded = true;
 
-      const db7 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(7)) ? resultDbByBondCount.get(7).length : 0;
-      const db8 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(8)) ? resultDbByBondCount.get(8).length : 0;
-      const db9 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(9)) ? resultDbByBondCount.get(9).length : 0;
-      if(status){
-        const base = String(status.textContent || "").trim();
-        status.textContent = `${base}${base ? " / " : ""}nobol_formations:${addRows.length}件 統合 / 7因縁:${db7}件 / 8因縁:${db8}件 / 9因縁:${db9}件`;
+        if(typeof rebuildResultDbIndex === "function") rebuildResultDbIndex();
+
+        const db7 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(7)) ? resultDbByBondCount.get(7).length : 0;
+        const db8 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(8)) ? resultDbByBondCount.get(8).length : 0;
+        const db9 = (typeof resultDbByBondCount !== "undefined" && resultDbByBondCount.get(9)) ? resultDbByBondCount.get(9).length : 0;
+        if(status){
+          const base = String(status.textContent || "").replace(/\s*\/\s*nobol_formations.*$/," ").trim();
+          status.textContent = `${base}${base ? " / " : ""}nobol_formations:${addRows.length}件 統合 / 7因縁:${db7}件 / 8因縁:${db8}件 / 9因縁:${db9}件`;
+        }
+
+        if(typeof renderDbCountButtons === "function") renderDbCountButtons();
+        if(typeof renderDbStatButtons === "function") renderDbStatButtons();
+        if(typeof renderDbFormationList === "function") renderDbFormationList();
+      }catch(e){
+        console.error("nobol_formations統合失敗", e);
+        if(status){
+          const base = String(status.textContent || "").trim();
+          status.textContent = `${base}${base ? " / " : ""}nobol_formations未読込`;
+        }
+      }finally{
+        window.__nobolMergePromise = null;
       }
-
-      if(typeof renderDbCountButtons === "function") renderDbCountButtons();
-      if(typeof renderDbStatButtons === "function") renderDbStatButtons();
-      if(typeof renderDbFormationList === "function") renderDbFormationList();
-    }catch(e){
-      console.error("nobol_formations統合失敗", e);
-      if(status){
-        const base = String(status.textContent || "").trim();
-        status.textContent = `${base}${base ? " / " : ""}nobol_formations未読込`;
-      }
-    }
+    })();
+    return window.__nobolMergePromise;
   }
 
   window.loadNobolFormationsIntoResultDb = loadNobolFormationsIntoResultDb;
