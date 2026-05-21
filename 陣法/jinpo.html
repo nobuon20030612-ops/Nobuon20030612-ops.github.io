@@ -10707,6 +10707,103 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 })();
 </script>
 
+
+
+<!-- 2026-05-22 final fix: 7〜9因縁はnobol_formations統合完了後だけ描画する。仕様/レイアウト変更なし。 -->
+<script id="final-pc-mobile-7-9-nobol-before-render-guard">
+(function(){
+  if(window.__finalPcMobile79NobolBeforeRenderGuardInstalled) return;
+  window.__finalPcMobile79NobolBeforeRenderGuardInstalled = true;
+
+  var PREV_RENDER_79_NOBOL_GUARD = window.renderDbFormationList;
+  var PREV_HANDLE_COUNT_79_NOBOL_GUARD = window.handleDbCountButtonClick;
+  var CACHE_PREFIX_79 = "jinpo_final_7_9_finish_v1@@";
+  var ensuring = false;
+
+  function selectedCount79(){
+    try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; }
+  }
+  function setSelectedCount79(count){
+    try{ selectedDbListBondCount = Number(count) || null; }
+    catch(e){ window.selectedDbListBondCount = Number(count) || null; }
+  }
+  function indexedCount79(count){
+    try{
+      var rows = resultDbByBondCount && resultDbByBondCount.get(Number(count));
+      return Array.isArray(rows) ? rows.length : 0;
+    }catch(e){ return 0; }
+  }
+  function clearFinal79Cache(){
+    try{
+      var removeKeys = [];
+      for(var i=0;i<localStorage.length;i++){
+        var k = localStorage.key(i);
+        if(k && k.indexOf(CACHE_PREFIX_79) === 0) removeKeys.push(k);
+      }
+      removeKeys.forEach(function(k){ localStorage.removeItem(k); });
+    }catch(e){}
+  }
+  function showLoading79(count){
+    var status = document.getElementById("dbListStatus");
+    var box = document.getElementById("dbFormationList");
+    if(status) status.textContent = count + "因縁データ読込中。数分お待ちください。";
+    if(box) box.innerHTML = '<div class="dbListNote">読込中です。数分お待ちください。</div>';
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:count + "因縁データ読込中。数分お待ちください。", processed:0, total:1, indeterminate:true, startTime:performance.now()});
+      }
+    }catch(e){}
+  }
+  async function ensureNobolBefore79Render(count){
+    count = Number(count) || 0;
+    if(count < 7 || count > 9) return indexedCount79(count);
+    clearFinal79Cache();
+    if(ensuring) return indexedCount79(count);
+    if(indexedCount79(count) >= 10) return indexedCount79(count);
+    if(typeof window.loadNobolFormationsIntoResultDb !== "function") return indexedCount79(count);
+
+    ensuring = true;
+    showLoading79(count);
+    try{
+      await window.loadNobolFormationsIntoResultDb();
+    }catch(e){
+      console.error("7〜9因縁 nobol_formations 読込失敗", e);
+    }finally{
+      ensuring = false;
+      clearFinal79Cache();
+    }
+    return indexedCount79(count);
+  }
+
+  window.renderDbFormationList = async function(){
+    var count = selectedCount79();
+    if(count >= 7 && count <= 9 && !ensuring){
+      await ensureNobolBefore79Render(count);
+    }
+    if(typeof PREV_RENDER_79_NOBOL_GUARD === "function"){
+      return PREV_RENDER_79_NOBOL_GUARD.apply(this, arguments);
+    }
+  };
+
+  window.handleDbCountButtonClick = async function(count){
+    var n = Number(count) || 0;
+    if(n >= 7 && n <= 9){
+      setSelectedCount79(n);
+      clearFinal79Cache();
+      try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+      await ensureNobolBefore79Render(n);
+      return window.renderDbFormationList();
+    }
+    if(typeof PREV_HANDLE_COUNT_79_NOBOL_GUARD === "function"){
+      return PREV_HANDLE_COUNT_79_NOBOL_GUARD.apply(this, arguments);
+    }
+    setSelectedCount79(n);
+    try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+    return window.renderDbFormationList();
+  };
+})();
+</script>
+
 </body>
 </html>
 
