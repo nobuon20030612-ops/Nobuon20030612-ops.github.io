@@ -10974,6 +10974,52 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
 })();
 </script>
 
+
+
+<script id="absolute-last-hero-name-variant-normalize-fix">
+/* 2026-05-22 名前表記差対応のみ。
+   対象: DB側「前田利家・雄材」などと英傑マスター側「前田利家(雄材)」などの照合。
+   変更禁止対象: レイアウト、検索条件、表示上限、5/6/7/8因縁、リーチ、適用後計算仕様。 */
+(function(){
+  if(window.__heroNameVariantNormalizeFixInstalled) return;
+  window.__heroNameVariantNormalizeFixInstalled = true;
+
+  function normalizeHeroVariantName(name){
+    return String(name == null ? "" : name)
+      .trim()
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g, "")
+      .replace(/・/g, "")
+      .replace(/[\s　]+/g, "")
+      .replace(/[()（）［］\[\]「」『』【】]/g, "");
+  }
+
+  window.canonicalHeroName = normalizeHeroVariantName;
+  try{ canonicalHeroName = normalizeHeroVariantName; }catch(e){}
+
+  window.dbRowMembers = function(row){
+    var raw = row && (row.eiketsu_ids || row.members || row["英傑"] || row.m || row.r || "");
+    if(Array.isArray(raw)) return raw.map(function(x){ return String(x || "").trim().replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g, ""); }).filter(Boolean);
+    return String(raw || "")
+      .split(/[|,、/／\s]+/)
+      .map(function(x){ return String(x || "").trim().replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g, ""); })
+      .filter(Boolean);
+  };
+  try{ dbRowMembers = window.dbRowMembers; }catch(e){}
+
+  window.buildHeroNameLookup = function(){
+    var map = new Map();
+    try{
+      (eiketsuMaster || []).forEach(function(h){
+        var name = h["英傑名"] || h.name || h["名前"] || "";
+        if(name) map.set(normalizeHeroVariantName(name), h);
+      });
+    }catch(e){}
+    return map;
+  };
+  try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
+})();
+</script>
+
 </body>
 </html>
 
@@ -12974,5 +13020,63 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
     render9();
   }, true);
+})();
+</script>
+
+
+<script id="absolute-last-hero-name-all-variant-normalize-fix">
+/* 2026-05-22: 英傑一覧(23).csv基準の名前表記差 全件照合対応。
+   対象: 名前照合のみ。レイアウト・検索条件・5/6/7/8/9因縁ロジック・表示上限は変更しない。
+   確認済み: nobol_formations内の「・」表記72種類は英傑一覧の「( )」表記へ正規化一致。
+   9因縁で残っていた未認識「山中鹿之助」は英傑一覧の「山中鹿之介」へ別名対応。 */
+(function(){
+  if(window.__heroNameAllVariantNormalizeFixInstalled) return;
+  window.__heroNameAllVariantNormalizeFixInstalled = true;
+
+  var HERO_NAME_ALIAS = {
+    "山中鹿之助":"山中鹿之介",
+    "森田浄雲":"森田浄曇"
+  };
+
+  function stripPowerMarks(v){
+    return String(v == null ? "" : v).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g, "");
+  }
+  function normalizeHeroVariantNameAll(name){
+    var s = stripPowerMarks(name).trim();
+    s = s.replace(/（/g,"(").replace(/）/g,")");
+    if(s.indexOf("・") !== -1 && s.indexOf("(") === -1){
+      var p = s.lastIndexOf("・");
+      s = s.slice(0,p) + "(" + s.slice(p+1) + ")";
+    }
+    if(HERO_NAME_ALIAS[s]) s = HERO_NAME_ALIAS[s];
+    return s
+      .replace(/[()（）［］\[\]「」『』【】]/g, "")
+      .replace(/・/g, "")
+      .replace(/[\s　]+/g, "");
+  }
+
+  window.canonicalHeroName = normalizeHeroVariantNameAll;
+  try{ canonicalHeroName = normalizeHeroVariantNameAll; }catch(e){}
+
+  window.dbRowMembers = function(row){
+    var raw = row && (row.eiketsu_ids || row.members || row["英傑"] || row.m || row.r || "");
+    var arr = Array.isArray(raw) ? raw : String(raw || "").split(/[|,、/／\s]+/);
+    return arr.map(function(x){ return stripPowerMarks(x).trim(); }).filter(Boolean);
+  };
+  try{ dbRowMembers = window.dbRowMembers; }catch(e){}
+
+  window.buildHeroNameLookup = function(){
+    var map = new Map();
+    try{
+      (eiketsuMaster || []).forEach(function(h){
+        var name = h["英傑名"] || h.name || h["名前"] || "";
+        if(name){
+          map.set(normalizeHeroVariantNameAll(name), h);
+        }
+      });
+    }catch(e){}
+    return map;
+  };
+  try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 })();
 </script>
