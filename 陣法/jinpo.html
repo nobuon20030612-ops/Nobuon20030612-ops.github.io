@@ -1996,10 +1996,10 @@ modeText = hit.ambiguous ? `実数値DB一致 / 複数候補 ${hit.candidates.le
 const singleFormula = calcSingleInenStatsFromMultiplierMaster(result);
 if(singleFormula){
 stats = singleFormula.stats;
-modeText = "実数値DB未一致 / 単独因縁式で計算表示";
+modeText = "";
 }else{
 for(const k of REALTIME_STAT_KEYS) stats[k] = "—";
-modeText = "実数値DB未一致 / 単独因縁以外は計算停止";
+modeText = "";
 }
 }
 box.innerHTML = REALTIME_STAT_KEYS.map(k=>{
