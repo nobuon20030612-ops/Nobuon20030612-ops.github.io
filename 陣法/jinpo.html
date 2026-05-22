@@ -1996,10 +1996,10 @@ modeText = hit.ambiguous ? `実数値DB一致 / 複数候補 ${hit.candidates.le
 const singleFormula = calcSingleInenStatsFromMultiplierMaster(result);
 if(singleFormula){
 stats = singleFormula.stats;
-modeText = "";
+modeText = "実数値DB未一致 / 単独因縁式で計算表示";
 }else{
 for(const k of REALTIME_STAT_KEYS) stats[k] = "—";
-modeText = "";
+modeText = "実数値DB未一致 / 単独因縁以外は計算停止";
 }
 }
 box.innerHTML = REALTIME_STAT_KEYS.map(k=>{
@@ -8927,7 +8927,15 @@ if(window.__heroNameAllVariantNormalizeFixInstalled) return;
 window.__heroNameAllVariantNormalizeFixInstalled = true;
 var HERO_NAME_ALIAS = {
 "山中鹿之助":"山中鹿之介",
-"森田浄雲":"森田浄曇"
+"森田浄雲":"森田浄曇",
+"酒井忠次(通)":"酒井忠次(衣鉢)",
+"前田利家":"前田利家(雄材)",
+"ねね(納涼)":"ねね(涼)",
+"織田信長(特別)":"織田信長(覇王)",
+"まつ":"まつ(兎忍)",
+"濃姫(雅楽)":"濃姫",
+"羽柴秀吉(涼)":"羽柴秀吉(納涼)",
+"羽柴秀吉・涼":"羽柴秀吉(納涼)"
 };
 function stripPowerMarks(v){
 return String(v == null ? "" : v).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g, "");
@@ -8939,6 +8947,7 @@ if(s.indexOf("・") !== -1 && s.indexOf("(") === -1){
 var p = s.lastIndexOf("・");
 s = s.slice(0,p) + "(" + s.slice(p+1) + ")";
 }
+s = s.replace(/\(\s*([^\)]+?)\s*\)/g, function(_, inner){ return "(" + String(inner).trim() + ")"; });
 if(HERO_NAME_ALIAS[s]) s = HERO_NAME_ALIAS[s];
 return s
 .replace(/[()（）［］\[\]「」『』【】]/g, "")
