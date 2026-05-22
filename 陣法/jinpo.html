@@ -10891,9 +10891,20 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     if(before >= 50) return before;
     if(typeof window.loadNobolFormationsIntoResultDb === "function"){
       var status = el("dbListStatus"), box = el("dbFormationList");
+      var progressStart = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
       if(status) status.textContent = "9因縁データ読込中。数分お待ちください。";
       if(box) box.innerHTML = '<div class="dbListNote">読込中です。数分お待ちください。</div>';
+      try{
+        if(typeof setDbSearchProgress === "function"){
+          setDbSearchProgress({phase:"9因縁データ読込中。数分お待ちください。", processed:0, total:1, indeterminate:true, startTime:progressStart});
+        }
+      }catch(e){}
       try{ await window.loadNobolFormationsIntoResultDb(); }catch(e){ console.error("9因縁 nobol_formations 読込失敗", e); }
+      try{
+        if(typeof setDbSearchProgress === "function"){
+          setDbSearchProgress({phase:"9因縁データ読込完了。表示準備中。", processed:1, total:1, startTime:progressStart});
+        }
+      }catch(e){}
     }
     clearCache9();
     return sourceRows9().length;
@@ -10950,9 +10961,19 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
     var shown = rows.slice(0, MAX_ULT9);
     var formLabel = selectedForms9().join("/") || "全陣形";
     status.innerHTML = formLabel + " / 9因縁: DB全体 " + all.length.toLocaleString() + "件 / 絞り込み " + rows.length.toLocaleString() + "件 / 表示 " + shown.length.toLocaleString() + "件（最大" + MAX_ULT9 + "件） / 検索結果記録済み";
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:"9因縁検索結果を表示中。", processed:3, total:3, startTime:progressStart});
+      }
+    }catch(e){}
     box.innerHTML = shown.length ? table9(shown) : '<div class="dbListNote">該当行なし。確認: 9因縁のDB全体候補は '+esc9(all.length)+'件。</div>';
     bindApply9(shown);
-    try{ if(typeof hideDbSearchProgress === "function") hideDbSearchProgress(); }catch(e){}
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:"検索完了", processed:3, total:3, startTime:progressStart, done:true});
+      }
+    }catch(e){}
+    setTimeout(function(){ try{ if(typeof hideDbSearchProgress === "function") hideDbSearchProgress(); }catch(e){} }, 900);
   }
 
   window.renderDbFormationList = function(){
@@ -12967,9 +12988,20 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   async function render9(){
     var box = el9("dbFormationList"), status = el9("dbListStatus");
     if(!box || !status) return;
+    var progressStart = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
     var forms = selectedForms9();
     if(!forms.length){ status.textContent = "陣形を選択してください。"; box.innerHTML = '<div class="dbListNote">陣形選択後、9因縁ボタンで一覧を表示します。</div>'; return; }
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:"9因縁検索中。数分お待ちください。", processed:0, total:3, indeterminate:true, startTime:progressStart});
+      }
+    }catch(e){}
     await ensureNobol9();
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:"9因縁検索条件を照合中。", processed:1, total:3, startTime:progressStart});
+      }
+    }catch(e){}
     var all = sourceRows9();
     var ruleList = rules9();
     var rows = all.filter(function(row){
@@ -12982,6 +13014,11 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
       }
       return true;
     });
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({phase:"9因縁検索結果を並び替え中。", processed:2, total:3, startTime:progressStart});
+      }
+    }catch(e){}
     rows.sort(function(a,b){
       for(var i=0;i<ruleList.length;i++){ var d = statVal9(b, ruleList[i].stat) - statVal9(a, ruleList[i].stat); if(d) return d; }
       return 0;
