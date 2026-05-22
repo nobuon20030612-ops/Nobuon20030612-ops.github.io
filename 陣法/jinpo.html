@@ -6984,6 +6984,146 @@ try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 </script>
 
 </body>
+
+<script id="absolute-last-reach-apply-display-sync-fix">
+/* 2026-05-23:
+リーチ適用後の表示同期だけ修正。
+- 下側の重複「適用中の候補」(#appliedRowPreviewUnderFormation) は非表示
+- リーチ適用後にトータルステータスと上側の適用中候補を現在配置で再同期
+- 仕様/レイアウト/検索/DB/リーチ候補生成は変更しない
+*/
+(function(){
+if(window.__reachApplyDisplaySyncFixInstalled) return;
+window.__reachApplyDisplaySyncFixInstalled = true;
+
+function hideLowerAppliedPreview(){
+  try{
+    var box = document.getElementById("appliedRowPreviewUnderFormation");
+    if(box){
+      box.innerHTML = "";
+      box.style.display = "none";
+    }
+  }catch(e){}
+}
+
+try{
+  var st = document.createElement("style");
+  st.textContent = "#appliedRowPreviewUnderFormation{display:none!important;}";
+  document.head.appendChild(st);
+}catch(e){}
+
+window.renderAppliedPreviewUnderFormation = function(){
+  hideLowerAppliedPreview();
+  return false;
+};
+window.clearAppliedPreviewUnderFormation = hideLowerAppliedPreview;
+
+function currentReachResultSafe(){
+  try{
+    if(window.JinpoActivationEngine && typeof placement !== "undefined" && typeof inenMaster !== "undefined"){
+      var form = "";
+      try{ form = String(formationSelect && formationSelect.value || "").trim(); }catch(e){}
+      if(form){
+        return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+function findAppliedDbRowSafe(result){
+  try{
+    if(window.__lastReachAppliedDbRow) return window.__lastReachAppliedDbRow;
+  }catch(e){}
+  try{
+    if(result && typeof findResultDbRowForPlacementState === "function"){
+      var r = findResultDbRowForPlacementState(placement, result);
+      if(r) return r;
+    }
+  }catch(e){}
+  try{
+    var sid = String(typeof selectedDbResultId !== "undefined" ? selectedDbResultId : "").trim();
+    if(sid && Array.isArray(resultDbRows)){
+      for(var i=0;i<resultDbRows.length;i++){
+        var row = resultDbRows[i];
+        if(String(row.result_id || row.id || "") === sid) return row;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+function syncReachAppliedDisplay(){
+  hideLowerAppliedPreview();
+
+  var result = currentReachResultSafe();
+  var row = findAppliedDbRowSafe(result);
+
+  if(row){
+    try{ window.__lastReachAppliedDbRow = row; }catch(e){}
+    try{ currentAppliedDbRow = row; }catch(e){}
+    try{ selectedDbResultId = String(row.result_id || row.id || ""); }catch(e){}
+
+    try{
+      if(typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
+        renderRealtimeTotalStatsFromReachDbRow(row);
+      }else if(typeof renderRealtimeTotalStats === "function" && result){
+        renderRealtimeTotalStats(result);
+      }
+    }catch(e){}
+
+    try{
+      if(typeof renderReachAppliedCandidateBox === "function"){
+        renderReachAppliedCandidateBox(row, result);
+      }else if(typeof renderAppliedDbRowDisplay === "function"){
+        renderAppliedDbRowDisplay(row);
+      }
+    }catch(e){}
+  }else{
+    try{ window.__lastReachAppliedDbRow = null; }catch(e){}
+    try{ currentAppliedDbRow = null; }catch(e){}
+    try{ selectedDbResultId = ""; }catch(e){}
+
+    try{
+      if(typeof clearReachTotalStatsForUnregistered === "function"){
+        clearReachTotalStatsForUnregistered();
+      }else if(typeof renderRealtimeTotalStats === "function" && result){
+        renderRealtimeTotalStats(result);
+      }
+    }catch(e){}
+
+    try{
+      if(typeof renderReachAppliedCandidateUnregistered === "function"){
+        renderReachAppliedCandidateUnregistered(result);
+      }
+    }catch(e){}
+  }
+}
+
+var prevApplyReach = window.applyReachSwapCandidate;
+if(typeof prevApplyReach === "function" && !prevApplyReach.__reachDisplaySyncWrapped){
+  window.applyReachSwapCandidate = function(slot, afterId){
+    var ret = prevApplyReach.apply(this, arguments);
+    setTimeout(syncReachAppliedDisplay, 0);
+    setTimeout(syncReachAppliedDisplay, 80);
+    setTimeout(syncReachAppliedDisplay, 200);
+    return ret;
+  };
+  window.applyReachSwapCandidate.__reachDisplaySyncWrapped = true;
+}
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.reachApplyBtn[data-reach-slot][data-reach-after]") : null;
+  if(!btn) return;
+  setTimeout(syncReachAppliedDisplay, 0);
+  setTimeout(syncReachAppliedDisplay, 120);
+}, true);
+
+document.addEventListener("DOMContentLoaded", hideLowerAppliedPreview);
+setTimeout(hideLowerAppliedPreview, 0);
+})();
+</script>
+
 </html>
 
 <script id="final-final-5-6-line-search-orderless-fix">
