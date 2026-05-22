@@ -9212,3 +9212,141 @@ return prevRender.apply(this, arguments);
 };
 })();
 </script>
+
+
+<script id="absolute-last-reach-hide-lower-applied-only-fix">
+/* 2026-05-23:
+リーチ適用時だけ、下側の重複「適用中の候補」(#appliedDbRowDisplay)を非表示。
+上側の適用中候補、通常の差し替え適用ボタン、検索/DB/レイアウトは変更しない。
+*/
+(function(){
+if(window.__reachHideLowerAppliedOnlyFixInstalled) return;
+window.__reachHideLowerAppliedOnlyFixInstalled = true;
+
+var reachApplyActiveUntil = 0;
+
+function markReachApply(){
+  reachApplyActiveUntil = Date.now() + 1200;
+}
+
+function isReachApplyActive(){
+  return Date.now() < reachApplyActiveUntil;
+}
+
+function hideLowerAppliedOnly(){
+  if(!isReachApplyActive()) return;
+  try{
+    var box = document.getElementById("appliedDbRowDisplay");
+    if(box){
+      box.innerHTML = "";
+      box.style.display = "none";
+    }
+  }catch(e){}
+}
+
+var prevReachBox = window.renderReachAppliedCandidateBox;
+if(typeof prevReachBox === "function" && !prevReachBox.__hideLowerAppliedOnlyWrapped){
+  window.renderReachAppliedCandidateBox = function(){
+    if(isReachApplyActive()){
+      hideLowerAppliedOnly();
+      return false;
+    }
+    return prevReachBox.apply(this, arguments);
+  };
+  window.renderReachAppliedCandidateBox.__hideLowerAppliedOnlyWrapped = true;
+}
+
+var prevReachUnreg = window.renderReachAppliedCandidateUnregistered;
+if(typeof prevReachUnreg === "function" && !prevReachUnreg.__hideLowerAppliedOnlyWrapped){
+  window.renderReachAppliedCandidateUnregistered = function(){
+    if(isReachApplyActive()){
+      hideLowerAppliedOnly();
+      return false;
+    }
+    return prevReachUnreg.apply(this, arguments);
+  };
+  window.renderReachAppliedCandidateUnregistered.__hideLowerAppliedOnlyWrapped = true;
+}
+
+var prevApplyReach = window.applyReachSwapCandidate;
+if(typeof prevApplyReach === "function" && !prevApplyReach.__hideLowerAppliedOnlyWrapped){
+  window.applyReachSwapCandidate = function(){
+    markReachApply();
+    var ret = prevApplyReach.apply(this, arguments);
+    setTimeout(hideLowerAppliedOnly, 0);
+    setTimeout(hideLowerAppliedOnly, 80);
+    setTimeout(hideLowerAppliedOnly, 200);
+    setTimeout(hideLowerAppliedOnly, 500);
+    return ret;
+  };
+  window.applyReachSwapCandidate.__hideLowerAppliedOnlyWrapped = true;
+}
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.reachApplyBtn[data-reach-slot][data-reach-after]") : null;
+  if(!btn) return;
+  markReachApply();
+  setTimeout(hideLowerAppliedOnly, 0);
+  setTimeout(hideLowerAppliedOnly, 80);
+  setTimeout(hideLowerAppliedOnly, 200);
+  setTimeout(hideLowerAppliedOnly, 500);
+}, true);
+})();
+</script>
+
+
+<script id="absolute-last-hide-lower-applied-display-always-fix">
+/* 2026-05-23:
+通常の適用ボタン/リーチ適用ボタン共通で、下側の重複「適用中の候補」(#appliedDbRowDisplay)だけを常時非表示。
+上側の適用候補(#appliedRowPreviewUnderFormation)とトータルステータス更新は残す。
+検索、DB、リーチ、レイアウト、通常適用処理は変更しない。
+*/
+(function(){
+if(window.__hideLowerAppliedDisplayAlwaysFixInstalled) return;
+window.__hideLowerAppliedDisplayAlwaysFixInstalled = true;
+
+function hideLowerAppliedDisplay(){
+  try{
+    var box = document.getElementById("appliedDbRowDisplay");
+    if(box){
+      box.innerHTML = "";
+      box.style.display = "none";
+      box.setAttribute("aria-hidden", "true");
+    }
+  }catch(e){}
+}
+
+try{
+  var st = document.createElement("style");
+  st.textContent = "#appliedDbRowDisplay{display:none!important;}";
+  document.head.appendChild(st);
+}catch(e){}
+
+window.renderAppliedDbRowDisplay = function(){
+  hideLowerAppliedDisplay();
+  return false;
+};
+
+window.renderReachAppliedCandidateBox = function(){
+  hideLowerAppliedDisplay();
+  return false;
+};
+
+window.renderReachAppliedCandidateUnregistered = function(){
+  hideLowerAppliedDisplay();
+  return false;
+};
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn") : null;
+  if(!btn) return;
+  setTimeout(hideLowerAppliedDisplay, 0);
+  setTimeout(hideLowerAppliedDisplay, 80);
+  setTimeout(hideLowerAppliedDisplay, 200);
+  setTimeout(hideLowerAppliedDisplay, 500);
+}, true);
+
+document.addEventListener("DOMContentLoaded", hideLowerAppliedDisplay);
+setTimeout(hideLowerAppliedDisplay, 0);
+})();
+</script>
