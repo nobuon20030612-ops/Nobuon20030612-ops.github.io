@@ -13117,3 +13117,111 @@ var grade3Cost6OnlyEnabled = (typeof grade3Cost6OnlyEnabled !== "undefined") ? g
   try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 })();
 </script>
+
+
+<script id="absolute-last-lazy-result-db-load-guard">
+/* 2026-05-22 軽量化:
+   初期表示では35万DB(result_db_lookup_350693.csv)を読まず、7〜9因縁ボタン押下時だけ読込。
+   仕様/レイアウト/5・6因縁/リーチ/適用処理は変更しない。 */
+(function(){
+  if(window.__absoluteLastLazyResultDbLoadGuardInstalled) return;
+  window.__absoluteLastLazyResultDbLoadGuardInstalled = true;
+
+  var prevHandle = window.handleDbCountButtonClick;
+  var prevRender = window.renderDbFormationList;
+  var dbLoadPromise = null;
+
+  function selectedCountLazy(){
+    try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return 0; }
+  }
+  function hasResultDbRowsLazy(){
+    try{ return Array.isArray(resultDbRows) && resultDbRows.length > 0; }catch(e){ return false; }
+  }
+  function setStatusLazy(message){
+    var status = document.getElementById("resultDbStatus");
+    if(status) status.textContent = message;
+    var listStatus = document.getElementById("dbListStatus");
+    if(listStatus) listStatus.textContent = message;
+  }
+  function showProgressLazy(message){
+    try{
+      if(typeof setDbSearchProgress === "function"){
+        setDbSearchProgress({
+          phase: message,
+          processed: 0,
+          total: 1,
+          indeterminate: true,
+          startTime: (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now()
+        });
+      }
+    }catch(e){}
+  }
+  async function ensureResultDbLoadedLazy(){
+    if(hasResultDbRowsLazy()) return true;
+    if(dbLoadPromise) return dbLoadPromise;
+
+    if(typeof loadResultDbAuto !== "function"){
+      setStatusLazy("実数値DB読込関数が見つかりません。");
+      return false;
+    }
+
+    setStatusLazy("実数値DBを読込中。数分お待ちください。");
+    showProgressLazy("実数値DBを読込中。数分お待ちください。");
+
+    dbLoadPromise = Promise.resolve()
+      .then(function(){ return loadResultDbAuto(); })
+      .then(function(){
+        if(!hasResultDbRowsLazy()){
+          setStatusLazy("実数値DBが読込できませんでした。");
+          return false;
+        }
+        return true;
+      })
+      .catch(function(e){
+        console.error("実数値DB読込失敗", e);
+        setStatusLazy("実数値DB読込失敗。");
+        return false;
+      })
+      .finally(function(){
+        dbLoadPromise = null;
+      });
+
+    return dbLoadPromise;
+  }
+
+  window.ensureResultDbLoadedFor79 = ensureResultDbLoadedLazy;
+
+  window.handleDbCountButtonClick = async function(count){
+    var n = Number(count) || 0;
+
+    try{ selectedDbListBondCount = n || null; }catch(e){ window.selectedDbListBondCount = n || null; }
+    try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+
+    if(n >= 7 && n <= 9){
+      var ok = await ensureResultDbLoadedLazy();
+      if(!ok) return;
+    }
+
+    if(typeof prevHandle === "function"){
+      return prevHandle.apply(this, arguments);
+    }
+    if(typeof prevRender === "function"){
+      return prevRender.apply(this, arguments);
+    }
+  };
+
+  window.renderDbFormationList = async function(){
+    var n = selectedCountLazy();
+    if(n >= 7 && n <= 9 && !hasResultDbRowsLazy()){
+      var box = document.getElementById("dbFormationList");
+      var status = document.getElementById("dbListStatus");
+      if(status) status.textContent = n + "因縁はボタン押下時に実数値DBを読込します。";
+      if(box) box.innerHTML = "";
+      return;
+    }
+    if(typeof prevRender === "function"){
+      return prevRender.apply(this, arguments);
+    }
+  };
+})();
+</script>
