@@ -9246,3 +9246,170 @@ document.addEventListener("DOMContentLoaded", hideLower);
 setTimeout(hideLower, 0);
 })();
 </script>
+
+
+<script id="absolute-last-registered-hit-total-preview-sync-fix">
+(function(){
+if(window.__registeredHitTotalPreviewSyncFixInstalled) return;
+window.__registeredHitTotalPreviewSyncFixInstalled = true;
+
+function escFix(v){
+  try{ if(typeof escPreview === "function") return escPreview(v); }catch(e){}
+  try{ if(typeof esc === "function") return esc(v); }catch(e){}
+  return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+  });
+}
+
+function statKeysFix(){
+  try{
+    if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS;
+  }catch(e){}
+  return ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+}
+
+function rowStatsText(row){
+  if(!row) return "登録外 / ステータス未登録";
+  return statKeysFix().map(function(k){
+    var v = row[k];
+    if(v == null) v = row[String(k).replace("属性","")];
+    if(v == null || v === "") v = "—";
+    return k + ":" + v;
+  }).join(" / ");
+}
+
+function hideLower(){
+  try{
+    var lower = document.getElementById("appliedDbRowDisplay");
+    if(lower){
+      lower.innerHTML = "";
+      lower.style.display = "none";
+    }
+  }catch(e){}
+}
+
+function ensureUpperBox(){
+  var box = document.getElementById("appliedRowPreviewUnderFormation");
+  if(box) return box;
+  try{
+    var fv = document.getElementById("formationView");
+    if(!fv) return null;
+    box = document.createElement("div");
+    box.id = "appliedRowPreviewUnderFormation";
+    fv.insertAdjacentElement("afterend", box);
+    return box;
+  }catch(e){}
+  return null;
+}
+
+function getCurrentResult(){
+  try{
+    if(window.JinpoActivationEngine && typeof placement !== "undefined" && typeof inenMaster !== "undefined"){
+      var form = String(formationSelect && formationSelect.value || "").trim();
+      if(form) return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }
+  }catch(e){}
+  return null;
+}
+
+function findCurrentRegisteredRow(result){
+  try{
+    if(typeof findResultDbRowForPlacementState === "function"){
+      var r = findResultDbRowForPlacementState(placement, result || getCurrentResult());
+      if(r) return r;
+    }
+  }catch(e){}
+  try{
+    var sid = String(typeof selectedDbResultId !== "undefined" ? selectedDbResultId : "").trim();
+    if(sid && Array.isArray(resultDbRows)){
+      for(var i=0;i<resultDbRows.length;i++){
+        var row = resultDbRows[i];
+        if(String(row.result_id || row.id || "") === sid) return row;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+function dbRowMembersFix(row){
+  try{ if(typeof dbRowMembers === "function") return dbRowMembers(row); }catch(e){}
+  return String(row && (row.eiketsu_ids || row.members || "") || "").split(/[|,、/／\s]+/).filter(Boolean);
+}
+
+function dbRowBondsFix(row, result){
+  try{ if(typeof dbRowBondList === "function") return dbRowBondList(row); }catch(e){}
+  var raw = String(row && (row.bond_ids || row.inen || row.bonds || "") || "");
+  var arr = raw.split(/[|,、/／]+/).map(function(x){return x.trim();}).filter(Boolean);
+  if(arr.length) return arr;
+  try{ return (result && result.activated ? result.activated : []).map(function(a){return a.name;}).filter(Boolean); }catch(e){}
+  return [];
+}
+
+function renderUpperFromRegisteredRow(row, result){
+  hideLower();
+  var box = ensureUpperBox();
+  if(!box || !row) return false;
+
+  var members = dbRowMembersFix(row);
+  var bonds = dbRowBondsFix(row, result);
+  var count = Number(row.bond_count || row.ic || bonds.length || (result && result.activated ? result.activated.length : 0) || 0) || 0;
+  var formation = String(row.formation || row.form || row["陣形"] || (formationSelect && formationSelect.value) || "");
+  var totalText = rowStatsText(row);
+
+  box.style.display = "";
+  box.innerHTML =
+    '<div class="appliedPreviewTitle">適用中の候補</div>'+
+    '<div class="appliedPreviewGrid">'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁数</div><div class="appliedPreviewValue">'+escFix(count)+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">陣形</div><div class="appliedPreviewValue">'+escFix(formation)+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">英傑</div><div class="appliedPreviewList">'+members.map(function(n,i){return '<span>'+escFix((i+1)+'. '+n)+'</span>';}).join("")+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁</div><div class="appliedPreviewList">'+bonds.map(function(n){return '<span>'+escFix(n)+'</span>';}).join("")+'</div></div>'+
+    '<div class="appliedPreviewBox appliedPreviewWide"><div class="appliedPreviewLabel">総合値</div><div class="appliedPreviewValue">'+escFix(totalText)+'</div></div>'+
+    '</div>';
+  return true;
+}
+
+function syncRegisteredHitPreview(){
+  var result = getCurrentResult();
+  var row = findCurrentRegisteredRow(result);
+  if(!row) return false;
+
+  try{ window.__lastReachAppliedDbRow = row; }catch(e){}
+  try{ currentAppliedDbRow = row; }catch(e){}
+  try{ selectedDbResultId = String(row.result_id || row.id || ""); }catch(e){}
+
+  try{
+    if(typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
+      renderRealtimeTotalStatsFromReachDbRow(row);
+    }else if(typeof renderTotalFromRow === "function"){
+      renderTotalFromRow(row);
+    }
+  }catch(e){}
+
+  return renderUpperFromRegisteredRow(row, result);
+}
+
+var prevApplyStable = window.applyDbFormationRow;
+if(typeof prevApplyStable === "function" && !prevApplyStable.__registeredHitTotalPreviewSyncWrapped){
+  window.applyDbFormationRow = function(){
+    var ret = prevApplyStable.apply(this, arguments);
+    setTimeout(syncRegisteredHitPreview, 0);
+    setTimeout(syncRegisteredHitPreview, 100);
+    setTimeout(syncRegisteredHitPreview, 250);
+    return ret;
+  };
+  window.applyDbFormationRow.__registeredHitTotalPreviewSyncWrapped = true;
+}
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn") : null;
+  if(!btn) return;
+  var isRegisteredOut = String(btn.textContent || "").indexOf("登録外") !== -1 ||
+                        (btn.classList && btn.classList.contains("dbMissing"));
+  if(isRegisteredOut) return;
+  setTimeout(syncRegisteredHitPreview, 0);
+  setTimeout(syncRegisteredHitPreview, 120);
+  setTimeout(syncRegisteredHitPreview, 300);
+}, true);
+})();
+</script>
