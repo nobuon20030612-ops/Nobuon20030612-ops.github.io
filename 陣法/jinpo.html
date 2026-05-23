@@ -9587,3 +9587,471 @@ function refreshGrade3ListIfNeeded(){
 setTimeout(refreshGrade3ListIfNeeded, 0);
 })();
 </script>
+
+
+<script id="absolute-last-grade3-7inen-db-search-fix">
+(function(){
+if(window.__grade3SevenDbSearchFixInstalled) return;
+window.__grade3SevenDbSearchFixInstalled = true;
+
+/* 
+等級3以下ON時:
+5/6因縁と同じく「DB直絞り込み」ではなく、
+35万DB全体から動的検索して7因縁以上を生成する。
+*/
+
+function grade3EnabledFix(){
+  try{ return !!grade3Cost6OnlyEnabled; }catch(e){}
+  return false;
+}
+
+function cost6Fix(name){
+  try{
+    if(typeof heroCostByDisplayName === "function"){
+      var c = heroCostByDisplayName(name);
+      return Number.isFinite(c) && c <= 6;
+    }
+  }catch(e){}
+  return false;
+}
+
+function rowMembersFix(row){
+  try{
+    if(typeof dbRowMembers === "function"){
+      var arr = dbRowMembers(row);
+      if(Array.isArray(arr)) return arr;
+    }
+  }catch(e){}
+  return String(row && (row.eiketsu_ids || row.members || "") || "")
+    .split(/[|,、/／\s]+/)
+    .map(function(x){ return String(x || "").trim(); })
+    .filter(Boolean);
+}
+
+function matchesGrade3Dynamic(row){
+  var members = rowMembersFix(row);
+  if(members.length !== 6) return false;
+  return members.every(cost6Fix);
+}
+
+var oldRenderStableList = window.renderStableList;
+if(typeof oldRenderStableList === "function" && !oldRenderStableList.__grade3SevenFixWrapped){
+
+  window.renderStableList = function(){
+
+    var count = null;
+    try{ count = Number(selectedDbListBondCount || 0); }catch(e){}
+
+    if(!grade3EnabledFix() || count < 7){
+      return oldRenderStableList.apply(this, arguments);
+    }
+
+    var box = document.getElementById("dbFormationList");
+    var status = document.getElementById("dbListStatus");
+    if(!box || !status){
+      return oldRenderStableList.apply(this, arguments);
+    }
+
+    var all = [];
+    try{
+      all = (resultDbByBondCount && resultDbByBondCount.get(count)) || [];
+    }catch(e){}
+
+    if(!Array.isArray(all) || !all.length){
+      return oldRenderStableList.apply(this, arguments);
+    }
+
+    status.textContent = count + "因縁を検索中。数分お待ちください。";
+
+    setTimeout(function(){
+
+      var rows = all.slice();
+
+      try{
+        if(typeof matchesFormation === "function"){
+          rows = rows.filter(matchesFormation);
+        }
+      }catch(e){}
+
+      try{
+        if(typeof matchesOwned === "function"){
+          rows = rows.filter(matchesOwned);
+        }
+      }catch(e){}
+
+      rows = rows.filter(matchesGrade3Dynamic);
+
+      try{
+        if(typeof priorityRules === "function" && typeof statValue === "function"){
+          var rules = priorityRules() || [];
+          rules.forEach(function(rule){
+            if(rule.threshold !== null && Number.isFinite(rule.threshold)){
+              rows = rows.filter(function(r){
+                return statValue(r, rule.stat) >= rule.threshold;
+              });
+            }
+          });
+        }
+      }catch(e){}
+
+      try{
+        if(typeof renderDbListTable === "function"){
+          box.innerHTML = renderDbListTable(rows);
+        }else{
+          box.innerHTML = "";
+        }
+      }catch(e){
+        box.innerHTML = "";
+      }
+
+      status.textContent = count + "因縁：" + rows.length + "件";
+
+    }, 0);
+
+  };
+
+  window.renderStableList.__grade3SevenFixWrapped = true;
+}
+})();
+</script>
+
+
+<script id="absolute-last-grade3-7inen-linegen-plus-db-fix">
+(function(){
+if(window.__grade3SevenLineGenPlusDbFixInstalled) return;
+window.__grade3SevenLineGenPlusDbFixInstalled = true;
+
+/*
+等級3以下ONの7因縁だけ:
+1) 5/6因縁と同じ「ライン探索生成」結果を出す
+2) 35万DB内の7因縁・コスト6以下結果も追加表示
+その他の5/6/8/9/通常7因縁は変更しない。
+*/
+
+var G7_CACHE_PREFIX = "jinpo_grade3_7_linegen_plus_db_v1@@";
+var G7_MAX_OUTPUT = 300;
+var G7_MAX_PAIR_COMBOS = 120000;
+
+function g7Enabled(){
+  try{ return !!grade3Cost6OnlyEnabled; }catch(e){}
+  return false;
+}
+
+function g7SelectedCount(){
+  try{ return Number(selectedDbListBondCount || 0); }catch(e){}
+  return 0;
+}
+
+function g7Esc(v){
+  try{ if(typeof safeEsc === "function") return safeEsc(v); }catch(e){}
+  try{ if(typeof esc === "function") return esc(v); }catch(e){}
+  return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+  });
+}
+
+function g7HeroName(h){
+  try{ if(typeof heroName === "function") return heroName(h); }catch(e){}
+  return String(h && (h["英傑名"] || h.name || h["名前"] || "") || "");
+}
+
+function g7HeroCost(h){
+  var v = Number(h && (h["コスト"] ?? h.cost ?? ""));
+  return Number.isFinite(v) ? v : NaN;
+}
+
+function g7CostOkHero(h){
+  var c = g7HeroCost(h);
+  return Number.isFinite(c) && c <= 6;
+}
+
+function g7RowMembers(row){
+  try{
+    if(typeof dbRowMembers === "function"){
+      var arr = dbRowMembers(row);
+      if(Array.isArray(arr) && arr.length) return arr;
+    }
+  }catch(e){}
+  return String(row && (row.eiketsu_ids || row.members || "") || "")
+    .split(/[|,、/／\s]+/)
+    .map(function(x){ return String(x || "").trim(); })
+    .filter(Boolean);
+}
+
+function g7CostOkName(name){
+  try{
+    if(typeof heroCostByDisplayName === "function"){
+      var c = heroCostByDisplayName(name);
+      return Number.isFinite(c) && c <= 6;
+    }
+  }catch(e){}
+  try{
+    if(Array.isArray(eiketsuMaster)){
+      var key = typeof canonicalHeroName === "function" ? canonicalHeroName(name) : String(name || "");
+      for(var i=0;i<eiketsuMaster.length;i++){
+        var h = eiketsuMaster[i];
+        var hn = h && (h["英傑名"] || h.name || h["名前"] || "");
+        var hk = typeof canonicalHeroName === "function" ? canonicalHeroName(hn) : String(hn || "");
+        if(hk === key) return g7CostOkHero(h);
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
+function g7DbRowCostOk(row){
+  var members = g7RowMembers(row);
+  if(members.length !== 6) return false;
+  return members.every(g7CostOkName);
+}
+
+function g7CurrentForms(){
+  try{
+    if(typeof currentSelectedForms === "function"){
+      var a = currentSelectedForms();
+      if(Array.isArray(a) && a.length) return a;
+    }
+  }catch(e){}
+  try{
+    var f = String(formationSelect && formationSelect.value || "").trim();
+    return f ? [f] : [];
+  }catch(e){}
+  return [];
+}
+
+function g7MatchesFormation(row){
+  try{
+    if(typeof matchesFormation === "function") return matchesFormation(row);
+  }catch(e){}
+  var forms = g7CurrentForms();
+  if(!forms.length) return false;
+  var text = String(row && (row.formation || row.form || row["陣形"] || row.eiketsu_position_key || "") || "");
+  return forms.some(function(f){
+    if(f === "魚鱗/方円" || f === "魚鱗" || f === "方円"){
+      return text.indexOf("魚鱗") !== -1 || text.indexOf("方円") !== -1;
+    }
+    return text.indexOf(f) !== -1;
+  });
+}
+
+function g7DbStatsText(row){
+  var keys = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  return keys.map(function(k){
+    var v = row && row[k];
+    if(v == null) v = row && row[String(k).replace("属性","")];
+    if(v == null || v === "") v = "—";
+    return k + ":" + v;
+  }).join(" / ");
+}
+
+function g7RowId(row, idx){
+  try{ if(typeof rowId === "function") return rowId(row, idx); }catch(e){}
+  return String(row && (row.result_id || row.id || idx) || idx);
+}
+
+function g7BondList(row){
+  try{ if(typeof dbRowBondList === "function") return dbRowBondList(row); }catch(e){}
+  return String(row && (row.bond_ids || row.inen || "") || "").split(/[|,、/／]+/).map(function(x){return x.trim();}).filter(Boolean);
+}
+
+function g7DbRows(){
+  var out = [];
+  try{
+    var all = (resultDbByBondCount && resultDbByBondCount.get(7)) || [];
+    out = all.filter(g7MatchesFormation).filter(g7DbRowCostOk);
+  }catch(e){}
+  return out;
+}
+
+function g7LineDefs(){
+  var form = "";
+  try{ form = String(formationSelect && formationSelect.value || "").trim(); }catch(e){}
+  try{
+    if(typeof getFormationLines === "function"){
+      var lines = getFormationLines(form);
+      if(Array.isArray(lines) && lines.length) return lines;
+    }
+  }catch(e){}
+  if(form === "魚鱗" || form === "方円" || form === "魚鱗/方円"){
+    return [[1,2,3],[3,4,5],[5,6,1]];
+  }
+  if(form === "鶴翼" || form === "衡軛"){
+    return [[1,2,3],[4,5,6]];
+  }
+  return [[1,2,3],[3,4,5],[5,6,1]];
+}
+
+function g7CalcPlacement(heroes){
+  var p = {};
+  for(var i=0;i<6;i++) p[i+1] = heroes[i];
+  try{
+    if(window.JinpoActivationEngine && typeof inenMaster !== "undefined"){
+      var form = String(formationSelect && formationSelect.value || "").trim();
+      return window.JinpoActivationEngine.calculateFormation(p, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }
+  }catch(e){}
+  return null;
+}
+
+function g7ResultBonds(result){
+  try{ return (result && result.activated ? result.activated : []).map(function(a){return a.name;}).filter(Boolean); }catch(e){}
+  return [];
+}
+
+function g7MakeGeneratedRows(){
+  var heroes = [];
+  try{ heroes = (eiketsuMaster || []).filter(g7CostOkHero); }catch(e){}
+  if(!heroes.length) return [];
+
+  var lines = g7LineDefs();
+  var out = [];
+  var seen = new Set();
+
+  // 5/6因縁と同系統: コスト6以下の英傑から6人配置を動的生成し、計算結果7因縁だけ採用。
+  // 全探索は重すぎるため、5/6側と同じく上限付き生成。
+  var n = heroes.length;
+  var attempts = 0;
+
+  outer:
+  for(var a=0; a<n; a++){
+    for(var b=0; b<n; b++){ if(b===a) continue;
+      for(var c=0; c<n; c++){ if(c===a||c===b) continue;
+        for(var d=0; d<n; d++){ if(d===a||d===b||d===c) continue;
+          for(var e=0; e<n; e++){ if(e===a||e===b||e===c||e===d) continue;
+            for(var f=0; f<n; f++){ if(f===a||f===b||f===c||f===d||f===e) continue;
+
+              attempts++;
+              if(attempts > G7_MAX_PAIR_COMBOS) break outer;
+
+              var arr = [heroes[a],heroes[b],heroes[c],heroes[d],heroes[e],heroes[f]];
+              var key = arr.map(function(h){return String(h.internal_id || h["英傑名"] || h.name || "");}).join("|");
+              if(seen.has(key)) continue;
+              seen.add(key);
+
+              var result = g7CalcPlacement(arr);
+              var bonds = g7ResultBonds(result);
+              if(bonds.length !== 7) continue;
+
+              out.push({
+                source:"linegen",
+                heroes:arr,
+                bonds:bonds,
+                result:result
+              });
+              if(out.length >= G7_MAX_OUTPUT) break outer;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+function g7HtmlDbRows(rows){
+  return rows.map(function(row, idx){
+    var rid = g7RowId(row, idx);
+    var members = g7RowMembers(row);
+    var bonds = g7BondList(row);
+    var stats = g7DbStatsText(row);
+    return '<tr class="dbMainRow">'+
+      '<td><button type="button" class="applyBtn" data-result-id="'+g7Esc(rid)+'">適用</button></td>'+
+      '<td>7</td>'+
+      '<td>'+g7Esc(row.formation || row.form || row["陣形"] || row.eiketsu_position_key || "")+'</td>'+
+      '<td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+g7Esc(i+1)+'. '+g7Esc(m)+'</span>';}).join("")+'</div></td>'+
+      '<td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+g7Esc(b)+'</span>';}).join("")+'</div></td>'+
+      '</tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+g7Esc(stats)+'</span></td></tr>';
+  }).join("");
+}
+
+function g7HtmlGeneratedRows(rows){
+  return rows.map(function(row, idx){
+    var members = row.heroes.map(g7HeroName);
+    var bonds = row.bonds || [];
+    return '<tr class="dbMainRow">'+
+      '<td><button type="button" class="applyBtn reachApplyBtn dbMissing" data-grade3-linegen7="'+g7Esc(idx)+'">登録外</button></td>'+
+      '<td>7</td>'+
+      '<td>'+g7Esc((formationSelect && formationSelect.value) || "")+'</td>'+
+      '<td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+g7Esc(i+1)+'. '+g7Esc(m)+'</span>';}).join("")+'</div></td>'+
+      '<td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+g7Esc(b)+'</span>';}).join("")+'</div></td>'+
+      '</tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">登録外 / ステータス未登録</span></td></tr>';
+  }).join("");
+}
+
+function g7Render(){
+  if(!g7Enabled() || g7SelectedCount() !== 7) return false;
+
+  var box = document.getElementById("dbFormationList");
+  var status = document.getElementById("dbListStatus");
+  if(!box || !status) return false;
+
+  status.textContent = "7因縁を等級3以下で検索中。数分お待ちください。";
+  box.innerHTML = "";
+
+  setTimeout(function(){
+    var dbRows = g7DbRows();
+    var genRows = g7MakeGeneratedRows();
+
+    var html = '<table class="dbListTable dbListTwoRow"><thead><tr>'+
+      '<th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th>'+
+      '</tr></thead><tbody>'+
+      g7HtmlDbRows(dbRows)+
+      g7HtmlGeneratedRows(genRows)+
+      '</tbody></table>';
+
+    if(!dbRows.length && !genRows.length){
+      html = '<div class="dbListNote">該当行なし。</div>';
+    }
+
+    box.innerHTML = html;
+    status.textContent = "7因縁：35万DB " + dbRows.length + "件 / 探索生成 " + genRows.length + "件";
+
+    window.__grade3Linegen7Rows = genRows;
+  }, 0);
+
+  return true;
+}
+
+var prevRender = window.renderDbFormationList;
+window.renderDbFormationList = function(){
+  if(g7Render()) return;
+  return prevRender.apply(this, arguments);
+};
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button[data-grade3-linegen7]") : null;
+  if(!btn) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  var idx = Number(btn.getAttribute("data-grade3-linegen7"));
+  var rows = window.__grade3Linegen7Rows || [];
+  var item = rows[idx];
+  if(!item) return;
+
+  try{
+    var next = {};
+    for(var i=0;i<6;i++) next[i+1] = item.heroes[i];
+    placement = next;
+  }catch(e){}
+
+  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+  try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
+  try{ if(typeof calculate === "function") calculate(); }catch(e){}
+
+  try{
+    if(typeof renderUpperPreview === "function"){
+      renderUpperPreview({
+        count:"7",
+        formation:String((formationSelect && formationSelect.value) || ""),
+        heroes:item.heroes.map(function(h,i){return (i+1)+". "+g7HeroName(h);}),
+        bonds:item.bonds || [],
+        stats:"登録外 / ステータス未登録"
+      });
+    }
+  }catch(e){}
+}, true);
+
+})();
+</script>
