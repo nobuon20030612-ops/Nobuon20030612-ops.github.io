@@ -2023,7 +2023,9 @@ mini.innerHTML = hit
 // 陣法能力トータル下のライン/因縁別内訳は非表示指定のため描画しない。
 }
 function ownedHeroSourceRows(){
-if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
+if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
+return OWNED_HERO_LIST_FROM_UPLOAD;
+}
 return eiketsuMaster.map(e=>({
 "番号": e.internal_id || "",
 "名前": e["英傑名"] || "",
@@ -2037,11 +2039,6 @@ return eiketsuMaster.map(e=>({
 "腕力": e["腕力"] || "",
 "知力": e["知力"] || ""
 }));
-}
-if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
-return OWNED_HERO_LIST_FROM_UPLOAD;
-}
-return [];
 }
 let activeOwnedHeroSlotIndex = null;
 function ownedHeroById(id){
@@ -3443,15 +3440,12 @@ return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){return {"&":"&a
 }
 function rows(){
 try{
-if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
-return eiketsuMaster.map(function(e){return {"番号":e.internal_id||"","名前":e["英傑名"]||"","職":e["職"]||"","コスト":e["コスト"]||"","因子1":e["因子1"]||"","因子2":e["因子2"]||"","因子3":e["因子3"]||"","因子4":e["因子4"]||"","生命":e["生命"]||"","気合":e["気合"]||"","腕力":e["腕力"]||"","知力":e["知力"]||""};});
-}
-}catch(e){}
-try{
 if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD;
 }catch(e){}
 try{
-if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD;
+if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
+return eiketsuMaster.map(function(e){return {"番号":e.internal_id||"","名前":e["英傑名"]||"","コスト":e["コスト"]||"","因子1":e["因子1"]||"","因子2":e["因子2"]||"","因子3":e["因子3"]||"","因子4":e["因子4"]||"","生命":e["生命"]||"","気合":e["気合"]||"","腕力":e["腕力"]||"","知力":e["知力"]||""};});
+}
 }catch(e){}
 return [];
 }
@@ -3598,6 +3592,8 @@ function escHtml(v){
 return String(v == null ? "" : v).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 function uploadedRows(){
+try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
+try{ if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
 try{
 if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
 return eiketsuMaster.map(e => ({
@@ -3616,8 +3612,6 @@ return eiketsuMaster.map(e => ({
 }));
 }
 }catch(e){}
-try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
-try{ if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
 return [];
 }
 function cleanFactors(row){
@@ -7320,235 +7314,56 @@ if(formationSelectU){
 </script>
 
 
-<script id="owned-placement-complete-link-final">
-/* 所持英傑選択と陣形配置クリック選択を同一英傑マスターへ完全連動 */
+
+<script id="registered-out-button-label-apply-only-final">
+/* 2026-05-23 追加修正:
+   登録外/ステータス未登録ボタンの表示名だけ「適用」に統一する。
+   dbMissing/reachApplyBtn/data-lazy-missing-calc は残し、押下時計算判定は変更しない。 */
 (function(){
-function escLink(v){return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];});}
-function rowsLink(){
-  try{
-    if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
-      return eiketsuMaster.filter(function(e){return e && (e.internal_id || e["英傑名"]);});
-    }
-  }catch(e){}
-  return [];
-}
-function heroIdLink(e){return String((e && (e.internal_id || e["番号"] || e["英傑名"])) || "").trim();}
-function heroNameLink(e){
-  try{ if(typeof heroName === "function") return heroName(e); }catch(err){}
-  return String((e && (e["英傑名"] || e["名前"])) || "").trim();
-}
-function heroByKeyLink(key){
-  var k = String(key || "").trim();
-  if(!k) return null;
-  return rowsLink().find(function(e){return heroIdLink(e) === k || heroNameLink(e) === k;}) || null;
-}
-function cleanFactorsLink(e){
-  return [e && e["因子1"], e && e["因子2"], e && e["因子3"], e && e["因子4"]]
-    .map(function(v){return String(v || "").trim();})
-    .filter(function(v){return v && v !== "?" && v !== "未確認" && v !== "対象外";});
-}
-function statLink(e,k){return String((e && e[k]) || "");}
-function selectedOwnedIdsLink(){
-  try{
-    if(window.__ownedHeroReliableState && Array.isArray(window.__ownedHeroReliableState.selected)){
-      return window.__ownedHeroReliableState.selected.filter(Boolean).map(String);
-    }
-  }catch(e){}
-  try{ if(Array.isArray(ownedHeroFilterIds)) return ownedHeroFilterIds.filter(Boolean).map(String); }catch(e){}
-  return [];
-}
-function setOwnedIdsLink(ids){
-  var next = (ids || []).filter(Boolean).map(String).slice(0,3);
-  try{ ownedHeroFilterIds = next.slice(); }catch(e){}
-  if(!window.__ownedHeroReliableState) window.__ownedHeroReliableState = {selected:["","",""], active:0};
-  window.__ownedHeroReliableState.selected = [next[0] || "", next[1] || "", next[2] || ""];
-  refreshOwnedButtonsLink();
-}
-function refreshOwnedButtonsLink(){
-  var ids = selectedOwnedIdsLink();
-  for(var i=0;i<3;i++){
-    var btn = document.getElementById("ownedHeroSlotBtn" + (i+1));
-    if(!btn) continue;
-    var h = heroByKeyLink(ids[i]);
-    var name = h ? heroNameLink(h) : "";
-    btn.textContent = name ? ("所持英傑" + (i+1) + "：" + name) : ("所持英傑" + (i+1) + "：未選択");
-    btn.classList.toggle("hasOwnedHero", !!name);
-    btn.title = name || ("所持英傑" + (i+1));
-    btn.style.pointerEvents = "auto";
-    btn.style.cursor = "pointer";
+  if(window.__registeredOutButtonLabelApplyOnlyFinalInstalled) return;
+  window.__registeredOutButtonLabelApplyOnlyFinalInstalled = true;
+
+  function shouldRelabel(btn){
+    if(!btn) return false;
+    var text = String(btn.textContent || '').trim();
+    return text === '登録外' ||
+      (btn.classList && (btn.classList.contains('dbMissing') || btn.classList.contains('reachApplyBtn'))) ||
+      btn.dataset.lazyMissingCalc === '1';
   }
-  var info = document.getElementById("ownedHeroSelectedInfo");
-  if(info){
-    var names = ids.map(function(id){var h=heroByKeyLink(id); return h ? heroNameLink(h) : "";}).filter(Boolean);
-    info.textContent = names.length ? ("所持英傑：" + names.join("・")) : "所持英傑：未選択";
+
+  function relabelRegisteredOutButtons(){
+    var selectors = [
+      '#dbFormationList button.applyBtn',
+      '#reachList button.reachApplyBtn',
+      'button.dbMissing',
+      'button[data-lazy-missing-calc="1"]'
+    ];
+    document.querySelectorAll(selectors.join(',')).forEach(function(btn){
+      if(!shouldRelabel(btn)) return;
+      btn.textContent = '適用';
+      if(btn.dataset.lazyMissingCalc === '1' || (btn.classList && btn.classList.contains('dbMissing'))){
+        btn.setAttribute('title', '登録外：押した時だけ配置して計算します。一覧表示時は計算しません。');
+      }
+    });
   }
-}
-function setupSelectOptionsLink(prefix){
-  var rows = rowsLink();
-  var jobSel = document.getElementById(prefix + "Job") || document.getElementById(prefix + "JobFilter");
-  var factorSel = document.getElementById(prefix + "Factor") || document.getElementById(prefix + "FactorFilter");
-  var jobs = Array.from(new Set(rows.map(function(e){return String(e["因子1"] || "").trim();}).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,"ja");});
-  var factors = Array.from(new Set(rows.flatMap(cleanFactorsLink))).sort(function(a,b){return a.localeCompare(b,"ja");});
-  if(jobSel){ var oldJ = jobSel.value || ""; jobSel.innerHTML = '<option value="">特化</option>' + jobs.map(function(j){return '<option value="'+escLink(j)+'">'+escLink(j)+'</option>';}).join(""); if(oldJ && jobs.indexOf(oldJ)!==-1) jobSel.value = oldJ; }
-  if(factorSel){ var oldF = factorSel.value || ""; factorSel.innerHTML = '<option value="">因子すべて</option>' + factors.map(function(f){return '<option value="'+escLink(f)+'">'+escLink(f)+'</option>';}).join(""); if(oldF && factors.indexOf(oldF)!==-1) factorSel.value = oldF; }
-}
-function ownedModalElLink(){
-  var modal = document.getElementById("ownedHeroReliableModal");
-  if(modal) return modal;
-  modal = document.createElement("div");
-  modal.id = "ownedHeroReliableModal";
-  modal.innerHTML = '<div class="ownedHeroReliableBox"><div class="ownedHeroReliableHeader"><strong id="ownedHeroReliableTitle">所持英傑選択</strong><button id="ownedHeroReliableClose" type="button">閉じる</button></div><div class="ownedHeroReliableBody"><div class="ownedHeroModalNote">陣形ライン配置クリックと同じ英傑マスターから選択します。</div><div class="modalFilterGrid"><input id="ownedHeroReliableSearch" placeholder="英傑名で検索"><select id="ownedHeroReliableJob"><option value="">特化</option></select><select id="ownedHeroReliableFactor"><option value="">因子すべて</option></select></div><div id="ownedHeroReliableGrid" class="ownedHeroReliableGrid"></div></div></div>';
-  document.body.appendChild(modal);
-  return modal;
-}
-function renderOwnedGridLink(){
-  var grid = document.getElementById("ownedHeroReliableGrid");
-  if(!grid) return;
-  var q = String((document.getElementById("ownedHeroReliableSearch") || {}).value || "").trim();
-  var job = String((document.getElementById("ownedHeroReliableJob") || {}).value || "").trim();
-  var factor = String((document.getElementById("ownedHeroReliableFactor") || {}).value || "").trim();
-  var selected = new Set(selectedOwnedIdsLink());
-  var list = rowsLink().filter(function(e){
-    if(q && heroNameLink(e).indexOf(q) === -1) return false;
-    if(job && String(e["因子1"] || "").trim() !== job) return false;
-    if(factor && cleanFactorsLink(e).indexOf(factor) === -1) return false;
-    return true;
-  });
-  grid.innerHTML = list.map(function(e){
-    var id = heroIdLink(e);
-    var picked = selected.has(id);
-    var factors = cleanFactorsLink(e).map(function(f){return '<span class="badge">'+escLink(f)+'</span>';}).join("");
-    return '<div class="ownedHeroReliableCard '+(picked?'selectedOwned':'')+'" data-owned-linked-key="'+escLink(id)+'"><div class="modalHeroFallback">'+escLink(id)+'<br>英傑</div><div><div class="modalHeroName">'+escLink(heroNameLink(e))+(picked?' <span class="heroTag">選択中</span>':'')+'</div><div class="modalHeroMeta">'+escLink(e["職"]||"")+' / コスト '+escLink(e["コスト"]||"未確認")+'</div><div>'+factors+'</div><div class="modalHeroMeta">生命 '+escLink(statLink(e,"生命"))+' / 気合 '+escLink(statLink(e,"気合"))+' / 腕力 '+escLink(statLink(e,"腕力"))+' / 知力 '+escLink(statLink(e,"知力"))+'</div></div></div>';
-  }).join("") || '<div class="dbListNote">該当英傑なし</div>';
-}
-function openOwnedLinked(slot, ev){
-  if(ev){ev.preventDefault(); ev.stopPropagation();}
-  if(!window.__ownedHeroReliableState) window.__ownedHeroReliableState = {selected:["","",""], active:0};
-  window.__ownedHeroReliableState.active = Math.max(0, Math.min(2, Number(slot)||0));
-  var modal = ownedModalElLink();
-  setupSelectOptionsLink("ownedHeroReliable");
-  var title = document.getElementById("ownedHeroReliableTitle");
-  if(title) title.textContent = "所持英傑" + (window.__ownedHeroReliableState.active+1) + "を選択";
-  modal.classList.add("open");
-  modal.style.display = "flex";
-  renderOwnedGridLink();
-  return false;
-}
-function closeOwnedLinked(ev){
-  if(ev){ev.preventDefault(); ev.stopPropagation();}
-  var modal = document.getElementById("ownedHeroReliableModal");
-  if(modal){modal.classList.remove("open"); modal.style.display="none";}
-  return false;
-}
-function pickOwnedLinked(id, ev){
-  if(ev){ev.preventDefault(); ev.stopPropagation();}
-  var hero = heroByKeyLink(id);
-  if(!hero) return false;
-  var ids = selectedOwnedIdsLink();
-  var active = (window.__ownedHeroReliableState && Number(window.__ownedHeroReliableState.active)) || 0;
-  var key = heroIdLink(hero);
-  if(ids.some(function(v,i){return v === key && i !== active;})){alert("同じ英傑は所持英傑1〜3に重複して選択できません"); return false;}
-  ids[active] = key;
-  setOwnedIdsLink(ids);
-  try{ if(typeof renderDbFormationList === "function") renderDbFormationList(); }catch(e){}
-  closeOwnedLinked();
-  return false;
-}
-function clearOwnedLinked(ev){
-  if(ev){ev.preventDefault(); ev.stopPropagation();}
-  setOwnedIdsLink([]);
-  try{ if(typeof renderDbFormationList === "function") renderDbFormationList(); }catch(e){}
-  return false;
-}
-function renderPlacementGridLinked(){
-  var grid = document.getElementById("modalHeroGrid");
-  if(!grid) return;
-  var q = String((document.getElementById("modalHeroSearch") || {}).value || "").trim();
-  var job = String((document.getElementById("modalJobFilter") || {}).value || "").trim();
-  var factor = String((document.getElementById("modalFactorFilter") || {}).value || "").trim();
-  var usedIds = new Set();
+
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+    if(btn && shouldRelabel(btn)){
+      setTimeout(relabelRegisteredOutButtons, 0);
+      setTimeout(relabelRegisteredOutButtons, 120);
+      setTimeout(relabelRegisteredOutButtons, 300);
+    }
+  }, true);
+
   try{
-    [1,2,3,4,5,6].forEach(function(slot){ if(Number(slot)!==Number(activeSlotForModal) && placement && placement[slot] && placement[slot].internal_id) usedIds.add(String(placement[slot].internal_id)); });
+    var mo = new MutationObserver(relabelRegisteredOutButtons);
+    mo.observe(document.documentElement, {childList:true, subtree:true, characterData:true});
   }catch(e){}
-  var ownedSet = new Set(selectedOwnedIdsLink());
-  var list = rowsLink().filter(function(e){
-    var id = heroIdLink(e);
-    if(usedIds.has(id)) return false;
-    if(q && heroNameLink(e).indexOf(q) === -1) return false;
-    if(job && String(e["因子1"] || "").trim() !== job) return false;
-    if(factor && cleanFactorsLink(e).indexOf(factor) === -1) return false;
-    return true;
-  }).sort(function(a,b){
-    var ao = ownedSet.has(heroIdLink(a)) ? 0 : 1;
-    var bo = ownedSet.has(heroIdLink(b)) ? 0 : 1;
-    if(ao !== bo) return ao - bo;
-    return heroNameLink(a).localeCompare(heroNameLink(b),"ja");
-  });
-  grid.innerHTML = list.map(function(e){
-    var id = heroIdLink(e);
-    var owned = ownedSet.has(id);
-    var img = "";
-    try{
-      img = (typeof modalHasExternalImage === "function" && modalHasExternalImage(e)) ? '<img class="modalHeroThumb" loading="lazy" decoding="async" src="'+escLink(modalHeroImagePath(e))+'" onerror="this.outerHTML=\'<div class=&quot;modalHeroFallback&quot;>画像なし</div>\'">' : '<div class="modalHeroFallback">画像なし</div>';
-    }catch(err){ img = '<div class="modalHeroFallback">画像なし</div>'; }
-    var factors = cleanFactorsLink(e).map(function(f){return '<span class="badge">'+escLink(f)+'</span>';}).join("");
-    return '<div class="modalHeroCard '+(owned?'selectedOwned':'')+'" data-placement-linked-id="'+escLink(id)+'">'+img+'<div><div class="modalHeroName">'+escLink(heroNameLink(e))+(owned?' <span class="heroTag">所持</span>':'')+'</div><div class="modalHeroMeta">'+escLink(e["職"]||"")+' / コスト '+escLink(e["コスト"]||"未確認")+'</div><div>'+factors+'</div></div></div>';
-  }).join("") || '<div class="dbListNote">該当英傑なし</div>';
-  grid.querySelectorAll("[data-placement-linked-id]").forEach(function(card){
-    card.addEventListener("click", function(ev){
-      ev.preventDefault(); ev.stopPropagation();
-      var hero = heroByKeyLink(card.getAttribute("data-placement-linked-id"));
-      if(!hero || !activeSlotForModal) return;
-      try{
-        if(typeof isHeroAlreadyPlaced === "function" && isHeroAlreadyPlaced(hero.internal_id, activeSlotForModal)){alert("同じ英傑は複数配置できません"); return;}
-      }catch(e){}
-      placement[activeSlotForModal] = hero;
-      try{ if(typeof closeHeroModal === "function") closeHeroModal(); }catch(e){}
-      try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
-      try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
-      try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
-      try{ if(typeof calculate === "function") calculate(); }catch(e){}
-    }, true);
-  });
-}
-function setupPlacementFiltersLinked(){ setupSelectOptionsLink("modal"); }
-function openPlacementLinked(slot){
-  try{ activeSlotForModal = slot; }catch(e){}
-  setupPlacementFiltersLinked();
-  var title = document.getElementById("heroModalTitle");
-  if(title) title.textContent = slot + "番に配置する英傑を選択";
-  var modal = document.getElementById("heroSelectModal");
-  if(modal) modal.classList.add("open");
-  renderPlacementGridLinked();
-}
-function bindLink(){
-  refreshOwnedButtonsLink();
-  window.__ownedHeroOpenReliable = openOwnedLinked;
-  window.__ownedHeroClearReliable = clearOwnedLinked;
-  window.forceOpenOwnedHeroModal = openOwnedLinked;
-  window.forceRefreshOwnedHeroButtons = refreshOwnedButtonsLink;
-  window.openOwnedHeroModal = openOwnedLinked;
-  window.renderOwnedHeroGrid = renderOwnedGridLink;
-  window.renderOwnedHeroFilterUi = refreshOwnedButtonsLink;
-  window.openHeroModal = openPlacementLinked;
-  window.renderModalHeroGrid = renderPlacementGridLinked;
-  window.setupHeroModalFilters = setupPlacementFiltersLinked;
-  ["ownedHeroReliableSearch","ownedHeroReliableJob","ownedHeroReliableFactor"].forEach(function(id){var el=document.getElementById(id); if(el){el.oninput=renderOwnedGridLink; el.onchange=renderOwnedGridLink;}});
-  ["modalHeroSearch","modalJobFilter","modalFactorFilter"].forEach(function(id){var el=document.getElementById(id); if(el){el.oninput=renderPlacementGridLinked; el.onchange=renderPlacementGridLinked;}});
-}
-document.addEventListener("click", function(ev){
-  var ownedBtn = ev.target && ev.target.closest ? ev.target.closest("#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3") : null;
-  if(ownedBtn){ return openOwnedLinked(Number(ownedBtn.dataset.ownedSlot || 0), ev); }
-  var clearBtn = ev.target && ev.target.closest ? ev.target.closest("#ownedHeroClearBtn") : null;
-  if(clearBtn){ return clearOwnedLinked(ev); }
-  var ownedCard = ev.target && ev.target.closest ? ev.target.closest("[data-owned-linked-key]") : null;
-  if(ownedCard){ return pickOwnedLinked(ownedCard.getAttribute("data-owned-linked-key"), ev); }
-  if(ev.target && ev.target.id === "ownedHeroReliableModal") return closeOwnedLinked(ev);
-}, true);
-document.addEventListener("DOMContentLoaded", bindLink);
-setTimeout(bindLink,0);
-setTimeout(bindLink,500);
-setTimeout(bindLink,1500);
+
+  document.addEventListener('DOMContentLoaded', relabelRegisteredOutButtons);
+  setTimeout(relabelRegisteredOutButtons, 0);
+  setTimeout(relabelRegisteredOutButtons, 200);
 })();
 </script>
 
@@ -10434,3 +10249,207 @@ document.addEventListener("click", function(ev){
 })();
 </script>
 
+
+
+<script id="lazy-calc-missing-only-lightweight-final">
+/* 2026-05-23 追加修正:
+   登録済みDB値はそのまま表示して計算しない。
+   登録外/ステータス未登録行だけ、ボタン押下時に既存の適用処理へ流して計算する。
+   一覧描画時の追加計算は禁止して表示を軽量化する。 */
+(function(){
+  if(window.__lazyCalcMissingOnlyLightweightFinalInstalled) return;
+  window.__lazyCalcMissingOnlyLightweightFinalInstalled = true;
+
+  function isMissingText(text){
+    text = String(text == null ? "" : text);
+    if(text.indexOf("登録外") !== -1) return true;
+    if(text.indexOf("ステータス未登録") !== -1) return true;
+    var compact = text.replace(/[\s　/:｜|]/g, "");
+    return !compact;
+  }
+  function normalizeDbMissingButtons(){
+    var list = document.getElementById("dbFormationList");
+    if(!list) return;
+    var mainRows = list.querySelectorAll("tr.dbMainRow");
+    mainRows.forEach(function(mainRow){
+      var statRow = mainRow.nextElementSibling;
+      var statText = statRow ? statRow.textContent || "" : "";
+      var btn = mainRow.querySelector("button.applyBtn");
+      if(!btn) return;
+      if(isMissingText(statText)){
+        btn.textContent = "登録外";
+        btn.classList.add("dbMissing", "reachApplyBtn");
+        btn.setAttribute("title", "登録外：押した時だけ配置して計算します。一覧表示時は計算しません。");
+        btn.dataset.lazyMissingCalc = "1";
+        var val = statRow && statRow.querySelector(".dbListStat");
+        if(val && val.textContent.trim() === "") val.textContent = "登録外 / 押下時のみ計算";
+      }else{
+        btn.dataset.lazyMissingCalc = "0";
+        btn.setAttribute("title", "DB登録済み：保存済み総合値をそのまま表示します。");
+      }
+    });
+  }
+
+  var oldRender = window.renderDbFormationList;
+  if(typeof oldRender === "function" && !oldRender.__lazyCalcMissingOnlyWrapped){
+    window.renderDbFormationList = function(){
+      var ret = oldRender.apply(this, arguments);
+      setTimeout(normalizeDbMissingButtons, 0);
+      setTimeout(normalizeDbMissingButtons, 120);
+      return ret;
+    };
+    window.renderDbFormationList.__lazyCalcMissingOnlyWrapped = true;
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("#dbFormationList button.applyBtn") : null;
+    if(!btn) return;
+    if(btn.dataset.lazyMissingCalc === "1"){
+      var row = btn.closest("tr.dbMainRow");
+      var statRow = row ? row.nextElementSibling : null;
+      var val = statRow && statRow.querySelector(".dbListStat");
+      if(val) val.textContent = "登録外 / 計算中...";
+      setTimeout(function(){
+        normalizeDbMissingButtons();
+      }, 250);
+    }
+  }, true);
+
+  var mo = new MutationObserver(function(){
+    normalizeDbMissingButtons();
+  });
+  try{
+    var list = document.getElementById("dbFormationList");
+    if(list) mo.observe(list, {childList:true, subtree:true, characterData:true});
+  }catch(e){}
+  document.addEventListener("DOMContentLoaded", function(){
+    normalizeDbMissingButtons();
+    try{
+      var list = document.getElementById("dbFormationList");
+      if(list) mo.observe(list, {childList:true, subtree:true, characterData:true});
+    }catch(e){}
+  });
+  setTimeout(normalizeDbMissingButtons, 0);
+})();
+</script>
+
+
+<script id="registered-out-calc-display-sync-final">
+/* 2026-05-23 追加修正:
+   登録外/ステータス未登録の候補だけ、押下後に既存計算結果を表示へ反映する。
+   一覧描画時には計算しない。DB登録済み行はDB値をそのまま維持する。 */
+(function(){
+  if(window.__registeredOutCalcDisplaySyncFinalInstalled) return;
+  window.__registeredOutCalcDisplaySyncFinalInstalled = true;
+
+  var STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+
+  function esc(v){
+    try{ if(typeof escFix === "function") return escFix(v); }catch(e){}
+    try{ if(typeof escPreview === "function") return escPreview(v); }catch(e){}
+    try{ if(typeof esc === "function" && window.esc !== esc) return window.esc(v); }catch(e){}
+    return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+    });
+  }
+
+  function statKeys(){
+    try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){}
+    return STAT_KEYS;
+  }
+
+  function isMissingButton(btn){
+    if(!btn) return false;
+    var text = String(btn.textContent || "");
+    return text.indexOf("登録外") !== -1 ||
+      (btn.classList && (btn.classList.contains("dbMissing") || btn.classList.contains("reachApplyBtn"))) ||
+      btn.dataset.lazyMissingCalc === "1";
+  }
+
+  function readTotalStatsText(){
+    var box = document.getElementById("totalStatResult");
+    if(!box) return "";
+    var out = [];
+    var items = box.querySelectorAll(".totalStatItem");
+    items.forEach(function(item){
+      var name = item.querySelector(".statName");
+      var val = item.querySelector(".statVal");
+      var k = String(name ? name.textContent : "").trim();
+      var v = String(val ? val.textContent : "").trim();
+      if(!k) return;
+      out.push(k + ":" + (v || "—"));
+    });
+    return out.join(" / ");
+  }
+
+  function compactHasNumber(text){
+    text = String(text || "");
+    if(text.indexOf("計算中") !== -1) return false;
+    if(text.indexOf("登録外") !== -1) return false;
+    if(text.indexOf("未登録") !== -1) return false;
+    if(text.indexOf("未一致") !== -1 && text.indexOf("—") !== -1) return false;
+    return /[0-9１-９]/.test(text);
+  }
+
+  function updateAppliedPreviewStats(statsText){
+    var box = document.getElementById("appliedRowPreviewUnderFormation");
+    if(!box || !statsText) return false;
+    var target = box.querySelector(".appliedPreviewWide .appliedPreviewValue");
+    if(!target) return false;
+    target.textContent = statsText;
+    return true;
+  }
+
+  function updateClickedRowStats(btn, statsText){
+    if(!btn || !statsText) return false;
+    var row = btn.closest ? btn.closest("tr.dbMainRow") : null;
+    var statRow = row ? row.nextElementSibling : null;
+    var val = statRow && statRow.querySelector ? statRow.querySelector(".dbListStat") : null;
+    if(!val) return false;
+    val.textContent = statsText;
+    return true;
+  }
+
+  function syncAfterCalc(btn){
+    var statsText = readTotalStatsText();
+    if(!compactHasNumber(statsText)) return false;
+    updateAppliedPreviewStats(statsText);
+    updateClickedRowStats(btn, statsText);
+    var mode = document.getElementById("totalStatMode");
+    if(mode && String(mode.textContent || "").indexOf("DB未一致") !== -1){
+      mode.textContent = "登録外 / 計算式で参考表示";
+    }
+    return true;
+  }
+
+  function trySync(btn){
+    var delays = [0,80,180,360,700];
+    delays.forEach(function(ms){
+      setTimeout(function(){ syncAfterCalc(btn); }, ms);
+    });
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("#dbFormationList button.applyBtn, #reachList button.reachApplyBtn") : null;
+    if(!btn || !isMissingButton(btn)) return;
+    var row = btn.closest ? btn.closest("tr.dbMainRow") : null;
+    var statRow = row ? row.nextElementSibling : null;
+    var val = statRow && statRow.querySelector ? statRow.querySelector(".dbListStat") : null;
+    if(val) val.textContent = "登録外 / 計算中...";
+    trySync(btn);
+  }, true);
+
+  var prevCalculate = window.calculate;
+  if(typeof prevCalculate === "function" && !prevCalculate.__registeredOutCalcSyncWrapped){
+    window.calculate = function(){
+      var ret = prevCalculate.apply(this, arguments);
+      setTimeout(function(){
+        var last = document.querySelector("#dbFormationList button.dbMissing, #dbFormationList button[data-lazy-missing-calc='1']");
+        if(last) syncAfterCalc(last);
+      }, 120);
+      return ret;
+    };
+    window.calculate.__registeredOutCalcSyncWrapped = true;
+  }
+})();
+</script>
