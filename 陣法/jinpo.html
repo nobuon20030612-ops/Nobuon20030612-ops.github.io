@@ -2023,9 +2023,7 @@ mini.innerHTML = hit
 // 陣法能力トータル下のライン/因縁別内訳は非表示指定のため描画しない。
 }
 function ownedHeroSourceRows(){
-if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
-return OWNED_HERO_LIST_FROM_UPLOAD;
-}
+if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
 return eiketsuMaster.map(e=>({
 "番号": e.internal_id || "",
 "名前": e["英傑名"] || "",
@@ -2039,6 +2037,11 @@ return eiketsuMaster.map(e=>({
 "腕力": e["腕力"] || "",
 "知力": e["知力"] || ""
 }));
+}
+if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
+return OWNED_HERO_LIST_FROM_UPLOAD;
+}
+return [];
 }
 let activeOwnedHeroSlotIndex = null;
 function ownedHeroById(id){
@@ -3440,12 +3443,15 @@ return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){return {"&":"&a
 }
 function rows(){
 try{
+if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
+return eiketsuMaster.map(function(e){return {"番号":e.internal_id||"","名前":e["英傑名"]||"","職":e["職"]||"","コスト":e["コスト"]||"","因子1":e["因子1"]||"","因子2":e["因子2"]||"","因子3":e["因子3"]||"","因子4":e["因子4"]||"","生命":e["生命"]||"","気合":e["気合"]||"","腕力":e["腕力"]||"","知力":e["知力"]||""};});
+}
+}catch(e){}
+try{
 if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD;
 }catch(e){}
 try{
-if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
-return eiketsuMaster.map(function(e){return {"番号":e.internal_id||"","名前":e["英傑名"]||"","コスト":e["コスト"]||"","因子1":e["因子1"]||"","因子2":e["因子2"]||"","因子3":e["因子3"]||"","因子4":e["因子4"]||"","生命":e["生命"]||"","気合":e["気合"]||"","腕力":e["腕力"]||"","知力":e["知力"]||""};});
-}
+if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD;
 }catch(e){}
 return [];
 }
@@ -3592,8 +3598,6 @@ function escHtml(v){
 return String(v == null ? "" : v).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 }
 function uploadedRows(){
-try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
-try{ if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
 try{
 if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
 return eiketsuMaster.map(e => ({
@@ -3612,6 +3616,8 @@ return eiketsuMaster.map(e => ({
 }));
 }
 }catch(e){}
+try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length) return window.OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
+try{ if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length) return OWNED_HERO_LIST_FROM_UPLOAD; }catch(e){}
 return [];
 }
 function cleanFactors(row){
