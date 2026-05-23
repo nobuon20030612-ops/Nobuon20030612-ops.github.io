@@ -9478,3 +9478,112 @@ document.addEventListener("click", function(ev){
 setTimeout(syncGrade3ButtonText, 0);
 })();
 </script>
+
+
+<script id="absolute-last-grade3-cost-lookup-name-alias-fix">
+(function(){
+if(window.__grade3CostLookupNameAliasFixInstalled) return;
+window.__grade3CostLookupNameAliasFixInstalled = true;
+
+var GRADE3_NAME_ALIAS = {
+  "山中鹿之助":"山中鹿之介",
+  "森田浄雲":"森田浄曇",
+  "酒井忠次(通)":"酒井忠次(衣鉢)",
+  "前田利家":"前田利家(雄材)",
+  "ねね(納涼)":"ねね(涼)",
+  "織田信長(特別)":"織田信長(覇王)",
+  "まつ":"まつ(兎忍)",
+  "濃姫(雅楽)":"濃姫",
+  "羽柴秀吉(涼)":"羽柴秀吉(納涼)",
+  "羽柴秀吉・涼":"羽柴秀吉(納涼)"
+};
+
+function stripMarks(v){
+  return String(v == null ? "" : v).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/g,"");
+}
+
+function grade3CanonicalName(v){
+  var s = stripMarks(v).trim().replace(/（/g,"(").replace(/）/g,")");
+  if(s.indexOf("・") !== -1 && s.indexOf("(") === -1){
+    var p = s.lastIndexOf("・");
+    s = s.slice(0,p) + "(" + s.slice(p+1) + ")";
+  }
+  s = s.replace(/\(\s*([^\)]+?)\s*\)/g, function(_, inner){ return "(" + String(inner).trim() + ")"; });
+  if(GRADE3_NAME_ALIAS[s]) s = GRADE3_NAME_ALIAS[s];
+  try{
+    if(typeof canonicalHeroName === "function") return canonicalHeroName(s);
+  }catch(e){}
+  return s.replace(/[()（）［］\[\]「」『』【】]/g,"").replace(/・/g,"").replace(/[\s　]+/g,"");
+}
+
+function grade3RowMembers(row){
+  try{
+    if(typeof dbRowMembers === "function"){
+      var arr = dbRowMembers(row);
+      if(Array.isArray(arr) && arr.length) return arr;
+    }
+  }catch(e){}
+  var raw = row && (row.eiketsu_ids || row.members || row["英傑"] || row.m || row.r || "");
+  return String(raw || "").split(/[|,、/／\s]+/).map(function(x){return stripMarks(x).trim();}).filter(Boolean);
+}
+
+function grade3HeroCost(name){
+  var key = grade3CanonicalName(name);
+  if(!key) return NaN;
+
+  try{
+    if(Array.isArray(eiketsuMaster)){
+      for(var i=0;i<eiketsuMaster.length;i++){
+        var h = eiketsuMaster[i];
+        var hn = h && (h["英傑名"] || h.name || h["名前"] || "");
+        if(grade3CanonicalName(hn) === key){
+          var v = Number(h["コスト"] ?? h.cost ?? "");
+          if(Number.isFinite(v)) return v;
+        }
+      }
+    }
+  }catch(e){}
+
+  try{
+    if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD)){
+      for(var j=0;j<OWNED_HERO_LIST_FROM_UPLOAD.length;j++){
+        var o = OWNED_HERO_LIST_FROM_UPLOAD[j];
+        var on = o && (o["名前"] || o["英傑名"] || "");
+        if(grade3CanonicalName(on) === key){
+          var v2 = Number(o["コスト"] ?? o.cost ?? "");
+          if(Number.isFinite(v2)) return v2;
+        }
+      }
+    }
+  }catch(e){}
+
+  return NaN;
+}
+
+window.heroCostByDisplayName = grade3HeroCost;
+try{ heroCostByDisplayName = grade3HeroCost; }catch(e){}
+
+window.dbRowAllHeroesCost6OrLess = function(row){
+  var members = grade3RowMembers(row);
+  if(members.length !== 6) return false;
+  return members.every(function(name){
+    var cost = grade3HeroCost(name);
+    return Number.isFinite(cost) && cost <= 6;
+  });
+};
+
+window.dbRowAllHeroesCost3OrLess = window.dbRowAllHeroesCost6OrLess;
+try{ dbRowAllHeroesCost6OrLess = window.dbRowAllHeroesCost6OrLess; }catch(e){}
+try{ dbRowAllHeroesCost3OrLess = window.dbRowAllHeroesCost6OrLess; }catch(e){}
+
+function refreshGrade3ListIfNeeded(){
+  try{
+    if(typeof grade3Cost6OnlyEnabled !== "undefined" && grade3Cost6OnlyEnabled){
+      if(typeof renderDbFormationList === "function") renderDbFormationList();
+    }
+  }catch(e){}
+}
+
+setTimeout(refreshGrade3ListIfNeeded, 0);
+})();
+</script>
