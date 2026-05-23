@@ -6985,145 +6985,6 @@ try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 
 </body>
 
-<script id="absolute-last-reach-apply-display-sync-fix">
-/* 2026-05-23:
-リーチ適用後の表示同期だけ修正。
-- 下側の重複「適用中の候補」(#appliedRowPreviewUnderFormation) は非表示
-- リーチ適用後にトータルステータスと上側の適用中候補を現在配置で再同期
-- 仕様/レイアウト/検索/DB/リーチ候補生成は変更しない
-*/
-(function(){
-if(window.__reachApplyDisplaySyncFixInstalled) return;
-window.__reachApplyDisplaySyncFixInstalled = true;
-
-function hideLowerAppliedPreview(){
-  try{
-    var box = document.getElementById("appliedRowPreviewUnderFormation");
-    if(box){
-      box.innerHTML = "";
-      box.style.display = "none";
-    }
-  }catch(e){}
-}
-
-try{
-  var st = document.createElement("style");
-  st.textContent = "#appliedRowPreviewUnderFormation{display:none!important;}";
-  document.head.appendChild(st);
-}catch(e){}
-
-window.renderAppliedPreviewUnderFormation = function(){
-  hideLowerAppliedPreview();
-  return false;
-};
-window.clearAppliedPreviewUnderFormation = hideLowerAppliedPreview;
-
-function currentReachResultSafe(){
-  try{
-    if(window.JinpoActivationEngine && typeof placement !== "undefined" && typeof inenMaster !== "undefined"){
-      var form = "";
-      try{ form = String(formationSelect && formationSelect.value || "").trim(); }catch(e){}
-      if(form){
-        return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-      }
-    }
-  }catch(e){}
-  return null;
-}
-
-function findAppliedDbRowSafe(result){
-  try{
-    if(window.__lastReachAppliedDbRow) return window.__lastReachAppliedDbRow;
-  }catch(e){}
-  try{
-    if(result && typeof findResultDbRowForPlacementState === "function"){
-      var r = findResultDbRowForPlacementState(placement, result);
-      if(r) return r;
-    }
-  }catch(e){}
-  try{
-    var sid = String(typeof selectedDbResultId !== "undefined" ? selectedDbResultId : "").trim();
-    if(sid && Array.isArray(resultDbRows)){
-      for(var i=0;i<resultDbRows.length;i++){
-        var row = resultDbRows[i];
-        if(String(row.result_id || row.id || "") === sid) return row;
-      }
-    }
-  }catch(e){}
-  return null;
-}
-
-function syncReachAppliedDisplay(){
-  hideLowerAppliedPreview();
-
-  var result = currentReachResultSafe();
-  var row = findAppliedDbRowSafe(result);
-
-  if(row){
-    try{ window.__lastReachAppliedDbRow = row; }catch(e){}
-    try{ currentAppliedDbRow = row; }catch(e){}
-    try{ selectedDbResultId = String(row.result_id || row.id || ""); }catch(e){}
-
-    try{
-      if(typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
-        renderRealtimeTotalStatsFromReachDbRow(row);
-      }else if(typeof renderRealtimeTotalStats === "function" && result){
-        renderRealtimeTotalStats(result);
-      }
-    }catch(e){}
-
-    try{
-      if(typeof renderReachAppliedCandidateBox === "function"){
-        renderReachAppliedCandidateBox(row, result);
-      }else if(typeof renderAppliedDbRowDisplay === "function"){
-        renderAppliedDbRowDisplay(row);
-      }
-    }catch(e){}
-  }else{
-    try{ window.__lastReachAppliedDbRow = null; }catch(e){}
-    try{ currentAppliedDbRow = null; }catch(e){}
-    try{ selectedDbResultId = ""; }catch(e){}
-
-    try{
-      if(typeof clearReachTotalStatsForUnregistered === "function"){
-        clearReachTotalStatsForUnregistered();
-      }else if(typeof renderRealtimeTotalStats === "function" && result){
-        renderRealtimeTotalStats(result);
-      }
-    }catch(e){}
-
-    try{
-      if(typeof renderReachAppliedCandidateUnregistered === "function"){
-        renderReachAppliedCandidateUnregistered(result);
-      }
-    }catch(e){}
-  }
-}
-
-var prevApplyReach = window.applyReachSwapCandidate;
-if(typeof prevApplyReach === "function" && !prevApplyReach.__reachDisplaySyncWrapped){
-  window.applyReachSwapCandidate = function(slot, afterId){
-    var ret = prevApplyReach.apply(this, arguments);
-    setTimeout(syncReachAppliedDisplay, 0);
-    setTimeout(syncReachAppliedDisplay, 80);
-    setTimeout(syncReachAppliedDisplay, 200);
-    return ret;
-  };
-  window.applyReachSwapCandidate.__reachDisplaySyncWrapped = true;
-}
-
-document.addEventListener("click", function(ev){
-  var btn = ev.target && ev.target.closest ? ev.target.closest("button.reachApplyBtn[data-reach-slot][data-reach-after]") : null;
-  if(!btn) return;
-  setTimeout(syncReachAppliedDisplay, 0);
-  setTimeout(syncReachAppliedDisplay, 120);
-}, true);
-
-document.addEventListener("DOMContentLoaded", hideLowerAppliedPreview);
-setTimeout(hideLowerAppliedPreview, 0);
-})();
-</script>
-
 </html>
 
 <script id="final-final-5-6-line-search-orderless-fix">
@@ -9214,139 +9075,174 @@ return prevRender.apply(this, arguments);
 </script>
 
 
-<script id="absolute-last-reach-hide-lower-applied-only-fix">
-/* 2026-05-23:
-リーチ適用時だけ、下側の重複「適用中の候補」(#appliedDbRowDisplay)を非表示。
-上側の適用中候補、通常の差し替え適用ボタン、検索/DB/レイアウトは変更しない。
-*/
+<script id="absolute-last-registered-out-preview-recovery-fix">
 (function(){
-if(window.__reachHideLowerAppliedOnlyFixInstalled) return;
-window.__reachHideLowerAppliedOnlyFixInstalled = true;
+if(window.__registeredOutPreviewRecoveryFixInstalled) return;
+window.__registeredOutPreviewRecoveryFixInstalled = true;
 
-var reachApplyActiveUntil = 0;
-
-function markReachApply(){
-  reachApplyActiveUntil = Date.now() + 1200;
+function escFix(v){
+  try{ if(typeof escPreview === "function") return escPreview(v); }catch(e){}
+  try{ if(typeof esc === "function") return esc(v); }catch(e){}
+  return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+  });
 }
 
-function isReachApplyActive(){
-  return Date.now() < reachApplyActiveUntil;
-}
-
-function hideLowerAppliedOnly(){
-  if(!isReachApplyActive()) return;
+function hideLower(){
   try{
-    var box = document.getElementById("appliedDbRowDisplay");
-    if(box){
-      box.innerHTML = "";
-      box.style.display = "none";
+    var lower = document.getElementById("appliedDbRowDisplay");
+    if(lower){
+      lower.innerHTML = "";
+      lower.style.display = "none";
+      lower.setAttribute("aria-hidden","true");
     }
   }catch(e){}
 }
 
-var prevReachBox = window.renderReachAppliedCandidateBox;
-if(typeof prevReachBox === "function" && !prevReachBox.__hideLowerAppliedOnlyWrapped){
-  window.renderReachAppliedCandidateBox = function(){
-    if(isReachApplyActive()){
-      hideLowerAppliedOnly();
-      return false;
-    }
-    return prevReachBox.apply(this, arguments);
-  };
-  window.renderReachAppliedCandidateBox.__hideLowerAppliedOnlyWrapped = true;
+function ensureUpperBox(){
+  var box = document.getElementById("appliedRowPreviewUnderFormation");
+  if(box) return box;
+  try{
+    var fv = document.getElementById("formationView");
+    if(!fv) return null;
+    box = document.createElement("div");
+    box.id = "appliedRowPreviewUnderFormation";
+    fv.insertAdjacentElement("afterend", box);
+    return box;
+  }catch(e){}
+  return null;
 }
 
-var prevReachUnreg = window.renderReachAppliedCandidateUnregistered;
-if(typeof prevReachUnreg === "function" && !prevReachUnreg.__hideLowerAppliedOnlyWrapped){
-  window.renderReachAppliedCandidateUnregistered = function(){
-    if(isReachApplyActive()){
-      hideLowerAppliedOnly();
-      return false;
+function splitBadgesFromCell(cell){
+  var arr = [];
+  try{
+    cell.querySelectorAll(".badge,span").forEach(function(sp){
+      var t = String(sp.textContent || "").trim();
+      if(t) arr.push(t);
+    });
+  }catch(e){}
+  if(!arr.length){
+    var t = String(cell && cell.textContent || "").trim();
+    if(t) arr = t.split(/(?=\d+\.\s*)|[\/／]/).map(function(x){return x.trim();}).filter(Boolean);
+  }
+  return arr;
+}
+
+function getStatsFromRowElement(tr){
+  try{
+    var n = tr ? tr.nextElementSibling : null;
+    if(n && n.classList && n.classList.contains("dbStatRow")){
+      return String(n.textContent || "").replace(/\s+/g," ").trim();
     }
-    return prevReachUnreg.apply(this, arguments);
+  }catch(e){}
+  return "";
+}
+
+function readButtonRow(btn){
+  var tr = btn && btn.closest ? btn.closest("tr") : null;
+  if(!tr) return null;
+  var cells = Array.prototype.slice.call(tr.children || []);
+  if(cells.length < 5) return null;
+  return {
+    count: String(cells[1] ? cells[1].textContent : "").trim(),
+    formation: String(cells[2] ? cells[2].textContent : "").trim(),
+    heroes: splitBadgesFromCell(cells[3]),
+    bonds: splitBadgesFromCell(cells[4]),
+    stats: getStatsFromRowElement(tr)
   };
-  window.renderReachAppliedCandidateUnregistered.__hideLowerAppliedOnlyWrapped = true;
+}
+
+function previewFromCurrentPlacementAndResult(){
+  var result = null;
+  try{
+    if(window.JinpoActivationEngine && typeof placement !== "undefined" && typeof inenMaster !== "undefined"){
+      var form = String(formationSelect && formationSelect.value || "").trim();
+      if(form) result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }
+  }catch(e){}
+  var heroes = [];
+  try{
+    for(var i=1;i<=6;i++){
+      var h = placement && placement[i];
+      var n = "";
+      try{ n = typeof heroName === "function" ? heroName(h) : (h && (h["英傑名"] || h.name || h["名前"])); }catch(e){}
+      if(n) heroes.push(i + ". " + n);
+    }
+  }catch(e){}
+  var bonds = [];
+  try{ bonds = (result && result.activated ? result.activated : []).map(function(a){return a.name;}).filter(Boolean); }catch(e){}
+  return {
+    count: String(bonds.length || ""),
+    formation: String((typeof formationSelect !== "undefined" && formationSelect) ? formationSelect.value || "" : ""),
+    heroes: heroes,
+    bonds: bonds,
+    stats: "登録外 / ステータス未登録"
+  };
+}
+
+function renderUpperPreview(data){
+  hideLower();
+  var box = ensureUpperBox();
+  if(!box || !data) return false;
+
+  box.style.display = "";
+  var heroes = (data.heroes || []).map(function(v){return '<span>'+escFix(v)+'</span>';}).join("");
+  var bonds = (data.bonds || []).map(function(v){return '<span>'+escFix(v)+'</span>';}).join("");
+  var stats = String(data.stats || "").replace(/^総合値\s*/,"").trim();
+
+  box.innerHTML =
+    '<div class="appliedPreviewTitle">適用中の候補</div>'+
+    '<div class="appliedPreviewGrid">'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁数</div><div class="appliedPreviewValue">'+escFix(data.count || "")+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">陣形</div><div class="appliedPreviewValue">'+escFix(data.formation || "")+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">英傑</div><div class="appliedPreviewList">'+heroes+'</div></div>'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁</div><div class="appliedPreviewList">'+bonds+'</div></div>'+
+    '<div class="appliedPreviewBox appliedPreviewWide"><div class="appliedPreviewLabel">総合値</div><div class="appliedPreviewValue">'+escFix(stats || "登録外 / ステータス未登録")+'</div></div>'+
+    '</div>';
+  return true;
+}
+
+function restoreFromButton(btn){
+  var data = readButtonRow(btn);
+  if(data) renderUpperPreview(data);
+}
+
+function restoreRegisteredOut(){
+  var data = previewFromCurrentPlacementAndResult();
+  renderUpperPreview(data);
 }
 
 var prevApplyReach = window.applyReachSwapCandidate;
-if(typeof prevApplyReach === "function" && !prevApplyReach.__hideLowerAppliedOnlyWrapped){
+if(typeof prevApplyReach === "function" && !prevApplyReach.__registeredOutPreviewRecoveryWrapped){
   window.applyReachSwapCandidate = function(){
-    markReachApply();
     var ret = prevApplyReach.apply(this, arguments);
-    setTimeout(hideLowerAppliedOnly, 0);
-    setTimeout(hideLowerAppliedOnly, 80);
-    setTimeout(hideLowerAppliedOnly, 200);
-    setTimeout(hideLowerAppliedOnly, 500);
+    setTimeout(restoreRegisteredOut, 0);
+    setTimeout(restoreRegisteredOut, 100);
+    setTimeout(restoreRegisteredOut, 250);
     return ret;
   };
-  window.applyReachSwapCandidate.__hideLowerAppliedOnlyWrapped = true;
+  window.applyReachSwapCandidate.__registeredOutPreviewRecoveryWrapped = true;
 }
-
-document.addEventListener("click", function(ev){
-  var btn = ev.target && ev.target.closest ? ev.target.closest("button.reachApplyBtn[data-reach-slot][data-reach-after]") : null;
-  if(!btn) return;
-  markReachApply();
-  setTimeout(hideLowerAppliedOnly, 0);
-  setTimeout(hideLowerAppliedOnly, 80);
-  setTimeout(hideLowerAppliedOnly, 200);
-  setTimeout(hideLowerAppliedOnly, 500);
-}, true);
-})();
-</script>
-
-
-<script id="absolute-last-hide-lower-applied-display-always-fix">
-/* 2026-05-23:
-通常の適用ボタン/リーチ適用ボタン共通で、下側の重複「適用中の候補」(#appliedDbRowDisplay)だけを常時非表示。
-上側の適用候補(#appliedRowPreviewUnderFormation)とトータルステータス更新は残す。
-検索、DB、リーチ、レイアウト、通常適用処理は変更しない。
-*/
-(function(){
-if(window.__hideLowerAppliedDisplayAlwaysFixInstalled) return;
-window.__hideLowerAppliedDisplayAlwaysFixInstalled = true;
-
-function hideLowerAppliedDisplay(){
-  try{
-    var box = document.getElementById("appliedDbRowDisplay");
-    if(box){
-      box.innerHTML = "";
-      box.style.display = "none";
-      box.setAttribute("aria-hidden", "true");
-    }
-  }catch(e){}
-}
-
-try{
-  var st = document.createElement("style");
-  st.textContent = "#appliedDbRowDisplay{display:none!important;}";
-  document.head.appendChild(st);
-}catch(e){}
-
-window.renderAppliedDbRowDisplay = function(){
-  hideLowerAppliedDisplay();
-  return false;
-};
-
-window.renderReachAppliedCandidateBox = function(){
-  hideLowerAppliedDisplay();
-  return false;
-};
-
-window.renderReachAppliedCandidateUnregistered = function(){
-  hideLowerAppliedDisplay();
-  return false;
-};
 
 document.addEventListener("click", function(ev){
   var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn") : null;
   if(!btn) return;
-  setTimeout(hideLowerAppliedDisplay, 0);
-  setTimeout(hideLowerAppliedDisplay, 80);
-  setTimeout(hideLowerAppliedDisplay, 200);
-  setTimeout(hideLowerAppliedDisplay, 500);
+
+  var isRegisteredOut = String(btn.textContent || "").indexOf("登録外") !== -1 ||
+                        (btn.classList && btn.classList.contains("dbMissing"));
+
+  if(isRegisteredOut){
+    setTimeout(restoreRegisteredOut, 0);
+    setTimeout(restoreRegisteredOut, 120);
+    setTimeout(restoreRegisteredOut, 300);
+  }else{
+    setTimeout(function(){ restoreFromButton(btn); }, 0);
+    setTimeout(function(){ restoreFromButton(btn); }, 120);
+    setTimeout(function(){ restoreFromButton(btn); }, 300);
+  }
 }, true);
 
-document.addEventListener("DOMContentLoaded", hideLowerAppliedDisplay);
-setTimeout(hideLowerAppliedDisplay, 0);
+document.addEventListener("DOMContentLoaded", hideLower);
+setTimeout(hideLower, 0);
 })();
 </script>
