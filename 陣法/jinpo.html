@@ -7255,6 +7255,64 @@ if(formationSelectU){
 })();
 </script>
 
+
+<script id="absolute-last-grade3-off-same-display-format-final">
+/* 2026-05-23 修正: 等級3以下OFF時もON時と同じ検索表示UI形式を維持。検索ロジック・DBは変更しない。 */
+(function(){
+  if(window.__grade3OffSameDisplayFormatFinalInstalled) return;
+  window.__grade3OffSameDisplayFormatFinalInstalled = true;
+
+  function gradeOn(){ try{return !!grade3Cost6OnlyEnabled;}catch(e){return !!window.grade3Cost6OnlyEnabled;} }
+  function getCount(){ try{return Number(selectedDbListBondCount)||0;}catch(e){return Number(window.selectedDbListBondCount)||0;} }
+  function setCount(c){ try{selectedDbListBondCount=Number(c)||0;}catch(e){} window.selectedDbListBondCount=Number(c)||0; }
+
+  function normalizeCountButtons(){
+    var old=document.getElementById('dbCountButtons');
+    if(!old) return;
+    var c=getCount();
+    var g=gradeOn();
+    old.innerHTML='<button class="dbGradeToggleBtn '+(g?'active':'')+'" data-grade3-toggle="1" type="button">等級3以下 '+(g?'ON':'OFF')+'</button>'+[5,6,7,8,9].map(function(n){
+      return '<button class="dbCountBtn '+(c===n?'active':'')+'" data-count="'+n+'" type="button">'+n+'因縁</button>';
+    }).join('');
+  }
+
+  function normalizeResultTableClass(){
+    var table=document.querySelector('#dbFormationList table.dbListTable');
+    if(table && !table.classList.contains('dbListTwoRow')) table.classList.add('dbListTwoRow');
+  }
+
+  var prevHandle=window.handleDbCountButtonClick;
+  window.handleDbCountButtonClick=function(count){
+    count=Number(count)||0;
+    setCount(count);
+    normalizeCountButtons();
+    if(gradeOn() && count>=5 && count<=7 && typeof prevHandle==='function'){
+      /* 直前の軽量DB版がON時5/6/7を処理する。 */
+      return prevHandle.call(this,count);
+    }
+    var ret = (typeof prevHandle==='function') ? prevHandle.call(this,count) : undefined;
+    Promise.resolve(ret).finally(function(){
+      /* OFF時もON時と同じボタン表示・一覧テーブル形式へ戻す。検索結果内容は既存処理のまま。 */
+      normalizeCountButtons();
+      normalizeResultTableClass();
+    });
+    return ret;
+  };
+
+  document.addEventListener('click',function(ev){
+    var btn=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons [data-grade3-toggle],#dbCountButtons button[data-count]'):null;
+    if(!btn) return;
+    setTimeout(function(){ normalizeCountButtons(); normalizeResultTableClass(); },0);
+    setTimeout(function(){ normalizeCountButtons(); normalizeResultTableClass(); },80);
+    setTimeout(function(){ normalizeCountButtons(); normalizeResultTableClass(); },350);
+  },true);
+
+  var mo=new MutationObserver(function(){ normalizeResultTableClass(); });
+  try{ mo.observe(document.body,{childList:true,subtree:true}); }catch(e){}
+  normalizeCountButtons();
+})();
+</script>
+
 </body>
 
 </html>
