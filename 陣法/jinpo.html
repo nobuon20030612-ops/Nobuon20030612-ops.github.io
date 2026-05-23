@@ -7480,6 +7480,30 @@ window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation
 })();
 </script>
 
+
+<script id="db-apply-no-heavy-recalc-final">
+(function(){
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn") : null;
+  if(!btn) return;
+  var isDbApply =
+    btn.hasAttribute("data-result-id") ||
+    btn.hasAttribute("data-linegen-actual") ||
+    btn.hasAttribute("data-linegen-v5") ||
+    btn.hasAttribute("data-linegen-v6") ||
+    btn.hasAttribute("data-linegen-single") ||
+    btn.hasAttribute("data-linegen-v3") ||
+    btn.hasAttribute("data-linegen-v4") ||
+    btn.hasAttribute("data-generated-line-row");
+  if(!isDbApply) return;
+  setTimeout(function(){
+    try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+  }, 0);
+}, true);
+})();
+</script>
+
 </body>
 
 </html>
