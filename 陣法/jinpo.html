@@ -7482,13 +7482,28 @@ window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation
 
 
 
+
 <script id="db-apply-direct-no-freeze-final">
 (function(){
 function splitApplyPipe(v){
   return String(v == null ? "" : v).split("|").map(function(x){ return x.trim(); }).filter(Boolean);
 }
-function cleanApplyName(v){
-  return String(v == null ? "" : v).replace(/^\s*\d+\.\s*/, "").trim();
+function normalizeApplyHeroName(v){
+  var s = String(v == null ? "" : v)
+    .replace(/^\s*\d+\.\s*/, "")
+    .replace(/（/g, "(")
+    .replace(/）/g, ")")
+    .replace(/\s+/g, "")
+    .trim();
+
+  // DB側の「前田利家・雄材」などを、英傑マスター側の「前田利家(雄材)」形式にも合わせる
+  if(s.indexOf("・") !== -1 && s.indexOf("(") === -1){
+    var parts = s.split("・").filter(Boolean);
+    if(parts.length >= 2){
+      s = parts[0] + "(" + parts.slice(1).join("・") + ")";
+    }
+  }
+  return s;
 }
 function applyRowMembersDirect(row){
   if(!row) return false;
@@ -7500,16 +7515,20 @@ function applyRowMembersDirect(row){
     (Array.isArray(eiketsuMaster) ? eiketsuMaster : []).forEach(function(h){
       var n = "";
       try{ n = heroName(h); }catch(e){ n = h && (h["英傑名"] || h["名前"] || h.name || ""); }
-      if(n) lookup.set(cleanApplyName(n), h);
+      if(n){
+        lookup.set(normalizeApplyHeroName(n), h);
+        lookup.set(String(n).trim(), h);
+      }
     });
   }catch(e){}
 
   var next = {};
   for(var i=0;i<6;i++){
-    var name = cleanApplyName(members[i]);
-    var h = lookup.get(name);
+    var rawName = members[i];
+    var name = normalizeApplyHeroName(rawName);
+    var h = lookup.get(name) || lookup.get(String(rawName || "").trim());
     if(!h){
-      alert("英傑マスターに見つからない英傑があります: " + name);
+      alert("英傑マスターに見つからない英傑があります: " + rawName);
       return true;
     }
     next[i+1] = h;
@@ -7524,6 +7543,22 @@ function applyRowMembersDirect(row){
 
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
   try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+
+  // DB行の総合値を上部トータルにも反映
+  try{
+    var box = document.getElementById("totalStatResult");
+    var mode = document.getElementById("totalStatMode");
+    var keys = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+    if(box){
+      box.innerHTML = keys.map(function(k){
+        var v = row[k] || row[k.replace("属性","")] || "—";
+        var zero = (v === "—" || Number(v) === 0);
+        return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
+      }).join("");
+    }
+    if(mode) mode.textContent = "実数値DB一致 / 適用";
+  }catch(e){}
+
   return true;
 }
 function findApplyRowFromButton(btn){
