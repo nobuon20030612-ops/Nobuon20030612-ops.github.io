@@ -9413,3 +9413,68 @@ document.addEventListener("click", function(ev){
 }, true);
 })();
 </script>
+
+
+<script id="absolute-last-grade3-toggle-click-fix">
+(function(){
+if(window.__grade3ToggleClickFixInstalled) return;
+window.__grade3ToggleClickFixInstalled = true;
+
+function findGrade3Button(){
+  var root = document.getElementById("dbCountButtons") || document;
+  var btn = root.querySelector("[data-grade3-toggle]");
+  if(btn) return btn;
+  var buttons = Array.prototype.slice.call(root.querySelectorAll("button"));
+  return buttons.find(function(b){
+    return String(b.textContent || "").indexOf("等級3以下") !== -1 ||
+           String(b.textContent || "").indexOf("等級３以下") !== -1;
+  }) || null;
+}
+
+function currentGrade3State(){
+  try{ return !!grade3Cost6OnlyEnabled; }catch(e){}
+  return false;
+}
+
+function setGrade3State(v){
+  try{ grade3Cost6OnlyEnabled = !!v; }catch(e){}
+  try{ window.grade3Cost6OnlyEnabled = !!v; }catch(e){}
+}
+
+function redrawAfterGrade3(){
+  try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
+  try{ if(typeof cleanRenderCounts === "function") cleanRenderCounts(); }catch(e){}
+  try{ if(typeof finalRenderDbCountButtons === "function") finalRenderDbCountButtons(); }catch(e){}
+  try{ if(typeof renderDbFormationList === "function") renderDbFormationList(); }catch(e){}
+}
+
+function syncGrade3ButtonText(){
+  var btn = findGrade3Button();
+  if(!btn) return;
+  var on = currentGrade3State();
+  btn.textContent = on ? "等級3以下 ON" : "等級3以下 OFF";
+  btn.classList.toggle("active", on);
+}
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("[data-grade3-toggle],button") : null;
+  if(!btn) return;
+
+  var isGrade3 = btn.hasAttribute("data-grade3-toggle") ||
+    String(btn.textContent || "").indexOf("等級3以下") !== -1 ||
+    String(btn.textContent || "").indexOf("等級３以下") !== -1;
+
+  if(!isGrade3) return;
+
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.stopImmediatePropagation();
+
+  setGrade3State(!currentGrade3State());
+  syncGrade3ButtonText();
+  redrawAfterGrade3();
+}, true);
+
+setTimeout(syncGrade3ButtonText, 0);
+})();
+</script>
