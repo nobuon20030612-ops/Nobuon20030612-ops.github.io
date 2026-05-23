@@ -7390,99 +7390,6 @@ window.bondNameOnlyText = bondNameOnlyText;
 
 
 
-<style id="require-formation-for-count-buttons-style-v2">
-.dbCountBtn.disabledByNoFormation,
-.dbCountBtn:disabled {
-  opacity: .45 !important;
-  cursor: not-allowed !important;
-  filter: grayscale(.35) !important;
-}
-</style>
-<script id="require-formation-for-count-buttons-v2">
-(function(){
-var userSelectedFormationForDbButtons = false;
-
-function currentFormationSelectedForDbButtons(){
-  var sel = document.getElementById("formationSelect");
-  if(!sel) return false;
-  var v = String(sel.value || "").trim();
-  return userSelectedFormationForDbButtons && !!v;
-}
-
-function ensureFormationPlaceholder(){
-  var sel = document.getElementById("formationSelect");
-  if(!sel || sel.dataset.requireFormationPlaceholder === "1") return;
-  var opt = document.createElement("option");
-  opt.value = "";
-  opt.textContent = "陣形を選択";
-  opt.disabled = false;
-  opt.selected = true;
-  sel.insertBefore(opt, sel.firstChild);
-  sel.value = "";
-  sel.dataset.requireFormationPlaceholder = "1";
-}
-
-function setDbCountButtonsEnabledByFormation(){
-  var ok = currentFormationSelectedForDbButtons();
-  document.querySelectorAll("button").forEach(function(btn){
-    var label = String(btn.textContent || "").trim();
-    var count = btn.getAttribute("data-db-count") || "";
-    var isCountButton = /^[5-9]因縁$/.test(label) || /^[5-9]$/.test(count);
-    if(!isCountButton) return;
-    btn.disabled = !ok;
-    btn.classList.toggle("disabledByNoFormation", !ok);
-    btn.title = ok ? "" : "陣形を選択してください";
-  });
-}
-
-function bindRequireFormation(){
-  ensureFormationPlaceholder();
-  setDbCountButtonsEnabledByFormation();
-
-  var sel = document.getElementById("formationSelect");
-  if(sel && sel.dataset.requireFormationBound !== "1"){
-    sel.addEventListener("change", function(){
-      userSelectedFormationForDbButtons = !!String(sel.value || "").trim();
-      setDbCountButtonsEnabledByFormation();
-    }, true);
-    sel.addEventListener("input", function(){
-      userSelectedFormationForDbButtons = !!String(sel.value || "").trim();
-      setDbCountButtonsEnabledByFormation();
-    }, true);
-    sel.dataset.requireFormationBound = "1";
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function(){
-  bindRequireFormation();
-  document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button") : null;
-    if(!btn) return;
-    var label = String(btn.textContent || "").trim();
-    var count = btn.getAttribute("data-db-count") || "";
-    var isCountButton = /^[5-9]因縁$/.test(label) || /^[5-9]$/.test(count);
-    if(!isCountButton) return;
-    if(!currentFormationSelectedForDbButtons()){
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
-      alert("先に陣形を選択してください");
-      bindRequireFormation();
-      return false;
-    }
-  }, true);
-
-  setTimeout(bindRequireFormation, 0);
-  setTimeout(bindRequireFormation, 300);
-  setTimeout(bindRequireFormation, 1000);
-});
-
-window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation;
-})();
-</script>
-
-
-
-
 <script id="db-apply-direct-no-freeze-final">
 (function(){
 function splitApplyPipe(v){
@@ -7535,10 +7442,13 @@ function applyRowMembersDirect(row){
   }
 
   try{ placement = next; }catch(e){}
+  // 適用時は現在選択中の陣形を維持する。
+  // DB行の formation が「魚鱗/方円」など複数値を持つ場合があるため、ここでは上書きしない。
   try{
     var sel = document.getElementById("formationSelect");
-    var f = String(row.formation || row.form || row["陣形"] || "").split(/[\/,]/)[0].trim();
-    if(sel && f) sel.value = f;
+    if(sel && String(sel.value || "").trim()){
+      sel.value = String(sel.value || "").trim();
+    }
   }catch(e){}
 
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
@@ -7663,6 +7573,277 @@ document.addEventListener("click", function(ev){
 
   return false;
 }, true);
+})();
+</script>
+
+
+<style id="reach-slot-replace-ui-style">
+#reachList .reachSlotBar{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;overflow-x:auto;padding:6px 0}
+#reachList .reachSlotPickBtn{min-width:120px;border:1px solid #d19a32;background:linear-gradient(#3a250d,#120a04);color:#ffe1a1;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer;white-space:nowrap}
+#reachList .reachSlotPickBtn:hover{box-shadow:0 0 12px rgba(231,189,92,.35)}
+#reachList .reachSlotPickBtn.empty{opacity:.55}
+#reachList .reachReplacePanel{margin-top:8px;border:1px solid rgba(244,211,139,.25);border-radius:10px;padding:8px;background:rgba(0,0,0,.18)}
+#reachList .reachReplaceList{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:8px;max-height:280px;overflow:auto}
+#reachList .reachReplaceHeroBtn{text-align:left;border:1px solid #7a5a29;background:#0d0a07;color:#f4ead2;border-radius:10px;padding:8px;cursor:pointer}
+#reachList .reachReplaceHeroBtn:hover{border-color:#f4d38b;box-shadow:0 0 10px rgba(231,189,92,.28)}
+#reachList .reachReplaceName{color:#ffe1a1;font-weight:800}
+#reachList .reachReplaceMeta{font-size:12px;color:#cbb98f;margin-top:3px}
+</style>
+<script id="reach-slot-replace-ui">
+(function(){
+var activeReachReplaceSlot = null;
+
+function reachHeroNameSafe(h){
+  try{ return heroName(h) || ""; }catch(e){ return h && (h["英傑名"] || h["名前"] || h.name || ""); }
+}
+function reachHeroFactorsSafe(h){
+  try{ return heroFactors(h) || []; }catch(e){ return [h&&h["因子1"],h&&h["因子2"],h&&h["因子3"],h&&h["因子4"]].filter(Boolean); }
+}
+function reachEsc(v){
+  try{ return esc(v); }catch(e){ return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];}); }
+}
+function reachUsedIdsExcept(slot){
+  var ids = new Set();
+  for(var i=1;i<=6;i++){
+    if(Number(i) === Number(slot)) continue;
+    var h = placement && placement[i];
+    if(h && h.internal_id) ids.add(String(h.internal_id));
+  }
+  return ids;
+}
+function reachApplyDirectSlot(slot, id){
+  slot = Number(slot);
+  var hero = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).find(function(h){return String(h.internal_id||"") === String(id);});
+  if(!hero) return;
+  try{ placement[slot] = hero; }catch(e){}
+  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+  try{ if(typeof calculate === "function") calculate(); }catch(e){
+    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(_){}
+  }
+}
+function renderReachReplaceList(slot){
+  var panel = document.getElementById("reachReplacePanel");
+  if(!panel) return;
+  slot = Number(slot);
+  var current = placement && placement[slot];
+  var used = reachUsedIdsExcept(slot);
+  var rows = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).filter(function(h){
+    return h && h.internal_id && !used.has(String(h.internal_id));
+  });
+  panel.innerHTML = '<div class="small">差し替え対象: '+reachEsc(slot)+'番 '+reachEsc(reachHeroNameSafe(current)||"未選択")+'</div>'
+    + '<div class="reachReplaceList">'
+    + rows.map(function(h){
+      var name = reachHeroNameSafe(h);
+      var factors = reachHeroFactorsSafe(h).map(function(f){return '<span class="badge">'+reachEsc(f)+'</span>';}).join("");
+      return '<button type="button" class="reachReplaceHeroBtn" data-reach-replace-slot="'+reachEsc(slot)+'" data-reach-replace-id="'+reachEsc(h.internal_id)+'">'
+        + '<div class="reachReplaceName">'+reachEsc(name)+'</div>'
+        + '<div class="reachReplaceMeta">コスト '+reachEsc(h["コスト"]||"未確認")+'</div>'
+        + '<div>'+factors+'</div>'
+        + '</button>';
+    }).join("")
+    + '</div>';
+}
+function renderReachSlotOnlyUi(){
+  var root = document.getElementById("reachList");
+  if(!root) return;
+  var html = '<h3>リーチ</h3><div class="small">差し替えたい配置英傑を選択してください。</div><div class="reachSlotBar">';
+  for(var i=1;i<=6;i++){
+    var h = placement && placement[i];
+    var name = reachHeroNameSafe(h) || "未選択";
+    html += '<button type="button" class="reachSlotPickBtn '+(!h?'empty':'')+'" data-reach-slot-pick="'+i+'">'+i+'. '+reachEsc(name)+'</button>';
+  }
+  html += '</div><div id="reachReplacePanel" class="reachReplacePanel"><div class="small">上の英傑名ボタンを押すと差し替え英傑一覧を表示します。</div></div>';
+  root.innerHTML = html;
+  if(activeReachReplaceSlot) renderReachReplaceList(activeReachReplaceSlot);
+}
+var oldRenderResults = window.renderResults || (typeof renderResults === "function" ? renderResults : null);
+if(typeof oldRenderResults === "function" && !oldRenderResults.__reachSlotReplaceUi){
+  var wrapped = function(result){
+    var r = oldRenderResults.apply(this, arguments);
+    renderReachSlotOnlyUi();
+    return r;
+  };
+  wrapped.__reachSlotReplaceUi = true;
+  window.renderResults = wrapped;
+  try{ renderResults = wrapped; }catch(e){}
+}
+document.addEventListener("click", function(ev){
+  var slotBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-slot-pick]") : null;
+  if(slotBtn){
+    ev.preventDefault();
+    activeReachReplaceSlot = Number(slotBtn.getAttribute("data-reach-slot-pick"));
+    renderReachReplaceList(activeReachReplaceSlot);
+    return;
+  }
+  var heroBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-replace-slot][data-reach-replace-id]") : null;
+  if(heroBtn){
+    ev.preventDefault();
+    reachApplyDirectSlot(heroBtn.getAttribute("data-reach-replace-slot"), heroBtn.getAttribute("data-reach-replace-id"));
+    activeReachReplaceSlot = null;
+    setTimeout(renderReachSlotOnlyUi,0);
+  }
+}, true);
+document.addEventListener("DOMContentLoaded", function(){
+  setTimeout(renderReachSlotOnlyUi,0);
+  setTimeout(renderReachSlotOnlyUi,300);
+});
+window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
+})();
+</script>
+
+
+<script id="priority-select-sequential-fix">
+(function(){
+function priorityStatValue(i){
+  var s = document.getElementById("dbPriorityStat"+i);
+  return String(s && s.value || "").trim();
+}
+function syncPriorityValueEnabled(){
+  for(var i=1;i<=3;i++){
+    var statSel = document.getElementById("dbPriorityStat"+i);
+    var valSel = document.getElementById("dbPriorityValue"+i);
+    if(!statSel || !valSel) continue;
+
+    var allowed = !!priorityStatValue(i);
+    if(i === 2) allowed = allowed && !!priorityStatValue(1);
+    if(i === 3) allowed = allowed && !!priorityStatValue(1) && !!priorityStatValue(2);
+
+    valSel.disabled = !allowed;
+    if(!allowed) valSel.value = "";
+    valSel.title = allowed ? "" : "上の段の優先ソートを選択してください";
+  }
+}
+document.addEventListener("change", function(ev){
+  var id = ev.target && ev.target.id || "";
+  if(/^dbPriorityStat[123]$/.test(id)){
+    var n = Number(id.replace("dbPriorityStat",""));
+    for(var i=n;i<=3;i++){
+      var statSel = document.getElementById("dbPriorityStat"+i);
+      var valSel = document.getElementById("dbPriorityValue"+i);
+      if(i > n && statSel && !priorityStatValue(i-1)) statSel.value = "";
+      if(valSel && !priorityStatValue(i)) valSel.value = "";
+    }
+    syncPriorityValueEnabled();
+  }
+  if(/^dbPriorityValue[123]$/.test(id)){
+    var i = Number(id.replace("dbPriorityValue",""));
+    var ok = !!priorityStatValue(i) && (i===1 || !!priorityStatValue(i-1)) && (i<=2 || !!priorityStatValue(2));
+    if(!ok){
+      ev.target.value = "";
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      alert("上の段の優先ソートを先に選択してください");
+    }
+    syncPriorityValueEnabled();
+  }
+}, true);
+document.addEventListener("DOMContentLoaded", function(){
+  setTimeout(syncPriorityValueEnabled, 0);
+  setTimeout(syncPriorityValueEnabled, 300);
+  setTimeout(syncPriorityValueEnabled, 1000);
+});
+window.syncPriorityValueEnabled = syncPriorityValueEnabled;
+})();
+</script>
+
+
+<style id="hard-require-formation-before-search-style">
+button.dbCountBtn.disabledByNoFormation,
+button.disabledByNoFormation {
+  opacity: .45 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(.35) !important;
+}
+</style>
+<script id="hard-require-formation-before-search">
+(function(){
+var formationActuallySelected = false;
+function getFormationSelectHard(){ return document.getElementById("formationSelect"); }
+function isCountSearchButtonHard(btn){
+  if(!btn) return false;
+  var label = String(btn.textContent || "").trim();
+  var count = String(btn.getAttribute("data-count") || btn.getAttribute("data-db-count") || btn.dataset?.count || btn.dataset?.dbCount || "").trim();
+  return /^[5-9]因縁$/.test(label) || /^[5-9]$/.test(count);
+}
+function hasSelectedFormationHard(){
+  var sel = getFormationSelectHard();
+  if(!sel) return false;
+  var v = String(sel.value || "").trim();
+  return formationActuallySelected && !!v;
+}
+function setCountButtonsHard(){
+  var ok = hasSelectedFormationHard();
+  document.querySelectorAll("button").forEach(function(btn){
+    if(!isCountSearchButtonHard(btn)) return;
+    btn.disabled = !ok;
+    btn.classList.toggle("disabledByNoFormation", !ok);
+    btn.title = ok ? "" : "陣形を選択してください";
+  });
+}
+function forceInitialUnselectedHard(){
+  var sel = getFormationSelectHard();
+  if(!sel || sel.dataset.hardFormationInit === "1") return;
+  var first = sel.querySelector('option[value=""]');
+  if(!first){
+    first = document.createElement("option");
+    first.value = "";
+    first.textContent = "陣形を選択";
+    sel.insertBefore(first, sel.firstChild);
+  }else{
+    first.textContent = "陣形を選択";
+  }
+  sel.value = "";
+  formationActuallySelected = false;
+  sel.dataset.hardFormationInit = "1";
+}
+function bindHardRequireFormation(){
+  forceInitialUnselectedHard();
+  setCountButtonsHard();
+  var sel = getFormationSelectHard();
+  if(sel && sel.dataset.hardFormationBound !== "1"){
+    sel.addEventListener("change", function(){
+      formationActuallySelected = !!String(sel.value || "").trim();
+      setCountButtonsHard();
+    }, true);
+    sel.addEventListener("input", function(){
+      formationActuallySelected = !!String(sel.value || "").trim();
+      setCountButtonsHard();
+    }, true);
+    sel.dataset.hardFormationBound = "1";
+  }
+}
+document.addEventListener("click", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button") : null;
+  if(!btn || !isCountSearchButtonHard(btn)) return;
+  if(!hasSelectedFormationHard()){
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    bindHardRequireFormation();
+    var status = document.getElementById("dbListStatus");
+    var box = document.getElementById("dbFormationList");
+    if(status) status.textContent = "先に陣形を選択してください";
+    if(box) box.innerHTML = '<div class="dbListNote">陣形を選択してから5〜9因縁ボタンを押してください。</div>';
+    alert("先に陣形を選択してください");
+    return false;
+  }
+}, true);
+document.addEventListener("pointerdown", function(ev){
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button") : null;
+  if(!btn || !isCountSearchButtonHard(btn)) return;
+  if(!hasSelectedFormationHard()){
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    bindHardRequireFormation();
+    return false;
+  }
+}, true);
+document.addEventListener("DOMContentLoaded", function(){
+  bindHardRequireFormation();
+  setTimeout(bindHardRequireFormation, 0);
+  setTimeout(bindHardRequireFormation, 300);
+  setTimeout(bindHardRequireFormation, 1000);
+});
+window.bindHardRequireFormation = bindHardRequireFormation;
 })();
 </script>
 
