@@ -7481,11 +7481,105 @@ window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation
 </script>
 
 
-<script id="db-apply-no-heavy-recalc-final">
+
+<script id="db-apply-direct-no-freeze-final">
 (function(){
+function splitApplyPipe(v){
+  return String(v == null ? "" : v).split("|").map(function(x){ return x.trim(); }).filter(Boolean);
+}
+function cleanApplyName(v){
+  return String(v == null ? "" : v).replace(/^\s*\d+\.\s*/, "").trim();
+}
+function applyRowMembersDirect(row){
+  if(!row) return false;
+  var members = splitApplyPipe(row.eiketsu_ids || row.members || row["英傑"] || "");
+  if(members.length !== 6) return false;
+
+  var lookup = new Map();
+  try{
+    (Array.isArray(eiketsuMaster) ? eiketsuMaster : []).forEach(function(h){
+      var n = "";
+      try{ n = heroName(h); }catch(e){ n = h && (h["英傑名"] || h["名前"] || h.name || ""); }
+      if(n) lookup.set(cleanApplyName(n), h);
+    });
+  }catch(e){}
+
+  var next = {};
+  for(var i=0;i<6;i++){
+    var name = cleanApplyName(members[i]);
+    var h = lookup.get(name);
+    if(!h){
+      alert("英傑マスターに見つからない英傑があります: " + name);
+      return true;
+    }
+    next[i+1] = h;
+  }
+
+  try{ placement = next; }catch(e){}
+  try{
+    var sel = document.getElementById("formationSelect");
+    var f = String(row.formation || row.form || row["陣形"] || "").split(/[\/,]/)[0].trim();
+    if(sel && f) sel.value = f;
+  }catch(e){}
+
+  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+  try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+  return true;
+}
+function findApplyRowFromButton(btn){
+  var id = btn.getAttribute("data-result-id");
+  if(id){
+    try{
+      var rows = Array.isArray(resultDbRows) ? resultDbRows : [];
+      var hit = rows.find(function(r){
+        return String(r.result_id || r.id || r.eiketsu_position_key || "") === String(id);
+      });
+      if(hit) return hit;
+    }catch(e){}
+  }
+
+  id = btn.getAttribute("data-linegen-v6");
+  if(id){
+    try{
+      var rows6 = window.__jinpoLineGenV6Rows || [];
+      var hit6 = rows6.find(function(r){ return String(r.result_id) === String(id); });
+      if(hit6) return hit6;
+    }catch(e){}
+  }
+
+  id = btn.getAttribute("data-linegen-actual");
+  if(id){
+    try{
+      var rowsA = window.__jinpoActualLineRows || [];
+      var hitA = rowsA.find(function(r){ return String(r.result_id) === String(id); });
+      if(hitA) return hitA;
+    }catch(e){}
+  }
+
+  id = btn.getAttribute("data-linegen-v4");
+  if(id){
+    try{
+      var rows4 = window.__jinpoLineGenV4Rows || [];
+      var hit4 = rows4.find(function(r){ return String(r.result_id) === String(id); });
+      if(hit4) return hit4;
+    }catch(e){}
+  }
+
+  id = btn.getAttribute("data-generated-line-row");
+  if(id){
+    try{
+      var rowsG = window.__jinpoGeneratedLineRows || window.__jinpoLineGenRows || [];
+      var hitG = rowsG.find(function(r){ return String(r.result_id) === String(id); });
+      if(hitG) return hitG;
+    }catch(e){}
+  }
+
+  return null;
+}
 document.addEventListener("click", function(ev){
   var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn") : null;
   if(!btn) return;
+
   var isDbApply =
     btn.hasAttribute("data-result-id") ||
     btn.hasAttribute("data-linegen-actual") ||
@@ -7495,11 +7589,44 @@ document.addEventListener("click", function(ev){
     btn.hasAttribute("data-linegen-v3") ||
     btn.hasAttribute("data-linegen-v4") ||
     btn.hasAttribute("data-generated-line-row");
+
   if(!isDbApply) return;
+
+  var row = findApplyRowFromButton(btn);
+  if(!row) return;
+
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+
+  btn.disabled = true;
+  var oldText = btn.textContent;
+  btn.textContent = "適用中";
+
   setTimeout(function(){
-    try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
-    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+    try{
+      applyRowMembersDirect(row);
+      try{
+        if(typeof renderAppliedPreviewUnderFormation === "function"){
+          var members = splitApplyPipe(row.eiketsu_ids || row.members || row["英傑"] || "");
+          var bonds = splitApplyPipe(row.bond_ids || row.inen || row["因縁"] || "").map(function(x){
+            return (window.bondNameOnlyText ? window.bondNameOnlyText(x) : String(x).split(":").pop());
+          });
+          var statKeys = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+          var stats = statKeys.map(function(k){ return k + ":" + (row[k] || row[k.replace("属性","")] || ""); }).join(" / ");
+          renderAppliedPreviewUnderFormation({
+            members: members.join("|"),
+            bonds: bonds.join("|"),
+            stats: stats
+          });
+        }
+      }catch(e){}
+    }finally{
+      btn.disabled = false;
+      btn.textContent = oldText || "適用";
+    }
   }, 0);
+
+  return false;
 }, true);
 })();
 </script>
