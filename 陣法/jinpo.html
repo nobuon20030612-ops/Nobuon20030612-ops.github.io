@@ -7389,7 +7389,8 @@ window.bondNameOnlyText = bondNameOnlyText;
 </script>
 
 
-<style id="require-formation-for-count-buttons-style">
+
+<style id="require-formation-for-count-buttons-style-v2">
 .dbCountBtn.disabledByNoFormation,
 .dbCountBtn:disabled {
   opacity: .45 !important;
@@ -7397,49 +7398,84 @@ window.bondNameOnlyText = bondNameOnlyText;
   filter: grayscale(.35) !important;
 }
 </style>
-<script id="require-formation-for-count-buttons">
+<script id="require-formation-for-count-buttons-v2">
 (function(){
+var userSelectedFormationForDbButtons = false;
+
 function currentFormationSelectedForDbButtons(){
   var sel = document.getElementById("formationSelect");
   if(!sel) return false;
   var v = String(sel.value || "").trim();
-  return !!v;
+  return userSelectedFormationForDbButtons && !!v;
 }
+
+function ensureFormationPlaceholder(){
+  var sel = document.getElementById("formationSelect");
+  if(!sel || sel.dataset.requireFormationPlaceholder === "1") return;
+  var opt = document.createElement("option");
+  opt.value = "";
+  opt.textContent = "陣形を選択";
+  opt.disabled = false;
+  opt.selected = true;
+  sel.insertBefore(opt, sel.firstChild);
+  sel.value = "";
+  sel.dataset.requireFormationPlaceholder = "1";
+}
+
 function setDbCountButtonsEnabledByFormation(){
   var ok = currentFormationSelectedForDbButtons();
-  document.querySelectorAll("[data-db-count], .dbCountBtn").forEach(function(btn){
+  document.querySelectorAll("button").forEach(function(btn){
     var label = String(btn.textContent || "").trim();
-    var isCountButton = btn.hasAttribute("data-db-count") || /^[5-9]因縁$/.test(label);
+    var count = btn.getAttribute("data-db-count") || "";
+    var isCountButton = /^[5-9]因縁$/.test(label) || /^[5-9]$/.test(count);
     if(!isCountButton) return;
     btn.disabled = !ok;
     btn.classList.toggle("disabledByNoFormation", !ok);
     btn.title = ok ? "" : "陣形を選択してください";
   });
 }
-document.addEventListener("DOMContentLoaded", function(){
+
+function bindRequireFormation(){
+  ensureFormationPlaceholder();
   setDbCountButtonsEnabledByFormation();
+
   var sel = document.getElementById("formationSelect");
-  if(sel){
-    sel.addEventListener("change", setDbCountButtonsEnabledByFormation, true);
-    sel.addEventListener("input", setDbCountButtonsEnabledByFormation, true);
+  if(sel && sel.dataset.requireFormationBound !== "1"){
+    sel.addEventListener("change", function(){
+      userSelectedFormationForDbButtons = !!String(sel.value || "").trim();
+      setDbCountButtonsEnabledByFormation();
+    }, true);
+    sel.addEventListener("input", function(){
+      userSelectedFormationForDbButtons = !!String(sel.value || "").trim();
+      setDbCountButtonsEnabledByFormation();
+    }, true);
+    sel.dataset.requireFormationBound = "1";
   }
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  bindRequireFormation();
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("[data-db-count], .dbCountBtn") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button") : null;
     if(!btn) return;
     var label = String(btn.textContent || "").trim();
-    var isCountButton = btn.hasAttribute("data-db-count") || /^[5-9]因縁$/.test(label);
+    var count = btn.getAttribute("data-db-count") || "";
+    var isCountButton = /^[5-9]因縁$/.test(label) || /^[5-9]$/.test(count);
     if(!isCountButton) return;
     if(!currentFormationSelectedForDbButtons()){
       ev.preventDefault();
       ev.stopImmediatePropagation();
       alert("先に陣形を選択してください");
-      setDbCountButtonsEnabledByFormation();
+      bindRequireFormation();
       return false;
     }
   }, true);
-  setTimeout(setDbCountButtonsEnabledByFormation, 0);
-  setTimeout(setDbCountButtonsEnabledByFormation, 300);
+
+  setTimeout(bindRequireFormation, 0);
+  setTimeout(bindRequireFormation, 300);
+  setTimeout(bindRequireFormation, 1000);
 });
+
 window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation;
 })();
 </script>
