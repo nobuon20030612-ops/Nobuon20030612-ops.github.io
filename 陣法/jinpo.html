@@ -7388,6 +7388,62 @@ window.bondNameOnlyText = bondNameOnlyText;
 })();
 </script>
 
+
+<style id="require-formation-for-count-buttons-style">
+.dbCountBtn.disabledByNoFormation,
+.dbCountBtn:disabled {
+  opacity: .45 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(.35) !important;
+}
+</style>
+<script id="require-formation-for-count-buttons">
+(function(){
+function currentFormationSelectedForDbButtons(){
+  var sel = document.getElementById("formationSelect");
+  if(!sel) return false;
+  var v = String(sel.value || "").trim();
+  return !!v;
+}
+function setDbCountButtonsEnabledByFormation(){
+  var ok = currentFormationSelectedForDbButtons();
+  document.querySelectorAll("[data-db-count], .dbCountBtn").forEach(function(btn){
+    var label = String(btn.textContent || "").trim();
+    var isCountButton = btn.hasAttribute("data-db-count") || /^[5-9]因縁$/.test(label);
+    if(!isCountButton) return;
+    btn.disabled = !ok;
+    btn.classList.toggle("disabledByNoFormation", !ok);
+    btn.title = ok ? "" : "陣形を選択してください";
+  });
+}
+document.addEventListener("DOMContentLoaded", function(){
+  setDbCountButtonsEnabledByFormation();
+  var sel = document.getElementById("formationSelect");
+  if(sel){
+    sel.addEventListener("change", setDbCountButtonsEnabledByFormation, true);
+    sel.addEventListener("input", setDbCountButtonsEnabledByFormation, true);
+  }
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("[data-db-count], .dbCountBtn") : null;
+    if(!btn) return;
+    var label = String(btn.textContent || "").trim();
+    var isCountButton = btn.hasAttribute("data-db-count") || /^[5-9]因縁$/.test(label);
+    if(!isCountButton) return;
+    if(!currentFormationSelectedForDbButtons()){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      alert("先に陣形を選択してください");
+      setDbCountButtonsEnabledByFormation();
+      return false;
+    }
+  }, true);
+  setTimeout(setDbCountButtonsEnabledByFormation, 0);
+  setTimeout(setDbCountButtonsEnabledByFormation, 300);
+});
+window.setDbCountButtonsEnabledByFormation = setDbCountButtonsEnabledByFormation;
+})();
+</script>
+
 </body>
 
 </html>
