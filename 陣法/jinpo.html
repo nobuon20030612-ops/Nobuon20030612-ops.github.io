@@ -5300,7 +5300,7 @@ var keys=statKeysV4();
 return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row){
 var members=splitPipeV4(row.eiketsu_ids), bonds=splitPipeV4(row.bond_ids);
 var stats=keys.map(function(k){return k+':'+(row[k]||'');}).join(' / ');
-return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-v4="'+escV4(row.result_id)+'" type="button">適用</button></td><td>'+escV4(row.bond_count)+'</td><td>'+escV4(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+escV4(i+1)+'. '+escV4(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+escV4(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+escV4(stats || '5/6因縁はHTML側探索のためDB総合値なし')+'</span></td></tr>';
+return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-v4="'+escV4(row.result_id)+'" type="button">適用</button></td><td>'+escV4(row.bond_count)+'</td><td>'+escV4(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+escV4(i+1)+'. '+escV4(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class=\"badge\">'+escV4((window.bondNameOnlyText?window.bondNameOnlyText(b):String(b).split(':').pop()))+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+escV4(stats || '5/6因縁はHTML側探索のためDB総合値なし')+'</span></td></tr>';
 }).join('')+'</tbody></table>';
 }
 function cacheKeyV4(count){ return CACHE_PREFIX_V4 + [currentFormV4(),count,gradeOnV4(),selectedOwnedNamesV4().join('|')].join('@@'); }
@@ -5323,7 +5323,7 @@ try{ placement=next; selectedDbResultId=''; }catch(e){}
 try{ var sel=document.getElementById('formationSelect'); if(sel) sel.value=row.formation; }catch(e){}
 try{ if(typeof renderSlots==='function') renderSlots(); }catch(e){}
 try{ if(typeof renderHeroCards==='function') renderHeroCards(); }catch(e){}
-try{ if(typeof calculate==='function') calculate(); else if(typeof renderFormation==='function') renderFormation(null); }catch(e){}
+try{ if(typeof renderFormation==='function') renderFormation(null); }catch(e){}
 },true);
 list.dataset.linegenV4Bound='1';
 }
@@ -5535,7 +5535,7 @@ function table6(rows){
 var keys=statKeys6();
 return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row){
 var members=pipe6(row.eiketsu_ids), bonds=pipe6(row.bond_ids), stats=keys.map(function(k){return k+":"+(row[k]||"");}).join(" / ");
-return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-v6="'+esc6(row.result_id)+'" type="button">適用</button></td><td>'+esc6(row.bond_count)+'</td><td>'+esc6(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+esc6(i+1)+'. '+esc6(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+esc6(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc6(stats||"5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
+return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-v6="'+esc6(row.result_id)+'" type="button">適用</button></td><td>'+esc6(row.bond_count)+'</td><td>'+esc6(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+esc6(i+1)+'. '+esc6(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class=\"badge\">'+esc6((window.bondNameOnlyText?window.bondNameOnlyText(b):String(b).split(':').pop()))+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc6(stats||"5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
 }).join('')+'</tbody></table>';
 }
 function cacheKey6(count){ var pri=""; try{ if(typeof getDbPriorityRules==="function") pri=getDbPriorityRules().map(function(r){return r.stat+":"+(r.threshold||"");}).join(","); }catch(e){} return [form6(),count,gradeOn6(),ownedNames6().join("|"),pri].join("@@"); }
@@ -7374,6 +7374,20 @@ if(formationSelectU){
 <script src="js/main.js"></script>
 <script src="js/usage-logger.js"></script>
 
+
+<script id="bond-name-only-display-fix">
+(function(){
+function bondNameOnlyText(v){
+  return String(v == null ? "" : v)
+    .split(":")
+    .map(function(x){ return x.trim(); })
+    .filter(Boolean)
+    .pop() || "";
+}
+window.bondNameOnlyText = bondNameOnlyText;
+})();
+</script>
+
 </body>
 
 </html>
@@ -8224,7 +8238,7 @@ function table(rows){
 var keys=statKeys();
 return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row){
 var members=pipe(row.eiketsu_ids), bonds=pipe(row.bond_ids), stats=keys.map(function(k){return k+":"+(row[k]||"");}).join(" / ");
-return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-actual="'+escA(row.result_id)+'" type="button">適用</button></td><td>'+escA(row.bond_count)+'</td><td>'+escA(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+escA(i+1)+'. '+escA(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+escA(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+escA(stats || "5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
+return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-actual="'+escA(row.result_id)+'" type="button">適用</button></td><td>'+escA(row.bond_count)+'</td><td>'+escA(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+escA(i+1)+'. '+escA(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class=\"badge\">'+escA((window.bondNameOnlyText?window.bondNameOnlyText(b):String(b).split(':').pop()))+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+escA(stats || "5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
 }).join('')+'</tbody></table>';
 }
 function clearOldEmptyCaches(){
@@ -8749,7 +8763,7 @@ function table56(rows){
 var keys=statKeys56();
 return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row){
 var members=pipe56(row.eiketsu_ids), bonds=pipe56(row.bond_ids), stats=keys.map(function(k){return k+":"+(row[k]||"");}).join(" / ");
-return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-cancel-actual="'+esc56(row.result_id)+'" type="button">適用</button></td><td>'+esc56(row.bond_count)+'</td><td>'+esc56(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+esc56(i+1)+'. '+esc56(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class="badge">'+esc56(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc56(stats || "5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
+return '<tr class="dbMainRow"><td><button class="applyBtn" data-linegen-cancel-actual="'+esc56(row.result_id)+'" type="button">適用</button></td><td>'+esc56(row.bond_count)+'</td><td>'+esc56(row.formation)+'</td><td><div class="dbPlacementMini">'+members.map(function(m,i){return '<span>'+esc56(i+1)+'. '+esc56(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bonds.map(function(b){return '<span class=\"badge\">'+esc56((window.bondNameOnlyText?window.bondNameOnlyText(b):String(b).split(':').pop()))+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc56(stats || "5/6因縁はHTML側探索のためDB総合値なし")+'</span></td></tr>';
 }).join('')+'</tbody></table>';
 }
 function keyFor56(count){
