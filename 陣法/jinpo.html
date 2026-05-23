@@ -1358,7 +1358,6 @@ ${heroThumbHtml(e)}
 <div class="heroTitle">${esc(e["英傑名"]||"")}${tag?`<span class="heroTag">${esc(tag)}</span>`:""}</div>
 <div class="heroMeta">${esc(e["職"]||"")} / コスト ${esc(e["コスト"]||"未確認")} / ${hasExternalImage(e)?"画像IDあり":"画像ID未確認"}</div>
 <div>${cleanList([e["因子1"],e["因子2"],e["因子3"],e["因子4"]]).map(f=>`<span class="badge">${esc(f)}</span>`).join("")}</div>
-<div class="heroMeta">生命 ${esc(e["生命"])} / 気合 ${esc(e["気合"])} / 腕力 ${esc(e["腕力"])} / 知力 ${esc(e["知力"])}</div>
 </div>
 </div>`;
 }
@@ -2023,13 +2022,10 @@ mini.innerHTML = hit
 // 陣法能力トータル下のライン/因縁別内訳は非表示指定のため描画しない。
 }
 function ownedHeroSourceRows(){
-if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
-return OWNED_HERO_LIST_FROM_UPLOAD;
-}
-return eiketsuMaster.map(e=>({
-"番号": e.internal_id || "",
-"名前": e["英傑名"] || "",
-"コスト": e["コスト"] || "",
+const latestRows = Array.isArray(eiketsuMaster) ? eiketsuMaster.map(e=>({
+"番号": e.internal_id || e["番号"] || "",
+"名前": e["英傑名"] || e["名前"] || e.name || "",
+"コスト": e["コスト"] || e.cost || "",
 "因子1": e["因子1"] || "",
 "因子2": e["因子2"] || "",
 "因子3": e["因子3"] || "",
@@ -2038,7 +2034,14 @@ return eiketsuMaster.map(e=>({
 "気合": e["気合"] || "",
 "腕力": e["腕力"] || "",
 "知力": e["知力"] || ""
-}));
+})) : [];
+if(latestRows.length){
+return latestRows;
+}
+if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
+return OWNED_HERO_LIST_FROM_UPLOAD;
+}
+return [];
 }
 let activeOwnedHeroSlotIndex = null;
 function ownedHeroById(id){
@@ -2144,7 +2147,6 @@ ${img}
 <div class="modalHeroName">${esc(name)}${picked ? ' <span class="heroTag">選択中</span>' : ""}</div>
 <div class="modalHeroMeta">番号 ${esc(e["番号"] || "")} / コスト ${esc(e["コスト"] || "未確認")}</div>
 <div>${cleanList([e["因子1"],e["因子2"],e["因子3"],e["因子4"]]).map(f=>`<span class="badge">${esc(f)}</span>`).join("")}</div>
-<div class="modalHeroMeta">生命 ${esc(e["生命"] || "")} / 気合 ${esc(e["気合"] || "")} / 腕力 ${esc(e["腕力"] || "")} / 知力 ${esc(e["知力"] || "")}</div>
 </div>
 </div>`;
 }).join("");
@@ -7370,7 +7372,6 @@ if(formationSelectU){
 
 <script src="js/config.js"></script>
 <script src="js/factor-engine.js"></script>
-<script src="js/high-perf-search.js"></script>
 <script src="js/discovery-engine.js"></script>
 <script src="js/formation-search.js"></script>
 <script src="js/main.js"></script>
