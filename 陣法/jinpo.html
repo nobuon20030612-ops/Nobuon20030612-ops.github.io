@@ -6983,6 +6983,82 @@ try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 })();
 </script>
 
+
+<script id="grade3-toggle-rerun-search-final-fix">
+/* 2026-05-23 修正: 等級3以下ボタンON/OFF時に、現在選択中の因縁数で検索を再実行する。その他変更禁止。 */
+(function(){
+  if(window.__grade3ToggleRerunSearchFinalFixInstalled) return;
+  window.__grade3ToggleRerunSearchFinalFixInstalled = true;
+
+  function getSelectedCount(){
+    try{ return Number(selectedDbListBondCount) || 0; }catch(e){ return Number(window.selectedDbListBondCount) || 0; }
+  }
+
+  function setGradeEnabled(value){
+    try{ grade3Cost6OnlyEnabled = !!value; }catch(e){ window.grade3Cost6OnlyEnabled = !!value; }
+  }
+
+  function getGradeEnabled(){
+    try{ return !!grade3Cost6OnlyEnabled; }catch(e){ return !!window.grade3Cost6OnlyEnabled; }
+  }
+
+  function clearSearchCaches(){
+    try{
+      var prefixes = [
+        'jinpo_db_list_cache_v2::',
+        'jinpo_exact_count_v2@@',
+        'jinpo_line_5_6_',
+        'jinpo_5_6_',
+        'jinpo_actual_5_6_no_empty_',
+        'jinpo_final_7_9_finish_v1@@'
+      ];
+      for(var i = localStorage.length - 1; i >= 0; i--){
+        var key = localStorage.key(i);
+        if(prefixes.some(function(prefix){ return key && key.indexOf(prefix) === 0; })){
+          localStorage.removeItem(key);
+        }
+      }
+    }catch(e){}
+    try{ if(window.jinpoSearchResultCache && typeof window.jinpoSearchResultCache.clear === 'function') window.jinpoSearchResultCache.clear(); }catch(e){}
+  }
+
+  async function rerunCurrentSearch(count){
+    var status = document.getElementById('dbListStatus');
+    if(status && count){
+      status.textContent = count + '因縁を検索中。数分お待ちください。';
+    }
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+
+    if(count && typeof window.handleDbCountButtonClick === 'function'){
+      await window.handleDbCountButtonClick(count);
+      return;
+    }
+    if(typeof window.renderDbFormationList === 'function'){
+      window.renderDbFormationList();
+    }
+  }
+
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-grade3-toggle]') : null;
+    if(!btn) return;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+
+    var count = getSelectedCount();
+    setGradeEnabled(!getGradeEnabled());
+    clearSearchCaches();
+    rerunCurrentSearch(count).catch(function(err){
+      console.error(err);
+      try{
+        var status = document.getElementById('dbListStatus');
+        if(status) status.textContent = '等級3以下切替後の再検索でエラーが発生しました。';
+      }catch(e){}
+    });
+  }, true);
+})();
+</script>
 </body>
 
 </html>
