@@ -7776,10 +7776,30 @@ function reachApplyDirectSlot(slot, id){
   slot = Number(slot);
   var hero = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).find(function(h){return String(h.internal_id||"") === String(id);});
   if(!hero) return;
+  activeReachReplaceSlot = null;
   try{ placement[slot] = hero; }catch(e){}
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+  try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
+  var freshResult = null;
+  try{
+    if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.calculateFormation === "function"){
+      freshResult = window.JinpoActivationEngine.calculateFormation(
+        placement,
+        formationSelect.value,
+        inenMaster,
+        window.JINPO_FORMATION_CONFIG
+      );
+    }
+  }catch(e){ console.error("リーチ差し替え後の再計算失敗", e); }
   try{ if(typeof calculate === "function") calculate(); }catch(e){
-    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(_){}
+    try{ if(freshResult && typeof renderFormation === "function") renderFormation(freshResult); }catch(_){}
+    try{ if(freshResult && typeof renderResults === "function") renderResults(freshResult); }catch(_){}
+    try{ if(freshResult && typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(freshResult); }catch(_){}
+  }
+  if(freshResult){
+    try{ renderReachSlotOnlyUi(freshResult); }catch(e){ console.error("リーチ差し替え後の表示更新失敗", e); }
+    setTimeout(function(){ try{ renderReachSlotOnlyUi(freshResult); }catch(e){} }, 0);
+    setTimeout(function(){ try{ renderReachSlotOnlyUi(freshResult); }catch(e){} }, 120);
   }
 }
 function renderReachReplaceList(slot){
