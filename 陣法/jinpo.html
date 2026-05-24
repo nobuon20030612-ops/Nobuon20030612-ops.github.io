@@ -8087,6 +8087,82 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
   window.addEventListener("load", normalizeKnownArrays);
 })();
 </script>
+
+<script id="reach-final-regression-guard-20260524">
+(function(){
+  if(window.__reachFinalRegressionGuard20260524) return;
+  window.__reachFinalRegressionGuard20260524 = true;
+
+  function currentReachResult(){
+    try{
+      var sel = document.getElementById("formationSelect");
+      var form = sel ? String(sel.value || "").trim() : "";
+      if(!form && typeof formationSelect !== "undefined" && formationSelect) form = String(formationSelect.value || "").trim();
+      if(!form) return null;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      if(typeof placement === "undefined" || typeof inenMaster === "undefined") return null;
+      return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){
+      console.error("リーチ再計算失敗", e);
+      return null;
+    }
+  }
+
+  function refreshReachNow(result){
+    try{
+      var r = result || currentReachResult();
+      if(r && typeof window.renderReachSlotOnlyUi === "function"){
+        window.renderReachSlotOnlyUi(r);
+      }
+    }catch(e){
+      console.error("リーチ再描画失敗", e);
+    }
+  }
+
+  var oldRenderReach = window.renderReachSlotOnlyUi;
+  if(typeof oldRenderReach === "function" && !oldRenderReach.__reachFinalNoNull){
+    var wrappedRenderReach = function(result){
+      return oldRenderReach.call(this, result || currentReachResult());
+    };
+    wrappedRenderReach.__reachFinalNoNull = true;
+    window.renderReachSlotOnlyUi = wrappedRenderReach;
+  }
+
+  var oldCalculate = (typeof calculate === "function") ? calculate : null;
+  if(typeof oldCalculate === "function" && !oldCalculate.__reachFinalRefresh){
+    var wrappedCalculate = function(){
+      var ret = oldCalculate.apply(this, arguments);
+      setTimeout(function(){ refreshReachNow(); }, 0);
+      setTimeout(function(){ refreshReachNow(); }, 120);
+      return ret;
+    };
+    wrappedCalculate.__reachFinalRefresh = true;
+    try{ calculate = wrappedCalculate; }catch(e){}
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn,[data-reach-replace-slot][data-reach-replace-id],[data-reach-slot-pick]") : null;
+    if(!btn) return;
+    setTimeout(function(){ refreshReachNow(); }, 0);
+    setTimeout(function(){ refreshReachNow(); }, 150);
+  }, true);
+
+  document.addEventListener("change", function(ev){
+    var t = ev.target;
+    if(!t) return;
+    if(t.id === "formationSelect" || t.id === "slotTarget" || /slot|formation/i.test(String(t.id || ""))){
+      setTimeout(function(){ refreshReachNow(); }, 0);
+      setTimeout(function(){ refreshReachNow(); }, 150);
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(function(){ refreshReachNow(); }, 0);
+    setTimeout(function(){ refreshReachNow(); }, 300);
+  });
+})();
+</script>
+
 </body>
 
 </html>
@@ -11488,5 +11564,151 @@ document.addEventListener("click", function(ev){
     wrapped.__yamanakaFixedAfterAll = true;
     try{ calculate = wrapped; window.calculate = wrapped; }catch(e){}
   }
+})();
+</script>
+
+<script id="apply-formula-freeze-final-fix-20260524">
+/* 2026-05-24
+   原因特定:
+   - 計算が必要な適用行でも applyRowMembersDirect が空ステータスを上部へ描画していた。
+   - 適用後の再計算が複数経路で走り、Safari/スマホで固まりやすかった。
+   修正:
+   - 式・倍率は変更しない。
+   - DB数値がある行だけDB値表示。
+   - DB未登録/空ステータス行は、現在配置の発動因縁を1回だけ再計算して固定倍率CSV式へ渡す。
+   - 適用中ロード表示を出し、重複再計算を抑止する。
+*/
+(function(){
+  if(window.__applyFormulaFreezeFinalFix20260524) return;
+  window.__applyFormulaFreezeFinalFix20260524 = true;
+
+  var STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  var recalcTimer = 0;
+
+  function escFix(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];});
+  }
+  function normalizeHeroFix(v){
+    return String(v == null ? "" : v).trim()
+      .replace(/山中鹿之助/g,"山中鹿之介")
+      .replace(/（/g,"(").replace(/）/g,")")
+      .replace(/\s+/g,"").replace(/　+/g,"");
+  }
+  function splitPipeFix(v){
+    return String(v == null ? "" : v).split("|").map(function(x){return x.trim();}).filter(Boolean);
+  }
+  function rowMembersFix(row){
+    return splitPipeFix(row && (row.eiketsu_ids || row.members || row["英傑"] || row["英傑名"] || ""));
+  }
+  function hasRowStatsFix(row){
+    if(!row) return false;
+    return STAT_KEYS.some(function(k){
+      var v = row[k];
+      if((v == null || v === "") && k.indexOf("属性") !== -1) v = row[k.replace("属性","")];
+      return v != null && v !== "" && v !== "—" && !isNaN(Number(v)) && Number(v) !== 0;
+    });
+  }
+  function drawRowStatsFix(row){
+    var box = document.getElementById("totalStatResult");
+    var mode = document.getElementById("totalStatMode");
+    if(!box || !row) return false;
+    box.innerHTML = STAT_KEYS.map(function(k){
+      var v = row[k];
+      if((v == null || v === "") && k.indexOf("属性") !== -1) v = row[k.replace("属性","")];
+      if(v == null || v === "") v = "—";
+      var zero = (v === "—" || Number(v) === 0);
+      return '<div class="totalStatItem '+(zero ? 'zero' : '')+'"><div class="statName">'+escFix(k)+'</div><div class="statVal">'+escFix(v)+'</div></div>';
+    }).join("");
+    if(mode) mode.textContent = "実数値DB一致 / 適用";
+    return true;
+  }
+  function ensureOverlayFix(){
+    var ov = document.getElementById("applyFormulaLoadingOverlay");
+    if(ov) return ov;
+    var style = document.createElement("style");
+    style.id = "applyFormulaLoadingOverlayStyle";
+    style.textContent = '#applyFormulaLoadingOverlay{position:fixed;inset:0;z-index:50000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#ffe1a1;font-weight:900;font-size:22px;letter-spacing:.04em}#applyFormulaLoadingOverlay .box{border:1px solid #e7bd5c;border-radius:14px;background:rgba(18,13,9,.94);padding:18px 26px;box-shadow:0 0 22px rgba(231,189,92,.35)}';
+    document.head.appendChild(style);
+    ov = document.createElement("div");
+    ov.id = "applyFormulaLoadingOverlay";
+    ov.innerHTML = '<div class="box">適用中です。数分お待ちください。</div>';
+    document.body.appendChild(ov);
+    return ov;
+  }
+  function showOverlayFix(){ try{ ensureOverlayFix().style.display = "flex"; }catch(e){} }
+  function hideOverlayFix(){ try{ var ov=document.getElementById("applyFormulaLoadingOverlay"); if(ov) ov.style.display = "none"; }catch(e){} }
+
+  function findHeroFix(name){
+    var key = normalizeHeroFix(name);
+    try{
+      var list = Array.isArray(eiketsuMaster) ? eiketsuMaster : [];
+      for(var i=0;i<list.length;i++){
+        var h = list[i];
+        var n = "";
+        try{ n = (typeof heroName === "function") ? heroName(h) : ""; }catch(e){}
+        if(!n && h) n = h["英傑名"] || h["名前"] || h.name || "";
+        if(normalizeHeroFix(n) === key) return h;
+      }
+    }catch(e){}
+    return null;
+  }
+  function applyPlacementOnlyFix(row){
+    var members = rowMembersFix(row);
+    if(members.length !== 6) return false;
+    var next = {};
+    for(var i=0;i<6;i++){
+      var h = findHeroFix(members[i]);
+      if(!h){ alert("英傑マスターに見つからない英傑があります: " + members[i]); return true; }
+      next[i+1] = h;
+    }
+    try{ placement = next; }catch(e){}
+    try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+    try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
+    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+    return true;
+  }
+  function currentResultFix(){
+    try{
+      var sel = document.getElementById("formationSelect");
+      if(!sel || !String(sel.value || "").trim()) return null;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      return window.JinpoActivationEngine.calculateFormation(placement, sel.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){ console.error("適用後計算結果作成失敗", e); return null; }
+  }
+  function recalcOnceFix(delay){
+    clearTimeout(recalcTimer);
+    recalcTimer = setTimeout(function(){
+      try{
+        var result = currentResultFix();
+        if(result && typeof window.renderRealtimeTotalStats === "function") window.renderRealtimeTotalStats(result);
+        if(result && typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(result);
+      }catch(e){ console.error("適用後再計算失敗", e); }
+      finally{ setTimeout(hideOverlayFix, 80); }
+    }, delay == null ? 30 : delay);
+  }
+
+  var oldApplyDirect = (typeof applyRowMembersDirect === "function") ? applyRowMembersDirect : null;
+  window.applyRowMembersDirect = applyRowMembersDirect = function(row){
+    showOverlayFix();
+    var ok = applyPlacementOnlyFix(row);
+    if(!ok){ hideOverlayFix(); return oldApplyDirect ? oldApplyDirect(row) : false; }
+    if(hasRowStatsFix(row)){
+      drawRowStatsFix(row);
+      try{ var resultDb = currentResultFix(); if(resultDb && typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(resultDb); }catch(e){}
+      setTimeout(hideOverlayFix, 80);
+    }else{
+      var mode = document.getElementById("totalStatMode");
+      if(mode) mode.textContent = "DB未登録 / 固定倍率CSV式で計算中";
+      recalcOnceFix(30);
+    }
+    return true;
+  };
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-v5],[data-linegen-v6],[data-linegen-v3],[data-linegen-v4],[data-linegen-single],[data-linegen-actual],[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result]") : null;
+    if(!btn) return;
+    showOverlayFix();
+    recalcOnceFix(220);
+  }, true);
 })();
 </script>
