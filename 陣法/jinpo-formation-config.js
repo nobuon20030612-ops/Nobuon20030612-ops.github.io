@@ -52,8 +52,8 @@ window.JINPO_FORMATION_CONFIG = {
     },
     activeLines: [
       [1,2,3],
-      [1,6,5],
-      [5,4,3]
+      [3,4,5],
+      [5,6,1]
     ],
     bonus: {
       "気合": 0.10,
@@ -73,9 +73,9 @@ window.JINPO_FORMATION_CONFIG = {
       4: {x: 1, y: 3}
     },
     activeLines: [
-      [1,2,3],
-      [1,6,5],
-      [3,4,5]
+      [2,3,4],
+      [4,5,6],
+      [2,1,6]
     ],
     bonus: {
       "気合": 0.10,

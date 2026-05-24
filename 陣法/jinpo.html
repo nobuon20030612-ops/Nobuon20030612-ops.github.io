@@ -1771,9 +1771,13 @@ inenMultiplierMap.clear();
 for(const r of inenMultiplierRows){
 const inen = r["因縁名"] ?? r["因縁"] ?? r["name"] ?? "";
 const stat = r["対象ステータス"] ?? r["ステータス"] ?? r["stat"] ?? "";
-const mult = Number(r["倍率%"] ?? r["倍率"] ?? r["rate"] ?? 0) || 0;
+const mult = Number(r["実効係数_因縁係数x2.24"] ?? r["実効係数"] ?? r["倍率%"] ?? r["倍率"] ?? r["rate"] ?? 0) || 0;
 const key = makeMultiplierKey(inen, stat);
-if(inen && stat && mult) inenMultiplierMap.set(key, mult);
+if(inen && stat && mult){
+  inenMultiplierMap.set(key, mult);
+  if(String(inen).endsWith("の絆")) inenMultiplierMap.set(makeMultiplierKey(String(inen).slice(0,-2), stat), mult);
+  else inenMultiplierMap.set(makeMultiplierKey(String(inen)+"の絆", stat), mult);
+}
 }
 const ms = document.getElementById("multiplierStatus");
 if(ms) ms.textContent = `単独因縁倍率: ${inenMultiplierMap.size}件 読込済`;
@@ -7883,334 +7887,336 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
 </script>
 
 
-<style id="unified-jinpo-formula-only-style">
-#unifiedApplyProgressOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.62);z-index:50000;pointer-events:auto}
-#unifiedApplyProgressOverlay .unifiedApplyProgressBox{min-width:260px;max-width:82vw;border:2px solid #e7bd5c;border-radius:16px;background:linear-gradient(180deg,rgba(60,10,10,.98),rgba(18,12,8,.98));box-shadow:0 0 28px rgba(231,189,92,.34),0 18px 60px rgba(0,0,0,.65);padding:22px 26px;text-align:center;color:#ffe1a1;font-weight:900}
-#unifiedApplyProgressOverlay .unifiedApplyProgressTitle{font-size:22px;margin-bottom:8px}
-#unifiedApplyProgressOverlay .unifiedApplyProgressText{font-size:14px;color:#f4ead2}
-#unifiedApplyProgressOverlay .unifiedApplyProgressSpinner{width:34px;height:34px;margin:0 auto 14px;border:4px solid rgba(231,189,92,.25);border-top-color:#ffe1a1;border-radius:50%;animation:unifiedApplyProgressSpin .8s linear infinite}
-@keyframes unifiedApplyProgressSpin{to{transform:rotate(360deg)}}
-</style>
-<script id="unified-jinpo-formula-only-final">
-/* 2026-05-24 最終修正: 式を1本化。
-   正式式: 因縁ごとに成立ライン3人の対象ステ合計 × 因縁倍率% / 100 をfloor、因縁数分加算、最後に陣形倍率を適用してfloor。
-   DB実数値がある行はDB値優先。DB空欄/未登録だけこの統一式で表示する。
-   旧式 floor(base × 倍率%) 直掛けはこのブロックで上書きして使わせない。 */
+<script id="multi-inen-formula-display-fix">
 (function(){
-  if(window.__unifiedJinpoFormulaOnlyFinalInstalled) return;
-  window.__unifiedJinpoFormulaOnlyFinalInstalled = true;
+function statKeysFormula(){
+  return Array.isArray(window.REALTIME_STAT_KEYS) ? window.REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+}
+function heroStatForFormula(hero, stat){
+  if(!hero) return 0;
+  var aliases = {
+    "生命":["生命","生命力"], "気合":["気合"], "腕力":["腕力"],
+    "耐久力":["耐久力","耐久"], "器用さ":["器用さ","器用"],
+    "知力":["知力"], "魅力":["魅力"],
+    "土属性":["土属性","土"], "水属性":["水属性","水"],
+    "火属性":["火属性","火"], "風属性":["風属性","風"]
+  }[stat] || [stat];
+  for(var i=0;i<aliases.length;i++){
+    var v = Number(hero[aliases[i]]);
+    if(Number.isFinite(v) && v !== 0) return v;
+  }
+  return 0;
+}
+function multiplierForFormula(inenName, stat){
+  try{
+    if(typeof makeMultiplierKey === "function" && typeof inenMultiplierMap !== "undefined"){
+      return inenMultiplierMap.get(makeMultiplierKey(String(inenName||"").trim(), stat));
+    }
+  }catch(e){}
+  return null;
+}
+function calcAllInenStatsFromMultiplierMaster(result){
+  var activated = result && Array.isArray(result.activated) ? result.activated : [];
+  if(!activated.length) return null;
+  var keys = statKeysFormula();
+  var raw = {};
+  keys.forEach(function(k){ raw[k] = 0; });
+  var matched = 0;
+
+  activated.forEach(function(act){
+    var inenName = String(act.name || "").trim();
+    var slots = Array.isArray(act.lineSlots) ? act.lineSlots : [];
+    if(!inenName || slots.length !== 3) return;
+
+    keys.forEach(function(stat){
+      var mult = multiplierForFormula(inenName, stat);
+      if(!mult) return;
+      var base = 0;
+      slots.forEach(function(slot){
+        base += heroStatForFormula(placement && placement[slot], stat);
+      });
+      if(base <= 0) return;
+      raw[stat] += Math.floor((base * Number(mult)) + 1e-9);
+      matched++;
+    });
+  });
+
+  if(!matched) return null;
+
+  var finalStats = raw;
+  try{
+    if(typeof applyFormationBonusToStats === "function"){
+      finalStats = applyFormationBonusToStats(raw);
+    }
+  }catch(e){}
+  return finalStats;
+}
+function renderStatsGridFormula(stats, modeText){
+  var box = document.getElementById("totalStatResult");
+  var mode = document.getElementById("totalStatMode");
+  if(!box) return false;
+  var keys = statKeysFormula();
+  box.innerHTML = keys.map(function(k){
+    var v = stats && stats[k] != null ? stats[k] : "—";
+    var zero = (v === "—" || Number(v) === 0);
+    return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
+  }).join("");
+  if(mode) mode.textContent = modeText || "";
+  return true;
+}
+var oldRenderRealtimeTotalStats = window.renderRealtimeTotalStats || (typeof renderRealtimeTotalStats === "function" ? renderRealtimeTotalStats : null);
+function renderRealtimeTotalStatsFormulaFixed(result){
+  var hit = null;
+  try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
+  if(hit && typeof getStatsFromMasterHit === "function"){
+    return renderStatsGridFormula(getStatsFromMasterHit(hit), hit.ambiguous ? "実数値DB一致 / 複数候補" : "実数値DB一致");
+  }
+  var stats = calcAllInenStatsFromMultiplierMaster(result);
+  if(stats){
+    return renderStatsGridFormula(stats, "実数値DB未一致 / 因縁倍率式で計算表示");
+  }
+  if(typeof oldRenderRealtimeTotalStats === "function"){
+    return oldRenderRealtimeTotalStats(result);
+  }
+  return renderStatsGridFormula(null, "実数値DB未一致 / 計算不可");
+}
+window.renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed;
+try{ renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed; }catch(e){}
+
+window.updateFormulaStatsForCurrentPlacement = function(){
+  try{
+    if(!formationSelect || !String(formationSelect.value || "").trim()) return false;
+    if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return false;
+    var result = window.JinpoActivationEngine.calculateFormation(
+      placement,
+      formationSelect.value,
+      inenMaster,
+      window.JINPO_FORMATION_CONFIG
+    );
+    renderRealtimeTotalStatsFormulaFixed(result);
+    return true;
+  }catch(e){
+    return false;
+  }
+};
+})();
+</script>
+
+
+
+<script id="fixed-csv-only-current-line-formula-verified-20260524">
+/* 原因特定後の最終固定:
+   - 式・倍率は変更しない
+   - data/91因縁_計算式_倍率展開.csv の固定倍率だけ使用
+   - 旧 jinpo_inen_multiplier_master.csv には戻さない
+   - DB登録済みはDB値優先、DB未登録だけ現在画面の実配置ラインで計算
+   - 魚鱗/方円の発動ラインだけ、既知仕様へ最終上書き
+*/
+(function(){
+  if(window.__fixedCsvOnlyCurrentLineFormulaVerified20260524) return;
+  window.__fixedCsvOnlyCurrentLineFormulaVerified20260524 = true;
 
   var STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
-  var STAT_ALIAS = {"生命力":"生命","生命":"生命","気合":"気合","腕力":"腕力","耐久":"耐久力","耐久力":"耐久力","器用":"器用さ","器用さ":"器用さ","知力":"知力","魅力":"魅力","土":"土属性","土属性":"土属性","水":"水属性","水属性":"水属性","火":"火属性","火属性":"火属性","風":"風属性","風属性":"風属性","四象":"四象"};
-  var HERO_NAME_ALIAS = {"山中鹿之助":"山中鹿之介","森田浄雲":"森田浄曇","酒井忠次(通)":"酒井忠次(衣鉢)","前田利家":"前田利家(雄材)","ねね(納涼)":"ねね(涼)","織田信長(特別)":"織田信長(覇王)","まつ":"まつ(兎忍)","濃姫(雅楽)":"濃姫","羽柴秀吉(涼)":"羽柴秀吉(納涼)","羽柴秀吉・涼":"羽柴秀吉(納涼)"};
-  var multiplierRows = [];
-  var multiplierMap = new Map();
-  var multiplierLoading = null;
+  var fixedMultiplierRows = null;
+  var fixedMultiplierMap = new Map();
+  var fixedMultiplierLoading = null;
 
-  function esc(v){
-    try{ if(typeof window.esc === "function") return window.esc(v); }catch(e){}
-    return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
+  function normText(v){
+    return String(v == null ? "" : v).trim()
+      .replace(/^\uFEFF/, "")
+      .replace(/山中鹿之助/g, "山中鹿之介")
+      .replace(/龍飛鳳舞/g, "竜飛鳳舞")
+      .replace(/日進月步/g, "日進月歩")
+      .replace(/老練豁達/g, "老練闊達")
+      .replace(/\s+/g, "").replace(/　+/g, "");
   }
-  function normText(v){ return String(v == null ? "" : v).trim().replace(/[\s　]+/g,"").replace(/・/g,"").replace(/力力/g,"力"); }
-  function normStat(v){ return STAT_ALIAS[String(v == null ? "" : v).trim()] || String(v == null ? "" : v).trim(); }
-  function normInenName(v){
-    var n = normText(v);
-    var alias = {"竜飛鳳舞":"龍飛鳳舞"};
-    return alias[n] || n;
+  function normStat(v){
+    var s = normText(v).replace(/生命力/g,"生命").replace(/耐久$/,"耐久力").replace(/器用$/,"器用さ");
+    var m = {"土":"土属性","水":"水属性","火":"火属性","風":"風属性","九光":"九光"};
+    return m[s] || s;
   }
-  function firstCell(row, keys){
-    if(!row) return "";
-    for(var i=0;i<keys.length;i++){
-      if(row[keys[i]] != null && String(row[keys[i]]).trim() !== "") return row[keys[i]];
-      var bomKey = "\ufeff" + keys[i];
-      if(row[bomKey] != null && String(row[bomKey]).trim() !== "") return row[bomKey];
-    }
-    return "";
+  function multKey(name, stat){ return normText(name) + "|" + normStat(stat); }
+  function aliasNames(name){
+    var n = normText(name), out = [n];
+    if(n.endsWith("の絆")) out.push(n.slice(0,-2));
+    else out.push(n + "の絆");
+    return Array.from(new Set(out.filter(Boolean)));
   }
-  function multKey(inen, stat){ return normInenName(inen) + "|" + normStat(stat); }
-  function parseMultiplierPercent(v){
-    var s = String(v == null ? "" : v).trim().replace("％","%");
-    if(!s || s === "対象外" || s === "未確認" || s === "未確定") return 0;
-    s = s.replace("%","");
-    var n = Number(s);
-    if(!Number.isFinite(n)) return 0;
-    // CSV列名は「倍率%」。0.7 は0.7%なので、計算用倍率は0.007。
-    return n / 100;
+  function canonicalFormationFinal(v){
+    var s = String(v == null ? "" : v);
+    if(s.indexOf("魚鱗") !== -1 || /gyorin/i.test(s)) return "魚鱗";
+    if(s.indexOf("方円") !== -1 || /hoen/i.test(s)) return "方円";
+    if(s.indexOf("衡軛") !== -1 || s.indexOf("衝軛") !== -1 || /koeyaku|shoyaku/i.test(s)) return "衡軛";
+    if(s.indexOf("鶴翼") !== -1 || /kakuyoku/i.test(s)) return "鶴翼";
+    return s.trim();
   }
-  function rebuildMultiplierMap(rows){
-    multiplierRows = Array.isArray(rows) ? rows : [];
-    multiplierMap.clear();
-    multiplierRows.forEach(function(r){
-      var inen = firstCell(r, ["因縁名","因縁","name","bond"]);
-      var stat = firstCell(r, ["対象ステータス","ステータス","stat"]);
-      var raw = firstCell(r, ["倍率%","倍率","rate"]);
-      var rate = parseMultiplierPercent(raw);
-      if(inen && stat && rate) multiplierMap.set(multKey(inen, stat), rate);
+  function applyKnownActiveLinesFinal(){
+    if(!window.JINPO_FORMATION_CONFIG) return;
+    var cfg = window.JINPO_FORMATION_CONFIG;
+    Object.keys(cfg).forEach(function(k){
+      var name = canonicalFormationFinal(k + " " + (cfg[k] && (cfg[k].label || cfg[k].name) || ""));
+      if(name === "魚鱗") cfg[k].activeLines = [[1,2,3],[3,4,5],[5,6,1]];
+      if(name === "方円") cfg[k].activeLines = [[2,3,4],[4,5,6],[2,1,6]];
     });
+    if(cfg["魚鱗"]) cfg["魚鱗"].activeLines = [[1,2,3],[3,4,5],[5,6,1]];
+    if(cfg["方円"]) cfg["方円"].activeLines = [[2,3,4],[4,5,6],[2,1,6]];
   }
-  function readGlobalMultiplierRows(){
-    try{ if(Array.isArray(window.inenMultiplierRows) && window.inenMultiplierRows.length) return window.inenMultiplierRows; }catch(e){}
-    try{ if(typeof inenMultiplierRows !== "undefined" && Array.isArray(inenMultiplierRows) && inenMultiplierRows.length) return inenMultiplierRows; }catch(e){}
-    return [];
+
+  function loadFixedMultipliers(){
+    if(fixedMultiplierRows) return Promise.resolve(fixedMultiplierRows);
+    if(fixedMultiplierLoading) return fixedMultiplierLoading;
+    fixedMultiplierLoading = (window.JinpoActivationEngine && typeof window.JinpoActivationEngine.loadCSV === "function"
+      ? window.JinpoActivationEngine.loadCSV("data/91因縁_計算式_倍率展開.csv?v=20260524_fixed")
+      : Promise.reject(new Error("CSV loader missing"))
+    ).then(function(rows){
+      fixedMultiplierRows = Array.isArray(rows) ? rows : [];
+      fixedMultiplierMap.clear();
+      fixedMultiplierRows.forEach(function(r){
+        var name = r["因縁名"] || r["因縁"] || r["name"] || "";
+        var stat = r["対象ステータス"] || r["ステータス"] || r["stat"] || "";
+        var val = Number(r["実効係数_因縁係数x2.24"] || r["実効係数"] || r["倍率"] || 0);
+        if(!name || !stat || !isFinite(val) || val <= 0) return;
+        aliasNames(name).forEach(function(n){ fixedMultiplierMap.set(multKey(n, stat), val); });
+      });
+      try{
+        var ms = document.getElementById("multiplierStatus");
+        if(ms) ms.textContent = "固定倍率CSV: " + fixedMultiplierMap.size + "件 読込済";
+      }catch(e){}
+      return fixedMultiplierRows;
+    });
+    return fixedMultiplierLoading;
   }
-  function ensureMultipliers(){
-    var globalRows = readGlobalMultiplierRows();
-    if(globalRows.length){ rebuildMultiplierMap(globalRows); return Promise.resolve(true); }
-    if(multiplierMap.size) return Promise.resolve(true);
-    if(multiplierLoading) return multiplierLoading;
-    multiplierLoading = (async function(){
-      var paths = ["data/jinpo_inen_multiplier_master.csv","jinpo_inen_multiplier_master.csv"];
-      for(var i=0;i<paths.length;i++){
-        try{
-          if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.loadCSV === "function"){
-            var rows = await window.JinpoActivationEngine.loadCSV(paths[i]);
-            if(Array.isArray(rows) && rows.length){ rebuildMultiplierMap(rows); return true; }
-          }
-        }catch(e){}
-      }
-      return false;
-    })();
-    return multiplierLoading;
+
+  function statKeys(){
+    try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){}
+    return STAT_KEYS;
   }
-  function multiplierRate(inen, stat){
-    if(!multiplierMap.size){ var rows = readGlobalMultiplierRows(); if(rows.length) rebuildMultiplierMap(rows); }
-    return Number(multiplierMap.get(multKey(inen, stat)) || 0) || 0;
-  }
-  function heroStat(hero, stat){
-    if(!hero) return 0;
-    var aliases = {"生命":["生命","生命力"],"気合":["気合"],"腕力":["腕力"],"耐久力":["耐久力","耐久"],"器用さ":["器用さ","器用"],"知力":["知力"],"魅力":["魅力"],"土属性":["土属性","土"],"水属性":["水属性","水"],"火属性":["火属性","火"],"風属性":["風属性","風"]}[stat] || [stat];
-    for(var i=0;i<aliases.length;i++){
-      var n = Number(hero[aliases[i]]);
-      if(Number.isFinite(n) && n !== 0) return n;
-    }
+  function heroStat(h, stat){
+    if(!h) return 0;
+    try{ if(typeof heroStatValue === "function") return Number(heroStatValue(h, stat) || 0); }catch(e){}
+    var aliases = {
+      "生命":["生命","生命力"],"気合":["気合"],"腕力":["腕力"],"耐久力":["耐久力","耐久"],"器用さ":["器用さ","器用"],
+      "知力":["知力"],"魅力":["魅力"],"土属性":["土属性","土"],"水属性":["水属性","水"],"火属性":["火属性","火"],"風属性":["風属性","風"]
+    }[stat] || [stat];
+    for(var i=0;i<aliases.length;i++){ var v = Number(h[aliases[i]] || 0); if(v) return v; }
     return 0;
   }
-  function formationMultiplier(stat){
-    var f = "";
-    try{ f = String((document.getElementById("formationSelect") || {}).value || "").trim(); }catch(e){}
-    var row = null;
-    try{ if(typeof formationBonusMap !== "undefined" && formationBonusMap && formationBonusMap.get) row = formationBonusMap.get(f); }catch(e){}
-    var raw = row ? row[stat] : "1";
-    var n = Number(raw);
-    return Number.isFinite(n) ? n : 1;
+  function formationBonusRate(stat){
+    try{
+      var form = document.getElementById("formationSelect");
+      var f = form ? form.value : "";
+      var name = canonicalFormationFinal(f);
+      var cfg = window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[name];
+      if(cfg && cfg.bonus && cfg.bonus[stat] != null) return Number(cfg.bonus[stat]) || 0;
+    }catch(e){}
+    return 0;
   }
-  function applyFormation(stats){
-    var out = {};
-    STAT_KEYS.forEach(function(k){ out[k] = Math.floor((Number(stats[k] || 0) || 0) * formationMultiplier(k) + 1e-9); });
-    return out;
+  function hasUsefulStats(stats){
+    if(!stats) return false;
+    return statKeys().some(function(k){ var v = stats[k]; return v !== "—" && v !== "" && v != null && Number(v) !== 0; });
   }
-  function activatedList(result){ return result && Array.isArray(result.activated) ? result.activated : []; }
-  function calculateUnifiedFormulaStats(result){
-    var acts = activatedList(result);
-    if(!acts.length) return null;
-    if(!multiplierMap.size){ var rows = readGlobalMultiplierRows(); if(rows.length) rebuildMultiplierMap(rows); }
-    var raw = {}; STAT_KEYS.forEach(function(k){ raw[k] = 0; });
-    var matched = 0;
-    acts.forEach(function(act){
-      var name = String(act && act.name || "").trim();
-      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
-      if(!name || slots.length !== 3) return;
-      STAT_KEYS.forEach(function(stat){
-        var rate = multiplierRate(name, stat);
-        if(!rate) return;
-        var base = 0;
-        slots.forEach(function(slot){
-          try{ base += heroStat(placement && placement[slot], stat); }catch(e){}
-        });
-        if(base <= 0) return;
-        raw[stat] += Math.floor(base * rate + 1e-9);
-        matched++;
-      });
-    });
-    return matched ? applyFormation(raw) : null;
-  }
-  function rowHasDbStats(row){
-    if(!row) return false;
-    return STAT_KEYS.some(function(k){
-      var v = row[k];
-      if(v == null && k.indexOf("属性") !== -1) v = row[k.replace("属性","")];
-      if(v == null || v === "" || v === "—" || v === "対象外" || v === "未確認" || v === "未確定") return false;
-      var n = Number(v);
-      return Number.isFinite(n) && n !== 0;
-    });
-  }
-  function statsFromDbRow(row){
-    if(!row || !rowHasDbStats(row)) return null;
-    var stats = {};
-    STAT_KEYS.forEach(function(k){
-      var v = row[k];
-      if(v == null && k.indexOf("属性") !== -1) v = row[k.replace("属性","")];
-      var n = Number(v);
-      stats[k] = Number.isFinite(n) ? n : 0;
-    });
-    return stats;
-  }
-  function renderStats(stats, modeText){
+  function drawStats(stats, modeText){
     var box = document.getElementById("totalStatResult");
     var mode = document.getElementById("totalStatMode");
     if(!box) return false;
-    box.innerHTML = STAT_KEYS.map(function(k){
+    box.innerHTML = statKeys().map(function(k){
       var v = stats && stats[k] != null ? stats[k] : "—";
       var zero = (v === "—" || Number(v) === 0);
-      return '<div class="totalStatItem '+(zero ? 'zero' : '')+'"><div class="statName">'+esc(k)+'</div><div class="statVal">'+esc(v)+'</div></div>';
+      return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
     }).join("");
     if(mode) mode.textContent = modeText || "";
     return true;
   }
-  function getDbHit(){
-    try{ if(typeof getCurrentMasterHit === "function"){ var hit = getCurrentMasterHit(); if(hit && hit.raw) return hit.raw; } }catch(e){}
-    try{ if(typeof getResultDbHitByExternalIds === "function") return getResultDbHitByExternalIds(); }catch(e){}
+  function getDbStatsIfCurrentHit(){
+    var hit = null;
+    try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
+    if(!hit) return null;
+    try{ if(typeof getStatsFromMasterHit === "function") return getStatsFromMasterHit(hit); }catch(e){}
     return null;
   }
-  function renderUnifiedTotal(result, preferredRow){
-    var dbStats = statsFromDbRow(preferredRow) || statsFromDbRow(getDbHit());
-    if(dbStats) return renderStats(dbStats, "実数値DB一致 / DB数値優先");
-    var formulaStats = calculateUnifiedFormulaStats(result);
-    if(formulaStats) return renderStats(formulaStats, "DB未一致 / 統一式：ライン3人合計×因縁倍率%→加算→陣形倍率");
-    return renderStats(null, "DB未一致 / 計算不可（倍率または成立ライン不足）");
-  }
-  function canonHero(v){
-    var s = String(v == null ? "" : v).trim().replace(/（/g,"(").replace(/）/g,")");
-    if(HERO_NAME_ALIAS[s]) s = HERO_NAME_ALIAS[s];
-    if(s.indexOf("・") !== -1 && s.indexOf("(") === -1){ var p = s.lastIndexOf("・"); s = s.slice(0,p) + "(" + s.slice(p+1) + ")"; }
-    try{ if(typeof canonicalHeroName === "function") return canonicalHeroName(s); }catch(e){}
-    return normText(s).replace(/[()（）［］\[\]「」『』【】]/g,"");
-  }
-  function splitRowMembers(row){
-    var raw = row && (row.eiketsu_ids || row.members || row["英傑"] || row.m || row.r || "");
-    var arr = Array.isArray(raw) ? raw : String(raw || "").split(/[|,、/／\s]+/);
-    return arr.map(function(x){ return String(x||"").trim(); }).filter(Boolean);
-  }
-  function buildHeroLookup(){
-    var map = new Map();
-    try{ (Array.isArray(eiketsuMaster) ? eiketsuMaster : []).forEach(function(h){ var n = h && (h["英傑名"] || h["名前"] || h.name || ""); if(n) map.set(canonHero(n), h); }); }catch(e){}
-    return map;
-  }
-  function rowId(row, index){ return String(row && (row.result_id || row.id || row.resultId || ("row_"+index)) || ""); }
-  function allKnownRows(){
-    var out = [];
-    try{ if(Array.isArray(resultDbRows)) out = out.concat(resultDbRows); }catch(e){}
-    ["__absoluteLast9ShownRows","__jinpoLineGenV3Rows","__jinpoLineGenV5Rows","__jinpoActualLineRows","__jinpoGeneratedLineRows","__jinpoLineGenRows","__jinpoLineGenSingleRows","__jinpoLineGenV4Rows","__jinpoLineGenV6Rows","__jinpoCancelResponsive56Rows"].forEach(function(n){
-      try{ if(Array.isArray(window[n])) out = out.concat(window[n]); }catch(e){}
+  function calculateFixedCsvFormula(result){
+    if(!result || !Array.isArray(result.activated) || !result.activated.length) return null;
+    applyKnownActiveLinesFinal();
+    if(!fixedMultiplierMap.size) return null;
+    var keys = statKeys();
+    var raw = {}; keys.forEach(function(k){ raw[k] = 0; });
+    var matched = 0;
+    result.activated.forEach(function(act){
+      var name = act && (act.name || act["因縁名"] || act.inenName || "");
+      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
+      if(!name || slots.length !== 3) return;
+      keys.forEach(function(stat){
+        var mult = Number(fixedMultiplierMap.get(multKey(name, stat)) || 0);
+        if(!mult) return;
+        var base = 0;
+        slots.forEach(function(slot){ base += heroStat(placement && placement[slot], stat); });
+        if(base <= 0) return;
+        raw[stat] += Math.floor(base * mult + 1e-9);
+        matched++;
+      });
+    });
+    if(!matched) return null;
+    var out = {};
+    keys.forEach(function(stat){
+      var rate = formationBonusRate(stat);
+      out[stat] = Math.floor(raw[stat] + raw[stat] * rate + 1e-9);
     });
     return out;
   }
-  function resolveApplyRow(btn){
-    if(!btn) return null;
-    var attrs = ["data-result-id","data-linegen-v3","data-linegen-v5","data-linegen-actual","data-linegen","data-generated-line-row","data-linegen-v4","data-linegen-v6","data-linegen-single","data-linegen-cancel-actual"];
-    var id = "";
-    for(var i=0;i<attrs.length;i++){ id = btn.getAttribute(attrs[i]); if(id) break; }
-    if(!id) return null;
-    var rows = allKnownRows();
-    for(var r=0;r<rows.length;r++){
-      if(rowId(rows[r], r) === String(id) || String(rows[r] && rows[r].result_id || "") === String(id)) return rows[r];
-    }
-    return null;
-  }
-  function formationFromRow(row){
-    var f = String(row && (row.formation || row.form || row["陣形"] || "") || "");
-    if(f.indexOf("衡軛") !== -1) return "衡軛";
-    if(f.indexOf("鶴翼") !== -1) return "鶴翼";
-    if(f.indexOf("魚鱗") !== -1) return "魚鱗";
-    if(f.indexOf("方円") !== -1) return "方円";
-    return f.split(/[\/／,、\s]+/).filter(Boolean)[0] || f;
-  }
-  function showProgress(text){
-    var ov = document.getElementById("unifiedApplyProgressOverlay");
-    if(!ov){
-      ov = document.createElement("div");
-      ov.id = "unifiedApplyProgressOverlay";
-      ov.innerHTML = '<div class="unifiedApplyProgressBox"><div class="unifiedApplyProgressSpinner"></div><div class="unifiedApplyProgressTitle">反映中</div><div class="unifiedApplyProgressText"></div></div>';
-      document.body.appendChild(ov);
-    }
-    var t = ov.querySelector(".unifiedApplyProgressText");
-    if(t) t.textContent = text || "適用候補を反映しています。少しお待ちください。";
-    ov.style.display = "flex";
-  }
-  function hideProgress(){ var ov = document.getElementById("unifiedApplyProgressOverlay"); if(ov) ov.style.display = "none"; }
-  async function applyUnifiedRow(row){
-    if(!row) return false;
-    showProgress("適用候補を反映しています。少しお待ちください。");
-    await new Promise(function(resolve){ setTimeout(resolve, 30); });
+  function currentFormationResult(){
+    applyKnownActiveLinesFinal();
     try{
-      await ensureMultipliers();
-      var names = splitRowMembers(row);
-      if(names.length !== 6) throw new Error("配置英傑が6人分取得できません");
-      var lookup = buildHeroLookup();
-      var next = {}, missing = [];
-      names.forEach(function(name, idx){
-        var h = lookup.get(canonHero(name));
-        if(h) next[idx+1] = h; else missing.push(name);
-      });
-      if(missing.length) throw new Error("英傑マスターに見つからない英傑があります: " + missing.join(" / "));
-      var form = formationFromRow(row);
-      var fs = document.getElementById("formationSelect");
-      if(form && fs) fs.value = form;
-      try{ placement = next; }catch(e){ window.placement = next; }
-      try{ selectedDbResultId = String(row.result_id || row.id || ""); }catch(e){}
-      try{ selectedDbListBondCount = Number(row.bond_count || row.ic || selectedDbListBondCount || 0) || selectedDbListBondCount; }catch(e){}
-      var result = null;
-      try{
-        if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.calculateFormation === "function"){
-          result = window.JinpoActivationEngine.calculateFormation(placement, fs ? fs.value : form, inenMaster, window.JINPO_FORMATION_CONFIG);
-        }
-      }catch(e){}
-      try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
-      try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
-      try{ if(result && typeof renderFormation === "function") renderFormation(result); }catch(e){}
-      try{ if(result && typeof renderResults === "function") renderResults(result); }catch(e){}
-      try{ if(typeof renderAppliedDbRowDisplay === "function") renderAppliedDbRowDisplay(row); }catch(e){}
-      renderUnifiedTotal(result, row);
-      try{ if(typeof renderMasterResult === "function") renderMasterResult(); }catch(e){}
-      try{ if(result && typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result); }catch(e){}
-      setTimeout(function(){ try{ if(result && typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result); }catch(e){} renderUnifiedTotal(result, row); }, 80);
-      setTimeout(function(){ try{ if(result && typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result); }catch(e){} renderUnifiedTotal(result, row); }, 220);
-      return true;
-    }catch(err){ alert(err && err.message ? err.message : String(err)); return false; }
-    finally{ setTimeout(hideProgress, 120); }
+      var sel = document.getElementById("formationSelect");
+      if(!sel || !String(sel.value || "").trim()) return null;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      return window.JinpoActivationEngine.calculateFormation(placement, sel.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){ console.error("固定CSV式 result作成失敗", e); return null; }
+  }
+  function renderFixedCsvResult(result){
+    var dbStats = getDbStatsIfCurrentHit();
+    if(hasUsefulStats(dbStats)) return drawStats(dbStats, "実数値DB一致");
+    var stats = calculateFixedCsvFormula(result || currentFormationResult());
+    if(hasUsefulStats(stats)) return drawStats(stats, "DB未登録 / 固定倍率CSV式で計算表示");
+    return drawStats(null, "DB未登録 / 固定倍率CSV式で計算不可");
   }
 
-  // 公開・上書き: 旧式を使う経路をここで統一式へ集約。
-  window.__jinpoUnifiedFormulaStats = calculateUnifiedFormulaStats;
-  window.__jinpoUnifiedRenderTotal = renderUnifiedTotal;
-  window.__jinpoUnifiedApplyRow = applyUnifiedRow;
-  window.calcAllInenStatsFromMultiplierMaster = calculateUnifiedFormulaStats;
-  window.calcRealTimeStatsFromMultiplierMaster = calculateUnifiedFormulaStats;
-  window.calcSingleInenStatsFromMultiplierMaster = function(result){
-    var stats = calculateUnifiedFormulaStats(result);
-    return stats ? {source:"unified_formula", stats:stats, rawStats:stats, details:[]} : null;
-  };
-  window.renderRealtimeTotalStats = function(result){ return renderUnifiedTotal(result, null); };
-  try{ renderRealtimeTotalStats = window.renderRealtimeTotalStats; }catch(e){}
-  window.updateFormulaStatsForCurrentPlacement = function(){
-    var result = null;
-    try{
-      var fs = document.getElementById("formationSelect");
-      if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.calculateFormation === "function"){
-        result = window.JinpoActivationEngine.calculateFormation(placement, fs ? fs.value : "", inenMaster, window.JINPO_FORMATION_CONFIG);
-      }
-    }catch(e){}
-    return renderUnifiedTotal(result, null);
+  var prevRenderRealtime = window.renderRealtimeTotalStats;
+  window.renderRealtimeTotalStats = function(result){
+    applyKnownActiveLinesFinal();
+    if(!fixedMultiplierMap.size){
+      loadFixedMultipliers().then(function(){ renderFixedCsvResult(result || currentFormationResult()); });
+      if(typeof prevRenderRealtime === "function") return prevRenderRealtime.apply(this, arguments);
+      return drawStats(null, "固定倍率CSV読込中");
+    }
+    return renderFixedCsvResult(result);
   };
 
-  // 通常DB/5-6ライン生成の適用ボタンは、古い式へ行かせず統一式で処理する。
+  var prevCalculate = window.calculate;
+  if(typeof prevCalculate === "function" && !prevCalculate.__fixedCsvOnlyCurrentLineWrapped){
+    var wrapped = function(){
+      applyKnownActiveLinesFinal();
+      var ret = prevCalculate.apply(this, arguments);
+      setTimeout(function(){ loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); }); }, 0);
+      return ret;
+    };
+    wrapped.__fixedCsvOnlyCurrentLineWrapped = true;
+    try{ window.calculate = calculate = wrapped; }catch(e){ window.calculate = wrapped; }
+  }
+
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("#dbFormationList button.applyBtn") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-actual],[data-generated-line-row],[data-result-id]") : null;
     if(!btn) return;
-    // 等級3以下外部DB専用ボタンは、元の外部DBハンドラで配置後、下のrenderRealtimeTotalStats上書きにより統一式へ入る。
-    if(btn.hasAttribute("data-grade3-ext-row") || btn.hasAttribute("data-grade3-precomputed-result") || btn.hasAttribute("data-grade3-unified-result")) return;
-    var row = resolveApplyRow(btn);
-    if(!row) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-    applyUnifiedRow(row);
+    setTimeout(function(){ loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); }); }, 80);
+    setTimeout(function(){ loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); }); }, 250);
   }, true);
 
+  applyKnownActiveLinesFinal();
   document.addEventListener("DOMContentLoaded", function(){
-    ensureMultipliers().then(function(){ try{ window.updateFormulaStatsForCurrentPlacement(); }catch(e){} });
+    applyKnownActiveLinesFinal();
+    setTimeout(applyKnownActiveLinesFinal, 0);
+    setTimeout(applyKnownActiveLinesFinal, 120);
   });
-  setTimeout(function(){ ensureMultipliers(); },0);
+  loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); });
 })();
 </script>
 
@@ -11350,3 +11356,230 @@ document.addEventListener("click", function(ev){
   }
 })();
 </script>
+
+
+<script id="final-stabilize-name-reach-formula-20260524">
+/* 最終安定化:
+   1) 山中鹿之助/山中鹿之介 表記揺れを全照合前に正規化
+   2) calculate後にリーチ欄を必ず最新配置で再描画
+   3) 5/6などDB空ステータス時は、倍率マスターが存在する場合だけ式計算へフォールバック
+   ※既存レイアウト・ボタン配置は変更しない
+*/
+(function(){
+  function normalizeHeroNameFinal(v){
+    return String(v == null ? "" : v)
+      .trim()
+      .replace(/山中鹿之助/g, "山中鹿之介")
+      .replace(/[・･]/g, "")
+      .replace(/[（）()]/g, "")
+      .replace(/[\s　]+/g, "");
+  }
+  function displayHeroNameFinal(v){
+    return String(v == null ? "" : v).trim().replace(/山中鹿之助/g, "山中鹿之介");
+  }
+  var oldCanonicalHeroNameFinal = (typeof canonicalHeroName === "function") ? canonicalHeroName : null;
+  try{
+    canonicalHeroName = function(name){
+      return normalizeHeroNameFinal(name);
+    };
+  }catch(e){}
+  try{
+    window.canonicalHeroName = function(name){
+      return normalizeHeroNameFinal(name);
+    };
+  }catch(e){}
+
+  try{
+    makeHeroNameKey = function(names){
+      return (names || []).map(normalizeHeroNameFinal).join("|");
+    };
+    window.makeHeroNameKey = makeHeroNameKey;
+  }catch(e){}
+
+  var oldHeroNameFinal = (typeof heroName === "function") ? heroName : null;
+  try{
+    heroName = function(h){
+      var n = oldHeroNameFinal ? oldHeroNameFinal(h) : (h && (h["英傑名"] || h["名前"] || h.name || "") || "");
+      return displayHeroNameFinal(n);
+    };
+    window.heroName = heroName;
+  }catch(e){}
+
+  try{
+    buildHeroNameLookup = function(){
+      var map = new Map();
+      (Array.isArray(eiketsuMaster) ? eiketsuMaster : []).forEach(function(h){
+        var raw = h && (h["英傑名"] || h.name || h["名前"] || "");
+        var key = normalizeHeroNameFinal(raw);
+        if(key) map.set(key, h);
+        if(raw) map.set(normalizeHeroNameFinal(displayHeroNameFinal(raw)), h);
+      });
+      return map;
+    };
+    window.buildHeroNameLookup = buildHeroNameLookup;
+  }catch(e){}
+
+  var oldDbRowMembersFinal = (typeof dbRowMembers === "function") ? dbRowMembers : null;
+  try{
+    dbRowMembers = function(row){
+      var list = oldDbRowMembersFinal
+        ? oldDbRowMembersFinal(row)
+        : String(row && (row.eiketsu_ids || row.members || "") || "").split("|").map(function(x){return x.trim();}).filter(Boolean);
+      return list.map(displayHeroNameFinal);
+    };
+    window.dbRowMembers = dbRowMembers;
+  }catch(e){}
+
+  function statKeysFinal(){
+    try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){}
+    return ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  }
+  function rowStatsFinal(row){
+    var out = {};
+    statKeysFinal().forEach(function(k){
+      var v = row && (row[k] != null ? row[k] : row[String(k).replace("属性","")]);
+      out[k] = (v === "" || v == null) ? "—" : (Number(v) || 0);
+    });
+    return out;
+  }
+  function hasUsefulStatsFinal(stats){
+    if(!stats) return false;
+    return statKeysFinal().some(function(k){
+      var v = stats[k];
+      return v !== "—" && v !== "" && v != null && Number(v) !== 0;
+    });
+  }
+  function drawStatsFinal(stats, modeText){
+    var box = document.getElementById("totalStatResult");
+    var mode = document.getElementById("totalStatMode");
+    if(!box) return false;
+    box.innerHTML = statKeysFinal().map(function(k){
+      var v = stats && stats[k] != null ? stats[k] : "—";
+      var zero = (v === "—" || Number(v) === 0);
+      return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
+    }).join("");
+    if(mode) mode.textContent = modeText || "";
+    return true;
+  }
+
+  var multiplierLoadStartedFinal = false;
+  function ensureMultiplierMasterFinal(){
+    if(multiplierLoadStartedFinal) return;
+    multiplierLoadStartedFinal = true;
+    try{
+      if(typeof inenMultiplierMap !== "undefined" && inenMultiplierMap && inenMultiplierMap.size > 0) return;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.loadCSV !== "function") return;
+      window.JinpoActivationEngine.loadCSV("data/91因縁_計算式_倍率展開.csv?v=20260524_fixed").then(function(rows){
+        if(!Array.isArray(rows) || !rows.length) return;
+        try{
+          inenMultiplierRows = rows;
+          if(typeof rebuildInenMultiplierMap === "function") rebuildInenMultiplierMap();
+          if(typeof calculate === "function") calculate();
+        }catch(e){}
+      }).catch(function(){});
+    }catch(e){}
+  }
+  function calcAllFormulaFinal(result){
+    var activated = result && Array.isArray(result.activated) ? result.activated : [];
+    if(!activated.length) return null;
+    ensureMultiplierMasterFinal();
+    try{
+      if(typeof inenMultiplierMap === "undefined" || !inenMultiplierMap || inenMultiplierMap.size === 0) return null;
+    }catch(e){ return null; }
+    var keys = statKeysFinal();
+    var raw = {};
+    keys.forEach(function(k){ raw[k] = 0; });
+    var matched = 0;
+    activated.forEach(function(act){
+      var nm = String(act && act.name || "").trim();
+      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
+      if(!nm || slots.length !== 3) return;
+      keys.forEach(function(stat){
+        var mult = 0;
+        try{
+          if(typeof makeMultiplierKey === "function") mult = Number(inenMultiplierMap.get(makeMultiplierKey(nm, stat)) || 0);
+        }catch(e){}
+        if(!mult) return;
+        var base = 0;
+        slots.forEach(function(slot){
+          var h = placement && placement[slot];
+          if(!h) return;
+          if(typeof heroStatValue === "function"){
+            base += Number(heroStatValue(h, stat) || 0);
+          }else{
+            base += Number(h[stat] || h[String(stat).replace("属性","")] || 0);
+          }
+        });
+        if(base <= 0) return;
+        raw[stat] += Math.floor(base * mult + 1e-9);
+        matched++;
+      });
+    });
+    if(!matched) return null;
+    try{
+      if(typeof applyFormationBonusToStats === "function") return applyFormationBonusToStats(raw);
+    }catch(e){}
+    return raw;
+  }
+
+  var oldRenderRealtimeFinal = (typeof renderRealtimeTotalStats === "function") ? renderRealtimeTotalStats : null;
+  function renderRealtimeFinal(result){
+    var hit = null;
+    try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
+    if(hit){
+      var dbStats = null;
+      try{ if(typeof getStatsFromMasterHit === "function") dbStats = getStatsFromMasterHit(hit); }catch(e){}
+      if(hasUsefulStatsFinal(dbStats)){
+        return drawStatsFinal(dbStats, hit.ambiguous ? "実数値DB一致 / 複数候補" : "実数値DB一致");
+      }
+    }
+    var formulaStats = calcAllFormulaFinal(result);
+    if(hasUsefulStatsFinal(formulaStats)){
+      return drawStatsFinal(formulaStats, "実数値DB未一致 / 因縁倍率式で計算表示");
+    }
+    if(oldRenderRealtimeFinal) return oldRenderRealtimeFinal(result);
+    return drawStatsFinal(null, "実数値DB未一致 / 計算不可");
+  }
+  try{
+    renderRealtimeTotalStats = renderRealtimeFinal;
+    window.renderRealtimeTotalStats = renderRealtimeFinal;
+  }catch(e){}
+
+  var oldCalculateFinal = (typeof calculate === "function") ? calculate : null;
+  if(oldCalculateFinal && !oldCalculateFinal.__finalStabilized20260524){
+    var wrappedCalculateFinal = function(){
+      var ret;
+      try{ ret = oldCalculateFinal.apply(this, arguments); }catch(e){ throw e; }
+      setTimeout(function(){
+        try{
+          if(!formationSelect || !String(formationSelect.value || "").trim()) return;
+          if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
+          var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+          if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
+          renderRealtimeFinal(result);
+        }catch(e){ console.error("最終再描画失敗", e); }
+      }, 0);
+      return ret;
+    };
+    wrappedCalculateFinal.__finalStabilized20260524 = true;
+    try{ calculate = wrappedCalculateFinal; window.calculate = wrappedCalculateFinal; }catch(e){}
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-actual],[data-generated-line-row],[data-result-id]") : null;
+    if(!btn) return;
+    setTimeout(function(){
+      try{
+        if(!formationSelect || !String(formationSelect.value || "").trim()) return;
+        if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
+        var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+        if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
+        renderRealtimeFinal(result);
+      }catch(e){}
+    }, 80);
+  }, true);
+
+  window.__jinpoFinalNameReachFormulaPatch = true;
+})();
+</script>
+
