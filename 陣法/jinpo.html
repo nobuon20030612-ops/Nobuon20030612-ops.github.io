@@ -1576,9 +1576,13 @@ let formationBonusMap = new Map();
 function makePipeKey(values){
 return values.map(v=>String(v ?? "").trim()).join("|");
 }
-function canonicalHeroName(name){
+function normalizeHeroDisplayName(name){
 return String(name ?? "")
 .trim()
+.replace(/山中鹿之助/g, "山中鹿之介");
+}
+function canonicalHeroName(name){
+return normalizeHeroDisplayName(name)
 .replace(/・/g, "")
 .replace(/\s+/g, "")
 .replace(/　+/g, "");
@@ -2140,6 +2144,7 @@ return names.every(name=>rowNames.includes(name));
 function dbRowMembers(row){
 return String(row?.eiketsu_ids || row?.members || "")
 .split("|")
+.map(x=>normalizeHeroDisplayName(x))
 .map(x=>x.trim())
 .filter(Boolean);
 }
@@ -2153,7 +2158,11 @@ function buildHeroNameLookup(){
 const map = new Map();
 for(const h of eiketsuMaster){
 const name = h["英傑名"] || h.name || h["名前"] || "";
-if(name) map.set(canonicalHeroName(name), h);
+if(name){
+const fixedName = normalizeHeroDisplayName(name);
+map.set(canonicalHeroName(fixedName), h);
+map.set(canonicalHeroName(name), h);
+}
 }
 return map;
 }
@@ -7354,7 +7363,7 @@ function splitApplyPipe(v){
   return String(v == null ? "" : v).split("|").map(function(x){ return x.trim(); }).filter(Boolean);
 }
 function normalizeApplyHeroName(v){
-  var s = String(v == null ? "" : v)
+  var s = normalizeHeroDisplayName(String(v == null ? "" : v))
     .replace(/^\s*\d+\.\s*/, "")
     .replace(/（/g, "(")
     .replace(/）/g, ")")
@@ -7389,7 +7398,7 @@ function applyRowMembersDirect(row){
 
   var next = {};
   for(var i=0;i<6;i++){
-    var rawName = members[i];
+    var rawName = normalizeHeroDisplayName(members[i]);
     var name = normalizeApplyHeroName(rawName);
     var h = lookup.get(name) || lookup.get(String(rawName || "").trim());
     if(!h){
@@ -11710,5 +11719,231 @@ document.addEventListener("click", function(ev){
     showOverlayFix();
     recalcOnceFix(220);
   }, true);
+})();
+
+/* 最終英傑名正規化ガード: 表示/適用/リーチ/DB経路で山中鹿之介へ統一。式・倍率・件数は変更しない。 */
+(function(){
+  const fixHeroName = function(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g, "山中鹿之介"); };
+  window.normalizeHeroDisplayName = fixHeroName;
+  const prevCanonical = (typeof canonicalHeroName === "function") ? canonicalHeroName : null;
+  canonicalHeroName = function(name){
+    const fixed = fixHeroName(name);
+    if(prevCanonical){
+      return prevCanonical(fixed);
+    }
+    return fixed.replace(/・/g, "").replace(/[\s　]+/g, "");
+  };
+  window.canonicalHeroName = canonicalHeroName;
+  if(typeof dbRowMembers === "function"){
+    const prevDbRowMembers = dbRowMembers;
+    dbRowMembers = function(row){
+      return prevDbRowMembers(row).map(fixHeroName);
+    };
+    window.dbRowMembers = dbRowMembers;
+  }
+  if(typeof buildHeroNameLookup === "function"){
+    const prevBuildHeroNameLookup = buildHeroNameLookup;
+    buildHeroNameLookup = function(){
+      const map = prevBuildHeroNameLookup();
+      try{
+        for(const h of (eiketsuMaster || [])){
+          const name = h["英傑名"] || h.name || h["名前"] || "";
+          if(name){
+            map.set(canonicalHeroName(fixHeroName(name)), h);
+            map.set(canonicalHeroName(name), h);
+          }
+        }
+      }catch(e){}
+      return map;
+    };
+    window.buildHeroNameLookup = buildHeroNameLookup;
+  }
+})();
+</script>
+
+
+<script id="reach-candidate-fallback-fix-20260525">
+/* リーチ表示復旧専用:
+   - 式・倍率・一覧表示仕様は変更しない
+   - 既存 result.reach が空の時だけ、現在配置から1人差し替え候補を再探索する
+   - 既存リーチ候補が出る場合は既存処理を優先する
+*/
+(function(){
+  if(window.__reachCandidateFallbackFix20260525) return;
+  window.__reachCandidateFallbackFix20260525 = true;
+
+  var originalBuildReachOnlyCandidates = (typeof buildReachOnlyCandidates === "function") ? buildReachOnlyCandidates : null;
+
+  function reachFixHeroName(h){
+    try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
+    return h && (h["英傑名"] || h["名前"] || h.name || "") || "";
+  }
+  function reachFixFactors(h){
+    try{ if(typeof cleanHeroFactors === "function") return cleanHeroFactors(h) || []; }catch(e){}
+    return [h&&h["因子1"],h&&h["因子2"],h&&h["因子3"],h&&h["因子4"]]
+      .map(function(v){return String(v==null?"":v).trim();})
+      .filter(Boolean);
+  }
+  function reachFixSet(result){
+    return new Set(((result && result.activated) || []).map(function(a){
+      return String(a && a.name || "").trim();
+    }).filter(Boolean));
+  }
+  function reachFixOwnedLock(){
+    try{ if(typeof ownedHeroReachLockState === "function") return ownedHeroReachLockState(); }catch(e){}
+    return {ids:new Set(), names:new Set()};
+  }
+  function reachFixOwnedLocked(hero, lock){
+    try{ if(typeof isOwnedReachLockedHero === "function") return isOwnedReachLockedHero(hero, lock); }catch(e){}
+    return false;
+  }
+  function reachFixOwnedKeep(testPlacement, lock){
+    try{ if(typeof placementKeepsOwnedReachHeroes === "function") return placementKeepsOwnedReachHeroes(testPlacement, lock); }catch(e){}
+    return true;
+  }
+  function reachFixDbRow(testPlacement, testResult){
+    try{ if(typeof findResultDbRowForPlacementState === "function") return findResultDbRowForPlacementState(testPlacement, testResult); }catch(e){}
+    return null;
+  }
+  function reachFixCalculate(testPlacement){
+    try{
+      var sel = document.getElementById("formationSelect");
+      var form = sel ? String(sel.value || "").trim() : "";
+      if(!form || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      return window.JinpoActivationEngine.calculateFormation(testPlacement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){
+      console.error("リーチ候補再探索失敗", e);
+      return null;
+    }
+  }
+
+  function buildReachFallbackCandidates(result){
+    if(!result || !Array.isArray(result.activated)) return [];
+    if(typeof placement === "undefined" || !placement) return [];
+    if(!Array.isArray(eiketsuMaster) || !eiketsuMaster.length) return [];
+
+    var currentCount = result.activated.length;
+    var currentNames = reachFixSet(result);
+    var usedIds = new Set([1,2,3,4,5,6].map(function(s){
+      return placement[s] && placement[s].internal_id;
+    }).filter(Boolean).map(String));
+    var ownedLock = reachFixOwnedLock();
+    var rows = [];
+    var seen = new Set();
+
+    for(var slot=1; slot<=6; slot++){
+      var beforeHero = placement[slot];
+      if(!beforeHero) continue;
+      if(reachFixOwnedLocked(beforeHero, ownedLock)) continue;
+
+      for(var i=0; i<eiketsuMaster.length; i++){
+        var cand = eiketsuMaster[i];
+        if(!cand || !cand.internal_id) continue;
+        if(String(cand.internal_id) === String(beforeHero.internal_id || "")) continue;
+        if(usedIds.has(String(cand.internal_id))) continue;
+
+        var testPlacement = Object.assign({}, placement);
+        testPlacement[slot] = cand;
+        if(!reachFixOwnedKeep(testPlacement, ownedLock)) continue;
+
+        var testResult = reachFixCalculate(testPlacement);
+        if(!testResult || !Array.isArray(testResult.activated)) continue;
+
+        var nextCount = testResult.activated.length;
+        if(nextCount < currentCount) continue;
+
+        var nextNames = reachFixSet(testResult);
+        var added = Array.from(nextNames).filter(function(n){ return !currentNames.has(n); });
+        var removed = Array.from(currentNames).filter(function(n){ return !nextNames.has(n); });
+        var kept = Array.from(nextNames).filter(function(n){ return currentNames.has(n); });
+        var sameSet = added.length === 0 && removed.length === 0;
+
+        if(nextCount === currentCount && !sameSet && !added.length && !removed.length) continue;
+
+        var key = slot + "|" + String(beforeHero.internal_id || "") + "|" + String(cand.internal_id || "") + "|" + Array.from(nextNames).sort().join(",");
+        if(seen.has(key)) continue;
+        seen.add(key);
+
+        var dbRow = reachFixDbRow(testPlacement, testResult);
+        rows.push({
+          kind: nextCount > currentCount ? "因縁増加" : (sameSet ? "同因縁数・同じ因縁" : "同因縁数・因縁変更"),
+          slot: slot,
+          beforeId: beforeHero.internal_id,
+          afterId: cand.internal_id,
+          before: reachFixHeroName(beforeHero),
+          after: reachFixHeroName(cand),
+          from: currentCount,
+          to: nextCount,
+          added: added,
+          removed: removed,
+          kept: kept,
+          sameSet: sameSet,
+          hasDbStats: !!dbRow,
+          dbStatusText: dbRow ? "DB登録あり" : "登録外・計算対象",
+          plusText: "",
+          minusText: ""
+        });
+
+        if(rows.length >= 120) break;
+      }
+      if(rows.length >= 120) break;
+    }
+
+    rows.sort(function(a,b){
+      if(a.to !== b.to) return b.to - a.to;
+      if(a.kind !== b.kind) return a.kind === "因縁増加" ? -1 : 1;
+      return a.slot - b.slot;
+    });
+    return rows.slice(0,120);
+  }
+
+  var fixedBuildReachOnlyCandidates = function(result){
+    var rows = [];
+    if(originalBuildReachOnlyCandidates){
+      try{ rows = originalBuildReachOnlyCandidates.apply(this, arguments) || []; }catch(e){ rows = []; }
+    }
+    if(rows && rows.length) return rows;
+    return buildReachFallbackCandidates(result);
+  };
+
+  try{
+    buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
+    window.buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
+  }catch(e){
+    window.buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
+  }
+
+  function refreshReachAfterFix(){
+    try{
+      var sel = document.getElementById("formationSelect");
+      var form = sel ? String(sel.value || "").trim() : "";
+      if(!form || typeof placement === "undefined" || typeof inenMaster === "undefined") return;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
+      var result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+      if(typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(result);
+    }catch(e){ console.error("リーチ復旧再描画失敗", e); }
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-v5],[data-linegen-v6],[data-linegen-v3],[data-linegen-v4],[data-linegen-single],[data-linegen-actual],[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result],[data-reach-replace-slot][data-reach-replace-id]") : null;
+    if(!btn) return;
+    setTimeout(refreshReachAfterFix, 0);
+    setTimeout(refreshReachAfterFix, 180);
+    setTimeout(refreshReachAfterFix, 500);
+  }, true);
+
+  document.addEventListener("change", function(ev){
+    var t = ev.target;
+    if(!t) return;
+    if(t.id === "formationSelect" || /slot|formation/i.test(String(t.id || ""))){
+      setTimeout(refreshReachAfterFix, 0);
+      setTimeout(refreshReachAfterFix, 180);
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(refreshReachAfterFix, 0);
+    setTimeout(refreshReachAfterFix, 300);
+  });
 })();
 </script>
