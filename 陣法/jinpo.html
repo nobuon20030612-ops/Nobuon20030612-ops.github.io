@@ -10822,7 +10822,29 @@ document.addEventListener("click", function(ev){
   function rowMatchesPriority(row){var rs=rules(); for(var i=0;i<rs.length;i++){var r=rs[i]; if(r&&r.threshold!==null&&Number.isFinite(Number(r.threshold))){if(statVal(row,r.stat)<Number(r.threshold)) return false;}} return true;}
   function sortRows(rows){var rs=rules(); return rows.slice().sort(function(a,b){for(var i=0;i<rs.length;i++){var d=statVal(b,rs[i].stat)-statVal(a,rs[i].stat); if(d) return d;} return String(a.result_id||'').localeCompare(String(b.result_id||''));});}
   function loadDb(){ if(dbCache) return Promise.resolve(dbCache); if(dbLoading) return dbLoading; dbLoading=fetch(DB_PATH,{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('HTTP '+r.status); return r.json();}).then(function(j){dbCache=j; return j;}); return dbLoading; }
-  function statsText(row){var parts=statKeys().map(function(k){var v=row&&(row[k]!=null?row[k]:row[String(k).replace('属性','')]); return k+':'+(v==null?'':v);}); var t=parts.join(' / '); return t.replace(/[\s/:]/g,'')?t:'登録外 / ステータス未登録';}
+  function statsText(row){
+    var hasValue=false;
+    var parts=statKeys().map(function(k){
+      var v=row&&(row[k]!=null?row[k]:row[String(k).replace('属性','')]);
+      if(v!=null && String(v).trim()!=='' && Number(v)!==0) hasValue=true;
+      return k+':'+(v==null?'':v);
+    });
+    return hasValue?parts.join(' / '):'登録外 / ステータス未登録';
+  }
+  function currentTotalStatsText(){
+    try{
+      var box=document.getElementById('totalStatResult');
+      if(!box) return '';
+      var cells=Array.prototype.slice.call(box.querySelectorAll('.totalStatItem'));
+      var parts=cells.map(function(cell){
+        var n=cell.querySelector('.statName');
+        var v=cell.querySelector('.statVal');
+        return String(n?n.textContent:'').trim()+':'+String(v?v.textContent:'').trim();
+      }).filter(function(x){return x && x.indexOf(':')!==-1;});
+      var text=parts.join(' / ');
+      return text && text.indexOf('—')===-1 ? text : '';
+    }catch(e){return '';}
+  }
   function table(rows,c){return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){var m=rowMembers(row),b=rowBonds(row); var has=statsText(row).indexOf('ステータス未登録')===-1; var label=has?'適用':'登録外'; var cls=has?'applyBtn':'applyBtn reachApplyBtn dbMissing'; return '<tr class="dbMainRow"><td><button class="'+cls+'" data-grade3-ext-row="'+esc(idx)+'" type="button">'+label+'</button></td><td>'+esc(row.bond_count||c)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+m.map(function(x,i){return '<span>'+esc(i+1)+'. '+esc(x)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+b.map(function(x){return '<span class="badge">'+esc(x)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+esc(statsText(row))+'</span></td></tr>';}).join('')+'</tbody></table>';}
   function renderButtons(){
     var old=document.getElementById('dbCountButtons'); if(!old) return;
@@ -10856,8 +10878,36 @@ document.addEventListener("click", function(ev){
     });
   }
   function findHero(name){var key=norm(name); try{for(var i=0;i<eiketsuMaster.length;i++){var h=eiketsuMaster[i], n=h&& (h['英傑名']||h['名前']||h.name||''); if(norm(n)===key) return h;}}catch(e){} return null;}
-  function preview(row){try{if(typeof renderUpperPreview==='function') renderUpperPreview({count:String(row.bond_count||getCount()),formation:String(row.formation||formation()),heroes:rowMembers(row).map(function(m,i){return (i+1)+'. '+m;}),bonds:rowBonds(row),stats:statsText(row)});}catch(e){}}
-  function applyRow(row){if(!row) return; var has=statsText(row).indexOf('ステータス未登録')===-1; if(has&&typeof applyDbFormationRow==='function'){try{applyDbFormationRow(row); return;}catch(e){}} var m=rowMembers(row), next={}; for(var i=0;i<6;i++){var h=findHero(m[i]); if(h) next[i+1]=h;} if(Object.keys(next).length===6){try{placement=next;}catch(e){} try{if(typeof renderSlots==='function') renderSlots();}catch(e){} try{if(typeof renderHeroCards==='function') renderHeroCards();}catch(e){} try{if(typeof calculate==='function') calculate();}catch(e){}} preview(row);}
+  function preview(row){
+    try{
+      var st=statsText(row);
+      if(st.indexOf('ステータス未登録')!==-1){
+        var live=currentTotalStatsText();
+        if(live) st=live;
+      }
+      if(typeof renderUpperPreview==='function') renderUpperPreview({count:String(row.bond_count||getCount()),formation:String(row.formation||formation()),heroes:rowMembers(row).map(function(m,i){return (i+1)+'. '+m;}),bonds:rowBonds(row),stats:st});
+    }catch(e){}
+  }
+  function applyRow(row){
+    if(!row) return;
+    var has=statsText(row).indexOf('ステータス未登録')===-1;
+    if(has&&typeof applyDbFormationRow==='function'){
+      try{applyDbFormationRow(row); return;}catch(e){}
+    }
+    try{ currentAppliedDbRow=null; }catch(e){}
+    try{ selectedDbResultId=''; }catch(e){}
+    var m=rowMembers(row), next={};
+    for(var i=0;i<6;i++){var h=findHero(m[i]); if(h) next[i+1]=h;}
+    if(Object.keys(next).length===6){
+      try{placement=next;}catch(e){}
+      try{if(typeof renderSlots==='function') renderSlots();}catch(e){}
+      try{if(typeof renderHeroCards==='function') renderHeroCards();}catch(e){}
+      try{if(typeof calculate==='function') calculate();}catch(e){}
+      try{if(typeof updateFormulaStatsForCurrentPlacement==='function') updateFormulaStatsForCurrentPlacement();}catch(e){}
+    }
+    setTimeout(function(){preview(row);},0);
+    setTimeout(function(){preview(row);},120);
+  }
 
   window.renderDbCountButtons=renderButtons;
   window.finalRenderDbCountButtons=renderButtons;
@@ -11082,184 +11132,5 @@ document.addEventListener("click", function(ev){
     };
     window.calculate.__registeredOutCalcSyncWrapped = true;
   }
-})();
-</script>
-
-
-<script id="absolute-last-grade3-567-blank-stat-registeredout-fix">
-/* 2026-05-24 修正:
-   等級3以下ONの5/6/7外部DBで、ステータス値が空欄なのに「適用」扱いになる問題を修正。
-   空欄行は登録外として扱い、押下時だけ配置→既存calculate()へ流す。
-   7〜9のDB登録済み表示・既存レイアウトには触らない。 */
-(function(){
-  if(window.__grade3567BlankStatRegisteredOutFixInstalled) return;
-  window.__grade3567BlankStatRegisteredOutFixInstalled = true;
-
-  var STAT_KEYS = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
-
-  function norm(v){ return String(v == null ? '' : v).trim().replace(/・/g,'').replace(/[\s　]+/g,''); }
-  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; }); }
-  function statKeys(){ try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){} return STAT_KEYS; }
-
-  function statValuesAreBlank(text){
-    text = String(text == null ? '' : text);
-    if(text.indexOf('登録外') !== -1 || text.indexOf('ステータス未登録') !== -1) return true;
-    var body = text.replace(/^\s*総合値\s*/,'');
-    var sawKey = false;
-    var hasValue = false;
-    statKeys().forEach(function(k){
-      var re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*[:：]\\s*([^/｜|]*)');
-      var m = body.match(re);
-      if(m){
-        sawKey = true;
-        var v = String(m[1] || '').trim();
-        if(v && v !== '—' && v !== '-') hasValue = true;
-      }
-    });
-    return sawKey && !hasValue;
-  }
-
-  function readMembersFromRow(mainRow){
-    var out = [];
-    if(!mainRow) return out;
-    mainRow.querySelectorAll('.dbPlacementMini span').forEach(function(sp){
-      var t = String(sp.textContent || '').trim();
-      t = t.replace(/^\s*\d+\s*[\.．、:]\s*/, '').trim();
-      if(t) out.push(t);
-    });
-    return out;
-  }
-
-  function readBondsFromRow(mainRow){
-    var out = [];
-    if(!mainRow) return out;
-    mainRow.querySelectorAll('.dbListBonds .badge').forEach(function(sp){
-      var t = String(sp.textContent || '').trim();
-      if(t) out.push(t);
-    });
-    return out;
-  }
-
-  function findHero(name){
-    var key = norm(name);
-    try{
-      for(var i=0;i<eiketsuMaster.length;i++){
-        var h = eiketsuMaster[i];
-        var n = h && (h['英傑名'] || h['名前'] || h.name || '');
-        if(norm(n) === key) return h;
-      }
-    }catch(e){}
-    return null;
-  }
-
-  function applyBlankStatRow(btn){
-    var mainRow = btn && btn.closest ? btn.closest('tr.dbMainRow') : null;
-    if(!mainRow) return false;
-    var members = readMembersFromRow(mainRow);
-    if(members.length !== 6) return false;
-    var next = {};
-    var missing = [];
-    for(var i=0;i<6;i++){
-      var h = findHero(members[i]);
-      if(h) next[i+1] = h; else missing.push(members[i]);
-    }
-    if(missing.length){ alert('英傑マスターに見つからない英傑があります: ' + missing.join(' / ')); return true; }
-
-    try{ selectedDbResultId = ''; }catch(e){}
-    try{ window.__lastReachAppliedDbRow = null; }catch(e){}
-    try{ placement = next; }catch(e){}
-    try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
-    try{ if(typeof renderHeroCards === 'function') renderHeroCards(); }catch(e){}
-    try{ if(typeof calculate === 'function') calculate(); }catch(e){}
-
-    var statRow = mainRow.nextElementSibling;
-    var val = statRow && statRow.querySelector ? statRow.querySelector('.dbListStat') : null;
-    if(val) val.textContent = '登録外 / 計算中...';
-
-    setTimeout(function(){ syncCalculatedStats(btn, members, readBondsFromRow(mainRow)); }, 80);
-    setTimeout(function(){ syncCalculatedStats(btn, members, readBondsFromRow(mainRow)); }, 220);
-    setTimeout(function(){ syncCalculatedStats(btn, members, readBondsFromRow(mainRow)); }, 500);
-    return true;
-  }
-
-  function currentStatsText(){
-    var box = document.getElementById('totalStatResult');
-    if(!box) return '';
-    var parts = [];
-    box.querySelectorAll('.totalStatItem').forEach(function(item){
-      var n = item.querySelector('.statName');
-      var v = item.querySelector('.statVal');
-      var name = String(n ? n.textContent : '').trim();
-      var val = String(v ? v.textContent : '').trim();
-      if(name) parts.push(name + ':' + (val || '—'));
-    });
-    return parts.join(' / ');
-  }
-
-  function hasUsefulNumber(text){
-    text = String(text || '');
-    if(text.indexOf('計算中') !== -1) return false;
-    if(text.indexOf('登録外') !== -1) return false;
-    return /[1-9１-９]/.test(text);
-  }
-
-  function syncCalculatedStats(btn, members, bonds){
-    var stats = currentStatsText();
-    if(!stats) return false;
-    var mainRow = btn && btn.closest ? btn.closest('tr.dbMainRow') : null;
-    var statRow = mainRow ? mainRow.nextElementSibling : null;
-    var val = statRow && statRow.querySelector ? statRow.querySelector('.dbListStat') : null;
-    if(val) val.textContent = hasUsefulNumber(stats) ? stats : '登録外 / ステータス未登録';
-    try{
-      if(typeof renderUpperPreview === 'function'){
-        var form = '';
-        try{ form = typeof currentFormationCanonical === 'function' ? currentFormationCanonical() : ''; }catch(e){}
-        if(!form){ var s=document.getElementById('formationSelect'); form=s?String(s.value||''):''; }
-        renderUpperPreview({
-          count: String((typeof selectedDbListBondCount !== 'undefined' && selectedDbListBondCount) || ''),
-          formation: form,
-          heroes: members.map(function(m,i){ return (i+1)+'. '+m; }),
-          bonds: bonds,
-          stats: hasUsefulNumber(stats) ? stats : '登録外 / ステータス未登録'
-        });
-      }
-    }catch(e){}
-    return true;
-  }
-
-  function normalizeBlankStatRows(){
-    var list = document.getElementById('dbFormationList');
-    if(!list) return;
-    list.querySelectorAll('tr.dbMainRow').forEach(function(mainRow){
-      var statRow = mainRow.nextElementSibling;
-      var statText = statRow ? String(statRow.textContent || '') : '';
-      var btn = mainRow.querySelector('button[data-grade3-ext-row], button.applyBtn');
-      if(!btn) return;
-      if(!statValuesAreBlank(statText)) return;
-      if(btn.hasAttribute('data-grade3-ext-row')){
-        btn.setAttribute('data-grade3-ext-row-fixed', btn.getAttribute('data-grade3-ext-row') || '');
-        btn.removeAttribute('data-grade3-ext-row');
-      }
-      btn.textContent = '登録外';
-      btn.classList.add('dbMissing','reachApplyBtn');
-      btn.dataset.lazyMissingCalc = '1';
-      btn.title = '登録外：押した時だけ配置して計算します。';
-      var val = statRow && statRow.querySelector ? statRow.querySelector('.dbListStat') : null;
-      if(val && statValuesAreBlank(val.textContent)) val.textContent = '登録外 / 押下時のみ計算';
-    });
-  }
-
-  document.addEventListener('click', function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest('#dbFormationList button[data-grade3-ext-row-fixed], #dbFormationList button[data-lazy-missing-calc="1"]') : null;
-    if(!btn) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-    applyBlankStatRow(btn);
-  }, true);
-
-  var mo = new MutationObserver(function(){ normalizeBlankStatRows(); });
-  try{ mo.observe(document.documentElement,{childList:true,subtree:true,characterData:true}); }catch(e){}
-  [0,120,400,900,1600].forEach(function(ms){ setTimeout(normalizeBlankStatRows, ms); });
 })();
 </script>
