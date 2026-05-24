@@ -7452,7 +7452,7 @@ function applyRowMembersDirect(row){
   }catch(e){}
 
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
-  try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){}
+  try{ if(typeof renderFormation === "function") renderFormation(null); }catch(e){} try{ if(typeof window.updateFormulaStatsForCurrentPlacement === "function") window.updateFormulaStatsForCurrentPlacement(); }catch(e){}
 
   // DB行の総合値を上部トータルにも反映
   try{
@@ -7573,121 +7573,6 @@ document.addEventListener("click", function(ev){
 
   return false;
 }, true);
-})();
-</script>
-
-
-<style id="reach-slot-replace-ui-style">
-#reachList .reachSlotBar{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;overflow-x:auto;padding:6px 0}
-#reachList .reachSlotPickBtn{min-width:120px;border:1px solid #d19a32;background:linear-gradient(#3a250d,#120a04);color:#ffe1a1;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer;white-space:nowrap}
-#reachList .reachSlotPickBtn:hover{box-shadow:0 0 12px rgba(231,189,92,.35)}
-#reachList .reachSlotPickBtn.empty{opacity:.55}
-#reachList .reachReplacePanel{margin-top:8px;border:1px solid rgba(244,211,139,.25);border-radius:10px;padding:8px;background:rgba(0,0,0,.18)}
-#reachList .reachReplaceList{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:8px;max-height:280px;overflow:auto}
-#reachList .reachReplaceHeroBtn{text-align:left;border:1px solid #7a5a29;background:#0d0a07;color:#f4ead2;border-radius:10px;padding:8px;cursor:pointer}
-#reachList .reachReplaceHeroBtn:hover{border-color:#f4d38b;box-shadow:0 0 10px rgba(231,189,92,.28)}
-#reachList .reachReplaceName{color:#ffe1a1;font-weight:800}
-#reachList .reachReplaceMeta{font-size:12px;color:#cbb98f;margin-top:3px}
-</style>
-<script id="reach-slot-replace-ui">
-(function(){
-var activeReachReplaceSlot = null;
-
-function reachHeroNameSafe(h){
-  try{ return heroName(h) || ""; }catch(e){ return h && (h["英傑名"] || h["名前"] || h.name || ""); }
-}
-function reachHeroFactorsSafe(h){
-  try{ return heroFactors(h) || []; }catch(e){ return [h&&h["因子1"],h&&h["因子2"],h&&h["因子3"],h&&h["因子4"]].filter(Boolean); }
-}
-function reachEsc(v){
-  try{ return esc(v); }catch(e){ return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];}); }
-}
-function reachUsedIdsExcept(slot){
-  var ids = new Set();
-  for(var i=1;i<=6;i++){
-    if(Number(i) === Number(slot)) continue;
-    var h = placement && placement[i];
-    if(h && h.internal_id) ids.add(String(h.internal_id));
-  }
-  return ids;
-}
-function reachApplyDirectSlot(slot, id){
-  slot = Number(slot);
-  var hero = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).find(function(h){return String(h.internal_id||"") === String(id);});
-  if(!hero) return;
-  try{ placement[slot] = hero; }catch(e){}
-  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
-  try{ if(typeof calculate === "function") calculate(); }catch(e){
-    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(_){}
-  }
-}
-function renderReachReplaceList(slot){
-  var panel = document.getElementById("reachReplacePanel");
-  if(!panel) return;
-  slot = Number(slot);
-  var current = placement && placement[slot];
-  var used = reachUsedIdsExcept(slot);
-  var rows = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).filter(function(h){
-    return h && h.internal_id && !used.has(String(h.internal_id));
-  });
-  panel.innerHTML = '<div class="small">差し替え対象: '+reachEsc(slot)+'番 '+reachEsc(reachHeroNameSafe(current)||"未選択")+'</div>'
-    + '<div class="reachReplaceList">'
-    + rows.map(function(h){
-      var name = reachHeroNameSafe(h);
-      var factors = reachHeroFactorsSafe(h).map(function(f){return '<span class="badge">'+reachEsc(f)+'</span>';}).join("");
-      return '<button type="button" class="reachReplaceHeroBtn" data-reach-replace-slot="'+reachEsc(slot)+'" data-reach-replace-id="'+reachEsc(h.internal_id)+'">'
-        + '<div class="reachReplaceName">'+reachEsc(name)+'</div>'
-        + '<div class="reachReplaceMeta">コスト '+reachEsc(h["コスト"]||"未確認")+'</div>'
-        + '<div>'+factors+'</div>'
-        + '</button>';
-    }).join("")
-    + '</div>';
-}
-function renderReachSlotOnlyUi(){
-  var root = document.getElementById("reachList");
-  if(!root) return;
-  var html = '<h3>リーチ</h3><div class="small">差し替えたい配置英傑を選択してください。</div><div class="reachSlotBar">';
-  for(var i=1;i<=6;i++){
-    var h = placement && placement[i];
-    var name = reachHeroNameSafe(h) || "未選択";
-    html += '<button type="button" class="reachSlotPickBtn '+(!h?'empty':'')+'" data-reach-slot-pick="'+i+'">'+i+'. '+reachEsc(name)+'</button>';
-  }
-  html += '</div><div id="reachReplacePanel" class="reachReplacePanel"><div class="small">上の英傑名ボタンを押すと差し替え英傑一覧を表示します。</div></div>';
-  root.innerHTML = html;
-  if(activeReachReplaceSlot) renderReachReplaceList(activeReachReplaceSlot);
-}
-var oldRenderResults = window.renderResults || (typeof renderResults === "function" ? renderResults : null);
-if(typeof oldRenderResults === "function" && !oldRenderResults.__reachSlotReplaceUi){
-  var wrapped = function(result){
-    var r = oldRenderResults.apply(this, arguments);
-    renderReachSlotOnlyUi();
-    return r;
-  };
-  wrapped.__reachSlotReplaceUi = true;
-  window.renderResults = wrapped;
-  try{ renderResults = wrapped; }catch(e){}
-}
-document.addEventListener("click", function(ev){
-  var slotBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-slot-pick]") : null;
-  if(slotBtn){
-    ev.preventDefault();
-    activeReachReplaceSlot = Number(slotBtn.getAttribute("data-reach-slot-pick"));
-    renderReachReplaceList(activeReachReplaceSlot);
-    return;
-  }
-  var heroBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-replace-slot][data-reach-replace-id]") : null;
-  if(heroBtn){
-    ev.preventDefault();
-    reachApplyDirectSlot(heroBtn.getAttribute("data-reach-replace-slot"), heroBtn.getAttribute("data-reach-replace-id"));
-    activeReachReplaceSlot = null;
-    setTimeout(renderReachSlotOnlyUi,0);
-  }
-}, true);
-document.addEventListener("DOMContentLoaded", function(){
-  setTimeout(renderReachSlotOnlyUi,0);
-  setTimeout(renderReachSlotOnlyUi,300);
-});
-window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
 })();
 </script>
 
@@ -7844,6 +7729,252 @@ document.addEventListener("DOMContentLoaded", function(){
   setTimeout(bindHardRequireFormation, 1000);
 });
 window.bindHardRequireFormation = bindHardRequireFormation;
+})();
+</script>
+
+
+<style id="reach-slot-replace-ui-style">
+#reachList .reachSlotBar{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;overflow-x:auto;padding:6px 0}
+#reachList .reachSlotPickBtn{min-width:120px;border:1px solid #d19a32;background:linear-gradient(#3a250d,#120a04);color:#ffe1a1;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer;white-space:nowrap}
+#reachList .reachReplacePanel{margin-top:8px;border:1px solid rgba(244,211,139,.25);border-radius:10px;padding:8px;background:rgba(0,0,0,.18)}
+#reachList .reachReplaceList{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:8px;max-height:280px;overflow:auto}
+#reachList .reachReplaceHeroBtn{text-align:left;border:1px solid #7a5a29;background:#0d0a07;color:#f4ead2;border-radius:10px;padding:8px;cursor:pointer}
+#reachList .reachReplaceName{color:#ffe1a1;font-weight:800}
+#reachList .reachReplaceMeta{font-size:12px;color:#cbb98f;margin-top:3px}
+</style>
+<script id="reach-slot-replace-ui">
+(function(){
+var activeReachReplaceSlot = null;
+var lastReachReplaceCandidates = [];
+
+function reachHeroNameSafe(h){
+  try{ return heroName(h) || ""; }catch(e){ return h && (h["英傑名"] || h["名前"] || h.name || ""); }
+}
+function reachEsc(v){
+  try{ return esc(v); }catch(e){ return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];}); }
+}
+function reachCandidateRowsFromResult(result){
+  try{
+    if(typeof buildReachOnlyCandidates === "function"){
+      return buildReachOnlyCandidates(result) || [];
+    }
+  }catch(e){}
+  return [];
+}
+function reachCandidatesBySlot(slot){
+  slot = Number(slot);
+  var seen = new Set();
+  return lastReachReplaceCandidates.filter(function(c){
+    if(Number(c.slot) !== slot) return false;
+    var key = String(c.afterId || "") + "||" + String(c.after || "");
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return !!c.afterId;
+  });
+}
+function reachApplyDirectSlot(slot, id){
+  slot = Number(slot);
+  var hero = (Array.isArray(eiketsuMaster)?eiketsuMaster:[]).find(function(h){return String(h.internal_id||"") === String(id);});
+  if(!hero) return;
+  try{ placement[slot] = hero; }catch(e){}
+  try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+  try{ if(typeof calculate === "function") calculate(); }catch(e){
+    try{ if(typeof renderFormation === "function") renderFormation(null); }catch(_){}
+  }
+}
+function renderReachReplaceList(slot){
+  var panel = document.getElementById("reachReplacePanel");
+  if(!panel) return;
+  slot = Number(slot);
+  var current = placement && placement[slot];
+  var rows = reachCandidatesBySlot(slot);
+  if(!rows.length){
+    panel.innerHTML = '<div class="small">'+reachEsc(slot)+'番 '+reachEsc(reachHeroNameSafe(current)||"未選択")+' は差し替え可能候補なし</div>';
+    return;
+  }
+  panel.innerHTML = '<div class="small">差し替え対象: '+reachEsc(slot)+'番 '+reachEsc(reachHeroNameSafe(current)||"未選択")+'</div>'
+    + '<div class="reachReplaceList">'
+    + rows.map(function(c){
+      var meta = String(c.kind || "") + " / 因縁数 " + String(c.from || "") + "→" + String(c.to || "");
+      return '<button type="button" class="reachReplaceHeroBtn" data-reach-replace-slot="'+reachEsc(slot)+'" data-reach-replace-id="'+reachEsc(c.afterId)+'">'
+        + '<div class="reachReplaceName">'+reachEsc(c.after)+'</div>'
+        + '<div class="reachReplaceMeta">'+reachEsc(meta)+'</div>'
+        + '</button>';
+    }).join("")
+    + '</div>';
+}
+function renderReachSlotOnlyUi(result){
+  var root = document.getElementById("reachList");
+  if(!root) return;
+  lastReachReplaceCandidates = reachCandidateRowsFromResult(result);
+  var slotMap = new Map();
+  lastReachReplaceCandidates.forEach(function(c){
+    var slot = Number(c.slot);
+    if(!slot || slotMap.has(slot)) return;
+    slotMap.set(slot, c);
+  });
+  var slots = Array.from(slotMap.keys()).sort(function(a,b){return a-b;});
+  if(!slots.length){
+    root.innerHTML = '<h3>リーチ</h3><p class="small">差し替え可能候補なし</p>';
+    return;
+  }
+  var html = '<h3>リーチ</h3><div class="small">差し替え可能な配置英傑のみ表示しています。</div><div class="reachSlotBar">';
+  slots.forEach(function(i){
+    var h = placement && placement[i];
+    var name = reachHeroNameSafe(h) || "未選択";
+    var count = reachCandidatesBySlot(i).length;
+    html += '<button type="button" class="reachSlotPickBtn" data-reach-slot-pick="'+i+'">'+i+'. '+reachEsc(name)+' ('+count+')</button>';
+  });
+  html += '</div><div id="reachReplacePanel" class="reachReplacePanel"><div class="small">上の英傑名ボタンを押すと、実際に入換可能な英傑だけ表示します。</div></div>';
+  root.innerHTML = html;
+  if(activeReachReplaceSlot && slotMap.has(Number(activeReachReplaceSlot))) renderReachReplaceList(activeReachReplaceSlot);
+}
+var oldRenderResults = window.renderResults || (typeof renderResults === "function" ? renderResults : null);
+if(typeof oldRenderResults === "function" && !oldRenderResults.__reachSlotReplaceUi){
+  var wrapped = function(result){
+    var r = oldRenderResults.apply(this, arguments);
+    renderReachSlotOnlyUi(result);
+    return r;
+  };
+  wrapped.__reachSlotReplaceUi = true;
+  window.renderResults = wrapped;
+  try{ renderResults = wrapped; }catch(e){}
+}
+document.addEventListener("click", function(ev){
+  var slotBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-slot-pick]") : null;
+  if(slotBtn){
+    ev.preventDefault();
+    activeReachReplaceSlot = Number(slotBtn.getAttribute("data-reach-slot-pick"));
+    renderReachReplaceList(activeReachReplaceSlot);
+    return;
+  }
+  var heroBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-replace-slot][data-reach-replace-id]") : null;
+  if(heroBtn){
+    ev.preventDefault();
+    reachApplyDirectSlot(heroBtn.getAttribute("data-reach-replace-slot"), heroBtn.getAttribute("data-reach-replace-id"));
+    activeReachReplaceSlot = null;
+  }
+}, true);
+document.addEventListener("DOMContentLoaded", function(){
+  setTimeout(function(){ renderReachSlotOnlyUi(null); },0);
+});
+window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
+})();
+</script>
+
+
+<script id="multi-inen-formula-display-fix">
+(function(){
+function statKeysFormula(){
+  return Array.isArray(window.REALTIME_STAT_KEYS) ? window.REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+}
+function heroStatForFormula(hero, stat){
+  if(!hero) return 0;
+  var aliases = {
+    "生命":["生命","生命力"], "気合":["気合"], "腕力":["腕力"],
+    "耐久力":["耐久力","耐久"], "器用さ":["器用さ","器用"],
+    "知力":["知力"], "魅力":["魅力"],
+    "土属性":["土属性","土"], "水属性":["水属性","水"],
+    "火属性":["火属性","火"], "風属性":["風属性","風"]
+  }[stat] || [stat];
+  for(var i=0;i<aliases.length;i++){
+    var v = Number(hero[aliases[i]]);
+    if(Number.isFinite(v) && v !== 0) return v;
+  }
+  return 0;
+}
+function multiplierForFormula(inenName, stat){
+  try{
+    if(typeof makeMultiplierKey === "function" && typeof inenMultiplierMap !== "undefined"){
+      return inenMultiplierMap.get(makeMultiplierKey(String(inenName||"").trim(), stat));
+    }
+  }catch(e){}
+  return null;
+}
+function calcAllInenStatsFromMultiplierMaster(result){
+  var activated = result && Array.isArray(result.activated) ? result.activated : [];
+  if(!activated.length) return null;
+  var keys = statKeysFormula();
+  var raw = {};
+  keys.forEach(function(k){ raw[k] = 0; });
+  var matched = 0;
+
+  activated.forEach(function(act){
+    var inenName = String(act.name || "").trim();
+    var slots = Array.isArray(act.lineSlots) ? act.lineSlots : [];
+    if(!inenName || slots.length !== 3) return;
+
+    keys.forEach(function(stat){
+      var mult = multiplierForFormula(inenName, stat);
+      if(!mult) return;
+      var base = 0;
+      slots.forEach(function(slot){
+        base += heroStatForFormula(placement && placement[slot], stat);
+      });
+      if(base <= 0) return;
+      raw[stat] += Math.floor((base * Number(mult)) + 1e-9);
+      matched++;
+    });
+  });
+
+  if(!matched) return null;
+
+  var finalStats = raw;
+  try{
+    if(typeof applyFormationBonusToStats === "function"){
+      finalStats = applyFormationBonusToStats(raw);
+    }
+  }catch(e){}
+  return finalStats;
+}
+function renderStatsGridFormula(stats, modeText){
+  var box = document.getElementById("totalStatResult");
+  var mode = document.getElementById("totalStatMode");
+  if(!box) return false;
+  var keys = statKeysFormula();
+  box.innerHTML = keys.map(function(k){
+    var v = stats && stats[k] != null ? stats[k] : "—";
+    var zero = (v === "—" || Number(v) === 0);
+    return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
+  }).join("");
+  if(mode) mode.textContent = modeText || "";
+  return true;
+}
+var oldRenderRealtimeTotalStats = window.renderRealtimeTotalStats || (typeof renderRealtimeTotalStats === "function" ? renderRealtimeTotalStats : null);
+function renderRealtimeTotalStatsFormulaFixed(result){
+  var hit = null;
+  try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
+  if(hit && typeof getStatsFromMasterHit === "function"){
+    return renderStatsGridFormula(getStatsFromMasterHit(hit), hit.ambiguous ? "実数値DB一致 / 複数候補" : "実数値DB一致");
+  }
+  var stats = calcAllInenStatsFromMultiplierMaster(result);
+  if(stats){
+    return renderStatsGridFormula(stats, "実数値DB未一致 / 因縁倍率式で計算表示");
+  }
+  if(typeof oldRenderRealtimeTotalStats === "function"){
+    return oldRenderRealtimeTotalStats(result);
+  }
+  return renderStatsGridFormula(null, "実数値DB未一致 / 計算不可");
+}
+window.renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed;
+try{ renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed; }catch(e){}
+
+window.updateFormulaStatsForCurrentPlacement = function(){
+  try{
+    if(!formationSelect || !String(formationSelect.value || "").trim()) return false;
+    if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return false;
+    var result = window.JinpoActivationEngine.calculateFormation(
+      placement,
+      formationSelect.value,
+      inenMaster,
+      window.JINPO_FORMATION_CONFIG
+    );
+    renderRealtimeTotalStatsFormulaFixed(result);
+    return true;
+  }catch(e){
+    return false;
+  }
+};
 })();
 </script>
 
