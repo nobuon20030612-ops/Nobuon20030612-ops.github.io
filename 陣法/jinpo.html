@@ -11134,3 +11134,230 @@ document.addEventListener("click", function(ev){
   }
 })();
 </script>
+
+
+<script id="final-stabilize-name-reach-formula-20260524">
+/* 最終安定化:
+   1) 山中鹿之助/山中鹿之介 表記揺れを全照合前に正規化
+   2) calculate後にリーチ欄を必ず最新配置で再描画
+   3) 5/6などDB空ステータス時は、倍率マスターが存在する場合だけ式計算へフォールバック
+   ※既存レイアウト・ボタン配置は変更しない
+*/
+(function(){
+  function normalizeHeroNameFinal(v){
+    return String(v == null ? "" : v)
+      .trim()
+      .replace(/山中鹿之助/g, "山中鹿之介")
+      .replace(/[・･]/g, "")
+      .replace(/[（）()]/g, "")
+      .replace(/[\s　]+/g, "");
+  }
+  function displayHeroNameFinal(v){
+    return String(v == null ? "" : v).trim().replace(/山中鹿之助/g, "山中鹿之介");
+  }
+  var oldCanonicalHeroNameFinal = (typeof canonicalHeroName === "function") ? canonicalHeroName : null;
+  try{
+    canonicalHeroName = function(name){
+      return normalizeHeroNameFinal(name);
+    };
+  }catch(e){}
+  try{
+    window.canonicalHeroName = function(name){
+      return normalizeHeroNameFinal(name);
+    };
+  }catch(e){}
+
+  try{
+    makeHeroNameKey = function(names){
+      return (names || []).map(normalizeHeroNameFinal).join("|");
+    };
+    window.makeHeroNameKey = makeHeroNameKey;
+  }catch(e){}
+
+  var oldHeroNameFinal = (typeof heroName === "function") ? heroName : null;
+  try{
+    heroName = function(h){
+      var n = oldHeroNameFinal ? oldHeroNameFinal(h) : (h && (h["英傑名"] || h["名前"] || h.name || "") || "");
+      return displayHeroNameFinal(n);
+    };
+    window.heroName = heroName;
+  }catch(e){}
+
+  try{
+    buildHeroNameLookup = function(){
+      var map = new Map();
+      (Array.isArray(eiketsuMaster) ? eiketsuMaster : []).forEach(function(h){
+        var raw = h && (h["英傑名"] || h.name || h["名前"] || "");
+        var key = normalizeHeroNameFinal(raw);
+        if(key) map.set(key, h);
+        if(raw) map.set(normalizeHeroNameFinal(displayHeroNameFinal(raw)), h);
+      });
+      return map;
+    };
+    window.buildHeroNameLookup = buildHeroNameLookup;
+  }catch(e){}
+
+  var oldDbRowMembersFinal = (typeof dbRowMembers === "function") ? dbRowMembers : null;
+  try{
+    dbRowMembers = function(row){
+      var list = oldDbRowMembersFinal
+        ? oldDbRowMembersFinal(row)
+        : String(row && (row.eiketsu_ids || row.members || "") || "").split("|").map(function(x){return x.trim();}).filter(Boolean);
+      return list.map(displayHeroNameFinal);
+    };
+    window.dbRowMembers = dbRowMembers;
+  }catch(e){}
+
+  function statKeysFinal(){
+    try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){}
+    return ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  }
+  function rowStatsFinal(row){
+    var out = {};
+    statKeysFinal().forEach(function(k){
+      var v = row && (row[k] != null ? row[k] : row[String(k).replace("属性","")]);
+      out[k] = (v === "" || v == null) ? "—" : (Number(v) || 0);
+    });
+    return out;
+  }
+  function hasUsefulStatsFinal(stats){
+    if(!stats) return false;
+    return statKeysFinal().some(function(k){
+      var v = stats[k];
+      return v !== "—" && v !== "" && v != null && Number(v) !== 0;
+    });
+  }
+  function drawStatsFinal(stats, modeText){
+    var box = document.getElementById("totalStatResult");
+    var mode = document.getElementById("totalStatMode");
+    if(!box) return false;
+    box.innerHTML = statKeysFinal().map(function(k){
+      var v = stats && stats[k] != null ? stats[k] : "—";
+      var zero = (v === "—" || Number(v) === 0);
+      return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
+    }).join("");
+    if(mode) mode.textContent = modeText || "";
+    return true;
+  }
+
+  var multiplierLoadStartedFinal = false;
+  function ensureMultiplierMasterFinal(){
+    if(multiplierLoadStartedFinal) return;
+    multiplierLoadStartedFinal = true;
+    try{
+      if(typeof inenMultiplierMap !== "undefined" && inenMultiplierMap && inenMultiplierMap.size > 0) return;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.loadCSV !== "function") return;
+      window.JinpoActivationEngine.loadCSV("data/jinpo_inen_multiplier_master.csv?v=20260524").then(function(rows){
+        if(!Array.isArray(rows) || !rows.length) return;
+        try{
+          inenMultiplierRows = rows;
+          if(typeof rebuildInenMultiplierMap === "function") rebuildInenMultiplierMap();
+          if(typeof calculate === "function") calculate();
+        }catch(e){}
+      }).catch(function(){});
+    }catch(e){}
+  }
+  function calcAllFormulaFinal(result){
+    var activated = result && Array.isArray(result.activated) ? result.activated : [];
+    if(!activated.length) return null;
+    ensureMultiplierMasterFinal();
+    try{
+      if(typeof inenMultiplierMap === "undefined" || !inenMultiplierMap || inenMultiplierMap.size === 0) return null;
+    }catch(e){ return null; }
+    var keys = statKeysFinal();
+    var raw = {};
+    keys.forEach(function(k){ raw[k] = 0; });
+    var matched = 0;
+    activated.forEach(function(act){
+      var nm = String(act && act.name || "").trim();
+      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
+      if(!nm || slots.length !== 3) return;
+      keys.forEach(function(stat){
+        var mult = 0;
+        try{
+          if(typeof makeMultiplierKey === "function") mult = Number(inenMultiplierMap.get(makeMultiplierKey(nm, stat)) || 0);
+        }catch(e){}
+        if(!mult) return;
+        var base = 0;
+        slots.forEach(function(slot){
+          var h = placement && placement[slot];
+          if(!h) return;
+          if(typeof heroStatValue === "function"){
+            base += Number(heroStatValue(h, stat) || 0);
+          }else{
+            base += Number(h[stat] || h[String(stat).replace("属性","")] || 0);
+          }
+        });
+        if(base <= 0) return;
+        raw[stat] += Math.floor(base * mult + 1e-9);
+        matched++;
+      });
+    });
+    if(!matched) return null;
+    try{
+      if(typeof applyFormationBonusToStats === "function") return applyFormationBonusToStats(raw);
+    }catch(e){}
+    return raw;
+  }
+
+  var oldRenderRealtimeFinal = (typeof renderRealtimeTotalStats === "function") ? renderRealtimeTotalStats : null;
+  function renderRealtimeFinal(result){
+    var hit = null;
+    try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
+    if(hit){
+      var dbStats = null;
+      try{ if(typeof getStatsFromMasterHit === "function") dbStats = getStatsFromMasterHit(hit); }catch(e){}
+      if(hasUsefulStatsFinal(dbStats)){
+        return drawStatsFinal(dbStats, hit.ambiguous ? "実数値DB一致 / 複数候補" : "実数値DB一致");
+      }
+    }
+    var formulaStats = calcAllFormulaFinal(result);
+    if(hasUsefulStatsFinal(formulaStats)){
+      return drawStatsFinal(formulaStats, "実数値DB未一致 / 因縁倍率式で計算表示");
+    }
+    if(oldRenderRealtimeFinal) return oldRenderRealtimeFinal(result);
+    return drawStatsFinal(null, "実数値DB未一致 / 計算不可");
+  }
+  try{
+    renderRealtimeTotalStats = renderRealtimeFinal;
+    window.renderRealtimeTotalStats = renderRealtimeFinal;
+  }catch(e){}
+
+  var oldCalculateFinal = (typeof calculate === "function") ? calculate : null;
+  if(oldCalculateFinal && !oldCalculateFinal.__finalStabilized20260524){
+    var wrappedCalculateFinal = function(){
+      var ret;
+      try{ ret = oldCalculateFinal.apply(this, arguments); }catch(e){ throw e; }
+      setTimeout(function(){
+        try{
+          if(!formationSelect || !String(formationSelect.value || "").trim()) return;
+          if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
+          var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+          if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
+          renderRealtimeFinal(result);
+        }catch(e){ console.error("最終再描画失敗", e); }
+      }, 0);
+      return ret;
+    };
+    wrappedCalculateFinal.__finalStabilized20260524 = true;
+    try{ calculate = wrappedCalculateFinal; window.calculate = wrappedCalculateFinal; }catch(e){}
+  }
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-actual],[data-generated-line-row],[data-result-id]") : null;
+    if(!btn) return;
+    setTimeout(function(){
+      try{
+        if(!formationSelect || !String(formationSelect.value || "").trim()) return;
+        if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
+        var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
+        if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
+        renderRealtimeFinal(result);
+      }catch(e){}
+    }, 80);
+  }, true);
+
+  window.__jinpoFinalNameReachFormulaPatch = true;
+})();
+</script>
+
