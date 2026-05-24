@@ -11947,3 +11947,389 @@ document.addEventListener("click", function(ev){
   });
 })();
 </script>
+
+
+<script id="final-reach-and-5-6-apply-cause-fix-20260525">
+/*
+  原因特定後の最終補強:
+  - 5/6因縁の生成行適用は calculate() 全体再探索へ流さず、選択行の6人配置だけ適用して現在陣形ラインで再計算する
+  - リーチ候補は「現在result.reachが空/候補0」でも、実際に1人差し替え後の発動因縁数・因縁集合を計算して候補を復元する
+  - 式・倍率・CSV・表示項目は変更しない
+*/
+(function(){
+  if(window.__finalReachAndLineApplyCauseFix20260525) return;
+  window.__finalReachAndLineApplyCauseFix20260525 = true;
+
+  var STAT_KEYS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+  var multiplierRows = null;
+  var multiplierMap = new Map();
+  var multiplierPromise = null;
+
+  function normName(v){
+    return String(v == null ? "" : v)
+      .replace(/山中鹿之助/g, "山中鹿之介")
+      .replace(/龍飛鳳舞/g, "竜飛鳳舞")
+      .replace(/日進月步/g, "日進月歩")
+      .replace(/老練豁達/g, "老練闊達")
+      .replace(/^\uFEFF/, "")
+      .replace(/[・･]/g, "")
+      .replace(/[（）()]/g, "")
+      .replace(/\s+/g, "")
+      .replace(/　+/g, "")
+      .trim();
+  }
+  function dispName(v){
+    return String(v == null ? "" : v).replace(/山中鹿之助/g, "山中鹿之介").trim();
+  }
+  function statName(v){
+    var s = String(v == null ? "" : v).replace(/^\uFEFF/, "").trim()
+      .replace(/生命力/g, "生命")
+      .replace(/^耐久$/, "耐久力")
+      .replace(/^器用$/, "器用さ");
+    if(s === "土") return "土属性";
+    if(s === "水") return "水属性";
+    if(s === "火") return "火属性";
+    if(s === "風") return "風属性";
+    return s;
+  }
+  function escLocal(v){
+    try{ if(typeof esc === "function") return esc(v); }catch(e){}
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];});
+  }
+  function keyOf(name, stat){ return normName(name) + "|" + statName(stat); }
+  function namesOfRow(row){
+    return String(row && (row.eiketsu_ids || row.members || row["英傑"] || "") || "")
+      .split("|").map(function(x){ return dispName(x); }).filter(Boolean);
+  }
+  function heroNameSafe(h){
+    try{ if(typeof heroName === "function") return dispName(heroName(h)); }catch(e){}
+    return dispName(h && (h["英傑名"] || h["名前"] || h.name || ""));
+  }
+  function heroFactorsSafe(h){
+    try{ if(typeof cleanHeroFactors === "function") return cleanHeroFactors(h).map(String); }catch(e){}
+    return [h&&h["因子1"],h&&h["因子2"],h&&h["因子3"],h&&h["因子4"]]
+      .map(function(x){return String(x == null ? "" : x).trim();})
+      .filter(function(x){return x && x !== "対象外" && x !== "未確認";});
+  }
+  function heroStatSafe(h, stat){
+    try{ if(typeof heroStatValue === "function") return Number(heroStatValue(h, stat) || 0); }catch(e){}
+    var aliases = {
+      "生命":["生命","生命力"],"気合":["気合"],"腕力":["腕力"],"耐久力":["耐久力","耐久"],"器用さ":["器用さ","器用"],
+      "知力":["知力"],"魅力":["魅力"],"土属性":["土属性","土"],"水属性":["水属性","水"],"火属性":["火属性","火"],"風属性":["風属性","風"]
+    }[stat] || [stat];
+    for(var i=0;i<aliases.length;i++){
+      var v = Number(h && h[aliases[i]] || 0);
+      if(v) return v;
+    }
+    return 0;
+  }
+  function getStatKeys(){
+    try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){}
+    return STAT_KEYS;
+  }
+  function canonicalFormation(v){
+    var s = String(v == null ? "" : v);
+    if(s.indexOf("魚鱗") !== -1) return "魚鱗";
+    if(s.indexOf("方円") !== -1) return "方円";
+    if(s.indexOf("鶴翼") !== -1) return "鶴翼";
+    if(s.indexOf("衡軛") !== -1 || s.indexOf("衝軛") !== -1) return "衡軛";
+    return s.trim();
+  }
+  function forceKnownLines(){
+    try{
+      var cfg = window.JINPO_FORMATION_CONFIG;
+      if(!cfg) return;
+      if(cfg["魚鱗"]) cfg["魚鱗"].activeLines = [[1,2,3],[3,4,5],[5,6,1]];
+      if(cfg["方円"]) cfg["方円"].activeLines = [[2,3,4],[4,5,6],[2,1,6]];
+    }catch(e){}
+  }
+  function currentResult(){
+    try{
+      forceKnownLines();
+      var sel = document.getElementById("formationSelect");
+      var form = sel ? String(sel.value || "").trim() : "";
+      if(!form || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){ return null; }
+  }
+  function loadMultipliers(){
+    if(multiplierRows) return Promise.resolve(multiplierRows);
+    if(multiplierPromise) return multiplierPromise;
+    if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.loadCSV !== "function"){
+      return Promise.resolve([]);
+    }
+    multiplierPromise = window.JinpoActivationEngine.loadCSV("data/91因縁_計算式_倍率展開.csv?v=20260524_fixed")
+      .then(function(rows){
+        multiplierRows = Array.isArray(rows) ? rows : [];
+        multiplierMap.clear();
+        multiplierRows.forEach(function(r){
+          var name = r["因縁名"] || r["因縁"] || r.name || "";
+          var stat = r["対象ステータス"] || r["ステータス"] || r.stat || "";
+          var val = Number(r["実効係数_因縁係数x2.24"] || r["実効係数"] || r["倍率"] || 0);
+          if(!name || !stat || !Number.isFinite(val) || val <= 0) return;
+          multiplierMap.set(keyOf(name, stat), val);
+          var n = String(name || "").trim();
+          if(n.endsWith("の絆")) multiplierMap.set(keyOf(n.slice(0, -2), stat), val);
+          else multiplierMap.set(keyOf(n + "の絆", stat), val);
+        });
+        return multiplierRows;
+      }).catch(function(){ return []; });
+    return multiplierPromise;
+  }
+  function formationBonusRate(stat){
+    try{
+      var sel = document.getElementById("formationSelect");
+      var form = canonicalFormation(sel ? sel.value : "");
+      var cfg = window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[form];
+      if(cfg && cfg.bonus && cfg.bonus[stat] != null) return Number(cfg.bonus[stat]) || 0;
+    }catch(e){}
+    return 0;
+  }
+  function calcFixedStats(result){
+    if(!result || !Array.isArray(result.activated) || !result.activated.length || !multiplierMap.size) return null;
+    var keys = getStatKeys();
+    var raw = {};
+    keys.forEach(function(k){ raw[k] = 0; });
+    var matched = 0;
+    result.activated.forEach(function(act){
+      var nm = act && (act.name || act["因縁名"] || act.inenName || "");
+      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
+      if(!nm || slots.length !== 3) return;
+      keys.forEach(function(stat){
+        var mult = Number(multiplierMap.get(keyOf(nm, stat)) || 0);
+        if(!mult) return;
+        var base = 0;
+        slots.forEach(function(slot){ base += heroStatSafe(placement && placement[slot], stat); });
+        if(base <= 0) return;
+        raw[stat] += Math.floor(base * mult + 1e-9);
+        matched++;
+      });
+    });
+    if(!matched) return null;
+    var out = {};
+    keys.forEach(function(stat){
+      var rate = formationBonusRate(stat);
+      out[stat] = Math.floor(raw[stat] + raw[stat] * rate + 1e-9);
+    });
+    return out;
+  }
+  function drawStats(stats, modeText){
+    var box = document.getElementById("totalStatResult");
+    var mode = document.getElementById("totalStatMode");
+    if(!box) return;
+    var keys = getStatKeys();
+    box.innerHTML = keys.map(function(k){
+      var v = stats && stats[k] != null ? stats[k] : "—";
+      var zero = (v === "—" || Number(v) === 0);
+      return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+escLocal(k)+'</div><div class="statVal">'+escLocal(v)+'</div></div>';
+    }).join("");
+    if(mode) mode.textContent = modeText || "";
+  }
+  function hasStats(stats){
+    if(!stats) return false;
+    return getStatKeys().some(function(k){ var v = stats[k]; return v !== "—" && v !== "" && v != null && Number(v) !== 0; });
+  }
+  function drawFixedFormula(result){
+    var stats = calcFixedStats(result || currentResult());
+    if(hasStats(stats)) drawStats(stats, "DB未登録 / 固定倍率CSV式で計算表示");
+    else drawStats(null, "DB未登録 / 固定倍率CSV式で計算不可");
+  }
+  function findHeroByName(name){
+    var key = normName(name);
+    var rows = Array.isArray(eiketsuMaster) ? eiketsuMaster : [];
+    for(var i=0;i<rows.length;i++){
+      if(normName(heroNameSafe(rows[i])) === key) return rows[i];
+    }
+    return null;
+  }
+  function applyMembersFast(row){
+    var names = namesOfRow(row);
+    if(names.length !== 6) return false;
+    var next = {};
+    for(var i=0;i<6;i++){
+      var h = findHeroByName(names[i]);
+      if(!h){
+        alert("英傑マスターに見つからない英傑があります: " + names[i]);
+        return true;
+      }
+      next[i+1] = h;
+    }
+    try{ placement = next; }catch(e){}
+    try{
+      var sel = document.getElementById("formationSelect");
+      if(sel && row && row.formation) sel.value = canonicalFormation(row.formation) || row.formation;
+    }catch(e){}
+    try{ selectedDbResultId = ""; }catch(e){}
+    try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
+    try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
+    var result = currentResult();
+    try{ if(result && typeof renderFormation === "function") renderFormation(result); }catch(e){}
+    try{ if(result && typeof renderResults === "function") renderResults(result); }catch(e){}
+    loadMultipliers().then(function(){ drawFixedFormula(result || currentResult()); });
+    return true;
+  }
+
+  window.addEventListener("click", function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest("[data-generated-line-row]") : null;
+    if(!btn) return;
+    var id = btn.getAttribute("data-generated-line-row");
+    var rows = Array.isArray(window.__jinpoGeneratedLineRows) ? window.__jinpoGeneratedLineRows : [];
+    var row = rows.find(function(r){ return String(r && r.result_id) === String(id); });
+    if(!row) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    applyMembersFast(row);
+  }, true);
+
+  function activeNameSet(result){
+    return new Set(((result && result.activated) || []).map(function(a){ return String(a && a.name || "").trim(); }).filter(Boolean));
+  }
+  function ownedLockState(){
+    try{ if(typeof ownedHeroReachLockState === "function") return ownedHeroReachLockState(); }catch(e){}
+    return {ids:new Set(), names:new Set()};
+  }
+  function isOwnedLocked(hero, lock){
+    try{ if(typeof isOwnedReachLockedHero === "function") return isOwnedReachLockedHero(hero, lock); }catch(e){}
+    if(!lock || !hero) return false;
+    if(lock.ids && lock.ids.has(String(hero.internal_id || ""))) return true;
+    if(lock.names && lock.names.has(normName(heroNameSafe(hero)))) return true;
+    return false;
+  }
+  function keepsOwned(testPlacement, lock){
+    try{ if(typeof placementKeepsOwnedReachHeroes === "function") return placementKeepsOwnedReachHeroes(testPlacement, lock); }catch(e){}
+    if(!lock) return true;
+    var ids = new Set([1,2,3,4,5,6].map(function(s){ return String(testPlacement[s] && testPlacement[s].internal_id || ""); }).filter(Boolean));
+    var names = new Set([1,2,3,4,5,6].map(function(s){ return normName(heroNameSafe(testPlacement[s])); }).filter(Boolean));
+    var ok = true;
+    if(lock.ids) lock.ids.forEach(function(id){ if(!ids.has(String(id))) ok = false; });
+    if(lock.names) lock.names.forEach(function(n){ if(!names.has(normName(n))) ok = false; });
+    return ok;
+  }
+  function candidatePrefilter(result){
+    var factors = new Set();
+    try{
+      ((result && result.reach) || []).forEach(function(r){
+        ((r && r.missing) || []).forEach(function(f){ if(f) factors.add(String(f)); });
+      });
+    }catch(e){}
+    return factors;
+  }
+  function buildVerifiedReachCandidates(result){
+    if(!result || !Array.isArray(result.activated)) result = currentResult();
+    if(!result || !Array.isArray(result.activated)) return [];
+    var baseCount = result.activated.length;
+    var baseNames = activeNameSet(result);
+    var usedIds = new Set([1,2,3,4,5,6].map(function(s){ return placement[s] && String(placement[s].internal_id || ""); }).filter(Boolean));
+    var lock = ownedLockState();
+    var factorFilter = candidatePrefilter(result);
+    var allHeroes = Array.isArray(eiketsuMaster) ? eiketsuMaster : [];
+    var rows = [];
+    var seen = new Set();
+
+    for(var slot=1; slot<=6; slot++){
+      var beforeHero = placement && placement[slot];
+      if(!beforeHero) continue;
+      if(isOwnedLocked(beforeHero, lock)) continue;
+
+      for(var i=0;i<allHeroes.length;i++){
+        var cand = allHeroes[i];
+        if(!cand || !cand.internal_id) continue;
+        if(String(cand.internal_id) === String(beforeHero.internal_id || "")) continue;
+        if(usedIds.has(String(cand.internal_id || ""))) continue;
+
+        if(factorFilter.size){
+          var cf = heroFactorsSafe(cand);
+          var hasMissing = cf.some(function(f){ return factorFilter.has(String(f)); });
+          if(!hasMissing) continue;
+        }
+
+        var testPlacement = Object.assign({}, placement);
+        testPlacement[slot] = cand;
+        if(!keepsOwned(testPlacement, lock)) continue;
+
+        var testResult = null;
+        try{
+          testResult = window.JinpoActivationEngine.calculateFormation(
+            testPlacement,
+            document.getElementById("formationSelect").value,
+            inenMaster,
+            window.JINPO_FORMATION_CONFIG
+          );
+        }catch(e){}
+        if(!testResult || !Array.isArray(testResult.activated)) continue;
+        var nextCount = testResult.activated.length;
+        if(nextCount < baseCount) continue;
+
+        var nextNames = activeNameSet(testResult);
+        var added = Array.from(nextNames).filter(function(n){ return !baseNames.has(n); });
+        var removed = Array.from(baseNames).filter(function(n){ return !nextNames.has(n); });
+        var kept = Array.from(nextNames).filter(function(n){ return baseNames.has(n); });
+        var sameSet = added.length === 0 && removed.length === 0;
+        if(nextCount === baseCount && sameSet) continue;
+
+        var key = slot + "|" + String(beforeHero.internal_id || "") + "|" + String(cand.internal_id || "") + "|" + Array.from(nextNames).sort().join(",");
+        if(seen.has(key)) continue;
+        seen.add(key);
+
+        var dbRow = null;
+        try{ if(typeof findResultDbRowForPlacementState === "function") dbRow = findResultDbRowForPlacementState(testPlacement, testResult); }catch(e){}
+        rows.push({
+          kind: nextCount > baseCount ? "因縁増加" : "同因縁数・因縁変更",
+          slot: slot,
+          beforeId: beforeHero.internal_id,
+          afterId: cand.internal_id,
+          before: heroNameSafe(beforeHero),
+          after: heroNameSafe(cand),
+          from: baseCount,
+          to: nextCount,
+          added: added,
+          removed: removed,
+          kept: kept,
+          sameSet: sameSet,
+          hasDbStats: !!dbRow,
+          dbStatusText: dbRow ? "DB登録あり" : "登録外・計算対象",
+          plusText: "",
+          minusText: ""
+        });
+        if(rows.length >= 120) break;
+      }
+      if(rows.length >= 120) break;
+    }
+    rows.sort(function(a,b){
+      if(a.to !== b.to) return b.to - a.to;
+      if(a.kind !== b.kind) return a.kind === "因縁増加" ? -1 : 1;
+      return a.slot - b.slot;
+    });
+    return rows;
+  }
+
+  var oldBuildReach = (typeof window.buildReachOnlyCandidates === "function") ? window.buildReachOnlyCandidates : (typeof buildReachOnlyCandidates === "function" ? buildReachOnlyCandidates : null);
+  var finalBuildReach = function(result){
+    var rows = [];
+    if(oldBuildReach){
+      try{ rows = oldBuildReach.apply(this, arguments) || []; }catch(e){ rows = []; }
+    }
+    if(rows && rows.length) return rows;
+    return buildVerifiedReachCandidates(result);
+  };
+  try{ buildReachOnlyCandidates = finalBuildReach; }catch(e){}
+  window.buildReachOnlyCandidates = finalBuildReach;
+
+  function refreshReach(){
+    var result = currentResult();
+    if(result && typeof window.renderReachSlotOnlyUi === "function"){
+      try{ window.renderReachSlotOnlyUi(result); }catch(e){}
+    }
+  }
+  document.addEventListener("click", function(ev){
+    if(ev.target && ev.target.closest && ev.target.closest("button.applyBtn,[data-result-id],[data-reach-replace-slot][data-reach-replace-id]")){
+      setTimeout(refreshReach, 0);
+      setTimeout(refreshReach, 250);
+    }
+  }, true);
+
+  forceKnownLines();
+  loadMultipliers();
+})();
+</script>
