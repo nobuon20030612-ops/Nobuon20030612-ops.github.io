@@ -1780,7 +1780,7 @@ if(inen && stat && mult){
 }
 }
 const ms = document.getElementById("multiplierStatus");
-if(ms) ms.textContent = `単独因縁倍率: ${inenMultiplierMap.size}件 読込済`;
+if(ms) ms.textContent = "旧倍率マップは無効化済み";
 }
 function heroStatValue(hero, stat){
 if(!hero) return 0;
@@ -1804,58 +1804,12 @@ if(Number.isFinite(v) && v !== 0) return v;
 return 0;
 }
 function calcSingleInenStatsFromMultiplierMaster(result){
-const activated = result?.activated || [];
-if(activated.length !== 1) return null;
-const act = activated[0];
-const inenName = String(act.name || "").trim();
-const slots = act.lineSlots || [];
-if(slots.length !== 3) return null;
-const rawStats = {};
-const details = [];
-let matched = 0;
-for(const k of REALTIME_STAT_KEYS) rawStats[k] = 0;
-for(const stat of REALTIME_STAT_KEYS){
-const key = makeMultiplierKey(inenName, stat);
-const mult = inenMultiplierMap.get(key);
-if(!mult) continue;
-let base = 0;
-const heroParts = [];
-for(const slot of slots){
-const hero = placement[slot];
-if(!hero) continue;
-const v = heroStatValue(hero, stat);
-base += v;
-heroParts.push(`${heroName(hero)}:${v}`);
-}
-if(base <= 0) continue;
-const value = Math.floor((base * mult) + 1e-9);
-rawStats[stat] = value;
-matched++;
-details.push({
-stat,
-base,
-multiplier: mult,
-value,
-heroes: heroParts.join(" / "),
-formula: `floor(${base} × ${mult}) = ${value}`
-});
-}
-if(!matched) return null;
-const finalStats = applyFormationBonusToStats(rawStats);
-for(const d of details){
-d.finalValue = finalStats[d.stat];
-}
-return {
-source:"single_inen_formula",
-act,
-rawStats,
-stats: finalStats,
-details
-};
+// 旧式計算は誤作動防止のため無効化。固定倍率CSV式のみ使用する。
+return null;
 }
 function calcRealTimeStatsFromMultiplierMaster(result){
-const single = calcSingleInenStatsFromMultiplierMaster(result);
-return single ? single.stats : null;
+// 旧式計算は使用しない。
+return null;
 }
 function getCurrentMasterHit(){
 const candidates = getResultDbCandidatesByCurrentPlacement();
@@ -1973,7 +1927,7 @@ return `<tr>
 }).join(""))}
 </tbody>
 </table>
-${hit ? `<div class="cleanNote">DB一致: ${esc(hit.raw?.result_id || hit.raw?.id || "")} / 候補数: ${esc(candidates.length)} / DB内因縁: ${esc(dbBonds.join(" / "))}</div>` : (singleFormula ? `<div class="cleanNote">DB未一致 / 単独因縁式で表示: 91因縁画像表示値 ÷ 画像配置3人ステ合計で作成した倍率を使用</div>` : `<div class="cleanNote">DB未一致。単独因縁1件のみ式計算表示。</div>`)}
+${hit ? `<div class="cleanNote">DB一致: ${esc(hit.raw?.result_id || hit.raw?.id || "")} / 候補数: ${esc(candidates.length)} / DB内因縁: ${esc(dbBonds.join(" / "))}</div>` : (singleFormula ? `<div class="cleanNote">DB未一致 / 旧式計算無効</div>` : `<div class="cleanNote">DB未一致。単独因縁1件のみ式計算表示。</div>`)}
 ${hit?.ambiguous ? `
 <details class="cleanNote" open>
 <summary>同一配置のDB候補 ${esc(candidates.length)}件（誤表示防止のため全候補を確認）</summary>
@@ -1999,7 +1953,7 @@ modeText = hit.ambiguous ? `実数値DB一致 / 複数候補 ${hit.candidates.le
 const singleFormula = calcSingleInenStatsFromMultiplierMaster(result);
 if(singleFormula){
 stats = singleFormula.stats;
-modeText = "実数値DB未一致 / 単独因縁式で計算表示";
+modeText = "実数値DB未一致 / 旧式計算無効";
 }else{
 for(const k of REALTIME_STAT_KEYS) stats[k] = "—";
 modeText = "実数値DB未一致 / 単独因縁以外は計算停止";
@@ -5119,7 +5073,7 @@ function escV4(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function cleanNameV4(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function cleanNameV4(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function heroNameV4(h){
 try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
 return h && (h["英傑名"] || h.name || h["名前"] || "") || "";
@@ -5382,7 +5336,7 @@ function esc6(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function norm6(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function norm6(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function heroName6(h){ try{ if(typeof heroName === "function") return heroName(h)||""; }catch(e){} return h && (h["英傑名"]||h.name||h["名前"]||"") || ""; }
 function heroId6(h){ return String(h && (h.internal_id || h.id || h["internal_id"] || heroName6(h)) || ""); }
 function heroCost6(h){ var v=Number(h && (h["コスト"]!=null?h["コスト"]:h.cost)); return Number.isFinite(v)?v:999; }
@@ -5600,7 +5554,7 @@ function escX(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function normX(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function normX(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function cleanVals(arr){
 var ng={"":1,"対象外":1,"未確認":1,"nan":1,"NaN":1,"undefined":1,"null":1};
 return (arr||[]).map(function(v){return String(v==null?"":v).trim();}).filter(function(v){return !ng[v];});
@@ -7078,7 +7032,7 @@ function escU(v){
   return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
 function splitU(v){ return String(v == null ? "" : v).split("|").map(function(x){return x.trim();}).filter(Boolean); }
-function normU(v){ return String(v || "").trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function normU(v){ return String(v || "").trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function statKeysU(){ try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTIME_STAT_KEYS; }catch(e){} return ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"]; }
 function countU(){ try{ return Number(selectedDbListBondCount || 0); }catch(e){ return 0; } }
 function gradeOnU(){ try{ return !!grade3Cost6OnlyEnabled; }catch(e){ return false; } }
@@ -7885,125 +7839,6 @@ document.addEventListener("DOMContentLoaded", function(){
 window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
 })();
 </script>
-
-
-<script id="multi-inen-formula-display-fix">
-(function(){
-function statKeysFormula(){
-  return Array.isArray(window.REALTIME_STAT_KEYS) ? window.REALTIME_STAT_KEYS : ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
-}
-function heroStatForFormula(hero, stat){
-  if(!hero) return 0;
-  var aliases = {
-    "生命":["生命","生命力"], "気合":["気合"], "腕力":["腕力"],
-    "耐久力":["耐久力","耐久"], "器用さ":["器用さ","器用"],
-    "知力":["知力"], "魅力":["魅力"],
-    "土属性":["土属性","土"], "水属性":["水属性","水"],
-    "火属性":["火属性","火"], "風属性":["風属性","風"]
-  }[stat] || [stat];
-  for(var i=0;i<aliases.length;i++){
-    var v = Number(hero[aliases[i]]);
-    if(Number.isFinite(v) && v !== 0) return v;
-  }
-  return 0;
-}
-function multiplierForFormula(inenName, stat){
-  try{
-    if(typeof makeMultiplierKey === "function" && typeof inenMultiplierMap !== "undefined"){
-      return inenMultiplierMap.get(makeMultiplierKey(String(inenName||"").trim(), stat));
-    }
-  }catch(e){}
-  return null;
-}
-function calcAllInenStatsFromMultiplierMaster(result){
-  var activated = result && Array.isArray(result.activated) ? result.activated : [];
-  if(!activated.length) return null;
-  var keys = statKeysFormula();
-  var raw = {};
-  keys.forEach(function(k){ raw[k] = 0; });
-  var matched = 0;
-
-  activated.forEach(function(act){
-    var inenName = String(act.name || "").trim();
-    var slots = Array.isArray(act.lineSlots) ? act.lineSlots : [];
-    if(!inenName || slots.length !== 3) return;
-
-    keys.forEach(function(stat){
-      var mult = multiplierForFormula(inenName, stat);
-      if(!mult) return;
-      var base = 0;
-      slots.forEach(function(slot){
-        base += heroStatForFormula(placement && placement[slot], stat);
-      });
-      if(base <= 0) return;
-      raw[stat] += Math.floor((base * Number(mult)) + 1e-9);
-      matched++;
-    });
-  });
-
-  if(!matched) return null;
-
-  var finalStats = raw;
-  try{
-    if(typeof applyFormationBonusToStats === "function"){
-      finalStats = applyFormationBonusToStats(raw);
-    }
-  }catch(e){}
-  return finalStats;
-}
-function renderStatsGridFormula(stats, modeText){
-  var box = document.getElementById("totalStatResult");
-  var mode = document.getElementById("totalStatMode");
-  if(!box) return false;
-  var keys = statKeysFormula();
-  box.innerHTML = keys.map(function(k){
-    var v = stats && stats[k] != null ? stats[k] : "—";
-    var zero = (v === "—" || Number(v) === 0);
-    return '<div class="totalStatItem '+(zero ? "zero" : "")+'"><div class="statName">'+k+'</div><div class="statVal">'+v+'</div></div>';
-  }).join("");
-  if(mode) mode.textContent = modeText || "";
-  return true;
-}
-var oldRenderRealtimeTotalStats = window.renderRealtimeTotalStats || (typeof renderRealtimeTotalStats === "function" ? renderRealtimeTotalStats : null);
-function renderRealtimeTotalStatsFormulaFixed(result){
-  var hit = null;
-  try{ if(typeof getCurrentMasterHit === "function") hit = getCurrentMasterHit(); }catch(e){}
-  if(hit && typeof getStatsFromMasterHit === "function"){
-    return renderStatsGridFormula(getStatsFromMasterHit(hit), hit.ambiguous ? "実数値DB一致 / 複数候補" : "実数値DB一致");
-  }
-  var stats = calcAllInenStatsFromMultiplierMaster(result);
-  if(stats){
-    return renderStatsGridFormula(stats, "実数値DB未一致 / 因縁倍率式で計算表示");
-  }
-  if(typeof oldRenderRealtimeTotalStats === "function"){
-    return oldRenderRealtimeTotalStats(result);
-  }
-  return renderStatsGridFormula(null, "実数値DB未一致 / 計算不可");
-}
-window.renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed;
-try{ renderRealtimeTotalStats = renderRealtimeTotalStatsFormulaFixed; }catch(e){}
-
-window.updateFormulaStatsForCurrentPlacement = function(){
-  try{
-    if(!formationSelect || !String(formationSelect.value || "").trim()) return false;
-    if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return false;
-    var result = window.JinpoActivationEngine.calculateFormation(
-      placement,
-      formationSelect.value,
-      inenMaster,
-      window.JINPO_FORMATION_CONFIG
-    );
-    renderRealtimeTotalStatsFormulaFixed(result);
-    return true;
-  }catch(e){
-    return false;
-  }
-};
-})();
-</script>
-
-
-
 <script id="fixed-csv-only-current-line-formula-verified-20260524">
 /* 原因特定後の最終固定:
    - 式・倍率は変更しない
@@ -8185,7 +8020,6 @@ window.updateFormulaStatsForCurrentPlacement = function(){
     applyKnownActiveLinesFinal();
     if(!fixedMultiplierMap.size){
       loadFixedMultipliers().then(function(){ renderFixedCsvResult(result || currentFormationResult()); });
-      if(typeof prevRenderRealtime === "function") return prevRenderRealtime.apply(this, arguments);
       return drawStats(null, "固定倍率CSV読込中");
     }
     return renderFixedCsvResult(result);
@@ -8220,6 +8054,39 @@ window.updateFormulaStatsForCurrentPlacement = function(){
 })();
 </script>
 
+
+<script id="final-yamanaka-name-no-regression-20260524">
+/* 山中鹿之介 表記固定: 旧コード経路で「山中鹿之助」に戻るのを防止。式・倍率・表示件数は変更しない。 */
+(function(){
+  if(window.__finalYamanakaNameNoRegressionInstalled) return;
+  window.__finalYamanakaNameNoRegressionInstalled = true;
+  function fixYamanaka(v){ return String(v == null ? "" : v).replace(/山中鹿之助/g,"山中鹿之介"); }
+  var oldHeroName = (typeof heroName === "function") ? heroName : null;
+  if(oldHeroName){
+    try{ heroName = function(h){ return fixYamanaka(oldHeroName(h)); }; window.heroName = heroName; }catch(e){}
+  }
+  var oldCanonical = (typeof canonicalHeroName === "function") ? canonicalHeroName : null;
+  try{
+    canonicalHeroName = function(name){
+      var fixed = fixYamanaka(name);
+      return oldCanonical ? oldCanonical(fixed) : fixed.trim().replace(/・/g,"").replace(/[\s　]+/g,"");
+    };
+    window.canonicalHeroName = canonicalHeroName;
+  }catch(e){}
+  function normalizeHeroObject(h){
+    if(!h || typeof h !== "object") return;
+    ["英傑名","名前","name"].forEach(function(k){ if(h[k]) h[k] = fixYamanaka(h[k]); });
+  }
+  function normalizeKnownArrays(){
+    try{ if(Array.isArray(window.eiketsuMaster)) window.eiketsuMaster.forEach(normalizeHeroObject); }catch(e){}
+    try{ if(Array.isArray(eiketsuMaster)) eiketsuMaster.forEach(normalizeHeroObject); }catch(e){}
+    try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD)) window.OWNED_HERO_LIST_FROM_UPLOAD.forEach(normalizeHeroObject); }catch(e){}
+    try{ if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD)) OWNED_HERO_LIST_FROM_UPLOAD.forEach(normalizeHeroObject); }catch(e){}
+  }
+  normalizeKnownArrays();
+  window.addEventListener("load", normalizeKnownArrays);
+})();
+</script>
 </body>
 
 </html>
@@ -8235,7 +8102,7 @@ function escF(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function cleanNameF(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function cleanNameF(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function heroNameF(h){
 try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
 return h && (h["英傑名"] || h.name || h["名前"] || "") || "";
@@ -8571,7 +8438,7 @@ function esc5(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function clean5(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function clean5(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function heroName5(h){
 try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
 return h && (h["英傑名"] || h.name || h["名前"] || "") || "";
@@ -8852,7 +8719,7 @@ function escA(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function normA(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function normA(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function cleanValsA(values){
 var ng={"":1,"対象外":1,"未確認":1,"?":1,"nan":1,"NaN":1,"undefined":1,"null":1};
 return values.map(function(v){return String(v == null ? "" : v).trim();}).filter(function(v){return !ng[v];});
@@ -9349,7 +9216,7 @@ function esc56(v){
 try{ if(typeof esc === "function") return esc(v); }catch(e){}
 return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];});
 }
-function norm56(v){ return String(v == null ? "" : v).trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function norm56(v){ return String(v == null ? "" : v).trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function cleanVals56(values){
 var ng={"":1,"対象外":1,"未確認":1,"?":1,"nan":1,"NaN":1,"undefined":1,"null":1};
 return values.map(function(v){return String(v == null ? "" : v).trim();}).filter(function(v){return !ng[v];});
@@ -10866,7 +10733,7 @@ function statKeys567(){ try{ if(Array.isArray(REALTIME_STAT_KEYS)) return REALTI
 function statVal567(row,k){ return Number(row && (row[k] != null ? row[k] : row[String(k).replace("属性","")]) || 0) || 0; }
 function priorityRules567(){ try{ if(typeof getDbPriorityRules === "function") return getDbPriorityRules() || []; }catch(e){} return []; }
 function ownedNames567(){ try{ if(typeof ownedHeroNames === "function") return ownedHeroNames().map(function(x){return String(x||"").trim();}).filter(Boolean); }catch(e){} return []; }
-function normalizeName567(v){ return String(v || "").trim().replace(/・/g,"").replace(/[\s　]+/g,""); }
+function normalizeName567(v){ return String(v || "").trim().replace(/山中鹿之助/g,"山中鹿之介").replace(/・/g,"").replace(/[\s　]+/g,""); }
 function rowMembers567(row){ return split567(row && row.eiketsu_ids); }
 function rowBonds567(row){ return split567(row && (row.bond_ids || row.inen || row["因縁"] || row["因縁名"])); }
 function rowMatchesOwned567(row){
@@ -11018,7 +10885,7 @@ document.addEventListener("click", function(ev){
 
   function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m];});}
   function split(v){return String(v==null?'':v).split('|').map(function(x){return x.trim();}).filter(Boolean);}
-  function norm(v){return String(v||'').trim().replace(/・/g,'').replace(/[\s　]+/g,'');}
+  function norm(v){return String(v||'').trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
   function gradeOn(){try{return !!grade3Cost6OnlyEnabled;}catch(e){return !!window.grade3Cost6OnlyEnabled;}}
   function setGrade(v){try{grade3Cost6OnlyEnabled=!!v;}catch(e){} window.grade3Cost6OnlyEnabled=!!v;}
   function getCount(){try{return Number(selectedDbListBondCount)||0;}catch(e){return Number(window.selectedDbListBondCount)||0;}}
@@ -11540,10 +11407,12 @@ document.addEventListener("click", function(ev){
     if(oldRenderRealtimeFinal) return oldRenderRealtimeFinal(result);
     return drawStatsFinal(null, "実数値DB未一致 / 計算不可");
   }
+  /* 固定倍率CSV式を後段で上書きしない。リーチ再描画のみ残す。
   try{
     renderRealtimeTotalStats = renderRealtimeFinal;
     window.renderRealtimeTotalStats = renderRealtimeFinal;
   }catch(e){}
+  */
 
   var oldCalculateFinal = (typeof calculate === "function") ? calculate : null;
   if(oldCalculateFinal && !oldCalculateFinal.__finalStabilized20260524){
@@ -11556,7 +11425,7 @@ document.addEventListener("click", function(ev){
           if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
           var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
           if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
-          renderRealtimeFinal(result);
+          if(typeof window.renderRealtimeTotalStats === "function") window.renderRealtimeTotalStats(result);
         }catch(e){ console.error("最終再描画失敗", e); }
       }, 0);
       return ret;
@@ -11574,7 +11443,7 @@ document.addEventListener("click", function(ev){
         if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
         var result = window.JinpoActivationEngine.calculateFormation(placement, formationSelect.value, inenMaster, window.JINPO_FORMATION_CONFIG);
         if(typeof renderReachSlotOnlyUi === "function") renderReachSlotOnlyUi(result);
-        renderRealtimeFinal(result);
+        if(typeof window.renderRealtimeTotalStats === "function") window.renderRealtimeTotalStats(result);
       }catch(e){}
     }, 80);
   }, true);
@@ -11583,3 +11452,41 @@ document.addEventListener("click", function(ev){
 })();
 </script>
 
+
+<script id="final-yamanaka-name-no-regression-after-all-20260524">
+/* 最終後段固定: 旧スクリプト後でも山中鹿之助へ戻さない。式・倍率・件数・表示仕様は変更しない。 */
+(function(){
+  if(window.__finalYamanakaNameNoRegressionAfterAllInstalled) return;
+  window.__finalYamanakaNameNoRegressionAfterAllInstalled = true;
+  function fixYamanaka(v){ return String(v == null ? "" : v).replace(/山中鹿之助/g,"山中鹿之介"); }
+  var oldCanonical = (typeof canonicalHeroName === "function") ? canonicalHeroName : null;
+  try{
+    canonicalHeroName = function(name){
+      var fixed = fixYamanaka(name);
+      return oldCanonical ? oldCanonical(fixed) : fixed.trim().replace(/・/g,"").replace(/[\s　]+/g,"");
+    };
+    window.canonicalHeroName = canonicalHeroName;
+  }catch(e){}
+  var oldHeroName = (typeof heroName === "function") ? heroName : null;
+  if(oldHeroName){
+    try{ heroName = function(h){ return fixYamanaka(oldHeroName(h)); }; window.heroName = heroName; }catch(e){}
+  }
+  function fixObj(h){
+    if(!h || typeof h !== "object") return;
+    ["英傑名","名前","name"].forEach(function(k){ if(h[k]) h[k]=fixYamanaka(h[k]); });
+  }
+  function fixArrays(){
+    try{ if(Array.isArray(eiketsuMaster)) eiketsuMaster.forEach(fixObj); }catch(e){}
+    try{ if(Array.isArray(window.eiketsuMaster)) window.eiketsuMaster.forEach(fixObj); }catch(e){}
+    try{ if(Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD)) OWNED_HERO_LIST_FROM_UPLOAD.forEach(fixObj); }catch(e){}
+    try{ if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD)) window.OWNED_HERO_LIST_FROM_UPLOAD.forEach(fixObj); }catch(e){}
+  }
+  fixArrays();
+  var oldCalculate = (typeof calculate === "function") ? calculate : null;
+  if(oldCalculate && !oldCalculate.__yamanakaFixedAfterAll){
+    var wrapped = function(){ fixArrays(); return oldCalculate.apply(this, arguments); };
+    wrapped.__yamanakaFixedAfterAll = true;
+    try{ calculate = wrapped; window.calculate = wrapped; }catch(e){}
+  }
+})();
+</script>
