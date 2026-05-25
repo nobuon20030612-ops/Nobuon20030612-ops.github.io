@@ -352,7 +352,7 @@ function normalizeUploadedEiketsuMasterRows(rows){
 if(!Array.isArray(rows)) return rows;
 return rows.map((r, idx)=>{
 const out = {...r};
-if(!out.internal_id) out.internal_id = String(out["番号"] ?? idx + 1).trim();
+if(!out.internal_id) out.internal_id = String(out["\uFEFFinternal_id"] ?? out["番号"] ?? idx + 1).trim();
 if(!out["英傑名"]) out["英傑名"] = String(out["名前"] ?? "").trim();
 if(!out["職"]) out["職"] = String(out["因子1(特化)"] ?? out["因子1"] ?? "").trim();
 if(!("因子1" in out)) out["因子1"] = String(out["因子1(特化)"] ?? "").trim();
@@ -2664,7 +2664,7 @@ const formationKeys = ["衡軛","鶴翼","魚鱗","方円"];
 formationSelect.innerHTML = `<option value="">陣形を選択</option>` + formationKeys
 .map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join("");
 formationSelect.value = "";
-eiketsuMaster = await window.JinpoActivationEngine.loadCSV("data/jinpo_eiketsu_master.csv?v=20260515154758");
+eiketsuMaster = normalizeUploadedEiketsuMasterRows(await window.JinpoActivationEngine.loadCSV("data/jinpo_eiketsu_master.csv?v=20260515154758"));
 standardEiketsuMaster = eiketsuMaster.slice();
 inenMaster = await window.JinpoActivationEngine.loadCSV("data/jinpo_inen_master.csv?v=20260515154758");
 standardInenMaster = inenMaster.slice();
@@ -11902,9 +11902,9 @@ document.addEventListener("click", function(ev){
           minusText: ""
         });
 
-        if(rows.length >= 120) break;
+        slotRows++;
+        if(slotRows >= perSlotLimit) break;
       }
-      if(rows.length >= 120) break;
     }
 
     rows.sort(function(a,b){
@@ -12250,27 +12250,22 @@ document.addEventListener("click", function(ev){
     var baseNames = activeNameSet(result);
     var usedIds = new Set([1,2,3,4,5,6].map(function(s){ return placement[s] && String(placement[s].internal_id || ""); }).filter(Boolean));
     var lock = ownedLockState();
-    var factorFilter = candidatePrefilter(result);
     var allHeroes = Array.isArray(eiketsuMaster) ? eiketsuMaster : [];
     var rows = [];
     var seen = new Set();
+    var perSlotLimit = 120;
 
     for(var slot=1; slot<=6; slot++){
       var beforeHero = placement && placement[slot];
       if(!beforeHero) continue;
       if(isOwnedLocked(beforeHero, lock)) continue;
+      var slotRows = 0;
 
       for(var i=0;i<allHeroes.length;i++){
         var cand = allHeroes[i];
         if(!cand || !cand.internal_id) continue;
         if(String(cand.internal_id) === String(beforeHero.internal_id || "")) continue;
         if(usedIds.has(String(cand.internal_id || ""))) continue;
-
-        if(factorFilter.size){
-          var cf = heroFactorsSafe(cand);
-          var hasMissing = cf.some(function(f){ return factorFilter.has(String(f)); });
-          if(!hasMissing) continue;
-        }
 
         var testPlacement = Object.assign({}, placement);
         testPlacement[slot] = cand;
@@ -12320,9 +12315,9 @@ document.addEventListener("click", function(ev){
           plusText: "",
           minusText: ""
         });
-        if(rows.length >= 120) break;
+        slotRows++;
+        if(slotRows >= perSlotLimit) break;
       }
-      if(rows.length >= 120) break;
     }
     rows.sort(function(a,b){
       if(a.to !== b.to) return b.to - a.to;
@@ -12346,7 +12341,7 @@ document.addEventListener("click", function(ev){
         if(seenMerge.has(key)) return false;
         seenMerge.add(key);
         return true;
-      }).slice(0,120);
+      });
     }
     return verifiedRows;
   };
