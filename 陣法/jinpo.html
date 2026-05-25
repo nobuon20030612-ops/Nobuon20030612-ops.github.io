@@ -8117,6 +8117,7 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
     }
   }
 
+  var reachRefreshTimer = null;
   function refreshReachNow(result){
     try{
       var r = result || currentReachResult();
@@ -8126,6 +8127,10 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
     }catch(e){
       console.error("リーチ再描画失敗", e);
     }
+  }
+  function scheduleReachRefreshNow(delay){
+    clearTimeout(reachRefreshTimer);
+    reachRefreshTimer = setTimeout(function(){ refreshReachNow(); }, delay || 0);
   }
 
   var oldRenderReach = window.renderReachSlotOnlyUi;
@@ -8141,8 +8146,7 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
   if(typeof oldCalculate === "function" && !oldCalculate.__reachFinalRefresh){
     var wrappedCalculate = function(){
       var ret = oldCalculate.apply(this, arguments);
-      setTimeout(function(){ refreshReachNow(); }, 0);
-      setTimeout(function(){ refreshReachNow(); }, 120);
+      scheduleReachRefreshNow(0);
       return ret;
     };
     wrappedCalculate.__reachFinalRefresh = true;
@@ -8152,22 +8156,19 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
   document.addEventListener("click", function(ev){
     var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn,[data-reach-replace-slot][data-reach-replace-id],[data-reach-slot-pick]") : null;
     if(!btn) return;
-    setTimeout(function(){ refreshReachNow(); }, 0);
-    setTimeout(function(){ refreshReachNow(); }, 150);
+    scheduleReachRefreshNow(0);
   }, true);
 
   document.addEventListener("change", function(ev){
     var t = ev.target;
     if(!t) return;
     if(t.id === "formationSelect" || t.id === "slotTarget" || /slot|formation/i.test(String(t.id || ""))){
-      setTimeout(function(){ refreshReachNow(); }, 0);
-      setTimeout(function(){ refreshReachNow(); }, 150);
+      scheduleReachRefreshNow(0);
     }
   }, true);
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(function(){ refreshReachNow(); }, 0);
-    setTimeout(function(){ refreshReachNow(); }, 300);
+    scheduleReachRefreshNow(0);
   });
 })();
 </script>
@@ -11278,7 +11279,7 @@ document.addEventListener("click", function(ev){
   }
 
   function trySync(btn){
-    var delays = [0,80,180,360,700];
+    var delays = [80,220];
     delays.forEach(function(ms){
       setTimeout(function(){ syncAfterCalc(btn); }, ms);
     });
@@ -11913,6 +11914,7 @@ document.addEventListener("click", function(ev){
     window.buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
   }
 
+  var reachAfterFixTimer = null;
   function refreshReachAfterFix(){
     try{
       var sel = document.getElementById("formationSelect");
@@ -11923,27 +11925,27 @@ document.addEventListener("click", function(ev){
       if(typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(result);
     }catch(e){ console.error("リーチ復旧再描画失敗", e); }
   }
+  function scheduleReachAfterFix(delay){
+    clearTimeout(reachAfterFixTimer);
+    reachAfterFixTimer = setTimeout(refreshReachAfterFix, delay || 0);
+  }
 
   document.addEventListener("click", function(ev){
     var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-v5],[data-linegen-v6],[data-linegen-v3],[data-linegen-v4],[data-linegen-single],[data-linegen-actual],[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result],[data-reach-replace-slot][data-reach-replace-id]") : null;
     if(!btn) return;
-    setTimeout(refreshReachAfterFix, 0);
-    setTimeout(refreshReachAfterFix, 180);
-    setTimeout(refreshReachAfterFix, 500);
+    scheduleReachAfterFix(0);
   }, true);
 
   document.addEventListener("change", function(ev){
     var t = ev.target;
     if(!t) return;
     if(t.id === "formationSelect" || /slot|formation/i.test(String(t.id || ""))){
-      setTimeout(refreshReachAfterFix, 0);
-      setTimeout(refreshReachAfterFix, 180);
+      scheduleReachAfterFix(0);
     }
   }, true);
 
   document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(refreshReachAfterFix, 0);
-    setTimeout(refreshReachAfterFix, 300);
+    scheduleReachAfterFix(0);
   });
 })();
 </script>
@@ -12266,7 +12268,7 @@ document.addEventListener("click", function(ev){
         var removed = Array.from(baseNames).filter(function(n){ return !nextNames.has(n); });
         var kept = Array.from(nextNames).filter(function(n){ return baseNames.has(n); });
         var sameSet = added.length === 0 && removed.length === 0;
-        if(nextCount === baseCount && sameSet) continue;
+        // 同因縁数・同じ因縁でも、英傑差し替えでステータスが変わる候補はリーチ候補として残す。
 
         var key = slot + "|" + String(beforeHero.internal_id || "") + "|" + String(cand.internal_id || "") + "|" + Array.from(nextNames).sort().join(",");
         if(seen.has(key)) continue;
@@ -12275,7 +12277,7 @@ document.addEventListener("click", function(ev){
         var dbRow = null;
         try{ if(typeof findResultDbRowForPlacementState === "function") dbRow = findResultDbRowForPlacementState(testPlacement, testResult); }catch(e){}
         rows.push({
-          kind: nextCount > baseCount ? "因縁増加" : "同因縁数・因縁変更",
+          kind: nextCount > baseCount ? "因縁増加" : (sameSet ? "同因縁数・同じ因縁" : "同因縁数・因縁変更"),
           slot: slot,
           beforeId: beforeHero.internal_id,
           afterId: cand.internal_id,
@@ -12316,16 +12318,20 @@ document.addEventListener("click", function(ev){
   try{ buildReachOnlyCandidates = finalBuildReach; }catch(e){}
   window.buildReachOnlyCandidates = finalBuildReach;
 
+  var finalReachRefreshTimer = null;
   function refreshReach(){
     var result = currentResult();
     if(result && typeof window.renderReachSlotOnlyUi === "function"){
       try{ window.renderReachSlotOnlyUi(result); }catch(e){}
     }
   }
+  function scheduleFinalReachRefresh(){
+    clearTimeout(finalReachRefreshTimer);
+    finalReachRefreshTimer = setTimeout(refreshReach, 0);
+  }
   document.addEventListener("click", function(ev){
     if(ev.target && ev.target.closest && ev.target.closest("button.applyBtn,[data-result-id],[data-reach-replace-slot][data-reach-replace-id]")){
-      setTimeout(refreshReach, 0);
-      setTimeout(refreshReach, 250);
+      scheduleFinalReachRefresh();
     }
   }, true);
 
