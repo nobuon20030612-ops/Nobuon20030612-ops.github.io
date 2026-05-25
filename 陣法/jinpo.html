@@ -7747,27 +7747,14 @@ function reachApplyDirectSlot(slot, id){
   try{ placement[slot] = hero; }catch(e){}
   try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){}
   try{ if(typeof renderHeroCards === "function") renderHeroCards(); }catch(e){}
-  var freshResult = null;
   try{
-    if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.calculateFormation === "function"){
-      freshResult = window.JinpoActivationEngine.calculateFormation(
-        placement,
-        formationSelect.value,
-        inenMaster,
-        window.JINPO_FORMATION_CONFIG
-      );
-    }
-  }catch(e){ console.error("リーチ差し替え後の再計算失敗", e); }
-  try{ if(typeof calculate === "function") calculate(); }catch(e){
-    try{ if(freshResult && typeof renderFormation === "function") renderFormation(freshResult); }catch(_){}
-    try{ if(freshResult && typeof renderResults === "function") renderResults(freshResult); }catch(_){}
-    try{ if(freshResult && typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(freshResult); }catch(_){}
+    if(typeof calculate === "function") calculate();
+  }catch(e){
+    console.error("リーチ差し替え後の再計算失敗", e);
   }
-  if(freshResult){
-    try{ renderReachSlotOnlyUi(freshResult); }catch(e){ console.error("リーチ差し替え後の表示更新失敗", e); }
-    setTimeout(function(){ try{ renderReachSlotOnlyUi(freshResult); }catch(e){} }, 0);
-    setTimeout(function(){ try{ renderReachSlotOnlyUi(freshResult); }catch(e){} }, 120);
-  }
+  try{
+    if(typeof window.scheduleJinpoReachRefreshOnce === "function") window.scheduleJinpoReachRefreshOnce(40);
+  }catch(e){}
 }
 function renderReachReplaceList(slot){
   var panel = document.getElementById("reachReplacePanel");
@@ -8047,7 +8034,7 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
   }
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-actual],[data-generated-line-row],[data-result-id]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest(".__jinpo_disabled_final_click_guard__") : null;
     if(!btn) return;
     setTimeout(function(){ loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); }); }, 80);
     setTimeout(function(){ loadFixedMultipliers().then(function(){ renderFixedCsvResult(currentFormationResult()); }); }, 250);
@@ -8154,7 +8141,7 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
   }
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn,[data-reach-replace-slot][data-reach-replace-id],[data-reach-slot-pick]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest(".__jinpo_disabled_reach_click_guard__") : null;
     if(!btn) return;
     scheduleReachRefreshNow(0);
   }, true);
@@ -8173,6 +8160,36 @@ window.renderReachSlotOnlyUi = renderReachSlotOnlyUi;
 })();
 </script>
 
+
+<script id="jinpo-reach-apply-final-stabilize-20260525">
+(function(){
+  if(window.__jinpoReachApplyFinalStabilize20260525) return;
+  window.__jinpoReachApplyFinalStabilize20260525 = true;
+  var timer = null;
+  function currentResultOnce(){
+    try{
+      var sel = document.getElementById("formationSelect");
+      var form = sel ? String(sel.value || "").trim() : "";
+      if(!form && typeof formationSelect !== "undefined" && formationSelect) form = String(formationSelect.value || "").trim();
+      if(!form) return null;
+      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
+      if(typeof placement === "undefined" || typeof inenMaster === "undefined") return null;
+      return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+    }catch(e){ console.error("最終リーチ/登録外再計算失敗", e); return null; }
+  }
+  window.scheduleJinpoReachRefreshOnce = function(delay){
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      try{
+        var result = currentResultOnce();
+        if(!result) return;
+        if(typeof window.renderRealtimeTotalStats === "function") window.renderRealtimeTotalStats(result);
+        if(typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(result);
+      }catch(e){ console.error("最終リーチ/登録外再描画失敗", e); }
+    }, delay == null ? 40 : delay);
+  };
+})();
+</script>
 </body>
 
 </html>
@@ -11903,8 +11920,17 @@ document.addEventListener("click", function(ev){
     if(originalBuildReachOnlyCandidates){
       try{ rows = originalBuildReachOnlyCandidates.apply(this, arguments) || []; }catch(e){ rows = []; }
     }
-    if(rows && rows.length) return rows;
-    return buildReachFallbackCandidates(result);
+    var fallbackRows = buildReachFallbackCandidates(result) || [];
+    if(rows && rows.length){
+      var seenMerge = new Set();
+      return rows.concat(fallbackRows).filter(function(r){
+        var key = [r.slot,r.beforeId,r.afterId,r.from,r.to,(r.added||[]).join("|"),(r.removed||[]).join("|")].join("||");
+        if(seenMerge.has(key)) return false;
+        seenMerge.add(key);
+        return true;
+      }).slice(0,120);
+    }
+    return fallbackRows;
   };
 
   try{
@@ -11931,7 +11957,7 @@ document.addEventListener("click", function(ev){
   }
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-v5],[data-linegen-v6],[data-linegen-v3],[data-linegen-v4],[data-linegen-single],[data-linegen-actual],[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result],[data-reach-replace-slot][data-reach-replace-id]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest(".__jinpo_disabled_reach_after_fix_click_guard__") : null;
     if(!btn) return;
     scheduleReachAfterFix(0);
   }, true);
@@ -12312,8 +12338,17 @@ document.addEventListener("click", function(ev){
     if(oldBuildReach){
       try{ rows = oldBuildReach.apply(this, arguments) || []; }catch(e){ rows = []; }
     }
-    if(rows && rows.length) return rows;
-    return buildVerifiedReachCandidates(result);
+    var verifiedRows = buildVerifiedReachCandidates(result) || [];
+    if(rows && rows.length){
+      var seenMerge = new Set();
+      return rows.concat(verifiedRows).filter(function(r){
+        var key = [r.slot,r.beforeId,r.afterId,r.from,r.to,(r.added||[]).join("|"),(r.removed||[]).join("|")].join("||");
+        if(seenMerge.has(key)) return false;
+        seenMerge.add(key);
+        return true;
+      }).slice(0,120);
+    }
+    return verifiedRows;
   };
   try{ buildReachOnlyCandidates = finalBuildReach; }catch(e){}
   window.buildReachOnlyCandidates = finalBuildReach;
@@ -12330,7 +12365,7 @@ document.addEventListener("click", function(ev){
     finalReachRefreshTimer = setTimeout(refreshReach, 0);
   }
   document.addEventListener("click", function(ev){
-    if(ev.target && ev.target.closest && ev.target.closest("button.applyBtn,[data-result-id],[data-reach-replace-slot][data-reach-replace-id]")){
+    if(ev.target && ev.target.closest && ev.target.closest(".__jinpo_disabled_final_reach_refresh_click_guard__")){
       scheduleFinalReachRefresh();
     }
   }, true);
