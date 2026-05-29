@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-<rect width="1200" height="630" fill="#100b07"/>
-<circle cx="960" cy="120" r="220" fill="#7b281c" opacity=".35"/>
-<circle cx="170" cy="500" r="260" fill="#d8ad55" opacity=".12"/>
-<rect x="80" y="80" width="1040" height="470" rx="34" fill="#1c140d" stroke="#d8ad55" stroke-width="4"/>
-<text x="600" y="250" text-anchor="middle" font-size="86" fill="#ffe1a1" font-family="serif">英傑陣法</text>
-<text x="600" y="345" text-anchor="middle" font-size="38" fill="#f4ead2" font-family="sans-serif">信長の野望Online 支援ツール</text>
-<text x="600" y="420" text-anchor="middle" font-size="28" fill="#cbb98f" font-family="sans-serif">internal_id運用 / 因縁判定 / 共有URL対応</text>
-</svg>
