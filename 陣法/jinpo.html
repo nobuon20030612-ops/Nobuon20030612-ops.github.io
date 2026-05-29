@@ -2891,7 +2891,9 @@ root.style.position = "relative";
 root.style.height = "330px";
 root.style.minHeight = "330px";
 root.style.overflow = "hidden";
-const width = Math.max(root.clientWidth || 600, 520);
+// step173: iPhone Safariでは520px固定幅で描画すると陣形ライン右側が切れるため、スマホ時だけ実表示幅を基準にする。
+const __step173MobileFormationLine = !!(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+const width = __step173MobileFormationLine ? Math.max(root.clientWidth || 320, 320) : Math.max(root.clientWidth || 600, 520);
 const height = Math.max(root.clientHeight || 300, 300);
 const padX = 50;
 const padY = 46;
@@ -17413,312 +17415,33 @@ body{padding-top:0 !important;}
     z-index:30000 !important;
   }
 }
+</style>
 
-/* step172-iphone-safari-result-card-display-fix
-   目的: iPhone Safariで必要な結果表示が右側に隠れる問題を、スマホCSSのみで補正。
-   DB/CSV・式・倍率・検索ロジックは変更しない。 */
-@media (max-width: 760px), (hover: none) and (pointer: coarse) {
-  html,
-  body{
-    width:100% !important;
-    max-width:100% !important;
-    overflow-x:hidden !important;
-  }
 
-  main,
-  .card,
-  #dbCountBrowserCard{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-    overflow-x:hidden !important;
-  }
-
-  #dbCountBrowserCard .dbFormationSelectTop{
-    display:block !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    height:auto !important;
-    min-height:0 !important;
-    padding:6px !important;
-    margin:0 0 8px 0 !important;
-    box-sizing:border-box !important;
-    overflow:visible !important;
-  }
-
-  #dbCountBrowserCard .dbFormationSelectTop>.row{
-    display:flex !important;
-    flex-wrap:wrap !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    height:auto !important;
-    min-height:0 !important;
-    margin:0 0 8px 0 !important;
-    padding:8px !important;
-    box-sizing:border-box !important;
-  }
-
-  #dbCountBrowserCard .dbFormationSelectTop label{
-    width:100% !important;
-    max-width:100% !important;
-    flex-wrap:wrap !important;
-    white-space:normal !important;
-  }
-
-  #formationSelect,
-  #clearBtn{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-  }
-
-  #ownedHeroControl,
-  .ownedHeroControl,
-  #dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{
-    display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    gap:8px !important;
-    margin:8px 0 !important;
-  }
-
-  .ownedHeroBtn,
-  .ownedHeroClearBtn{
-    width:100% !important;
-    min-width:0 !important;
-    max-width:100% !important;
-    box-sizing:border-box !important;
-  }
-
-  .ownedHeroSelected,
-  .ownedHeroCountNote{
-    grid-column:1 / -1 !important;
-    width:100% !important;
-    max-width:100% !important;
-  }
-
-  #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons,
-  #dbCountButtons{
-    display:grid !important;
-    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    gap:8px !important;
-    margin:8px 0 !important;
-    padding:0 !important;
-  }
-
-  #dbCountButtons .dbCountBtn,
-  #dbCountButtons button{
-    width:100% !important;
-    min-width:0 !important;
-    max-width:100% !important;
-    height:auto !important;
-    min-height:46px !important;
-    padding:8px 4px !important;
-    font-size:14px !important;
-    box-sizing:border-box !important;
-  }
-
+<!-- step173: iPhone Safari formation-line fit fix. Formation line display only; DB/search/formula unchanged. -->
+<style id="step173-iphone-formation-line-fit-only">
+@media (max-width:760px){
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{
-    display:block !important;
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
-    height:255px !important;
-    min-height:255px !important;
-    margin:8px 0 0 0 !important;
-    padding:6px !important;
     box-sizing:border-box !important;
     overflow:hidden !important;
   }
-
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
-    height:225px !important;
-    min-height:225px !important;
-    overflow:hidden !important;
-  }
-
-  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{
-    width:90px !important;
-    max-width:90px !important;
-    min-height:38px !important;
-    padding:3px !important;
-    font-size:9px !important;
-    line-height:1.05 !important;
-  }
-
-  #dbFormationList.dbListBox,
-  .dbListBox{
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    overflow-x:hidden !important;
-    overflow-y:visible !important;
-    max-height:none !important;
-  }
-
-  #dbFormationList .dbListTable,
-  .dbListBox .dbListTable{
-    display:block !important;
-    width:100% !important;
-    min-width:0 !important;
-    max-width:100% !important;
-    table-layout:auto !important;
-    border-collapse:separate !important;
-    border-spacing:0 8px !important;
-    font-size:11px !important;
-  }
-
-  #dbFormationList .dbListTable thead,
-  .dbListBox .dbListTable thead{
-    display:none !important;
-  }
-
-  #dbFormationList .dbListTable tbody,
-  .dbListBox .dbListTable tbody{
-    display:block !important;
-    width:100% !important;
-  }
-
-  #dbFormationList .dbListTable tr.dbMainRow,
-  .dbListBox .dbListTable tr.dbMainRow{
-    display:grid !important;
-    grid-template-columns:72px 54px minmax(0,1fr) !important;
-    gap:4px !important;
-    width:100% !important;
+    height:330px !important;
+    min-height:330px !important;
+    overflow:visible !important;
     box-sizing:border-box !important;
-    padding:8px !important;
-    border:1px solid rgba(231,189,92,.38) !important;
-    border-radius:10px 10px 0 0 !important;
-    background:rgba(13,10,7,.88) !important;
   }
-
-  #dbFormationList .dbListTable tr.dbStatRow,
-  .dbListBox .dbListTable tr.dbStatRow{
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .line{
     display:block !important;
-    width:100% !important;
-    box-sizing:border-box !important;
-    margin:0 0 8px 0 !important;
-    padding:0 !important;
-    border:1px solid rgba(231,189,92,.25) !important;
-    border-top:0 !important;
-    border-radius:0 0 10px 10px !important;
-    background:rgba(60,35,18,.42) !important;
-  }
-
-  #dbFormationList .dbListTable td,
-  .dbListBox .dbListTable td{
-    display:block !important;
-    width:auto !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-    border:0 !important;
-    padding:4px !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-  }
-
-  #dbFormationList .dbListTable tr.dbMainRow td:nth-child(1),
-  .dbListBox .dbListTable tr.dbMainRow td:nth-child(1){
-    grid-column:1 !important;
-    grid-row:1 !important;
-  }
-
-  #dbFormationList .dbListTable tr.dbMainRow td:nth-child(2),
-  .dbListBox .dbListTable tr.dbMainRow td:nth-child(2){
-    grid-column:2 !important;
-    grid-row:1 !important;
-  }
-
-  #dbFormationList .dbListTable tr.dbMainRow td:nth-child(3),
-  .dbListBox .dbListTable tr.dbMainRow td:nth-child(3){
-    grid-column:3 !important;
-    grid-row:1 !important;
-    white-space:nowrap !important;
-  }
-
-  #dbFormationList .dbListTable tr.dbMainRow td:nth-child(4),
-  .dbListBox .dbListTable tr.dbMainRow td:nth-child(4),
-  #dbFormationList .dbListTable tr.dbMainRow td:nth-child(5),
-  .dbListBox .dbListTable tr.dbMainRow td:nth-child(5){
-    grid-column:1 / -1 !important;
-  }
-
-  #dbFormationList .dbPlacementMini{
-    display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    width:100% !important;
-    max-width:100% !important;
-    min-width:0 !important;
-    gap:4px !important;
-  }
-
-  #dbFormationList .dbPlacementMini span{
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    line-height:1.25 !important;
-  }
-
-  #dbFormationList .dbListBonds{
-    display:flex !important;
-    flex-wrap:wrap !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    gap:4px !important;
-    width:100% !important;
-    max-width:100% !important;
-  }
-
-  #dbFormationList .dbListBonds .badge{
-    max-width:100% !important;
-    white-space:nowrap !important;
-  }
-
-  #dbFormationList .dbListStat{
-    display:block !important;
-    width:100% !important;
-    max-width:100% !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    line-height:1.45 !important;
-    font-size:11px !important;
-  }
-
-  #appliedRowPreviewUnderFormation,
-  #appliedRowPreviewUnderFormation .appliedPreviewGrid{
-    width:100% !important;
-    max-width:100% !important;
-    grid-template-columns:1fr !important;
-    overflow:visible !important;
-  }
-
-  .mobileActionBar{
-    padding-bottom:calc(8px + env(safe-area-inset-bottom)) !important;
-    z-index:30000 !important;
-  }
-
-  body{
-    padding-bottom:calc(92px + env(safe-area-inset-bottom)) !important;
   }
 }
-
 </style>
-
 </body>
 </html>
