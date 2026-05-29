@@ -293,9 +293,9 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
   </div>
 
   <div id="ownedHeroControl" class="ownedHeroControl">
-    <button id="ownedHeroSlotBtn1" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="0" onpointerdown="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(0,event)" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(0,event)">所持英傑1：未選択</button>
-    <button id="ownedHeroSlotBtn2" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="1" onpointerdown="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(1,event)" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(1,event)">所持英傑2：未選択</button>
-    <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onpointerdown="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)">所持英傑3：未選択</button>
+    <button id="ownedHeroSlotBtn1" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="0" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(0,event)">所持英傑1：未選択</button>
+    <button id="ownedHeroSlotBtn2" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="1" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(1,event)">所持英傑2：未選択</button>
+    <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)">所持英傑3：未選択</button>
     <button id="ownedHeroClearBtn" type="button" class="ownedHeroClearBtn">解除</button>
     <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">所持英傑：未選択</div>
   </div>
@@ -3205,6 +3205,7 @@ return `<div class="ownedHeroReliableCard ${picked ? "selectedOwned" : ""}" data
 }
 function openModal(slot, ev){
 if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+state.justOpenedAt = Date.now();
 state.active = Math.max(0, Math.min(2, Number(slot) || 0));
 ensureModal();
 setupSelects();
@@ -3224,6 +3225,7 @@ return false;
 }
 function pickHero(key, ev){
 if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+if(state.justOpenedAt && Date.now() - state.justOpenedAt < 350) return false;
 if(!key) return false;
 const dup = state.selected.findIndex((v,i) => v === key && i !== state.active);
 if(dup !== -1){ alert("同じ英傑は所持英傑1〜3に重複して選択できません"); return false; }
@@ -3247,10 +3249,11 @@ refreshButtons();
 for(let i=0;i<3;i++){
 const btn = document.getElementById(`ownedHeroSlotBtn${i+1}`);
 if(!btn) continue;
-btn.onpointerdown = ev => openModal(i, ev);
-btn.onmousedown = ev => openModal(i, ev);
+btn.onpointerdown = null;
+btn.onmousedown = null;
+btn.removeAttribute("onpointerdown");
+btn.removeAttribute("onmousedown");
 btn.onclick = ev => openModal(i, ev);
-btn.setAttribute("onpointerdown", `return window.__ownedHeroOpenReliable(${i},event)`);
 btn.setAttribute("onclick", `return window.__ownedHeroOpenReliable(${i},event)`);
 }
 const clearBtn = document.getElementById("ownedHeroClearBtn");
@@ -3261,7 +3264,7 @@ clearBtn.onclick = clearOwned;
 }
 window.__ownedHeroOpenReliable = openModal;
 window.__ownedHeroClearReliable = clearOwned;
-["pointerdown","mousedown","click"].forEach(type => {
+["click"].forEach(type => {
 document.addEventListener(type, ev => {
 const btn = ev.target?.closest?.("#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3");
 if(btn){
@@ -16992,6 +16995,425 @@ body{padding-top:0 !important;}
   install();
 })();
 </script>
+
+
+<!-- step170: スマホ誤タップ共通ガード。所持英傑モーダル直後の等級3以下/因縁ボタン/英傑カード誤反応を防止。 -->
+<script id="step170-mobile-owned-grade-tap-guard">
+(function(){
+  'use strict';
+  if(window.__step170MobileOwnedGradeTapGuardInstalled) return;
+  window.__step170MobileOwnedGradeTapGuardInstalled = true;
+
+  var DEFAULT_GUARD_MS = 850;
+
+  function isMobileLike(){
+    try{
+      if(window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse), (max-width: 900px)').matches) return true;
+    }catch(e){}
+    try{
+      if(navigator.maxTouchPoints && navigator.maxTouchPoints > 0) return true;
+    }catch(e){}
+    return false;
+  }
+
+  function closest(target, selector){
+    try{ return target && target.closest ? target.closest(selector) : null; }catch(e){ return null; }
+  }
+
+  function now(){ return Date.now ? Date.now() : new Date().getTime(); }
+
+  function setGuard(reason, ms){
+    var until = now() + (Number(ms) || DEFAULT_GUARD_MS);
+    window.__jinpoMobileTapGuardUntil = Math.max(Number(window.__jinpoMobileTapGuardUntil || 0), until);
+    window.__jinpoMobileTapGuardReason = reason || 'mobile-owned-guard';
+  }
+
+  function guardActive(){
+    return Number(window.__jinpoMobileTapGuardUntil || 0) > now();
+  }
+
+  function isOwnedOpenControl(target){
+    return !!closest(target, '#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroClearBtn,.ownedHeroSlotBtn,.ownedHeroBtn');
+  }
+
+  function isOwnedHeroCard(target){
+    return !!closest(target, '.ownedHeroReliableCard,[data-owned-reliable-key]');
+  }
+
+  function isGradeOrBondButton(target){
+    return !!closest(target, '#dbCountButtons [data-grade3-toggle],#dbCountButtons .dbGradeToggleBtn,#dbCountButtons button[data-count],#dbCountButtons .dbCountBtn,[data-grade3-toggle].dbGradeToggleBtn,button[data-count].dbCountBtn');
+  }
+
+  function blockEvent(ev){
+    try{ ev.preventDefault(); }catch(e){}
+    try{ ev.stopPropagation(); }catch(e){}
+    try{ if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }catch(e){}
+    return false;
+  }
+
+  function captureGuard(ev){
+    if(!isMobileLike()) return;
+    var target = ev.target;
+
+    // 所持英傑ボタンを押した瞬間から、同一タップの貫通とゴーストクリックを短時間だけ無効化する。
+    if(isOwnedOpenControl(target)){
+      setGuard('owned-hero-control-' + ev.type, DEFAULT_GUARD_MS);
+      return;
+    }
+
+    // モーダルを開いた直後に、同一タップが英傑カード・等級3以下・因縁ボタンへ流れるのを止める。
+    if(guardActive() && (isOwnedHeroCard(target) || isGradeOrBondButton(target))){
+      return blockEvent(ev);
+    }
+  }
+
+  ['pointerdown','touchstart','mousedown','pointerup','touchend','mouseup','click'].forEach(function(type){
+    document.addEventListener(type, captureGuard, true);
+  });
+
+  window.__step170SetMobileTapGuard = setGuard;
+})();
+</script>
+
+
+<!-- step171: iPhone Safari mobile layout display fix. Smartphone CSS only; search logic / DB / formula unchanged. -->
+<style id="step171-iphone-safari-display-fix">
+@media (max-width:900px){
+  html,
+  body{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
+    -webkit-text-size-adjust:100% !important;
+  }
+
+  body{
+    box-sizing:border-box !important;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+
+  main,
+  .card,
+  #dbCountBrowserCard,
+  #dbCountBrowserCard *{
+    box-sizing:border-box !important;
+  }
+
+  main,
+  .card,
+  #dbCountBrowserCard{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+    overflow-x:hidden !important;
+  }
+
+  .totalStatPanel{
+    left:0 !important;
+    right:0 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    overflow:hidden !important;
+    padding:10px 10px calc(10px + env(safe-area-inset-top) * 0) 10px !important;
+  }
+
+  .totalStatHeader{
+    gap:4px !important;
+    margin-bottom:6px !important;
+  }
+
+  .totalStatHeader strong{
+    font-size:16px !important;
+  }
+
+  .totalStatMode{
+    font-size:11px !important;
+  }
+
+  .totalStatGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:6px !important;
+  }
+
+  .totalStatItem{
+    min-width:0 !important;
+    padding:6px 4px !important;
+  }
+
+  .totalStatItem .statName{
+    font-size:11px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  .totalStatItem .statVal{
+    font-size:20px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    height:auto !important;
+    min-height:0 !important;
+    padding:8px !important;
+    margin:0 0 10px 0 !important;
+    border:1px solid rgba(231,189,92,.45) !important;
+    border-radius:12px !important;
+    background:rgba(0,0,0,.10) !important;
+    overflow:hidden !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.row{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    height:auto !important;
+    min-height:0 !important;
+    padding:8px !important;
+    margin:0 0 10px 0 !important;
+    gap:8px !important;
+    border:1px solid rgba(231,189,92,.38) !important;
+    border-radius:10px !important;
+    background:rgba(40,20,10,.32) !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop label{
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    font-size:22px !important;
+    line-height:1.2 !important;
+    white-space:normal !important;
+  }
+
+  #formationSelect,
+  #clearBtn{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+  }
+
+  #formationSelect{
+    min-height:54px !important;
+    font-size:22px !important;
+  }
+
+  #clearBtn{
+    min-height:48px !important;
+    font-size:17px !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{
+    display:block !important;
+    position:relative !important;
+    left:auto !important;
+    right:auto !important;
+    top:auto !important;
+    grid-column:auto !important;
+    grid-row:auto !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    height:auto !important;
+    min-height:270px !important;
+    padding:8px !important;
+    margin:0 0 10px 0 !important;
+    overflow:hidden !important;
+    border:1px solid rgba(231,189,92,.55) !important;
+    border-radius:12px !important;
+    background:rgba(0,0,0,.18) !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{
+    margin:0 0 6px 0 !important;
+    font-size:16px !important;
+    line-height:1.1 !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    height:235px !important;
+    min-height:235px !important;
+    overflow:hidden !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{
+    width:92px !important;
+    max-width:92px !important;
+    min-height:40px !important;
+    padding:3px !important;
+    font-size:9px !important;
+    line-height:1.05 !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{
+    font-size:10px !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{
+    font-size:7px !important;
+    max-height:14px !important;
+    line-height:1.05 !important;
+  }
+
+  #ownedHeroControl,
+  .ownedHeroControl,
+  #dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    gap:8px !important;
+    margin:8px 0 !important;
+    padding:0 !important;
+  }
+
+  .ownedHeroBtn,
+  .ownedHeroClearBtn{
+    flex:1 1 calc(50% - 8px) !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    min-height:44px !important;
+  }
+
+  .ownedHeroSelected{
+    flex:1 1 100% !important;
+    max-width:100% !important;
+  }
+
+  #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons,
+  #dbCountButtons{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    gap:8px !important;
+    margin:8px 0 0 0 !important;
+    padding:0 !important;
+  }
+
+  #dbCountButtons .dbCountBtn,
+  #dbCountButtons button,
+  #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    height:48px !important;
+    min-height:48px !important;
+    padding:8px 4px !important;
+    font-size:14px !important;
+    white-space:nowrap !important;
+  }
+
+  .dbPriorityControls{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    gap:10px !important;
+    overflow:hidden !important;
+  }
+
+  .dbPriorityGroup,
+  .dbPriorityGroup select{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+  }
+
+  #dbFormationList.dbListBox,
+  .dbListBox{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+
+  #dbFormationList .dbListTable,
+  .dbListBox .dbListTable{
+    display:table !important;
+    width:920px !important;
+    min-width:920px !important;
+    max-width:none !important;
+    table-layout:fixed !important;
+    font-size:11px !important;
+  }
+
+  #dbFormationList .dbListTable thead{display:table-header-group !important;}
+  #dbFormationList .dbListTable tbody{display:table-row-group !important;}
+  #dbFormationList .dbListTable tr{display:table-row !important;}
+  #dbFormationList .dbListTable th,
+  #dbFormationList .dbListTable td{display:table-cell !important;}
+
+  #dbFormationList .dbListTable th:nth-child(1),
+  #dbFormationList .dbListTable td:nth-child(1){width:74px !important;}
+  #dbFormationList .dbListTable th:nth-child(2),
+  #dbFormationList .dbListTable td:nth-child(2){width:68px !important;}
+  #dbFormationList .dbListTable th:nth-child(3),
+  #dbFormationList .dbListTable td:nth-child(3){width:76px !important;}
+  #dbFormationList .dbListTable th:nth-child(4),
+  #dbFormationList .dbListTable td:nth-child(4){width:240px !important;}
+  #dbFormationList .dbListTable th:nth-child(5),
+  #dbFormationList .dbListTable td:nth-child(5){width:230px !important;}
+  #dbFormationList .dbListTable th:nth-child(6),
+  #dbFormationList .dbListTable td:nth-child(6){width:232px !important;}
+
+  #dbFormationList .dbPlacementMini{
+    min-width:0 !important;
+    width:100% !important;
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  }
+
+  #dbFormationList .dbListBonds{
+    flex-wrap:wrap !important;
+    white-space:normal !important;
+    overflow:visible !important;
+  }
+
+  #dbFormationList .dbListStat{
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    line-height:1.45 !important;
+  }
+
+  #appliedRowPreviewUnderFormation{
+    width:100% !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+
+  #appliedRowPreviewUnderFormation .appliedPreviewGrid{
+    grid-template-columns:1fr !important;
+  }
+
+  .mobileActionBar{
+    padding-bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+    z-index:30000 !important;
+  }
+}
+</style>
 
 </body>
 </html>
