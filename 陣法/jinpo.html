@@ -17443,5 +17443,442 @@ body{padding-top:0 !important;}
   }
 }
 </style>
+
+
+<!-- step174: 通常7因縁の条件付き全体検索を分割CSV逐次読込に変更。iPhone Safariの巨大CSV全結合エラー対策。DB/式/倍率変更なし。 -->
+<script id="step174-normal7-split-stream-filter-fix">
+(function(){
+  'use strict';
+  if(window.__step174Normal7SplitStreamFilterFixInstalled) return;
+  window.__step174Normal7SplitStreamFilterFixInstalled = true;
+
+  var LIMIT = Number(window.JINPO_RESULT_LIMIT || 300) || 300;
+  var PARTS = [
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part002.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part003.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part004.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part005.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part006.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part007.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part008.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part009.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part010.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part011.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part012.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part013.csv'
+  ];
+  var activeToken = 0;
+  var activeRows = [];
+
+  function q(id){ return document.getElementById(id); }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; }); }
+  function num(v){ var n = Number(String(v == null ? '' : v).replace(/,/g,'')); return Number.isFinite(n) ? n : 0; }
+  function sleep(){ return new Promise(function(resolve){ setTimeout(resolve,0); }); }
+  function gradeOn(){ try{ return !!grade3Cost6OnlyEnabled; }catch(e){ return !!window.grade3Cost6OnlyEnabled; } }
+  function selectedCount(){ try{ return Number(selectedDbListBondCount)||0; }catch(e){} return Number(window.selectedDbListBondCount)||0; }
+  function setSelectedCount(c){ try{ selectedDbListBondCount = Number(c)||null; }catch(e){} window.selectedDbListBondCount = Number(c)||null; }
+  function currentFormation(){ var sel=q('formationSelect'); return sel ? String(sel.value || '').trim() : ''; }
+  function normName(v){ return String(v || '').trim().replace(/\u5c71\u4e2d\u9e7f\u4e4b\u52a9/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,''); }
+  function split(v){ return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean); }
+  function rowFormation(row){ return String((row && (row.formation || row.form || row['陣形'])) || '').trim(); }
+  function formationMatch(row, form){
+    if(!form) return true;
+    var rf = rowFormation(row);
+    if(!rf) return false;
+    if(rf === form) return true;
+    return rf.indexOf(form) !== -1;
+  }
+  function rowMembers(row){ return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['英傑'])); }
+  function rowBonds(row){ return split(row && (row.bond_names || row.bond_ids || row.inen || row['因縁'])); }
+  function ownedNames(){ try{ return (typeof ownedHeroNames === 'function' ? ownedHeroNames() : []).map(normName).filter(Boolean); }catch(e){ return []; } }
+  function rowOwnedMatch(row){
+    var owned = ownedNames();
+    if(!owned.length) return true;
+    var mem = rowMembers(row).map(normName);
+    return owned.every(function(n){ return mem.indexOf(n) !== -1; });
+  }
+  function rules(){ try{ return (typeof getDbPriorityRules === 'function' && getDbPriorityRules()) || []; }catch(e){ return []; } }
+  function hasThreshold(){ return rules().some(function(r){ return r && r.threshold !== null && Number.isFinite(Number(r.threshold)); }); }
+  function shouldStream7(count){ return !gradeOn() && Number(count) === 7 && (ownedNames().length > 0 || hasThreshold()); }
+  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }
+  function priorityMatch(row){
+    var rs = rules();
+    for(var i=0;i<rs.length;i++){
+      var r = rs[i];
+      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;
+    }
+    return true;
+  }
+  function total(row){ return num(row && (row.total_score || row['総合値'])); }
+  function compareRows(a,b){
+    var rs = rules().filter(function(r){ return r && r.stat; });
+    for(var i=0;i<rs.length;i++){
+      var d = stat(b,rs[i].stat) - stat(a,rs[i].stat);
+      if(d) return d;
+    }
+    var td = total(b) - total(a);
+    if(td) return td;
+    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');
+  }
+  function statText(row){
+    return ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'].map(function(k){ return k + ':' + (row && row[k] != null ? row[k] : ''); }).join(' / ');
+  }
+  function table(rows,count){
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>' + rows.map(function(row,idx){
+      var mem = rowMembers(row), bd = rowBonds(row);
+      return '<tr class="dbMainRow"><td><button class="applyBtn" data-step174-db-idx="'+idx+'" type="button">適用</button></td><td>'+esc(row.bond_count || count)+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){ return '<span>'+esc(i+1)+'. '+esc(m)+'</span>'; }).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){ return '<span class="badge">'+esc(b)+'</span>'; }).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値 '+esc(total(row))+'</span><span class="dbListStat">'+esc(statText(row))+'</span></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function parseCsv(text){
+    if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.parseCSV === 'function') return window.JinpoActivationEngine.parseCSV(text);
+    var rows=[], row=[], field='', quote=false, headers=null;
+    for(var i=0;i<text.length;i++){
+      var ch=text[i], nx=text[i+1];
+      if(quote){
+        if(ch==='"' && nx==='"'){ field+='"'; i++; }
+        else if(ch==='"') quote=false;
+        else field+=ch;
+      }else{
+        if(ch==='"') quote=true;
+        else if(ch===','){ row.push(field); field=''; }
+        else if(ch==='\n'){
+          row.push(field); field='';
+          if(row.length){ if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); }); else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); } }
+          row=[];
+        }else if(ch==='\r'){}
+        else field+=ch;
+      }
+    }
+    if(field.length || row.length){ row.push(field); if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); }); else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); } }
+    return rows;
+  }
+  async function fetchPart(path){
+    var res = await fetch(path, {cache:'no-store'});
+    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);
+    return parseCsv(await res.text());
+  }
+  function showProgress(msg){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='block'; p.classList.add('active'); }
+    var t=q('dbSearchProgressTitle'); if(t) t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'分割DB読込中。数分お待ちください。');
+    var c=q('dbSearchProgressCount'); if(c) c.textContent='読込中';
+    var r=q('dbSearchProgressRemain'); if(r) r.textContent='数分お待ちください';
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='42%'; if(b.parentElement) b.parentElement.classList.add('indeterminate'); }
+  }
+  function updateProgress(done,total,matched){
+    var c=q('dbSearchProgressCount'); if(c) c.textContent='part '+done+' / '+total+'・候補 '+Number(matched||0).toLocaleString()+'件';
+  }
+  function hideProgress(){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='none'; p.classList.remove('active'); }
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='0%'; if(b.parentElement) b.parentElement.classList.remove('indeterminate'); }
+  }
+  function addBest(best,row){
+    if(best.length < LIMIT){ best.push(row); if(best.length > 1) best.sort(compareRows); return; }
+    if(compareRows(row,best[best.length-1]) < 0){
+      best.push(row);
+      best.sort(compareRows);
+      best.length = LIMIT;
+    }
+  }
+  async function renderStream7(){
+    var count = 7;
+    if(!shouldStream7(count)) return false;
+    var myToken = ++activeToken;
+    setSelectedCount(count);
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    var box=q('dbFormationList'), status=q('dbListStatus'), form=currentFormation();
+    if(status) status.style.display='';
+    if(status) status.textContent=(form ? form : '全陣形') + ' / 7因縁: 分割DB読込中。数分お待ちください。';
+    if(box) box.innerHTML='';
+    showProgress('7因縁分割DB読込中。数分お待ちください。');
+    var best=[], loaded=0, matched=0;
+    try{
+      for(var p=0;p<PARTS.length;p++){
+        if(myToken !== activeToken) return true;
+        var rows = await fetchPart(PARTS[p]);
+        loaded += rows.length;
+        for(var i=0;i<rows.length;i++){
+          var r = rows[i];
+          if(String(r && (r.bond_count || r.ic || '')) !== '7') continue;
+          if(!formationMatch(r,form)) continue;
+          if(!rowOwnedMatch(r)) continue;
+          if(!priorityMatch(r)) continue;
+          matched++;
+          addBest(best,r);
+        }
+        rows = null;
+        updateProgress(p+1, PARTS.length, matched);
+        await sleep();
+      }
+      if(myToken !== activeToken) return true;
+      best.sort(compareRows);
+      activeRows = best.slice(0,LIMIT);
+      try{ window.resultDbRows = activeRows; resultDbRows = activeRows; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
+      if(status) status.textContent=(form ? form : '全陣形') + ' / 7因縁: 分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件）';
+      if(box) box.innerHTML = activeRows.length ? table(activeRows,7) : '<div class="dbListNote">該当DBなし。陣形・所持英傑・優先条件を確認してください。</div>';
+    }catch(err){
+      console.error('step174 7因縁分割DB読込失敗', err);
+      if(status) status.textContent='7因縁の分割DB読込に失敗しました。jinpo_result_db_7_parts のCSV配置を確認してください。';
+      if(box) box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
+    }finally{
+      hideProgress();
+    }
+    return true;
+  }
+
+  var prevHandle = window.handleDbCountButtonClick;
+  var prevRender = window.renderDbFormationList;
+  var prevStep38 = window.__step38RenderDbCount;
+  window.__step174RenderNormal7Stream = renderStream7;
+  window.__step38RenderDbCount = function(c){
+    c = Number(c)||0;
+    if(c === 7 && shouldStream7(c)) return renderStream7();
+    return (typeof prevStep38 === 'function') ? prevStep38.apply(this,arguments) : undefined;
+  };
+  window.handleDbCountButtonClick = function(c){
+    c = Number(c)||0;
+    if(c === 7 && shouldStream7(c)) return renderStream7();
+    return (typeof prevHandle === 'function') ? prevHandle.apply(this,arguments) : undefined;
+  };
+  window.renderDbFormationList = function(){
+    var c = selectedCount();
+    if(c === 7 && shouldStream7(c)) return renderStream7();
+    return (typeof prevRender === 'function') ? prevRender.apply(this,arguments) : undefined;
+  };
+  try{ handleDbCountButtonClick = window.handleDbCountButtonClick; }catch(e){}
+  try{ renderDbFormationList = window.renderDbFormationList; }catch(e){}
+
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('button[data-step174-db-idx]') : null;
+    if(!btn) return;
+    var row = activeRows[Number(btn.getAttribute('data-step174-db-idx'))];
+    if(!row) return;
+    try{ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }catch(e){}
+    try{ if(typeof applyDbFormationRow === 'function') applyDbFormationRow(row); }catch(err){ console.error('step174 適用失敗', err); }
+  }, true);
+})();
+</script>
+
+
+<!-- step175: 等級3以下ON 6因縁の条件付き全体検索を分割CSV逐次読込に変更。iPhone Safariの巨大CSV全結合エラー対策。DB/式/倍率/表示CSS変更なし。 -->
+<script id="step175-grade3-6-split-stream-filter-fix">
+(function(){
+  'use strict';
+  if(window.__step175Grade36SplitStreamFilterFixInstalled) return;
+  window.__step175Grade36SplitStreamFilterFixInstalled = true;
+
+  var LIMIT = Number(window.JINPO_RESULT_LIMIT || 300) || 300;
+  var PARTS = [
+    'data/grade3_6_parts/step114_grade3_6_combinations_part001.csv',
+    'data/grade3_6_parts/step114_grade3_6_combinations_part002.csv',
+    'data/grade3_6_parts/step114_grade3_6_combinations_part003.csv',
+    'data/grade3_6_parts/step114_grade3_6_combinations_part004.csv',
+    'data/grade3_6_parts/step114_grade3_6_combinations_part005.csv',
+    'data/grade3_6_parts/step114_grade3_6_combinations_part006.csv'
+  ];
+  var activeToken = 0;
+  var activeRows = [];
+
+  function q(id){ return document.getElementById(id); }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; }); }
+  function num(v){ var n = Number(String(v == null ? '' : v).replace(/,/g,'')); return Number.isFinite(n) ? n : 0; }
+  function sleep(){ return new Promise(function(resolve){ setTimeout(resolve,0); }); }
+  function gradeOn(){ try{ return !!grade3Cost6OnlyEnabled; }catch(e){ return !!window.grade3Cost6OnlyEnabled; } }
+  function selectedCount(){
+    try{ if(Number(selectedDbListBondCount)) return Number(selectedDbListBondCount)||0; }catch(e){}
+    try{ if(Number(currentDbCount)) return Number(currentDbCount)||0; }catch(e){}
+    return Number(window.selectedDbListBondCount || window.currentDbCount || 0) || 0;
+  }
+  function setSelectedCount(c){
+    try{ selectedDbListBondCount = Number(c)||null; }catch(e){}
+    try{ currentDbCount = Number(c)||0; }catch(e){}
+    window.selectedDbListBondCount = Number(c)||null;
+    window.currentDbCount = Number(c)||0;
+  }
+  function currentFormation(){ var sel=q('formationSelect'); return sel ? String(sel.value || '').trim() : ''; }
+  function normName(v){ return String(v || '').trim().replace(/\u5c71\u4e2d\u9e7f\u4e4b\u52a9/g,'山中鹿之介').replace(/・/g,'').replace(/[（）()]/g,'').replace(/[\s　]+/g,''); }
+  function split(v){ return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean); }
+  function rowFormation(row){
+    var v = String((row && (row.formation || row.form || row['陣形'])) || '').trim();
+    if(v.indexOf('衡軛') !== -1) return '衡軛';
+    if(v.indexOf('鶴翼') !== -1) return '鶴翼';
+    if(v.indexOf('魚鱗') !== -1) return '魚鱗';
+    if(v.indexOf('方円') !== -1) return '方円';
+    return v;
+  }
+  function formationMatch(row, form){ if(!form) return true; return rowFormation(row) === form; }
+  function rowMembers(row){
+    var direct = row && (row.eiketsu_names || row.members || row['配置英傑'] || row['英傑']);
+    if(direct) return split(direct);
+    var slots=[];
+    for(var i=1;i<=6;i++){ var v=row && (row['配置'+i] || row['配置名'+i] || row['英傑'+i]); if(v) slots.push(String(v).trim()); }
+    if(slots.length) return slots;
+    return split(row && row.eiketsu_ids);
+  }
+  function rowMemberIds(row){
+    var ids=[];
+    for(var i=1;i<=6;i++){ var v=row && (row['配置ID'+i] || row['id'+i]); if(v) ids.push(String(v).trim()); }
+    if(ids.length) return ids;
+    return split(row && row.eiketsu_ids);
+  }
+  function rowBonds(row){ return split(row && (row.bond_names || row.bond_ids || row.inen || row['発動因縁'] || row['因縁'])); }
+  function ownedNames(){ try{ return (typeof ownedHeroNames === 'function' ? ownedHeroNames() : []).map(normName).filter(Boolean); }catch(e){ return []; } }
+  function ownedIds(){ try{ return Array.isArray(ownedHeroFilterIds) ? ownedHeroFilterIds.map(function(x){ return String(x||'').trim(); }).filter(Boolean) : []; }catch(e){ return []; } }
+  function rowOwnedMatch(row){
+    var on = ownedNames(), oi = ownedIds();
+    if(!on.length && !oi.length) return true;
+    var mem = rowMembers(row).map(normName);
+    var ids = rowMemberIds(row).map(function(x){ return String(x||'').trim(); });
+    if(!on.every(function(n){ return mem.indexOf(n) !== -1; })) return false;
+    return oi.every(function(id){ return !/^EIK_/.test(id) || ids.indexOf(id) !== -1; });
+  }
+  function rules(){ try{ return (typeof getDbPriorityRules === 'function' && getDbPriorityRules()) || []; }catch(e){ return []; } }
+  function hasThreshold(){ return rules().some(function(r){ return r && r.threshold !== null && Number.isFinite(Number(r.threshold)); }); }
+  function shouldStream6(count){ return gradeOn() && Number(count) === 6 && (ownedNames().length > 0 || ownedIds().length > 0 || hasThreshold()); }
+  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }
+  function priorityMatch(row){
+    var rs = rules();
+    for(var i=0;i<rs.length;i++){
+      var r = rs[i];
+      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;
+    }
+    return true;
+  }
+  function total(row){ return num(row && (row.total_score || row['総合値'])); }
+  function compareRows(a,b){
+    var rs = rules().filter(function(r){ return r && r.stat; });
+    for(var i=0;i<rs.length;i++){
+      var d = stat(b,rs[i].stat) - stat(a,rs[i].stat);
+      if(d) return d;
+    }
+    var td = total(b) - total(a);
+    if(td) return td;
+    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');
+  }
+  function statText(row){
+    return ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'].map(function(k){ return k + ':' + (row && row[k] != null ? row[k] : ''); }).join(' / ');
+  }
+  function table(rows,count){
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>' + rows.map(function(row,idx){
+      var mem = rowMembers(row), bd = rowBonds(row);
+      return '<tr class="dbMainRow"><td><button class="applyBtn" data-step175-db-idx="'+idx+'" type="button">適用</button></td><td>'+esc(row.bond_count || count)+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){ return '<span>'+esc(i+1)+'. '+esc(m)+'</span>'; }).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){ return '<span class="badge">'+esc(String(b).split(':').pop())+'</span>'; }).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値 '+esc(total(row))+'</span><span class="dbListStat">'+esc(statText(row))+'</span></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function parseCsv(text){
+    if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.parseCSV === 'function') return window.JinpoActivationEngine.parseCSV(text);
+    var rows=[], row=[], field='', quote=false, headers=null;
+    for(var i=0;i<text.length;i++){
+      var ch=text[i], nx=text[i+1];
+      if(quote){
+        if(ch==='"' && nx==='"'){ field+='"'; i++; }
+        else if(ch==='"') quote=false;
+        else field+=ch;
+      }else{
+        if(ch==='"') quote=true;
+        else if(ch===','){ row.push(field); field=''; }
+        else if(ch==='\n'){
+          row.push(field); field='';
+          if(row.length){ if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); }); else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); } }
+          row=[];
+        }else if(ch==='\r'){}
+        else field+=ch;
+      }
+    }
+    if(field.length || row.length){ row.push(field); if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); }); else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); } }
+    return rows;
+  }
+  async function fetchPart(path){
+    var res = await fetch(path, {cache:'no-store'});
+    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);
+    return parseCsv(await res.text());
+  }
+  function showProgress(msg){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='block'; p.classList.add('active'); }
+    var t=q('dbSearchProgressTitle'); if(t) t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'分割DB読込中。数分お待ちください。');
+    var c=q('dbSearchProgressCount'); if(c) c.textContent='読込中';
+    var r=q('dbSearchProgressRemain'); if(r) r.textContent='数分お待ちください';
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='42%'; if(b.parentElement) b.parentElement.classList.add('indeterminate'); }
+  }
+  function updateProgress(done,total,matched){ var c=q('dbSearchProgressCount'); if(c) c.textContent='part '+done+' / '+total+'・候補 '+Number(matched||0).toLocaleString()+'件'; }
+  function hideProgress(){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='none'; p.classList.remove('active'); }
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='0%'; if(b.parentElement) b.parentElement.classList.remove('indeterminate'); }
+  }
+  function addBest(best,row){
+    if(best.length < LIMIT){ best.push(row); if(best.length > 1) best.sort(compareRows); return; }
+    if(compareRows(row,best[best.length-1]) < 0){ best.push(row); best.sort(compareRows); best.length = LIMIT; }
+  }
+  async function renderStream6(){
+    var count = 6;
+    if(!shouldStream6(count)) return false;
+    var myToken = ++activeToken;
+    setSelectedCount(count);
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    var box=q('dbFormationList'), status=q('dbListStatus'), form=currentFormation();
+    if(!form){ if(status) status.textContent='陣形を選択してください。'; if(box) box.innerHTML='<div class="dbListNote">陣形選択後、6因縁ボタンで一覧を表示します。</div>'; return true; }
+    if(status) status.style.display='';
+    if(status) status.textContent=form + ' / 6因縁: 等級3以下分割DB読込中。数分お待ちください。';
+    if(box) box.innerHTML='';
+    showProgress('等級3以下6因縁分割DB読込中。数分お待ちください。');
+    var best=[], loaded=0, matched=0;
+    try{
+      for(var p=0;p<PARTS.length;p++){
+        if(myToken !== activeToken) return true;
+        var rows = await fetchPart(PARTS[p]);
+        loaded += rows.length;
+        for(var i=0;i<rows.length;i++){
+          var r = rows[i];
+          if(String(r && (r.bond_count || r.ic || '')) !== '6') continue;
+          if(!formationMatch(r,form)) continue;
+          if(!rowOwnedMatch(r)) continue;
+          if(!priorityMatch(r)) continue;
+          matched++;
+          addBest(best,r);
+        }
+        rows = null;
+        updateProgress(p+1, PARTS.length, matched);
+        await sleep();
+      }
+      if(myToken !== activeToken) return true;
+      best.sort(compareRows);
+      activeRows = best.slice(0,LIMIT);
+      try{ window.resultDbRows = activeRows; resultDbRows = activeRows; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
+      var ownedLabel = ownedNames().join('・') || ownedIds().join('・') || '指定なし';
+      if(status) status.textContent=form + ' / 6因縁: 等級3以下分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件） / 所持英傑: ' + ownedLabel;
+      if(box) box.innerHTML = activeRows.length ? table(activeRows,6) : '<div class="dbListNote">該当DBなし。陣形・所持英傑・優先条件を確認してください。</div>';
+    }catch(err){
+      console.error('step175 等級3以下6因縁分割DB読込失敗', err);
+      if(status) status.textContent='等級3以下6因縁の分割DB読込に失敗しました。grade3_6_parts のCSV配置を確認してください。';
+      if(box) box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
+    }finally{
+      hideProgress();
+    }
+    return true;
+  }
+
+  var prevHandle = window.handleDbCountButtonClick;
+  var prevRender = window.renderDbFormationList;
+  var prevStep38 = window.__step38RenderDbCount;
+  var prevStep124 = window.__step124RenderGrade356;
+  var prevStep129 = window.__step129RenderGrade356;
+  window.__step175RenderGrade36Stream = renderStream6;
+  window.__step38RenderDbCount = function(c){ c = Number(c)||0; if(c === 6 && shouldStream6(c)) return renderStream6(); return (typeof prevStep38 === 'function') ? prevStep38.apply(this,arguments) : undefined; };
+  window.__step124RenderGrade356 = function(c){ c = Number(c)||0; if(c === 6 && shouldStream6(c)) return renderStream6(); return (typeof prevStep124 === 'function') ? prevStep124.apply(this,arguments) : false; };
+  window.__step129RenderGrade356 = function(c){ c = Number(c)||0; if(c === 6 && shouldStream6(c)) return renderStream6(); return (typeof prevStep129 === 'function') ? prevStep129.apply(this,arguments) : false; };
+  window.handleDbCountButtonClick = function(c){ c = Number(c)||0; if(c === 6 && shouldStream6(c)) return renderStream6(); return (typeof prevHandle === 'function') ? prevHandle.apply(this,arguments) : undefined; };
+  window.renderDbFormationList = function(){ var c = selectedCount(); if(c === 6 && shouldStream6(c)) return renderStream6(); return (typeof prevRender === 'function') ? prevRender.apply(this,arguments) : undefined; };
+  try{ handleDbCountButtonClick = window.handleDbCountButtonClick; }catch(e){}
+  try{ renderDbFormationList = window.renderDbFormationList; }catch(e){}
+
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('button[data-step175-db-idx]') : null;
+    if(!btn) return;
+    var row = activeRows[Number(btn.getAttribute('data-step175-db-idx'))];
+    if(!row) return;
+    try{ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }catch(e){}
+    try{ if(typeof applyDbFormationRow === 'function') applyDbFormationRow(row); }catch(err){ console.error('step175 適用失敗', err); }
+  }, true);
+})();
+</script>
 </body>
 </html>
