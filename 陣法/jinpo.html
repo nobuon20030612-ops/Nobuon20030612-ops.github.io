@@ -16870,5 +16870,128 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+
+<!-- step167: GitHub 100MB制限対応。巨大CSVを分割ファイルから読む。 -->
+<script id="step167-split-large-csv-loader">
+(function(){
+  'use strict';
+  if(window.__step167SplitLargeCsvLoaderInstalled) return;
+  window.__step167SplitLargeCsvLoaderInstalled = true;
+
+  var SPLIT_CSV_PARTS = {
+    "data/jinpo_result_db_7.csv": ["data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part002.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part003.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part004.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part005.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part006.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part007.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part008.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part009.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part010.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part011.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part012.csv", "data/jinpo_result_db_7_parts/jinpo_result_db_7_part013.csv"],
+    "data/step114_grade3_6_combinations.csv": ["data/grade3_6_parts/step114_grade3_6_combinations_part001.csv", "data/grade3_6_parts/step114_grade3_6_combinations_part002.csv", "data/grade3_6_parts/step114_grade3_6_combinations_part003.csv", "data/grade3_6_parts/step114_grade3_6_combinations_part004.csv", "data/grade3_6_parts/step114_grade3_6_combinations_part005.csv", "data/grade3_6_parts/step114_grade3_6_combinations_part006.csv"]
+  };
+
+  window.JINPO_SPLIT_CSV_PARTS = Object.assign({}, window.JINPO_SPLIT_CSV_PARTS || {}, SPLIT_CSV_PARTS);
+  window.__step167SplitCsvCache = window.__step167SplitCsvCache || Object.create(null);
+  window.__step167SplitCsvLoading = window.__step167SplitCsvLoading || Object.create(null);
+
+  function normalizePath(path){
+    var s = String(path == null ? '' : path).trim();
+    s = s.split('#')[0].split('?')[0];
+    try{
+      if(/^https?:\/\//i.test(s)){
+        var u = new URL(s, location.href);
+        s = u.pathname.replace(/^\//,'');
+        var base = location.pathname.replace(/[^\/]*$/, '');
+        if(base && s.indexOf(base.replace(/^\//,'')) === 0){
+          s = s.slice(base.replace(/^\//,'').length);
+        }
+      }
+    }catch(e){}
+    s = s.replace(/^\.\//,'').replace(/^\//,'').replace(/\\/g,'/');
+    return s;
+  }
+
+  function fallbackParseCsv(text){
+    if(window.JinpoActivationEngine && typeof window.JinpoActivationEngine.parseCSV === 'function'){
+      return window.JinpoActivationEngine.parseCSV(text);
+    }
+    var rows=[], row=[], field='', q=false, headers=null;
+    for(var i=0;i<text.length;i++){
+      var ch=text[i], nx=text[i+1];
+      if(q){
+        if(ch==='"' && nx==='"'){ field+='"'; i++; }
+        else if(ch==='"') q=false;
+        else field+=ch;
+      }else{
+        if(ch==='"') q=true;
+        else if(ch===','){ row.push(field); field=''; }
+        else if(ch==='\n'){
+          row.push(field); field='';
+          if(row.length){
+            if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); });
+            else { var obj={}; headers.forEach(function(h,idx){ obj[h]=row[idx]||''; }); rows.push(obj); }
+          }
+          row=[];
+        }else if(ch==='\r'){}
+        else field+=ch;
+      }
+    }
+    if(field.length || row.length){
+      row.push(field);
+      if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); });
+      else { var obj={}; headers.forEach(function(h,idx){ obj[h]=row[idx]||''; }); rows.push(obj); }
+    }
+    return rows;
+  }
+
+  function install(){
+    if(!window.JinpoActivationEngine) window.JinpoActivationEngine = {};
+    var engine = window.JinpoActivationEngine;
+    var originalLoadCSV = engine.loadCSV;
+    if(typeof originalLoadCSV !== 'function'){
+      originalLoadCSV = function(path){
+        return fetch(path, {cache:'no-store'})
+          .then(function(r){ if(!r.ok) throw new Error(String(path)+' HTTP '+r.status); return r.text(); })
+          .then(fallbackParseCsv);
+      };
+    }
+    if(originalLoadCSV.__step167SplitPatched) return true;
+
+    function patchedLoadCSV(path){
+      var key = normalizePath(path);
+      var parts = SPLIT_CSV_PARTS[key] || SPLIT_CSV_PARTS[key.replace(/^陣法\//,'')];
+      if(!parts || !parts.length){
+        return originalLoadCSV.apply(this, arguments);
+      }
+      if(window.__step167SplitCsvCache[key]){
+        return Promise.resolve(window.__step167SplitCsvCache[key]);
+      }
+      if(window.__step167SplitCsvLoading[key]){
+        return window.__step167SplitCsvLoading[key];
+      }
+
+      var all = [];
+      var loadChain = Promise.resolve();
+      parts.forEach(function(part){
+        loadChain = loadChain.then(function(){
+          return originalLoadCSV.call(engine, part).then(function(rows){
+            if(Array.isArray(rows) && rows.length) all = all.concat(rows);
+          });
+        });
+      });
+
+      window.__step167SplitCsvLoading[key] = loadChain.then(function(){
+        window.__step167SplitCsvCache[key] = all;
+        delete window.__step167SplitCsvLoading[key];
+        return all;
+      }).catch(function(err){
+        delete window.__step167SplitCsvLoading[key];
+        throw err;
+      });
+      return window.__step167SplitCsvLoading[key];
+    }
+    patchedLoadCSV.__step167SplitPatched = true;
+    patchedLoadCSV.__step167OriginalLoadCSV = originalLoadCSV;
+    engine.loadCSV = patchedLoadCSV;
+    return true;
+  }
+
+  install();
+})();
+</script>
+
 </body>
 </html>

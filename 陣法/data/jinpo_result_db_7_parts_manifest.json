@@ -1,0 +1,89 @@
+{
+  "source_file": "clean_jinpo_result_db_7_from_step166.csv",
+  "target_max_bytes": 24117248,
+  "parts": [
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv",
+      "rows": 20174,
+      "bytes": 24116462,
+      "sha256": "331b7deaf30a4814a235aa4f97136e49f80f34e9f8ea88b4d56f33e87e942edb"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part002.csv",
+      "rows": 20186,
+      "bytes": 24117003,
+      "sha256": "680df5e81a9c6d69fb410fb76121321bfbb885b4c208048a2ae5d57a7baa378f"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part003.csv",
+      "rows": 20214,
+      "bytes": 24116955,
+      "sha256": "1d32b62b2a1bd8572146c652d93cd1bbb92ba2552ed9be5ef314e94775d94d7d"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part004.csv",
+      "rows": 20473,
+      "bytes": 24117127,
+      "sha256": "81cf4aa3aa1f739d592835cf8c5c50c5c84873e405ea7e5af4f2f93495e2d6e8"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part005.csv",
+      "rows": 20695,
+      "bytes": 24116411,
+      "sha256": "78119495816b7935fb49178f5eb35cbe64a48a65f52318288fe67d4ede0f8693"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part006.csv",
+      "rows": 20868,
+      "bytes": 24117119,
+      "sha256": "066604482ba44ec0d0c040fd94578e7ccad51807e068d3900463de7ac00522c1"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part007.csv",
+      "rows": 19145,
+      "bytes": 24116346,
+      "sha256": "6abd470ca87020856371bed72efc0b48c4ba050dec9a208ba7f280a249c07036"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part008.csv",
+      "rows": 18970,
+      "bytes": 24116267,
+      "sha256": "6b022123de62e9a552c7d02f46e273d493e546c45847d128d181101441834eaa"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part009.csv",
+      "rows": 19014,
+      "bytes": 24117069,
+      "sha256": "b0038a675f5cc6e8751e1f8711b11512fefb79939523d477a8a25c66f6893750"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part010.csv",
+      "rows": 19208,
+      "bytes": 24117092,
+      "sha256": "0e06692e3c090315529a48034094c371316b6637fba11d5b94c7408eb1db07dc"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part011.csv",
+      "rows": 19432,
+      "bytes": 24116265,
+      "sha256": "6c8c728fa101f936814db7b681d26cf835580549234012a25bbdba16c36ebc0b"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part012.csv",
+      "rows": 19582,
+      "bytes": 24116672,
+      "sha256": "21c6ccf532ff9c7998f4816efc2dd05220ac95319d7aa62d8548d0f964cc8081"
+    },
+    {
+      "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part013.csv",
+      "rows": 12099,
+      "bytes": 14720647,
+      "sha256": "8abd27d2e3f3eed916232bdfaa60889617d0a95c8cc537b26aaf7d08e17eb8fd"
+    }
+  ],
+  "total_rows": 250060,
+  "total_bytes_source": 304117271,
+  "created_note": "Each part includes the CSV header. Use the HTML split loader; do not upload the original oversized CSV.",
+  "part_count": 13,
+  "total_bytes_parts": 304121435
+}
