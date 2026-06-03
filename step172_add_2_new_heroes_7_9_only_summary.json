@@ -1,0 +1,156 @@
+{
+  "step": "step172_add_2_new_heroes_7_9_only",
+  "base_zip": "step171_new_formula_full_db_rebuild_utf8.zip",
+  "hero_source": "英傑一覧(27).csv",
+  "added_heroes": [
+    {
+      "internal_id": "EIK_0387",
+      "英傑名": "朝倉義景",
+      "因子1": "仙道",
+      "因子2": "文化人",
+      "因子3": "外交官",
+      "因子4": "対象外"
+    },
+    {
+      "internal_id": "EIK_0388",
+      "英傑名": "お市(八雷)",
+      "因子1": "医学",
+      "因子2": "女傑",
+      "因子3": "内助の功",
+      "因子4": "気鋭"
+    }
+  ],
+  "scope": "7〜9因縁のみ新規組み合わせ追加。5/6因縁DB、等級3以下表示DB、HTMLレイアウトは変更なし。",
+  "generation": {
+    "new_line_triples": 11973,
+    "cycle_abstract_candidates_before_dedup": 234742,
+    "twoline_abstract_candidates_before_dedup": 2718,
+    "deduped_new_rows_total": 132104,
+    "new_rows_by_count": {
+      "7": 130362,
+      "8": 1732,
+      "9": 10
+    },
+    "new_rows_by_formation": {
+      "方円": 64693,
+      "衡軛": 1359,
+      "魚鱗": 64693,
+      "鶴翼": 1359
+    },
+    "new_7_parts_added": [
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part014.csv",
+        "rows": 20000,
+        "bytes": 20991365,
+        "sha256": "179d081a3746ac4caeadfd75406a1ec3c4fdf9a320e485398b77d873f9ab48c8",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part015.csv",
+        "rows": 20000,
+        "bytes": 21027129,
+        "sha256": "4fe35052dbbcd279bc87902b46b39629a143b8625d37fca63e3e6eb9d30d50d2",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part016.csv",
+        "rows": 20000,
+        "bytes": 20947052,
+        "sha256": "8c60cc5a11ae53f8cfcd1ec1ca3bdc080d7eebfb8276f3cbfda1382caf4ccb8c",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part017.csv",
+        "rows": 20000,
+        "bytes": 20958445,
+        "sha256": "7fb0531ee8d8fab9350e19fc80a74940b5467d6b9c102c61a924bac539c6a0eb",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part018.csv",
+        "rows": 20000,
+        "bytes": 21031619,
+        "sha256": "30fa74b03dd1eaa71be58b920f65741358cd231c13041231b1a207c9131827e8",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part019.csv",
+        "rows": 20000,
+        "bytes": 20983282,
+        "sha256": "3a3a0ea9a05c434f3a1e87406678af264a696d619556f7aa3b919f7e79098981",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      },
+      {
+        "file": "data/jinpo_result_db_7_parts/jinpo_result_db_7_part020.csv",
+        "rows": 10362,
+        "bytes": 10833581,
+        "sha256": "b4a378d34c91dd872bd07de5d6d261e2eda1eabf4465119b37d8648e13c7e8bf",
+        "added_by": "step172_add_new_heroes_7_9_only"
+      }
+    ],
+    "missing_bond_rows": 0
+  },
+  "counts_after": {
+    "jinpo_result_db_5.csv": 6394,
+    "jinpo_result_db_6.csv": 11770,
+    "jinpo_result_db_8.csv": 21764,
+    "jinpo_result_db_9.csv": 120,
+    "jinpo_result_db_7_parts_total": 380422,
+    "new_rows_total": 132104,
+    "new_rows_by_count": {
+      "7": 130362,
+      "8": 1732,
+      "9": 10
+    },
+    "new_rows_by_formation": {
+      "方円": 64693,
+      "衡軛": 1359,
+      "魚鱗": 64693,
+      "鶴翼": 1359
+    },
+    "new_heroes": [
+      {
+        "internal_id": "EIK_0387",
+        "英傑名": "朝倉義景",
+        "因子1": "仙道",
+        "因子2": "文化人",
+        "因子3": "外交官",
+        "因子4": "対象外"
+      },
+      {
+        "internal_id": "EIK_0388",
+        "英傑名": "お市(八雷)",
+        "因子1": "医学",
+        "因子2": "女傑",
+        "因子3": "内助の功",
+        "因子4": "気鋭"
+      }
+    ]
+  },
+  "indexes": {
+    "jinpo_top300_index_7_8_9_rows": 2042,
+    "sort_index_rows": {
+      "7": 14400,
+      "8": 8664,
+      "9": 1440
+    }
+  },
+  "checks": {
+    "js_scripts_ok": 118,
+    "js_errors": [],
+    "old_formula_string_hits": {
+      "jinpo.html": {
+        "成立ライン3人合計": 0,
+        "対象ライン3人": 0,
+        "因縁係数x2.24": 0
+      },
+      "91因縁_計算式_倍率展開.csv": {
+        "成立ライン3人合計": 0,
+        "対象ライン3人": 0,
+        "因縁係数x2.24": 0
+      }
+    },
+    "mojibake_hits": 0,
+    "elapsed_seconds": 103.516
+  }
+}
