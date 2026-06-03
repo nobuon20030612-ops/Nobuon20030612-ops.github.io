@@ -105,6 +105,136 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
 </head>
 <body>
 
+
+<script id="step175-mobile-grade3-single-toggle-fix">
+/* step175: スマホで等級3以下タップ時に複数の既存click処理が連続実行され、ON直後にOFFへ戻る症状だけを抑止。
+   対象は data-grade3-toggle のクリック制御のみ。DB/CSV/式/倍率/5/6/7/8/9検索ロジック/レイアウトは変更しない。 */
+(function(){
+  'use strict';
+  if(window.__step175MobileGrade3SingleToggleFixInstalled) return;
+  window.__step175MobileGrade3SingleToggleFixInstalled = true;
+
+  var lastAcceptedAt = 0;
+  var lastForcedState = null;
+
+  function isGrade3Button(target){
+    var btn = target && target.closest ? target.closest('#dbCountButtons [data-grade3-toggle], #dbCountButtons .dbGradeToggleBtn') : null;
+    if(!btn) return null;
+    var text = String(btn.textContent || '');
+    if(btn.hasAttribute('data-grade3-toggle') || text.indexOf('等級3以下') !== -1 || text.indexOf('等級３以下') !== -1){
+      return btn;
+    }
+    return null;
+  }
+
+  function gradeOn(){
+    try{ return !!grade3Cost6OnlyEnabled; }catch(e){}
+    try{ return !!window.grade3Cost6OnlyEnabled; }catch(e){}
+    return false;
+  }
+
+  function setGrade(v){
+    try{ grade3Cost6OnlyEnabled = !!v; }catch(e){}
+    try{ window.grade3Cost6OnlyEnabled = !!v; }catch(e){}
+    lastForcedState = !!v;
+  }
+
+  function selectedCount(){
+    try{ return Number(selectedDbListBondCount) || 0; }catch(e){}
+    try{ return Number(window.selectedDbListBondCount) || 0; }catch(e){}
+    return 0;
+  }
+
+  function buttonLocked(btn){
+    if(!btn) return true;
+    if(btn.disabled) return true;
+    var cls = String(btn.className || '');
+    if(cls.indexOf('step75Locked') !== -1 || cls.indexOf('disabledByNoFormation') !== -1) return true;
+    if(String(btn.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    var sel = document.getElementById('formationSelect');
+    if(sel && !String(sel.value || '').trim()) return true;
+    return false;
+  }
+
+  function clearSearchCaches(){
+    try{
+      var prefixes = [
+        'jinpo_db_list_cache_v2::',
+        'jinpo_exact_count_v2@@',
+        'jinpo_line_5_6_',
+        'jinpo_5_6_',
+        'jinpo_actual_5_6_no_empty_',
+        'jinpo_final_7_9_finish_v1@@'
+      ];
+      for(var i = localStorage.length - 1; i >= 0; i--){
+        var key = localStorage.key(i);
+        if(prefixes.some(function(prefix){ return key && key.indexOf(prefix) === 0; })) localStorage.removeItem(key);
+      }
+    }catch(e){}
+    try{ if(window.jinpoSearchResultCache && typeof window.jinpoSearchResultCache.clear === 'function') window.jinpoSearchResultCache.clear(); }catch(e){}
+  }
+
+  function syncButtonState(){
+    var on = gradeOn();
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('#dbCountButtons [data-grade3-toggle], #dbCountButtons .dbGradeToggleBtn'));
+    buttons.forEach(function(btn){
+      var text = String(btn.textContent || '');
+      if(text.indexOf('等級3以下') === -1 && text.indexOf('等級３以下') === -1 && !btn.hasAttribute('data-grade3-toggle')) return;
+      btn.setAttribute('data-grade3-toggle','1');
+      btn.classList.toggle('active', on);
+      btn.textContent = '等級3以下 ' + (on ? 'ON' : 'OFF');
+    });
+  }
+
+  function redrawOnlyExistingPaths(count){
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    try{ if(typeof cleanRenderCounts === 'function') cleanRenderCounts(); }catch(e){}
+    try{ if(typeof finalRenderDbCountButtons === 'function') finalRenderDbCountButtons(); }catch(e){}
+    syncButtonState();
+    if(count && typeof window.handleDbCountButtonClick === 'function'){
+      try{
+        var r = window.handleDbCountButtonClick(count);
+        if(r && typeof r.catch === 'function') r.catch(function(err){ console.error(err); });
+      }catch(e){ console.error(e); }
+    }else{
+      try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
+    }
+    setTimeout(syncButtonState, 0);
+    setTimeout(syncButtonState, 120);
+    setTimeout(function(){ if(lastForcedState !== null) setGrade(lastForcedState); syncButtonState(); }, 320);
+  }
+
+  document.addEventListener('click', function(ev){
+    var btn = isGrade3Button(ev.target);
+    if(!btn) return;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+
+    if(buttonLocked(btn)){
+      syncButtonState();
+      return;
+    }
+
+    var now = Date.now();
+    if(now - lastAcceptedAt < 700){
+      if(lastForcedState !== null) setGrade(lastForcedState);
+      syncButtonState();
+      return;
+    }
+    lastAcceptedAt = now;
+
+    var next = !gradeOn();
+    var count = selectedCount();
+    setGrade(next);
+    clearSearchCaches();
+    syncButtonState();
+    redrawOnlyExistingPaths(count);
+  }, true);
+})();
+</script>
+
 <script id="step75-formation-grade3-button-lock-early">
 /* step75: クリック仕様のみ。
    ①陣形未選択: 等級3以下・5〜9を暗くして完全無反応
@@ -1829,7 +1959,7 @@ inenMultiplierMap.clear();
 for(const r of inenMultiplierRows){
 const inen = r["因縁名"] ?? r["因縁"] ?? r["name"] ?? "";
 const stat = r["対象ステータス"] ?? r["ステータス"] ?? r["stat"] ?? "";
-const mult = Number(r["実効係数_因縁係数x2.24"] ?? r["実効係数"] ?? r["倍率%"] ?? r["倍率"] ?? r["rate"] ?? 0) || 0;
+const mult = Number(r["実効係数"] ?? r["実効係数"] ?? r["倍率%"] ?? r["倍率"] ?? r["rate"] ?? 0) || 0;
 const key = makeMultiplierKey(inen, stat);
 if(inen && stat && mult){
   inenMultiplierMap.set(key, mult);
@@ -1862,7 +1992,7 @@ if(Number.isFinite(v) && v !== 0) return v;
 return 0;
 }
 function calcSingleInenStatsFromMultiplierMaster(result){
-// 旧式計算は誤作動防止のため無効化。固定倍率CSV式のみ使用する。
+// 旧式計算は誤作動防止のため無効化。新式倍率CSV式のみ使用する。
 return null;
 }
 function calcRealTimeStatsFromMultiplierMaster(result){
@@ -6347,7 +6477,7 @@ try{ buildHeroNameLookup = window.buildHeroNameLookup; }catch(e){}
 if(window.__grade3Unified5678DbOnlyFinalInstalled) return;
 window.__grade3Unified5678DbOnlyFinalInstalled = true;
 var PREV_RENDER_UNIFIED_5678 = window.renderDbFormationList;
-var DB_PATH_UNIFIED_5678 = "data/grade3_precomputed_5_6_7_8.json";
+var DB_PATH_UNIFIED_5678 = "data/grade3_precomputed_5_6_7_8_9.json";
 var dbCacheUnified5678 = null;
 var dbLoadingUnified5678 = null;
 var activeRowsUnified5678 = [];
@@ -6501,7 +6631,7 @@ function renderUnifiedU(){
     if(seq !== requestSeqUnified5678) return;
     console.error("等級3以下5/6/7/8統一DB読込エラー", err);
     status.textContent = "等級3以下5/6/7/8統一DBを読み込めません。";
-    box.innerHTML = '<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>';
+    box.innerHTML = '<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>';
   });
   return true;
 }
@@ -7167,7 +7297,7 @@ window.bindHardRequireFormation = bindHardRequireFormation;
 
 <script id="fixed-csv-only-current-line-formula-verified-20260524">
 /* 原因特定後の最終固定:
-   - 式・倍率は変更しない
+   - 陣法説明(6).xlsxの新式へ変更済み
    - data/91因縁_計算式_倍率展開.csv の固定倍率だけ使用
    - 旧 jinpo_inen_multiplier_master.csv には戻さない
    - DB登録済みはDB値優先、DB未登録だけ現在画面の実配置ラインで計算
@@ -7235,13 +7365,13 @@ window.bindHardRequireFormation = bindHardRequireFormation;
       fixedMultiplierRows.forEach(function(r){
         var name = r["因縁名"] || r["因縁"] || r["name"] || "";
         var stat = r["対象ステータス"] || r["ステータス"] || r["stat"] || "";
-        var val = Number(r["実効係数_因縁係数x2.24"] || r["実効係数"] || r["倍率"] || 0);
+        var val = Number(r["実効係数"] || r["実効係数"] || r["倍率"] || 0);
         if(!name || !stat || !isFinite(val) || val <= 0) return;
         aliasNames(name).forEach(function(n){ fixedMultiplierMap.set(multKey(n, stat), val); });
       });
       try{
         var ms = document.getElementById("multiplierStatus");
-        if(ms) ms.textContent = "固定倍率CSV: " + fixedMultiplierMap.size + "件 読込済";
+        if(ms) ms.textContent = "新式倍率CSV: " + fixedMultiplierMap.size + "件 読込済";
       }catch(e){}
       return fixedMultiplierRows;
     });
@@ -7304,13 +7434,12 @@ window.bindHardRequireFormation = bindHardRequireFormation;
     var matched = 0;
     result.activated.forEach(function(act){
       var name = act && (act.name || act["因縁名"] || act.inenName || "");
-      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
-      if(!name || slots.length !== 3) return;
+      if(!name) return;
       keys.forEach(function(stat){
         var mult = Number(fixedMultiplierMap.get(multKey(name, stat)) || 0);
         if(!mult) return;
         var base = 0;
-        slots.forEach(function(slot){ base += heroStat(placement && placement[slot], stat); });
+        for(var slot=1; slot<=6; slot++){ base += heroStat(placement && placement[slot], stat); }
         if(base <= 0) return;
         raw[stat] += Math.floor(base * mult + 1e-9);
         matched++;
@@ -7337,8 +7466,8 @@ window.bindHardRequireFormation = bindHardRequireFormation;
     var dbStats = getDbStatsIfCurrentHit();
     if(hasUsefulStats(dbStats)) return drawStats(dbStats, "実数値DB一致");
     var stats = calculateFixedCsvFormula(result || currentFormationResult());
-    if(hasUsefulStats(stats)) return drawStats(stats, "DB未登録 / 固定倍率CSV式で計算表示");
-    return drawStats(null, "DB未登録 / 固定倍率CSV式で計算不可");
+    if(hasUsefulStats(stats)) return drawStats(stats, "DB未登録 / 新式（配置6人合計×因縁倍率）で計算表示");
+    return drawStats(null, "DB未登録 / 新式で計算不可");
   }
 
   var prevRenderRealtime = window.renderRealtimeTotalStats;
@@ -7346,7 +7475,7 @@ window.bindHardRequireFormation = bindHardRequireFormation;
     applyKnownActiveLinesFinal();
     if(!fixedMultiplierMap.size){
       loadFixedMultipliers().then(function(){ renderFixedCsvResult(result || currentFormationResult()); });
-      return drawStats(null, "固定倍率CSV読込中");
+      return drawStats(null, "新式倍率CSV読込中");
     }
     return renderFixedCsvResult(result);
   };
@@ -10752,7 +10881,7 @@ setTimeout(refreshGrade3ListIfNeeded, 0);
 if(window.__grade3Precomputed567Installed) return;
 window.__grade3Precomputed567Installed = true;
 var PREV_RENDER_GRADE3_PRECOMPUTED_567 = window.renderDbFormationList;
-var GRADE3_PRECOMPUTED_567_PATH = "data/grade3_precomputed_5_6_7_8.json";
+var GRADE3_PRECOMPUTED_567_PATH = "data/grade3_precomputed_5_6_7_8_9.json";
 var grade3Precomputed567Cache = null;
 var grade3Precomputed567Loading = null;
 var grade3Precomputed567AppliedRows = [];
@@ -10894,7 +11023,7 @@ function renderPrecomputed567(){
   }).catch(function(err){
     console.error("等級3以下5/6/7事前DB読込エラー", err);
     status.textContent = "等級3以下5/6/7事前DBを読み込めません。";
-    box.innerHTML = '<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>';
+    box.innerHTML = '<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>';
   });
   return true;
 }
@@ -10916,7 +11045,7 @@ document.addEventListener("click", function(ev){
 
 <script id="absolute-last-grade3-567-external-db-lightweight-final">
 /* 2026-05-23 軽量最終修正:
-   等級3以下ONの5/6/7は外部JSON(data/grade3_precomputed_5_6_7_8.json)のみ参照。
+   等級3以下ONの5/6/7は外部JSON(data/grade3_precomputed_5_6_7_8_9.json)のみ参照。
    HTML内蔵DBなし。旧クリックイベントが残っていても最後にDB表示へ戻す。
    OFF時・8/9・既存UIは維持。 */
 (function(){
@@ -10925,7 +11054,7 @@ document.addEventListener("click", function(ev){
 
   var PREV_HANDLE = window.handleDbCountButtonClick;
   var PREV_RENDER_LIST = window.renderDbFormationList;
-  var DB_PATH = 'data/grade3_precomputed_5_6_7_8.json';
+  var DB_PATH = 'data/grade3_precomputed_5_6_7_8_9.json';
   var dbCache = null, dbLoading = null, activeRows = [], renderSeq = 0;
 
   function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m];});}
@@ -10994,7 +11123,7 @@ document.addEventListener("click", function(ev){
     var f=formation();
     if(!f){status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5〜8因縁ボタンで一覧を表示します。</div>'; return true;}
     var local=++renderSeq; activeRows=[]; status.textContent=c+'因縁の等級3以下DBを読込中。数分お待ちください。'; box.innerHTML='';
-    loadDb().then(function(db){ if(local!==renderSeq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(rowMatchesOwned).filter(rowMatchesPriority)); var max=300, shown=rows.slice(0,max); activeRows=shown; var note=pack&&pack.info&&pack.info.note?' / '+pack.info.note:''; status.textContent=f+' / '+c+'因縁: 等級3以下DB全体 '+all.length.toLocaleString()+'件 / 絞り込み '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大'+max+'件） / 外部DB表示のみ'+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。等級3以下DBを参照済みです。</div>'; }).catch(function(err){ if(local!==renderSeq) return; console.error('等級3以下5/6/7外部DB読込エラー',err); status.textContent='等級3以下5/6/7外部DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>'; });
+    loadDb().then(function(db){ if(local!==renderSeq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(rowMatchesOwned).filter(rowMatchesPriority)); var max=300, shown=rows.slice(0,max); activeRows=shown; var note=pack&&pack.info&&pack.info.note?' / '+pack.info.note:''; status.textContent=f+' / '+c+'因縁: 等級3以下DB全体 '+all.length.toLocaleString()+'件 / 絞り込み '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大'+max+'件） / 外部DB表示のみ'+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。等級3以下DBを参照済みです。</div>'; }).catch(function(err){ if(local!==renderSeq) return; console.error('等級3以下5/6/7外部DB読込エラー',err); status.textContent='等級3以下5/6/7外部DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
     return true;
   }
   function doCount(c){ setCount(c); renderButtons(); if(gradeOn()&&is567(c)){directRender(); setTimeout(directRender,80); setTimeout(directRender,350); return false;} if(typeof PREV_HANDLE==='function') return PREV_HANDLE.call(window,c); if(typeof PREV_RENDER_LIST==='function') return PREV_RENDER_LIST(); }
@@ -11403,8 +11532,7 @@ document.addEventListener("click", function(ev){
     var matched = 0;
     activated.forEach(function(act){
       var nm = String(act && act.name || "").trim();
-      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
-      if(!nm || slots.length !== 3) return;
+      if(!nm) return;
       keys.forEach(function(stat){
         var mult = 0;
         try{
@@ -11412,15 +11540,12 @@ document.addEventListener("click", function(ev){
         }catch(e){}
         if(!mult) return;
         var base = 0;
-        slots.forEach(function(slot){
+        for(var slot=1; slot<=6; slot++){
           var h = placement && placement[slot];
-          if(!h) return;
-          if(typeof heroStatValue === "function"){
-            base += Number(heroStatValue(h, stat) || 0);
-          }else{
-            base += Number(h[stat] || h[String(stat).replace("属性","")] || 0);
-          }
-        });
+          if(!h) continue;
+          if(typeof heroStatValue === "function"){ base += Number(heroStatValue(h, stat) || 0); }
+          else{ base += Number(h[stat] || h[String(stat).replace("属性","")] || 0); }
+        }
         if(base <= 0) return;
         raw[stat] += Math.floor(base * mult + 1e-9);
         matched++;
@@ -11451,7 +11576,7 @@ document.addEventListener("click", function(ev){
     if(oldRenderRealtimeFinal) return oldRenderRealtimeFinal(result);
     return drawStatsFinal(null, "実数値DB未一致 / 計算不可");
   }
-  /* 固定倍率CSV式を後段で上書きしない。リーチ再描画のみ残す。
+  /* 新式倍率CSV式を後段で上書きしない。リーチ再描画のみ残す。
   try{
     renderRealtimeTotalStats = renderRealtimeFinal;
     window.renderRealtimeTotalStats = renderRealtimeFinal;
@@ -11541,9 +11666,9 @@ document.addEventListener("click", function(ev){
    - 計算が必要な適用行でも applyRowMembersDirect が空ステータスを上部へ描画していた。
    - 適用後の再計算が複数経路で走り、Safari/スマホで固まりやすかった。
    修正:
-   - 式・倍率は変更しない。
+   - 陣法説明(6).xlsxの新式へ変更済み。
    - DB数値がある行だけDB値表示。
-   - DB未登録/空ステータス行は、現在配置の発動因縁を1回だけ再計算して固定倍率CSV式へ渡す。
+   - DB未登録/空ステータス行は、現在配置の発動因縁を1回だけ再計算して新式倍率CSV式へ渡す。
    - 適用中ロード表示を出し、重複再計算を抑止する。
 */
 (function(){
@@ -11665,7 +11790,7 @@ document.addEventListener("click", function(ev){
       setTimeout(hideOverlayFix, 80);
     }else{
       var mode = document.getElementById("totalStatMode");
-      if(mode) mode.textContent = "DB未登録 / 固定倍率CSV式で計算中";
+      if(mode) mode.textContent = "DB未登録 / 新式倍率CSV式で計算中";
       recalcOnceFix(30);
     }
     return true;
@@ -12035,7 +12160,7 @@ document.addEventListener("click", function(ev){
         multiplierRows.forEach(function(r){
           var name = r["因縁名"] || r["因縁"] || r.name || "";
           var stat = r["対象ステータス"] || r["ステータス"] || r.stat || "";
-          var val = Number(r["実効係数_因縁係数x2.24"] || r["実効係数"] || r["倍率"] || 0);
+          var val = Number(r["実効係数"] || r["実効係数"] || r["倍率"] || 0);
           if(!name || !stat || !Number.isFinite(val) || val <= 0) return;
           multiplierMap.set(keyOf(name, stat), val);
           var n = String(name || "").trim();
@@ -12063,13 +12188,12 @@ document.addEventListener("click", function(ev){
     var matched = 0;
     result.activated.forEach(function(act){
       var nm = act && (act.name || act["因縁名"] || act.inenName || "");
-      var slots = Array.isArray(act && act.lineSlots) ? act.lineSlots : [];
-      if(!nm || slots.length !== 3) return;
+      if(!nm) return;
       keys.forEach(function(stat){
         var mult = Number(multiplierMap.get(keyOf(nm, stat)) || 0);
         if(!mult) return;
         var base = 0;
-        slots.forEach(function(slot){ base += heroStatSafe(placement && placement[slot], stat); });
+        for(var slot=1; slot<=6; slot++){ base += heroStatSafe(placement && placement[slot], stat); }
         if(base <= 0) return;
         raw[stat] += Math.floor(base * mult + 1e-9);
         matched++;
@@ -12101,8 +12225,8 @@ document.addEventListener("click", function(ev){
   }
   function drawFixedFormula(result){
     var stats = calcFixedStats(result || currentResult());
-    if(hasStats(stats)) drawStats(stats, "DB未登録 / 固定倍率CSV式で計算表示");
-    else drawStats(null, "DB未登録 / 固定倍率CSV式で計算不可");
+    if(hasStats(stats)) drawStats(stats, "DB未登録 / 新式（配置6人合計×因縁倍率）で計算表示");
+    else drawStats(null, "DB未登録 / 新式で計算不可");
   }
   function findHeroByName(name){
     var key = normName(name);
@@ -15639,7 +15763,7 @@ document.addEventListener("click", function(ev){
   window.__step124Grade356JsonDisplayFinalFixInstalled = true;
   var prevRender = window.renderDbFormationList;
   var prevHandle = window.handleDbCountButtonClick;
-  var JSON_PATH = "data/grade3_precomputed_5_6_7_8.json";
+  var JSON_PATH = "data/grade3_precomputed_5_6_7_8_9.json";
   var cache = null, loading = null, activeRows = [], seq = 0;
   function esc(v){ try{ if(typeof window.esc === "function") return window.esc(v); }catch(e){} return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];}); }
   function split(v){ return String(v == null ? "" : v).split("|").map(function(x){return x.trim();}).filter(Boolean); }
@@ -15663,7 +15787,7 @@ document.addEventListener("click", function(ev){
   function preview(row){ try{ if(typeof renderUpperPreview === "function") renderUpperPreview({count:String(row.bond_count||count()),formation:String(row.formation||formation()),heroes:members(row).map(function(x,i){return (i+1)+". "+x;}),bonds:bonds(row),stats:stats(row)}); }catch(e){} }
   function apply(row){ if(!row) return; try{ if(typeof applyDbFormationRow === "function"){ applyDbFormationRow(row); return; } }catch(e){} var m=members(row), next={}; for(var i=0;i<6;i++){ var h=heroByName(m[i]); if(h) next[i+1]=h; } if(Object.keys(next).length===6){ try{ placement=next; }catch(e){} try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){} try{ if(typeof calculate === "function") calculate(); }catch(e){} } preview(row); }
   function table(rows,c){ return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){ var m=members(row), b=bonds(row); return '<tr class="dbMainRow"><td><button class="dbOnlyApplyBtn" data-step124-grade3-result="'+esc(idx)+'" type="button">適用</button></td><td>'+esc(row.bond_count||c)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+m.map(function(x,i){return '<span>'+esc(i+1)+'. '+esc(x)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+b.map(function(x){return '<span class="badge">'+esc(x)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+stats(row)+'</span></td></tr>'; }).join('')+'</tbody></table>'; }
-  function render(){ var c=count(); if(!gradeOn() || (c!==5 && c!==6)) return false; var box=document.getElementById("dbFormationList"), status=document.getElementById("dbListStatus"); if(!box||!status) return false; var f=formation(); if(!f){ activeRows=[]; status.textContent="陣形を選択してください。"; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true; } var my=++seq; activeRows=[]; status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。"; box.innerHTML=""; loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(ownedOk).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 絞り込み "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / JSON表示のみ"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。grade3_precomputed_5_6_7.json を参照済みです。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step124 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>'; }); return true; }
+  function render(){ var c=count(); if(!gradeOn() || (c!==5 && c!==6)) return false; var box=document.getElementById("dbFormationList"), status=document.getElementById("dbListStatus"); if(!box||!status) return false; var f=formation(); if(!f){ activeRows=[]; status.textContent="陣形を選択してください。"; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true; } var my=++seq; activeRows=[]; status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。"; box.innerHTML=""; loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(ownedOk).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 絞り込み "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / JSON表示のみ"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。grade3_precomputed_5_6_7.json を参照済みです。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step124 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; }); return true; }
   window.renderDbFormationList=function(){ if(render()) return; return (typeof prevRender==="function")?prevRender.apply(this,arguments):undefined; };
   window.__step124RenderGrade356=function(c){ c=Number(c)||0; if(c===5||c===6){ setCount(c); try{ if(typeof renderDbCountButtons==="function") renderDbCountButtons(); }catch(e){} return render(); } return false; };
   window.handleDbCountButtonClick=function(c){ c=Number(c)||0; if(c===5||c===6){ if(window.__step124RenderGrade356(c)) return; } return (typeof prevHandle==="function")?prevHandle.apply(this,arguments):undefined; };
@@ -15678,13 +15802,13 @@ document.addEventListener("click", function(ev){
    - 所持英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件を表示
    - 所持英傑あり: 押した因縁数(5または6)のDB本体内を検索して、所持英傑を含む候補を総合値順で最大300件表示
    - 所持英傑選択モーダルは等級3以下ON時だけコスト6以下に限定
-   DB本体・式・倍率は変更しない。 */
+   DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step126Grade3OwnedFullSearchFixInstalled) return;
   window.__step126Grade3OwnedFullSearchFixInstalled = true;
   var prevRender = window.renderDbFormationList;
   var prevHandle = window.handleDbCountButtonClick;
-  var JSON_PATH = "data/grade3_precomputed_5_6_7_8.json";
+  var JSON_PATH = "data/grade3_precomputed_5_6_7_8_9.json";
   var DB_PATHS = {5:"data/jinpo_result_db_5.csv",6:"data/jinpo_result_db_6.csv"};
   var jsonCache = null, jsonLoading = null, csvCache = {}, csvLoading = {}, activeRows = [], seq = 0;
   function esc(v){ try{ if(typeof window.esc === "function") return window.esc(v); }catch(e){} return String(v == null ? "" : v).replace(/[&<>\"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[m];}); }
@@ -15735,7 +15859,7 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML="";
     if(!owned.length){
       status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。";
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 所持英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 所持英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
     status.textContent=c+"因縁の等級3以下DB本体を所持英傑で検索中。数分お待ちください。";
@@ -15807,7 +15931,7 @@ document.addEventListener("click", function(ev){
 (function(){
   if(window.__step128Grade3OwnedSearchSourceFixInstalled) return;
   window.__step128Grade3OwnedSearchSourceFixInstalled = true;
-  var JSON_PATH = "data/grade3_precomputed_5_6_7_8.json";
+  var JSON_PATH = "data/grade3_precomputed_5_6_7_8_9.json";
   var DB_PATHS = {5:"data/jinpo_result_db_5.csv",6:"data/jinpo_result_db_6.csv"};
   var jsonCache=null,jsonLoading=null,csvCache={},csvLoading={},activeRows=[],seq=0;
   function esc(v){ try{ if(typeof window.esc==='function') return window.esc(v); }catch(e){} return String(v==null?'':v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m];}); }
@@ -15860,14 +15984,14 @@ document.addEventListener("click", function(ev){
    - 所持英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件表示。
    - 所持英傑あり + 6因縁: step114_grade3_6_combinations.csv（全組み合わせ）を検索。
    - 所持英傑あり + 5因縁: 全体検索用の正式行データが未同梱なら、部分DBで該当なしとは表示しない。
-   DB本体・式・倍率は変更しない。 */
+   DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step129Grade3OwnedActualRouteFixInstalled) return;
   window.__step129Grade3OwnedActualRouteFixInstalled = true;
 
   var PREV_RENDER = window.renderDbFormationList;
   var PREV_HANDLE = window.handleDbCountButtonClick;
-  var JSON_PATH = 'data/grade3_precomputed_5_6_7_8.json';
+  var JSON_PATH = 'data/grade3_precomputed_5_6_7_8_9.json';
   var GRADE3_6_FULL_PATH = 'data/step114_grade3_6_combinations.csv';
   var jsonCache = null, jsonLoading = null, csv6Cache = null, csv6Loading = null;
   var activeRows = [];
@@ -15932,7 +16056,7 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedSelected(); activeRows=[]; box.innerHTML='';
     if(!owned.ids.length && !owned.normNames.length){
       status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。';
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
     if(c===5){
@@ -16315,7 +16439,7 @@ body{padding-top:0 !important;}
    - 5/6: 所持英傑あり、または数値条件ありは既存の全体検索経路へ戻す。
    - 7: 初期表示は総合値上位300件だけ表示し、所持英傑・数値条件ありは7因縁DB内全件から絞り込む。
    - 8/9: 小型表示用DB内から表示。
-   DB本体・式・倍率は変更しない。 */
+   DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step148Grade3DisplayRouteFixInstalled) return;
   window.__step148Grade3DisplayRouteFixInstalled = true;
@@ -16519,7 +16643,7 @@ body{padding-top:0 !important;}
    - 8因縁は小型DB全件から表示。
    - 9因縁は0件枠を即表示。
    - 5/6の既存全体検索経路・Worker経路は触らない。
-   DB本体・式・倍率は変更しない。 */
+   DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step150Grade378DisplayHandleFinalFixInstalled) return;
   window.__step150Grade378DisplayHandleFinalFixInstalled = true;
