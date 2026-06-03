@@ -11,7 +11,7 @@
    目的:
    - ページを開いただけで固まる原因になっている body/html 全体監視 MutationObserver を初期段階で抑止。
    - formationView / dbFormationList など対象限定の監視は残す。
-   - 式・倍率・DB値・所持英傑機能は変更しない。配置英傑クリック/選択UIは削除対象。 */
+   - 式・倍率・DB値・配置英傑機能は変更しない。配置英傑クリック/選択UIは削除対象。 */
 (function(){
   'use strict';
   if(window.__step37EarlyOpenFreezeObserverGuard) return;
@@ -423,11 +423,11 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
   </div>
 
   <div id="ownedHeroControl" class="ownedHeroControl">
-    <button id="ownedHeroSlotBtn1" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="0" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(0,event)">所持英傑1：未選択</button>
-    <button id="ownedHeroSlotBtn2" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="1" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(1,event)">所持英傑2：未選択</button>
-    <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)">所持英傑3：未選択</button>
+    <button id="ownedHeroSlotBtn1" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="0" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(0,event)">配置英傑1：未選択</button>
+    <button id="ownedHeroSlotBtn2" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="1" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(1,event)">配置英傑2：未選択</button>
+    <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)">配置英傑3：未選択</button>
     <button id="ownedHeroClearBtn" type="button" class="ownedHeroClearBtn">解除</button>
-    <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">所持英傑：未選択</div>
+    <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">配置英傑：未選択</div>
   </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
 
@@ -2184,9 +2184,9 @@ for(let i=0;i<3;i++){
 const btn = document.getElementById(`ownedHeroSlotBtn${i+1}`);
 if(!btn) continue;
 const name = ownedHeroDisplayName(ownedHeroFilterIds[i] || "");
-btn.textContent = name ? `所持英傑${i+1}：${name}` : `所持英傑${i+1}：未選択`;
+btn.textContent = name ? `配置英傑${i+1}：${name}` : `配置英傑${i+1}：未選択`;
 btn.classList.toggle("hasOwnedHero", !!name);
-btn.title = name || `所持英傑${i+1}`;
+btn.title = name || `配置英傑${i+1}`;
 }
 }
 function bindOwnedHeroFilterEvents(){
@@ -2262,10 +2262,10 @@ const names = [];
 [1,2,3].forEach(i=>{
 const btn = document.getElementById(`ownedHeroSlotBtn${i}`);
 const label = String(btn?.textContent || "").trim();
-const m = label.match(/所持英傑\d+：(.+)$/);
+const m = label.match(/配置英傑\d+：(.+)$/);
 if(m && m[1] && m[1] !== "未選択") names.push(m[1]);
 });
-box.textContent = names.length ? `所持英傑選択中：${names.join(" / ")}` : "所持英傑：未選択";
+box.textContent = names.length ? `配置英傑選択中：${names.join(" / ")}` : "配置英傑：未選択";
 }
 window.updateOwnedHeroSelectedInfo = updateOwnedHeroSelectedInfo;
 setInterval(updateOwnedHeroSelectedInfo, 1000);
@@ -2571,7 +2571,7 @@ const selectedFormLabel = selectedFormationFilterNames().join("/") || "全陣形
 const priText = priorityRules.length
 ? " / 優先: " + priorityRules.map((r,idx)=>`${idx+1}.${DB_PRIORITY_LABELS[r.stat] || r.stat}${r.threshold ? " "+r.threshold+"以上" : ""}`).join(" → ")
 : "";
-const ownedText = ownedHeroNames().length ? " / 所持英傑: " + ownedHeroNames().join("・") : "";
+const ownedText = ownedHeroNames().length ? " / 配置英傑: " + ownedHeroNames().join("・") : "";
 const gradeText = grade3Cost6OnlyEnabled ? " / 等級3以下: ON（コスト6以下のみ）" : "";
 status.innerHTML = `${selectedFormLabel} / ${selectedDbListBondCount}因縁: DB全体 ${all.length.toLocaleString()}件 / 絞り込み ${rows.length.toLocaleString()}件 / 表示 ${shown.length.toLocaleString()}件（最大${DB_LIST_MAX}件）${priText}${ownedText}${gradeText}`;
 if(!shown.length){
@@ -3252,7 +3252,7 @@ for(let i=0;i<3;i++){
 const btn = document.getElementById(`ownedHeroSlotBtn${i+1}`);
 if(!btn) continue;
 const name = displayNameFromKey(state.selected[i] || "");
-btn.textContent = name ? `所持英傑${i+1}：${name}` : `所持英傑${i+1}：未選択`;
+btn.textContent = name ? `配置英傑${i+1}：${name}` : `配置英傑${i+1}：未選択`;
 btn.classList.toggle("hasOwnedHero", !!name);
 btn.style.pointerEvents = "auto";
 btn.style.cursor = "pointer";
@@ -3266,11 +3266,11 @@ modal.id = "ownedHeroReliableModal";
 modal.innerHTML = `
 <div class="ownedHeroReliableBox">
 <div class="ownedHeroReliableHeader">
-<strong id="ownedHeroReliableTitle">所持英傑選択</strong>
+<strong id="ownedHeroReliableTitle">配置英傑選択</strong>
 <button id="ownedHeroReliableClose" type="button">閉じる</button>
 </div>
 <div class="ownedHeroReliableBody">
-<div class="ownedHeroReliableNote">英傑一覧から所持英傑1〜3に登録する英傑を選択します。等級3以下ON時はコスト6以下のみ表示します。</div>
+<div class="ownedHeroReliableNote">英傑一覧から配置英傑1〜3に登録する英傑を選択します。等級3以下ON時はコスト6以下のみ表示します。</div>
 <div class="modalFilterGrid">
 <input id="ownedHeroReliableSearch" placeholder="英傑名で検索">
 <select id="ownedHeroReliableJob"><option value="">特化</option></select>
@@ -3342,7 +3342,7 @@ state.active = Math.max(0, Math.min(2, Number(slot) || 0));
 ensureModal();
 setupSelects();
 const title = document.getElementById("ownedHeroReliableTitle");
-if(title) title.textContent = `所持英傑${state.active+1}を選択`;
+if(title) title.textContent = `配置英傑${state.active+1}を選択`;
 const modal = document.getElementById("ownedHeroReliableModal");
 modal.classList.add("open");
 modal.style.display = "flex";
@@ -3360,7 +3360,7 @@ if(ev){ ev.preventDefault(); ev.stopPropagation(); }
 if(state.justOpenedAt && Date.now() - state.justOpenedAt < 350) return false;
 if(!key) return false;
 const dup = state.selected.findIndex((v,i) => v === key && i !== state.active);
-if(dup !== -1){ alert("同じ英傑は所持英傑1〜3に重複して選択できません"); return false; }
+if(dup !== -1){ alert("同じ英傑は配置英傑1〜3に重複して選択できません"); return false; }
 state.selected[state.active] = key;
 syncExistingFilter();
 refreshButtons();
@@ -3945,7 +3945,7 @@ function statusText(allCount, filteredCount, shownCount, cached){
 var count = (typeof selectedDbListBondCount !== "undefined") ? selectedDbListBondCount : "";
 var forms = currentSelectedForms().join("/") || "全陣形";
 var ownedText = "";
-try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 所持英傑: " + ownedHeroNames().join("・"); }catch(e){}
+try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 配置英傑: " + ownedHeroNames().join("・"); }catch(e){}
 var gradeText = "";
 try{ if(grade3Cost6OnlyEnabled) gradeText = " / 等級3以下: ON（コスト6以下のみ）"; }catch(e){}
 var cacheText = cached ? " / キャッシュ表示" : " / 検索結果記録済み";
@@ -4296,7 +4296,7 @@ return '<tr class="dbMainRow">' +
 function status2(total, filtered, shown, cached){
 var count = 0; try{ count = Number(selectedDbListBondCount)||0; }catch(e){}
 var forms = selectedForms2().join("/") || "全陣形";
-var ownedText = ""; try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 所持英傑: " + ownedHeroNames().join("・"); }catch(e){}
+var ownedText = ""; try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 配置英傑: " + ownedHeroNames().join("・"); }catch(e){}
 var gradeText = ""; try{ if(grade3Cost6OnlyEnabled) gradeText = " / 等級3以下: ON（コスト6以下のみ）"; }catch(e){}
 return forms+" / "+count+"因縁: DB全体 "+Number(total||0).toLocaleString()+"件 / 絞り込み "+Number(filtered||0).toLocaleString()+"件 / 表示 "+Number(shown||0).toLocaleString()+"件（最大"+(typeof DB_LIST_MAX!=="undefined"?DB_LIST_MAX:300)+"件）"+ownedText+gradeText+(cached?" / キャッシュ表示":" / 検索結果記録済み");
 }
@@ -4656,10 +4656,10 @@ setTimeout(function(){
 var result = generateRowsFor5or6L(count);
 var rows = result.rows || [];
 window.__jinpoGeneratedLineRows = rows;
-var ownedText = selectedOwnedNamesL().length ? ' / 所持英傑: '+selectedOwnedNamesL().join('・') : '';
+var ownedText = selectedOwnedNamesL().length ? ' / 配置英傑: '+selectedOwnedNamesL().join('・') : '';
 var gradeText = ''; try{ if(grade3Cost6OnlyEnabled) gradeText=' / 等級3以下: ON（コスト6以下のみ）'; }catch(e){}
 var st = form+' / '+count+'因縁: '+result.note+' / 確認候補 '+Number(result.total||0).toLocaleString()+'件 / 表示 '+rows.length.toLocaleString()+'件（最大'+MAX_OUTPUT+'件）'+ownedText+gradeText+' / 検索結果記録済み';
-var html = rows.length ? tableHtmlL(rows) : '<div class="dbListNote">該当行なし。'+escL(result.note)+'。所持英傑・等級3以下・陣形条件を確認してください。</div>';
+var html = rows.length ? tableHtmlL(rows) : '<div class="dbListNote">該当行なし。'+escL(result.note)+'。配置英傑・等級3以下・陣形条件を確認してください。</div>';
 status.innerHTML = st;
 box.innerHTML = html;
 bindGeneratedApplyL();
@@ -4764,7 +4764,7 @@ try{ if(typeof ownedHeroNames === "function") return ownedHeroNames().map(cleanN
 var out=[];
 document.querySelectorAll('[data-owned-hero-name], .ownedHeroBtn').forEach(function(el){
 var t = el.getAttribute('data-owned-hero-name') || el.dataset?.heroName || el.textContent || "";
-t = t.replace(/所持英傑[123１２３]?/g,"").replace(/未選択/g,"").trim();
+t = t.replace(/配置英傑[123１２３]?/g,"").replace(/未選択/g,"").trim();
 if(t) out.push(cleanNameV4(t));
 });
 return Array.from(new Set(out.filter(Boolean)));
@@ -4865,7 +4865,7 @@ if(!inenRows.length) return {rows:[], total:0, note:'因縁マスター未読込
 var rows=[], seen=new Set(), checked=0;
 var seed = hashV4([form,count,gradeOnV4(),selectedOwnedNamesV4().join('|'),pool.length,inenRows.length].join('@@'));
 var rng = mulberry32V4(seed);
-// まず現在の並びに近い候補と、所持英傑固定を優先して試す
+// まず現在の並びに近い候補と、配置英傑固定を優先して試す
 function testList(list){
 if(!list || list.length !== 6) return;
 var assign={};
@@ -4948,7 +4948,7 @@ setTimeout(function(){
 var r=generateV4(count), rows=r.rows||[];
 window.__jinpoLineGenV4Rows=rows;
 var grade=gradeOnV4() ? ' / 等級3以下: ON（コスト6以下のみ）' : '';
-var owned=selectedOwnedNamesV4().length ? ' / 所持英傑: '+selectedOwnedNamesV4().join('・') : '';
+var owned=selectedOwnedNamesV4().length ? ' / 配置英傑: '+selectedOwnedNamesV4().join('・') : '';
 var st=escV4(form)+' / '+count+'因縁: '+escV4(r.note)+' / 確認 '+Number(r.total||0).toLocaleString()+'件 / 表示 '+rows.length.toLocaleString()+'件（最大'+MAX_OUTPUT_V4+'件）'+escV4(owned+grade)+' / 検索結果記録済み';
 var html=rows.length ? tableV4(rows) : '<div class="dbListNote">該当行なし。探索対象英傑 '+sourceHeroesV4().length+'人 / 因縁マスター '+buildInenRowsV4().length+'件。条件を緩めて再検索してください。</div>';
 status.innerHTML=st; box.innerHTML=html; bindApplyV4();
@@ -5169,10 +5169,10 @@ status.innerHTML=esc6(f)+" / "+count+"因縁: 3人ライン探索中...";
 box.innerHTML='<div class="dbListNote">5/6因縁はDB外のため、陣形ラインから探索生成しています。</div>';
 setTimeout(function(){
 var r=generate6(count), rows=r.rows||[]; window.__jinpoLineGenV6Rows=rows;
-var owned=ownedNames6().length ? " / 所持英傑: "+ownedNames6().join("・") : "";
+var owned=ownedNames6().length ? " / 配置英傑: "+ownedNames6().join("・") : "";
 var grade=gradeOn6()?" / 等級3以下: ON（コスト6以下のみ）":"";
 var st=esc6(f)+" / "+count+"因縁: "+esc6(r.note)+" / ライン候補 "+esc6(r.lineCandidates||"")+" / 合成確認 "+Number(r.total||0).toLocaleString()+"件 / 表示 "+rows.length.toLocaleString()+"件（最大"+MAX_OUTPUT+"件）"+esc6(owned+grade)+" / 検索結果記録済み";
-var html=rows.length ? table6(rows) : '<div class="dbListNote">該当候補なし。'+esc6(r.note)+' / ライン候補 '+esc6(r.lineCandidates||"0")+' / 走査 '+Number(r.scan||0).toLocaleString()+'件。所持英傑・等級3以下・陣形条件を確認してください。</div>';
+var html=rows.length ? table6(rows) : '<div class="dbListNote">該当候補なし。'+esc6(r.note)+' / ライン候補 '+esc6(r.lineCandidates||"0")+' / 走査 '+Number(r.scan||0).toLocaleString()+'件。配置英傑・等級3以下・陣形条件を確認してください。</div>';
 status.innerHTML=st; box.innerHTML=html; bindApply6();
 try{ if(rows.length) localStorage.setItem(key,JSON.stringify({statusCached:st.replace("検索結果記録済み","キャッシュ表示"),html:html,rows:rows})); else localStorage.removeItem(key); }catch(e){}
 },0);
@@ -5307,7 +5307,7 @@ return n;
 function fillRest(assign, rows){
 var n={}, used=new Set(), owned=ownedNames();
 Object.keys(assign||{}).forEach(function(k){ n[k]=assign[k]; used.add(hId(assign[k])); });
-// 所持英傑が未配置なら優先して空き枠に入れる
+// 配置英傑が未配置なら優先して空き枠に入れる
 function putHero(h){
 if(!h || used.has(hId(h))) return true;
 for(var s=1;s<=6;s++){
@@ -5327,7 +5327,7 @@ if(Object.keys(n).length>=6) break;
 putHero(rows[i]);
 }
 for(var j=1;j<=6;j++){ if(!n[j]) return null; }
-// 所持英傑指定がある場合、完成配置に全員含まれること
+// 配置英傑指定がある場合、完成配置に全員含まれること
 var names=[]; for(var k=1;k<=6;k++) names.push(normX(hName(n[k])));
 if(owned.length && !owned.every(function(x){return names.indexOf(x)!==-1;})) return null;
 return n;
@@ -5526,7 +5526,7 @@ if(r && r.cancelled){ showCancelled56(box,status); return; }
 if(isCancelled56(token)){ showCancelled56(box,status); return; }
 var rows=r.rows||[];
 window.__jinpoActualLineRows=rows;
-var owned=ownedNames().length ? " / 所持英傑: "+ownedNames().join("・") : "";
+var owned=ownedNames().length ? " / 配置英傑: "+ownedNames().join("・") : "";
 var grade=gradeOn()?" / 等級3以下: ON（コスト6以下のみ）":"";
 var st=escA(f)+" / "+count+"因縁: "+escA(r.note)+" / ライン候補 "+escA(r.lineCandidates||"0")+" / 確認 "+Number(r.checked||0).toLocaleString()+"件 / 表示 "+rows.length.toLocaleString()+"件（最大"+MAX_ROWS+"件）"+escA(owned+grade)+(rows.length?" / 検索結果記録済み":"");
 var html=rows.length ? table(rows) : '<div class="dbListNote">該当候補なし。ライン候補 '+escA(r.lineCandidates||"0")+' / 確認 '+Number(r.checked||0).toLocaleString()+'件。条件を外して再確認してください。</div>';
@@ -8586,10 +8586,10 @@ setTimeout(function(){
 var result = generateF(count);
 var rows = result.rows || [];
 window.__jinpoLineGenV3Rows = rows;
-var ownedText = selectedOwnedNamesF().length ? " / 所持英傑: " + selectedOwnedNamesF().join("・") : "";
+var ownedText = selectedOwnedNamesF().length ? " / 配置英傑: " + selectedOwnedNamesF().join("・") : "";
 var gradeText = ""; try{ if(grade3Cost6OnlyEnabled) gradeText = " / 等級3以下: ON（コスト6以下のみ）"; }catch(e){}
 var st = escF(form) + " / " + count + "因縁: " + escF(result.note) + " / 確認候補 " + Number(result.total||0).toLocaleString() + "件 / 表示 " + rows.length.toLocaleString() + "件（最大" + MAX_OUTPUT + "件）" + escF(ownedText + gradeText) + " / 検索結果記録済み";
-var html = rows.length ? tableF(rows) : '<div class="dbListNote">該当行なし。'+escF(result.note)+'。所持英傑・等級3以下・陣形条件を確認してください。</div>';
+var html = rows.length ? tableF(rows) : '<div class="dbListNote">該当行なし。'+escF(result.note)+'。配置英傑・等級3以下・陣形条件を確認してください。</div>';
 status.innerHTML = st;
 box.innerHTML = html;
 bindApplyF();
@@ -8865,10 +8865,10 @@ box.innerHTML='<div class="dbListNote">5/6因縁はDB外のため、陣形ライ
 setTimeout(function(){
 var r=generate5(count), rows=r.rows||[];
 window.__jinpoLineGenV5Rows=rows;
-var owned=ownedNames5().length ? " / 所持英傑: "+ownedNames5().join("・") : "";
+var owned=ownedNames5().length ? " / 配置英傑: "+ownedNames5().join("・") : "";
 var grade=gradeOn5()?" / 等級3以下: ON（コスト6以下のみ）":"";
 var st=esc5(f)+" / "+count+"因縁: "+esc5(r.note)+" / ライン候補 "+esc5(r.lineCandidates||"")+" / 組合せ確認 "+Number(r.total||0).toLocaleString()+"件 / 表示 "+rows.length.toLocaleString()+"件（最大"+MAX_OUTPUT_V5+"件）"+esc5(owned+grade)+" / 検索結果記録済み";
-var html=rows.length ? table5(rows) : '<div class="dbListNote">該当候補なし。'+esc5(r.note)+' / ライン候補 '+esc5(r.lineCandidates||"0")+'。所持英傑・等級3以下・陣形条件を確認してください。</div>';
+var html=rows.length ? table5(rows) : '<div class="dbListNote">該当候補なし。'+esc5(r.note)+' / ライン候補 '+esc5(r.lineCandidates||"0")+'。配置英傑・等級3以下・陣形条件を確認してください。</div>';
 status.innerHTML=st; box.innerHTML=html; bindApply5();
 try{ localStorage.setItem(key,JSON.stringify({statusCached:st.replace("検索結果記録済み","キャッシュ表示"),html:html,rows:rows})); }catch(e){}
 },0);
@@ -9169,7 +9169,7 @@ setDbSearchProgress({phase:(Number(count)+"因縁 専用ライン探索中・フ
 }
 var r=generate(count), rows=r.rows||[];
 window.__jinpoActualLineRows=rows;
-var owned=ownedNames().length ? " / 所持英傑: "+ownedNames().join("・") : "";
+var owned=ownedNames().length ? " / 配置英傑: "+ownedNames().join("・") : "";
 var grade=gradeOn()?" / 等級3以下: ON（コスト6以下のみ）":"";
 var st=escA(f)+" / "+count+"因縁: "+escA(r.note)+" / ライン候補 "+escA(r.lineCandidates||"0")+" / 確認 "+Number(r.checked||0).toLocaleString()+"件 / 表示 "+rows.length.toLocaleString()+"件（最大"+MAX_ROWS+"件）"+escA(owned+grade)+(rows.length?" / 検索結果記録済み":"");
 var html=rows.length ? table(rows) : '<div class="dbListNote">該当候補なし。ライン候補 '+escA(r.lineCandidates||"0")+' / 確認 '+Number(r.checked||0).toLocaleString()+'件。条件を外して再確認してください。</div>';
@@ -9269,7 +9269,7 @@ return '<tr class="dbMainRow">'+
 function status79(total, filtered, shown, cached){
 var c = 0; try{ c = Number(selectedDbListBondCount) || 0; }catch(e){}
 var forms = selectedForms79().join("/") || "全陣形";
-var ownedText = ""; try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 所持英傑: " + ownedHeroNames().join("・"); }catch(e){}
+var ownedText = ""; try{ if(typeof ownedHeroNames === "function" && ownedHeroNames().length) ownedText = " / 配置英傑: " + ownedHeroNames().join("・"); }catch(e){}
 var gradeText = ""; try{ if(grade3Cost6OnlyEnabled) gradeText = " / 等級3以下: ON（コスト6以下のみ）"; }catch(e){}
 return forms+" / "+c+"因縁: DB全体 "+Number(total||0).toLocaleString()+"件 / 絞り込み "+Number(filtered||0).toLocaleString()+"件 / 表示 "+Number(shown||0).toLocaleString()+"件（最大"+MAX_79+"件）"+ownedText+gradeText+(cached?" / キャッシュ表示":" / 検索結果記録済み");
 }
@@ -9690,7 +9690,7 @@ catch(err){ try{ if(typeof hideDbSearchProgress === "function") hideDbSearchProg
 if((r && r.cancelled) || cancelled56(token)){ showCancelled56(); return; }
 var rows=r.rows||[];
 window.__jinpoCancelResponsive56Rows=rows;
-var owned=ownedNames56().length ? " / 所持英傑: "+ownedNames56().join("・") : "";
+var owned=ownedNames56().length ? " / 配置英傑: "+ownedNames56().join("・") : "";
 var grade=gradeOn56()?" / 等級3以下: ON（コスト6以下のみ）":"";
 var st=esc56(f)+" / "+count+"因縁: "+esc56(r.note)+" / ライン候補 "+esc56(r.lineCandidates||"0")+" / 確認 "+Number(r.checked||0).toLocaleString()+"件 / 表示 "+rows.length.toLocaleString()+"件（最大"+MAX_ROWS_RESP_56+"件）"+esc56(owned+grade)+(rows.length?" / 検索結果記録済み":"");
 var html=rows.length ? table56(rows) : '<div class="dbListNote">該当候補なし。ライン候補 '+esc56(r.lineCandidates||"0")+' / 確認 '+Number(r.checked||0).toLocaleString()+'件。条件を外して再確認してください。</div>';
@@ -13442,9 +13442,9 @@ document.addEventListener("click", function(ev){
       var shown = rows.slice(0, 300);
       if(seq !== renderSeqStep18) return;
       var gradeText = gradeOn() ? " / 等級3以下: ON" : "";
-      var ownedText = selectedOwnedNames().length ? " / 所持英傑: " + selectedOwnedNames().join("・") : "";
+      var ownedText = selectedOwnedNames().length ? " / 配置英傑: " + selectedOwnedNames().join("・") : "";
       status.innerHTML = esc(form) + " / " + count + "因縁: DB全体 " + all.length.toLocaleString() + "件 / 絞り込み " + rows.length.toLocaleString() + "件 / 表示 " + shown.length.toLocaleString() + "件（最大300件）" + gradeText + ownedText;
-      box.innerHTML = shown.length ? table(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+      box.innerHTML = shown.length ? table(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       hideProgressLater();
     }catch(err){
       console.error("5/6DB読込エラー", err);
@@ -13987,9 +13987,9 @@ document.addEventListener("click", function(ev){
       var sortText = rules26().filter(function(r){return r && r.stat;}).length ? " / 優先条件ソート上位300件" : " / 総合値上位300件";
       var gradeText = gradeOn26() ? " / 等級3以下: ON" : "";
       var owned = ownedNames26();
-      var ownedText = owned.length ? " / 所持英傑: " + owned.join("・") : "";
+      var ownedText = owned.length ? " / 配置英傑: " + owned.join("・") : "";
       status.textContent = form + " / " + count + "因縁: " + (useTopIndex ? "上位300件DB" : "分割DB") + " " + all.length.toLocaleString() + "件 / 絞り込み " + filtered.length.toLocaleString() + "件 / 表示 " + shown.length.toLocaleString() + "件（最大300件）" + sortText + gradeText + ownedText;
-      box.innerHTML = shown.length ? table26(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+      box.innerHTML = shown.length ? table26(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       hideProgress26();
     }catch(err){
       console.error("step26 分割DB読込エラー", err);
@@ -14517,7 +14517,7 @@ document.addEventListener("click", function(ev){
     var priText = rules.length ? " / 優先条件ソート上位300件" : " / 総合値上位300件";
     var gradeText = gradeOn32() ? " / 等級3以下: ON" : "";
     status.textContent = form + " / " + c + "因縁: 読込 " + rows.length.toLocaleString() + "件 / 絞り込み " + filtered.length.toLocaleString() + "件 / 表示 " + shown.length.toLocaleString() + "件（最大" + LIMIT32 + "件）" + priText + gradeText;
-    box.innerHTML = shown.length ? table32(shown) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+    box.innerHTML = shown.length ? table32(shown) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
     hideProgress32();
   };
   try{ renderDbFormationList = window.renderDbFormationList; }catch(e){}
@@ -14695,7 +14695,7 @@ document.addEventListener("click", function(ev){
     var priText=pri.length?' / 優先条件ソート上位300件':' / 総合値上位300件';
     var gradeText=gradeOn()?' / 等級3以下: ON':'';
     status.textContent=form+' / '+c+'因縁: 読込 '+rows.length.toLocaleString()+'件 / 絞り込み '+filtered.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大'+LIMIT+'件）'+priText+gradeText;
-    box.innerHTML=shown.length?table(shown):'<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+    box.innerHTML=shown.length?table(shown):'<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
     hideProgress();
   };
   try{ renderDbFormationList=window.renderDbFormationList; }catch(e){}
@@ -14722,7 +14722,7 @@ document.addEventListener("click", function(ev){
    - 初期表示では巨大DB/巨大sort indexを読まない。
    - 通常表示は小さい top300 index を使用。
    - 優先ステータスでソート時のみ count別の分割sort indexを読む。
-   - 所持英傑/等級3以下/閾値条件がある時だけ対象個別DBを読む。
+   - 配置英傑/等級3以下/閾値条件がある時だけ対象個別DBを読む。
    - 式・倍率・DB値は変更しない。 */
 (function(){
   'use strict';
@@ -14886,7 +14886,7 @@ document.addEventListener("click", function(ev){
       shownRows=shown;
       var sourceText = useFullDb() ? '個別DB' : (firstRuleStat() ? '分割ソートindex' : 'top300 index');
       status.textContent=form+' / '+c+'因縁: '+sourceText+' 読込 '+rows.length.toLocaleString()+'件 / 絞り込み '+filtered.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大'+LIMIT+'件）';
-      box.innerHTML=shown.length?table(shown):'<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+      box.innerHTML=shown.length?table(shown):'<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       try{ window.resultDbRows=shown; resultDbRows=shown; if(typeof rebuildResultDbIndex==='function') rebuildResultDbIndex(); }catch(e){}
     }catch(e){
       console.error('step35 表示読込失敗', e);
@@ -15142,7 +15142,7 @@ document.addEventListener("click", function(ev){
       shownRows = shown;
       try{ window.resultDbRows = shown; resultDbRows = shown; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
       status.textContent = (form ? form : '全陣形') + ' / ' + count + '因縁: ' + src.source + ' 読込 ' + src.rows.length.toLocaleString() + '件 / 絞り込み ' + filtered.length.toLocaleString() + '件 / 表示 ' + shown.length.toLocaleString() + '件（最大' + LIMIT + '件）';
-      box.innerHTML = shown.length ? table(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・所持英傑・優先条件を確認してください。</div>';
+      box.innerHTML = shown.length ? table(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       return shown;
     }catch(err){
       console.error('step38 5〜9読込失敗', err);
@@ -15799,9 +15799,9 @@ document.addEventListener("click", function(ev){
 
 <script id="step126-grade3-owned-full-search-and-cost6-owned-filter-fix">
 /* step126: 等級3以下ON時
-   - 所持英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件を表示
-   - 所持英傑あり: 押した因縁数(5または6)のDB本体内を検索して、所持英傑を含む候補を総合値順で最大300件表示
-   - 所持英傑選択モーダルは等級3以下ON時だけコスト6以下に限定
+   - 配置英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件を表示
+   - 配置英傑あり: 押した因縁数(5または6)のDB本体内を検索して、配置英傑を含む候補を総合値順で最大300件表示
+   - 配置英傑選択モーダルは等級3以下ON時だけコスト6以下に限定
    DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step126Grade3OwnedFullSearchFixInstalled) return;
@@ -15859,10 +15859,10 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML="";
     if(!owned.length){
       status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。";
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 所持英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 配置英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
-    status.textContent=c+"因縁の等級3以下DB本体を所持英傑で検索中。数分お待ちください。";
+    status.textContent=c+"因縁の等級3以下DB本体を配置英傑で検索中。数分お待ちください。";
     loadCsvRows(c).then(function(allRows){
       if(my!==seq) return;
       var total=allRows.length, rows=[];
@@ -15877,8 +15877,8 @@ document.addEventListener("click", function(ev){
       }
       rows=sortRows(rows);
       var shown=rows.slice(0,300); activeRows=shown;
-      status.textContent=f+" / "+c+"因縁: DB本体 "+total.toLocaleString()+"件 / 所持英傑全体検索 "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 所持英傑: "+owned.join("・");
-      box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。DB本体内を所持英傑条件で検索済みです。</div>';
+      status.textContent=f+" / "+c+"因縁: DB本体 "+total.toLocaleString()+"件 / 配置英傑全体検索 "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 配置英傑: "+owned.join("・");
+      box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。DB本体内を配置英傑条件で検索済みです。</div>';
     }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 DB本体検索エラー",err); status.textContent="等級3以下5/6のDB本体を読み込めません。"; box.innerHTML='<div class="dbListNote">data/jinpo_result_db_'+c+'.csv を確認してください。</div>'; });
     return true;
   }
@@ -15891,7 +15891,7 @@ document.addEventListener("click", function(ev){
 
 <script id="step127-grade3-owned-search-route-fix">
 /* step127: 等級3以下ON時の5/6で、前段step123が旧step124 JSON表示を直接呼ぶ経路を止め、
-   所持英傑ありの場合はstep126のDB本体検索経路へ必ず流す。
+   配置英傑ありの場合はstep126のDB本体検索経路へ必ず流す。
    DB/CSV/式/倍率は変更しない。 */
 (function(){
   if(window.__step127Grade3OwnedSearchRouteFixInstalled) return;
@@ -15906,7 +15906,7 @@ document.addEventListener("click", function(ev){
     setCount(c);
     try{ if(typeof renderDbCountButtons === "function") renderDbCountButtons(); }catch(e){}
     if(!gradeOn()) return false;
-    /* 所持英傑あり/なしの分岐はstep126側に任せる。
+    /* 配置英傑あり/なしの分岐はstep126側に任せる。
        ここで旧step124のJSON固定表示へ戻さない。 */
     if(typeof step126Handle === "function") return step126Handle(c);
     if(typeof window.handleDbCountButtonClick === "function" && window.handleDbCountButtonClick !== window.__step124RenderGrade356){
@@ -15923,10 +15923,10 @@ document.addEventListener("click", function(ev){
 
 
 <script id="step128-grade3-owned-search-source-and-member-fix">
-/* step128: 等級3以下ON時の5/6所持英傑検索が「該当なし」になる原因修正。
-   - 所持英傑あり: 5/6それぞれのDB CSV全体を検索する。
+/* step128: 等級3以下ON時の5/6配置英傑検索が「該当なし」になる原因修正。
+   - 配置英傑あり: 5/6それぞれのDB CSV全体を検索する。
    - 配置1〜6形式、eiketsu_names形式、eiketsu_ids形式をすべて読めるようにする。
-   - 所持英傑なし: grade3_precomputed_5_6_7.json の表示用上位300件を使う。
+   - 配置英傑なし: grade3_precomputed_5_6_7.json の表示用上位300件を使う。
    - DB/式/倍率の計算仕様は変更しない。 */
 (function(){
   if(window.__step128Grade3OwnedSearchSourceFixInstalled) return;
@@ -15967,9 +15967,9 @@ document.addEventListener("click", function(ev){
   function loadJson(){ if(jsonCache) return Promise.resolve(jsonCache); if(jsonLoading) return jsonLoading; jsonLoading=fetch(JSON_PATH,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(j){jsonCache=j;return j;}); return jsonLoading; }
   function loadCsv(c){ c=Number(c)||0; if(csvCache[c]) return Promise.resolve(csvCache[c]); if(csvLoading[c]) return csvLoading[c]; var path=DB_PATHS[c]; csvLoading[c]=(window.JinpoActivationEngine&&typeof window.JinpoActivationEngine.loadCSV==='function'?window.JinpoActivationEngine.loadCSV(path):fetch(path,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(parseCsv)).then(function(rows){csvCache[c]=Array.isArray(rows)?rows:[];return csvCache[c];}); return csvLoading[c]; }
   function table(rows,c){ return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){ var m=rowMembers(row), b=rowBonds(row); return '<tr class="dbMainRow"><td><button class="dbOnlyApplyBtn" data-step128-grade3-result="'+esc(idx)+'" type="button">適用</button></td><td>'+esc(rowCount(row)||c)+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+m.map(function(x,i){return '<span>'+esc(i+1)+'. '+esc(x)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+b.map(function(x){return '<span class="badge">'+esc(String(x).split(':').pop())+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+stats(row)+'</span></td></tr>'; }).join('')+'</tbody></table>'; }
-  function render(){ var c=count(); if(!gradeOn() || (c!==5&&c!==6)) return false; var box=document.getElementById('dbFormationList'), status=document.getElementById('dbListStatus'); if(!box||!status) return false; var f=formation(); if(!f){activeRows=[]; status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true;} var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML=''; if(!owned.length){ status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。'; loadJson().then(function(db){ if(my!==seq)return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }); return true; }
-    status.textContent=c+'因縁の等級3以下DB本体を所持英傑で検索中。数分お待ちください。';
-    loadCsv(c).then(function(allRows){ if(my!==seq)return; var rows=[]; for(var i=0;i<allRows.length;i++){ var r=allRows[i]; if(rowCount(r)!==c) continue; if(rowFormation(r)!==f) continue; if(!rowAllCost6(r)) continue; if(!rowMatchesOwned(r)) continue; if(!priorityOk(r)) continue; rows.push(r); } rows=sortRows(rows); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: DB本体 '+allRows.length.toLocaleString()+'件 / 所持英傑全体検索 '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑: '+owned.join('・'); box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。DB本体内を所持英傑条件で検索済みです。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step128 等級3以下5/6検索エラー',err); status.textContent='等級3以下5/6のDB本体を読み込めません。'; box.innerHTML='<div class="dbListNote">data/jinpo_result_db_'+c+'.csv を確認してください。</div>'; }); return true; }
+  function render(){ var c=count(); if(!gradeOn() || (c!==5&&c!==6)) return false; var box=document.getElementById('dbFormationList'), status=document.getElementById('dbListStatus'); if(!box||!status) return false; var f=formation(); if(!f){activeRows=[]; status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true;} var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML=''; if(!owned.length){ status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。'; loadJson().then(function(db){ if(my!==seq)return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }); return true; }
+    status.textContent=c+'因縁の等級3以下DB本体を配置英傑で検索中。数分お待ちください。';
+    loadCsv(c).then(function(allRows){ if(my!==seq)return; var rows=[]; for(var i=0;i<allRows.length;i++){ var r=allRows[i]; if(rowCount(r)!==c) continue; if(rowFormation(r)!==f) continue; if(!rowAllCost6(r)) continue; if(!rowMatchesOwned(r)) continue; if(!priorityOk(r)) continue; rows.push(r); } rows=sortRows(rows); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: DB本体 '+allRows.length.toLocaleString()+'件 / 配置英傑全体検索 '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑: '+owned.join('・'); box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。DB本体内を配置英傑条件で検索済みです。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step128 等級3以下5/6検索エラー',err); status.textContent='等級3以下5/6のDB本体を読み込めません。'; box.innerHTML='<div class="dbListNote">data/jinpo_result_db_'+c+'.csv を確認してください。</div>'; }); return true; }
   window.__step128RenderGrade356=render;
   window.renderDbFormationList=function(){ if(render()) return; };
   window.handleDbCountButtonClick=function(c){ c=Number(c)||0; if(c===5||c===6){ setCount(c); try{ if(typeof renderDbCountButtons==='function') renderDbCountButtons(); }catch(e){} if(render()) return; } };
@@ -15979,11 +15979,11 @@ document.addEventListener("click", function(ev){
 </script>
 
 <script id="step129-grade3-owned-actual-route-fix">
-/* step129: 等級3以下ON時の5/6所持英傑検索を、上位300件JSON/部分DB検索へ落とさない。
-   - 所持英傑判定は名前 + internal_id の両方を見る。
-   - 所持英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件表示。
-   - 所持英傑あり + 6因縁: step114_grade3_6_combinations.csv（全組み合わせ）を検索。
-   - 所持英傑あり + 5因縁: 全体検索用の正式行データが未同梱なら、部分DBで該当なしとは表示しない。
+/* step129: 等級3以下ON時の5/6配置英傑検索を、上位300件JSON/部分DB検索へ落とさない。
+   - 配置英傑判定は名前 + internal_id の両方を見る。
+   - 配置英傑なし: grade3_precomputed_5_6_7.json の総合値上位300件表示。
+   - 配置英傑あり + 6因縁: step114_grade3_6_combinations.csv（全組み合わせ）を検索。
+   - 配置英傑あり + 5因縁: 全体検索用の正式行データが未同梱なら、部分DBで該当なしとは表示しない。
    DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
   if(window.__step129Grade3OwnedActualRouteFixInstalled) return;
@@ -16056,15 +16056,15 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedSelected(); activeRows=[]; box.innerHTML='';
     if(!owned.ids.length && !owned.normNames.length){
       status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。';
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
     if(c===5){
-      status.textContent='5因縁 / 所持英傑あり: 正式全体検索用の5因縁データが未同梱です。部分DBでは検索しません。';
-      box.innerHTML='<div class="dbListNote">等級3以下5因縁は正式件数が非常に多いため、所持英傑ありの全体検索用データが必要です。上位300件JSONや部分DBだけでは不正確なので、ここでは「該当なし」と偽表示しません。</div>';
+      status.textContent='5因縁 / 配置英傑あり: 正式全体検索用の5因縁データが未同梱です。部分DBでは検索しません。';
+      box.innerHTML='<div class="dbListNote">等級3以下5因縁は正式件数が非常に多いため、配置英傑ありの全体検索用データが必要です。上位300件JSONや部分DBだけでは不正確なので、ここでは「該当なし」と偽表示しません。</div>';
       return true;
     }
-    status.textContent='6因縁の等級3以下全組み合わせを所持英傑で検索中。数分お待ちください。';
+    status.textContent='6因縁の等級3以下全組み合わせを配置英傑で検索中。数分お待ちください。';
     loadCsv6().then(function(allRows){
       if(my!==seq) return;
       var rows=[];
@@ -16078,8 +16078,8 @@ document.addEventListener("click", function(ev){
       }
       rows=sortRows(rows);
       var shown=rows.slice(0,300); activeRows=shown;
-      status.textContent=f+' / 6因縁: 等級3以下6因縁全体 '+allRows.length.toLocaleString()+'件 / 所持英傑検索 '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑: '+owned.names.join('・');
-      box.innerHTML=shown.length?table(shown,6):'<div class="dbListNote">該当行なし。等級3以下6因縁全体データを所持英傑条件で検索済みです。</div>';
+      status.textContent=f+' / 6因縁: 等級3以下6因縁全体 '+allRows.length.toLocaleString()+'件 / 配置英傑検索 '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑: '+owned.names.join('・');
+      box.innerHTML=shown.length?table(shown,6):'<div class="dbListNote">該当行なし。等級3以下6因縁全体データを配置英傑条件で検索済みです。</div>';
     }).catch(function(err){ if(my!==seq)return; console.error('step129 6因縁全体CSV読込エラー',err); status.textContent='等級3以下6因縁の全体検索CSVを読み込めません。'; box.innerHTML='<div class="dbListNote">data/step114_grade3_6_combinations.csv を確認してください。</div>'; });
     return true;
   }
@@ -16095,9 +16095,9 @@ document.addEventListener("click", function(ev){
 <script id="step130-grade3-5-owned-worker-full-search">
 /* step165: worker lineMask patched to require one factor from each of the three line heroes. */
 /* step130:
-   等級3以下ON + 所持英傑あり + 5因縁だけ、表示用300件JSON/部分DBではなく、
+   等級3以下ON + 配置英傑あり + 5因縁だけ、表示用300件JSON/部分DBではなく、
    押した5因縁内をWeb Workerで全体探索する。
-   - 所持英傑なし: 既存の総合値上位300件表示へ戻す。
+   - 配置英傑なし: 既存の総合値上位300件表示へ戻す。
    - 6因縁: step129の全体CSV検索へ戻す。
    - DB本体・式倍率CSVは変更しない。
 */
@@ -16208,10 +16208,10 @@ onmessage=async function(ev){ var msg=ev.data||{}; if(msg.cmd!=='search') return
     if(!box||!status) return false;
     if(!f){ activeRows=[]; status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5因縁ボタンで一覧を表示します。</div>'; return true; }
     var my=++seq; activeRows=[];
-    status.textContent=f+' / 5因縁: 等級3以下5因縁の全体検索を開始しています。数分お待ちください。 / 所持英傑: '+selectedText(o);
-    box.innerHTML='<div class="dbListNote">所持英傑ありのため、5因縁内だけを全体検索中です。画面が固まらないよう別スレッドで処理しています。</div>';
+    status.textContent=f+' / 5因縁: 等級3以下5因縁の全体検索を開始しています。数分お待ちください。 / 配置英傑: '+selectedText(o);
+    box.innerHTML='<div class="dbListNote">配置英傑ありのため、5因縁内だけを全体検索中です。画面が固まらないよう別スレッドで処理しています。</div>';
     var w=getWorker();
-    w.onmessage=function(ev){ var m=ev.data||{}; if(m.seq!==my) return; if(m.cmd==='progress'){ status.textContent=f+' / 5因縁: '+m.text+' / 所持英傑: '+selectedText(o); return; } if(m.cmd==='error'){ status.textContent='等級3以下5因縁の全体検索でエラー。'; box.innerHTML='<div class="dbListNote">'+esc(m.error||'検索エラー')+'</div>'; return; } if(m.cmd==='done'){ var rows=sortRows((m.rows||[]).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / 5因縁: 等級3以下5因縁全体検索 '+Number(m.total||0).toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 所持英傑: '+selectedText(o); box.innerHTML=shown.length?table(shown,5):'<div class="dbListNote">該当行なし。等級3以下5因縁内を所持英傑条件で全体検索済みです。</div>'; } };
+    w.onmessage=function(ev){ var m=ev.data||{}; if(m.seq!==my) return; if(m.cmd==='progress'){ status.textContent=f+' / 5因縁: '+m.text+' / 配置英傑: '+selectedText(o); return; } if(m.cmd==='error'){ status.textContent='等級3以下5因縁の全体検索でエラー。'; box.innerHTML='<div class="dbListNote">'+esc(m.error||'検索エラー')+'</div>'; return; } if(m.cmd==='done'){ var rows=sortRows((m.rows||[]).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / 5因縁: 等級3以下5因縁全体検索 '+Number(m.total||0).toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑: '+selectedText(o); box.innerHTML=shown.length?table(shown,5):'<div class="dbListNote">該当行なし。等級3以下5因縁内を配置英傑条件で全体検索済みです。</div>'; } };
     var seedUrl;
     try{ seedUrl = new URL(SEED_PATH, window.location.href).href; }catch(e){ seedUrl = SEED_PATH; }
     w.postMessage({cmd:'search',seq:my,seedUrl:seedUrl,formation:f,ownedIds:o.ids,ownedNames:o.normNames,priorityRules:workerPriorityRules(),sortStat:workerSortStat()});
@@ -16227,11 +16227,11 @@ onmessage=async function(ev){ var msg=ev.data||{}; if(msg.cmd!=='search') return
 
 <script id="step133-grade3-5-owned-handle-route-final-fix">
 /* step133:
-   step130で追加した等級3以下ON + 所持英傑あり + 5因縁Worker検索が、
+   step130で追加した等級3以下ON + 配置英傑あり + 5因縁Worker検索が、
    ボタンクリック時にstep129のhandleDbCountButtonClickへ先に吸われる問題を修正。
    - 5因縁: __step130RenderGrade356 を最優先
    - 6因縁: step129/step132 の6因縁全体CSV検索を維持
-   - 所持英傑なし: 既存の表示用JSON上位300件表示を維持
+   - 配置英傑なし: 既存の表示用JSON上位300件表示を維持
    DB/CSV/式/倍率は変更しない。
 */
 (function(){
@@ -16279,7 +16279,7 @@ onmessage=async function(ev){ var msg=ev.data||{}; if(msg.cmd!=='search') return
 
 <script id="step135-grade3-apply-members-final-fix">
 /* step135:
-   等級3以下ON + 所持英傑あり検索結果の適用時、
+   等級3以下ON + 配置英傑あり検索結果の適用時、
    CSV/JSONごとに英傑列名が違うため「DB行の配置英傑が6人ではありません」が出る問題を修正。
    変更対象は行データから配置6人を読む共通関数だけ。
    DB/CSV/式/倍率/検索仕様/表示件数は変更しない。
@@ -16435,9 +16435,9 @@ body{padding-top:0 !important;}
 
 <script id="step148-grade3-5-9-display-db-route-fix">
 /* step149: 等級3以下ON時の5〜9表示経路修正。
-   - 5/6: 所持英傑なし・数値条件なしの初期表示だけ表示用DBを参照。
-   - 5/6: 所持英傑あり、または数値条件ありは既存の全体検索経路へ戻す。
-   - 7: 初期表示は総合値上位300件だけ表示し、所持英傑・数値条件ありは7因縁DB内全件から絞り込む。
+   - 5/6: 配置英傑なし・数値条件なしの初期表示だけ表示用DBを参照。
+   - 5/6: 配置英傑あり、または数値条件ありは既存の全体検索経路へ戻す。
+   - 7: 初期表示は総合値上位300件だけ表示し、配置英傑・数値条件ありは7因縁DB内全件から絞り込む。
    - 8/9: 小型表示用DB内から表示。
    DB本体・陣法説明(6).xlsxの新式へ変更済み。 */
 (function(){
@@ -17123,7 +17123,7 @@ body{padding-top:0 !important;}
 </script>
 
 
-<!-- step170: スマホ誤タップ共通ガード。所持英傑モーダル直後の等級3以下/因縁ボタン/英傑カード誤反応を防止。 -->
+<!-- step170: スマホ誤タップ共通ガード。配置英傑モーダル直後の等級3以下/因縁ボタン/英傑カード誤反応を防止。 -->
 <script id="step170-mobile-owned-grade-tap-guard">
 (function(){
   'use strict';
@@ -17181,7 +17181,7 @@ body{padding-top:0 !important;}
     if(!isMobileLike()) return;
     var target = ev.target;
 
-    // 所持英傑ボタンを押した瞬間から、同一タップの貫通とゴーストクリックを短時間だけ無効化する。
+    // 配置英傑ボタンを押した瞬間から、同一タップの貫通とゴーストクリックを短時間だけ無効化する。
     if(isOwnedOpenControl(target)){
       setGuard('owned-hero-control-' + ev.type, DEFAULT_GUARD_MS);
       return;
@@ -17739,7 +17739,7 @@ body{padding-top:0 !important;}
       activeRows = best.slice(0,LIMIT);
       try{ window.resultDbRows = activeRows; resultDbRows = activeRows; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
       if(status) status.textContent=(form ? form : '全陣形') + ' / 7因縁: 分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件）';
-      if(box) box.innerHTML = activeRows.length ? table(activeRows,7) : '<div class="dbListNote">該当DBなし。陣形・所持英傑・優先条件を確認してください。</div>';
+      if(box) box.innerHTML = activeRows.length ? table(activeRows,7) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
     }catch(err){
       console.error('step174 7因縁分割DB読込失敗', err);
       if(status) status.textContent='7因縁の分割DB読込に失敗しました。jinpo_result_db_7_parts のCSV配置を確認してください。';
@@ -17968,8 +17968,8 @@ body{padding-top:0 !important;}
       activeRows = best.slice(0,LIMIT);
       try{ window.resultDbRows = activeRows; resultDbRows = activeRows; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
       var ownedLabel = ownedNames().join('・') || ownedIds().join('・') || '指定なし';
-      if(status) status.textContent=form + ' / 6因縁: 等級3以下分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件） / 所持英傑: ' + ownedLabel;
-      if(box) box.innerHTML = activeRows.length ? table(activeRows,6) : '<div class="dbListNote">該当DBなし。陣形・所持英傑・優先条件を確認してください。</div>';
+      if(status) status.textContent=form + ' / 6因縁: 等級3以下分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件） / 配置英傑: ' + ownedLabel;
+      if(box) box.innerHTML = activeRows.length ? table(activeRows,6) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
     }catch(err){
       console.error('step175 等級3以下6因縁分割DB読込失敗', err);
       if(status) status.textContent='等級3以下6因縁の分割DB読込に失敗しました。grade3_6_parts のCSV配置を確認してください。';
