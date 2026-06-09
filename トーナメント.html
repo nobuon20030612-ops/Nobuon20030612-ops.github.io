@@ -86,6 +86,76 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .danger{background:#50202a;border-color:#8c3344}
 .ghost{background:#101722}
 .small{min-height:30px;padding:4px 8px;font-size:12px;border-radius:8px}
+.entry-open-btn{
+  min-height:52px;
+  padding:12px 18px;
+  font-size:19px;
+  font-weight:900;
+  border-radius:14px;
+  background:linear-gradient(135deg,#ffe66d,#ff7a5c,#e84cff);
+  border-color:#ffe2a8;
+  color:#fffdf4;
+  box-shadow:0 0 16px rgba(255,192,88,.42);
+}
+.entry-open-btn:disabled{
+  opacity:.48;
+  filter:grayscale(.35);
+  cursor:not-allowed;
+  box-shadow:none;
+}
+.entry-modal{
+  position:fixed;
+  inset:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(3,6,12,.72);
+}
+.entry-modal-box{
+  width:min(560px,100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:linear-gradient(180deg,#202842,#121827);
+  padding:18px;
+  box-shadow:0 22px 60px rgba(0,0,0,.45);
+}
+.entry-modal-title{
+  font-size:22px;
+  font-weight:900;
+  margin-bottom:10px;
+}
+.entry-modal-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.entry-list{
+  display:grid;
+  gap:8px;
+  max-height:360px;
+  overflow:auto;
+  margin-top:10px;
+}
+.entry-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#111722;
+  padding:10px;
+}
+.entry-row-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-weight:800;
+}
 .note{color:var(--muted);font-size:13px;line-height:1.55}
 .hidden{display:none!important}
 .list{display:grid;gap:8px}
@@ -1314,6 +1384,30 @@ body.single-sticky-scroll-active{
     </div>
   </section>
 
+  <div id="entryModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div id="entryModalTitle" class="entry-modal-title">エントリー受付</div>
+      <p class="note">参加する名前を入力してください。ランダムトーナメント作成後はエントリーできません。</p>
+      <input id="entryNameInput" maxlength="40" placeholder="名前を入力">
+      <div class="entry-modal-actions">
+        <button id="entrySubmitBtn" class="primary" type="button">仮保存する</button>
+        <button id="entryCancelBtn" class="ghost" type="button">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="entryManageModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div id="entryManageTitle" class="entry-modal-title">エントリー仮保存一覧</div>
+      <p class="note">不要な登録は削除できます。「登録に反映」で仮保存分を一斉に登録一覧へ入れます。</p>
+      <div id="entryManageList" class="entry-list"></div>
+      <div class="entry-modal-actions">
+        <button id="entryApplyBtn" class="primary" type="button">登録に反映</button>
+        <button id="entryManageCloseBtn" class="ghost" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <section id="doubleView" class="double-layout hidden">
     <section id="doubleAdminPanel" class="panel">
       <h2>ダブル管理者操作</h2>
@@ -1325,6 +1419,7 @@ body.single-sticky-scroll-active{
         <button id="doubleBuildBtn" class="primary">初回組み合わせ作成</button>
         <button id="doubleResetBtn">勝敗リセット</button>
         <button id="doubleShuffleBtn">シャッフル</button>
+        <button id="doubleEntryManageBtn" class="entry-open-btn">エントリー確認</button>
         <button id="doubleExtendDeleteBtn">自動削除延長</button>
         <button id="doubleDeleteBtn" class="danger">トーナメント削除</button>
       </div>
@@ -1357,6 +1452,7 @@ body.single-sticky-scroll-active{
         <button id="buildBtn" class="primary">ランダムでトーナメント作成</button>
         <button id="resetResultsBtn">勝敗リセット</button>
         <button id="shuffleBtn">シャッフル</button>
+        <button id="entryManageBtn" class="entry-open-btn">エントリー確認</button>
         <button id="deleteBtn" class="danger">トーナメント削除</button>
         <button id="extendDeleteBtn">自動削除延長</button>
       </div>
@@ -1760,6 +1856,128 @@ function openTournament(id, mode){
   renderSingle();
 }
 
+let entryTargetTournamentId = null;
+let entryManageTournamentId = null;
+
+function pendingEntriesOf(tournament){
+  if(!tournament.pendingEntries) tournament.pendingEntries = [];
+  return tournament.pendingEntries;
+}
+
+function openEntryModal(id){
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament){ alert("トーナメントが見つかりません。"); return; }
+  if(tournament.created){
+    alert("ランダムトーナメント作成後はエントリーできません。");
+    renderHub();
+    return;
+  }
+  if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){
+    alert("登録は最大64件までです。");
+    return;
+  }
+  entryTargetTournamentId = id;
+  $("entryModalTitle").textContent = `${tournament.title}｜エントリー受付`;
+  $("entryNameInput").value = "";
+  $("entryModal").classList.remove("hidden");
+  $("entryNameInput").focus();
+}
+
+function closeEntryModal(){
+  entryTargetTournamentId = null;
+  $("entryModal").classList.add("hidden");
+  $("entryNameInput").value = "";
+}
+
+function submitEntryName(){
+  if(!entryTargetTournamentId) return;
+  const tournament = store.tournaments.find(t => t.id === entryTargetTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament){ alert("トーナメントが見つかりません。"); closeEntryModal(); renderHub(); return; }
+  if(tournament.created){
+    alert("ランダムトーナメント作成後はエントリーできません。");
+    closeEntryModal();
+    renderHub();
+    return;
+  }
+  const name = $("entryNameInput").value.trim();
+  if(!name){ alert("名前を入力してください。"); return; }
+  if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64件までです。"); closeEntryModal(); renderHub(); return; }
+  pendingEntriesOf(tournament).push({ id: uid("entry"), name, createdAt: Date.now(), entryStatus: "仮保存" });
+  tournament.updatedAt = Date.now();
+  saveStore();
+  closeEntryModal();
+  renderHub();
+  alert("エントリーを仮保存しました。");
+}
+
+function openEntryManageModal(){
+  if(currentMode !== "admin" || !currentTournament) return;
+  entryManageTournamentId = currentTournament.id;
+  renderEntryManageList();
+  $("entryManageModal").classList.remove("hidden");
+}
+
+function closeEntryManageModal(){
+  entryManageTournamentId = null;
+  $("entryManageModal").classList.add("hidden");
+}
+
+function renderEntryManageList(){
+  const tournament = store.tournaments.find(t => t.id === entryManageTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
+  const box = $("entryManageList");
+  if(!tournament){ box.innerHTML = '<div class="note">トーナメントが見つかりません。</div>'; return; }
+  $("entryManageTitle").textContent = `${tournament.title}｜エントリー仮保存一覧`;
+  const entries = pendingEntriesOf(tournament);
+  if(!entries.length){
+    box.innerHTML = '<div class="note">仮保存中のエントリーはありません。</div>';
+    $("entryApplyBtn").disabled = true;
+    return;
+  }
+  $("entryApplyBtn").disabled = tournament.created;
+  box.innerHTML = entries.map(e => `
+    <div class="entry-row">
+      <div class="entry-row-name">${escapeHtml(e.name)}</div>
+      <button class="small danger" type="button" onclick="deletePendingEntry('${e.id}')">削除</button>
+    </div>
+  `).join("");
+}
+
+function deletePendingEntry(entryId){
+  const tournament = store.tournaments.find(t => t.id === entryManageTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament) return;
+  tournament.pendingEntries = pendingEntriesOf(tournament).filter(e => e.id !== entryId);
+  tournament.updatedAt = Date.now();
+  saveStore();
+  renderEntryManageList();
+  renderHub();
+}
+
+function applyPendingEntries(){
+  const tournament = store.tournaments.find(t => t.id === entryManageTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament){ alert("トーナメントが見つかりません。"); closeEntryManageModal(); return; }
+  if(tournament.created){ alert("ランダムトーナメント作成後は登録に反映できません。"); renderEntryManageList(); return; }
+  const entries = pendingEntriesOf(tournament);
+  if(!entries.length){ alert("仮保存中のエントリーはありません。"); return; }
+  const available = MAX_TEAMS - (tournament.participants || []).length;
+  if(available <= 0){ alert("登録は最大64件までです。"); return; }
+  const applyList = entries.slice(0, available);
+  tournament.participants = tournament.participants || [];
+  for(const e of applyList){
+    tournament.participants.push({ id: uid("p"), name: e.name, createdAt: Date.now(), fromEntryId: e.id });
+  }
+  tournament.pendingEntries = entries.slice(applyList.length);
+  tournament.updatedAt = Date.now();
+  saveStore();
+  if(currentTournament && currentTournament.id === tournament.id) currentTournament = tournament;
+  renderEntryManageList();
+  if(currentTournament && currentMode === "admin"){
+    if(currentTournament.type === "double") renderDouble();
+    else renderSingle();
+  }
+  renderHub();
+  alert(`${applyList.length}件を登録に反映しました。`);
+}
+
 function showHub(){
   currentTournament = null;
   currentMode = "hub";
@@ -1789,6 +2007,7 @@ function renderHub(){
       </div>
       <div class="row" style="margin-top:8px">
         <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
+        <button class="entry-open-btn" onclick="openEntryModal('${t.id}')" ${t.created ? "disabled" : ""}>エントリー受付</button>
       </div>
     </div>
   `).join("");
@@ -2760,6 +2979,7 @@ function renderDouble(){
   $("doubleStatusText").textContent = `登録数：${currentTournament.participants.length}/${MAX_TEAMS} / 状態：${currentTournament.status || "開催中"}`;
   $("doubleBuildBtn").disabled = currentTournament.participants.length < 2;
   $("doubleResetBtn").disabled = !currentTournament.created;
+  if($("doubleEntryManageBtn")) $("doubleEntryManageBtn").disabled = currentTournament.created;
   renderDoubleParticipants();
   renderDoubleStatusList();
   renderDoubleDiagram();
@@ -2879,6 +3099,7 @@ function renderSingle(){
   const isAdmin = currentMode === "admin";
   $("adminPanel").classList.toggle("hidden", !isAdmin);
   $("singleView").classList.toggle("view-only", !isAdmin);
+  if($("entryManageBtn")) $("entryManageBtn").disabled = currentTournament.created;
   renderParticipants();
   renderStatus();
   renderBracket();
@@ -2898,6 +3119,13 @@ function init(){
 $("createSingleBtn").onclick = () => createTournament("single");
 $("createDoubleBtn").onclick = () => createTournament("double");
 $("hubBtn").onclick = showHub;
+$("entrySubmitBtn").onclick = submitEntryName;
+$("entryCancelBtn").onclick = closeEntryModal;
+$("entryNameInput").addEventListener("keydown", e => { if(e.key === "Enter") submitEntryName(); });
+$("entryManageBtn").onclick = openEntryManageModal;
+$("doubleEntryManageBtn").onclick = openEntryManageModal;
+$("entryManageCloseBtn").onclick = closeEntryManageModal;
+$("entryApplyBtn").onclick = applyPendingEntries;
 $("addBtn").onclick = addParticipant;
 $("nameInput").addEventListener("keydown", e => { if(e.key === "Enter") addParticipant(); });
 $("buildBtn").onclick = buildTournament;
