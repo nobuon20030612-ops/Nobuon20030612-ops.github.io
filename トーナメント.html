@@ -2081,11 +2081,13 @@ function renderBracket(){
 
       const p1Name = m.player1Id ? getName(m.player1Id) : "";
       const p2Name = m.player2Id ? getName(m.player2Id) : "";
-      const p1EmptyLabel = m.round > 1 ? "勝者待ち" : "空き";
-      const p2EmptyLabel = m.round > 1 ? "勝者待ち" : "空き";
+      const isFirstRoundBye = m.round === 1 && m.isBye;
+      const p1IsSeedEmpty = isFirstRoundBye && !m.player1Id && m.player2Id;
+      const p2IsSeedEmpty = isFirstRoundBye && m.player1Id && !m.player2Id;
+      const p1EmptyLabel = p1IsSeedEmpty ? "シード" : (m.round > 1 ? "勝者待ち" : "空き");
+      const p2EmptyLabel = p2IsSeedEmpty ? "シード" : (m.round > 1 ? "勝者待ち" : "空き");
       const p1Class = slotClass(m, m.player1Id);
       const p2Class = slotClass(m, m.player2Id);
-      const isFirstRoundBye = m.round === 1 && m.isBye;
       const bye1 = isFirstRoundBye && m.player1Id && !m.player2Id ? `<span class="seed-badge">シード</span>` : "";
       const bye2 = isFirstRoundBye && m.player2Id && !m.player1Id ? `<span class="seed-badge">シード</span>` : "";
 
@@ -2575,6 +2577,10 @@ function addDoubleTreeMatch(root, match, x, y, matchW){
   const p2 = match.player2Id ? getName(match.player2Id) : "";
   const p1Class = !match.player1Id ? "empty" : (match.winnerId === match.player1Id ? "win" : (match.winnerId ? "loser" : ""));
   const p2Class = !match.player2Id ? "empty" : (match.winnerId === match.player2Id ? "win" : (match.winnerId ? "loser" : ""));
+  const p1IsSeedEmpty = match.isBye && !match.player1Id && match.player2Id;
+  const p2IsSeedEmpty = match.isBye && match.player1Id && !match.player2Id;
+  const p1EmptyLabel = p1IsSeedEmpty ? "シード" : "空き";
+  const p2EmptyLabel = p2IsSeedEmpty ? "シード" : "空き";
   const bye1 = match.isBye && match.player1Id && !match.player2Id ? `<span class="seed-badge">シード</span>` : "";
   const card = document.createElement("div");
   card.className = "double-tree-match";
@@ -2583,10 +2589,10 @@ function addDoubleTreeMatch(root, match, x, y, matchW){
   card.style.width = `${matchW}px`;
   card.innerHTML = `
     <div class="double-tree-slot ${p1Class}" data-match="${match.id}" data-player="${match.player1Id || ""}">
-      <span class="double-tree-name">${p1 ? escapeHtml(p1) : "空き"}</span>${bye1}
+      <span class="double-tree-name">${p1 ? escapeHtml(p1) : p1EmptyLabel}</span>${bye1}
     </div>
     <div class="double-tree-slot ${p2Class}" data-match="${match.id}" data-player="${match.player2Id || ""}">
-      <span class="double-tree-name">${p2 ? escapeHtml(p2) : "空き"}</span>
+      <span class="double-tree-name">${p2 ? escapeHtml(p2) : p2EmptyLabel}</span>
     </div>`;
   root.appendChild(card);
 }
