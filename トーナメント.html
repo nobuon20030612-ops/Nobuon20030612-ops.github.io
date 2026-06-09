@@ -136,7 +136,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot:hover{background:#1a2232}
 .slot.empty{color:#687284;cursor:default}
 .slot.waiting{color:#8d98aa;background:rgba(255,255,255,.025);cursor:default}
-.slot.win{color:#07110b;background:linear-gradient(90deg,rgba(57,217,138,.95),rgba(57,217,138,.55));font-weight:700}
+.slot.win{
+  color:#07110b;
+  background:linear-gradient(90deg,rgba(57,217,138,.95),rgba(57,217,138,.55));
+  font-weight:700;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,220,.75),
+    0 0 10px rgba(57,217,138,.75),
+    0 0 22px rgba(57,217,138,.45);
+  text-shadow:0 0 8px rgba(255,255,255,.75);
+}
 .slot.loser{opacity:.62}
 .slot-name{display:block;flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;writing-mode:horizontal-tb;text-align:left;line-height:1.25}
 .seed-badge{flex:0 0 auto;color:#d8e2f7;font-size:11px;opacity:.8}
@@ -357,6 +366,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
     linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.04)),
     linear-gradient(135deg,#33f5a5,#6ee7ff);
   font-weight:700;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,220,.75),
+    0 0 10px rgba(51,245,165,.70),
+    0 0 22px rgba(110,231,255,.42);
+  text-shadow:0 0 8px rgba(255,255,255,.72);
 }
 .double-diagram-slot.loser{opacity:.56}
 .double-diagram-slot.empty{
@@ -642,6 +656,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
     linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.04)),
     linear-gradient(135deg,#33f5a5,#6ee7ff);
   font-weight:700;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,220,.75),
+    0 0 10px rgba(51,245,165,.70),
+    0 0 22px rgba(110,231,255,.42);
+  text-shadow:0 0 8px rgba(255,255,255,.72);
 }
 .double-tree-slot.loser{opacity:.56}
 .double-tree-slot.empty{
@@ -1214,6 +1233,7 @@ body.single-sticky-scroll-active{
   <h1 id="mainTitle">トーナメント</h1>
   <div class="row">
     <a class="btn ghost" href="../index.html">トップへ戻る</a>
+    <button id="hubBtn" class="ghost">トーナメント一覧</button>
     <div id="headerAutoDeleteBadge" class="admin-auto-delete-badge header-auto-delete-badge hidden"></div>
   </div>
 </header>
@@ -1689,19 +1709,57 @@ function setNextSlot(match, winnerId){
   if(match.index % 2 === 1) next.player1Id = winnerId;
   else next.player2Id = winnerId;
 }
+function nextPowerOfTwo(value){
+  let size = 1;
+  while(size < Math.max(2, value)) size *= 2;
+  return size;
+}
+function balancedMatchOrder(count){
+  const order = [];
+  let left = 0;
+  let right = count - 1;
+  while(left <= right){
+    order.push(left);
+    if(left !== right) order.push(right);
+    left += 1;
+    right -= 1;
+  }
+  return order;
+}
+function balancedFirstRoundPairs(ids){
+  const entries = ids.slice();
+  const targetSize = nextPowerOfTwo(entries.length);
+  const matchCount = targetSize / 2;
+  const byeCount = targetSize - entries.length;
+  const byeMatches = new Set(balancedMatchOrder(matchCount).slice(0, byeCount));
+  const pairs = [];
+  let index = 0;
+
+  for(let matchIndex = 0; matchIndex < matchCount; matchIndex++){
+    if(byeMatches.has(matchIndex)){
+      pairs.push([entries[index] || null, null]);
+      index += 1;
+    }else{
+      pairs.push([entries[index] || null, entries[index + 1] || null]);
+      index += 2;
+    }
+  }
+  return pairs;
+}
 function roundsFor(){
   if(currentTournament.matches && currentTournament.matches.length){
     return Math.max(...currentTournament.matches.map(m => m.round));
   }
-  return Math.ceil(Math.log2(Math.max(2, currentTournament.participants.length)));
+  return Math.log2(nextPowerOfTwo(currentTournament.participants.length));
 }
 function makeEmptyMatches(){
   const participantCount = Math.min(MAX_TEAMS, currentTournament.participants.length);
-  const totalRounds = Math.ceil(Math.log2(Math.max(2, participantCount)));
+  const bracketSize = nextPowerOfTwo(participantCount);
+  const totalRounds = Math.log2(bracketSize);
   const matches = [];
-  let incomingCount = participantCount;
+
   for(let r = 1; r <= totalRounds; r++){
-    const count = Math.ceil(incomingCount / 2);
+    const count = bracketSize / Math.pow(2, r);
     for(let m = 1; m <= count; m++){
       matches.push({
         id: `r${r}_m${m}`,
@@ -1713,30 +1771,26 @@ function makeEmptyMatches(){
         isBye: false
       });
     }
-    incomingCount = count;
   }
   return matches;
 }
 function autoAdvanceFirstRoundByes(){
-  // 初回シードだけでなく、上位ラウンドで片側だけになった枠も次へ進める。
-  // これをしないと、5人/6人/9人〜など2の累乗ではない人数で途中停止する。
-  let changed = true;
-  while(changed){
-    changed = false;
-    const matches = currentTournament.matches.slice().sort((a,b) => a.round - b.round || a.index - b.index);
-    for(const match of matches){
-      if(match.winnerId) continue;
-      const p1 = match.player1Id;
-      const p2 = match.player2Id;
-      if((p1 && !p2) || (!p1 && p2)){
-        const next = getNextMatch(match);
-        if(!next) continue;
-        const winner = p1 || p2;
-        match.winnerId = winner;
-        match.isBye = true;
-        setNextSlot(match, winner);
-        changed = true;
-      }
+  // 表基準：シードは2回戦開始まで。上位ラウンドの片側空きは試合結果待ちにする。
+  const matches = currentTournament.matches
+    .filter(match => match.round === 1)
+    .sort((a,b) => a.index - b.index);
+
+  for(const match of matches){
+    if(match.winnerId) continue;
+    const p1 = match.player1Id;
+    const p2 = match.player2Id;
+    if((p1 && !p2) || (!p1 && p2)){
+      const next = getNextMatch(match);
+      if(!next) continue;
+      const winner = p1 || p2;
+      match.winnerId = winner;
+      match.isBye = true;
+      setNextSlot(match, winner);
     }
   }
 }
@@ -1819,16 +1873,16 @@ function rebuildProgressFromCurrentFirstRound(){
 function buildTournament(){
   if(currentMode !== "admin") return;
   if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
-  const entries = shuffle(currentTournament.participants);
+  const entryIds = shuffle(currentTournament.participants.map(p => p.id));
+  const firstRoundPairs = balancedFirstRoundPairs(entryIds);
   currentTournament.matches = makeEmptyMatches();
   currentTournament.created = true;
   const firstRound = currentTournament.matches.filter(m => m.round === 1).sort((a,b) => a.index - b.index);
-  let entryIndex = 0;
-  for(const match of firstRound){
-    match.player1Id = entries[entryIndex] ? entries[entryIndex].id : null;
-    match.player2Id = entries[entryIndex + 1] ? entries[entryIndex + 1].id : null;
-    entryIndex += 2;
-  }
+  firstRound.forEach((match, index) => {
+    const pair = firstRoundPairs[index] || [null, null];
+    match.player1Id = pair[0];
+    match.player2Id = pair[1];
+  });
   autoAdvanceFirstRoundByes();
   saveTournament();
   renderSingle();
@@ -2106,24 +2160,24 @@ function doubleGetStatus(id){
   return currentTournament.doubleState.participants[id];
 }
 function doublePair(ids){
-  const matches = [];
-  for(let i = 0; i < ids.length; i += 2){
-    matches.push({
-      id: "dm_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
-      player1Id: ids[i] || null,
-      player2Id: ids[i + 1] || null,
-      winnerId: null,
-      loserId: null,
-      isBye: Boolean(ids[i] && !ids[i + 1])
-    });
-  }
-  return matches;
+  const pairs = balancedFirstRoundPairs(ids);
+  return pairs.map(pair => ({
+    id: "dm_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
+    player1Id: pair[0] || null,
+    player2Id: pair[1] || null,
+    winnerId: null,
+    loserId: null,
+    isBye: Boolean((pair[0] && !pair[1]) || (!pair[0] && pair[1]))
+  }));
 }
 function doubleAutoByes(matches){
   for(const m of matches){
-    if(m.isBye && m.player1Id && !m.player2Id && !m.winnerId){
-      m.winnerId = m.player1Id;
-      m.loserId = null;
+    if(m.isBye && !m.winnerId){
+      const winner = m.player1Id || m.player2Id;
+      if(winner){
+        m.winnerId = winner;
+        m.loserId = null;
+      }
     }
   }
 }
