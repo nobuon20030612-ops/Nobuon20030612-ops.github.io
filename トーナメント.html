@@ -2785,8 +2785,8 @@ function init(){
 }
 $("createSingleBtn").onclick = () => createTournament("single");
 $("createDoubleBtn").onclick = () => createTournament("double");
-const hubBtn = $("hubBtn");
-if(hubBtn) hubBtn.onclick = showHub;
+const hubButton = $("hubBtn");
+if(hubButton) hubButton.onclick = showHub;
 $("addBtn").onclick = addParticipant;
 $("nameInput").addEventListener("keydown", e => { if(e.key === "Enter") addParticipant(); });
 $("buildBtn").onclick = buildTournament;
