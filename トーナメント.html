@@ -1,0 +1,2721 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トーナメント</title>
+<style>
+:root{
+  --bg:#0d1118;
+  --panel:#151b27;
+  --panel2:#1e2635;
+  --text:#f5f7ff;
+  --muted:#aab3c5;
+  --border:#30394d;
+  --accent:#62a8ff;
+  --win:#39d98a;
+  --danger:#ff6b6b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;
+  background:linear-gradient(180deg,#0b1018,#121824);
+  color:var(--text);
+}
+header{
+  padding:16px;
+  border-bottom:1px solid var(--border);
+  background:rgba(13,17,24,.96);
+}
+h1{margin:0 0 8px;font-size:22px}
+h2{margin:0 0 12px;font-size:18px}
+main{padding:16px}
+a{color:inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;align-items:start}
+.layout.view-only{
+  grid-template-columns:1fr;
+}
+.layout.view-only .panel{
+  width:100%;
+}
+.panel{
+  border:1px solid var(--border);
+  background:rgba(21,27,39,.94);
+  border-radius:14px;
+  padding:14px;
+}
+input,button,select{font:inherit}
+input,select{
+  min-height:40px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#0f1420;
+  color:var(--text);
+  padding:8px 10px;
+}
+button,.btn{
+  min-height:40px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel2);
+  color:var(--text);
+  padding:8px 12px;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+button:hover,.btn:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:#1f5fbf;border-color:#2f7cff}
+.danger{background:#50202a;border-color:#8c3344}
+.ghost{background:#101722}
+.small{min-height:30px;padding:4px 8px;font-size:12px;border-radius:8px}
+.note{color:var(--muted);font-size:13px;line-height:1.55}
+.hidden{display:none!important}
+.list{display:grid;gap:8px}
+.card{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#111722;
+  padding:10px;
+}
+.card-title{font-weight:700;margin-bottom:6px}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:12px;
+  color:#d8e2f7;
+  background:#111827;
+}
+.participants{display:grid;gap:6px;max-height:420px;overflow:auto;padding-right:4px}
+.participant{display:flex;gap:8px;align-items:center;justify-content:space-between;background:#111722;border:1px solid var(--border);border-radius:10px;padding:7px 8px}
+.participant-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bracket-shell{
+  overflow:auto;
+  width:100%;
+  max-width:100%;
+  min-height:calc(100vh - 230px);
+  max-height:calc(100vh - 230px);
+  padding:10px;
+  background:rgba(10,13,19,.7);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y;
+  scrollbar-gutter:stable both-edges;
+}
+.bracket-shell.view-mode{
+  min-height:calc(100vh - 170px);
+  max-height:calc(100vh - 170px);
+}
+.bracket{
+  position:relative;
+  min-width:720px;
+  min-height:520px;
+  padding:24px 18px 82px;
+  transform-origin:top left;
+}
+.bracket-svg{position:absolute;left:18px;top:24px;overflow:visible;pointer-events:none;z-index:1}
+.bracket-line{fill:none;stroke:var(--border);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.bracket-line.win{stroke:var(--win);stroke-width:4;filter:drop-shadow(0 0 5px rgba(57,217,138,.9));opacity:1}
+.round-label{position:absolute;height:28px;display:flex;align-items:center;justify-content:center;color:#dbe7ff;font-weight:700;font-size:14px;white-space:nowrap}
+.match-wrap{position:absolute;width:var(--matchW);min-height:var(--matchH);z-index:2}
+.match{position:relative;width:var(--matchW);min-height:var(--matchH);background:#131927;border:1px solid var(--border);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.22);overflow:hidden}
+.slot{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:38px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer;font-size:15px;line-height:1.2;letter-spacing:0}
+.slot:last-child{border-bottom:0}
+.slot:hover{background:#1a2232}
+.slot.empty{color:#687284;cursor:default}
+.slot.waiting{color:#8d98aa;background:rgba(255,255,255,.025);cursor:default}
+.slot.win{color:#07110b;background:linear-gradient(90deg,rgba(57,217,138,.95),rgba(57,217,138,.55));font-weight:700}
+.slot.loser{opacity:.62}
+.slot-name{display:block;flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;writing-mode:horizontal-tb;text-align:left;line-height:1.25}
+.seed-badge{flex:0 0 auto;color:#d8e2f7;font-size:11px;opacity:.8}
+.champion{margin-bottom:12px;padding:10px;border:1px solid rgba(57,217,138,.55);background:rgba(57,217,138,.12);border-radius:12px}
+.double-layout{
+  display:grid;
+  grid-template-columns:360px minmax(0,1fr);
+  gap:16px;
+  align-items:start;
+  width:100%;
+  max-width:100%;
+}
+.double-layout.view-only{
+  grid-template-columns:1fr;
+}
+.double-layout > .panel{
+  min-width:0;
+}
+.double-board{
+  display:grid;
+  gap:14px;
+  width:100%;
+  min-width:0;
+}
+.grand-final-section{
+  border-color:rgba(255,230,109,.72);
+  box-shadow:
+    0 16px 42px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    0 0 28px rgba(255,230,109,.16);
+}
+.double-section{
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(10,13,19,.7);
+  padding:12px;
+  overflow:auto;
+  width:100%;
+  max-width:100%;
+  min-height:260px;
+  max-height:calc(100vh - 230px);
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.double-layout.view-only .double-section{
+  min-height:calc((100vh - 210px) / 3);
+  max-height:calc(100vh - 190px);
+}
+.double-status-list{
+  display:grid;
+  gap:6px;
+  max-height:260px;
+  overflow:auto;
+}
+.double-status-row{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:7px 8px;
+  background:#111722;
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+@media(max-width:900px){
+  .double-layout{grid-template-columns:1fr}
+  .double-section{
+    min-height:260px;
+    max-height:calc(100vh - 180px);
+  }
+  .double-layout.view-only .double-section{
+    min-height:300px;
+    max-height:calc(100vh - 150px);
+  }
+}
+@media(max-width:640px){
+  
+  
+  .double-section{
+    min-height:260px;
+    max-height:calc(100vh - 150px);
+    padding:8px;
+    overflow:auto;
+    touch-action:pan-x pan-y;
+  }
+  .double-layout.view-only .double-section{
+    min-height:320px;
+    max-height:calc(100vh - 130px);
+  }
+}
+@media(max-width:900px){
+  main{padding:10px}
+  .layout{grid-template-columns:1fr}
+  .bracket-shell{
+    min-height:calc(100vh - 190px);
+    max-height:calc(100vh - 190px);
+    padding:8px;
+  }
+  .bracket-shell.view-mode{
+    min-height:calc(100vh - 145px);
+    max-height:calc(100vh - 145px);
+  }
+}
+@media(max-width:640px){
+  header{padding:12px 10px}
+  h1{font-size:19px}
+  .row{gap:6px}
+  button,.btn{min-height:36px;padding:7px 10px}
+  .panel{padding:10px;border-radius:12px}
+  .bracket-shell{
+    min-height:calc(100vh - 175px);
+    max-height:calc(100vh - 175px);
+  }
+  .bracket-shell.view-mode{
+    min-height:calc(100vh - 132px);
+    max-height:calc(100vh - 132px);
+  }
+}
+
+
+/* double-diagram-layout: 画像のように勝者側と敗者側を左右に分け、最終決勝を最上部へ配置 */
+.double-diagram-board{
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.double-diagram-shell{
+  position:relative;
+  overflow:auto;
+  width:100%;
+  max-width:100%;
+  min-height:calc(100vh - 205px);
+  max-height:calc(100vh - 205px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:rgba(10,13,19,.7);
+  padding:8px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-x pan-y;
+  scrollbar-gutter:stable both-edges;
+}
+.double-diagram{
+  position:relative;
+  min-width:760px;
+  min-height:520px;
+  transform-origin:top left;
+}
+.double-diagram-svg{
+  position:absolute;
+  left:0;
+  top:0;
+  overflow:visible;
+  pointer-events:none;
+  z-index:1;
+}
+.double-diagram-line{
+  fill:none;
+  stroke:rgba(170,190,235,.65);
+  stroke-width:3;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px rgba(110,231,255,.16));
+}
+.double-diagram-line.win{
+  stroke:#ff3b3b;
+  stroke-width:5;
+  filter:drop-shadow(0 0 6px rgba(255,59,59,.65));
+}
+.double-diagram-title{
+  position:absolute;
+  z-index:3;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-shadow:0 0 14px rgba(110,231,255,.35);
+}
+.double-diagram-title.final{
+  color:var(--gold);
+  font-size:20px;
+}
+.double-diagram-title.winners{
+  color:#6ee7ff;
+}
+.double-diagram-title.losers{
+  color:#ff8bd7;
+}
+.double-diagram-match{
+  position:absolute;
+  z-index:2;
+  width:190px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    rgba(14,21,44,.90);
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.32),
+    inset 0 1px 0 rgba(255,255,255,.14),
+    0 0 20px rgba(124,60,255,.10);
+  overflow:hidden;
+}
+.double-diagram-slot{
+  min-height:36px;
+  padding:6px 9px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+.double-diagram-slot:last-child{border-bottom:0}
+.double-diagram-slot:hover{
+  background:linear-gradient(90deg,rgba(110,231,255,.15),rgba(124,60,255,.12));
+}
+.double-diagram-slot.win{
+  color:#06130e;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.04)),
+    linear-gradient(135deg,#33f5a5,#6ee7ff);
+  font-weight:700;
+}
+.double-diagram-slot.loser{opacity:.56}
+.double-diagram-slot.empty{
+  color:#9fb0d0;
+  cursor:default;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+.double-diagram-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  writing-mode:horizontal-tb;
+}
+.double-diagram-note{
+  position:absolute;
+  z-index:3;
+  color:var(--muted);
+  font-size:12px;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+}
+.double-diagram-bracket-label{
+  position:absolute;
+  z-index:3;
+  width:28px;
+  height:28px;
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  background:rgba(255,255,255,.08);
+  box-shadow:0 0 14px rgba(110,231,255,.18);
+}
+@media(max-width:900px){
+  .double-diagram-shell{
+    min-height:calc(100vh - 190px);
+    max-height:calc(100vh - 190px);
+  }
+}
+@media(max-width:640px){
+  .double-diagram-shell{
+    min-height:calc(100vh - 145px);
+    max-height:calc(100vh - 145px);
+    padding:8px;
+  }
+  .double-diagram{
+    min-width:700px;
+  }
+}
+
+
+/* double-clear-vertical-layout: 横長統合図をやめ、最終決勝→勝者側→敗者側の縦表示にする */
+.double-diagram-shell{
+  overflow:visible;
+  width:100%;
+  max-width:100%;
+  min-height:auto;
+  max-height:none;
+  touch-action:pan-y;
+  scrollbar-gutter:auto;
+}
+.double-diagram{
+  position:relative;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  gap:16px;
+  transform:none!important;
+}
+.double-clear-section{
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    rgba(13,20,42,.74);
+  box-shadow:
+    0 16px 42px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 0 26px rgba(0,212,255,.08);
+  padding:14px;
+  min-width:0;
+  margin-bottom:18px;
+}
+.double-clear-section.final{
+  border-color:rgba(255,230,109,.72);
+}
+.double-clear-title{
+  font-weight:800;
+  margin:0 0 10px;
+  color:#f8fbff;
+  text-shadow:0 0 14px rgba(110,231,255,.28);
+}
+.double-clear-section.final .double-clear-title{
+  color:var(--gold);
+}
+.double-clear-rounds{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  align-items:start;
+}
+.double-clear-round{
+  display:grid;
+  gap:9px;
+  min-width:0;
+  border:1px solid rgba(134,167,255,.24);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,.035);
+}
+.double-clear-round-title{
+  font-weight:800;
+  color:#dbe7ff;
+  text-align:left;
+  padding:4px 6px;
+  border-left:4px solid var(--accent);
+  text-shadow:0 0 12px rgba(110,231,255,.24);
+}
+.double-clear-match{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    rgba(14,21,44,.90);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.12);
+  overflow:hidden;
+}
+.double-clear-slot{
+  min-height:36px;
+  padding:6px 9px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+}
+.double-clear-slot:last-child{border-bottom:0}
+.double-clear-slot:hover{
+  background:linear-gradient(90deg,rgba(110,231,255,.15),rgba(124,60,255,.12));
+}
+.double-clear-slot.win{
+  color:#06130e;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.04)),
+    linear-gradient(135deg,#33f5a5,#6ee7ff);
+  font-weight:700;
+}
+.double-clear-slot.loser{opacity:.56}
+.double-clear-slot.empty{
+  color:#9fb0d0;
+  cursor:default;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+.double-clear-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  writing-mode:horizontal-tb;
+}
+.double-clear-note{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:8px;
+}
+.double-clear-match-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  padding:6px 9px;
+  font-size:12px;
+  color:#c3d0ed;
+  background:rgba(255,255,255,.045);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.double-clear-match-head span{
+  color:var(--muted);
+}
+@media(max-width:640px){
+  .double-diagram-shell{
+    overflow:visible;
+    min-height:auto;
+    max-height:none;
+    padding:0;
+  }
+  .double-clear-section{padding:9px}
+  .double-clear-rounds{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+}
+
+
+/* double-bracket-style: ダブル表示をカード一覧ではなく線でつながるトーナメント表風にする */
+.double-tree-shell{
+  overflow:auto;
+  width:100%;
+  max-width:100%;
+  min-height:260px;
+  max-height:calc(100vh - 230px);
+  border:1px solid rgba(134,167,255,.24);
+  border-radius:14px;
+  background:rgba(6,10,24,.36);
+  padding:10px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-x pan-y;
+  scrollbar-gutter:stable both-edges;
+}
+.double-tree{
+  position:relative;
+  min-width:620px;
+  min-height:240px;
+}
+.double-tree-svg{
+  position:absolute;
+  left:0;
+  top:0;
+  overflow:visible;
+  pointer-events:none;
+  z-index:1;
+}
+.double-tree-line{
+  fill:none;
+  stroke:rgba(170,190,235,.72);
+  stroke-width:3;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px rgba(110,231,255,.14));
+}
+.double-tree-line.win{
+  stroke:#ff3b3b;
+  stroke-width:5;
+  filter:drop-shadow(0 0 7px rgba(255,59,59,.62));
+}
+.double-tree-round-label{
+  position:absolute;
+  z-index:3;
+  color:#dbe7ff;
+  font-weight:800;
+  text-align:center;
+  white-space:nowrap;
+  text-shadow:0 0 12px rgba(110,231,255,.25);
+}
+.double-tree-match{
+  position:absolute;
+  z-index:2;
+  width:210px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    rgba(14,21,44,.90);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.12);
+  overflow:hidden;
+}
+.double-tree-slot{
+  min-height:38px;
+  padding:6px 10px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+}
+.double-tree-slot:last-child{border-bottom:0}
+.double-tree-slot:hover{
+  background:linear-gradient(90deg,rgba(110,231,255,.15),rgba(124,60,255,.12));
+}
+.double-tree-slot.win{
+  color:#06130e;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.04)),
+    linear-gradient(135deg,#33f5a5,#6ee7ff);
+  font-weight:700;
+}
+.double-tree-slot.loser{opacity:.56}
+.double-tree-slot.empty{
+  color:#9fb0d0;
+  cursor:default;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+.double-tree-name{
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  writing-mode:horizontal-tb;
+}
+.double-clear-section{
+  margin-bottom:22px;
+}
+.double-clear-section.final .double-tree-shell{
+  min-height:180px;
+  max-height:260px;
+}
+.double-clear-section.final .double-tree{
+  min-height:150px;
+}
+@media(max-width:640px){
+  .double-tree-shell{
+    min-height:250px;
+    max-height:calc(100vh - 160px);
+    padding:8px;
+  }
+  .double-tree{
+    min-width:560px;
+  }
+  .double-tree-match{
+    width:185px;
+  }
+  .double-tree-slot{
+    min-height:36px;
+    padding:6px 8px;
+  }
+}
+
+/* colorful-glossy-theme: 見た目だけ変更。機能JSには触らない。 */
+:root{
+  --bg:#070a16;
+  --panel:rgba(17,22,42,.82);
+  --panel2:rgba(37,48,92,.78);
+  --text:#f8fbff;
+  --muted:#b8c4de;
+  --border:rgba(126,156,255,.38);
+  --accent:#6ee7ff;
+  --win:#33f5a5;
+  --danger:#ff4d8d;
+  --gloss-a:#7c3cff;
+  --gloss-b:#00d4ff;
+  --gloss-c:#38ffb3;
+  --gloss-d:#ff5ec4;
+  --gold:#ffe66d;
+}
+body{
+  background:
+    radial-gradient(circle at 12% 8%, rgba(124,60,255,.42), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(0,212,255,.34), transparent 34%),
+    radial-gradient(circle at 50% 95%, rgba(56,255,179,.20), transparent 38%),
+    linear-gradient(135deg,#070a16 0%,#0a1730 42%,#14102a 100%);
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255,255,255,.08) 42%, transparent 56%),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,.10), transparent 38%);
+  mix-blend-mode:screen;
+  opacity:.45;
+}
+header{
+  background:linear-gradient(135deg,rgba(14,20,47,.92),rgba(42,23,77,.86));
+  border-bottom:1px solid rgba(110,231,255,.35);
+  box-shadow:0 10px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.12);
+}
+h1{
+  letter-spacing:.02em;
+  text-shadow:0 0 16px rgba(110,231,255,.32);
+}
+.panel,
+.card,
+.double-section,
+.bracket-shell{
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    rgba(13,20,42,.74);
+  border:1px solid rgba(134,167,255,.38);
+  box-shadow:
+    0 16px 42px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 0 26px rgba(0,212,255,.08);
+  backdrop-filter:blur(10px);
+}
+.panel h2,
+.double-section h2{
+  text-shadow:0 0 14px rgba(124,60,255,.38);
+}
+input,
+select{
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));
+  border-color:rgba(126,156,255,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 rgba(0,0,0,0);
+}
+input:focus,
+select:focus{
+  outline:none;
+  border-color:rgba(110,231,255,.9);
+  box-shadow:0 0 0 3px rgba(110,231,255,.14), 0 0 22px rgba(110,231,255,.20);
+}
+button,
+.btn{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),
+    linear-gradient(135deg,rgba(124,60,255,.85),rgba(0,183,255,.70));
+  border-color:rgba(160,220,255,.54);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    0 0 20px rgba(0,212,255,.12);
+  text-shadow:0 1px 10px rgba(0,0,0,.45);
+}
+button:hover,
+.btn:hover{
+  border-color:rgba(255,255,255,.78);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.28),
+    0 0 28px rgba(110,231,255,.30);
+  transform:translateY(-1px);
+}
+button:disabled{
+  transform:none;
+  box-shadow:none;
+}
+.primary{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,.06)),
+    linear-gradient(135deg,#00d4ff,#7c3cff 62%,#ff5ec4);
+  border-color:rgba(110,231,255,.82);
+}
+.danger{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),
+    linear-gradient(135deg,#ff4d8d,#ff8b3d);
+  border-color:rgba(255,120,180,.78);
+}
+.ghost{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.03)),
+    rgba(16,25,50,.68);
+}
+.badge,
+.seed-badge{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.05)),
+    rgba(20,30,64,.78);
+  border-color:rgba(110,231,255,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
+}
+.match,
+.slot,
+.slot:hover,
+.slot.win,
+.slot.loser,
+.slot.waiting,
+.double-slot.empty,
+.slot.empty{
+  color:#9fb0d0;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+}
+.bracket-line{
+  stroke:rgba(141,168,255,.55);
+  filter:drop-shadow(0 0 4px rgba(110,231,255,.14));
+}
+.bracket-line.win{
+  stroke:url(#unused);
+  stroke:#33f5a5;
+  filter:drop-shadow(0 0 8px rgba(51,245,165,.9));
+}
+.champion{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.04)),
+    linear-gradient(135deg,rgba(255,230,109,.32),rgba(51,245,165,.18),rgba(110,231,255,.14));
+  border-color:rgba(255,230,109,.72);
+  box-shadow:0 0 28px rgba(255,230,109,.20), inset 0 1px 0 rgba(255,255,255,.22);
+}
+.participant,
+.double-status-row{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.025)),
+    rgba(13,20,42,.82);
+  border-color:rgba(134,167,255,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+}
+.card-title{
+  text-shadow:0 0 14px rgba(110,231,255,.22);
+}
+.note{
+  color:#c3d0ed;
+}
+::-webkit-scrollbar{
+  width:12px;
+  height:12px;
+}
+::-webkit-scrollbar-track{
+  background:rgba(255,255,255,.05);
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(135deg,#7c3cff,#00d4ff,#33f5a5);
+  border-radius:999px;
+  border:2px solid rgba(10,14,28,.75);
+}
+::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(135deg,#ff5ec4,#00d4ff,#33f5a5);
+}
+@media(max-width:640px){
+  body::before{opacity:.30}
+  button:hover,.btn:hover{transform:none}
+}
+
+
+
+
+
+/* single-round-label-fix: 1回戦～決勝を各組み合わせの上に被らない位置で表示 */
+.round-label{
+  position:absolute;
+  z-index:6;
+  height:auto!important;
+  min-width:120px;
+  max-width:190px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(110,231,255,.48);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04)),
+    rgba(12,20,44,.92);
+  color:#eaf4ff;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:800;
+  text-align:center;
+  white-space:nowrap;
+  box-shadow:0 0 14px rgba(110,231,255,.22);
+  pointer-events:none;
+}
+
+
+/* single-scrollbar-visible-fix: シングルトーナメントの横スクロールバーを枠内に出す */
+.bracket-shell{
+  display:block;
+  position:relative;
+  width:100%!important;
+  max-width:100%!important;
+  overflow:scroll!important;
+  overflow-x:scroll!important;
+  overflow-y:scroll!important;
+  scrollbar-gutter:stable both-edges;
+}
+.bracket-shell::-webkit-scrollbar{
+  height:16px;
+  width:16px;
+}
+.bracket-shell::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:linear-gradient(135deg,#6ee7ff,#33f5a5,#7c3cff);
+}
+.bracket-shell::-webkit-scrollbar-track{
+  background:rgba(255,255,255,.08);
+  border-radius:999px;
+}
+#bracket.bracket{
+  display:block!important;
+  flex:none!important;
+  max-width:none!important;
+  width:var(--singleScrollWidth, 1200px)!important;
+  min-width:var(--singleScrollWidth, 1200px)!important;
+}
+
+
+
+/* single-view-admin-scroll-final: シングル表は管理者用・閲覧用どちらも同じ枠内で上下左右スクロール */
+#singleView .panel{
+  min-width:0;
+  overflow:hidden;
+}
+#singleView.view-only .panel{
+  min-width:0;
+  overflow:hidden;
+}
+#singleView .bracket-shell,
+#singleView.view-only .bracket-shell,
+.bracket-shell.view-mode{
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  overflow:scroll!important;
+  overflow-x:scroll!important;
+  overflow-y:scroll!important;
+  max-height:calc(100vh - 245px)!important;
+  min-height:420px!important;
+  height:calc(100vh - 245px)!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  touch-action:pan-x pan-y;
+  scrollbar-gutter:stable both-edges;
+}
+#singleView.view-only .bracket-shell,
+.bracket-shell.view-mode{
+  max-height:calc(100vh - 220px)!important;
+  height:calc(100vh - 220px)!important;
+}
+#singleView .bracket-shell::-webkit-scrollbar{
+  height:18px;
+  width:18px;
+}
+#singleView .bracket-shell::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:linear-gradient(135deg,#6ee7ff,#33f5a5,#7c3cff);
+}
+#singleView .bracket-shell::-webkit-scrollbar-track{
+  background:rgba(255,255,255,.08);
+  border-radius:999px;
+}
+#bracket.bracket{
+  display:block!important;
+  position:relative!important;
+  flex:none!important;
+  max-width:none!important;
+  width:var(--singleScrollWidth, 1400px)!important;
+  min-width:var(--singleScrollWidth, 1400px)!important;
+}
+@media(max-width:900px){
+  #singleView .bracket-shell,
+  #singleView.view-only .bracket-shell,
+  .bracket-shell.view-mode{
+    max-height:calc(100vh - 190px)!important;
+    height:calc(100vh - 190px)!important;
+    min-height:360px!important;
+  }
+}
+@media(max-width:640px){
+  #singleView .bracket-shell,
+  #singleView.view-only .bracket-shell,
+  .bracket-shell.view-mode{
+    max-height:calc(100vh - 150px)!important;
+    height:calc(100vh - 150px)!important;
+    min-height:320px!important;
+    padding:8px!important;
+  }
+}
+
+
+/* single-round-label-center-fix: 回戦ラベルを名前カード幅に対して中央寄せ */
+.round-label{
+  width:150px!important;
+  min-width:150px!important;
+  max-width:150px!important;
+  box-sizing:border-box;
+}
+
+
+
+
+
+
+/* single-visible-scroll-control-final: OS依存のスクロールバーではなく、必ず見える固定横スライダーを表示 */
+.single-scroll-control{
+  position:fixed!important;
+  left:12px!important;
+  right:12px!important;
+  bottom:10px!important;
+  z-index:2147483600!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  height:44px!important;
+  padding:8px 10px!important;
+  border:1px solid rgba(134,167,255,.68)!important;
+  border-radius:999px!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06)),
+    rgba(8,14,34,.96)!important;
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.48),
+    0 0 22px rgba(110,231,255,.24)!important;
+  backdrop-filter:blur(10px);
+}
+.single-scroll-control.hidden{
+  display:none!important;
+}
+body.single-sticky-scroll-active .single-scroll-control{
+  display:flex!important;
+}
+body:not(.single-sticky-scroll-active) .single-scroll-control{
+  display:none!important;
+}
+.single-scroll-control button{
+  width:36px!important;
+  height:28px!important;
+  min-height:28px!important;
+  padding:0!important;
+  border-radius:999px!important;
+  font-size:16px!important;
+  line-height:1!important;
+}
+#singleScrollRange{
+  flex:1!important;
+  width:100%!important;
+  height:24px!important;
+  accent-color:#33f5a5;
+  cursor:pointer;
+}
+#singleScrollRange::-webkit-slider-runnable-track{
+  height:12px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#6ee7ff,#33f5a5,#7c3cff);
+  box-shadow:0 0 12px rgba(110,231,255,.24);
+}
+#singleScrollRange::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:28px;
+  height:28px;
+  margin-top:-8px;
+  border-radius:50%;
+  background:#ffffff;
+  border:3px solid #33f5a5;
+  box-shadow:0 0 18px rgba(51,245,165,.65);
+}
+body.single-sticky-scroll-active{
+  padding-bottom:72px!important;
+}
+@media(max-width:640px){
+  .single-scroll-control{
+    left:8px!important;
+    right:8px!important;
+    bottom:8px!important;
+    height:46px!important;
+    padding:8px!important;
+    gap:8px!important;
+  }
+  .single-scroll-control button{
+    width:34px!important;
+  }
+  body.single-sticky-scroll-active{
+    padding-bottom:76px!important;
+  }
+}
+
+
+/* double-fixed-round-labels: ダブルの回戦表示を縦スクロール中も見えるよう固定 */
+.double-tree-shell{
+  position:relative!important;
+}
+.double-fixed-round-bar{
+  position:sticky;
+  top:0;
+  z-index:30;
+  height:34px;
+  min-height:34px;
+  margin:0 0 6px 0;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(8,14,34,.98),rgba(8,14,34,.82)),
+    rgba(8,14,34,.94);
+  border-bottom:1px solid rgba(134,167,255,.32);
+  box-shadow:0 8px 18px rgba(0,0,0,.32), 0 0 18px rgba(110,231,255,.12);
+}
+.double-fixed-round-label{
+  position:absolute;
+  top:5px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(110,231,255,.48);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04)),
+    rgba(12,20,44,.95);
+  color:#eaf4ff;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:800;
+  white-space:nowrap;
+  text-align:center;
+  text-shadow:0 0 10px rgba(110,231,255,.28);
+}
+.double-tree-round-label{
+  display:none!important;
+}
+
+
+/* admin-auto-delete-badge: 管理者ページ上部の完全自動削除期限表示 */
+.admin-auto-delete-badge{
+  margin:8px 0 14px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,224,102,.75);
+  background:
+    linear-gradient(135deg,rgba(255,224,102,.22),rgba(255,93,143,.18)),
+    rgba(18,24,45,.88);
+  color:#ffe066;
+  font-size:20px;
+  line-height:1.35;
+  font-weight:900;
+  letter-spacing:.02em;
+  text-shadow:0 0 14px rgba(255,224,102,.34);
+  box-shadow:
+    0 0 22px rgba(255,224,102,.14),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+.admin-auto-delete-badge strong{
+  color:#ffffff;
+  font-size:1.08em;
+}
+@media(max-width:640px){
+  .admin-auto-delete-badge{
+    font-size:17px;
+    padding:10px 12px;
+  }
+}
+
+
+
+
+/* header-auto-delete-badge-position: 完全自動削除表示をトーナメント一覧ボタンの右側へ配置 */
+.header-auto-delete-badge{
+  margin:0 0 0 8px!important;
+  padding:8px 12px!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+  min-width:280px;
+  max-width:min(560px, 48vw);
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.header-auto-delete-badge.hidden{
+  display:none!important;
+}
+@media(max-width:760px){
+  .header-auto-delete-badge{
+    flex-basis:100%;
+    max-width:100%;
+    min-width:0;
+    margin:8px 0 0 0!important;
+    white-space:normal;
+  }
+}
+
+</style>
+</head>
+<body>
+<header>
+  <h1 id="mainTitle">トーナメント</h1>
+  <div class="row">
+    <a class="btn ghost" href="../index.html">トップへ戻る</a>
+    <button id="hubBtn" class="ghost">トーナメント一覧</button>
+    <div id="headerAutoDeleteBadge" class="admin-auto-delete-badge header-auto-delete-badge hidden"></div>
+  </div>
+</header>
+
+<main>
+  <section id="hubView" class="grid">
+    <div class="panel">
+      <h2>新規トーナメント作成</h2>
+      <div class="list">
+        <input id="titleInput" placeholder="大会名">
+        <input id="pinInput" placeholder="管理者パスワード4桁" inputmode="numeric" maxlength="4">
+        <div class="row">
+          <button id="createSingleBtn" class="primary">シングル作成</button>
+          <button id="createDoubleBtn">ダブル作成</button>
+        </div>
+  
+      </div>
+    </div>
+    <div class="panel">
+      <h2>作成済みトーナメント閲覧</h2>
+      <div id="viewList" class="list"></div>
+    </div>
+    <div class="panel">
+      <h2>管理者用入口</h2>
+      <div id="adminList" class="list"></div>
+      <p class="note">管理者用は4桁パスワード入力後に編集できます。</p>
+    </div>
+  </section>
+
+  <section id="doubleView" class="double-layout hidden">
+    <section id="doubleAdminPanel" class="panel">
+      <h2>ダブル管理者操作</h2>
+      <div class="row">
+        <input id="doubleNameInput" maxlength="40" placeholder="登録名を入力">
+        <button id="doubleAddBtn" class="primary">追加</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="doubleBuildBtn" class="primary">初回組み合わせ作成</button>
+        <button id="doubleResetBtn">勝敗リセット</button>
+        <button id="doubleShuffleBtn">シャッフル</button>
+        <button id="doubleExtendDeleteBtn">自動削除延長</button>
+        <button id="doubleDeleteBtn" class="danger">トーナメント削除</button>
+      </div>
+      <p class="note">2敗で敗退。勝者側で負けた登録名は敗者側へ移動します。各ラウンドの勝敗がすべて入ると、次ラウンドは自動生成されます。</p>
+      <div id="doubleStatusText" class="note"></div>
+      <h2 style="margin-top:14px">登録一覧</h2>
+      <div id="doubleParticipants" class="participants"></div>
+      <h2 style="margin-top:14px">参加状態</h2>
+      <div id="doubleStatusList" class="double-status-list"></div>
+    </section>
+    <section class="panel">
+      <h2>ダブルトーナメント表</h2>
+      <div id="doubleChampion" class="champion hidden"></div>
+      <div class="double-board double-diagram-board">
+        <div class="double-diagram-shell">
+          <div id="doubleDiagram" class="double-diagram"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section id="singleView" class="layout hidden">
+    <section id="adminPanel" class="panel">
+      <h2>管理者操作</h2>
+      <div class="row">
+        <input id="nameInput" maxlength="40" placeholder="登録名を入力">
+        <button id="addBtn" class="primary">追加</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="buildBtn" class="primary">ランダムでトーナメント作成</button>
+        <button id="resetResultsBtn">勝敗リセット</button>
+        <button id="shuffleBtn">シャッフル</button>
+        <button id="deleteBtn" class="danger">トーナメント削除</button>
+        <button id="extendDeleteBtn">自動削除延長</button>
+      </div>
+      <p class="note">シードは奇数登録時のみ1組み合わせ。勝敗は登録名クリックで修正できます。</p>
+      <div id="statusText" class="note"></div>
+      <h2 style="margin-top:14px">登録一覧</h2>
+      <div id="participants" class="participants"></div>
+    </section>
+    <section class="panel">
+      <h2>トーナメント表</h2>
+      <div id="champion" class="champion hidden"></div>
+      <div class="bracket-shell">
+        <div id="bracket" class="bracket"></div>
+      </div>
+      <div id="singleScrollControl" class="single-scroll-control hidden" aria-label="シングルトーナメント固定横スクロール操作">
+        <button id="singleScrollLeftBtn" type="button" aria-label="左へスクロール">◀</button>
+        <input id="singleScrollRange" type="range" min="0" max="0" value="0" aria-label="横スクロール位置">
+        <button id="singleScrollRightBtn" type="button" aria-label="右へスクロール">▶</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-database-compat.js"></script>
+<script>
+const STORAGE_KEY = "nobuon_tournaments_functional_v1";
+const MAX_TEAMS = 64;
+const TOURNAMENT_EXPIRE_MS = 48 * 60 * 60 * 1000;
+const AUTO_DELETE_EXTENSION_DAY_MS = 24 * 60 * 60 * 1000;
+const AUTO_DELETE_EXTENSION_MAX_DAYS = 30;
+
+let store = { tournaments: [] };
+let currentTournament = null;
+let currentMode = "hub";
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDLuyz2MPqTkRQL-m_by28P4gM0zhCjYc8",
+  authDomain: "to-namento.firebaseapp.com",
+  databaseURL: "https://to-namento-default-rtdb.firebaseio.com",
+  projectId: "to-namento",
+  storageBucket: "to-namento.firebasestorage.app",
+  messagingSenderId: "1007733266727",
+  appId: "1:1007733266727:web:2711f010f9082bd2103102",
+  measurementId: "G-WXCEY4Z5CQ"
+};
+const FIREBASE_STORE_PATH = "tournamentsStore";
+let firebaseDb = null;
+let firebaseReady = false;
+let firebaseApplyingRemote = false;
+let firebaseSaveTimer = null;
+let firebaseFirstSnapshotReceived = false;
+let localWriteAt = 0;
+
+function normalizeStore(value){
+  return value && Array.isArray(value.tournaments) ? value : { tournaments: [] };
+}
+function firebaseStatusText(){
+  if(firebaseReady) return "Firebase同期：接続中";
+  return "Firebase同期：未接続（この端末内保存）";
+}
+function updateFirebaseStatus(){
+  const badge = $("headerAutoDeleteBadge");
+  if(badge && currentTournament && currentMode !== "hub" && firebaseReady){
+    badge.title = firebaseStatusText();
+  }
+}
+function initFirebaseSync(){
+  try{
+    if(!window.firebase || !firebase.initializeApp || !firebase.database){
+      console.warn("Firebase SDK が読み込めません。localStorage保存で動作します。");
+      return false;
+    }
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+    firebaseReady = true;
+    bindFirebaseStore();
+    return true;
+  }catch(error){
+    console.error("Firebase初期化に失敗しました。localStorage保存で動作します。", error);
+    firebaseReady = false;
+    firebaseDb = null;
+    return false;
+  }
+}
+function bindFirebaseStore(){
+  if(!firebaseDb) return;
+  firebaseDb.ref(FIREBASE_STORE_PATH).on("value", snapshot => {
+    const remoteStore = normalizeStore(snapshot.val());
+    const remoteCount = remoteStore.tournaments.length;
+    const localCount = store && Array.isArray(store.tournaments) ? store.tournaments.length : 0;
+    const justWroteLocal = localWriteAt && (Date.now() - localWriteAt < 2500);
+
+    // 作成・追加直後にFirebaseの古い空snapshotが返ってきても、画面上のローカル編集を巻き戻さない。
+    if(justWroteLocal && localCount > 0 && remoteCount === 0){
+      firebaseFirstSnapshotReceived = true;
+      return;
+    }
+
+    firebaseApplyingRemote = true;
+    store = remoteStore;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    if(currentTournament){
+      const refreshed = store.tournaments.find(t => t.id === currentTournament.id && t.status !== "削除");
+      if(refreshed){
+        currentTournament = refreshed;
+      }else if(!(justWroteLocal && localCount > 0)){
+        currentTournament = null;
+        currentMode = "hub";
+      }
+    }
+    firebaseFirstSnapshotReceived = true;
+    firebaseApplyingRemote = false;
+    refreshCurrentView();
+  }, error => {
+    console.error("Firebase読込に失敗しました。", error);
+  });
+}
+function saveStoreToFirebase(){
+  if(!firebaseReady || !firebaseDb || firebaseApplyingRemote) return;
+  clearTimeout(firebaseSaveTimer);
+  firebaseSaveTimer = setTimeout(() => {
+    firebaseDb.ref(FIREBASE_STORE_PATH).set(store).catch(error => {
+      console.error("Firebase保存に失敗しました。", error);
+    });
+  }, 120);
+}
+function refreshCurrentView(){
+  purgeExpiredTournaments();
+  if(currentMode === "hub" || !currentTournament){
+    showHub();
+    return;
+  }
+  setHash(currentTournament.id, currentMode);
+  $("mainTitle").textContent = currentTournament.title + "｜" + typeLabel(currentTournament.type);
+  if(currentTournament.type === "double"){
+    showOnly("doubleView");
+    renderDouble();
+  }else{
+    showOnly("singleView");
+    renderSingle();
+  }
+  updateFirebaseStatus();
+}
+
+
+function $(id){ return document.getElementById(id); }
+function uid(prefix){ return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8); }
+function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s])); }
+function loadStore(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return parsed && Array.isArray(parsed.tournaments) ? parsed : { tournaments: [] };
+  }catch(e){
+    return { tournaments: [] };
+  }
+}
+function saveStore(){
+  localWriteAt = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  saveStoreToFirebase();
+}
+function autoDeleteAtOf(tournament){
+  const fallbackCreatedAt = Number(tournament.createdAt || tournament.updatedAt || Date.now());
+  return Number(tournament.autoDeleteAt || (fallbackCreatedAt + TOURNAMENT_EXPIRE_MS));
+}
+function purgeExpiredTournaments(){
+  const now = Date.now();
+  const beforeCount = store.tournaments.length;
+  store.tournaments = store.tournaments.filter(t => now < autoDeleteAtOf(t));
+  if(store.tournaments.length !== beforeCount){
+    saveStore();
+  }
+}
+function expiresAtText(tournament){
+  const expiresAt = autoDeleteAtOf(tournament);
+  const rest = Math.max(0, expiresAt - Date.now());
+  const days = Math.floor(rest / AUTO_DELETE_EXTENSION_DAY_MS);
+  const hours = Math.floor((rest % AUTO_DELETE_EXTENSION_DAY_MS) / (60 * 60 * 1000));
+  const minutes = Math.floor((rest % (60 * 60 * 1000)) / (60 * 1000));
+  if(days > 0) return `自動削除まで ${days}日${hours}時間${minutes}分`;
+  return `自動削除まで ${hours}時間${minutes}分`;
+}
+function autoDeleteFullText(tournament){
+  const expiresAt = autoDeleteAtOf(tournament);
+  const rest = Math.max(0, expiresAt - Date.now());
+  const days = Math.floor(rest / AUTO_DELETE_EXTENSION_DAY_MS);
+  const hours = Math.floor((rest % AUTO_DELETE_EXTENSION_DAY_MS) / (60 * 60 * 1000));
+  const minutes = Math.floor((rest % (60 * 60 * 1000)) / (60 * 1000));
+  if(days > 0) return `${days}日${hours}時間${minutes}分`;
+  return `${hours}時間${minutes}分`;
+}
+function renderAdminAutoDeleteBadge(targetId){
+  const box = $(targetId);
+  if(!box) return;
+  if(!currentTournament || currentMode === "hub"){
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+  box.classList.remove("hidden");
+  box.innerHTML = `トーナメントの完全自動削除まで <strong>${autoDeleteFullText(currentTournament)}</strong>`;
+}
+function saveTournament(){
+  if(!currentTournament) return;
+  currentTournament.updatedAt = Date.now();
+  if(!store || !Array.isArray(store.tournaments)) store = { tournaments: [] };
+  const index = store.tournaments.findIndex(t => t.id === currentTournament.id);
+  if(index >= 0) store.tournaments[index] = currentTournament;
+  else store.tournaments.push(currentTournament);
+  saveStore();
+}
+function typeLabel(type){ return type === "double" ? "ダブル" : "シングル"; }
+function showOnly(viewId){
+  ["hubView","singleView","doubleView"].forEach(id => $(id).classList.toggle("hidden", id !== viewId));
+  if(viewId !== "singleView") syncSingleStickyScrollBar();
+  if(viewId === "hubView") renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
+}
+function setHash(id, mode){
+  if(!id){
+    history.replaceState(null, "", location.pathname);
+    return;
+  }
+  const nextHash = "#id=" + encodeURIComponent(id) + "&mode=" + encodeURIComponent(mode);
+  history.replaceState(null, "", location.pathname + nextHash);
+}
+function getHashParams(){
+  const raw = location.hash.startsWith("#") ? location.hash.slice(1) : "";
+  return new URLSearchParams(raw);
+}
+
+function createTournament(type){
+  const title = $("titleInput").value.trim();
+  const pin = $("pinInput").value.trim();
+  if(!title){ alert("大会名を入力してください。"); return; }
+  if(!/^\d{4}$/.test(pin)){ alert("管理者パスワードは4桁の数字で入力してください。"); return; }
+  const now = Date.now();
+  const tournament = {
+    id: uid("t"),
+    title,
+    type,
+    adminPin: pin,
+    status: "開催中",
+    createdAt: now,
+    updatedAt: now,
+    autoDeleteAt: now + TOURNAMENT_EXPIRE_MS,
+    participants: [],
+    matches: [],
+    created: false,
+    doubleState: {
+      participants: {},
+      winnersRounds: [],
+      losersRounds: [],
+      grandFinal: [],
+      roundNumber: 0,
+      championId: null
+    }
+  };
+  store.tournaments.push(tournament);
+  saveStore();
+  sessionStorage.setItem("admin_" + tournament.id, "ok");
+  openTournament(tournament.id, "admin");
+}
+
+function openAdmin(id){
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除");
+  if(!tournament){ alert("トーナメントが見つかりません。"); return; }
+  const pin = prompt("管理者パスワード4桁を入力してください。");
+  if(pin === null) return;
+  if(pin !== tournament.adminPin){ alert("パスワードが違います。"); return; }
+  sessionStorage.setItem("admin_" + id, "ok");
+  openTournament(id, "admin");
+}
+
+function openTournament(id, mode){
+  purgeExpiredTournaments();
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除");
+  if(!tournament){ alert("トーナメントが見つかりません。"); showHub(); return; }
+  if(mode === "admin" && sessionStorage.getItem("admin_" + id) !== "ok"){
+    const pin = prompt("管理者パスワード4桁を入力してください。");
+    if(pin !== tournament.adminPin){
+      alert("パスワードが違います。閲覧用で開きます。");
+      mode = "view";
+    }else{
+      sessionStorage.setItem("admin_" + id, "ok");
+    }
+  }
+  currentTournament = tournament;
+  currentMode = mode;
+  setHash(id, mode);
+  $("mainTitle").textContent = tournament.title + "｜" + typeLabel(tournament.type);
+
+  if(tournament.type === "double"){
+    showOnly("doubleView");
+    renderDouble();
+    return;
+  }
+  showOnly("singleView");
+  renderSingle();
+}
+
+function showHub(){
+  currentTournament = null;
+  currentMode = "hub";
+  setHash(null, null);
+  $("mainTitle").textContent = "トーナメント";
+
+  showOnly("hubView");
+  renderHub();
+}
+
+function renderHub(){
+  purgeExpiredTournaments();
+  const active = store.tournaments.filter(t => t.status !== "削除");
+  if(!active.length){
+    const syncNote = `<div class="card note">${firebaseStatusText()}</div>`;
+    $("viewList").innerHTML = syncNote + '<div class="card note">作成済みトーナメントはまだありません。</div>';
+    $("adminList").innerHTML = '<div class="card note">管理できるトーナメントはまだありません。</div>';
+    return;
+  }
+  $("viewList").innerHTML = `<div class="card note">${firebaseStatusText()}</div>` + active.map(t => `
+    <div class="card">
+      <div class="card-title">${escapeHtml(t.title)}</div>
+      <div class="row">
+        <span class="badge">${typeLabel(t.type)}</span>
+        <span class="badge">${escapeHtml(t.status || "開催中")}</span>
+        <span class="badge">登録 ${(t.participants || []).length}/64</span>
+        <span class="badge">${expiresAtText(t)}</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
+      </div>
+    </div>
+  `).join("");
+  $("adminList").innerHTML = active.map(t => `
+    <div class="card">
+      <div class="card-title">${escapeHtml(t.title)}</div>
+      <div class="row">
+        <span class="badge">${typeLabel(t.type)}</span>
+        <span class="badge">${escapeHtml(t.status || "開催中")}</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" onclick="openAdmin('${t.id}')">管理者用</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function shuffle(arr){
+  const copy = [...arr];
+  for(let i = copy.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+function getParticipant(id){ return (currentTournament.participants || []).find(p => p.id === id) || null; }
+function getName(id){ const p = getParticipant(id); return p ? p.name : ""; }
+function findMatch(id){ return currentTournament.matches.find(m => m.id === id) || null; }
+function getNextMatch(match){ return currentTournament.matches.find(m => m.round === match.round + 1 && Math.ceil(match.index / 2) === m.index) || null; }
+function setNextSlot(match, winnerId){
+  const next = getNextMatch(match);
+  if(!next) return;
+  if(match.index % 2 === 1) next.player1Id = winnerId;
+  else next.player2Id = winnerId;
+}
+function roundsFor(){
+  if(currentTournament.matches && currentTournament.matches.length){
+    return Math.max(...currentTournament.matches.map(m => m.round));
+  }
+  return Math.ceil(Math.log2(Math.max(2, currentTournament.participants.length)));
+}
+function makeEmptyMatches(){
+  const participantCount = Math.min(MAX_TEAMS, currentTournament.participants.length);
+  const totalRounds = Math.ceil(Math.log2(Math.max(2, participantCount)));
+  const matches = [];
+  let incomingCount = participantCount;
+  for(let r = 1; r <= totalRounds; r++){
+    const count = Math.ceil(incomingCount / 2);
+    for(let m = 1; m <= count; m++){
+      matches.push({
+        id: `r${r}_m${m}`,
+        round: r,
+        index: m,
+        player1Id: null,
+        player2Id: null,
+        winnerId: null,
+        isBye: false
+      });
+    }
+    incomingCount = count;
+  }
+  return matches;
+}
+function autoAdvanceFirstRoundByes(){
+  // 初回シードだけでなく、上位ラウンドで片側だけになった枠も次へ進める。
+  // これをしないと、5人/6人/9人〜など2の累乗ではない人数で途中停止する。
+  let changed = true;
+  while(changed){
+    changed = false;
+    const matches = currentTournament.matches.slice().sort((a,b) => a.round - b.round || a.index - b.index);
+    for(const match of matches){
+      if(match.winnerId) continue;
+      const p1 = match.player1Id;
+      const p2 = match.player2Id;
+      if((p1 && !p2) || (!p1 && p2)){
+        const next = getNextMatch(match);
+        if(!next) continue;
+        const winner = p1 || p2;
+        match.winnerId = winner;
+        match.isBye = true;
+        setNextSlot(match, winner);
+        changed = true;
+      }
+    }
+  }
+}
+function clearDownstream(match){
+  const next = getNextMatch(match);
+  if(!next) return;
+  if(match.index % 2 === 1) next.player1Id = null;
+  else next.player2Id = null;
+  next.winnerId = null;
+  next.isBye = false;
+  clearDownstream(next);
+}
+function addParticipant(){
+  if(currentMode !== "admin") return;
+  const name = $("nameInput").value.trim();
+  if(!name) return;
+  if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
+  const p = { id: uid("p"), name, createdAt: Date.now() };
+  currentTournament.participants.push(p);
+  $("nameInput").value = "";
+  if(currentTournament.created) insertParticipantIntoBye(p.id);
+  saveTournament();
+  renderSingle();
+}
+function insertParticipantIntoBye(participantId){
+  const firstRound = currentTournament.matches.filter(m => m.round === 1).sort((a,b) => a.index - b.index);
+  const target = firstRound.find(m => (m.player1Id && !m.player2Id) || (!m.player1Id && m.player2Id));
+  if(!target){ alert("空いているシード枠がありません。追加する場合は再抽選または作り直しが必要です。"); return; }
+  const oldWinner = target.winnerId;
+  if(target.player1Id && !target.player2Id) target.player2Id = participantId;
+  else if(!target.player1Id && target.player2Id) target.player1Id = participantId;
+  target.winnerId = null;
+  target.isBye = false;
+  if(oldWinner){
+    const next = getNextMatch(target);
+    if(next){
+      if(target.index % 2 === 1 && next.player1Id === oldWinner) next.player1Id = null;
+      if(target.index % 2 === 0 && next.player2Id === oldWinner) next.player2Id = null;
+      next.winnerId = null;
+      clearDownstream(next);
+    }
+  }
+}
+function removeParticipant(id){
+  if(currentMode !== "admin") return;
+  if(!confirm("この登録名を削除しますか？ 関連する勝敗もリセットされます。")) return;
+  currentTournament.participants = currentTournament.participants.filter(p => p.id !== id);
+  if(currentTournament.created){
+    for(const m of currentTournament.matches){
+      if(m.player1Id === id) m.player1Id = null;
+      if(m.player2Id === id) m.player2Id = null;
+      if(m.winnerId === id) m.winnerId = null;
+    }
+    rebuildProgressFromCurrentFirstRound();
+  }
+  saveTournament();
+  renderSingle();
+}
+function rebuildProgressFromCurrentFirstRound(){
+  const first = currentTournament.matches.filter(m => m.round === 1);
+  for(const m of currentTournament.matches){
+    if(m.round > 1){
+      m.player1Id = null;
+      m.player2Id = null;
+      m.winnerId = null;
+      m.isBye = false;
+    }else if(m.player1Id && m.player2Id){
+      m.isBye = false;
+    }
+  }
+  for(const m of first){
+    if(m.winnerId) setNextSlot(m, m.winnerId);
+  }
+  autoAdvanceFirstRoundByes();
+}
+function buildTournament(){
+  if(currentMode !== "admin") return;
+  if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
+  const entries = shuffle(currentTournament.participants);
+  currentTournament.matches = makeEmptyMatches();
+  currentTournament.created = true;
+  const firstRound = currentTournament.matches.filter(m => m.round === 1).sort((a,b) => a.index - b.index);
+  let entryIndex = 0;
+  for(const match of firstRound){
+    match.player1Id = entries[entryIndex] ? entries[entryIndex].id : null;
+    match.player2Id = entries[entryIndex + 1] ? entries[entryIndex + 1].id : null;
+    entryIndex += 2;
+  }
+  autoAdvanceFirstRoundByes();
+  saveTournament();
+  renderSingle();
+}
+function shuffleTournament(){
+  if(currentMode !== "admin") return;
+  if(currentTournament.participants.length < 2){
+    alert("登録名を2件以上入力してください。");
+    return;
+  }
+  if(currentTournament.created){
+    const hasResult = currentTournament.matches.some(m => m.winnerId && !m.isBye);
+    if(hasResult && !confirm("勝敗結果があります。リセットして組み合わせをシャッフルしますか？")) return;
+  }
+  buildTournament();
+}
+
+function chooseWinner(matchId, playerId){
+  const match = findMatch(matchId);
+  if(!match || !playerId){
+    if(currentMode === "admin") alert("この枠はまだ勝者待ちです。");
+    return;
+  }
+  if(currentMode !== "admin") return;
+  if(!match.player1Id || !match.player2Id) return;
+  if(match.winnerId === playerId) return;
+  if(match.winnerId && !confirm("勝敗結果を修正すると、この試合より上の結果をリセットします。変更しますか？")) return;
+  clearDownstream(match);
+  match.winnerId = playerId;
+  setNextSlot(match, playerId);
+  autoAdvanceFirstRoundByes();
+  saveTournament();
+  renderSingle();
+}
+function resetResults(){
+  if(currentMode !== "admin" || !currentTournament.created) return;
+  if(!confirm("勝敗結果をすべてリセットしますか？")) return;
+  for(const m of currentTournament.matches){
+    m.winnerId = null;
+    m.isBye = false;
+    if(m.round > 1){
+      m.player1Id = null;
+      m.player2Id = null;
+    }
+  }
+  autoAdvanceFirstRoundByes();
+  saveTournament();
+  renderSingle();
+}
+function extendAutoDelete(){
+  if(currentMode !== "admin" || !currentTournament) return;
+  const raw = prompt(`自動削除を何日延長しますか？ 1〜${AUTO_DELETE_EXTENSION_MAX_DAYS}日の数字で入力してください。`);
+  if(raw === null) return;
+  const days = Number(raw);
+  if(!Number.isInteger(days) || days < 1 || days > AUTO_DELETE_EXTENSION_MAX_DAYS){
+    alert(`延長できる日数は1日〜${AUTO_DELETE_EXTENSION_MAX_DAYS}日までです。`);
+    return;
+  }
+
+  const createdAt = Number(currentTournament.createdAt || currentTournament.updatedAt || Date.now());
+  const maxDeleteAt = createdAt + AUTO_DELETE_EXTENSION_MAX_DAYS * AUTO_DELETE_EXTENSION_DAY_MS + TOURNAMENT_EXPIRE_MS;
+  const requestedDeleteAt = Date.now() + days * AUTO_DELETE_EXTENSION_DAY_MS + TOURNAMENT_EXPIRE_MS;
+  if(requestedDeleteAt > maxDeleteAt){
+    alert(`自動削除延長は作成日時から最大${AUTO_DELETE_EXTENSION_MAX_DAYS}日までです。これ以上は延長できません。`);
+    return;
+  }
+
+  if(!confirm(`${days}日延長します。延長期間終了後、さらに48時間後に自動で完全削除されます。よろしいですか？`)) return;
+  currentTournament.autoDeleteAt = requestedDeleteAt;
+  saveTournament();
+  alert(`自動削除を${days}日延長しました。`);
+  if(currentTournament.type === "double") renderDouble();
+  else renderSingle();
+}
+function deleteTournament(){
+  if(currentMode !== "admin" || !currentTournament) return;
+  const pin = prompt("削除確認：管理者パスワード4桁を入力してください。");
+  if(pin === null) return;
+  if(pin !== currentTournament.adminPin){
+    alert("パスワードが違います。削除を中止しました。");
+    return;
+  }
+  const title = currentTournament.title || "このトーナメント";
+  if(!confirm(`「${title}」を完全削除します。元に戻せません。削除しますか？`)) return;
+  store.tournaments = store.tournaments.filter(t => t.id !== currentTournament.id);
+  saveStore();
+  currentTournament = null;
+  showHub();
+}
+function champion(){
+  if(!currentTournament.created || !currentTournament.matches.length) return null;
+  const lastRound = Math.max(...currentTournament.matches.map(m => m.round));
+  const final = currentTournament.matches.find(m => m.round === lastRound);
+  return final && final.winnerId ? getParticipant(final.winnerId) : null;
+}
+function roundLabel(round, totalRounds){
+  if(round === totalRounds) return "決勝";
+  if(round === totalRounds - 1) return "準決勝";
+  return `${round}回戦`;
+}
+function slotClass(match, playerId){
+  if(!playerId) return match.round > 1 ? "waiting" : "empty";
+  if(match.winnerId === playerId) return "win";
+  if(match.winnerId && match.winnerId !== playerId) return "loser";
+  return "";
+}
+function renderParticipants(){
+  const box = $("participants");
+  box.innerHTML = "";
+  currentTournament.participants.forEach((p,i) => {
+    const row = document.createElement("div");
+    row.className = "participant";
+    row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
+    row.querySelector("button").onclick = () => removeParticipant(p.id);
+    box.appendChild(row);
+  });
+}
+function renderStatus(){
+  const count = currentTournament.participants.length;
+  renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
+  $("statusText").textContent = `登録数：${count}/${MAX_TEAMS} / 状態：${currentTournament.status || "開催中"}`;
+  $("buildBtn").disabled = count < 2;
+  $("resetResultsBtn").disabled = !currentTournament.created;
+
+}
+function renderBracket(){
+  const root = $("bracket");
+  const shell = root.closest(".bracket-shell");
+  const keepScrollLeft = shell ? shell.scrollLeft : 0;
+  const keepScrollTop = shell ? shell.scrollTop : 0;
+  root.innerHTML = "";
+  if(shell) shell.classList.toggle("view-mode", currentMode !== "admin");
+  const champBox = $("champion");
+  const champ = champion();
+  if(champ){
+    champBox.classList.remove("hidden");
+    champBox.innerHTML = `優勝：<strong>${escapeHtml(champ.name)}</strong>`;
+  }else{
+    champBox.classList.add("hidden");
+    champBox.innerHTML = "";
+  }
+  if(!currentTournament.created){
+    root.style.transform = "";
+    root.classList.remove("force-wide");
+    root.style.removeProperty("--singleScrollWidth");
+    root.style.minWidth = "";
+    root.style.width = "";
+    root.innerHTML = `<div class="note">管理者用ページで登録名を追加して「ランダムでトーナメント作成」を押してください。</div>`;
+    syncSingleStickyScrollBar();
+    return;
+  }
+  const totalRounds = roundsFor();
+  const matchW = 210, matchH = 76, gapX = 58, gapY = 24;
+  const baseStep = matchW + gapX;
+  const firstRoundCount = currentTournament.matches.filter(m => m.round === 1).length;
+  const contentWidth = firstRoundCount * matchW + Math.max(0, firstRoundCount - 1) * gapX;
+  const contentHeight = totalRounds * matchH + Math.max(0, totalRounds - 1) * gapY;
+  root.style.setProperty("--matchW", `${matchW}px`);
+  root.style.setProperty("--matchH", `${matchH}px`);
+  const outerWidth = contentWidth + 80;
+  const outerHeight = contentHeight + 118;
+  const scrollWidth = shell ? Math.max(outerWidth, shell.clientWidth + Math.max(520, Math.floor(shell.clientWidth * 0.35))) : outerWidth;
+  root.style.width = `${scrollWidth}px`;
+  root.style.minWidth = `${scrollWidth}px`;
+  root.style.height = `${outerHeight}px`;
+  root.classList.add("force-wide");
+  root.style.setProperty("--singleScrollWidth", `${scrollWidth}px`);
+  root.style.transform = "";
+
+  requestAnimationFrame(() => {
+    fitBracketToShell(root, shell, scrollWidth, outerHeight, keepScrollLeft, keepScrollTop);
+    bindSingleStickyScrollBar();
+    syncSingleStickyScrollBar();
+    setTimeout(syncSingleStickyScrollBar, 0);
+  });
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "bracket-svg");
+  svg.setAttribute("width", contentWidth);
+  svg.setAttribute("height", contentHeight);
+  svg.setAttribute("viewBox", `0 0 ${contentWidth} ${contentHeight}`);
+  root.appendChild(svg);
+
+  const pos = new Map();
+  for(let r = 1; r <= totalRounds; r++){
+    const y = contentHeight - r * matchH - (r - 1) * gapY;
+    const matches = currentTournament.matches.filter(m => m.round === r).sort((a,b) => a.index - b.index);
+    const span = Math.pow(2, r - 1);
+    for(const [matchIndex, m] of matches.entries()){
+      const groupLeft = (m.index - 1) * span * baseStep;
+      const groupWidth = span * matchW + Math.max(0, span - 1) * gapX;
+      const centerX = groupLeft + groupWidth / 2;
+      const x = centerX - matchW / 2;
+      const label = document.createElement("div");
+      label.className = "round-label";
+      label.textContent = roundLabel(r, totalRounds);
+      const labelW = 150;
+
+      label.style.left = `${18 + x + (matchW - labelW) / 2}px`;
+      label.style.top = `${Math.max(4, 24 + y - 24)}px`;
+      root.appendChild(label);
+      pos.set(m.id, {x, y, centerX, centerY:y + matchH/2});
+
+      const wrap = document.createElement("div");
+      wrap.className = "match-wrap";
+      wrap.style.left = `${18 + x}px`;
+      wrap.style.top = `${24 + y}px`;
+
+      const p1Name = m.player1Id ? getName(m.player1Id) : "";
+      const p2Name = m.player2Id ? getName(m.player2Id) : "";
+      const p1EmptyLabel = m.round > 1 ? "勝者待ち" : "空き";
+      const p2EmptyLabel = m.round > 1 ? "勝者待ち" : "空き";
+      const p1Class = slotClass(m, m.player1Id);
+      const p2Class = slotClass(m, m.player2Id);
+      const isFirstRoundBye = m.round === 1 && m.isBye;
+      const bye1 = isFirstRoundBye && m.player1Id && !m.player2Id ? `<span class="seed-badge">シード</span>` : "";
+      const bye2 = isFirstRoundBye && m.player2Id && !m.player1Id ? `<span class="seed-badge">シード</span>` : "";
+
+      wrap.innerHTML = `
+        <div class="match">
+          <div class="slot ${p1Class}" data-player="${m.player1Id || ""}"><span class="slot-name">${p1Name ? escapeHtml(p1Name) : p1EmptyLabel}</span>${bye1}</div>
+          <div class="slot ${p2Class}" data-player="${m.player2Id || ""}"><span class="slot-name">${p2Name ? escapeHtml(p2Name) : p2EmptyLabel}</span>${bye2}</div>
+        </div>`;
+      wrap.querySelectorAll(".slot").forEach(slot => {
+        const pid = slot.dataset.player;
+        slot.onclick = () => chooseWinner(m.id, pid);
+      });
+      root.appendChild(wrap);
+    }
+  }
+  for(const m of currentTournament.matches){
+    const next = getNextMatch(m);
+    if(!next) continue;
+    if(!m.winnerId && m.round > 1) continue;
+    const a = pos.get(m.id), b = pos.get(next.id);
+    if(!a || !b) continue;
+    const startX = a.centerX;
+    const startY = a.y;
+    const endX = b.centerX;
+    const endY = b.y + matchH;
+    const midY = startY - gapY / 2;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", `bracket-line ${m.winnerId ? "win" : ""}`);
+    path.setAttribute("d", `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`);
+    svg.appendChild(path);
+  }
+}
+function ensureDoubleState(){
+  if(!currentTournament.doubleState){
+    currentTournament.doubleState = {
+      participants: {},
+      winnersRounds: [],
+      losersRounds: [],
+      grandFinal: [],
+      roundNumber: 0,
+      championId: null
+    };
+  }
+  if(!currentTournament.participants) currentTournament.participants = [];
+}
+function doubleActiveIds(losses){
+  ensureDoubleState();
+  return currentTournament.participants
+    .map(p => p.id)
+    .filter(id => {
+      const st = currentTournament.doubleState.participants[id] || {losses:0, eliminated:false};
+      return !st.eliminated && st.losses === losses;
+    });
+}
+function doubleGetStatus(id){
+  ensureDoubleState();
+  if(!currentTournament.doubleState.participants[id]){
+    currentTournament.doubleState.participants[id] = {losses:0, eliminated:false};
+  }
+  return currentTournament.doubleState.participants[id];
+}
+function doublePair(ids){
+  const matches = [];
+  for(let i = 0; i < ids.length; i += 2){
+    matches.push({
+      id: "dm_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
+      player1Id: ids[i] || null,
+      player2Id: ids[i + 1] || null,
+      winnerId: null,
+      loserId: null,
+      isBye: Boolean(ids[i] && !ids[i + 1])
+    });
+  }
+  return matches;
+}
+function doubleAutoByes(matches){
+  for(const m of matches){
+    if(m.isBye && m.player1Id && !m.player2Id && !m.winnerId){
+      m.winnerId = m.player1Id;
+      m.loserId = null;
+    }
+  }
+}
+function doubleAddParticipant(){
+  if(currentMode !== "admin") return;
+  ensureDoubleState();
+  const input = $("doubleNameInput");
+  const name = input.value.trim();
+  if(!name) return;
+  if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
+  const p = {id:uid("p"), name, createdAt:Date.now()};
+  currentTournament.participants.push(p);
+  currentTournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+  input.value = "";
+  saveTournament();
+  renderDouble();
+}
+function doubleRemoveParticipant(id){
+  if(currentMode !== "admin") return;
+  if(!confirm("この登録名を削除しますか？ ダブルトーナメントの勝敗もリセットされます。")) return;
+  currentTournament.participants = currentTournament.participants.filter(p => p.id !== id);
+  resetDoubleState(false);
+  saveTournament();
+  renderDouble();
+}
+function resetDoubleState(keepRender = true){
+  ensureDoubleState();
+  currentTournament.doubleState = {
+    participants: {},
+    winnersRounds: [],
+    losersRounds: [],
+    grandFinal: [],
+    roundNumber: 0,
+    championId: null
+  };
+  for(const p of currentTournament.participants){
+    currentTournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+  }
+  currentTournament.created = false;
+  if(keepRender){
+    saveTournament();
+    renderDouble();
+  }
+}
+function doubleBuildTournament(){
+  if(currentMode !== "admin") return;
+  ensureDoubleState();
+  if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
+  resetDoubleState(false);
+  const ids = shuffle(currentTournament.participants.map(p => p.id));
+  const firstMatches = doublePair(ids);
+  doubleAutoByes(firstMatches);
+  currentTournament.doubleState.winnersRounds.push({round:1, title:"勝者側 1回戦", matches:firstMatches});
+  currentTournament.doubleState.roundNumber = 1;
+  currentTournament.created = true;
+  saveTournament();
+  renderDouble();
+}
+function doubleShuffleTournament(){
+  if(currentMode !== "admin") return;
+  if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
+  if(currentTournament.created && !confirm("勝敗結果をリセットして組み合わせをシャッフルしますか？")) return;
+  doubleBuildTournament();
+}
+function doubleChooseWinner(matchId, playerId, bracketType){
+  if(currentMode !== "admin") return;
+  ensureDoubleState();
+  const match = findDoubleMatch(matchId);
+  if(!match || !playerId) return;
+  if(!match.player1Id || !match.player2Id) return;
+  if(match.winnerId === playerId) return;
+  if(match.winnerId && !confirm("この試合の勝敗を修正すると、以降のラウンドを作り直す必要があります。変更しますか？")) return;
+  match.winnerId = playerId;
+  match.loserId = match.player1Id === playerId ? match.player2Id : match.player1Id;
+  doubleAutoGenerateNextRoundIfReady();
+  saveTournament();
+  renderDouble();
+}
+function findDoubleMatch(matchId){
+  ensureDoubleState();
+  for(const round of currentTournament.doubleState.winnersRounds){
+    const found = round.matches.find(m => m.id === matchId);
+    if(found) return found;
+  }
+  for(const round of currentTournament.doubleState.losersRounds){
+    const found = round.matches.find(m => m.id === matchId);
+    if(found) return found;
+  }
+  for(const round of currentTournament.doubleState.grandFinal){
+    const found = round.matches.find(m => m.id === matchId);
+    if(found) return found;
+  }
+  return null;
+}
+function doubleAllMatchesDecided(rounds){
+  const last = rounds[rounds.length - 1];
+  if(!last) return true;
+  return last.matches.every(m => m.winnerId);
+}
+function applyDoubleRoundResults(rounds, bracket){
+  const last = rounds[rounds.length - 1];
+  if(!last || last.applied) return;
+  for(const m of last.matches){
+    if(!m.winnerId) continue;
+    if(m.loserId){
+      const loserStatus = doubleGetStatus(m.loserId);
+      loserStatus.losses += 1;
+      if(loserStatus.losses >= 2) loserStatus.eliminated = true;
+    }
+  }
+  last.applied = true;
+}
+function doubleGenerateNextRound(){
+  if(currentMode !== "admin") return;
+  ensureDoubleState();
+  if(!currentTournament.created){ alert("先に初回組み合わせを作成してください。"); return; }
+  if(currentTournament.doubleState.championId){ alert("優勝者が決定済みです。"); return; }
+
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.winnersRounds)){
+    alert("勝者側の未入力試合があります。");
+    return;
+  }
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.losersRounds)){
+    alert("敗者側の未入力試合があります。");
+    return;
+  }
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.grandFinal)){
+    alert("最終決勝の未入力試合があります。");
+    return;
+  }
+
+  applyDoubleRoundResults(currentTournament.doubleState.winnersRounds, "W");
+  applyDoubleRoundResults(currentTournament.doubleState.losersRounds, "L");
+
+  const loss0 = doubleActiveIds(0);
+  const loss1 = doubleActiveIds(1);
+
+  if(currentTournament.doubleState.grandFinal.length){
+    const finalMatch = currentTournament.doubleState.grandFinal[currentTournament.doubleState.grandFinal.length - 1].matches[0];
+    if(finalMatch && finalMatch.winnerId){
+      const loserId = finalMatch.loserId;
+      if(loserId){
+        const loserStatus = doubleGetStatus(loserId);
+        loserStatus.losses += 1;
+        if(loserStatus.losses >= 2){
+          loserStatus.eliminated = true;
+          currentTournament.doubleState.championId = finalMatch.winnerId;
+        }else{
+          const resetMatch = {
+            id: "gf_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
+            player1Id: finalMatch.winnerId,
+            player2Id: loserId,
+            winnerId: null,
+            loserId: null,
+            isBye: false
+          };
+          currentTournament.doubleState.grandFinal.push({round:currentTournament.doubleState.grandFinal.length + 1, title:"最終決勝リセット", matches:[resetMatch]});
+        }
+      }else{
+        currentTournament.doubleState.championId = finalMatch.winnerId;
+      }
+      saveTournament();
+      renderDouble();
+      return;
+    }
+  }
+
+  if(loss0.length === 1 && loss1.length === 1){
+    const gf = {
+      id: "gf_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8),
+      player1Id: loss0[0],
+      player2Id: loss1[0],
+      winnerId: null,
+      loserId: null,
+      isBye: false
+    };
+    currentTournament.doubleState.grandFinal.push({round:1, title:"最終決勝", matches:[gf]});
+    saveTournament();
+    renderDouble();
+    return;
+  }
+
+  currentTournament.doubleState.roundNumber += 1;
+  if(loss0.length > 1){
+    const wMatches = doublePair(shuffle(loss0));
+    doubleAutoByes(wMatches);
+    currentTournament.doubleState.winnersRounds.push({
+      round: currentTournament.doubleState.winnersRounds.length + 1,
+      title: "勝者側 " + (currentTournament.doubleState.winnersRounds.length + 1) + "回戦",
+      matches: wMatches
+    });
+  }
+  if(loss1.length > 1){
+    const lMatches = doublePair(shuffle(loss1));
+    doubleAutoByes(lMatches);
+    currentTournament.doubleState.losersRounds.push({
+      round: currentTournament.doubleState.losersRounds.length + 1,
+      title: "敗者側 " + (currentTournament.doubleState.losersRounds.length + 1) + "回戦",
+      matches: lMatches
+    });
+  }
+  saveTournament();
+  renderDouble();
+}
+function doubleAutoGenerateNextRoundIfReady(){
+  if(currentMode !== "admin") return;
+  ensureDoubleState();
+  if(!currentTournament.created) return;
+  if(currentTournament.doubleState.championId) return;
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.winnersRounds)) return;
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.losersRounds)) return;
+  if(!doubleAllMatchesDecided(currentTournament.doubleState.grandFinal)) return;
+
+  // 手動ボタンと同じ生成処理を使い、勝敗が揃った瞬間だけ自動で次へ進める。
+  doubleGenerateNextRound();
+}
+
+function doubleChampion(){
+  ensureDoubleState();
+  const id = currentTournament.doubleState.championId;
+  return id ? getParticipant(id) : null;
+}
+function renderDoubleParticipants(){
+  const box = $("doubleParticipants");
+  box.innerHTML = "";
+  currentTournament.participants.forEach((p,i) => {
+    const row = document.createElement("div");
+    row.className = "participant";
+    row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
+    row.querySelector("button").onclick = () => doubleRemoveParticipant(p.id);
+    box.appendChild(row);
+  });
+}
+function renderDoubleStatusList(){
+  ensureDoubleState();
+  const box = $("doubleStatusList");
+  box.innerHTML = "";
+  currentTournament.participants.forEach(p => {
+    const st = doubleGetStatus(p.id);
+    const row = document.createElement("div");
+    row.className = "double-status-row";
+    row.innerHTML = `<span>${escapeHtml(p.name)}</span><span>${st.eliminated ? "敗退" : st.losses + "敗"}</span>`;
+    box.appendChild(row);
+  });
+}
+function renderDoubleDiagram(){
+  ensureDoubleState();
+  const root = $("doubleDiagram");
+  if(!root) return;
+  const shell = root.closest(".double-diagram-shell");
+  const keepLeft = shell ? shell.scrollLeft : 0;
+  const keepTop = shell ? shell.scrollTop : 0;
+  root.innerHTML = "";
+
+  const winners = currentTournament.doubleState.winnersRounds || [];
+  const losers = currentTournament.doubleState.losersRounds || [];
+  const finals = currentTournament.doubleState.grandFinal || [];
+
+  root.style.width = "100%";
+  root.style.height = "auto";
+  root.style.minWidth = "0";
+  root.style.minHeight = "0";
+  root.style.transform = "";
+
+  root.appendChild(createDoubleBracketSection("最終決勝", finals, "勝者側代表と敗者側代表が決まると表示されます。", "final"));
+  root.appendChild(createDoubleBracketSection("勝者側トーナメント", winners, "初回組み合わせ未作成です。", "winners"));
+  root.appendChild(createDoubleBracketSection("敗者側トーナメント", losers, "勝者側で負けた登録名が入ります。", "losers"));
+
+  root.querySelectorAll(".double-tree-slot").forEach(slot => {
+    const matchId = slot.dataset.match;
+    const playerId = slot.dataset.player;
+    slot.onclick = () => doubleChooseWinner(matchId, playerId);
+  });
+
+  requestAnimationFrame(() => {
+    if(shell){
+      shell.scrollLeft = Math.min(Math.max(0, keepLeft), Math.max(0, shell.scrollWidth - shell.clientWidth));
+      // 縦スクロールはページ全体に任せるため、内側枠の scrollTop は戻さない。
+    }
+  });
+}
+function createDoubleBracketSection(title, rounds, emptyText, type){
+  const section = document.createElement("section");
+  section.className = "double-clear-section " + type;
+
+  const heading = document.createElement("div");
+  heading.className = "double-clear-title";
+  heading.textContent = title;
+  section.appendChild(heading);
+
+  if(!rounds.length){
+    const empty = document.createElement("div");
+    empty.className = "note";
+    empty.textContent = emptyText;
+    section.appendChild(empty);
+    return section;
+  }
+
+  const shell = document.createElement("div");
+  shell.className = "double-tree-shell";
+
+  const fixedBar = document.createElement("div");
+  fixedBar.className = "double-fixed-round-bar";
+  shell.appendChild(fixedBar);
+
+  const tree = document.createElement("div");
+  tree.className = "double-tree";
+  shell.appendChild(tree);
+
+  renderDoubleTreeInto(tree, rounds, type, fixedBar);
+
+  if(type === "losers"){
+    const note = document.createElement("div");
+    note.className = "double-clear-note";
+    note.textContent = "勝者側で負けた登録名は敗者側へ移動。敗者側で負けると2敗で敗退。";
+    section.appendChild(note);
+  }
+
+  section.appendChild(shell);
+  return section;
+}
+function renderDoubleTreeInto(root, rounds, type, fixedBar){
+  const isFinal = type === "final";
+  const matchW = isFinal ? 210 : 210;
+  const matchH = 76;
+  const gapX = isFinal ? 56 : 70;
+  const gapY = isFinal ? 18 : 34;
+  const topPad = 34;
+  const leftPad = 18;
+  const roundsCount = Math.max(1, rounds.length);
+  const maxMatches = Math.max(1, ...rounds.map(r => r.matches.length));
+  const contentWidth = leftPad * 2 + roundsCount * matchW + Math.max(0, roundsCount - 1) * gapX;
+  const contentHeight = topPad + maxMatches * matchH + Math.max(0, maxMatches - 1) * gapY + 36;
+
+  if(fixedBar){
+    fixedBar.style.width = `${contentWidth}px`;
+    fixedBar.style.minWidth = `${contentWidth}px`;
+    fixedBar.innerHTML = "";
+  }
+
+  root.style.width = `${contentWidth}px`;
+  root.style.height = `${contentHeight}px`;
+  root.style.minWidth = `${contentWidth}px`;
+  root.style.minHeight = `${contentHeight}px`;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "double-tree-svg");
+  svg.setAttribute("width", contentWidth);
+  svg.setAttribute("height", contentHeight);
+  svg.setAttribute("viewBox", `0 0 ${contentWidth} ${contentHeight}`);
+  root.appendChild(svg);
+
+  const pos = new Map();
+
+  rounds.forEach((round, roundIndex) => {
+    const x = leftPad + roundIndex * (matchW + gapX);
+
+    const label = document.createElement("div");
+    label.className = "double-tree-round-label";
+    label.textContent = round.title;
+    label.style.left = `${x}px`;
+    label.style.top = `4px`;
+    label.style.width = `${matchW}px`;
+    root.appendChild(label);
+
+    if(fixedBar){
+      const fixedLabel = document.createElement("div");
+      fixedLabel.className = "double-fixed-round-label";
+      fixedLabel.textContent = round.title;
+      fixedLabel.style.left = `${x}px`;
+      fixedLabel.style.width = `${matchW}px`;
+      fixedBar.appendChild(fixedLabel);
+    }
+
+    const matches = round.matches || [];
+    const span = Math.max(1, Math.pow(2, roundIndex));
+    matches.forEach((match, matchIndex) => {
+      let y;
+      if(isFinal){
+        y = topPad + matchIndex * (matchH + gapY);
+      }else{
+        const groupTop = matchIndex * span * (matchH + gapY);
+        const groupHeight = span * matchH + Math.max(0, span - 1) * gapY;
+        y = topPad + groupTop + groupHeight / 2 - matchH / 2;
+      }
+      addDoubleTreeMatch(root, match, x, y, matchW);
+      pos.set(match.id, {x, y, centerX:x + matchW / 2, centerY:y + matchH / 2});
+    });
+  });
+
+  for(let r = 0; r < rounds.length - 1; r++){
+    const from = rounds[r].matches || [];
+    const to = rounds[r + 1].matches || [];
+    from.forEach((match, index) => {
+      const next = to[Math.floor(index / 2)];
+      if(!next) return;
+      drawDoubleTreeConnector(svg, pos, match.id, next.id, matchW, Boolean(match.winnerId));
+    });
+  }
+}
+function addDoubleTreeMatch(root, match, x, y, matchW){
+  const p1 = match.player1Id ? getName(match.player1Id) : "";
+  const p2 = match.player2Id ? getName(match.player2Id) : "";
+  const p1Class = !match.player1Id ? "empty" : (match.winnerId === match.player1Id ? "win" : (match.winnerId ? "loser" : ""));
+  const p2Class = !match.player2Id ? "empty" : (match.winnerId === match.player2Id ? "win" : (match.winnerId ? "loser" : ""));
+  const bye1 = match.isBye && match.player1Id && !match.player2Id ? `<span class="seed-badge">シード</span>` : "";
+  const card = document.createElement("div");
+  card.className = "double-tree-match";
+  card.style.left = `${x}px`;
+  card.style.top = `${y}px`;
+  card.style.width = `${matchW}px`;
+  card.innerHTML = `
+    <div class="double-tree-slot ${p1Class}" data-match="${match.id}" data-player="${match.player1Id || ""}">
+      <span class="double-tree-name">${p1 ? escapeHtml(p1) : "空き"}</span>${bye1}
+    </div>
+    <div class="double-tree-slot ${p2Class}" data-match="${match.id}" data-player="${match.player2Id || ""}">
+      <span class="double-tree-name">${p2 ? escapeHtml(p2) : "空き"}</span>
+    </div>`;
+  root.appendChild(card);
+}
+function drawDoubleTreeConnector(svg, pos, fromId, toId, matchW, active){
+  const a = pos.get(fromId);
+  const b = pos.get(toId);
+  if(!a || !b) return;
+  const startX = a.x + matchW;
+  const startY = a.centerY;
+  const endX = b.x;
+  const endY = b.centerY;
+  const midX = startX + Math.max(24, (endX - startX) / 2);
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("class", `double-tree-line ${active ? "win" : ""}`);
+  path.setAttribute("d", `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`);
+  svg.appendChild(path);
+}
+
+function renderDouble(){
+  const pageScroll = capturePageScroll();
+  ensureDoubleState();
+  const isAdmin = currentMode === "admin";
+  $("doubleAdminPanel").classList.toggle("hidden", !isAdmin);
+  $("doubleView").classList.toggle("view-only", !isAdmin);
+  $("mainTitle").textContent = currentTournament.title + "｜ダブル";
+
+  $("doubleStatusText").textContent = `登録数：${currentTournament.participants.length}/${MAX_TEAMS} / 状態：${currentTournament.status || "開催中"}`;
+  $("doubleBuildBtn").disabled = currentTournament.participants.length < 2;
+  $("doubleResetBtn").disabled = !currentTournament.created;
+  renderDoubleParticipants();
+  renderDoubleStatusList();
+  renderDoubleDiagram();
+
+  const champ = doubleChampion();
+  const champBox = $("doubleChampion");
+  if(champ){
+    champBox.classList.remove("hidden");
+    champBox.innerHTML = `優勝：<strong>${escapeHtml(champ.name)}</strong>`;
+  }else{
+    champBox.classList.add("hidden");
+    champBox.innerHTML = "";
+  }
+}
+
+function syncSingleStickyScrollBar(){
+  const control = $("singleScrollControl");
+  const range = $("singleScrollRange");
+  const bracket = $("bracket");
+  const shell = bracket ? bracket.closest(".bracket-shell") : null;
+  const shouldShow = Boolean(
+    shell &&
+    bracket &&
+    control &&
+    range &&
+    currentTournament &&
+    currentTournament.type === "single" &&
+    currentMode !== "hub" &&
+    currentTournament.created
+  );
+
+  if(!shouldShow){
+    if(control) control.classList.add("hidden");
+    document.body.classList.remove("single-sticky-scroll-active");
+    return;
+  }
+
+  const bracketStyleWidth = parseInt(bracket.style.width || "0", 10) || 0;
+  const cssVarWidth = parseInt(bracket.style.props?.["--singleScrollWidth"] || bracket.style.getPropertyValue?.("--singleScrollWidth") || "0", 10) || 0;
+  const realWidth = Math.max(shell.scrollWidth || 0, bracket.scrollWidth || 0, bracketStyleWidth, cssVarWidth, shell.clientWidth + 520);
+  const maxLeft = Math.max(0, realWidth - shell.clientWidth);
+
+  document.body.classList.add("single-sticky-scroll-active");
+  control.classList.remove("hidden");
+  control.style.display = "flex";
+  range.max = String(maxLeft);
+  range.value = String(Math.min(Math.max(0, shell.scrollLeft), maxLeft));
+}
+function bindSingleStickyScrollBar(){
+  const control = $("singleScrollControl");
+  const range = $("singleScrollRange");
+  const leftBtn = $("singleScrollLeftBtn");
+  const rightBtn = $("singleScrollRightBtn");
+  const bracket = $("bracket");
+  const shell = bracket ? bracket.closest(".bracket-shell") : null;
+  if(!control || !range || !shell) return;
+
+  if(control.dataset.bound !== "1"){
+    control.dataset.bound = "1";
+    range.addEventListener("input", () => {
+      const currentShell = $("bracket") ? $("bracket").closest(".bracket-shell") : null;
+      if(!currentShell) return;
+      currentShell.scrollLeft = Number(range.value || 0);
+      syncSingleStickyScrollBar();
+    });
+    if(leftBtn){
+      leftBtn.addEventListener("click", () => {
+        const currentShell = $("bracket") ? $("bracket").closest(".bracket-shell") : null;
+        if(!currentShell) return;
+        currentShell.scrollLeft = Math.max(0, currentShell.scrollLeft - 280);
+        syncSingleStickyScrollBar();
+      });
+    }
+    if(rightBtn){
+      rightBtn.addEventListener("click", () => {
+        const currentShell = $("bracket") ? $("bracket").closest(".bracket-shell") : null;
+        if(!currentShell) return;
+        currentShell.scrollLeft = currentShell.scrollLeft + 280;
+        syncSingleStickyScrollBar();
+      });
+    }
+  }
+
+  if(shell.dataset.stickyBound !== "1"){
+    shell.dataset.stickyBound = "1";
+    shell.addEventListener("scroll", () => {
+      syncSingleStickyScrollBar();
+    });
+  }
+}
+function fitBracketToShell(root, shell, outerWidth, outerHeight, keepScrollLeft = 0, keepScrollTop = 0){
+  if(!root || !shell || !outerWidth || !outerHeight) return;
+  // シングルトーナメントは縮小表示せず、同じ枠内で上下左右スクロールさせる。
+  root.style.transform = "";
+  root.style.width = `${outerWidth}px`;
+  root.style.minWidth = `${outerWidth}px`;
+  root.style.height = `${outerHeight}px`;
+
+  const maxLeft = Math.max(0, shell.scrollWidth - shell.clientWidth);
+  const maxTop = Math.max(0, shell.scrollHeight - shell.clientHeight);
+  shell.scrollLeft = Math.min(Math.max(0, keepScrollLeft), maxLeft);
+  shell.scrollTop = Math.min(Math.max(0, keepScrollTop), maxTop);
+}
+
+function capturePageScroll(){
+  return {
+    x: window.scrollX || window.pageXOffset || 0,
+    y: window.scrollY || window.pageYOffset || 0
+  };
+}
+function restorePageScroll(pos){
+  if(!pos) return;
+  requestAnimationFrame(() => {
+    window.scrollTo(pos.x, pos.y);
+  });
+}
+function renderSingle(){
+  const pageScroll = capturePageScroll();
+  const isAdmin = currentMode === "admin";
+  $("adminPanel").classList.toggle("hidden", !isAdmin);
+  $("singleView").classList.toggle("view-only", !isAdmin);
+  renderParticipants();
+  renderStatus();
+  renderBracket();
+  restorePageScroll(pageScroll);
+}
+
+function init(){
+  store = loadStore();
+  initFirebaseSync();
+  purgeExpiredTournaments();
+  const params = getHashParams();
+  const id = params.get("id");
+  const mode = params.get("mode") || "view";
+  if(id) openTournament(id, mode);
+  else showHub();
+}
+$("createSingleBtn").onclick = () => createTournament("single");
+$("createDoubleBtn").onclick = () => createTournament("double");
+$("hubBtn").onclick = showHub;
+$("addBtn").onclick = addParticipant;
+$("nameInput").addEventListener("keydown", e => { if(e.key === "Enter") addParticipant(); });
+$("buildBtn").onclick = buildTournament;
+$("resetResultsBtn").onclick = resetResults;
+$("shuffleBtn").onclick = shuffleTournament;
+$("deleteBtn").onclick = deleteTournament;
+$("extendDeleteBtn").onclick = extendAutoDelete;
+$("doubleAddBtn").onclick = doubleAddParticipant;
+$("doubleNameInput").addEventListener("keydown", e => { if(e.key === "Enter") doubleAddParticipant(); });
+$("doubleBuildBtn").onclick = doubleBuildTournament;
+$("doubleResetBtn").onclick = () => { if(confirm("ダブルの勝敗をすべてリセットしますか？")) resetDoubleState(true); };
+$("doubleShuffleBtn").onclick = doubleShuffleTournament;
+$("doubleExtendDeleteBtn").onclick = extendAutoDelete;
+$("doubleDeleteBtn").onclick = deleteTournament;
+$("doubleDeleteBtn").onclick = deleteTournament;
+window.addEventListener("hashchange", init);
+document.addEventListener("wheel", (event) => {
+  const shell = event.target.closest ? event.target.closest(".bracket-shell") : null;
+  if(!shell) return;
+  if(Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+  if(event.shiftKey){
+    shell.scrollLeft += event.deltaY;
+    event.preventDefault();
+  }
+}, {passive:false});
+document.addEventListener("click", (event) => {
+  const button = event.target.closest ? event.target.closest("button") : null;
+  if(button && !button.type) button.type = "button";
+});
+window.addEventListener("resize", () => {
+  if(currentTournament && currentTournament.type === "single") renderBracket();
+  syncSingleStickyScrollBar();
+});
+setInterval(() => {
+  const openId = currentTournament ? currentTournament.id : null;
+  purgeExpiredTournaments();
+  if(openId && !store.tournaments.some(t => t.id === openId && t.status !== "削除")){
+    alert("このトーナメントは作成から48時間が経過したため完全削除されました。");
+    showHub();
+  }else if(currentMode === "hub"){
+    renderHub();
+  }else if(currentTournament && currentMode === "admin"){
+    if(currentTournament.type === "double") renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
+    else renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
+  }
+}, 60 * 1000);
+init();
+</script>
+</body>
+</html>
