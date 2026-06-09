@@ -34,6 +34,13 @@ main{padding:16px}
 a{color:inherit}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+#hubView{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
+}
+#hubView > .panel{
+  min-width:0;
+}
 .layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;align-items:start}
 .layout.view-only{
   grid-template-columns:1fr;
@@ -125,6 +132,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .elimination-box{font-size:19px;padding:15px 14px}
   .elimination-label{font-size:22px}
   .elimination-desc{font-size:16px}
+}
+@media(max-width:900px){
+  #hubView{
+    grid-template-columns:1fr;
+  }
 }
 .badge{
   display:inline-flex;
