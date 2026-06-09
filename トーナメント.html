@@ -2003,7 +2003,6 @@ function renderHub(){
         <span class="badge">${typeLabel(t.type)}</span>
         <span class="badge">${escapeHtml(t.status || "開催中")}</span>
         <span class="badge">登録 ${(t.participants || []).length}/64</span>
-        <span class="badge">${expiresAtText(t)}</span>
       </div>
       <div class="row" style="margin-top:8px">
         <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
@@ -2017,6 +2016,7 @@ function renderHub(){
       <div class="row">
         <span class="badge">${typeLabel(t.type)}</span>
         <span class="badge">${escapeHtml(t.status || "開催中")}</span>
+        <span class="badge">${expiresAtText(t)}</span>
       </div>
       <div class="row" style="margin-top:8px">
         <button class="primary" onclick="openAdmin('${t.id}')">管理者用</button>
