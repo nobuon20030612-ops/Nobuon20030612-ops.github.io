@@ -2029,6 +2029,8 @@ function closeEntryModal(){
   entryTargetTournamentId = null;
   $("entryModal").classList.add("hidden");
   $("entryNameInput").value = "";
+  $("entryTeamNameInput").value = "";
+  $("entryTeamMemberInputs").innerHTML = "";
 }
 
 function submitEntryName(){
@@ -2072,7 +2074,6 @@ function submitEntryName(){
   saveStore();
   closeEntryModal();
   renderHub();
-  alert("エントリーを仮保存しました。");
 }
 
 function openEntryManageModal(){
@@ -2218,7 +2219,7 @@ function applyPendingEntries(){
     else renderSingle();
   }
   renderHub();
-  alert(`${applyCount}件を登録に反映しました。`);
+  closeEntryManageModal();
 }
 
 function showHub(){
