@@ -2727,10 +2727,8 @@ function capturePageScroll(){
   };
 }
 function restorePageScroll(pos){
-  if(!pos) return;
-  requestAnimationFrame(() => {
-    window.scrollTo(pos.x, pos.y);
-  });
+  // 登録名クリック後にページ位置を自動移動させない。
+  // トーナメント枠内のスクロール位置は renderBracket / renderDoubleDiagram 側で維持する。
 }
 function renderSingle(){
   const pageScroll = capturePageScroll();
