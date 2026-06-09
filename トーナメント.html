@@ -1505,8 +1505,8 @@ body.single-sticky-scroll-active{
         <p>①個人トーナメント</p>
         <p>②登録は名前のみ</p>
         <p>③同じ名前は登録不可</p>
-        <p>④シングルは1回負けで敗退</p>
-        <p>⑤ダブルは2回負けで敗退</p>
+        <p>④シングル個人は1回負けで敗退</p>
+        <p>⑤ダブル個人は2回負けで敗退</p>
 
         <h3>◇団体トーナメント◇</h3>
         <p>①1チームはメイン7人</p>
@@ -1566,6 +1566,7 @@ body.single-sticky-scroll-active{
         <button id="doubleBuildBtn" class="primary">初回組み合わせ作成</button>
         <button id="doubleResetBtn">勝敗リセット</button>
         <button id="doubleShuffleBtn">シャッフル</button>
+        <button id="doubleSwitchTypeBtn">形式変更</button>
         <button id="doubleEntryManageBtn" class="entry-open-btn">エントリー確認</button>
         <button id="doubleExtendDeleteBtn">自動削除延長</button>
         <button id="doubleDeleteBtn" class="danger">トーナメント削除</button>
@@ -1598,6 +1599,7 @@ body.single-sticky-scroll-active{
         <button id="buildBtn" class="primary">ランダムでトーナメント作成</button>
         <button id="resetResultsBtn">勝敗リセット</button>
         <button id="shuffleBtn">シャッフル</button>
+        <button id="switchTypeBtn">形式変更</button>
         <button id="entryManageBtn" class="entry-open-btn">エントリー確認</button>
         <button id="deleteBtn" class="danger">トーナメント削除</button>
         <button id="extendDeleteBtn">自動削除延長</button>
@@ -2710,6 +2712,38 @@ function finalizeTeamTournamentEntries(tournament){
   return true;
 }
 
+function resetTournamentForTypeSwitch(tournament){
+  tournament.matches = [];
+  tournament.created = false;
+  tournament.doubleState = {
+    participants: {},
+    winnersRounds: [],
+    losersRounds: [],
+    grandFinal: [],
+    roundNumber: 0,
+    championId: null
+  };
+  for(const p of tournament.participants || []){
+    tournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+  }
+}
+function switchTournamentType(){
+  if(currentMode !== "admin" || !currentTournament) return;
+  if(currentTournament.created){
+    alert("トーナメント作成後は形式変更できません。勝敗リセット後に変更してください。");
+    return;
+  }
+  const currentLabel = typeLabel(currentTournament.type);
+  const nextType = currentTournament.type === "double" ? "single" : "double";
+  const nextLabel = typeLabel(nextType);
+  if(!confirm(`${currentLabel}から${nextLabel}へ変更します。\n参加者・チーム・補欠・個人補充は保持します。\nトーナメント表と勝敗データは未作成状態になります。\n変更しますか？`)) return;
+  currentTournament.type = nextType;
+  currentTournament.updatedAt = Date.now();
+  resetTournamentForTypeSwitch(currentTournament);
+  saveTournament();
+  openTournament(currentTournament.id, "admin");
+}
+
 function buildTournament(){
   if(currentMode !== "admin") return;
   if(isTeamTournament(currentTournament) && !finalizeTeamTournamentEntries(currentTournament)) return;
@@ -3543,6 +3577,7 @@ function renderDouble(){
   $("doubleBuildBtn").disabled = currentTournament.participants.length < 2;
   $("doubleResetBtn").disabled = !currentTournament.created;
   if($("doubleEntryManageBtn")) $("doubleEntryManageBtn").disabled = currentTournament.created;
+  if($("doubleSwitchTypeBtn")) $("doubleSwitchTypeBtn").disabled = currentTournament.created;
   renderDoubleParticipants();
   renderDoubleStatusList();
   renderDoubleDiagram();
@@ -3663,6 +3698,7 @@ function renderSingle(){
   $("adminPanel").classList.toggle("hidden", !isAdmin);
   $("singleView").classList.toggle("view-only", !isAdmin);
   if($("entryManageBtn")) $("entryManageBtn").disabled = currentTournament.created;
+  if($("switchTypeBtn")) $("switchTypeBtn").disabled = currentTournament.created;
   renderParticipants();
   renderStatus();
   renderBracket();
@@ -3691,6 +3727,8 @@ $("entryIndividualModeBtn").onclick = () => setEntryMode("individual");
 $("entryTeamModeBtn").onclick = () => setEntryMode("team");
 $("entryManageBtn").onclick = openEntryManageModal;
 $("doubleEntryManageBtn").onclick = openEntryManageModal;
+$("switchTypeBtn").onclick = switchTournamentType;
+$("doubleSwitchTypeBtn").onclick = switchTournamentType;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
 $("entryApplyBtn").onclick = applyPendingEntries;
 $("teamMembersCloseBtn").onclick = closeTeamMembersModal;
