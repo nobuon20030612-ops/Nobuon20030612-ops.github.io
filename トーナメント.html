@@ -1863,6 +1863,16 @@ function pendingEntriesOf(tournament){
   if(!tournament.pendingEntries) tournament.pendingEntries = [];
   return tournament.pendingEntries;
 }
+function normalizeEntryName(name){
+  return String(name || "").trim();
+}
+function hasDuplicateName(tournament, name, exceptPendingId = null){
+  const target = normalizeEntryName(name);
+  if(!target) return false;
+  const participants = tournament.participants || [];
+  if(participants.some(p => normalizeEntryName(p.name) === target)) return true;
+  return pendingEntriesOf(tournament).some(e => e.id !== exceptPendingId && normalizeEntryName(e.name) === target);
+}
 
 function openEntryModal(id){
   const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
@@ -1901,6 +1911,7 @@ function submitEntryName(){
   }
   const name = $("entryNameInput").value.trim();
   if(!name){ alert("名前を入力してください。"); return; }
+  if(hasDuplicateName(tournament, name)){ alert("同じ名前は登録できません。"); return; }
   if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64件までです。"); closeEntryModal(); renderHub(); return; }
   pendingEntriesOf(tournament).push({ id: uid("entry"), name, createdAt: Date.now(), entryStatus: "仮保存" });
   tournament.updatedAt = Date.now();
@@ -1960,12 +1971,19 @@ function applyPendingEntries(){
   if(!entries.length){ alert("仮保存中のエントリーはありません。"); return; }
   const available = MAX_TEAMS - (tournament.participants || []).length;
   if(available <= 0){ alert("登録は最大64件までです。"); return; }
-  const applyList = entries.slice(0, available);
   tournament.participants = tournament.participants || [];
-  for(const e of applyList){
+  const appliedIds = new Set();
+  for(const e of entries){
+    if(appliedIds.size >= available) break;
+    if(hasDuplicateName(tournament, e.name, e.id)){
+      appliedIds.add(e.id);
+      continue;
+    }
     tournament.participants.push({ id: uid("p"), name: e.name, createdAt: Date.now(), fromEntryId: e.id });
+    appliedIds.add(e.id);
   }
-  tournament.pendingEntries = entries.slice(applyList.length);
+  const applyCount = appliedIds.size;
+  tournament.pendingEntries = entries.filter(e => !appliedIds.has(e.id));
   tournament.updatedAt = Date.now();
   saveStore();
   if(currentTournament && currentTournament.id === tournament.id) currentTournament = tournament;
@@ -1975,7 +1993,7 @@ function applyPendingEntries(){
     else renderSingle();
   }
   renderHub();
-  alert(`${applyList.length}件を登録に反映しました。`);
+  alert(`${applyCount}件を登録に反映しました。`);
 }
 
 function showHub(){
@@ -2145,6 +2163,7 @@ function addParticipant(){
   }
   const name = $("nameInput").value.trim();
   if(!name) return;
+  if(hasDuplicateName(currentTournament, name)){ alert("同じ名前は登録できません。"); return; }
   if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
   const p = { id: uid("p"), name, createdAt: Date.now() };
   currentTournament.participants.push(p);
@@ -2538,6 +2557,7 @@ function doubleAddParticipant(){
   const input = $("doubleNameInput");
   const name = input.value.trim();
   if(!name) return;
+  if(hasDuplicateName(currentTournament, name)){ alert("同じ名前は登録できません。"); return; }
   if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
   const p = {id:uid("p"), name, createdAt:Date.now()};
   currentTournament.participants.push(p);
