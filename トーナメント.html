@@ -162,17 +162,17 @@ button:disabled{opacity:.45;cursor:not-allowed}
   font-weight:900;
   font-size:16px;
   border-radius:14px;
-  box-shadow:0 0 18px rgba(98,223,255,.26);
+  color:#fff;
+  text-shadow:0 2px 4px rgba(0,0,0,.70),0 0 10px rgba(255,255,255,.34);
+  box-shadow:0 0 18px rgba(98,223,255,.22), inset 0 1px 0 rgba(255,255,255,.18);
 }
 .mode-btn.single-individual,.mode-btn.double-individual{
-  background:linear-gradient(135deg,#18e7ff,#815cff,#ff4fd8);
-  border-color:#77f2ff;
-  color:#fff;
+  background:linear-gradient(135deg,#064ea8,#6333d8,#9b1abf);
+  border-color:#8fd8ff;
 }
 .mode-btn.single-team,.mode-btn.double-team{
-  background:linear-gradient(135deg,#49ff94,#24d8ff,#7d5cff);
-  border-color:#8cffc4;
-  color:#fff;
+  background:linear-gradient(135deg,#04775d,#087eb3,#3450d8);
+  border-color:#8dffd7;
 }
 .team-incomplete{
   border-color:#ffca4f!important;
@@ -192,6 +192,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
   gap:8px;
   flex-wrap:wrap;
   margin:10px 0;
+}
+.entry-mode-choice button.entry-mode-active{
+  background:linear-gradient(135deg,#ffe66d,#ff7a5c,#e84cff);
+  border-color:#ffe2a8;
+  color:#fffdf4;
+  box-shadow:0 0 18px rgba(255,192,88,.44), inset 0 1px 0 rgba(255,255,255,.22);
+  text-shadow:0 2px 4px rgba(0,0,0,.70);
 }
 .team-members-note{
   color:var(--muted);
@@ -1985,6 +1992,8 @@ function renderEntryTeamMemberInputs(values = [], reserves = []){
 function setEntryMode(mode){
   entryTeamMode = mode;
   const isTeam = mode === "team";
+  $("entryIndividualModeBtn").classList.toggle("entry-mode-active", !isTeam);
+  $("entryTeamModeBtn").classList.toggle("entry-mode-active", isTeam);
   $("entryTeamNameInput").classList.toggle("hidden", !isTeam);
   $("entryTeamMemberInputs").classList.toggle("hidden", !isTeam);
   $("entryNameInput").classList.toggle("hidden", isTeam);
