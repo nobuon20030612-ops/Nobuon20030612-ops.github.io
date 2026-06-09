@@ -1442,6 +1442,7 @@ function mergeTournamentStores(localStore, remoteStore){
   const deletedIds = new Set(loadDeletedTournamentIds());
   const localList = localStore && Array.isArray(localStore.tournaments) ? localStore.tournaments : [];
   const remoteList = remoteStore && Array.isArray(remoteStore.tournaments) ? remoteStore.tournaments : [];
+  const keepFreshLocalOnly = localWriteAt && (Date.now() - localWriteAt < 30000);
 
   for(const t of remoteList){
     if(t && t.id && !deletedIds.has(t.id)) mergedMap.set(t.id, t);
@@ -1450,7 +1451,9 @@ function mergeTournamentStores(localStore, remoteStore){
     if(!localTournament || !localTournament.id || deletedIds.has(localTournament.id)) continue;
     const remoteTournament = mergedMap.get(localTournament.id);
     if(!remoteTournament){
-      mergedMap.set(localTournament.id, localTournament);
+      if(keepFreshLocalOnly){
+        mergedMap.set(localTournament.id, localTournament);
+      }
       continue;
     }
     const localUpdated = Number(localTournament.updatedAt || localTournament.createdAt || 0);
@@ -1507,7 +1510,7 @@ function bindFirebaseStore(){
     const localStore = currentLocalStore();
     const mergedStore = mergeTournamentStores(localStore, remoteStore);
 
-    // Firebase側が空/nullでも、今この端末で作成・追加した大会は消さない。
+    // Firebaseに存在しない古いlocalStorage大会は復活させない。
     firebaseApplyingRemote = true;
     store = mergedStore;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
@@ -1525,7 +1528,7 @@ function bindFirebaseStore(){
     firebaseFirstSnapshotReceived = true;
     firebaseApplyingRemote = false;
 
-    // remoteが古い/空でmergeによりローカルを保持した場合、Firebase側へ再保存して同期を直す。
+    // 作成直後などの新しいローカル変更だけ、Firebase側へ再保存して同期を直す。
     const remoteJson = JSON.stringify(remoteStore);
     const mergedJson = JSON.stringify(mergedStore);
     if(firebaseReady && remoteJson !== mergedJson){
