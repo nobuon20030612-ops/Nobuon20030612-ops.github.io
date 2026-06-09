@@ -2047,6 +2047,7 @@ function submitEntryName(){
     const members = entryTeamMemberValues();
     const reserves = entryTeamReserveValues();
     if(!teamName){ alert("チーム名を入力してください。"); return; }
+    if(!members.length){ alert("メンバー名を1人以上入力してください。"); return; }
     if(hasDuplicateName(tournament, teamName)){ alert("同じ名前は登録できません。"); return; }
     for(const member of members){
       if(hasDuplicateName(tournament, member)){ alert("同じ名前は登録できません。"); return; }
