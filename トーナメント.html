@@ -156,6 +156,55 @@ button:disabled{opacity:.45;cursor:not-allowed}
   text-overflow:ellipsis;
   font-weight:800;
 }
+.mode-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mode-btn{
+  min-height:50px;
+  font-weight:900;
+  font-size:16px;
+  border-radius:14px;
+  box-shadow:0 0 18px rgba(98,223,255,.26);
+}
+.mode-btn.single-individual,.mode-btn.double-individual{
+  background:linear-gradient(135deg,#18e7ff,#815cff,#ff4fd8);
+  border-color:#77f2ff;
+  color:#fff;
+}
+.mode-btn.single-team,.mode-btn.double-team{
+  background:linear-gradient(135deg,#49ff94,#24d8ff,#7d5cff);
+  border-color:#8cffc4;
+  color:#fff;
+}
+.team-incomplete{
+  border-color:#ffca4f!important;
+  background:linear-gradient(180deg,rgba(255,198,79,.20),rgba(255,124,79,.08))!important;
+}
+.team-complete{
+  border-color:#5cf2a0!important;
+}
+.team-member-inputs{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:8px;
+  margin-top:8px;
+}
+.entry-mode-choice{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:10px 0;
+}
+.team-members-note{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  margin-top:4px;
+}
+.team-reserves-note{
+  color:#ffe08a;
+  font-size:12px;
+  line-height:1.45;
+  margin-top:4px;
+}
 .note{color:var(--muted);font-size:13px;line-height:1.55}
 .hidden{display:none!important}
 .list{display:grid;gap:8px}
@@ -1356,9 +1405,11 @@ body.single-sticky-scroll-active{
       <div class="list">
         <input id="titleInput" placeholder="大会名">
         <input id="pinInput" placeholder="管理者パスワード4桁" inputmode="numeric" maxlength="4">
-        <div class="row">
-          <button id="createSingleBtn" class="primary">シングル作成</button>
-          <button id="createDoubleBtn">ダブル作成</button>
+        <div class="mode-buttons">
+          <button id="createSingleIndividualBtn" class="mode-btn single-individual">シングル個人</button>
+          <button id="createSingleTeamBtn" class="mode-btn single-team">シングル団体</button>
+          <button id="createDoubleIndividualBtn" class="mode-btn double-individual">ダブル個人</button>
+          <button id="createDoubleTeamBtn" class="mode-btn double-team">ダブル団体</button>
         </div>
   
       </div>
@@ -1387,8 +1438,14 @@ body.single-sticky-scroll-active{
   <div id="entryModal" class="entry-modal hidden" role="dialog" aria-modal="true">
     <div class="entry-modal-box">
       <div id="entryModalTitle" class="entry-modal-title">エントリー受付</div>
-      <p class="note">参加する名前を入力してください。ランダムトーナメント作成後はエントリーできません。</p>
+      <p id="entryModalNote" class="note">参加する名前を入力してください。ランダムトーナメント作成後はエントリーできません。</p>
+      <div id="entryModeChoice" class="entry-mode-choice hidden">
+        <button id="entryIndividualModeBtn" class="ghost" type="button">個人でエントリー</button>
+        <button id="entryTeamModeBtn" class="ghost" type="button">チームでエントリー</button>
+      </div>
+      <input id="entryTeamNameInput" class="hidden" maxlength="40" placeholder="チーム名">
       <input id="entryNameInput" maxlength="40" placeholder="名前を入力">
+      <div id="entryTeamMemberInputs" class="team-member-inputs hidden"></div>
       <div class="entry-modal-actions">
         <button id="entrySubmitBtn" class="primary" type="button">仮保存する</button>
         <button id="entryCancelBtn" class="ghost" type="button">キャンセル</button>
@@ -1663,7 +1720,7 @@ function refreshCurrentView(){
     return;
   }
   setHash(currentTournament.id, currentMode);
-  $("mainTitle").textContent = currentTournament.title + "｜" + typeLabel(currentTournament.type);
+  $("mainTitle").textContent = currentTournament.title + "｜" + tournamentFullLabel(currentTournament);
   if(currentTournament.type === "double"){
     showOnly("doubleView");
     renderDouble();
@@ -1766,6 +1823,23 @@ function saveTournament(){
   saveStore();
 }
 function typeLabel(type){ return type === "double" ? "ダブル" : "シングル"; }
+function entryKindLabel(tournament){ return tournament && tournament.entryKind === "team" ? "団体" : "個人"; }
+function tournamentFullLabel(tournament){ return `${typeLabel(tournament.type)}${entryKindLabel(tournament)}`; }
+function isTeamTournament(tournament){ return tournament && tournament.entryKind === "team"; }
+function isTeamObject(p){ return p && p.entryType === "team"; }
+function teamMemberCount(team){ return (team && Array.isArray(team.members)) ? team.members.filter(n => String(n || "").trim()).length : 0; }
+function teamReserveValues(team){ return (team && Array.isArray(team.reserves)) ? team.reserves.filter(n => String(n || "").trim()).slice(0,2) : []; }
+function teamReserveText(team){ const reserves = teamReserveValues(team); return reserves.length ? `補欠：${reserves.map(escapeHtml).join(" / ")}` : "補欠：なし"; }
+function teamStatusText(team){ return isTeamObject(team) ? `${teamMemberCount(team)}/7人` : "個人"; }
+function teamDisplayName(p){
+  if(!isTeamObject(p)) return p ? p.name : "";
+  return `${p.name}（${teamMemberCount(p)}/7人）`;
+}
+function ensureEntryBuckets(tournament){
+  if(!tournament.pendingEntries) tournament.pendingEntries = [];
+  if(!tournament.individualEntries) tournament.individualEntries = [];
+  return tournament;
+}
 function showOnly(viewId){
   ["hubView","singleView","doubleView"].forEach(id => $(id).classList.toggle("hidden", id !== viewId));
   const hubBtn = $("hubBtn");
@@ -1786,7 +1860,7 @@ function getHashParams(){
   return new URLSearchParams(raw);
 }
 
-function createTournament(type){
+function createTournament(type, entryKind = "individual"){
   const title = $("titleInput").value.trim();
   const pin = $("pinInput").value.trim();
   if(!title){ alert("大会名を入力してください。"); return; }
@@ -1796,12 +1870,15 @@ function createTournament(type){
     id: uid("t"),
     title,
     type,
+    entryKind,
     adminPin: pin,
     status: "開催中",
     createdAt: now,
     updatedAt: now,
     autoDeleteAt: now + TOURNAMENT_EXPIRE_MS,
     participants: [],
+    pendingEntries: [],
+    individualEntries: [],
     matches: [],
     created: false,
     doubleState: {
@@ -1845,7 +1922,7 @@ function openTournament(id, mode){
   currentTournament = tournament;
   currentMode = mode;
   setHash(id, mode);
-  $("mainTitle").textContent = tournament.title + "｜" + typeLabel(tournament.type);
+  $("mainTitle").textContent = tournament.title + "｜" + tournamentFullLabel(tournament);
 
   if(tournament.type === "double"){
     showOnly("doubleView");
@@ -1869,9 +1946,49 @@ function normalizeEntryName(name){
 function hasDuplicateName(tournament, name, exceptPendingId = null){
   const target = normalizeEntryName(name);
   if(!target) return false;
+  ensureEntryBuckets(tournament);
   const participants = tournament.participants || [];
   if(participants.some(p => normalizeEntryName(p.name) === target)) return true;
-  return pendingEntriesOf(tournament).some(e => e.id !== exceptPendingId && normalizeEntryName(e.name) === target);
+  if((tournament.individualEntries || []).some(e => normalizeEntryName(e.name) === target)) return true;
+  for(const p of participants){
+    if(isTeamObject(p) && (p.members || []).some(m => normalizeEntryName(m) === target)) return true;
+    if(isTeamObject(p) && (p.reserves || []).some(m => normalizeEntryName(m) === target)) return true;
+  }
+  return pendingEntriesOf(tournament).some(e => e.id !== exceptPendingId && (
+    normalizeEntryName(e.name) === target ||
+    normalizeEntryName(e.teamName) === target ||
+    (e.members || []).some(m => normalizeEntryName(m) === target) ||
+    (e.reserves || []).some(m => normalizeEntryName(m) === target)
+  ));
+}
+
+let entryTeamMode = "individual";
+
+function entryTeamMemberValues(){
+  return Array.from({length:7}, (_,i) => {
+    const el = $(`entryMember${i+1}`);
+    return el ? el.value.trim() : "";
+  }).filter(Boolean);
+}
+function entryTeamReserveValues(){
+  return Array.from({length:2}, (_,i) => {
+    const el = $(`entryReserve${i+1}`);
+    return el ? el.value.trim() : "";
+  }).filter(Boolean);
+}
+function renderEntryTeamMemberInputs(values = [], reserves = []){
+  const box = $("entryTeamMemberInputs");
+  const memberInputs = Array.from({length:7}, (_,i) => `<input id="entryMember${i+1}" maxlength="40" placeholder="メンバー${i+1}" value="${escapeHtml(values[i] || "")}">`).join("");
+  const reserveInputs = Array.from({length:2}, (_,i) => `<input id="entryReserve${i+1}" maxlength="40" placeholder="補欠${i+1}（任意）" value="${escapeHtml(reserves[i] || "")}">`).join("");
+  box.innerHTML = memberInputs + reserveInputs;
+}
+function setEntryMode(mode){
+  entryTeamMode = mode;
+  const isTeam = mode === "team";
+  $("entryTeamNameInput").classList.toggle("hidden", !isTeam);
+  $("entryTeamMemberInputs").classList.toggle("hidden", !isTeam);
+  $("entryNameInput").classList.toggle("hidden", isTeam);
+  if(isTeam) renderEntryTeamMemberInputs();
 }
 
 function openEntryModal(id){
@@ -1882,15 +1999,21 @@ function openEntryModal(id){
     renderHub();
     return;
   }
-  if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){
-    alert("登録は最大64件までです。");
+  ensureEntryBuckets(tournament);
+  if((tournament.participants || []).length >= MAX_TEAMS){
+    alert(isTeamTournament(tournament) ? "登録は最大64チームまでです。" : "登録は最大64件までです。");
     return;
   }
   entryTargetTournamentId = id;
   $("entryModalTitle").textContent = `${tournament.title}｜エントリー受付`;
   $("entryNameInput").value = "";
+  $("entryTeamNameInput").value = "";
+  $("entryModeChoice").classList.toggle("hidden", !isTeamTournament(tournament));
+  $("entryModalNote").textContent = isTeamTournament(tournament) ? "チーム登録、または補充用の個人エントリーができます。" : "参加する名前を入力してください。ランダムトーナメント作成後はエントリーできません。";
+  setEntryMode(isTeamTournament(tournament) ? "team" : "individual");
   $("entryModal").classList.remove("hidden");
-  $("entryNameInput").focus();
+  if(isTeamTournament(tournament)) $("entryTeamNameInput").focus();
+  else $("entryNameInput").focus();
 }
 
 function closeEntryModal(){
@@ -1903,17 +2026,38 @@ function submitEntryName(){
   if(!entryTargetTournamentId) return;
   const tournament = store.tournaments.find(t => t.id === entryTargetTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); closeEntryModal(); renderHub(); return; }
+  ensureEntryBuckets(tournament);
   if(tournament.created){
     alert("ランダムトーナメント作成後はエントリーできません。");
     closeEntryModal();
     renderHub();
     return;
   }
-  const name = $("entryNameInput").value.trim();
-  if(!name){ alert("名前を入力してください。"); return; }
-  if(hasDuplicateName(tournament, name)){ alert("同じ名前は登録できません。"); return; }
-  if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64件までです。"); closeEntryModal(); renderHub(); return; }
-  pendingEntriesOf(tournament).push({ id: uid("entry"), name, createdAt: Date.now(), entryStatus: "仮保存" });
+  if(isTeamTournament(tournament) && entryTeamMode === "team"){
+    const teamName = $("entryTeamNameInput").value.trim();
+    const members = entryTeamMemberValues();
+    const reserves = entryTeamReserveValues();
+    if(!teamName){ alert("チーム名を入力してください。"); return; }
+    if(hasDuplicateName(tournament, teamName)){ alert("同じ名前は登録できません。"); return; }
+    for(const member of members){
+      if(hasDuplicateName(tournament, member)){ alert("同じ名前は登録できません。"); return; }
+    }
+    for(const reserve of reserves){
+      if(hasDuplicateName(tournament, reserve)){ alert("同じ名前は登録できません。"); return; }
+    }
+    if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64チームまでです。"); closeEntryModal(); renderHub(); return; }
+    pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"team", teamName, name: teamName, members, reserves, createdAt: Date.now(), entryStatus: "仮保存" });
+  }else{
+    const name = $("entryNameInput").value.trim();
+    if(!name){ alert("名前を入力してください。"); return; }
+    if(hasDuplicateName(tournament, name)){ alert("同じ名前は登録できません。"); return; }
+    if(isTeamTournament(tournament)){
+      tournament.individualEntries.push({ id: uid("solo"), name, createdAt: Date.now(), entryStatus: "個人仮保存" });
+    }else{
+      if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64件までです。"); closeEntryModal(); renderHub(); return; }
+      pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"individual", name, createdAt: Date.now(), entryStatus: "仮保存" });
+    }
+  }
   tournament.updatedAt = Date.now();
   saveStore();
   closeEntryModal();
@@ -1933,24 +2077,53 @@ function closeEntryManageModal(){
   $("entryManageModal").classList.add("hidden");
 }
 
+function entrySummary(e){
+  if(e.entryType === "team") return `${escapeHtml(e.teamName || e.name)}｜${teamMemberCount(e)}/7人｜補欠 ${teamReserveValues(e).length}/2人`;
+  return escapeHtml(e.name);
+}
+function renderTeamParticipantRow(p, index){
+  const cls = teamMemberCount(p) < 7 ? "participant team-incomplete" : "participant team-complete";
+  const members = (p.members || []).filter(Boolean).map(escapeHtml).join(" / ");
+  const reserves = teamReserveValues(p).map(escapeHtml).join(" / ");
+  return `<div class="${cls}">
+    <div class="participant-name">${index + 1}. ${escapeHtml(p.name)} <span class="badge">${teamMemberCount(p)}/7人</span><span class="badge">補欠 ${teamReserveValues(p).length}/2人</span><div class="team-members-note">${members || "メンバー未登録"}</div><div class="team-reserves-note">${reserves ? "補欠：" + reserves : "補欠：なし"}</div></div>
+    <div class="row"><button class="small" type="button" onclick="editTeamParticipant('${p.id}')">変更</button><button class="small danger" type="button" onclick="removeParticipant('${p.id}')">削除</button></div>
+  </div>`;
+}
+function renderIndividualEntryRow(e, index){
+  return `<div class="participant">
+    <div class="participant-name">個人${index + 1}. ${escapeHtml(e.name)}</div>
+    <div class="row"><button class="small" type="button" onclick="editIndividualEntry('${e.id}')">変更</button><button class="small danger" type="button" onclick="deleteIndividualEntry('${e.id}')">削除</button></div>
+  </div>`;
+}
+
 function renderEntryManageList(){
   const tournament = store.tournaments.find(t => t.id === entryManageTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
   const box = $("entryManageList");
   if(!tournament){ box.innerHTML = '<div class="note">トーナメントが見つかりません。</div>'; return; }
+  ensureEntryBuckets(tournament);
   $("entryManageTitle").textContent = `${tournament.title}｜エントリー仮保存一覧`;
   const entries = pendingEntriesOf(tournament);
-  if(!entries.length){
+  const individualEntries = tournament.individualEntries || [];
+  if(!entries.length && !individualEntries.length){
     box.innerHTML = '<div class="note">仮保存中のエントリーはありません。</div>';
     $("entryApplyBtn").disabled = true;
     return;
   }
   $("entryApplyBtn").disabled = tournament.created;
-  box.innerHTML = entries.map(e => `
-    <div class="entry-row">
-      <div class="entry-row-name">${escapeHtml(e.name)}</div>
+  const pendingHtml = entries.map(e => `
+    <div class="entry-row ${e.entryType === "team" && teamMemberCount(e) < 7 ? "team-incomplete" : ""}">
+      <div class="entry-row-name">${entrySummary(e)}</div>
       <button class="small danger" type="button" onclick="deletePendingEntry('${e.id}')">削除</button>
     </div>
   `).join("");
+  const individualHtml = isTeamTournament(tournament) ? individualEntries.map(e => `
+    <div class="entry-row">
+      <div class="entry-row-name">個人補充：${escapeHtml(e.name)}</div>
+      <button class="small danger" type="button" onclick="deleteIndividualEntry('${e.id}')">削除</button>
+    </div>
+  `).join("") : "";
+  box.innerHTML = pendingHtml + individualHtml;
 }
 
 function deletePendingEntry(entryId){
@@ -1962,27 +2135,69 @@ function deletePendingEntry(entryId){
   renderEntryManageList();
   renderHub();
 }
+function deleteIndividualEntry(entryId){
+  const tournament = store.tournaments.find(t => t.id === (entryManageTournamentId || (currentTournament && currentTournament.id)) && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament) return;
+  tournament.individualEntries = (tournament.individualEntries || []).filter(e => e.id !== entryId);
+  tournament.updatedAt = Date.now();
+  saveStore();
+  renderEntryManageList();
+  if(currentTournament && currentTournament.id === tournament.id){
+    if(currentTournament.type === "double") renderDouble();
+    else renderSingle();
+  }
+  renderHub();
+}
+function editIndividualEntry(entryId){
+  const tournament = currentTournament;
+  if(!tournament) return;
+  const entry = (tournament.individualEntries || []).find(e => e.id === entryId);
+  if(!entry) return;
+  const name = prompt("個人名を変更してください。", entry.name);
+  if(name === null) return;
+  const nextName = name.trim();
+  if(!nextName) return;
+  if(hasDuplicateName(tournament, nextName)){ alert("同じ名前は登録できません。"); return; }
+  entry.name = nextName;
+  tournament.updatedAt = Date.now();
+  saveTournament();
+  if(tournament.type === "double") renderDouble();
+  else renderSingle();
+}
 
 function applyPendingEntries(){
   const tournament = store.tournaments.find(t => t.id === entryManageTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); closeEntryManageModal(); return; }
+  ensureEntryBuckets(tournament);
   if(tournament.created){ alert("ランダムトーナメント作成後は登録に反映できません。"); renderEntryManageList(); return; }
   const entries = pendingEntriesOf(tournament);
-  if(!entries.length){ alert("仮保存中のエントリーはありません。"); return; }
-  const available = MAX_TEAMS - (tournament.participants || []).length;
-  if(available <= 0){ alert("登録は最大64件までです。"); return; }
+  if(!entries.length && !(tournament.individualEntries || []).length){ alert("仮保存中のエントリーはありません。"); return; }
   tournament.participants = tournament.participants || [];
   const appliedIds = new Set();
+  let applyCount = 0;
   for(const e of entries){
-    if(appliedIds.size >= available) break;
-    if(hasDuplicateName(tournament, e.name, e.id)){
+    if(isTeamTournament(tournament)){
+      if(e.entryType === "team"){
+        if((tournament.participants || []).length >= MAX_TEAMS) break;
+        if(hasDuplicateName(tournament, e.teamName || e.name, e.id)){ appliedIds.add(e.id); continue; }
+        tournament.participants.push({ id: uid("p"), entryType:"team", name:e.teamName || e.name, members:(e.members || []).slice(0,7), reserves:(e.reserves || []).slice(0,2), createdAt:Date.now(), fromEntryId:e.id });
+        appliedIds.add(e.id);
+        applyCount++;
+      }else{
+        if(!hasDuplicateName(tournament, e.name, e.id)){
+          tournament.individualEntries.push({ id: uid("solo"), name:e.name, createdAt:Date.now(), fromEntryId:e.id });
+          applyCount++;
+        }
+        appliedIds.add(e.id);
+      }
+    }else{
+      if((tournament.participants || []).length >= MAX_TEAMS) break;
+      if(hasDuplicateName(tournament, e.name, e.id)){ appliedIds.add(e.id); continue; }
+      tournament.participants.push({ id: uid("p"), name: e.name, createdAt: Date.now(), fromEntryId: e.id });
       appliedIds.add(e.id);
-      continue;
+      applyCount++;
     }
-    tournament.participants.push({ id: uid("p"), name: e.name, createdAt: Date.now(), fromEntryId: e.id });
-    appliedIds.add(e.id);
   }
-  const applyCount = appliedIds.size;
   tournament.pendingEntries = entries.filter(e => !appliedIds.has(e.id));
   tournament.updatedAt = Date.now();
   saveStore();
@@ -2018,9 +2233,9 @@ function renderHub(){
     <div class="card">
       <div class="card-title">${escapeHtml(t.title)}</div>
       <div class="row">
-        <span class="badge">${typeLabel(t.type)}</span>
+        <span class="badge">${tournamentFullLabel(t)}</span>
         <span class="badge">${escapeHtml(t.status || "開催中")}</span>
-        <span class="badge">登録 ${(t.participants || []).length}/64</span>
+        <span class="badge">登録 ${(t.participants || []).length}/64${isTeamTournament(t) ? `・個人 ${(t.individualEntries || []).length}人` : ""}</span>
       </div>
       <div class="row" style="margin-top:8px">
         <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
@@ -2032,7 +2247,7 @@ function renderHub(){
     <div class="card">
       <div class="card-title">${escapeHtml(t.title)}</div>
       <div class="row">
-        <span class="badge">${typeLabel(t.type)}</span>
+        <span class="badge">${tournamentFullLabel(t)}</span>
         <span class="badge">${escapeHtml(t.status || "開催中")}</span>
         <span class="badge">${expiresAtText(t)}</span>
       </div>
@@ -2164,6 +2379,24 @@ function addParticipant(){
   const name = $("nameInput").value.trim();
   if(!name) return;
   if(hasDuplicateName(currentTournament, name)){ alert("同じ名前は登録できません。"); return; }
+  if(isTeamTournament(currentTournament)){
+    if(confirm("チームとして登録しますか？\nOK=チーム登録 / キャンセル=個人登録")){
+      if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64チームまでです。"); return; }
+      const raw = prompt("メンバー名をカンマ区切りで入力してください。7人未満でも登録できます。", "");
+      const members = raw === null ? [] : raw.split(",").map(v => v.trim()).filter(Boolean).slice(0,7);
+      const reserveRaw = prompt("補欠名をカンマ区切りで入力してください。最大2人、任意です。", "");
+      const reserves = reserveRaw === null ? [] : reserveRaw.split(",").map(v => v.trim()).filter(Boolean).slice(0,2);
+      const p = { id: uid("p"), entryType:"team", name, members, reserves, createdAt: Date.now() };
+      currentTournament.participants.push(p);
+    }else{
+      currentTournament.individualEntries = currentTournament.individualEntries || [];
+      currentTournament.individualEntries.push({ id: uid("solo"), name, createdAt: Date.now() });
+    }
+    $("nameInput").value = "";
+    saveTournament();
+    renderSingle();
+    return;
+  }
   if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
   const p = { id: uid("p"), name, createdAt: Date.now() };
   currentTournament.participants.push(p);
@@ -2191,6 +2424,26 @@ function insertParticipantIntoBye(participantId){
     }
   }
 }
+function editTeamParticipant(id){
+  if(currentMode !== "admin" || !currentTournament) return;
+  const team = currentTournament.participants.find(p => p.id === id);
+  if(!team || !isTeamObject(team)) return;
+  const nextName = prompt("チーム名を変更してください。", team.name);
+  if(nextName === null) return;
+  const teamName = nextName.trim();
+  if(!teamName) return;
+  const raw = prompt("メンバー名をカンマ区切りで入力してください。7人未満でも登録できます。", (team.members || []).join(","));
+  if(raw === null) return;
+  const reserveRaw = prompt("補欠名をカンマ区切りで入力してください。最大2人、任意です。", (team.reserves || []).join(","));
+  if(reserveRaw === null) return;
+  team.name = teamName;
+  team.members = raw.split(",").map(v => v.trim()).filter(Boolean).slice(0,7);
+  team.reserves = reserveRaw.split(",").map(v => v.trim()).filter(Boolean).slice(0,2);
+  saveTournament();
+  if(currentTournament.type === "double") renderDouble();
+  else renderSingle();
+}
+
 function removeParticipant(id){
   if(currentMode !== "admin") return;
   if(!confirm("この登録名を削除しますか？ 関連する勝敗もリセットされます。")) return;
@@ -2223,9 +2476,39 @@ function rebuildProgressFromCurrentFirstRound(){
   }
   autoAdvanceFirstRoundByes();
 }
+function finalizeTeamTournamentEntries(tournament){
+  if(!isTeamTournament(tournament)) return true;
+  ensureEntryBuckets(tournament);
+  const teams = (tournament.participants || []).filter(isTeamObject);
+  const individuals = shuffle((tournament.individualEntries || []).slice());
+  for(const team of teams){
+    team.members = (team.members || []).filter(Boolean).slice(0,7);
+    team.reserves = (team.reserves || []).filter(Boolean).slice(0,2);
+    while(team.members.length < 7 && individuals.length){
+      team.members.push(individuals.shift().name);
+    }
+    if(team.members.length < 7){
+      alert(`7人未満のチームがあります：${team.name}（${team.members.length}/7人）`);
+      return false;
+    }
+  }
+  while(individuals.length >= 7){
+    const members = individuals.splice(0,7).map(e => e.name);
+    teams.push({ id: uid("p"), entryType:"team", name:`ランダムチーム${teams.length + 1}`, members, reserves:[], createdAt:Date.now(), autoTeam:true });
+  }
+  if(individuals.length){
+    alert(`7人チームにできない個人登録が${individuals.length}人残っています。`);
+    return false;
+  }
+  tournament.participants = teams;
+  tournament.individualEntries = [];
+  return true;
+}
+
 function buildTournament(){
   if(currentMode !== "admin") return;
-  if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
+  if(isTeamTournament(currentTournament) && !finalizeTeamTournamentEntries(currentTournament)) return;
+  if(currentTournament.participants.length < 2){ alert(isTeamTournament(currentTournament) ? "登録チームを2件以上にしてください。" : "登録名を2件以上入力してください。"); return; }
   const entryIds = shuffle(currentTournament.participants.map(p => p.id));
   const firstRoundPairs = balancedFirstRoundPairs(entryIds);
   currentTournament.matches = makeEmptyMatches();
@@ -2359,11 +2642,22 @@ function renderParticipants(){
   box.innerHTML = "";
   currentTournament.participants.forEach((p,i) => {
     const row = document.createElement("div");
-    row.className = "participant";
-    row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
-    row.querySelector("button").onclick = () => removeParticipant(p.id);
+    if(isTeamTournament(currentTournament) && isTeamObject(p)){
+      row.innerHTML = renderTeamParticipantRow(p, i);
+    }else{
+      row.className = "participant";
+      row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
+      row.querySelector("button").onclick = () => removeParticipant(p.id);
+    }
     box.appendChild(row);
   });
+  if(isTeamTournament(currentTournament)){
+    (currentTournament.individualEntries || []).forEach((e,i) => {
+      const row = document.createElement("div");
+      row.innerHTML = renderIndividualEntryRow(e, i);
+      box.appendChild(row);
+    });
+  }
 }
 function renderStatus(){
   const count = currentTournament.participants.length;
@@ -2559,6 +2853,25 @@ function doubleAddParticipant(){
   const name = input.value.trim();
   if(!name) return;
   if(hasDuplicateName(currentTournament, name)){ alert("同じ名前は登録できません。"); return; }
+  if(isTeamTournament(currentTournament)){
+    if(confirm("チームとして登録しますか？\nOK=チーム登録 / キャンセル=個人登録")){
+      if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64チームまでです。"); return; }
+      const raw = prompt("メンバー名をカンマ区切りで入力してください。7人未満でも登録できます。", "");
+      const members = raw === null ? [] : raw.split(",").map(v => v.trim()).filter(Boolean).slice(0,7);
+      const reserveRaw = prompt("補欠名をカンマ区切りで入力してください。最大2人、任意です。", "");
+      const reserves = reserveRaw === null ? [] : reserveRaw.split(",").map(v => v.trim()).filter(Boolean).slice(0,2);
+      const p = {id:uid("p"), entryType:"team", name, members, reserves, createdAt:Date.now()};
+      currentTournament.participants.push(p);
+      currentTournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+    }else{
+      currentTournament.individualEntries = currentTournament.individualEntries || [];
+      currentTournament.individualEntries.push({ id: uid("solo"), name, createdAt: Date.now() });
+    }
+    input.value = "";
+    saveTournament();
+    renderDouble();
+    return;
+  }
   if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
   const p = {id:uid("p"), name, createdAt:Date.now()};
   currentTournament.participants.push(p);
@@ -2597,7 +2910,8 @@ function resetDoubleState(keepRender = true){
 function doubleBuildTournament(){
   if(currentMode !== "admin") return;
   ensureDoubleState();
-  if(currentTournament.participants.length < 2){ alert("登録名を2件以上入力してください。"); return; }
+  if(isTeamTournament(currentTournament) && !finalizeTeamTournamentEntries(currentTournament)) return;
+  if(currentTournament.participants.length < 2){ alert(isTeamTournament(currentTournament) ? "登録チームを2件以上にしてください。" : "登録名を2件以上入力してください。"); return; }
   resetDoubleState(false);
   const ids = shuffle(currentTournament.participants.map(p => p.id));
   const firstMatches = doublePair(ids);
@@ -2777,11 +3091,22 @@ function renderDoubleParticipants(){
   box.innerHTML = "";
   currentTournament.participants.forEach((p,i) => {
     const row = document.createElement("div");
-    row.className = "participant";
-    row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
-    row.querySelector("button").onclick = () => doubleRemoveParticipant(p.id);
+    if(isTeamTournament(currentTournament) && isTeamObject(p)){
+      row.innerHTML = renderTeamParticipantRow(p, i);
+    }else{
+      row.className = "participant";
+      row.innerHTML = `<div class="participant-name">${i + 1}. ${escapeHtml(p.name)}</div><button class="small danger" type="button">削除</button>`;
+      row.querySelector("button").onclick = () => doubleRemoveParticipant(p.id);
+    }
     box.appendChild(row);
   });
+  if(isTeamTournament(currentTournament)){
+    (currentTournament.individualEntries || []).forEach((e,i) => {
+      const row = document.createElement("div");
+      row.innerHTML = renderIndividualEntryRow(e, i);
+      box.appendChild(row);
+    });
+  }
 }
 function renderDoubleStatusList(){
   ensureDoubleState();
@@ -3137,12 +3462,16 @@ function init(){
   if(id) openTournament(id, mode);
   else showHub();
 }
-$("createSingleBtn").onclick = () => createTournament("single");
-$("createDoubleBtn").onclick = () => createTournament("double");
+$("createSingleIndividualBtn").onclick = () => createTournament("single", "individual");
+$("createSingleTeamBtn").onclick = () => createTournament("single", "team");
+$("createDoubleIndividualBtn").onclick = () => createTournament("double", "individual");
+$("createDoubleTeamBtn").onclick = () => createTournament("double", "team");
 $("hubBtn").onclick = showHub;
 $("entrySubmitBtn").onclick = submitEntryName;
 $("entryCancelBtn").onclick = closeEntryModal;
 $("entryNameInput").addEventListener("keydown", e => { if(e.key === "Enter") submitEntryName(); });
+$("entryIndividualModeBtn").onclick = () => setEntryMode("individual");
+$("entryTeamModeBtn").onclick = () => setEntryMode("team");
 $("entryManageBtn").onclick = openEntryManageModal;
 $("doubleEntryManageBtn").onclick = openEntryManageModal;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
