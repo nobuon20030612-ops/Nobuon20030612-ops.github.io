@@ -212,6 +212,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
   line-height:1.45;
   margin-top:4px;
 }
+.manual-open-btn{
+  margin-left:auto;
+  background:linear-gradient(135deg,#ff2f5f,#ff6b35,#ffcf4a);
+  border-color:#ffd0a0;
+  color:#fffdf4;
+  font-weight:900;
+  box-shadow:0 0 18px rgba(255,74,94,.42), inset 0 1px 0 rgba(255,255,255,.22);
+  text-shadow:0 2px 4px rgba(0,0,0,.65);
+}
+.manual-body{
+  max-height:70vh;
+  overflow:auto;
+  display:grid;
+  gap:8px;
+  line-height:1.6;
+}
+.manual-body h3{
+  margin:10px 0 2px;
+  color:#ffe66d;
+}
+.manual-body p{
+  margin:0;
+  color:#f6fbff;
+}
 .note{color:var(--muted);font-size:13px;line-height:1.55}
 .hidden{display:none!important}
 .list{display:grid;gap:8px}
@@ -1402,6 +1426,7 @@ body.single-sticky-scroll-active{
     <a class="btn ghost" href="../index.html">トップへ戻る</a>
     <button id="hubBtn" class="ghost">トーナメント一覧</button>
     <div id="headerAutoDeleteBadge" class="admin-auto-delete-badge header-auto-delete-badge hidden"></div>
+    <button id="manualBtn" class="manual-open-btn hidden" type="button">説明書</button>
   </div>
 </header>
 
@@ -1468,6 +1493,55 @@ body.single-sticky-scroll-active{
       <div class="entry-modal-actions">
         <button id="entryApplyBtn" class="primary" type="button">登録に反映</button>
         <button id="entryManageCloseBtn" class="ghost" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="manualModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div class="entry-modal-title">管理者様へ説明書</div>
+      <div class="manual-body">
+        <h3>◇トーナメント種類◇</h3>
+        <p>①個人トーナメント</p>
+        <p>②登録は名前のみ</p>
+        <p>③同じ名前は登録不可</p>
+        <p>④シングル個人は1回負けで敗退</p>
+        <p>⑤ダブル個人は2回負けで敗退</p>
+
+        <h3>◇団体トーナメント◇</h3>
+        <p>①1チームはメイン7人</p>
+        <p>②補欠は別枠で最大2人</p>
+        <p>③補欠は7人判定に含めない</p>
+        <p>④補欠はランダム補充に使わない</p>
+        <p>⑤7人未満チームは色を変えて表示</p>
+        <p>⑥7人未満チームがある場合、トーナメント組み合わせ作成不可</p>
+        <p>⑦7人未満チームの既存メンバーは据え置き</p>
+        <p>⑧不足分だけ個人登録からランダム補充</p>
+        <p>⑨個人が7人余ればランダムチーム化</p>
+        <p>➉7人チームにできない個人が残る場合はトーナメント作成不可</p>
+
+        <h3>◇エントリー受付◇</h3>
+        <p>①閲覧側からエントリー受付可能</p>
+        <p>②個人でエントリー</p>
+        <p>③チームでエントリー</p>
+        <p>④チーム名だけでは登録不可</p>
+        <p>⑤チーム登録はメンバー1人以上必須</p>
+        <p>⑥エントリーはまず仮保存</p>
+        <p>⑦管理側で確認後、登録に反映</p>
+        <p>⑧不要な仮保存登録は削除可能</p>
+
+        <h3>◇管理者用◇</h3>
+        <p>①管理者用追加もエントリーと同じ画面</p>
+        <p>②管理者追加は仮保存ではなく直接登録</p>
+        <p>③チーム変更もエントリーと同じ画面</p>
+        <p>④チーム名・メンバー7人・補欠2人を変更可能</p>
+        <p>⑤勝敗リセットでエントリー受付ボタン復活</p>
+
+        <h3>◇閲覧ページ◇</h3>
+        <p>①団体のみ、チーム名クリックでメンバー一覧表示</p>
+      </div>
+      <div class="entry-modal-actions">
+        <button id="manualCloseBtn" class="ghost" type="button">閉じる</button>
       </div>
     </div>
   </div>
@@ -1859,6 +1933,8 @@ function showOnly(viewId){
   ["hubView","singleView","doubleView"].forEach(id => $(id).classList.toggle("hidden", id !== viewId));
   const hubBtn = $("hubBtn");
   if(hubBtn) hubBtn.classList.toggle("hidden", viewId === "hubView");
+  const manualBtn = $("manualBtn");
+  if(manualBtn) manualBtn.classList.toggle("hidden", currentMode !== "admin");
   if(viewId !== "singleView") syncSingleStickyScrollBar();
   if(viewId === "hubView") renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
 }
@@ -2406,6 +2482,12 @@ function closeTeamMembersModal(){
   $("teamMembersModal").classList.add("hidden");
   $("teamMembersTitle").textContent = "メンバー一覧";
   $("teamMembersBody").innerHTML = "";
+}
+function openManualModal(){
+  $("manualModal").classList.remove("hidden");
+}
+function closeManualModal(){
+  $("manualModal").classList.add("hidden");
 }
 function findMatch(id){ return currentTournament.matches.find(m => m.id === id) || null; }
 function getNextMatch(match){ return currentTournament.matches.find(m => m.round === match.round + 1 && Math.ceil(match.index / 2) === m.index) || null; }
@@ -3612,6 +3694,8 @@ $("doubleEntryManageBtn").onclick = openEntryManageModal;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
 $("entryApplyBtn").onclick = applyPendingEntries;
 $("teamMembersCloseBtn").onclick = closeTeamMembersModal;
+$("manualBtn").onclick = openManualModal;
+$("manualCloseBtn").onclick = closeManualModal;
 $("addBtn").onclick = () => { if(currentTournament) openEntryModal(currentTournament.id, true); };
 $("buildBtn").onclick = buildTournament;
 $("resetResultsBtn").onclick = resetResults;
