@@ -1343,7 +1343,39 @@ let localWriteAt = 0;
 function normalizeStore(value){
   return value && Array.isArray(value.tournaments) ? value : { tournaments: [] };
 }
+
+function mergeTournamentStores(localStore, remoteStore){
+  const mergedMap = new Map();
+  const localList = localStore && Array.isArray(localStore.tournaments) ? localStore.tournaments : [];
+  const remoteList = remoteStore && Array.isArray(remoteStore.tournaments) ? remoteStore.tournaments : [];
+
+  for(const t of remoteList){
+    if(t && t.id) mergedMap.set(t.id, t);
+  }
+  for(const localTournament of localList){
+    if(!localTournament || !localTournament.id) continue;
+    const remoteTournament = mergedMap.get(localTournament.id);
+    if(!remoteTournament){
+      mergedMap.set(localTournament.id, localTournament);
+      continue;
+    }
+    const localUpdated = Number(localTournament.updatedAt || localTournament.createdAt || 0);
+    const remoteUpdated = Number(remoteTournament.updatedAt || remoteTournament.createdAt || 0);
+    if(localUpdated >= remoteUpdated){
+      mergedMap.set(localTournament.id, localTournament);
+    }
+  }
+
+  return { tournaments: Array.from(mergedMap.values()) };
+}
+function currentLocalStore(){
+  return normalizeStore(store);
+}
+function isLocalFileMode(){
+  return location.protocol === "file:";
+}
 function firebaseStatusText(){
+  if(isLocalFileMode()) return "Firebase同期：ローカル確認中（この端末内保存）";
   if(firebaseReady) return "Firebase同期：接続中";
   return "Firebase同期：未接続（この端末内保存）";
 }
@@ -1355,6 +1387,12 @@ function updateFirebaseStatus(){
 }
 function initFirebaseSync(){
   try{
+    if(isLocalFileMode()){
+      console.warn("ローカルファイルではFirebase同期を使わず、この端末内保存で動作します。");
+      firebaseReady = false;
+      firebaseDb = null;
+      return false;
+    }
     if(!window.firebase || !firebase.initializeApp || !firebase.database){
       console.warn("Firebase SDK が読み込めません。localStorage保存で動作します。");
       return false;
@@ -1375,37 +1413,41 @@ function bindFirebaseStore(){
   if(!firebaseDb) return;
   firebaseDb.ref(FIREBASE_STORE_PATH).on("value", snapshot => {
     const remoteStore = normalizeStore(snapshot.val());
-    const remoteCount = remoteStore.tournaments.length;
-    const localCount = store && Array.isArray(store.tournaments) ? store.tournaments.length : 0;
-    const justWroteLocal = localWriteAt && (Date.now() - localWriteAt < 2500);
+    const localStore = currentLocalStore();
+    const mergedStore = mergeTournamentStores(localStore, remoteStore);
 
-    // 作成・追加直後にFirebaseの古い空snapshotが返ってきても、画面上のローカル編集を巻き戻さない。
-    if(justWroteLocal && localCount > 0 && remoteCount === 0){
-      firebaseFirstSnapshotReceived = true;
-      return;
-    }
-
+    // Firebase側が空/nullでも、今この端末で作成・追加した大会は消さない。
     firebaseApplyingRemote = true;
-    store = remoteStore;
+    store = mergedStore;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+
     if(currentTournament){
       const refreshed = store.tournaments.find(t => t.id === currentTournament.id && t.status !== "削除");
       if(refreshed){
         currentTournament = refreshed;
-      }else if(!(justWroteLocal && localCount > 0)){
+      }else{
         currentTournament = null;
         currentMode = "hub";
       }
     }
+
     firebaseFirstSnapshotReceived = true;
     firebaseApplyingRemote = false;
+
+    // remoteが古い/空でmergeによりローカルを保持した場合、Firebase側へ再保存して同期を直す。
+    const remoteJson = JSON.stringify(remoteStore);
+    const mergedJson = JSON.stringify(mergedStore);
+    if(firebaseReady && remoteJson !== mergedJson){
+      saveStoreToFirebase(true);
+    }
+
     refreshCurrentView();
   }, error => {
     console.error("Firebase読込に失敗しました。", error);
   });
 }
-function saveStoreToFirebase(){
-  if(!firebaseReady || !firebaseDb || firebaseApplyingRemote) return;
+function saveStoreToFirebase(force = false){
+  if(!firebaseReady || !firebaseDb || (firebaseApplyingRemote && !force)) return;
   clearTimeout(firebaseSaveTimer);
   firebaseSaveTimer = setTimeout(() => {
     firebaseDb.ref(FIREBASE_STORE_PATH).set(store).catch(error => {
@@ -1714,6 +1756,10 @@ function clearDownstream(match){
 }
 function addParticipant(){
   if(currentMode !== "admin") return;
+  if(!currentTournament){
+    alert("トーナメントが開けていません。トーナメント一覧から開き直してください。");
+    return;
+  }
   const name = $("nameInput").value.trim();
   if(!name) return;
   if(currentTournament.participants.length >= MAX_TEAMS){ alert("登録は最大64件までです。"); return; }
@@ -2088,6 +2134,10 @@ function doubleAutoByes(matches){
 }
 function doubleAddParticipant(){
   if(currentMode !== "admin") return;
+  if(!currentTournament){
+    alert("トーナメントが開けていません。トーナメント一覧から開き直してください。");
+    return;
+  }
   ensureDoubleState();
   const input = $("doubleNameInput");
   const name = input.value.trim();
