@@ -1476,7 +1476,6 @@ body.single-sticky-scroll-active{
     <section id="doubleAdminPanel" class="panel">
       <h2>ダブル管理者操作</h2>
       <div class="row">
-        <input id="doubleNameInput" maxlength="40" placeholder="登録名を入力">
         <button id="doubleAddBtn" class="primary">追加</button>
       </div>
       <div class="row" style="margin-top:8px">
@@ -1509,7 +1508,6 @@ body.single-sticky-scroll-active{
     <section id="adminPanel" class="panel">
       <h2>管理者操作</h2>
       <div class="row">
-        <input id="nameInput" maxlength="40" placeholder="登録名を入力">
         <button id="addBtn" class="primary">追加</button>
       </div>
       <div class="row" style="margin-top:8px">
@@ -1942,6 +1940,7 @@ function openTournament(id, mode){
 
 let entryTargetTournamentId = null;
 let entryManageTournamentId = null;
+let entryDirectAddMode = false;
 
 function pendingEntriesOf(tournament){
   if(!tournament.pendingEntries) tournament.pendingEntries = [];
@@ -2000,10 +1999,10 @@ function setEntryMode(mode){
   if(isTeam) renderEntryTeamMemberInputs();
 }
 
-function openEntryModal(id){
+function openEntryModal(id, directAdd = false){
   const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); return; }
-  if(tournament.created){
+  if(tournament.created && !directAdd){
     alert("ランダムトーナメント作成後はエントリーできません。");
     renderHub();
     return;
@@ -2014,11 +2013,15 @@ function openEntryModal(id){
     return;
   }
   entryTargetTournamentId = id;
-  $("entryModalTitle").textContent = `${tournament.title}｜エントリー受付`;
+  entryDirectAddMode = directAdd;
+  $("entryModalTitle").textContent = `${tournament.title}｜${directAdd ? "管理用追加" : "エントリー受付"}`;
+  $("entrySubmitBtn").textContent = directAdd ? "登録する" : "仮保存する";
   $("entryNameInput").value = "";
   $("entryTeamNameInput").value = "";
   $("entryModeChoice").classList.toggle("hidden", !isTeamTournament(tournament));
-  $("entryModalNote").textContent = isTeamTournament(tournament) ? "チーム登録、または補充用の個人エントリーができます。" : "参加する名前を入力してください。ランダムトーナメント作成後はエントリーできません。";
+  $("entryModalNote").textContent = isTeamTournament(tournament)
+    ? (directAdd ? "管理用として、チーム登録または補充用の個人登録ができます。" : "チーム登録、または補充用の個人エントリーができます。")
+    : "参加する名前を入力してください。";
   setEntryMode(isTeamTournament(tournament) ? "team" : "individual");
   $("entryModal").classList.remove("hidden");
   if(isTeamTournament(tournament)) $("entryTeamNameInput").focus();
@@ -2027,10 +2030,12 @@ function openEntryModal(id){
 
 function closeEntryModal(){
   entryTargetTournamentId = null;
+  entryDirectAddMode = false;
   $("entryModal").classList.add("hidden");
   $("entryNameInput").value = "";
   $("entryTeamNameInput").value = "";
   $("entryTeamMemberInputs").innerHTML = "";
+  $("entrySubmitBtn").textContent = "仮保存する";
 }
 
 function submitEntryName(){
@@ -2058,21 +2063,45 @@ function submitEntryName(){
       if(hasDuplicateName(tournament, reserve)){ alert("同じ名前は登録できません。"); return; }
     }
     if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64チームまでです。"); closeEntryModal(); renderHub(); return; }
-    pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"team", teamName, name: teamName, members, reserves, createdAt: Date.now(), entryStatus: "仮保存" });
+    if(entryDirectAddMode){
+      const p = { id: uid("p"), entryType:"team", name: teamName, members, reserves, createdAt: Date.now() };
+      tournament.participants.push(p);
+      if(tournament.type === "double"){
+        ensureDoubleState();
+        tournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+      }
+    }else{
+      pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"team", teamName, name: teamName, members, reserves, createdAt: Date.now(), entryStatus: "仮保存" });
+    }
   }else{
     const name = $("entryNameInput").value.trim();
     if(!name){ alert("名前を入力してください。"); return; }
     if(hasDuplicateName(tournament, name)){ alert("同じ名前は登録できません。"); return; }
     if(isTeamTournament(tournament)){
-      tournament.individualEntries.push({ id: uid("solo"), name, createdAt: Date.now(), entryStatus: "個人仮保存" });
+      tournament.individualEntries.push({ id: uid("solo"), name, createdAt: Date.now(), entryStatus: entryDirectAddMode ? "個人登録" : "個人仮保存" });
     }else{
       if((tournament.participants || []).length + pendingEntriesOf(tournament).length >= MAX_TEAMS){ alert("登録は最大64件までです。"); closeEntryModal(); renderHub(); return; }
-      pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"individual", name, createdAt: Date.now(), entryStatus: "仮保存" });
+      if(entryDirectAddMode){
+        const p = { id: uid("p"), name, createdAt: Date.now() };
+        tournament.participants.push(p);
+        if(tournament.type === "double"){
+          ensureDoubleState();
+          tournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+        }
+      }else{
+        pendingEntriesOf(tournament).push({ id: uid("entry"), entryType:"individual", name, createdAt: Date.now(), entryStatus: "仮保存" });
+      }
     }
   }
   tournament.updatedAt = Date.now();
   saveStore();
+  const wasDirectAdd = entryDirectAddMode;
   closeEntryModal();
+  if(wasDirectAdd && currentTournament && currentTournament.id === tournament.id && currentMode === "admin"){
+    currentTournament = tournament;
+    if(tournament.type === "double") renderDouble();
+    else renderSingle();
+  }
   renderHub();
 }
 
@@ -2279,6 +2308,23 @@ function shuffle(arr){
 }
 function getParticipant(id){ return (currentTournament.participants || []).find(p => p.id === id) || null; }
 function getName(id){ const p = getParticipant(id); return p ? p.name : ""; }
+function showTeamMembers(id){
+  if(currentMode === "admin" || !isTeamTournament(currentTournament)) return;
+  const team = getParticipant(id);
+  if(!team || !isTeamObject(team)) return;
+  const members = (team.members || []).filter(Boolean);
+  const reserves = teamReserveValues(team);
+  const lines = [
+    `${team.name}`,
+    "",
+    `メンバー（${members.length}/7人）`,
+    members.length ? members.map((name, index) => `${index + 1}. ${name}`).join("\n") : "未登録",
+    "",
+    `補欠（${reserves.length}/2人）`,
+    reserves.length ? reserves.map((name, index) => `${index + 1}. ${name}`).join("\n") : "なし"
+  ];
+  alert(lines.join("\n"));
+}
 function findMatch(id){ return currentTournament.matches.find(m => m.id === id) || null; }
 function getNextMatch(match){ return currentTournament.matches.find(m => m.round === match.round + 1 && Math.ceil(match.index / 2) === m.index) || null; }
 function setNextSlot(match, winnerId){
@@ -2780,7 +2826,13 @@ function renderBracket(){
         </div>`;
       wrap.querySelectorAll(".slot").forEach(slot => {
         const pid = slot.dataset.player;
-        slot.onclick = () => chooseWinner(m.id, pid);
+        slot.onclick = () => {
+          if(currentMode !== "admin" && isTeamTournament(currentTournament) && pid){
+            showTeamMembers(pid);
+            return;
+          }
+          chooseWinner(m.id, pid);
+        };
       });
       root.appendChild(wrap);
     }
@@ -3157,7 +3209,13 @@ function renderDoubleDiagram(){
   root.querySelectorAll(".double-tree-slot").forEach(slot => {
     const matchId = slot.dataset.match;
     const playerId = slot.dataset.player;
-    slot.onclick = () => doubleChooseWinner(matchId, playerId);
+    slot.onclick = () => {
+      if(currentMode !== "admin" && isTeamTournament(currentTournament) && playerId){
+        showTeamMembers(playerId);
+        return;
+      }
+      doubleChooseWinner(matchId, playerId);
+    };
   });
 
   requestAnimationFrame(() => {
@@ -3487,15 +3545,13 @@ $("entryManageBtn").onclick = openEntryManageModal;
 $("doubleEntryManageBtn").onclick = openEntryManageModal;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
 $("entryApplyBtn").onclick = applyPendingEntries;
-$("addBtn").onclick = addParticipant;
-$("nameInput").addEventListener("keydown", e => { if(e.key === "Enter") addParticipant(); });
+$("addBtn").onclick = () => { if(currentTournament) openEntryModal(currentTournament.id, true); };
 $("buildBtn").onclick = buildTournament;
 $("resetResultsBtn").onclick = resetResults;
 $("shuffleBtn").onclick = shuffleTournament;
 $("deleteBtn").onclick = deleteTournament;
 $("extendDeleteBtn").onclick = extendAutoDelete;
-$("doubleAddBtn").onclick = doubleAddParticipant;
-$("doubleNameInput").addEventListener("keydown", e => { if(e.key === "Enter") doubleAddParticipant(); });
+$("doubleAddBtn").onclick = () => { if(currentTournament) openEntryModal(currentTournament.id, true); };
 $("doubleBuildBtn").onclick = doubleBuildTournament;
 $("doubleResetBtn").onclick = () => { if(confirm("ダブルの勝敗をすべてリセットしますか？")) resetDoubleState(true); };
 $("doubleShuffleBtn").onclick = doubleShuffleTournament;
