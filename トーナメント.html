@@ -137,22 +137,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot.empty{color:#687284;cursor:default}
 .slot.waiting{color:#8d98aa;background:rgba(255,255,255,.025);cursor:default}
 .slot.win{
-  color:#021007;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08)),
-    linear-gradient(90deg,rgba(80,255,165,1),rgba(255,236,92,.95));
-  font-weight:900;
-  border-color:rgba(255,255,180,.95);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.95),
-    inset 0 0 18px rgba(255,255,255,.55),
-    0 0 12px rgba(255,236,92,.95),
-    0 0 28px rgba(57,217,138,.95),
-    0 0 48px rgba(57,217,138,.75);
-  text-shadow:
-    0 0 4px rgba(255,255,255,1),
-    0 0 12px rgba(255,255,180,.95),
-    0 0 20px rgba(57,217,138,.85);
+  color:#04130a;
+  background:#48e08d;
+  font-weight:800;
+  box-shadow:0 0 6px rgba(72,224,141,.42);
+  text-shadow:none;
 }
 .slot.loser{opacity:.62}
 .slot-name{display:block;flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;writing-mode:horizontal-tb;text-align:left;line-height:1.25}
@@ -369,22 +358,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
   background:linear-gradient(90deg,rgba(110,231,255,.15),rgba(124,60,255,.12));
 }
 .double-diagram-slot.win{
-  color:#021007;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08)),
-    linear-gradient(135deg,rgba(51,245,165,1),rgba(110,231,255,1),rgba(255,236,92,.95));
-  font-weight:900;
-  border-color:rgba(255,255,180,.95);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.95),
-    inset 0 0 18px rgba(255,255,255,.55),
-    0 0 12px rgba(255,236,92,.90),
-    0 0 28px rgba(51,245,165,.95),
-    0 0 48px rgba(110,231,255,.75);
-  text-shadow:
-    0 0 4px rgba(255,255,255,1),
-    0 0 12px rgba(255,255,180,.95),
-    0 0 20px rgba(110,231,255,.85);
+  color:#04130a;
+  background:#62dfff;
+  font-weight:800;
+  box-shadow:0 0 6px rgba(98,223,255,.38);
+  text-shadow:none;
 }
 .double-diagram-slot.loser{opacity:.56}
 .double-diagram-slot.empty{
@@ -665,22 +643,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
   background:linear-gradient(90deg,rgba(110,231,255,.15),rgba(124,60,255,.12));
 }
 .double-tree-slot.win{
-  color:#021007;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.08)),
-    linear-gradient(135deg,rgba(51,245,165,1),rgba(110,231,255,1),rgba(255,236,92,.95));
-  font-weight:900;
-  border-color:rgba(255,255,180,.95);
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,.95),
-    inset 0 0 18px rgba(255,255,255,.55),
-    0 0 12px rgba(255,236,92,.90),
-    0 0 28px rgba(51,245,165,.95),
-    0 0 48px rgba(110,231,255,.75);
-  text-shadow:
-    0 0 4px rgba(255,255,255,1),
-    0 0 12px rgba(255,255,180,.95),
-    0 0 20px rgba(110,231,255,.85);
+  color:#04130a;
+  background:#62dfff;
+  font-weight:800;
+  box-shadow:0 0 6px rgba(98,223,255,.38);
+  text-shadow:none;
 }
 .double-tree-slot.loser{opacity:.56}
 .double-tree-slot.empty{
@@ -1252,6 +1219,7 @@ body.single-sticky-scroll-active{
   <h1 id="mainTitle">トーナメント</h1>
   <div class="row">
     <a class="btn ghost" href="../index.html">トップへ戻る</a>
+    <button id="hubBtn" class="ghost">トーナメント一覧</button>
     <div id="headerAutoDeleteBadge" class="admin-auto-delete-badge header-auto-delete-badge hidden"></div>
   </div>
 </header>
@@ -1577,6 +1545,8 @@ function saveTournament(){
 function typeLabel(type){ return type === "double" ? "ダブル" : "シングル"; }
 function showOnly(viewId){
   ["hubView","singleView","doubleView"].forEach(id => $(id).classList.toggle("hidden", id !== viewId));
+  const hubBtn = $("hubBtn");
+  if(hubBtn) hubBtn.classList.toggle("hidden", viewId === "hubView");
   if(viewId !== "singleView") syncSingleStickyScrollBar();
   if(viewId === "hubView") renderAdminAutoDeleteBadge("headerAutoDeleteBadge");
 }
@@ -2785,8 +2755,7 @@ function init(){
 }
 $("createSingleBtn").onclick = () => createTournament("single");
 $("createDoubleBtn").onclick = () => createTournament("double");
-const hubButton = $("hubBtn");
-if(hubButton) hubButton.onclick = showHub;
+$("hubBtn").onclick = showHub;
 $("addBtn").onclick = addParticipant;
 $("nameInput").addEventListener("keydown", e => { if(e.key === "Enter") addParticipant(); });
 $("buildBtn").onclick = buildTournament;
