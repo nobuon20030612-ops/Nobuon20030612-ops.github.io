@@ -86,6 +86,46 @@ button:disabled{opacity:.45;cursor:not-allowed}
   padding:10px;
 }
 .card-title{font-weight:700;margin-bottom:6px}
+.elimination-guide{
+  grid-column:1 / -1;
+  margin-top:8px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px;
+}
+.elimination-box{
+  border-radius:18px;
+  padding:18px 20px;
+  font-size:22px;
+  line-height:1.35;
+  font-weight:900;
+  text-align:center;
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 12px 28px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.elimination-box.single{
+  background:linear-gradient(135deg,rgba(47,124,255,.92),rgba(110,231,255,.62));
+  color:#f8fbff;
+}
+.elimination-box.double{
+  background:linear-gradient(135deg,rgba(255,77,141,.92),rgba(255,230,109,.70));
+  color:#fffdf2;
+}
+.elimination-label{
+  display:block;
+  font-size:26px;
+  margin-bottom:6px;
+  letter-spacing:.02em;
+}
+.elimination-desc{
+  display:block;
+  font-size:18px;
+}
+@media(max-width:640px){
+  .elimination-box{font-size:19px;padding:15px 14px}
+  .elimination-label{font-size:22px}
+  .elimination-desc{font-size:16px}
+}
 .badge{
   display:inline-flex;
   align-items:center;
@@ -1247,6 +1287,16 @@ body.single-sticky-scroll-active{
       <div id="adminList" class="list"></div>
       <p class="note">管理者用は4桁パスワード入力後に編集できます。</p>
     </div>
+    <div class="elimination-guide" aria-label="トーナメント方式の説明">
+      <div class="elimination-box single">
+        <span class="elimination-label">シングルエリミネーション</span>
+        <span class="elimination-desc">1回負けで敗退トーナメント</span>
+      </div>
+      <div class="elimination-box double">
+        <span class="elimination-label">ダブルエリミネーション</span>
+        <span class="elimination-desc">2回負けで敗退トーナメント</span>
+      </div>
+    </div>
   </section>
 
   <section id="doubleView" class="double-layout hidden">
@@ -1319,6 +1369,7 @@ body.single-sticky-scroll-active{
 <script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-database-compat.js"></script>
 <script>
 const STORAGE_KEY = "nobuon_tournaments_functional_v1";
+const DELETED_TOURNAMENT_IDS_KEY = STORAGE_KEY + "_deleted_ids";
 const MAX_TEAMS = 64;
 const TOURNAMENT_EXPIRE_MS = 48 * 60 * 60 * 1000;
 const AUTO_DELETE_EXTENSION_DAY_MS = 24 * 60 * 60 * 1000;
@@ -1348,17 +1399,40 @@ let localWriteAt = 0;
 function normalizeStore(value){
   return value && Array.isArray(value.tournaments) ? value : { tournaments: [] };
 }
+function loadDeletedTournamentIds(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(DELETED_TOURNAMENT_IDS_KEY));
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return [];
+  }
+}
+function saveDeletedTournamentIds(ids){
+  localStorage.setItem(DELETED_TOURNAMENT_IDS_KEY, JSON.stringify(Array.from(new Set(ids))));
+}
+function markTournamentDeleted(id){
+  if(!id) return;
+  const ids = loadDeletedTournamentIds();
+  if(!ids.includes(id)){
+    ids.push(id);
+    saveDeletedTournamentIds(ids);
+  }
+}
+function isTournamentDeleted(id){
+  return loadDeletedTournamentIds().includes(id);
+}
 
 function mergeTournamentStores(localStore, remoteStore){
   const mergedMap = new Map();
+  const deletedIds = new Set(loadDeletedTournamentIds());
   const localList = localStore && Array.isArray(localStore.tournaments) ? localStore.tournaments : [];
   const remoteList = remoteStore && Array.isArray(remoteStore.tournaments) ? remoteStore.tournaments : [];
 
   for(const t of remoteList){
-    if(t && t.id) mergedMap.set(t.id, t);
+    if(t && t.id && !deletedIds.has(t.id)) mergedMap.set(t.id, t);
   }
   for(const localTournament of localList){
-    if(!localTournament || !localTournament.id) continue;
+    if(!localTournament || !localTournament.id || deletedIds.has(localTournament.id)) continue;
     const remoteTournament = mergedMap.get(localTournament.id);
     if(!remoteTournament){
       mergedMap.set(localTournament.id, localTournament);
@@ -1457,6 +1531,17 @@ function saveStoreToFirebase(force = false){
     });
   }, 120);
 }
+async function saveStoreToFirebaseNow(){
+  if(!firebaseReady || !firebaseDb) return true;
+  clearTimeout(firebaseSaveTimer);
+  try{
+    await firebaseDb.ref(FIREBASE_STORE_PATH).set(store);
+    return true;
+  }catch(error){
+    console.error("同期保存に失敗しました。", error);
+    return false;
+  }
+}
 function refreshCurrentView(){
   purgeExpiredTournaments();
   if(currentMode === "hub" || !currentTournament){
@@ -1497,12 +1582,36 @@ function autoDeleteAtOf(tournament){
   return Number(tournament.autoDeleteAt || (fallbackCreatedAt + TOURNAMENT_EXPIRE_MS));
 }
 function purgeExpiredTournaments(){
-  const now = Date.now();
-  const beforeCount = store.tournaments.length;
-  store.tournaments = store.tournaments.filter(t => now < autoDeleteAtOf(t));
-  if(store.tournaments.length !== beforeCount){
-    saveStore();
+  const expired = removeExpiredTournamentsFromStore();
+  if(expired.length){
+    localWriteAt = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    saveStoreToFirebaseNow();
   }
+  return expired;
+}
+function removeExpiredTournamentsFromStore(){
+  const now = Date.now();
+  const deletedIds = new Set(loadDeletedTournamentIds());
+  const expired = [];
+  store.tournaments = store.tournaments.filter(t => {
+    if(deletedIds.has(t.id)) return false;
+    if(now >= autoDeleteAtOf(t)){
+      expired.push(t.id);
+      markTournamentDeleted(t.id);
+      return false;
+    }
+    return true;
+  });
+  return expired;
+}
+async function purgeExpiredTournamentsNow(){
+  const expired = removeExpiredTournamentsFromStore();
+  if(!expired.length) return { changed:false, saved:true, expired };
+  localWriteAt = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const saved = await saveStoreToFirebaseNow();
+  return { changed:true, saved, expired };
 }
 function expiresAtText(tournament){
   const expiresAt = autoDeleteAtOf(tournament);
@@ -1597,7 +1706,7 @@ function createTournament(type){
 }
 
 function openAdmin(id){
-  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除");
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); return; }
   const pin = prompt("管理者パスワード4桁を入力してください。");
   if(pin === null) return;
@@ -1608,7 +1717,7 @@ function openAdmin(id){
 
 function openTournament(id, mode){
   purgeExpiredTournaments();
-  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除");
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); showHub(); return; }
   if(mode === "admin" && sessionStorage.getItem("admin_" + id) !== "ok"){
     const pin = prompt("管理者パスワード4桁を入力してください。");
@@ -1645,7 +1754,7 @@ function showHub(){
 
 function renderHub(){
   purgeExpiredTournaments();
-  const active = store.tournaments.filter(t => t.status !== "削除");
+  const active = store.tournaments.filter(t => t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!active.length){
     $("viewList").innerHTML = '<div class="card note">作成済みトーナメントはまだありません。</div>';
     $("adminList").innerHTML = '<div class="card note">管理できるトーナメントはまだありません。</div>';
@@ -1945,7 +2054,7 @@ function extendAutoDelete(){
   if(currentTournament.type === "double") renderDouble();
   else renderSingle();
 }
-function deleteTournament(){
+async function deleteTournament(){
   if(currentMode !== "admin" || !currentTournament) return;
   const pin = prompt("削除確認：管理者パスワード4桁を入力してください。");
   if(pin === null) return;
@@ -1955,9 +2064,20 @@ function deleteTournament(){
   }
   const title = currentTournament.title || "このトーナメント";
   if(!confirm(`「${title}」を完全削除します。元に戻せません。削除しますか？`)) return;
-  store.tournaments = store.tournaments.filter(t => t.id !== currentTournament.id);
-  saveStore();
+  const deleteId = currentTournament.id;
+  markTournamentDeleted(deleteId);
+  store.tournaments = store.tournaments.filter(t => t.id !== deleteId);
+  localWriteAt = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+
+  const saved = await saveStoreToFirebaseNow();
+  if(!saved){
+    alert("サーバーへの削除保存に失敗しました。通信状態を確認して、もう一度削除してください。");
+    return;
+  }
+
   currentTournament = null;
+  sessionStorage.removeItem("admin_" + deleteId);
   showHub();
 }
 function champion(){
@@ -2793,9 +2913,13 @@ window.addEventListener("resize", () => {
   if(currentTournament && currentTournament.type === "single") renderBracket();
   syncSingleStickyScrollBar();
 });
-setInterval(() => {
+setInterval(async () => {
   const openId = currentTournament ? currentTournament.id : null;
-  purgeExpiredTournaments();
+  const result = await purgeExpiredTournamentsNow();
+  if(result.changed && !result.saved){
+    console.error("自動削除のサーバー保存に失敗しました。");
+    return;
+  }
   if(openId && !store.tournaments.some(t => t.id === openId && t.status !== "削除")){
     alert("このトーナメントは作成から48時間が経過したため完全削除されました。");
     showHub();
