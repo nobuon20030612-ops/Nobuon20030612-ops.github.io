@@ -1375,26 +1375,23 @@ function isLocalFileMode(){
   return location.protocol === "file:";
 }
 function firebaseStatusText(){
-  if(isLocalFileMode()) return "Firebase同期：ローカル確認中（この端末内保存）";
-  if(firebaseReady) return "Firebase同期：接続中";
-  return "Firebase同期：未接続（この端末内保存）";
+  if(isLocalFileMode()) return "ローカル確認中（この端末内保存）";
+  if(firebaseReady) return "同期：接続中";
+  return "未接続（この端末内保存）";
 }
 function updateFirebaseStatus(){
-  const badge = $("headerAutoDeleteBadge");
-  if(badge && currentTournament && currentMode !== "hub" && firebaseReady){
-    badge.title = firebaseStatusText();
-  }
+  // Firebase同期状態の表示はしない。
 }
 function initFirebaseSync(){
   try{
     if(isLocalFileMode()){
-      console.warn("ローカルファイルではFirebase同期を使わず、この端末内保存で動作します。");
+      console.warn("ローカルファイルではこの端末内保存で動作します。");
       firebaseReady = false;
       firebaseDb = null;
       return false;
     }
     if(!window.firebase || !firebase.initializeApp || !firebase.database){
-      console.warn("Firebase SDK が読み込めません。localStorage保存で動作します。");
+      console.warn("同期SDKが読み込めません。localStorage保存で動作します。");
       return false;
     }
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -1403,7 +1400,7 @@ function initFirebaseSync(){
     bindFirebaseStore();
     return true;
   }catch(error){
-    console.error("Firebase初期化に失敗しました。localStorage保存で動作します。", error);
+    console.error("同期初期化に失敗しました。localStorage保存で動作します。", error);
     firebaseReady = false;
     firebaseDb = null;
     return false;
@@ -1443,7 +1440,7 @@ function bindFirebaseStore(){
 
     refreshCurrentView();
   }, error => {
-    console.error("Firebase読込に失敗しました。", error);
+    console.error("同期読込に失敗しました。", error);
   });
 }
 function saveStoreToFirebase(force = false){
@@ -1451,7 +1448,7 @@ function saveStoreToFirebase(force = false){
   clearTimeout(firebaseSaveTimer);
   firebaseSaveTimer = setTimeout(() => {
     firebaseDb.ref(FIREBASE_STORE_PATH).set(store).catch(error => {
-      console.error("Firebase保存に失敗しました。", error);
+      console.error("同期保存に失敗しました。", error);
     });
   }, 120);
 }
@@ -1643,12 +1640,11 @@ function renderHub(){
   purgeExpiredTournaments();
   const active = store.tournaments.filter(t => t.status !== "削除");
   if(!active.length){
-    const syncNote = `<div class="card note">${firebaseStatusText()}</div>`;
-    $("viewList").innerHTML = syncNote + '<div class="card note">作成済みトーナメントはまだありません。</div>';
+    $("viewList").innerHTML = '<div class="card note">作成済みトーナメントはまだありません。</div>';
     $("adminList").innerHTML = '<div class="card note">管理できるトーナメントはまだありません。</div>';
     return;
   }
-  $("viewList").innerHTML = `<div class="card note">${firebaseStatusText()}</div>` + active.map(t => `
+  $("viewList").innerHTML = active.map(t => `
     <div class="card">
       <div class="card-title">${escapeHtml(t.title)}</div>
       <div class="row">
