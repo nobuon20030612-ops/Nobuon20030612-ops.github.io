@@ -13645,6 +13645,9 @@ document.addEventListener("click", function(ev){
   var topIndexLoading26 = null;
   var dbCache26 = {};
   var dbLoading26 = {};
+  var tsuikayouDiffCache26 = null;
+  var tsuikayouDiffLoading26 = null;
+  var TSUIKAYOU_DIFF_PATH26 = "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_step26";
   var shownRows26 = [];
   var renderSeq26 = 0;
 
@@ -13785,6 +13788,78 @@ document.addEventListener("click", function(ev){
     try{ if(typeof hideDbSearchProgress === "function") hideDbSearchProgress(); }catch(e){}
     try{ var p = el26("dbSearchProgress"); if(p) p.classList.remove("active"); }catch(e){}
   }
+
+  function flattenTsuikayouDiff26(pack){
+    var rows = [];
+    var forms = pack && pack.formations ? pack.formations : {};
+    Object.keys(forms).forEach(function(form){
+      var byCount = forms[form] || {};
+      Object.keys(byCount).forEach(function(count){
+        var list = byCount[count] && Array.isArray(byCount[count].rows) ? byCount[count].rows : [];
+        list.forEach(function(row){
+          if(!row) return;
+          var r = Object.assign({}, row);
+          r.formation = r.formation || form;
+          r.bond_count = Number(r.bond_count || r.ic || count) || Number(count) || r.bond_count;
+          r.ic = Number(r.ic || r.bond_count || count) || r.ic;
+          r.source = r.source || "追加用差分DB";
+          r.source_file = r.source_file || "jinpo追加用_diff_5_6_7_8_9.json";
+          r._display_count = Number(r._display_count || r.bond_count || count) || Number(count) || r._display_count;
+          r._display_formation = r._display_formation || r.formation || form;
+          r._sort_key = r._sort_key || "総合値";
+          rows.push(r);
+        });
+      });
+    });
+    return rows;
+  }
+  function mergeUniqueRows26(baseRows, addRows){
+    var base = Array.isArray(baseRows) ? baseRows.slice() : [];
+    var add = Array.isArray(addRows) ? addRows : [];
+    if(!add.length) return base;
+    var seen = Object.create(null);
+    base.forEach(function(row){
+      if(!row) return;
+      var id = String(row.result_id || row.id || "");
+      var key = String(row.duplicate_key || "");
+      if(id) seen["id:" + id] = true;
+      if(key) seen["dup:" + key] = true;
+    });
+    add.forEach(function(row){
+      if(!row) return;
+      var id = String(row.result_id || row.id || "");
+      var key = String(row.duplicate_key || "");
+      if((id && seen["id:" + id]) || (key && seen["dup:" + key])) return;
+      base.push(row);
+      if(id) seen["id:" + id] = true;
+      if(key) seen["dup:" + key] = true;
+    });
+    return base;
+  }
+  function loadTsuikayouDiffRows26(count){
+    count = Number(count) || 0;
+    if(tsuikayouDiffCache26){
+      return Promise.resolve(count ? tsuikayouDiffCache26.filter(function(r){ return Number(r && r.bond_count) === count; }) : tsuikayouDiffCache26.slice());
+    }
+    if(!tsuikayouDiffLoading26){
+      tsuikayouDiffLoading26 = fetch(TSUIKAYOU_DIFF_PATH26, {cache:"no-store"}).then(function(res){
+        if(!res.ok) throw new Error("追加用DB HTTP " + res.status);
+        return res.json();
+      }).then(function(pack){
+        tsuikayouDiffCache26 = flattenTsuikayouDiff26(pack);
+        try{ window.__jinpoTsuikayouArakiFugaStep26Rows = tsuikayouDiffCache26; }catch(e){}
+        return tsuikayouDiffCache26;
+      }).catch(function(err){
+        console.error("step26 追加用DB読込失敗", err);
+        tsuikayouDiffCache26 = [];
+        return tsuikayouDiffCache26;
+      }).finally(function(){ tsuikayouDiffLoading26 = null; });
+    }
+    return tsuikayouDiffLoading26.then(function(rows){
+      return count ? rows.filter(function(r){ return Number(r && r.bond_count) === count; }) : rows.slice();
+    });
+  }
+
   async function loadDb26(count){
     count = Number(count) || 0;
     if(dbCache26[count]) return dbCache26[count];
@@ -13798,15 +13873,18 @@ document.addEventListener("click", function(ev){
       return window.JinpoActivationEngine.loadCSV(path);
     }).then(function(rows){
       rows = Array.isArray(rows) ? rows : [];
-      dbCache26[count] = rows;
-      try{
-        if(!Array.isArray(resultDbRows)) resultDbRows = [];
-        if(count === 5 || count === 6){
-          var others = resultDbRows.filter(function(r){ return Number(r && r.bond_count) !== count; });
-          resultDbRows = others.concat(rows);
-        }
-      }catch(e){}
-      return rows;
+      return loadTsuikayouDiffRows26(count).then(function(addRows){
+        rows = mergeUniqueRows26(rows, addRows);
+        dbCache26[count] = rows;
+        try{
+          if(!Array.isArray(resultDbRows)) resultDbRows = [];
+          if(count === 5 || count === 6){
+            var others = resultDbRows.filter(function(r){ return Number(r && r.bond_count) !== count; });
+            resultDbRows = others.concat(rows);
+          }
+        }catch(e){}
+        return rows;
+      });
     }).finally(function(){ dbLoading26[count] = null; });
     return dbLoading26[count];
   }
@@ -13819,8 +13897,11 @@ document.addEventListener("click", function(ev){
       }
       return window.JinpoActivationEngine.loadCSV(TOP_INDEX_PATH26);
     }).then(function(rows){
-      topIndexCache26 = Array.isArray(rows) ? rows : [];
-      return topIndexCache26;
+      rows = Array.isArray(rows) ? rows : [];
+      return loadTsuikayouDiffRows26(0).then(function(addRows){
+        topIndexCache26 = mergeUniqueRows26(rows, addRows);
+        return topIndexCache26;
+      });
     }).finally(function(){ topIndexLoading26 = null; });
     return topIndexLoading26;
   }
