@@ -17783,6 +17783,64 @@ body{padding-top:0 !important;}
     if(!res.ok) throw new Error(path + ' HTTP ' + res.status);
     return parseCsv(await res.text());
   }
+
+  var TSUIKAYOU_DIFF_PATHS174 = [
+    'data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_step174_merge_fix',
+    'data/' + encodeURIComponent('jinpo追加用_diff_5_6_7_8_9.json') + '?v=20260610_step174_merge_fix',
+    'data/jinpo追加用_diff_5_6_7_8_9.json'
+  ];
+  var tsuikayouDiffRows174 = null;
+  var tsuikayouDiffLoading174 = null;
+  function flattenTsuikayouDiff174(pack){
+    var out = [];
+    var forms = pack && pack.formations ? pack.formations : {};
+    Object.keys(forms).forEach(function(f){
+      var byCount = forms[f] || {};
+      Object.keys(byCount).forEach(function(c){
+        var list = byCount[c] && Array.isArray(byCount[c].rows) ? byCount[c].rows : [];
+        list.forEach(function(row){
+          if(!row) return;
+          row.formation = row.formation || f;
+          row.bond_count = Number(row.bond_count || row.ic || c) || row.bond_count || c;
+          row.ic = Number(row.ic || row.bond_count || c) || row.ic || c;
+          row.source = row.source || '追加用差分DB';
+          row.source_file = row.source_file || 'jinpo追加用_diff_5_6_7_8_9.json';
+          out.push(row);
+        });
+      });
+    });
+    return out;
+  }
+  function fetchTsuikayouDiffPack174(idx,lastErr){
+    idx = Number(idx)||0;
+    if(idx >= TSUIKAYOU_DIFF_PATHS174.length) throw (lastErr || new Error('追加用DBを読み込めません'));
+    var path = TSUIKAYOU_DIFF_PATHS174[idx];
+    return fetch(path,{cache:'no-store'}).then(function(res){
+      if(!res.ok) throw new Error(path + ' HTTP ' + res.status);
+      return res.json();
+    }).then(function(pack){
+      try{ window.__step174TsuikayouDiffPath = path; }catch(e){}
+      return pack;
+    }).catch(function(err){
+      return fetchTsuikayouDiffPack174(idx+1,err);
+    });
+  }
+  function loadTsuikayouDiffRows174(){
+    if(tsuikayouDiffRows174) return Promise.resolve(tsuikayouDiffRows174);
+    if(!tsuikayouDiffLoading174){
+      tsuikayouDiffLoading174 = fetchTsuikayouDiffPack174(0).then(function(pack){
+        tsuikayouDiffRows174 = flattenTsuikayouDiff174(pack);
+        try{ window.__step174TsuikayouDiffRows = tsuikayouDiffRows174; }catch(e){}
+        return tsuikayouDiffRows174;
+      }).catch(function(err){
+        console.error('step174 追加用DB読込失敗', err);
+        try{ window.__step174TsuikayouDiffError = String(err && (err.stack || err.message) || err); }catch(e){}
+        tsuikayouDiffRows174 = [];
+        return tsuikayouDiffRows174;
+      }).finally(function(){ tsuikayouDiffLoading174 = null; });
+    }
+    return tsuikayouDiffLoading174;
+  }
   function showProgress(msg){
     var p=q('dbSearchProgress'); if(p){ p.style.display='block'; p.classList.add('active'); }
     var t=q('dbSearchProgressTitle'); if(t) t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'分割DB読込中。数分お待ちください。');
@@ -17836,10 +17894,25 @@ body{padding-top:0 !important;}
         await sleep();
       }
       if(myToken !== activeToken) return true;
+      var diffLoaded = 0, diffMatched = 0;
+      var diffRows = await loadTsuikayouDiffRows174();
+      if(myToken !== activeToken) return true;
+      diffLoaded = diffRows.length;
+      for(var d=0; d<diffRows.length; d++){
+        var dr = diffRows[d];
+        if(String(dr && (dr.bond_count || dr.ic || '')) !== '7') continue;
+        if(!formationMatch(dr,form)) continue;
+        if(!rowOwnedMatch(dr)) continue;
+        if(!priorityMatch(dr)) continue;
+        diffMatched++;
+        matched++;
+        addBest(best,dr);
+      }
+      try{ window.__step174TsuikayouDiffLoaded = diffLoaded; window.__step174TsuikayouDiffMatched = diffMatched; }catch(e){}
       best.sort(compareRows);
       activeRows = best.slice(0,LIMIT);
       try{ window.resultDbRows = activeRows; resultDbRows = activeRows; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
-      if(status) status.textContent=(form ? form : '全陣形') + ' / 7因縁: 分割DB 読込 ' + loaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件 / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件）';
+      if(status) status.textContent=(form ? form : '全陣形') + ' / 7因縁: 分割DB 読込 ' + loaded.toLocaleString() + '件 + 追加用 ' + diffLoaded.toLocaleString() + '件 / 絞り込み ' + matched.toLocaleString() + '件（追加用 ' + diffMatched.toLocaleString() + '件） / 表示 ' + activeRows.length.toLocaleString() + '件（最大' + LIMIT + '件）';
       if(box) box.innerHTML = activeRows.length ? table(activeRows,7) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
     }catch(err){
       console.error('step174 7因縁分割DB読込失敗', err);
