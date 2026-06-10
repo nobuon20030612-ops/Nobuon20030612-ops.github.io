@@ -12834,6 +12834,19 @@ document.addEventListener("click", function(ev){
       return '<tr class="dbMainRow"><td><button class="applyBtn" data-result-id="'+esc(rid)+'" data-step35-db-idx="'+idx+'" type="button">適用</button></td><td>'+esc(row.bond_count||count())+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span>'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値 '+esc(total(row))+'</span><span class="dbListStat">'+esc(statText(row))+'</span></td></tr>';
     }).join('')+'</tbody></table>';
   }
+  async function mergeAdditionalIndexRows(rows,c){
+    rows = Array.isArray(rows) ? rows : [];
+    try{
+      if(window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.getRows === 'function'){
+        var add = await window.JINPO_ADDITIONAL_DB.getRows({bondCount:c});
+        if(Array.isArray(add) && add.length){
+          rows = (window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.mergeRows === 'function') ? window.JINPO_ADDITIONAL_DB.mergeRows(rows, add) : rows.concat(add);
+          rows.__jinpoAdditionalMergedCount = add.length;
+        }
+      }
+    }catch(e){ console.warn('追加用DB index合成失敗', e); }
+    return rows;
+  }
   async function rowsForDisplay(c, form){
     var cstr=String(c);
     if(useFullDb()){
@@ -12845,10 +12858,11 @@ document.addEventListener("click", function(ev){
       showProgress(c+'因縁ソートindex読込中。数分お待ちください。');
       var srows=await loadCsv(SORT_INDEX_BY_COUNT[cstr]);
       var f=srows.filter(function(r){return String(r.bond_count||r.ic||'')===cstr && formationMatch(r,form) && String(r.sort_key||'')===sk;});
+      f = await mergeAdditionalIndexRows(f,c);
       if(f.length) return f;
     }
     showProgress(c+'因縁上位index読込中。数分お待ちください。');
-    return await loadCsv(DEFAULT_INDEX_BY_COUNT[cstr] || 'data/jinpo_top300_index.csv');
+    return await mergeAdditionalIndexRows(await loadCsv(DEFAULT_INDEX_BY_COUNT[cstr] || 'data/jinpo_top300_index.csv'), c);
   }
   async function filterRows(rows,c,form,myToken){
     var out=[];
@@ -12876,9 +12890,11 @@ document.addEventListener("click", function(ev){
       var filtered=await filterRows(rows,c,form,myToken);
       if(myToken!==token || filtered===null) return;
       if(useFullDb()){ setProgress('並び替え中', rows.length, rows.length); await yieldUi(); }
-      var shown = useFullDb() ? sortRows(filtered).slice(0,LIMIT) : filtered.slice(0,LIMIT);
+      var addMerged = Number(rows && rows.__jinpoAdditionalMergedCount || 0) || 0;
+      var shown = (useFullDb() || firstRuleStat() || addMerged) ? sortRows(filtered).slice(0,LIMIT) : filtered.slice(0,LIMIT);
       shownRows=shown;
       var sourceText = useFullDb() ? '個別DB' : (firstRuleStat() ? '分割ソートindex' : 'top300 index');
+      if(addMerged) sourceText += ' + 追加用 '+addMerged.toLocaleString()+'件';
       status.textContent=form+' / '+c+'因縁: '+sourceText+' 読込 '+rows.length.toLocaleString()+'件 / 絞り込み '+filtered.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大'+LIMIT+'件）';
       box.innerHTML=shown.length?table(shown):'<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       try{ window.resultDbRows=shown; resultDbRows=shown; if(typeof rebuildResultDbIndex==='function') rebuildResultDbIndex(); }catch(e){}
@@ -13069,21 +13085,37 @@ document.addEventListener("click", function(ev){
       return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');
     });
   }
+  async function mergeAdditionalIndexRows(rows,count){
+    rows = Array.isArray(rows) ? rows : [];
+    var addCount = 0;
+    try{
+      if(window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.getRows === 'function'){
+        var add = await window.JINPO_ADDITIONAL_DB.getRows({bondCount:count});
+        addCount = Array.isArray(add) ? add.length : 0;
+        if(addCount){
+          rows = (window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.mergeRows === 'function') ? window.JINPO_ADDITIONAL_DB.mergeRows(rows, add) : rows.concat(add);
+        }
+      }
+    }catch(e){ console.warn('追加用DB index合成失敗', e); }
+    return {rows:rows, additionalRows:addCount};
+  }
   async function sourceRows(count){
     var c = String(count);
     if(useFullDb()){
       showProgress(count + '因縁DB読込中。数分お待ちください。');
-      return { rows: await loadCsv(DB_BY_COUNT[count]), source: '個別DB' };
+      return { rows: await loadCsv(DB_BY_COUNT[count]), source: '個別DB', additionalRows: 0 };
     }
     var sortKey = firstRuleStat();
     if(sortKey){
       showProgress(count + '因縁ソートindex読込中。数分お待ちください。');
       var sr = await loadCsv(SORT_INDEX_BY_COUNT[count]);
       var matchedSort = sr.filter(function(r){ return String(r.bond_count || r.ic || '') === c && String(r.sort_key || '') === sortKey; });
-      if(matchedSort.length) return { rows: matchedSort, source: '分割ソートindex' };
+      var mergedSort = await mergeAdditionalIndexRows(matchedSort, count);
+      if(mergedSort.rows.length) return { rows: mergedSort.rows, source: '分割ソートindex', additionalRows: mergedSort.additionalRows };
     }
     showProgress(count + '因縁上位index読込中。数分お待ちください。');
-    return { rows: await loadCsv(TOP_INDEX_BY_COUNT[count] || 'data/jinpo_top300_index.csv'), source: 'top300 index' };
+    var mergedTop = await mergeAdditionalIndexRows(await loadCsv(TOP_INDEX_BY_COUNT[count] || 'data/jinpo_top300_index.csv'), count);
+    return { rows: mergedTop.rows, source: 'top300 index', additionalRows: mergedTop.additionalRows };
   }
   async function filterRows(rows,count,form,myToken){
     var out=[];
@@ -13132,10 +13164,11 @@ document.addEventListener("click", function(ev){
       if(myToken !== token) return [];
       var filtered = await filterRows(src.rows, count, form, myToken);
       if(myToken !== token || filtered === null) return [];
-      var shown = (useFullDb() || firstRuleStat()) ? sortRows(filtered).slice(0,LIMIT) : filtered.slice(0,LIMIT);
+      var shown = (useFullDb() || firstRuleStat() || Number(src.additionalRows || 0)) ? sortRows(filtered).slice(0,LIMIT) : filtered.slice(0,LIMIT);
       shownRows = shown;
       try{ window.resultDbRows = shown; resultDbRows = shown; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
-      status.textContent = (form ? form : '全陣形') + ' / ' + count + '因縁: ' + src.source + ' 読込 ' + src.rows.length.toLocaleString() + '件 / 絞り込み ' + filtered.length.toLocaleString() + '件 / 表示 ' + shown.length.toLocaleString() + '件（最大' + LIMIT + '件）';
+      var sourceLabel = src.source + (Number(src.additionalRows || 0) ? ' + 追加用 ' + Number(src.additionalRows || 0).toLocaleString() + '件' : '');
+      status.textContent = (form ? form : '全陣形') + ' / ' + count + '因縁: ' + sourceLabel + ' 読込 ' + src.rows.length.toLocaleString() + '件 / 絞り込み ' + filtered.length.toLocaleString() + '件 / 表示 ' + shown.length.toLocaleString() + '件（最大' + LIMIT + '件）';
       box.innerHTML = shown.length ? table(shown,count) : '<div class="dbListNote">該当DBなし。陣形・等級3以下・配置英傑・優先条件を確認してください。</div>';
       return shown;
     }catch(err){
