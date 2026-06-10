@@ -1,0 +1,62 @@
+{
+  "base_zip": "陣法.zip",
+  "policy": "不要経路は削除。削除危険箇所は仮想キーへ置換し、実在する分割DB経路へ集約。追加は追加用DB更新だけで反映。",
+  "removed_script_ids": [
+    "step5-light-display-db-and-safe-index-20260525",
+    "step10-lazy-load-5-6-display-db-20260525",
+    "step18-final-runtime-operation-guard-20260525",
+    "step26-split-db-total-score-runtime",
+    "step31-lazy-top300-sort-index-runtime",
+    "nobol-formations-merge-search",
+    "pc-mobile-9inen-one-result-final-guard",
+    "final-pc-mobile-7-9-nobol-before-render-guard",
+    "ultimate-9inen-actual-data-render-guard",
+    "iphone12-9inen-safe-load-wrapper",
+    "mobile-9bond-data-complete-final-guard",
+    "absolute-last-9inen-actual-render-guard"
+  ],
+  "removed_files": [
+    "data/grade3_precomputed_5_6_7_8.json",
+    "data/step167_split_large_db_readme.txt",
+    "data/step167_split_large_db_summary.json",
+    "data/step168_7_9_read_error_missing_index_summary.json",
+    "data/step171_new_formula_rebuild_summary.json",
+    "data/step172_add_2_new_heroes_7_9_only_summary.json",
+    "data/step174_7_9_revalidation_repair_examples.csv",
+    "data/step174_7_9_revalidation_repair_summary.json"
+  ],
+  "virtual_routes": {
+    "__JINPO_SPLIT_DB_7__": [
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part002.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part003.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part004.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part005.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part006.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part007.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part008.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part009.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part010.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part011.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part012.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part013.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part014.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part015.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part016.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part017.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part018.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part019.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part020.csv",
+      "data/jinpo_result_db_7_parts/jinpo_result_db_7_part021.csv"
+    ],
+    "__JINPO_GRADE3_6_SPLIT__": [
+      "data/grade3_6_parts/step114_grade3_6_combinations_part001.csv",
+      "data/grade3_6_parts/step114_grade3_6_combinations_part002.csv",
+      "data/grade3_6_parts/step114_grade3_6_combinations_part003.csv",
+      "data/grade3_6_parts/step114_grade3_6_combinations_part004.csv",
+      "data/grade3_6_parts/step114_grade3_6_combinations_part005.csv",
+      "data/grade3_6_parts/step114_grade3_6_combinations_part006.csv"
+    ]
+  },
+  "additional_db": "data/jinpo追加用_diff_5_6_7_8_9.json"
+}
