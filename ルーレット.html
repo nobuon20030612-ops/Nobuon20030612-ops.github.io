@@ -71,7 +71,7 @@ let names=[],winnersHistory=[],spinning=false,rotation=0,soundOn=true,confettiOn
 const rows=document.getElementById('rows'),count=document.getElementById('count'),wheel=document.getElementById('wheel'),ctx=wheel.getContext('2d'),winnerName=document.getElementById('winnerName'),historyList=document.getElementById('historyList'),probBox=document.getElementById('probBox');
 const colors=['#c019d8','#0aaeee','#65b931','#cc7a2a','#e02662','#6250e8','#00c4a5','#d7aa30'];
 function save(){try{localStorage.setItem('neonSengokuNamesV6',JSON.stringify(names));localStorage.setItem('neonSengokuHistoryV6',JSON.stringify(winnersHistory));}catch(e){}}
-function load(){try{names=JSON.parse(localStorage.getItem('neonSengokuNamesV6')||'null')||sampleNames.slice();winnersHistory=JSON.parse(localStorage.getItem('neonSengokuHistoryV6')||'[]')||[]}catch(e){names=sampleNames.slice();winnersHistory=[]}}
+function load(){try{const savedNamesRaw=localStorage.getItem('neonSengokuNamesV6');const savedHistoryRaw=localStorage.getItem('neonSengokuHistoryV6');winnersHistory=JSON.parse(savedHistoryRaw||'[]')||[];names=savedNamesRaw?JSON.parse(savedNamesRaw)||[]:[];if(!Array.isArray(names))names=[];if(!Array.isArray(winnersHistory))winnersHistory=[];if(names.length===sampleNames.length&&winnersHistory.length===0&&names.every((n,i)=>n===sampleNames[i])){names=[];localStorage.setItem('neonSengokuNamesV6',JSON.stringify([]));}}catch(e){names=[];winnersHistory=[]}}
 function escapeHtml(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c))}
 function updateProbability(){
   const n=names.length;
