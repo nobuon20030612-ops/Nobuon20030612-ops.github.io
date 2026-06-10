@@ -18276,5 +18276,121 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+
+
+<script id="tsuikayou-araki-fuga-owned-list-fix-20260610">
+/* 2026-06-10: 荒木村重(風雅)を配置英傑一覧にも必ず追加する。
+   追加用DBの読み込み可否に関係なく、選択UI用マスターだけへ差分追加する。 */
+(function(){
+  "use strict";
+  var ARAKI = {
+    "internal_id":"EIK_0389",
+    "external_id":"追加用",
+    "image_external_id":"追加用",
+    "image_file":"追加用",
+    "image_path":"追加用",
+    "image_url":"追加用",
+    "ID方式":"追加用差分ID",
+    "external_id状態":"追加用",
+    "英傑名":"荒木村重(風雅)",
+    "職":"",
+    "コスト":"7",
+    "因子1":"仏門",
+    "因子2":"世渡り上手",
+    "因子3":"文化人",
+    "因子4":"対象外",
+    "生命":"39326",
+    "気合":"22478",
+    "腕力":"1916",
+    "耐久力":"2054",
+    "器用さ":"1768",
+    "知力":"2791",
+    "魅力":"2815",
+    "土属性":"2478",
+    "水属性":"2415",
+    "火属性":"2159",
+    "風属性":"2276",
+    "ID対応状況":"追加用",
+    "ID対応方法":"英傑一覧.csvから追加",
+    "ID元英傑名":"荒木村重(風雅)",
+    "育成技能1":"生命上昇Lv.5",
+    "育成技能2":"知力上昇Lv.3",
+    "育成技能3":"知力修練志向Lv.1",
+    "追加更新":"追加用",
+    "技能":"対象外",
+    "詳細":"対象外",
+    "確認状態":"英傑一覧.csvから追加",
+    "主キー運用":"internal_id",
+    "external_id運用メモ":"追加用差分DB内のみ"
+  };
+  function clone(obj){ return Object.assign({}, obj); }
+  function canon(v){
+    try{ if(typeof canonicalHeroName === "function") return canonicalHeroName(v); }catch(e){}
+    return String(v == null ? "" : v).replace(/[\s　]+/g, "").trim();
+  }
+  function sameHero(h){
+    if(!h) return false;
+    var name = h["英傑名"] || h["名前"] || h.name || "";
+    var id = h.internal_id || h["番号"] || h.id || "";
+    return canon(name) === canon(ARAKI["英傑名"]) || String(id) === ARAKI.internal_id;
+  }
+  function ensureEiketsuMaster(){
+    try{
+      if(typeof eiketsuMaster === "undefined") return false;
+      if(!Array.isArray(eiketsuMaster)) return false;
+      if(!eiketsuMaster.some(sameHero)) eiketsuMaster.push(clone(ARAKI));
+      try{ window.eiketsuMaster = eiketsuMaster; }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  function ensureOwnedUploadList(){
+    var row = {
+      "番号": ARAKI.internal_id,
+      "名前": ARAKI["英傑名"],
+      "職": ARAKI["職"],
+      "コスト": ARAKI["コスト"],
+      "因子1": ARAKI["因子1"],
+      "因子2": ARAKI["因子2"],
+      "因子3": ARAKI["因子3"],
+      "因子4": ARAKI["因子4"]
+    };
+    try{
+      if(!Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD)) window.OWNED_HERO_LIST_FROM_UPLOAD = [];
+      if(!window.OWNED_HERO_LIST_FROM_UPLOAD.some(sameHero)) window.OWNED_HERO_LIST_FROM_UPLOAD.push(row);
+    }catch(e){}
+    try{
+      if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== "undefined" && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD)){
+        if(!OWNED_HERO_LIST_FROM_UPLOAD.some(sameHero)) OWNED_HERO_LIST_FROM_UPLOAD.push(row);
+      }
+    }catch(e){}
+  }
+  function ensureArakiOwnedSelectable(){
+    ensureEiketsuMaster();
+    ensureOwnedUploadList();
+    try{ window.__jinpoArakiFugaOwnedSelectableReady = true; }catch(e){}
+  }
+  function wrapOpenReliable(){
+    try{
+      if(typeof window.__ownedHeroOpenReliable !== "function" || window.__ownedHeroOpenReliable.__arakiFugaWrapped) return;
+      var prev = window.__ownedHeroOpenReliable;
+      var wrapped = function(){
+        ensureArakiOwnedSelectable();
+        return prev.apply(this, arguments);
+      };
+      wrapped.__arakiFugaWrapped = true;
+      window.__ownedHeroOpenReliable = wrapped;
+    }catch(e){}
+  }
+  function tick(){
+    ensureArakiOwnedSelectable();
+    wrapOpenReliable();
+    try{ if(typeof renderOwnedHeroFilterUi === "function") renderOwnedHeroFilterUi(); }catch(e){}
+  }
+  tick();
+  document.addEventListener("DOMContentLoaded", tick);
+  [0, 100, 300, 700, 1200, 2000, 4000].forEach(function(ms){ setTimeout(tick, ms); });
+})();
+</script>
+
 </body>
 </html>
