@@ -58,5 +58,6 @@
       "data/grade3_6_parts/step114_grade3_6_combinations_part006.csv"
     ]
   },
-  "additional_db": "data/jinpo追加用_diff_5_6_7_8_9.json"
+  "additional_db": "data/jinpo追加用_diff_5_6_7_8_9.json",
+  "additional_db_new_heroes_rule": "今後の追加英傑は new_heroes に 職 を必ず入れる。未入力時もHTML側で 因子1 を職/特化に補完して、配置一覧の「特化 / コスト」表示が抜けないようにする。"
 }
