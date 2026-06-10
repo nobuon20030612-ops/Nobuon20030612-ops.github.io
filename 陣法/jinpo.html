@@ -2714,6 +2714,12 @@ formationSelect.innerHTML = `<option value="">陣形を選択</option>` + format
 formationSelect.value = "";
 eiketsuMaster = normalizeUploadedEiketsuMasterRows(await window.JinpoActivationEngine.loadCSV("data/jinpo_eiketsu_master.csv?v=20260515154758"));
 standardEiketsuMaster = eiketsuMaster.slice();
+try{
+  if(window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.mergeHeroes === "function"){
+    await window.JINPO_ADDITIONAL_DB.mergeHeroes();
+    standardEiketsuMaster = eiketsuMaster.slice();
+  }
+}catch(e){ console.warn("追加用DB 英傑マスター合成失敗", e); }
 inenMaster = await window.JinpoActivationEngine.loadCSV("data/jinpo_inen_master.csv?v=20260515154758");
 standardInenMaster = inenMaster.slice();
 try{
@@ -15190,24 +15196,32 @@ body{padding-top:0 !important;}
     if(!Array.isArray(heroes) || !heroes.length) return;
     var normalized = heroes.map(normalizeHero).filter(Boolean);
     if(!normalized.length) return;
+    // 既存英傑マスター読込前に追加英傑だけを入れると、配置一覧が追加英傑1件だけになるため禁止。
+    // 既存マスターが十分に読込済みの時だけ、末尾へ重複なし追加する。
+    function masterReady(list){ return Array.isArray(list) && list.length > 10; }
     try{
-      if(typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)){
+      if(typeof eiketsuMaster !== 'undefined' && masterReady(eiketsuMaster)){
         normalized.forEach(function(h){ if(!heroExists(eiketsuMaster,h)) eiketsuMaster.push(Object.assign({},h)); });
       }
     }catch(e){}
     try{
-      if(Array.isArray(window.eiketsuMaster)){
+      if(typeof standardEiketsuMaster !== 'undefined' && masterReady(standardEiketsuMaster)){
+        normalized.forEach(function(h){ if(!heroExists(standardEiketsuMaster,h)) standardEiketsuMaster.push(Object.assign({},h)); });
+      }
+    }catch(e){}
+    try{
+      if(masterReady(window.eiketsuMaster)){
         normalized.forEach(function(h){ if(!heroExists(window.eiketsuMaster,h)) window.eiketsuMaster.push(Object.assign({},h)); });
       }
     }catch(e){}
-    // 配置一覧元データは置き換えない。既存リストが存在する時だけ末尾に重複なし追加する。
+    // 配置一覧元データは置き換えない。既存リストが存在し、かつ十分な件数がある時だけ末尾に重複なし追加する。
     try{
-      if(Array.isArray(window.OWNED_HERO_LIST_FROM_UPLOAD) && window.OWNED_HERO_LIST_FROM_UPLOAD.length){
+      if(masterReady(window.OWNED_HERO_LIST_FROM_UPLOAD)){
         normalized.forEach(function(h){ if(!heroExists(window.OWNED_HERO_LIST_FROM_UPLOAD,h)) window.OWNED_HERO_LIST_FROM_UPLOAD.push(Object.assign({},h)); });
       }
     }catch(e){}
     try{
-      if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== 'undefined' && Array.isArray(OWNED_HERO_LIST_FROM_UPLOAD) && OWNED_HERO_LIST_FROM_UPLOAD.length){
+      if(typeof OWNED_HERO_LIST_FROM_UPLOAD !== 'undefined' && masterReady(OWNED_HERO_LIST_FROM_UPLOAD)){
         normalized.forEach(function(h){ if(!heroExists(OWNED_HERO_LIST_FROM_UPLOAD,h)) OWNED_HERO_LIST_FROM_UPLOAD.push(Object.assign({},h)); });
       }
     }catch(e){}
