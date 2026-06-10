@@ -3192,7 +3192,7 @@ if(Array.isArray(eiketsuMaster) && eiketsuMaster.length){
 return eiketsuMaster.map(e => ({
 "番号": e.internal_id || "",
 "名前": e["英傑名"] || "",
-"職": e["職"] || "",
+"職": e["職"] || e["特化"] || e["因子1"] || "",
 "コスト": e["コスト"] || "",
 "因子1": e["因子1"] || "",
 "因子2": e["因子2"] || "",
@@ -3329,7 +3329,7 @@ const factors = cleanFactors(r).map(f => `<span class="badge">${escHtml(f)}</spa
 return `<div class="ownedHeroReliableCard ${picked ? "selectedOwned" : ""}" data-owned-reliable-key="${escHtml(key)}">
 <div>
 <div class="ownedHeroName">${escHtml(rowName(r))}${picked ? ` <span class="heroTag">選択中</span>` : ""}</div>
-<div class="ownedHeroMeta">${escHtml(r["職"] || "")} / コスト ${escHtml(r["コスト"] || "未確認")}</div>
+<div class="ownedHeroMeta">${escHtml(r["職"] || r["特化"] || r["因子1"] || "")} / コスト ${escHtml(r["コスト"] || "未確認")}</div>
 <div>${factors}</div>
 </div>
 </div>`;
@@ -15214,6 +15214,10 @@ body{padding-top:0 !important;}
     out.internal_id = norm(out.internal_id || out['番号'] || out.id || name);
     out['番号'] = out['番号'] || out.internal_id;
     out['コスト'] = out['コスト'] || out.cost || '';
+    // 追加用DBの新英傑で「職」が未入力でも、配置一覧の「特化 / コスト」表示が欠けないようにする。
+    // 今後の追加でも、職/特化/job が無ければ因子1を特化表示へ使う。
+    out['職'] = out['職'] || out['特化'] || out.job || out['因子1'] || '';
+    out['特化'] = out['特化'] || out['職'] || out['因子1'] || '';
     return out;
   }
   function getHeroId(h){ return norm(h && (h.internal_id || h['番号'] || h.id)); }
