@@ -13647,7 +13647,12 @@ document.addEventListener("click", function(ev){
   var dbLoading26 = {};
   var tsuikayouDiffCache26 = null;
   var tsuikayouDiffLoading26 = null;
-  var TSUIKAYOU_DIFF_PATH26 = "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_step26";
+  var TSUIKAYOU_DIFF_PATH26 = "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_step26_fix2";
+  var TSUIKAYOU_DIFF_PATHS26 = [
+    "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_step26_fix2",
+    "data/" + encodeURIComponent("jinpo追加用_diff_5_6_7_8_9.json") + "?v=20260610_araki_fuga_step26_fix2",
+    "data/jinpo追加用_diff_5_6_7_8_9.json"
+  ];
   var shownRows26 = [];
   var renderSeq26 = 0;
 
@@ -13842,15 +13847,30 @@ document.addEventListener("click", function(ev){
       return Promise.resolve(count ? tsuikayouDiffCache26.filter(function(r){ return Number(r && r.bond_count) === count; }) : tsuikayouDiffCache26.slice());
     }
     if(!tsuikayouDiffLoading26){
-      tsuikayouDiffLoading26 = fetch(TSUIKAYOU_DIFF_PATH26, {cache:"no-store"}).then(function(res){
-        if(!res.ok) throw new Error("追加用DB HTTP " + res.status);
-        return res.json();
-      }).then(function(pack){
+      function fetchTsuikayouPack26(idx, lastErr){
+        idx = Number(idx) || 0;
+        var paths = TSUIKAYOU_DIFF_PATHS26 || [TSUIKAYOU_DIFF_PATH26];
+        if(idx >= paths.length){
+          throw lastErr || new Error("追加用DBを全候補パスで読み込めません");
+        }
+        var path = paths[idx];
+        return fetch(path, {cache:"no-store"}).then(function(res){
+          if(!res.ok) throw new Error("追加用DB HTTP " + res.status + " / " + path);
+          return res.json();
+        }).then(function(pack){
+          try{ window.__jinpoTsuikayouArakiFugaStep26Path = path; }catch(e){}
+          return pack;
+        }).catch(function(err){
+          return fetchTsuikayouPack26(idx + 1, err);
+        });
+      }
+      tsuikayouDiffLoading26 = fetchTsuikayouPack26(0).then(function(pack){
         tsuikayouDiffCache26 = flattenTsuikayouDiff26(pack);
         try{ window.__jinpoTsuikayouArakiFugaStep26Rows = tsuikayouDiffCache26; }catch(e){}
         return tsuikayouDiffCache26;
       }).catch(function(err){
         console.error("step26 追加用DB読込失敗", err);
+        try{ window.__jinpoTsuikayouArakiFugaStep26Error = String(err && (err.stack || err.message) || err); }catch(e){}
         tsuikayouDiffCache26 = [];
         return tsuikayouDiffCache26;
       }).finally(function(){ tsuikayouDiffLoading26 = null; });
@@ -18091,7 +18111,12 @@ body{padding-top:0 !important;}
    既存の巨大DB/CSVは変更しない。荒木村重(風雅)を含む追加用5〜9因縁JSONだけを合成する。 */
 (function(){
   "use strict";
-  var DIFF_PATH = "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga";
+  var DIFF_PATH = "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_fix2";
+  var DIFF_PATHS = [
+    "data/jinpo追加用_diff_5_6_7_8_9.json?v=20260610_araki_fuga_fix2",
+    "data/" + encodeURIComponent("jinpo追加用_diff_5_6_7_8_9.json") + "?v=20260610_araki_fuga_fix2",
+    "data/jinpo追加用_diff_5_6_7_8_9.json"
+  ];
   var diffPromise = null;
   var diffLoaded = false;
   var diffRows = [];
@@ -18177,10 +18202,24 @@ body{padding-top:0 !important;}
     if(diffLoaded) return Promise.resolve(diffRows);
     if(diffPromise) return diffPromise;
     setStatusLoading();
-    diffPromise = fetch(DIFF_PATH, {cache:"no-store"}).then(function(res){
-      if(!res.ok) throw new Error("追加用DB HTTP " + res.status);
-      return res.json();
-    }).then(function(pack){
+    function fetchDiffPack(idx, lastErr){
+      idx = Number(idx) || 0;
+      var paths = DIFF_PATHS || [DIFF_PATH];
+      if(idx >= paths.length){
+        throw lastErr || new Error("追加用DBを全候補パスで読み込めません");
+      }
+      var path = paths[idx];
+      return fetch(path, {cache:"no-store"}).then(function(res){
+        if(!res.ok) throw new Error("追加用DB HTTP " + res.status + " / " + path);
+        return res.json();
+      }).then(function(pack){
+        try{ window.__jinpoTsuikayouArakiFugaDiffPath = path; }catch(e){}
+        return pack;
+      }).catch(function(err){
+        return fetchDiffPack(idx + 1, err);
+      });
+    }
+    diffPromise = fetchDiffPack(0).then(function(pack){
       appendHeroRows(pack);
       diffRows = flattenRows(pack);
       appendRowsToRuntime(diffRows);
