@@ -28,6 +28,11 @@ button,input{font:inherit}button{cursor:pointer;border:0;color:#fff;font-weight:
 .startBig{display:block;margin:12px auto 5px;width:min(398px,100%);min-height:48px;border-radius:999px;background:linear-gradient(90deg,#ff2f63,#ff2fe1,#23f5ff,#72ff4e);background-size:240% 100%;animation:glow 2.5s linear infinite;font-size:clamp(19px,1.9vw,27px);box-shadow:0 0 28px rgba(255,47,225,.35),0 0 40px rgba(35,245,255,.22);text-shadow:0 0 14px rgba(0,0,0,.8)}@keyframes glow{to{background-position:240% 0}}.hint{text-align:center;color:#d7dbff;font-size:clamp(12px,1vw,15px);font-weight:900;margin:7px 0 3px}
 .history{height:100%;min-height:420px;margin-top:0;padding:10px;border-radius:24px;background:rgba(3,6,20,.52);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 0 28px rgba(0,0,0,.24)}.historyTop{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin-bottom:10px}.historyTitle{font-size:clamp(17px,1.35vw,21px);font-weight:1000;color:#fff}.historyBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.historyList{display:flex;flex-direction:column;gap:9px;max-height:calc(100vh - 245px);overflow:auto}.histItem{display:grid;grid-template-columns:38px 1fr 56px 56px;gap:7px;align-items:center;padding:7px;border-radius:17px;background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.13)}.histNo{font-size:14px;font-weight:1000;color:var(--gold);text-align:center}.histName{font-size:clamp(14px,1.1vw,18px);font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.miniBtn{height:33px;border-radius:12px;font-size:12px}.restore{background:linear-gradient(135deg,#1fffe3,#64ff3c);color:#031215}.deleteHist{background:linear-gradient(135deg,#ff3965,#a70c42);color:#fff}.emptyHistory{color:#c9ccff;font-weight:900;font-size:20px;padding:10px}.confetti{position:fixed;inset:0;pointer-events:none;z-index:20}
 @media(max-width:980px){.app{grid-template-columns:1fr;padding:8px}.externalTopBack{margin-bottom:8px}.probBox{font-size:15px;min-height:40px;padding:0 12px}.rows{max-height:38vh}.row{grid-template-columns:54px 1fr 44px;min-height:54px}.stagePanel{grid-template-columns:1fr;padding:10px}.history{min-height:auto}.historyTop{flex-direction:column}.historyList{max-height:28vh}.histItem{grid-template-columns:42px 1fr 62px 62px}.wheelWrap{width:min(390px,86vw)}.startBig{min-height:54px}}
+
+/* webview tap target fix: top back button only */
+.externalTopBack{position:relative;z-index:1000;overflow:visible}
+.topBackBtn{position:relative !important;z-index:1001 !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;min-height:42px !important;line-height:1 !important;padding:0 18px !important;pointer-events:auto !important;touch-action:manipulation !important;-webkit-tap-highlight-color:rgba(255,215,106,.35)}
+.topBackBtn::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:auto}
 </style>
 </head>
 <body>
@@ -66,6 +71,20 @@ button,input{font:inherit}button{cursor:pointer;border:0;color:#fff;font-weight:
 </main>
 <script>
 'use strict';
+
+// webview tap target fix: top back button only
+(function(){
+  var btn=document.querySelector('.topBackBtn');
+  if(!btn)return;
+  var target='https://nobuon20030612-ops.github.io/index.html';
+  btn.setAttribute('href',target);
+  btn.setAttribute('target','_self');
+  btn.addEventListener('click',function(e){
+    e.preventDefault();
+    window.location.href=target;
+  },false);
+})();
+
 const sampleNames=['織田信長','豊臣秀吉','徳川家康','武田信玄','上杉謙信','伊達政宗','真田幸村','明智光秀'];
 let names=[],winnersHistory=[],spinning=false,rotation=0,soundOn=true,confettiOn=true;
 const rows=document.getElementById('rows'),count=document.getElementById('count'),wheel=document.getElementById('wheel'),ctx=wheel.getContext('2d'),winnerName=document.getElementById('winnerName'),historyList=document.getElementById('historyList'),probBox=document.getElementById('probBox');
