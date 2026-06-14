@@ -2,6 +2,28 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<script id="android-app-pc-mode-early">
+(function(){
+  'use strict';
+  var ua = navigator.userAgent || '';
+  if (!/Android/i.test(ua)) return;
+
+  document.documentElement.classList.add('android-app-pc-mode');
+
+  var meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport');
+    var head = document.head || document.getElementsByTagName('head')[0] || document.documentElement;
+    head.appendChild(meta);
+  }
+  meta.setAttribute('content', 'width=1280, initial-scale=0.3, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes');
+
+  var css = 'html.android-app-pc-mode{width:1280px!important;min-width:1280px!important;overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;}html.android-app-pc-mode body{min-width:1280px!important;overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;-webkit-text-size-adjust:100%!important;}html.android-app-pc-mode .app,html.android-app-pc-mode main{max-width:none!important;}';
+  document.write('<style id="android-app-pc-mode-style">' + css + '</style>');
+})();
+</script>
+
 <title>星海の荒石</title>
 
 <style>
@@ -152,7 +174,6 @@ body{
   grid-template-columns:1fr 1fr;
 }
 </style>
-
 <link rel="manifest" href="manifest.json">
 <script src="pwa-init.js"></script>
 </head>
