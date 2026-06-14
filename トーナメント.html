@@ -103,6 +103,58 @@ button:disabled{opacity:.45;cursor:not-allowed}
   cursor:not-allowed;
   box-shadow:none;
 }
+
+.overview-open-btn{
+  min-height:52px;
+  padding:12px 18px;
+  font-size:19px;
+  font-weight:900;
+  border-radius:14px;
+  background:linear-gradient(135deg,#22e6a8,#00b7ff,#3461ff);
+  border-color:#b7fff0;
+  color:#f7ffff;
+  box-shadow:0 0 16px rgba(34,230,168,.34);
+}
+.overview-open-btn:hover{
+  border-color:#ffffff;
+  box-shadow:0 0 22px rgba(34,230,168,.48), inset 0 1px 0 rgba(255,255,255,.22);
+}
+.overview-admin-btn{
+  background:linear-gradient(135deg,#00c896,#008cff,#574bff);
+  border-color:#a8fff1;
+  color:#f7ffff;
+  font-weight:900;
+}
+.overview-body{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+  max-height:62vh;
+  overflow:auto;
+  padding-right:4px;
+}
+.overview-display-line{
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid rgba(134,167,255,.34);
+  border-radius:10px;
+  background:rgba(255,255,255,.045);
+  color:#f6fbff;
+  font-size:clamp(13px, 2.7vw, 16px);
+  line-height:1.25;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.overview-edit-input{
+  width:100%;
+  min-height:38px;
+}
+.overview-limit-note{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45;
+}
 .entry-modal{
   position:fixed;
   inset:0;
@@ -1556,6 +1608,20 @@ body.single-sticky-scroll-active{
     </div>
   </div>
 
+
+
+  <div id="overviewModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div id="overviewModalTitle" class="entry-modal-title">概要</div>
+      <p id="overviewModalNote" class="note">大会の概要を表示します。</p>
+      <div id="overviewModalBody" class="overview-body"></div>
+      <div class="entry-modal-actions">
+        <button id="overviewSaveBtn" class="primary hidden" type="button">保存</button>
+        <button id="overviewCloseBtn" class="ghost" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <section id="doubleView" class="double-layout hidden">
     <section id="doubleAdminPanel" class="panel">
       <h2>ダブル管理者操作</h2>
@@ -1568,6 +1634,7 @@ body.single-sticky-scroll-active{
         <button id="doubleShuffleBtn">シャッフル</button>
         <button id="doubleSwitchTypeBtn">形式変更</button>
         <button id="doubleEntryManageBtn" class="entry-open-btn">エントリー確認</button>
+        <button id="doubleOverviewEditBtn" class="overview-admin-btn">概要編集</button>
         <button id="doubleExtendDeleteBtn">自動削除延長</button>
         <button id="doubleDeleteBtn" class="danger">トーナメント削除</button>
       </div>
@@ -1601,6 +1668,7 @@ body.single-sticky-scroll-active{
         <button id="shuffleBtn">シャッフル</button>
         <button id="switchTypeBtn">形式変更</button>
         <button id="entryManageBtn" class="entry-open-btn">エントリー確認</button>
+        <button id="overviewEditBtn" class="overview-admin-btn">概要編集</button>
         <button id="deleteBtn" class="danger">トーナメント削除</button>
         <button id="extendDeleteBtn">自動削除延長</button>
       </div>
@@ -1930,6 +1998,99 @@ function ensureEntryBuckets(tournament){
   if(!tournament.pendingEntries) tournament.pendingEntries = [];
   if(!tournament.individualEntries) tournament.individualEntries = [];
   return tournament;
+}
+
+const OVERVIEW_LINE_COUNT = 40;
+const OVERVIEW_LINE_MAX_LENGTH = 48;
+let overviewTargetTournamentId = null;
+let overviewEditMode = false;
+function ensureOverview(tournament){
+  if(!tournament) return [];
+  if(!Array.isArray(tournament.overviewLines)) tournament.overviewLines = [];
+  tournament.overviewLines = tournament.overviewLines.slice(0, OVERVIEW_LINE_COUNT).map(line => String(line || "").slice(0, OVERVIEW_LINE_MAX_LENGTH));
+  return tournament.overviewLines;
+}
+function overviewLinesOf(tournament){
+  return ensureOverview(tournament).map(line => String(line || "").trim()).filter(Boolean);
+}
+function overviewPasteChunks(text){
+  const chunks = [];
+  String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").forEach(part => {
+    const value = part.trim();
+    if(!value) return;
+    for(let i = 0; i < value.length && chunks.length < OVERVIEW_LINE_COUNT; i += OVERVIEW_LINE_MAX_LENGTH){
+      chunks.push(value.slice(i, i + OVERVIEW_LINE_MAX_LENGTH));
+    }
+  });
+  return chunks;
+}
+function bindOverviewPasteInputs(){
+  for(let i = 1; i <= OVERVIEW_LINE_COUNT; i++){
+    const input = $(`overviewLine${i}`);
+    if(!input) continue;
+    input.addEventListener("paste", e => {
+      const text = e.clipboardData ? e.clipboardData.getData("text") : "";
+      if(!text || text.length <= OVERVIEW_LINE_MAX_LENGTH) return;
+      e.preventDefault();
+      const chunks = overviewPasteChunks(text);
+      let lineIndex = i;
+      chunks.forEach(chunk => {
+        const target = $(`overviewLine${lineIndex}`);
+        if(target) target.value = chunk.slice(0, OVERVIEW_LINE_MAX_LENGTH);
+        lineIndex++;
+      });
+    });
+  }
+}
+function openOverviewModal(id, editable = false){
+  const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament){ alert("トーナメントが見つかりません。"); return; }
+  const canEdit = !!editable && currentMode === "admin" && currentTournament && currentTournament.id === id;
+  overviewTargetTournamentId = id;
+  overviewEditMode = canEdit;
+  const lines = ensureOverview(tournament);
+  $("overviewModalTitle").textContent = `${tournament.title}｜概要`;
+  $("overviewModalNote").textContent = canEdit
+    ? `長い文章を貼り付けできます。貼り付け時は1行${OVERVIEW_LINE_MAX_LENGTH}文字ずつ自動で改行します。最大${OVERVIEW_LINE_COUNT}行まで入力できます。`
+    : "概要は閲覧のみです。";
+  if(canEdit){
+    $("overviewModalBody").innerHTML = Array.from({length: OVERVIEW_LINE_COUNT}, (_,i) => {
+      const value = escapeHtml(lines[i] || "");
+      return `<input id="overviewLine${i+1}" class="overview-edit-input" maxlength="${OVERVIEW_LINE_MAX_LENGTH}" placeholder="概要${i+1}行目（${OVERVIEW_LINE_MAX_LENGTH}文字まで）" value="${value}">`;
+    }).join("") + `<div class="overview-limit-note">表示崩れ防止のため、長い文章を貼り付けると1行${OVERVIEW_LINE_MAX_LENGTH}文字ずつ自動で分けます。</div>`;
+    bindOverviewPasteInputs();
+    $("overviewSaveBtn").classList.remove("hidden");
+  }else{
+    const displayLines = overviewLinesOf(tournament);
+    $("overviewModalBody").innerHTML = displayLines.length
+      ? displayLines.map(line => `<div class="overview-display-line" title="${escapeHtml(line)}">${escapeHtml(line)}</div>`).join("")
+      : '<div class="note">概要はまだ設定されていません。</div>';
+    $("overviewSaveBtn").classList.add("hidden");
+  }
+  $("overviewModal").classList.remove("hidden");
+}
+function closeOverviewModal(){
+  overviewTargetTournamentId = null;
+  overviewEditMode = false;
+  $("overviewModal").classList.add("hidden");
+}
+function saveOverviewText(){
+  if(!overviewEditMode || !overviewTargetTournamentId) return;
+  const tournament = store.tournaments.find(t => t.id === overviewTargetTournamentId && t.status !== "削除" && !isTournamentDeleted(t.id));
+  if(!tournament){ alert("トーナメントが見つかりません。"); closeOverviewModal(); return; }
+  tournament.overviewLines = Array.from({length: OVERVIEW_LINE_COUNT}, (_,i) => {
+    const el = $(`overviewLine${i+1}`);
+    return el ? el.value.trim().slice(0, OVERVIEW_LINE_MAX_LENGTH) : "";
+  }).filter(Boolean);
+  tournament.updatedAt = Date.now();
+  if(currentTournament && currentTournament.id === tournament.id) currentTournament = tournament;
+  saveStore();
+  closeOverviewModal();
+  if(currentTournament && currentMode === "admin"){
+    if(currentTournament.type === "double") renderDouble();
+    else renderSingle();
+  }
+  renderHub();
 }
 function showOnly(viewId){
   ["hubView","singleView","doubleView"].forEach(id => $(id).classList.toggle("hidden", id !== viewId));
@@ -2431,6 +2592,9 @@ function renderHub(){
       <div class="row" style="margin-top:8px">
         <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
         <button class="entry-open-btn" onclick="openEntryModal('${t.id}')" ${t.created ? "disabled" : ""}>エントリー受付</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="overview-open-btn" onclick="openOverviewModal('${t.id}', false)">概要</button>
       </div>
     </div>
   `).join("");
@@ -3727,6 +3891,10 @@ $("entryIndividualModeBtn").onclick = () => setEntryMode("individual");
 $("entryTeamModeBtn").onclick = () => setEntryMode("team");
 $("entryManageBtn").onclick = openEntryManageModal;
 $("doubleEntryManageBtn").onclick = openEntryManageModal;
+$("overviewEditBtn").onclick = () => { if(currentTournament) openOverviewModal(currentTournament.id, true); };
+$("doubleOverviewEditBtn").onclick = () => { if(currentTournament) openOverviewModal(currentTournament.id, true); };
+$("overviewSaveBtn").onclick = saveOverviewText;
+$("overviewCloseBtn").onclick = closeOverviewModal;
 $("switchTypeBtn").onclick = switchTournamentType;
 $("doubleSwitchTypeBtn").onclick = switchTournamentType;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
