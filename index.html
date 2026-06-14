@@ -3,7 +3,30 @@
 <head>
   <link rel="icon" type="image/png" href="favicon.png?v=2">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script id="android-app-pc-mode-early">
+(function(){
+  'use strict';
+  var originalViewport = "width=device-width, initial-scale=1.0";
+  var androidViewport = "width=1280, initial-scale=0.3, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes";
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var meta = document.createElement('meta');
+  meta.setAttribute('name', 'viewport');
+  meta.setAttribute('content', isAndroid ? androidViewport : originalViewport);
+  var here = document.currentScript;
+  if (here && here.parentNode) {
+    here.parentNode.insertBefore(meta, here.nextSibling);
+  } else if (document.head) {
+    document.head.appendChild(meta);
+  }
+  if (!isAndroid) return;
+  document.documentElement.classList.add('android-app-pc-mode');
+  var style = document.createElement('style');
+  style.id = 'android-app-pc-mode-style';
+  style.textContent = 'html.android-app-pc-mode{width:1280px!important;min-width:1280px!important;overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;}html.android-app-pc-mode body{min-width:1280px!important;overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;-webkit-text-size-adjust:100%;touch-action:pan-x pan-y;}';
+  document.head.appendChild(style);
+})();
+</script>
 <meta name="google-site-verification" content="EmXUONcxFN-HIXS3VmW-Kq3NfU8lShn4dwUGCAoOzfw" />
 
 <title>たいらの野望 | 信長の野望 | 信長の野望オンライン | 九十九ツール・鬼神石・家臣計算機まとめ | 信長の野望オンライン攻略</title>
@@ -168,6 +191,7 @@ body {
 
   }
 </style>
+<link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -329,5 +353,6 @@ window.addEventListener("load", () => {
 });
 </script>
 
+<script src="pwa-init.js?v=20260614_android_pc_safe_v4" defer></script>
 </body>
 </html>
