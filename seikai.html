@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=1280, user-scalable=yes">
 <title>星海の荒石</title>
 
 <style>
@@ -152,6 +153,24 @@ body{
   grid-template-columns:1fr 1fr;
 }
 </style>
+
+<link rel="manifest" href="manifest.json">
+<style id="pc-fixed-webview-style">
+/* PC width fixed for Android WebView / mobile browsers */
+html{
+  width:1280px !important;
+  min-width:1280px !important;
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+}
+body{
+  min-width:1280px !important;
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+  -webkit-text-size-adjust:100%;
+}
+</style>
+<script src="pwa-init.js" defer></script>
 </head>
 
 <body>
