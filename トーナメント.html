@@ -1832,22 +1832,22 @@ body.single-sticky-scroll-active{
 /* order-roulette-mini: 先攻後攻専用の軽量2択ルーレット */
 .order-roulette-area{
   display:grid;
-  gap:4px;
-  padding:5px 7px 6px;
+  gap:5px;
+  padding:6px 8px 8px;
   border-top:1px solid rgba(255,255,255,.10);
   background:
     linear-gradient(90deg,rgba(255,47,157,.16),rgba(36,247,255,.13),rgba(116,255,72,.10));
 }
 .order-roulette-result{
-  min-height:20px;
-  padding:2px 6px;
+  min-height:22px;
+  padding:3px 6px;
   border-radius:8px;
   border:1px solid rgba(36,247,255,.30);
   background:rgba(2,7,22,.48);
   color:#f8fbff;
-  font-size:10.5px;
+  font-size:11px;
   font-weight:900;
-  line-height:1.25;
+  line-height:1.35;
   overflow:hidden;
   white-space:nowrap;
   text-overflow:ellipsis;
@@ -1865,10 +1865,10 @@ body.single-sticky-scroll-active{
 }
 .order-roulette-btn{
   flex:1 1 auto;
-  min-height:24px;
-  padding:2px 7px;
+  min-height:28px;
+  padding:3px 7px;
   border-radius:999px;
-  font-size:10.5px;
+  font-size:11px;
   font-weight:1000;
   background:linear-gradient(90deg,#ff2f9d,#7c3cff,#24f7ff,#74ff48);
   background-size:220% 100%;
@@ -1877,12 +1877,11 @@ body.single-sticky-scroll-active{
 }
 .order-roulette-reset{
   flex:0 0 auto;
-  min-height:24px;
-  padding:2px 7px;
+  min-height:28px;
+  padding:3px 7px;
   border-radius:999px;
-  font-size:10.5px;
+  font-size:11px;
 }
-.order-roulette-area.done .order-roulette-actions:empty{display:none}
 .order-roulette-modal-box{
   max-width:520px;
   background:
@@ -1949,6 +1948,50 @@ body.single-sticky-scroll-active{
   .order-roulette-result{font-size:10px;}
 }
 
+
+
+/* hub-tournament-title-readable-fix: 狭い画面で大会名が縦読みにならないよう閲覧カードだけ上詰め1列化 */
+@media(max-width:1100px){
+  .view-tournament-card{
+    grid-template-columns:1fr!important;
+    row-gap:4px!important;
+    padding:7px 10px!important;
+  }
+  .view-tournament-card .card-title{
+    grid-column:1!important;
+    grid-row:1!important;
+    min-width:0!important;
+    font-size:16px!important;
+    line-height:1.22!important;
+    white-space:normal!important;
+    word-break:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+  .view-tournament-badges{
+    grid-column:1!important;
+    grid-row:2!important;
+  }
+  .tournament-datetime-badge{
+    grid-column:1!important;
+    grid-row:3!important;
+    width:100%!important;
+    margin:0!important;
+    padding:5px 8px!important;
+  }
+  .tournament-datetime-badge span{
+    font-size:11px!important;
+  }
+  .tournament-datetime-badge strong{
+    font-size:14px!important;
+    line-height:1.12!important;
+  }
+  .view-tournament-actions{
+    grid-column:1!important;
+    grid-row:4!important;
+    margin-top:1px!important;
+    flex-wrap:wrap!important;
+  }
+}
 
 </style>
 </head>
@@ -2117,8 +2160,8 @@ body.single-sticky-scroll-active{
 
   <div id="orderRouletteModal" class="entry-modal hidden" role="dialog" aria-modal="true">
     <div class="entry-modal-box order-roulette-modal-box">
-      <div class="entry-modal-title">先攻ルーレット</div>
-      <p id="orderRouletteNote" class="note">この組み合わせの2名だけで先攻を決めます。</p>
+      <div class="entry-modal-title">先攻後攻ルーレット</div>
+      <p id="orderRouletteNote" class="note">この組み合わせの2名だけで回します。</p>
       <div class="order-roulette-vs">
         <div id="orderRouletteName1" class="order-roulette-name"></div>
         <div class="order-roulette-vs-mark">VS</div>
@@ -2126,7 +2169,7 @@ body.single-sticky-scroll-active{
       </div>
       <div id="orderRouletteResultBig" class="order-roulette-result-big">未実施</div>
       <div class="entry-modal-actions">
-        <button id="orderRouletteSpinBtn" class="primary" type="button">先攻ルーレットを回す</button>
+        <button id="orderRouletteSpinBtn" class="primary" type="button">ルーレットを回す</button>
         <button id="orderRouletteResetBtn" class="danger" type="button">リセット</button>
         <button id="orderRouletteCloseBtn" class="ghost" type="button">閉じる</button>
       </div>
@@ -3881,19 +3924,18 @@ function canUseOrderRoulette(match){
 }
 function orderRouletteText(match){
   const result = orderRouletteResultFor(match);
-  if(!result) return "先攻：未実施";
-  return `先攻：${getName(result.firstId)}`;
+  if(!result) return "先攻後攻：未実施";
+  return `先攻：${getName(result.firstId)} / 後攻：${getName(result.secondId)}`;
 }
 function orderRouletteHtml(match){
   if(!canUseOrderRoulette(match)) return "";
   const hasResult = Boolean(orderRouletteResultFor(match));
-  const spinBtn = hasResult ? "" : `<button class="order-roulette-btn" type="button" data-order-spin="${match.id}">先攻ルーレット</button>`;
   const resetBtn = currentMode === "admin" && hasResult ? `<button class="order-roulette-reset danger" type="button" data-order-reset="${match.id}">リセット</button>` : "";
   return `
-    <div class="order-roulette-area ${hasResult ? "done" : ""}">
+    <div class="order-roulette-area">
       <div class="order-roulette-result ${hasResult ? "" : "empty"}">${escapeHtml(orderRouletteText(match))}</div>
       <div class="order-roulette-actions">
-        ${spinBtn}
+        <button class="order-roulette-btn" type="button" data-order-spin="${match.id}">先攻後攻ルーレット</button>
         ${resetBtn}
       </div>
     </div>`;
@@ -3934,9 +3976,9 @@ function openOrderRoulette(matchId){
   $("orderRouletteName2").textContent = p2;
   $("orderRouletteName1").classList.remove("active");
   $("orderRouletteName2").classList.remove("active");
+  $("orderRouletteSpinBtn").disabled = false;
+  $("orderRouletteResetBtn").classList.toggle("hidden", currentMode !== "admin" || !orderRouletteResultFor(match));
   const result = orderRouletteResultFor(match);
-  $("orderRouletteSpinBtn").disabled = Boolean(result);
-  $("orderRouletteResetBtn").classList.toggle("hidden", currentMode !== "admin" || !result);
   $("orderRouletteResultBig").textContent = result ? orderRouletteText(match) : "未実施";
   $("orderRouletteNote").textContent = "閲覧画面でも回せます。リセットは管理画面だけです。";
   $("orderRouletteModal").classList.remove("hidden");
@@ -3951,10 +3993,6 @@ function spinOrderRoulette(){
   if(!orderRouletteTarget || !currentTournament) return;
   const match = findAnyMatchById(orderRouletteTarget.matchId);
   if(!canUseOrderRoulette(match)) return;
-  if(orderRouletteResultFor(match)){
-    $("orderRouletteSpinBtn").disabled = true;
-    return;
-  }
   clearOrderRouletteTimer();
   const ids = [match.player1Id, match.player2Id];
   let tick = 0;
@@ -3978,7 +4016,7 @@ function spinOrderRoulette(){
       $("orderRouletteName1").classList.toggle("active", firstId === match.player1Id);
       $("orderRouletteName2").classList.toggle("active", firstId === match.player2Id);
       $("orderRouletteResultBig").textContent = orderRouletteText(match);
-      $("orderRouletteSpinBtn").disabled = true;
+      $("orderRouletteSpinBtn").disabled = false;
       $("orderRouletteResetBtn").classList.toggle("hidden", currentMode !== "admin");
       if(currentTournament.type === "double") renderDoubleDiagram();
       else renderBracket();
@@ -3990,7 +4028,7 @@ function resetOrderRoulette(matchId){
   const match = findAnyMatchById(matchId);
   if(!match) return;
   if(!orderRouletteResultFor(match)) return;
-  if(!confirm("この組み合わせの先攻ルーレット結果をリセットしますか？")) return;
+  if(!confirm("この組み合わせの先攻後攻ルーレット結果をリセットしますか？")) return;
   if(match.orderRoulette) delete match.orderRoulette;
   const results = ensureOrderRouletteStore(currentTournament);
   if(results[match.id]) delete results[match.id];
@@ -3999,7 +4037,6 @@ function resetOrderRoulette(matchId){
     $("orderRouletteResultBig").textContent = "未実施";
     $("orderRouletteName1").classList.remove("active");
     $("orderRouletteName2").classList.remove("active");
-    $("orderRouletteSpinBtn").disabled = false;
     $("orderRouletteResetBtn").classList.add("hidden");
   }
   if(currentTournament.type === "double") renderDoubleDiagram();
@@ -4068,7 +4105,7 @@ function renderBracket(){
     return;
   }
   const totalRounds = roundsFor();
-  const matchW = 210, matchH = 142, gapX = 58, gapY = 30;
+  const matchW = 210, matchH = 132, gapX = 58, gapY = 24;
   const baseStep = matchW + gapX;
   const firstRoundCount = currentTournament.matches.filter(m => m.round === 1).length;
   const contentWidth = firstRoundCount * matchW + Math.max(0, firstRoundCount - 1) * gapX;
@@ -4589,7 +4626,7 @@ function createDoubleBracketSection(title, rounds, emptyText, type){
 function renderDoubleTreeInto(root, rounds, type, fixedBar){
   const isFinal = type === "final";
   const matchW = isFinal ? 210 : 210;
-  const matchH = 142;
+  const matchH = 132;
   const gapX = isFinal ? 56 : 70;
   const gapY = isFinal ? 18 : 34;
   const topPad = 34;
