@@ -1469,6 +1469,342 @@ body.single-sticky-scroll-active{
   }
 }
 
+
+/* tournament-event-date-display: 開催日時表示と管理者編集欄を追加（既存機能は変更しない） */
+.view-tournament-card{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  justify-content:space-between;
+}
+.view-tournament-main{
+  min-width:0;
+  flex:1 1 auto;
+}
+.tournament-datetime-badge{
+  flex:0 1 46%;
+  min-width:220px;
+  max-width:520px;
+  align-self:flex-start;
+  margin-top:2px;
+  padding:9px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,230,109,.86);
+  background:
+    linear-gradient(135deg,rgba(255,230,109,.30),rgba(255,77,141,.26),rgba(110,231,255,.22)),
+    rgba(14,20,44,.88);
+  box-shadow:
+    0 0 22px rgba(255,230,109,.22),
+    inset 0 1px 0 rgba(255,255,255,.22);
+  text-align:center;
+  overflow:hidden;
+}
+.tournament-datetime-badge span{
+  display:block;
+  color:#ffe66d;
+  font-size:15px;
+  font-weight:900;
+  line-height:1.15;
+  text-shadow:0 0 12px rgba(255,230,109,.42);
+}
+.tournament-datetime-badge strong{
+  display:block;
+  margin-top:4px;
+  color:#ffffff;
+  font-size:clamp(16px, 1.75vw, 24px);
+  line-height:1.18;
+  font-weight:900;
+  letter-spacing:.01em;
+  overflow-wrap:anywhere;
+  text-shadow:
+    0 0 12px rgba(255,94,196,.50),
+    0 0 18px rgba(110,231,255,.36);
+}
+.tournament-datetime-badge.is-empty strong{
+  color:#cbd7f3;
+  font-size:16px;
+}
+.admin-event-date-editor{
+  display:grid;
+  gap:8px;
+  margin:10px 0 8px;
+  padding:10px;
+  border:1px solid rgba(255,230,109,.42);
+  border-radius:12px;
+  background:rgba(255,230,109,.06);
+}
+.admin-event-date-editor label{
+  color:#ffe66d;
+  font-weight:900;
+  text-shadow:0 0 10px rgba(255,230,109,.30);
+}
+.admin-event-date-editor .row input{
+  flex:1 1 220px;
+  min-width:0;
+}
+@media(max-width:760px){
+  .view-tournament-card{
+    display:grid;
+  }
+  .tournament-datetime-badge{
+    width:100%;
+    min-width:0;
+  }
+}
+/* tournament-event-date-compact-view: 閲覧カードの余白を詰め、2件程度をスクロールなしで見やすくする */
+.view-tournament-card{
+  padding:8px 10px!important;
+  gap:10px;
+  align-items:flex-start;
+}
+.view-tournament-card .card-title{
+  margin-bottom:4px;
+  line-height:1.2;
+}
+.view-tournament-badges{
+  gap:6px!important;
+  margin:0!important;
+}
+.view-tournament-card .badge{
+  font-size:11px;
+  padding:1px 7px;
+  line-height:1.35;
+}
+.view-tournament-actions{
+  gap:7px!important;
+  margin-top:7px!important;
+  align-items:center;
+}
+.view-tournament-card button{
+  min-height:34px;
+  padding:5px 10px;
+  border-radius:10px;
+}
+.view-tournament-card .entry-open-btn,
+.view-tournament-card .overview-open-btn{
+  min-height:38px;
+  padding:7px 12px;
+  font-size:15px;
+  border-radius:12px;
+  box-shadow:0 0 12px rgba(255,192,88,.26);
+}
+.view-tournament-card .overview-open-btn{
+  box-shadow:0 0 12px rgba(34,230,168,.24);
+}
+.tournament-datetime-badge{
+  flex:0 1 42%;
+  min-width:210px;
+  max-width:340px;
+  margin-top:8px;
+  padding:7px 10px;
+  border-radius:13px;
+}
+.tournament-datetime-badge span{
+  font-size:13px;
+}
+.tournament-datetime-badge strong{
+  margin-top:2px;
+  font-size:clamp(14px, 1.4vw, 18px);
+  line-height:1.15;
+}
+.tournament-datetime-badge.is-empty strong{
+  font-size:14px;
+}
+@media(max-width:760px){
+  .view-tournament-actions{
+    display:flex;
+    flex-wrap:wrap;
+  }
+  .tournament-datetime-badge{
+    margin-top:2px;
+    max-width:100%;
+  }
+}
+
+
+/* tournament-event-date-button-row-fix: 閲覧カードのボタンを横並びにして縦幅だけをさらに圧縮 */
+.view-tournament-card{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(190px,42%)!important;
+  column-gap:10px!important;
+  row-gap:5px!important;
+  align-items:start!important;
+  padding:7px 10px!important;
+}
+.view-tournament-main{
+  display:contents!important;
+}
+.view-tournament-card .card-title{
+  grid-column:1!important;
+  grid-row:1!important;
+  margin:0!important;
+  line-height:1.15!important;
+}
+.view-tournament-badges{
+  grid-column:1!important;
+  grid-row:2!important;
+  gap:5px!important;
+  margin:0!important;
+}
+.tournament-datetime-badge{
+  grid-column:2!important;
+  grid-row:1 / 3!important;
+  align-self:start!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:6px 9px!important;
+  border-radius:13px!important;
+}
+.tournament-datetime-badge span{
+  font-size:12px!important;
+  line-height:1.1!important;
+}
+.tournament-datetime-badge strong{
+  margin-top:1px!important;
+  font-size:clamp(13px, 1.25vw, 17px)!important;
+  line-height:1.12!important;
+}
+.tournament-datetime-badge.is-empty strong{
+  font-size:13px!important;
+}
+.view-tournament-actions{
+  grid-column:1 / -1!important;
+  grid-row:3!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:6px!important;
+  margin-top:2px!important;
+  align-items:center!important;
+}
+.view-tournament-actions button{
+  min-height:32px!important;
+  padding:4px 10px!important;
+  border-radius:10px!important;
+  white-space:nowrap!important;
+}
+.view-tournament-actions .primary{
+  flex:0 0 auto!important;
+}
+.view-tournament-card .entry-open-btn,
+.view-tournament-card .overview-open-btn{
+  min-height:32px!important;
+  padding:4px 11px!important;
+  font-size:14px!important;
+  border-radius:10px!important;
+}
+@media(max-width:760px){
+  .view-tournament-card{
+    grid-template-columns:1fr!important;
+  }
+  .tournament-datetime-badge{
+    grid-column:1!important;
+    grid-row:3!important;
+  }
+  .view-tournament-actions{
+    grid-column:1!important;
+    grid-row:4!important;
+    flex-wrap:wrap!important;
+  }
+}
+
+
+/* event-date-click-picker: 開催日時を別モーダルでクリック選択できるように追加 */
+.event-date-picker-btn{
+  background:linear-gradient(135deg,#ffe66d,#ff8b3d,#ff5ec4);
+  border-color:rgba(255,230,109,.86);
+  color:#fffdf4;
+  font-weight:900;
+}
+.event-date-picker-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.event-date-picker-field{
+  display:grid;
+  gap:5px;
+}
+.event-date-picker-field label{
+  color:#dbe7ff;
+  font-size:13px;
+  font-weight:800;
+}
+.event-date-picker-field select{
+  width:100%;
+}
+.event-date-picker-wide{
+  grid-column:1 / -1;
+}
+.event-date-picker-preview{
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid rgba(255,230,109,.58);
+  border-radius:12px;
+  background:rgba(255,230,109,.08);
+  color:#fff7c9;
+  font-weight:900;
+  text-align:center;
+}
+@media(max-width:640px){
+  .event-date-picker-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* event-date-final-adjust: 開催日時の表示改行・日時選択プルダウン色・リアルタイム保存対応 */
+.event-date-picker-field select{
+  background:#111827!important;
+  color:#f8fbff!important;
+  border-color:rgba(126,156,255,.64)!important;
+  color-scheme:dark;
+}
+.event-date-picker-field select option{
+  background:#111827!important;
+  color:#f8fbff!important;
+}
+.event-date-picker-field select:focus{
+  background:#111827!important;
+  color:#ffffff!important;
+}
+.event-date-display-date,
+.event-date-display-time{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.event-date-display-date{
+  font-size:1em!important;
+}
+.event-date-display-time{
+  margin-top:2px!important;
+  font-size:.92em!important;
+}
+.tournament-datetime-badge strong{
+  overflow-wrap:normal!important;
+  word-break:keep-all!important;
+}
+.admin-event-date-editor .row{
+  align-items:center;
+}
+.admin-event-date-editor .row input{
+  flex:1 1 260px;
+}
+
+/* event-date-time-row-fix: 開始/終了の時・分を左右同じ段に並べる */
+.event-date-picker-day-wide{
+  grid-column:1 / -1;
+}
+@media(max-width:640px){
+  .event-date-picker-day-wide{
+    grid-column:auto;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1622,9 +1958,60 @@ body.single-sticky-scroll-active{
     </div>
   </div>
 
+  <div id="eventDatePickerModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div class="entry-modal-title">開催日時選択</div>
+      <p class="note">入力とは別に、選択だけで開催日時を設定できます。</p>
+      <div class="event-date-picker-grid">
+        <div class="event-date-picker-field">
+          <label for="eventDateYearSelect">年</label>
+          <select id="eventDateYearSelect"></select>
+        </div>
+        <div class="event-date-picker-field">
+          <label for="eventDateMonthSelect">月</label>
+          <select id="eventDateMonthSelect"></select>
+        </div>
+        <div class="event-date-picker-field event-date-picker-day-wide">
+          <label for="eventDateDaySelect">日</label>
+          <select id="eventDateDaySelect"></select>
+        </div>
+        <div class="event-date-picker-field">
+          <label for="eventDateStartHourSelect">開始 時</label>
+          <select id="eventDateStartHourSelect"></select>
+        </div>
+        <div class="event-date-picker-field">
+          <label for="eventDateStartMinuteSelect">開始 分</label>
+          <select id="eventDateStartMinuteSelect"></select>
+        </div>
+        <div class="event-date-picker-field">
+          <label for="eventDateEndHourSelect">終了 時</label>
+          <select id="eventDateEndHourSelect"></select>
+        </div>
+        <div class="event-date-picker-field">
+          <label for="eventDateEndMinuteSelect">終了 分</label>
+          <select id="eventDateEndMinuteSelect"></select>
+        </div>
+        <div class="event-date-picker-field event-date-picker-wide">
+          <div id="eventDatePickerPreview" class="event-date-picker-preview">開催日時 未設定</div>
+        </div>
+      </div>
+      <div class="entry-modal-actions">
+        <button id="eventDatePickerApplyBtn" class="primary" type="button">この日時で保存</button>
+        <button id="eventDatePickerCloseBtn" class="ghost" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <section id="doubleView" class="double-layout hidden">
     <section id="doubleAdminPanel" class="panel">
       <h2>ダブル管理者操作</h2>
+      <div class="admin-event-date-editor">
+        <label for="doubleEventDateInput">開催日時</label>
+        <div class="row">
+          <input id="doubleEventDateInput" maxlength="60" placeholder="例：2026年6月16日22:00～24:00">
+          <button id="doubleEventDatePickerBtn" class="event-date-picker-btn" type="button">日時選択</button>
+        </div>
+      </div>
       <div class="row">
         <button id="doubleAddBtn" class="primary">追加</button>
       </div>
@@ -1659,6 +2046,13 @@ body.single-sticky-scroll-active{
   <section id="singleView" class="layout hidden">
     <section id="adminPanel" class="panel">
       <h2>管理者操作</h2>
+      <div class="admin-event-date-editor">
+        <label for="singleEventDateInput">開催日時</label>
+        <div class="row">
+          <input id="singleEventDateInput" maxlength="60" placeholder="例：2026年6月16日22:00～24:00">
+          <button id="singleEventDatePickerBtn" class="event-date-picker-btn" type="button">日時選択</button>
+        </div>
+      </div>
       <div class="row">
         <button id="addBtn" class="primary">追加</button>
       </div>
@@ -2004,6 +2398,155 @@ const OVERVIEW_LINE_COUNT = 40;
 const OVERVIEW_LINE_MAX_LENGTH = 48;
 let overviewTargetTournamentId = null;
 let overviewEditMode = false;
+
+function eventDateTextOf(tournament){
+  return String((tournament && tournament.eventDateText) || "").trim().slice(0, 60);
+}
+function renderEventDateEditors(){
+  if(!currentTournament) return;
+  const value = eventDateTextOf(currentTournament);
+  const singleInput = $("singleEventDateInput");
+  const doubleInput = $("doubleEventDateInput");
+  if(singleInput) singleInput.value = value;
+  if(doubleInput) doubleInput.value = value;
+}
+function saveEventDateText(source){
+  if(!currentTournament || currentMode !== "admin") return;
+  const inputId = source === "double" ? "doubleEventDateInput" : "singleEventDateInput";
+  const input = $(inputId);
+  if(!input) return;
+  currentTournament.eventDateText = input.value.trim().slice(0, 60);
+  saveTournament();
+  renderHub();
+  renderEventDateEditors();
+}
+function bindEventDateRealtimeSave(){
+  const pairs = [
+    ["singleEventDateInput", "single"],
+    ["doubleEventDateInput", "double"]
+  ];
+  pairs.forEach(([inputId, source]) => {
+    const input = $(inputId);
+    if(!input || input.dataset.eventDateRealtimeBound === "1") return;
+    input.dataset.eventDateRealtimeBound = "1";
+    input.addEventListener("input", () => {
+      if(currentMode === "admin") saveEventDateText(source);
+    });
+  });
+}
+
+let eventDatePickerSource = "single";
+let eventDatePickerInitialized = false;
+function padEventDateNumber(value){
+  return String(value).padStart(2, "0");
+}
+function eventDateSelectOptions(select, values, formatter){
+  if(!select) return;
+  select.innerHTML = values.map(value => `<option value="${value}">${formatter ? formatter(value) : value}</option>`).join("");
+}
+function initEventDatePickerOptions(){
+  if(eventDatePickerInitialized) return;
+  const now = new Date();
+  const baseYear = now.getFullYear();
+  eventDateSelectOptions($("eventDateYearSelect"), Array.from({length:8}, (_, index) => baseYear - 1 + index), value => `${value}年`);
+  eventDateSelectOptions($("eventDateMonthSelect"), Array.from({length:12}, (_, index) => index + 1), value => `${value}月`);
+  eventDateSelectOptions($("eventDateStartHourSelect"), Array.from({length:24}, (_, index) => index), value => `${padEventDateNumber(value)}時`);
+  eventDateSelectOptions($("eventDateEndHourSelect"), Array.from({length:25}, (_, index) => index), value => `${padEventDateNumber(value)}時`);
+  const minutes = Array.from({length:12}, (_, index) => index * 5);
+  eventDateSelectOptions($("eventDateStartMinuteSelect"), minutes, value => `${padEventDateNumber(value)}分`);
+  eventDateSelectOptions($("eventDateEndMinuteSelect"), minutes, value => `${padEventDateNumber(value)}分`);
+  ["eventDateYearSelect","eventDateMonthSelect"].forEach(id => {
+    const select = $(id);
+    if(select) select.addEventListener("change", updateEventDateDayOptions);
+  });
+  ["eventDateDaySelect","eventDateStartHourSelect","eventDateStartMinuteSelect","eventDateEndHourSelect","eventDateEndMinuteSelect"].forEach(id => {
+    const select = $(id);
+    if(select) select.addEventListener("change", updateEventDatePickerPreview);
+  });
+  eventDatePickerInitialized = true;
+}
+function updateEventDateDayOptions(){
+  const year = Number($("eventDateYearSelect").value);
+  const month = Number($("eventDateMonthSelect").value);
+  const daySelect = $("eventDateDaySelect");
+  const currentDay = Number(daySelect.value || 1);
+  const lastDay = new Date(year, month, 0).getDate();
+  eventDateSelectOptions(daySelect, Array.from({length:lastDay}, (_, index) => index + 1), value => `${value}日`);
+  daySelect.value = String(Math.min(currentDay, lastDay));
+  updateEventDatePickerPreview();
+}
+function parsedEventDateText(value){
+  const text = String(value || "");
+  const match = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})\s*[～~－-]\s*(\d{1,2}):(\d{2})/);
+  if(!match) return null;
+  return {
+    year:Number(match[1]), month:Number(match[2]), day:Number(match[3]),
+    startHour:Number(match[4]), startMinute:Number(match[5]),
+    endHour:Number(match[6]), endMinute:Number(match[7])
+  };
+}
+function eventDateDisplayHtml(value){
+  const text = String(value || "").trim();
+  if(!text) return "未設定";
+  const parsed = parsedEventDateText(text);
+  if(!parsed) return escapeHtml(text);
+  const dateLine = `${parsed.year}年${parsed.month}月${parsed.day}日`;
+  const timeLine = `${padEventDateNumber(parsed.startHour)}:${padEventDateNumber(parsed.startMinute)}～${padEventDateNumber(parsed.endHour)}:${padEventDateNumber(parsed.endMinute)}`;
+  return `<span class="event-date-display-date">${escapeHtml(dateLine)}</span><span class="event-date-display-time">${escapeHtml(timeLine)}</span>`;
+}
+function setEventDateSelectValue(id, value){
+  const select = $(id);
+  if(!select) return;
+  const stringValue = String(value);
+  if(Array.from(select.options).some(option => option.value === stringValue)){
+    select.value = stringValue;
+  }
+}
+function selectedEventDateText(){
+  const year = Number($("eventDateYearSelect").value);
+  const month = Number($("eventDateMonthSelect").value);
+  const day = Number($("eventDateDaySelect").value);
+  const startHour = Number($("eventDateStartHourSelect").value);
+  const startMinute = Number($("eventDateStartMinuteSelect").value);
+  const endHour = Number($("eventDateEndHourSelect").value);
+  const endMinute = Number($("eventDateEndMinuteSelect").value);
+  return `${year}年${month}月${day}日${padEventDateNumber(startHour)}:${padEventDateNumber(startMinute)}～${padEventDateNumber(endHour)}:${padEventDateNumber(endMinute)}`;
+}
+function updateEventDatePickerPreview(){
+  const preview = $("eventDatePickerPreview");
+  if(preview) preview.textContent = selectedEventDateText();
+}
+function openEventDatePicker(source){
+  if(!currentTournament || currentMode !== "admin") return;
+  eventDatePickerSource = source === "double" ? "double" : "single";
+  initEventDatePickerOptions();
+  const now = new Date();
+  const currentInput = $(eventDatePickerSource === "double" ? "doubleEventDateInput" : "singleEventDateInput");
+  const parsed = parsedEventDateText(currentInput ? currentInput.value : eventDateTextOf(currentTournament));
+  const values = parsed || {
+    year:now.getFullYear(), month:now.getMonth() + 1, day:now.getDate(),
+    startHour:22, startMinute:0, endHour:24, endMinute:0
+  };
+  setEventDateSelectValue("eventDateYearSelect", values.year);
+  setEventDateSelectValue("eventDateMonthSelect", values.month);
+  updateEventDateDayOptions();
+  setEventDateSelectValue("eventDateDaySelect", values.day);
+  setEventDateSelectValue("eventDateStartHourSelect", values.startHour);
+  setEventDateSelectValue("eventDateStartMinuteSelect", values.startMinute);
+  setEventDateSelectValue("eventDateEndHourSelect", values.endHour);
+  setEventDateSelectValue("eventDateEndMinuteSelect", values.endMinute);
+  updateEventDatePickerPreview();
+  $("eventDatePickerModal").classList.remove("hidden");
+}
+function closeEventDatePicker(){
+  $("eventDatePickerModal").classList.add("hidden");
+}
+function applyEventDatePicker(){
+  const input = $(eventDatePickerSource === "double" ? "doubleEventDateInput" : "singleEventDateInput");
+  if(input) input.value = selectedEventDateText();
+  closeEventDatePicker();
+  saveEventDateText(eventDatePickerSource);
+}
 function ensureOverview(tournament){
   if(!tournament) return [];
   if(!Array.isArray(tournament.overviewLines)) tournament.overviewLines = [];
@@ -2130,6 +2673,7 @@ function createTournament(type, entryKind = "individual"){
     createdAt: now,
     updatedAt: now,
     autoDeleteAt: now + TOURNAMENT_EXPIRE_MS,
+    eventDateText: "",
     participants: [],
     pendingEntries: [],
     individualEntries: [],
@@ -2581,23 +3125,30 @@ function renderHub(){
     $("adminList").innerHTML = '<div class="card note">管理できるトーナメントはまだありません。</div>';
     return;
   }
-  $("viewList").innerHTML = active.map(t => `
-    <div class="card">
-      <div class="card-title">${escapeHtml(t.title)}</div>
-      <div class="row">
-        <span class="badge">${tournamentFullLabel(t)}</span>
-        <span class="badge">${escapeHtml(t.status || "開催中")}</span>
-        <span class="badge">登録 ${(t.participants || []).length}/64${isTeamTournament(t) ? `・個人 ${(t.individualEntries || []).length}人` : ""}</span>
+  $("viewList").innerHTML = active.map(t => {
+    const eventDateText = eventDateTextOf(t);
+    return `
+    <div class="card view-tournament-card">
+      <div class="view-tournament-main">
+        <div class="card-title">${escapeHtml(t.title)}</div>
+        <div class="row view-tournament-badges">
+          <span class="badge">${tournamentFullLabel(t)}</span>
+          <span class="badge">${escapeHtml(t.status || "開催中")}</span>
+          <span class="badge">登録 ${(t.participants || []).length}/64${isTeamTournament(t) ? `・個人 ${(t.individualEntries || []).length}人` : ""}</span>
+        </div>
+        <div class="row view-tournament-actions">
+          <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
+          <button class="entry-open-btn" onclick="openEntryModal('${t.id}')" ${t.created ? "disabled" : ""}>エントリー受付</button>
+          <button class="overview-open-btn" onclick="openOverviewModal('${t.id}', false)">概要</button>
+        </div>
       </div>
-      <div class="row" style="margin-top:8px">
-        <button class="primary" onclick="openTournament('${t.id}','view')">閲覧</button>
-        <button class="entry-open-btn" onclick="openEntryModal('${t.id}')" ${t.created ? "disabled" : ""}>エントリー受付</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="overview-open-btn" onclick="openOverviewModal('${t.id}', false)">概要</button>
+      <div class="tournament-datetime-badge ${eventDateText ? "" : "is-empty"}">
+        <span>開催日時</span>
+        <strong>${eventDateDisplayHtml(eventDateText)}</strong>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
   $("adminList").innerHTML = active.map(t => `
     <div class="card">
       <div class="card-title">${escapeHtml(t.title)}</div>
@@ -3736,6 +4287,7 @@ function renderDouble(){
   $("doubleAdminPanel").classList.toggle("hidden", !isAdmin);
   $("doubleView").classList.toggle("view-only", !isAdmin);
   $("mainTitle").textContent = currentTournament.title + "｜ダブル";
+  renderEventDateEditors();
 
   $("doubleStatusText").textContent = `登録数：${currentTournament.participants.length}/${MAX_TEAMS} / 状態：${currentTournament.status || "開催中"}`;
   $("doubleBuildBtn").disabled = currentTournament.participants.length < 2;
@@ -3861,6 +4413,7 @@ function renderSingle(){
   const isAdmin = currentMode === "admin";
   $("adminPanel").classList.toggle("hidden", !isAdmin);
   $("singleView").classList.toggle("view-only", !isAdmin);
+  renderEventDateEditors();
   if($("entryManageBtn")) $("entryManageBtn").disabled = currentTournament.created;
   if($("switchTypeBtn")) $("switchTypeBtn").disabled = currentTournament.created;
   renderParticipants();
@@ -3895,6 +4448,11 @@ $("overviewEditBtn").onclick = () => { if(currentTournament) openOverviewModal(c
 $("doubleOverviewEditBtn").onclick = () => { if(currentTournament) openOverviewModal(currentTournament.id, true); };
 $("overviewSaveBtn").onclick = saveOverviewText;
 $("overviewCloseBtn").onclick = closeOverviewModal;
+bindEventDateRealtimeSave();
+if($("singleEventDatePickerBtn")) $("singleEventDatePickerBtn").onclick = () => openEventDatePicker("single");
+if($("doubleEventDatePickerBtn")) $("doubleEventDatePickerBtn").onclick = () => openEventDatePicker("double");
+$("eventDatePickerApplyBtn").onclick = applyEventDatePicker;
+$("eventDatePickerCloseBtn").onclick = closeEventDatePicker;
 $("switchTypeBtn").onclick = switchTournamentType;
 $("doubleSwitchTypeBtn").onclick = switchTournamentType;
 $("entryManageCloseBtn").onclick = closeEntryManageModal;
