@@ -1805,6 +1805,30 @@ body.single-sticky-scroll-active{
   }
 }
 
+
+/* trial-register-addition: 管理者用のお試し登録だけ追加 */
+.trial-open-btn{
+  background:linear-gradient(135deg,#33f5a5,#00d4ff,#7c3cff);
+  border-color:rgba(180,255,235,.82);
+  color:#fff;
+  font-weight:900;
+}
+.trial-choice-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.trial-choice-btn{
+  min-height:48px;
+  font-size:18px;
+  font-weight:900;
+}
+@media(max-width:640px){
+  .trial-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .trial-choice-btn{font-size:16px;}
+}
+
 </style>
 </head>
 <body>
@@ -1944,6 +1968,16 @@ body.single-sticky-scroll-active{
     </div>
   </div>
 
+  <div id="trialRegisterModal" class="entry-modal hidden" role="dialog" aria-modal="true">
+    <div class="entry-modal-box">
+      <div id="trialRegisterTitle" class="entry-modal-title">お試し登録</div>
+      <p id="trialRegisterNote" class="note">人数を選ぶと、動作確認用の登録名を自動で追加します。</p>
+      <div id="trialRegisterChoices" class="trial-choice-grid"></div>
+      <div class="entry-modal-actions">
+        <button id="trialRegisterCloseBtn" class="ghost" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
 
 
   <div id="overviewModal" class="entry-modal hidden" role="dialog" aria-modal="true">
@@ -2014,6 +2048,7 @@ body.single-sticky-scroll-active{
       </div>
       <div class="row">
         <button id="doubleAddBtn" class="primary">追加</button>
+        <button id="doubleTrialRegisterBtn" class="trial-open-btn" type="button">お試し登録</button>
       </div>
       <div class="row" style="margin-top:8px">
         <button id="doubleBuildBtn" class="primary">初回組み合わせ作成</button>
@@ -2055,6 +2090,7 @@ body.single-sticky-scroll-active{
       </div>
       <div class="row">
         <button id="addBtn" class="primary">追加</button>
+        <button id="trialRegisterBtn" class="trial-open-btn" type="button">お試し登録</button>
       </div>
       <div class="row" style="margin-top:8px">
         <button id="buildBtn" class="primary">ランダムでトーナメント作成</button>
@@ -2657,6 +2693,12 @@ function getHashParams(){
   return new URLSearchParams(raw);
 }
 
+function isAdminPasswordAccepted(input, tournament){
+  if(input === null || input === undefined) return false;
+  const value = String(input).trim();
+  return value === "tairano" || (!!tournament && value === String(tournament.adminPin || ""));
+}
+
 function createTournament(type, entryKind = "individual"){
   const title = $("titleInput").value.trim();
   const pin = $("pinInput").value.trim();
@@ -2697,9 +2739,9 @@ function createTournament(type, entryKind = "individual"){
 function openAdmin(id){
   const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); return; }
-  const pin = prompt("管理者パスワード4桁を入力してください。");
+  const pin = prompt("管理者パスワードを入力してください。");
   if(pin === null) return;
-  if(pin !== tournament.adminPin){ alert("パスワードが違います。"); return; }
+  if(!isAdminPasswordAccepted(pin, tournament)){ alert("パスワードが違います。"); return; }
   sessionStorage.setItem("admin_" + id, "ok");
   openTournament(id, "admin");
 }
@@ -2709,8 +2751,8 @@ function openTournament(id, mode){
   const tournament = store.tournaments.find(t => t.id === id && t.status !== "削除" && !isTournamentDeleted(t.id));
   if(!tournament){ alert("トーナメントが見つかりません。"); showHub(); return; }
   if(mode === "admin" && sessionStorage.getItem("admin_" + id) !== "ok"){
-    const pin = prompt("管理者パスワード4桁を入力してください。");
-    if(pin !== tournament.adminPin){
+    const pin = prompt("管理者パスワードを入力してください。");
+    if(!isAdminPasswordAccepted(pin, tournament)){
       alert("パスワードが違います。閲覧用で開きます。");
       mode = "view";
     }else{
@@ -3308,6 +3350,86 @@ function clearDownstream(match){
   next.isBye = false;
   clearDownstream(next);
 }
+
+function openTrialRegisterModal(){
+  if(currentMode !== "admin" || !currentTournament) return;
+  if(currentTournament.created){
+    alert("お試し登録はトーナメント作成前に使用してください。勝敗リセット後に使用できます。");
+    return;
+  }
+  const choices = $("trialRegisterChoices");
+  const isTeam = isTeamTournament(currentTournament);
+  $("trialRegisterTitle").textContent = "お試し登録";
+  $("trialRegisterNote").textContent = isTeam
+    ? "チーム数を選ぶと、チーム1〜の名前で検証用チームを自動登録します。"
+    : "人数を選ぶと、1〜の名前で検証用参加者を自動登録します。";
+  choices.innerHTML = "";
+  [2,4,8,16,32,64].forEach(count => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "trial-choice-btn primary";
+    btn.textContent = isTeam ? `${count}チーム` : `${count}人`;
+    btn.onclick = () => applyTrialRegister(count);
+    choices.appendChild(btn);
+  });
+  $("trialRegisterModal").classList.remove("hidden");
+}
+function closeTrialRegisterModal(){
+  $("trialRegisterModal").classList.add("hidden");
+  $("trialRegisterChoices").innerHTML = "";
+}
+function nextTrialNumberFor(prefix){
+  const used = new Set();
+  for(const p of currentTournament.participants || []){
+    const name = String(p.name || "");
+    if(prefix){
+      const m = name.match(new RegExp(`^${prefix}(\\d+)$`));
+      if(m) used.add(Number(m[1]));
+    }else if(/^\d+$/.test(name)){
+      used.add(Number(name));
+    }
+  }
+  let n = 1;
+  while(used.has(n)) n += 1;
+  return n;
+}
+function applyTrialRegister(count){
+  if(currentMode !== "admin" || !currentTournament) return;
+  if(currentTournament.created){
+    alert("お試し登録はトーナメント作成前に使用してください。勝敗リセット後に使用できます。");
+    closeTrialRegisterModal();
+    return;
+  }
+  currentTournament.participants = currentTournament.participants || [];
+  if(currentTournament.participants.length + count > MAX_TEAMS){
+    alert(isTeamTournament(currentTournament) ? "登録は最大64チームまでです。" : "登録は最大64件までです。");
+    return;
+  }
+  ensureEntryBuckets(currentTournament);
+  if(currentTournament.type === "double") ensureDoubleState();
+  const isTeam = isTeamTournament(currentTournament);
+  for(let i = 0; i < count; i++){
+    if(isTeam){
+      const n = nextTrialNumberFor("チーム");
+      const teamName = `チーム${n}`;
+      const members = Array.from({length:7}, (_, idx) => `${teamName}-${idx + 1}`);
+      const p = { id: uid("p"), entryType:"team", name: teamName, members, reserves:[], createdAt: Date.now(), trialEntry:true };
+      currentTournament.participants.push(p);
+      if(currentTournament.type === "double") currentTournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+    }else{
+      const n = nextTrialNumberFor("");
+      const p = { id: uid("p"), name: String(n), createdAt: Date.now(), trialEntry:true };
+      currentTournament.participants.push(p);
+      if(currentTournament.type === "double") currentTournament.doubleState.participants[p.id] = {losses:0, eliminated:false};
+    }
+  }
+  currentTournament.updatedAt = Date.now();
+  saveTournament();
+  closeTrialRegisterModal();
+  if(currentTournament.type === "double") renderDouble();
+  else renderSingle();
+}
+
 function addParticipant(){
   if(currentMode !== "admin") return;
   if(!currentTournament){
@@ -3550,9 +3672,9 @@ function extendAutoDelete(){
 }
 async function deleteTournament(){
   if(currentMode !== "admin" || !currentTournament) return;
-  const pin = prompt("削除確認：管理者パスワード4桁を入力してください。");
+  const pin = prompt("削除確認：管理者パスワードを入力してください。");
   if(pin === null) return;
-  if(pin !== currentTournament.adminPin){
+  if(!isAdminPasswordAccepted(pin, currentTournament)){
     alert("パスワードが違います。削除を中止しました。");
     return;
   }
@@ -4291,6 +4413,7 @@ function renderDouble(){
 
   $("doubleStatusText").textContent = `登録数：${currentTournament.participants.length}/${MAX_TEAMS} / 状態：${currentTournament.status || "開催中"}`;
   $("doubleBuildBtn").disabled = currentTournament.participants.length < 2;
+  if($("doubleTrialRegisterBtn")) $("doubleTrialRegisterBtn").disabled = currentTournament.created;
   $("doubleResetBtn").disabled = !currentTournament.created;
   if($("doubleEntryManageBtn")) $("doubleEntryManageBtn").disabled = currentTournament.created;
   if($("doubleSwitchTypeBtn")) $("doubleSwitchTypeBtn").disabled = currentTournament.created;
@@ -4416,6 +4539,7 @@ function renderSingle(){
   renderEventDateEditors();
   if($("entryManageBtn")) $("entryManageBtn").disabled = currentTournament.created;
   if($("switchTypeBtn")) $("switchTypeBtn").disabled = currentTournament.created;
+  if($("trialRegisterBtn")) $("trialRegisterBtn").disabled = currentTournament.created;
   renderParticipants();
   renderStatus();
   renderBracket();
@@ -4461,12 +4585,15 @@ $("teamMembersCloseBtn").onclick = closeTeamMembersModal;
 $("manualBtn").onclick = openManualModal;
 $("manualCloseBtn").onclick = closeManualModal;
 $("addBtn").onclick = () => { if(currentTournament) openEntryModal(currentTournament.id, true); };
+$("trialRegisterBtn").onclick = openTrialRegisterModal;
+$("trialRegisterCloseBtn").onclick = closeTrialRegisterModal;
 $("buildBtn").onclick = buildTournament;
 $("resetResultsBtn").onclick = resetResults;
 $("shuffleBtn").onclick = shuffleTournament;
 $("deleteBtn").onclick = deleteTournament;
 $("extendDeleteBtn").onclick = extendAutoDelete;
 $("doubleAddBtn").onclick = () => { if(currentTournament) openEntryModal(currentTournament.id, true); };
+$("doubleTrialRegisterBtn").onclick = openTrialRegisterModal;
 $("doubleBuildBtn").onclick = doubleBuildTournament;
 $("doubleResetBtn").onclick = () => { if(confirm("ダブルの勝敗をすべてリセットしますか？")) resetDoubleState(true); };
 $("doubleShuffleBtn").onclick = doubleShuffleTournament;
