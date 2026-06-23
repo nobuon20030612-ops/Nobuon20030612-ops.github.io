@@ -260,7 +260,7 @@ body{ background:#000; }
   border:2px solid #ff3b3b;
   z-index:99999;
   overflow-y:auto;
-  overflow-x:hidden;
+  overflow-x:auto;
   padding:12px;
   color:#ccc;
 }
@@ -569,6 +569,7 @@ body{ background:#000; }
   border:2px solid #ff3b3b;
   z-index:99999;
   overflow:auto;
+  overflow-x:auto;
   padding:12px;
   color:#ccc;
 }
@@ -867,8 +868,47 @@ body{ background:#000; }
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
+const KASHIN_BASE_DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
+
 function setKashinZoom(percent) {
-  document.body.style.zoom = percent + "%";
+  const currentRatio = window.devicePixelRatio || KASHIN_BASE_DEVICE_PIXEL_RATIO;
+  const browserZoomRatio = currentRatio / KASHIN_BASE_DEVICE_PIXEL_RATIO;
+  const correctedPercent = percent / (browserZoomRatio || 1);
+  document.body.style.zoom = correctedPercent + "%";
+}
+
+function fillKashinInputTestValues(){
+  if(!confirm("入力可能な全マスに1を入力します。実行していいですか？")) return;
+
+  document.querySelectorAll("input.input").forEach(input => {
+    input.value = "1";
+    const cell = input.closest(".cell");
+    if(cell){
+      cell.classList.add("filled");
+      cell.classList.remove("active");
+    }
+  });
+
+  if(typeof calc === "function"){
+    calc();
+  }
+}
+
+function resetKashinInputValues(){
+  if(!confirm("入力可能な全マスの数値を削除します。実行していいですか？")) return;
+
+  document.querySelectorAll("input.input").forEach(input => {
+    input.value = "";
+    const cell = input.closest(".cell");
+    if(cell){
+      cell.classList.remove("filled");
+      cell.classList.remove("active");
+    }
+  });
+
+  if(typeof calc === "function"){
+    calc();
+  }
 }
 
 function downloadScreen() {
@@ -902,6 +942,10 @@ function downloadScreen() {
   <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
+</div>
+<div class="top-buttons no-capture">
+  <div class="top-zoom" onclick="resetKashinInputValues()">リセット</div>
+  <div class="top-zoom" onclick="fillKashinInputTestValues()">入力テスト</div>
 </div>
 <!-- 合計能力 -->
 <div class="table">
@@ -1025,6 +1069,14 @@ createSection("左手：","left", true);
 
 
 <div id="tsukumoModal" class="tsukumo-modal hidden">
+  <div class="top-buttons no-capture">
+    <div class="top-zoom" onclick="resetKashinTsukumoSelection()">リセット</div>
+    <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
+    <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
+    <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
+    <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
+    <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
+  </div>
   <div class="tsukumo-actions">
     <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した8個を表へ反映</button>
     <button class="tsukumo-close-btn" onclick="closeTsukumoPicker()">閉じる</button>
@@ -1825,6 +1877,16 @@ function closeTsukumoPicker(){
   tsukumoTargetLabel = "";
   tsukumoReplaceTarget = null;
   updateTsukumoCount();
+}
+
+function resetKashinTsukumoSelection(){
+  tsukumoSelected = [];
+  tsukumoMainStat = null;
+  tsukumoSubStat = null;
+  tsukumoThirdStat = null;
+  tsukumoReplaceTarget = null;
+  saveKashinTsukumoCurrentState();
+  renderTsukumoPicker();
 }
 
 function getKashinTsukumoRowInputs(sectionClass, index){
