@@ -22,14 +22,14 @@ body{
 }
 
 .top-buttons{
-  position: fixed;
-  top: 12px;
-  right: 20px;
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
-  z-index: 9999;
+  padding: 12px 20px 0 0;
+  box-sizing: border-box;
 }
 
+.top-zoom,
 .top-save,
 .top-back{
   padding: 10px 20px;
@@ -41,6 +41,7 @@ body{
   transition: all 0.2s;
 }
 
+.top-zoom:hover,
 .top-save:hover,
 .top-back:hover{
   color: #fff;
@@ -188,11 +189,16 @@ button:active{
 <body>
 
 
-<h1 class="title">九十九</h1>
 <div class="top-buttons no-capture">
+  <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
+  <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
+  <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
+  <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
+  <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
+<h1 class="title">九十九</h1>
 <div style="text-align:center; margin:10px 0;">
 
   <div style="font-size:14px; margin-bottom:6px;">
@@ -578,6 +584,10 @@ loadCSV().then(() => {
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
+function setKashinZoom(percent) {
+  document.body.style.zoom = percent + "%";
+}
+
 function downloadScreen() { 
  html2canvas(document.body, {
     backgroundColor: "#000000",
