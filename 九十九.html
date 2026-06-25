@@ -190,6 +190,7 @@ button:active{
 
 
 <div class="top-buttons no-capture">
+  <div class="top-zoom" onclick="resetTsukumoSelection()">リセット</div>
   <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
   <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
   <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
@@ -303,6 +304,19 @@ function onExcludeChange(){
   syncExcludedSelected();
   updateExcludeLabels();
   showTop();
+}
+function resetTsukumoSelection(){
+  selected = [];
+  mainStat = null;
+  subStat = null;
+  thirdStat = null;
+  replaceTarget = null;
+  document.getElementById("excludeA").checked = false;
+  document.getElementById("excludeB").checked = false;
+  document.getElementById("excludeC").checked = false;
+  updateExcludeLabels();
+  updateBtnState();
+  render();
 }
 async function loadCSV() {
   const response = await fetch("./九十九.csv");
