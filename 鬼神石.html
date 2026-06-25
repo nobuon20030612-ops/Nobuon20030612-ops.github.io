@@ -257,6 +257,7 @@ button:active{
   <div class="top-info" onclick="openKishinsekiInfoModal()">合成最低発現数</div>
 </div>
 
+<div id="zoomArea">
 <h1 class="title">鬼神石</h1>
 
 
@@ -284,10 +285,14 @@ button:active{
 
 <h3>一覧</h3>
 <table id="table"></table>
+</div>
 
 <script>
 function setKishinsekiZoom(percent) {
-  document.body.style.zoom = percent + "%";
+  const zoomArea = document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom = percent + "%";
+  }
 }
 
 function resetKishinsekiSelection(){
