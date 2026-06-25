@@ -882,6 +882,13 @@ function setKashinZoom(percent) {
     return;
   }
 
+  const fuyosekiModal = document.getElementById("fuyosekiModal");
+  const fuyosekiZoomArea = document.getElementById("fuyosekiZoomArea");
+  if(fuyosekiModal && fuyosekiZoomArea && !fuyosekiModal.classList.contains("hidden")){
+    fuyosekiZoomArea.style.zoom = correctedPercent + "%";
+    return;
+  }
+
   const zoomArea = document.getElementById("zoomArea");
   if(zoomArea){
     zoomArea.style.zoom = correctedPercent + "%";
@@ -1118,14 +1125,24 @@ createSection("左手：","left", true);
 </div>
 
 <div id="fuyosekiModal" class="fuyoseki-modal hidden">
+  <div class="top-buttons no-capture">
+    <div class="top-zoom" onclick="resetFuyoModalSelection()">リセット</div>
+    <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
+    <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
+    <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
+    <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
+    <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
+  </div>
   <div class="fuyoseki-actions">
-    <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">決定</button>
+    <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">表に反映</button>
     <button class="fuyoseki-close-btn" onclick="closeFuyoPicker()">閉じる</button>
     <span id="fuyosekiTargetLabel">付与</span>
     <span id="fuyosekiSelectedCount" class="fuyoseki-count">選択 0/2</span>
   </div>
-  <div class="fuyoseki-note">最大2個選択できます。9～12番の入力欄も決定で合計して表へ反映します</div>
-  <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
+  <div id="fuyosekiZoomArea">
+    <div class="fuyoseki-note">最大2個選択できます。9～12番の入力欄も決定で合計して表へ反映します</div>
+    <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
+  </div>
 </div>
 
 <script>
@@ -1234,6 +1251,8 @@ function renderFuyoButtons(){
     html += `<div class="fuyoseki-grid-head" style="grid-column:span 2;color:${fuyosekiStatColor(stat)}">${stat}</div>`;
   });
 
+  html += `<div class="fuyoseki-manual-title">開運付与石系</div>`;
+
   fuyosekiData.forEach(row => {
     const num = kashinFuyoNum(row["番号"]);
     if(num < 1 || num > 8) return;
@@ -1280,7 +1299,6 @@ function updateFuyoSelectedCount(){
 function setFuyoManualValue(num, stat, value){
   const key = `${num}_${stat}`;
   fuyosekiManualValues[key] = String(value || "").replace(/[^\d\-０-９－ー]/g, "");
-  saveFuyoCurrentState();
 }
 
 function hasFuyoManualValue(){
@@ -1308,14 +1326,102 @@ function toggleFuyoSelection(key, num, stat, copy){
     }
     fuyosekiSelected.push({ key, num:String(num), stat, copy });
   }
-  saveFuyoCurrentState();
   renderFuyoButtons();
+}
+
+function clearFuyoModalSelectionState(){
+  fuyosekiSelected = [];
+  fuyosekiManualValues = {};
+}
+
+function resetFuyoModalSelection(){
+  clearFuyoModalSelectionState();
+  renderFuyoButtons();
+}
+
+function kashinInputsHaveAnyValue(inputs){
+  return inputs.some(input => String(input?.value || "").trim() !== "" && kashinFuyoNum(input.value) !== 0);
+}
+
+function readKashinInputsTotal(inputs){
+  const total = makeKashinFuyoTotal();
+  KASHIN_ALL_STATS.forEach((stat, i) => {
+    total[stat] = kashinFuyoNum(inputs[i]?.value || "");
+  });
+  return total;
+}
+
+function kashinTotalsEqual(a, b){
+  return KASHIN_ALL_STATS.every(stat => kashinFuyoNum(a[stat]) === kashinFuyoNum(b[stat]));
+}
+
+function isKashinFuyoReflected(sectionClass){
+  let inputs = [];
+  inputs = inputs.concat(getKashinFuyoInputs(sectionClass));
+  ["付与石1", "付与石2", "神器石1", "神器石2"].forEach(label => {
+    inputs = inputs.concat(getKashinFuyoDetailInputs(sectionClass, label));
+  });
+  return kashinInputsHaveAnyValue(inputs);
+}
+
+function loadFuyoManualRowFromTable(sectionClass, num, label){
+  const inputs = getKashinFuyoDetailInputs(sectionClass, label);
+  if(inputs.length !== 11) return;
+  KASHIN_ALL_STATS.forEach((stat, i) => {
+    const value = String(inputs[i]?.value || "").trim();
+    const key = `${num}_${stat}`;
+    if(value !== "" && kashinFuyoNum(value) !== 0){
+      fuyosekiManualValues[key] = value;
+    }else{
+      delete fuyosekiManualValues[key];
+    }
+  });
+}
+
+function loadFuyoTargetStateFromTable(sectionClass){
+  if(!isKashinFuyoReflected(sectionClass)){
+    clearFuyoModalSelectionState();
+    return;
+  }
+
+  loadFuyoTargetState(sectionClass);
+
+  const reconstructed = [];
+  ["付与石1", "付与石2"].forEach((label, index) => {
+    const inputs = getKashinFuyoDetailInputs(sectionClass, label);
+    if(inputs.length !== 11 || !kashinInputsHaveAnyValue(inputs)) return;
+
+    const targetTotal = readKashinInputsTotal(inputs);
+    let found = null;
+
+    fuyosekiData.forEach(row => {
+      if(found) return;
+      const num = String(kashinFuyoNum(row["番号"]));
+      if(kashinFuyoNum(num) < 1 || kashinFuyoNum(num) > 8) return;
+      KASHIN_FUYO_STATS.forEach(stat => {
+        if(found) return;
+        const item = { key:`${num}_${stat}_${index + 1}`, num, stat, copy:index + 1 };
+        const total = makeFuyoSelectedItemTotal(item);
+        if(total && kashinTotalsEqual(total, targetTotal)){
+          found = item;
+        }
+      });
+    });
+
+    if(found) reconstructed.push(found);
+  });
+
+  if(reconstructed.length){
+    fuyosekiSelected = reconstructed;
+  }
+
+  loadFuyoManualRowFromTable(sectionClass, "9", "神器石1");
+  loadFuyoManualRowFromTable(sectionClass, "10", "神器石2");
 }
 
 function openFuyoPicker(sectionClass, label){
   fuyosekiTargetSection = sectionClass;
   fuyosekiTargetLabel = label;
-  loadFuyoTargetState(sectionClass);
 
   const modal = document.getElementById("fuyosekiModal");
   const targetLabel = document.getElementById("fuyosekiTargetLabel");
@@ -1328,18 +1434,22 @@ function openFuyoPicker(sectionClass, label){
     modal.classList.remove("hidden");
   }
 
-  if(fuyosekiData.length){
+  const renderAfterStateLoad = () => {
+    loadFuyoTargetStateFromTable(sectionClass);
     renderFuyoButtons();
+  };
+
+  if(fuyosekiData.length){
+    renderAfterStateLoad();
   }else{
     loadFuyoCSV().then(data => {
       fuyosekiData = data;
-      renderFuyoButtons();
+      renderAfterStateLoad();
     });
   }
 }
 
 function closeFuyoPicker(){
-  saveFuyoCurrentState();
   const modal = document.getElementById("fuyosekiModal");
   if(modal){
     modal.classList.add("hidden");
@@ -1689,7 +1799,6 @@ function showKashinTsukumoTop(){
 
   tsukumoSelected = sorted.slice(0, 8).map(row => String(row["番号"] || ""));
   tsukumoReplaceTarget = null;
-  saveKashinTsukumoCurrentState();
   renderTsukumoPicker();
 }
 
@@ -1801,7 +1910,6 @@ function toggleTsukumo(id){
     }
 
     tsukumoReplaceTarget = null;
-    saveKashinTsukumoCurrentState();
     renderTsukumoPicker();
     return;
   }
@@ -1815,7 +1923,6 @@ function toggleTsukumo(id){
     tsukumoSelected.push(id);
   }
 
-  saveKashinTsukumoCurrentState();
   renderTsukumoPicker();
 }
 
@@ -1863,10 +1970,58 @@ function renderTsukumoPicker(){
   table.innerHTML = html;
 }
 
+function clearKashinTsukumoModalState(){
+  tsukumoSelected = [];
+  tsukumoMainStat = null;
+  tsukumoSubStat = null;
+  tsukumoThirdStat = null;
+  tsukumoReplaceTarget = null;
+}
+
+function isKashinTsukumoReflected(sectionClass){
+  let inputs = [];
+  for(let i=0; i<8; i++){
+    inputs = inputs.concat(getKashinTsukumoRowInputs(sectionClass, i));
+  }
+  return kashinInputsHaveAnyValue(inputs);
+}
+
+function loadKashinTsukumoSelectionFromTable(sectionClass){
+  const reconstructed = [];
+
+  for(let i=0; i<8; i++){
+    const inputs = getKashinTsukumoRowInputs(sectionClass, i);
+    if(inputs.length !== 11 || !kashinInputsHaveAnyValue(inputs)) continue;
+
+    const found = tsukumoData.find(row => {
+      return KASHIN_TSUKUMO_STATS.every((stat, index) => {
+        return kashinTsukumoNum(row[stat]) === kashinTsukumoNum(inputs[index]?.value || "");
+      });
+    });
+
+    if(found){
+      reconstructed.push(String(found["番号"] || ""));
+    }
+  }
+
+  if(reconstructed.length){
+    tsukumoSelected = reconstructed;
+  }
+}
+
+function loadKashinTsukumoTargetStateFromTable(sectionClass){
+  if(!isKashinTsukumoReflected(sectionClass)){
+    clearKashinTsukumoModalState();
+    return;
+  }
+
+  loadKashinTsukumoTargetState(sectionClass);
+  loadKashinTsukumoSelectionFromTable(sectionClass);
+}
+
 function openTsukumoPicker(sectionClass, label){
   tsukumoTargetSection = sectionClass;
   tsukumoTargetLabel = label;
-  loadKashinTsukumoTargetState(sectionClass);
 
   const modal = document.getElementById("tsukumoModal");
   const targetLabel = document.getElementById("tsukumoTargetLabel");
@@ -1874,18 +2029,21 @@ function openTsukumoPicker(sectionClass, label){
   if(targetLabel) targetLabel.textContent = label;
   if(modal) modal.classList.remove("hidden");
 
-  makeTsukumoPriorityBtns();
-  updateKashinTsukumoExcludeLabels();
+  const renderAfterStateLoad = () => {
+    loadKashinTsukumoTargetStateFromTable(sectionClass);
+    makeTsukumoPriorityBtns();
+    updateKashinTsukumoExcludeLabels();
+    renderTsukumoPicker();
+  };
 
   if(tsukumoDataLoaded){
-    renderTsukumoPicker();
+    renderAfterStateLoad();
   }else{
-    loadKashinTsukumoCSV().then(() => renderTsukumoPicker());
+    loadKashinTsukumoCSV().then(() => renderAfterStateLoad());
   }
 }
 
 function closeTsukumoPicker(){
-  saveKashinTsukumoCurrentState();
   const modal = document.getElementById("tsukumoModal");
   if(modal) modal.classList.add("hidden");
   tsukumoTargetSection = "";
@@ -1895,12 +2053,7 @@ function closeTsukumoPicker(){
 }
 
 function resetKashinTsukumoSelection(){
-  tsukumoSelected = [];
-  tsukumoMainStat = null;
-  tsukumoSubStat = null;
-  tsukumoThirdStat = null;
-  tsukumoReplaceTarget = null;
-  saveKashinTsukumoCurrentState();
+  clearKashinTsukumoModalState();
   renderTsukumoPicker();
 }
 
