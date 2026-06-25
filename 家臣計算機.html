@@ -874,7 +874,18 @@ function setKashinZoom(percent) {
   const currentRatio = window.devicePixelRatio || KASHIN_BASE_DEVICE_PIXEL_RATIO;
   const browserZoomRatio = currentRatio / KASHIN_BASE_DEVICE_PIXEL_RATIO;
   const correctedPercent = percent / (browserZoomRatio || 1);
-  document.body.style.zoom = correctedPercent + "%";
+
+  const tsukumoModal = document.getElementById("tsukumoModal");
+  const tsukumoZoomArea = document.getElementById("tsukumoZoomArea");
+  if(tsukumoModal && tsukumoZoomArea && !tsukumoModal.classList.contains("hidden")){
+    tsukumoZoomArea.style.zoom = correctedPercent + "%";
+    return;
+  }
+
+  const zoomArea = document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom = correctedPercent + "%";
+  }
 }
 
 function fillKashinInputTestValues(){
@@ -947,6 +958,7 @@ function downloadScreen() {
   <div class="top-zoom" onclick="resetKashinInputValues()">リセット</div>
   <div class="top-zoom" onclick="fillKashinInputTestValues()">入力テスト</div>
 </div>
+<div id="zoomArea">
 <!-- 合計能力 -->
 <div class="table">
   <div class="cell label shift-row">合計能力</div>
@@ -1065,6 +1077,7 @@ createSection("右手：","right", true);
 createSection("左手：","left", true);
 </script>
 </div>
+</div>
 
 
 
@@ -1078,11 +1091,12 @@ createSection("左手：","left", true);
     <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
   </div>
   <div class="tsukumo-actions">
-    <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した8個を表へ反映</button>
+    <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した九十九を表へ反映</button>
     <button class="tsukumo-close-btn" onclick="closeTsukumoPicker()">閉じる</button>
     <span id="tsukumoTargetLabel">九十九</span>
     <span id="tsukumoCount">選択数：0 / 8</span>
   </div>
+  <div id="tsukumoZoomArea">
   <div class="tsukumo-exclude-area">
     <span>除外可能な九十九 系統</span>
     <label id="tsukumoExcludeLabelA"><input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()"> 開運系・九十九</label>
@@ -1100,6 +1114,7 @@ createSection("左手：","left", true);
   </div>
   <div class="tsukumo-list-title">一覧</div>
   <table id="tsukumoPickerTable"></table>
+  </div>
 </div>
 
 <div id="fuyosekiModal" class="fuyoseki-modal hidden">
