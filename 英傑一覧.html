@@ -6,9 +6,9 @@
 <style>
 body{background:#000;color:#ccc;font-family:sans-serif;margin:0;padding:8px 16px 40px;}
 .title{text-align:center;font-size:40px;margin:12px 0;color:#ddd;}
-.top-back,.top-save{position:fixed;top:12px;padding:10px 20px;font-size:20px;border:2px solid #ff3b3b;color:#ff3b3b;background:rgba(0,0,0,0.6);cursor:pointer;transition:all .2s;z-index:9999;}
-.top-back{right:20px}.top-save{right:120px}
-.top-back:hover,.top-save:hover{color:#fff;border-color:#ff0000;box-shadow:0 0 8px rgba(255,80,80,.9),0 0 20px rgba(255,0,0,.9),0 0 40px rgba(255,0,0,.8);transform:scale(1.05)}
+.top-buttons{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px 0 0;box-sizing:border-box;}
+.top-reset,.top-zoom,.top-save,.top-back{padding:10px 20px;font-size:20px;border:2px solid #ff3b3b;color:#ff3b3b;background:rgba(0,0,0,0.6);cursor:pointer;transition:all .2s;}
+.top-reset:hover,.top-zoom:hover,.top-save:hover,.top-back:hover{color:#fff;border-color:#ff0000;box-shadow:0 0 8px rgba(255,80,80,.9),0 0 20px rgba(255,0,0,.9),0 0 40px rgba(255,0,0,.8);transform:scale(1.05)}
 h3{font-size:22px;margin:12px 0 4px;color:#ddd;}
 .priority-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
 .modeBtns{display:flex;gap:4px;margin-right:8px;}
@@ -60,9 +60,18 @@ tr:hover{background:#222;box-shadow:0 0 6px rgba(255,255,200,.5),0 0 12px rgba(2
 </style>
 </head>
 <body>
+<div class="top-buttons no-capture">
+  <div class="top-reset" onclick="resetEiketsuSelection()">リセット</div>
+  <div class="top-zoom" onclick="setEiketsuZoom(100)">100%</div>
+  <div class="top-zoom" onclick="setEiketsuZoom(125)">125%</div>
+  <div class="top-zoom" onclick="setEiketsuZoom(150)">150%</div>
+  <div class="top-zoom" onclick="setEiketsuZoom(175)">175%</div>
+  <div class="top-zoom" onclick="setEiketsuZoom(200)">200%</div>
+  <div class="top-save" onclick="downloadScreen()">保存</div>
+  <div class="top-back" onclick="location.href='index.html'">戻る</div>
+</div>
+<div id="zoomArea">
 <h1 class="title">英傑一覧</h1>
-<div class="top-save no-capture" onclick="downloadScreen()">保存</div>
-<div class="top-back no-capture" onclick="location.href='index.html'">戻る</div>
 
 <div class="guideBox">使い方：各優先で先に <strong>ステータス</strong> または <strong>育成技能</strong> を選んでから、右側の <strong>生命〜風</strong> ボタンを選んでください。</div>
 <h3>第1優先</h3><div class="priority-row"><div class="modeBtns" id="mode1"></div><div class="statBtns" id="stat1"></div></div>
@@ -73,6 +82,7 @@ tr:hover{background:#222;box-shadow:0 0 6px rgba(255,255,200,.5),0 0 12px rgba(2
 
 <h3>一覧</h3>
 <table id="table"></table>
+</div>
 
 <script>
 let baseData=[];
@@ -195,6 +205,11 @@ function updateButtons(){
 }
 function setMode(i,mode){priorities[i].mode=mode;updateButtons();render();}
 function setStat(i,stat){priorities[i].stat=stat;updateButtons();render();}
+function resetEiketsuSelection(){
+  priorities=[{mode:null,stat:null},{mode:null,stat:null},{mode:null,stat:null}];
+  updateButtons();
+  render();
+}
 
 function skillDetail(d,stat){
   let count=0, rate=0, up=0, train=0;
@@ -327,6 +342,12 @@ loadCSV().then(()=>render());
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
+function setEiketsuZoom(percent){
+  const zoomArea=document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom=percent+"%";
+  }
+}
 function downloadScreen(){html2canvas(document.body,{backgroundColor:"#000000",scale:2,x:window.scrollX,y:window.scrollY,width:window.innerWidth,height:window.innerHeight,windowWidth:window.innerWidth,windowHeight:window.innerHeight,ignoreElements:(el)=>el.classList.contains("no-capture")}).then(canvas=>{const link=document.createElement("a");link.download="英傑一覧.png";link.href=canvas.toDataURL("image/png");link.click();});}
 </script>
 </body>
