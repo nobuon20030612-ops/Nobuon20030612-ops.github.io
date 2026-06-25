@@ -199,6 +199,7 @@ button:active{
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
+<div id="zoomArea">
 <h1 class="title">九十九</h1>
 <div style="text-align:center; margin:10px 0;">
 
@@ -239,6 +240,7 @@ button:active{
 
 <h3>一覧</h3>
 <table id="table"></table>
+</div>
 
 <script>
 let baseData=[];
@@ -599,7 +601,10 @@ loadCSV().then(() => {
 
 <script>
 function setKashinZoom(percent) {
-  document.body.style.zoom = percent + "%";
+  const zoomArea = document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom = percent + "%";
+  }
 }
 
 function downloadScreen() { 
