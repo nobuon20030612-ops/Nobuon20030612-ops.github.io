@@ -1307,8 +1307,8 @@ let fuyosekiSavedState = loadFuyoSavedStateAll();
 const FUYOKU_PLACE_INDEX = { thousands:0, hundreds:1, tens:2, ones:3 };
 const FUYOKU_PLACE_LABELS = [{key:"thousands", label:"千の位"},{key:"hundreds", label:"百の位"},{key:"tens", label:"十の位"},{key:"ones", label:"一の位"}];
 const FUYOKU_LAYOUT = [
-  {title:"1枠目",rows:[{key:"slot1_fuyo", title:"付与　or　神秘"},{key:"slot1_jingi", title:"神器石1"},{key:"slot1_tenro", title:"天楼武器1"},{key:"slot1_other", title:"その他1"},{key:"slot1_gohogu", title:"御法具"}]},
-  {title:"2枠目",rows:[{key:"slot2_fuyo", title:"付与　or　神秘"},{key:"slot2_jingi", title:"神器石2"},{key:"slot2_tenro", title:"天楼武器2"},{key:"slot2_other", title:"その他2"}]}
+  {title:"1枠目",rows:[{key:"slot1_fuyo", title:"付与　or　神秘"},{key:"slot1_jingi", title:"神器石1"},{key:"slot1_tenro", title:"天楼武器"},{key:"slot1_other", title:"その他1"}]},
+  {title:"2枠目",rows:[{key:"slot2_fuyo", title:"付与　or　神秘"},{key:"slot2_jingi", title:"神器石2"},{key:"slot2_tenro", title:"御法具"},{key:"slot2_other", title:"その他2"}]}
 ];
 function kashinFuyoNum(value){
   const n = Number(String(value || "").replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー]/g, "-").replace(/,/g, "").replace(/[^0-9.\-]/g, "").trim());
@@ -1520,7 +1520,7 @@ function applyFuyoSelected(){
   if(!fuyosekiTargetSection){alert("反映先が不明です"); return;}
 
   const mainOnlyTotal = makeKashinFuyoTotal();
-  ["slot1_tenro", "slot1_other", "slot1_gohogu", "slot2_tenro", "slot2_other"].forEach(rowKey => {
+  ["slot1_tenro", "slot1_other", "slot2_tenro", "slot2_other"].forEach(rowKey => {
     addKashinFuyoTotals(mainOnlyTotal, makeFuyoRowTotal(rowKey));
   });
 
