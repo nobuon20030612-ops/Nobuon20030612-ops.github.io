@@ -255,14 +255,14 @@ body{ background:#000; }
 
 .fuyoseki-modal{
   position:fixed;
-  inset:18px;
+  inset:8px;
   background:#050505;
   border:2px solid #ff3b3b;
   z-index:99999;
-  overflow-y:auto;
-  overflow-x:auto;
-  padding:12px;
+  overflow:auto;
+  padding:8px;
   color:#ccc;
+  box-sizing:border-box;
 }
 
 .fuyoseki-modal.hidden{
@@ -273,7 +273,7 @@ body{ background:#000; }
   position:sticky;
   top:0;
   background:#050505;
-  padding:8px;
+  padding:6px;
   z-index:2;
   display:flex;
   align-items:center;
@@ -393,7 +393,7 @@ body{ background:#000; }
 }
 
 .fuyoseki-note{
-  margin-top:8px;
+  margin:4px 0;
   color:#ccc;
   font-size:12px;
 }
@@ -861,6 +861,133 @@ body{ background:#000; }
   font-weight:700;
 }
 
+
+
+#fuyosekiZoomArea{
+  zoom:100%;
+  transform-origin:top left;
+}
+
+/* ▼付与モーダル：クリック入力レイアウト */
+.fuyoseki-modal-title{grid-column:1 / -1;margin:4px 0 8px;text-align:center;font-size:34px;font-weight:900;letter-spacing:22px;border:1px solid #555;background:#f5f5f5;color:#000;padding:10px 0;}
+.fuyoseki-frame-wrap{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);gap:18px;align-items:start;}
+.fuyoseki-frame{border:1px solid #555;background:#050505;min-width:0;}
+.fuyoseki-frame-title{text-align:center;font-size:24px;font-weight:900;color:#ffffff;border-bottom:1px solid #555;padding:5px 0;}
+.fuyoseki-entry-title{text-align:center;font-size:22px;font-weight:900;color:#ffffff;border-top:1px solid #555;border-bottom:1px solid #555;padding:5px 0;background:#080808;}
+.fuyoseki-value-row{display:grid;grid-template-columns:repeat(11, minmax(0, 1fr));}
+.fuyoseki-value-btn{min-height:35px;min-width:0;border:1px solid #662222;background:#050505;font-size:13px;font-weight:900;cursor:pointer;padding:1px 0;margin:0;border-radius:0;line-height:1.08;}
+.fuyoseki-value-btn:hover,.fuyoseki-value-btn.active{color:#ffffff !important;border-color:#ff9999;background:#220000;box-shadow:inset 0 0 10px rgba(255,160,160,0.75),0 0 12px rgba(255,60,60,0.8);filter:brightness(1.25);transform:none;}
+.fuyoseki-value-stat{display:block;font-size:13px;font-weight:900;}
+.fuyoseki-value-number{display:block;margin-top:1px;font-size:13px;font-weight:900;color:#ffffff;}
+.fuyoseki-digit-modal{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:100000;display:flex;align-items:center;justify-content:center;}
+.fuyoseki-digit-modal.hidden{display:none;}
+.fuyoseki-digit-box{min-width:520px;max-width:calc(100vw - 80px);border:3px solid #ff3b3b;background:#060000;padding:18px;box-shadow:0 0 24px rgba(255,0,0,0.85);}
+.fuyoseki-active-text{color:#ffd0d0;font-size:18px;font-weight:900;margin-bottom:12px;text-align:center;}
+.fuyoseki-place-buttons,.fuyoseki-number-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+
+.fuyoseki-manual-direct-input{
+  width:100%;
+  box-sizing:border-box;
+  margin:10px 0 12px;
+  padding:10px 12px;
+  background:#080808;
+  color:#ffffff;
+  border:2px solid #ff7777;
+  font-size:24px;
+  font-weight:900;
+  text-align:center;
+  outline:none;
+}
+
+.fuyoseki-manual-direct-input:focus{
+  border-color:#ffcccc;
+  box-shadow:
+    0 0 10px rgba(255,120,120,0.9),
+    0 0 22px rgba(255,40,40,0.75);
+}
+.fuyoseki-place-btn,.fuyoseki-number-btn,.fuyoseki-clear-btn,.fuyoseki-digit-close-btn{background:#111;color:#ffd0d0;border:1px solid #774444;padding:10px 15px;font-size:18px;font-weight:900;cursor:pointer;}
+.fuyoseki-place-btn.active{background:#7a0000;color:#ffffff;border-color:#ff5555;box-shadow:0 0 12px rgba(255,0,0,0.9);}
+.fuyoseki-number-btn:hover,.fuyoseki-place-btn:hover,.fuyoseki-clear-btn:hover,.fuyoseki-digit-close-btn:hover{color:#ffffff;border-color:#ff9999;filter:brightness(1.25);}
+.fuyoseki-digit-column-wrap{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(90px, 1fr));
+  gap:10px;
+  margin:10px 0 14px;
+}
+.fuyoseki-digit-column{
+  border:1px solid #774444;
+  background:#090909;
+  padding:6px;
+}
+.fuyoseki-digit-column-title{
+  color:#ffd0d0;
+  font-size:18px;
+  font-weight:900;
+  text-align:center;
+  padding:4px 0 8px;
+}
+.fuyoseki-digit-column .fuyoseki-number-btn{
+  display:block;
+  width:100%;
+  margin:4px 0;
+  padding:7px 0;
+  font-size:20px;
+}
+.fuyoseki-digit-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.fuyoseki-modal-help{color:#ccc;font-size:12px;margin:4px 0;text-align:center;}
+
+/* ▼付与モーダル：枠・項目の色分け */
+.fuyoseki-frame-slot1{
+  border-color:#3f8cff;
+  box-shadow:0 0 12px rgba(63,140,255,0.35);
+}
+.fuyoseki-frame-slot2{
+  border-color:#c77dff;
+  box-shadow:0 0 12px rgba(199,125,255,0.35);
+}
+.fuyoseki-frame-slot1 .fuyoseki-frame-title{
+  background:#071a34;
+  color:#b9d6ff;
+  border-color:#3f8cff;
+}
+.fuyoseki-frame-slot2 .fuyoseki-frame-title{
+  background:#251036;
+  color:#e4c4ff;
+  border-color:#c77dff;
+}
+.fuyoseki-entry-fuyo{
+  background:#300707;
+  color:#ffb3b3;
+  border-color:#963333;
+}
+.fuyoseki-entry-jingi{
+  background:#2b2105;
+  color:#ffe08a;
+  border-color:#9a7820;
+}
+.fuyoseki-entry-tenro{
+  background:#061d2c;
+  color:#9fe7ff;
+  border-color:#267a9a;
+}
+.fuyoseki-entry-other{
+  background:#08240f;
+  color:#a8ffbf;
+  border-color:#2f8f48;
+}
+
+.fuyoseki-entry-gohogu{
+  background:#08240f;
+  color:#a8ffbf;
+  border-color:#2f8f48;
+}
+
 </style>
 </head>
 
@@ -1140,15 +1267,24 @@ createSection("左手：","left", true);
     <span id="fuyosekiSelectedCount" class="fuyoseki-count">選択 0/2</span>
   </div>
   <div id="fuyosekiZoomArea">
-    <div class="fuyoseki-note">最大2個選択できます。9～12番の入力欄も決定で合計して表へ反映します</div>
+    <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
     <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
+  </div>
+</div>
+<div id="fuyoDigitModal" class="fuyoseki-digit-modal hidden">
+  <div class="fuyoseki-digit-box">
+    <div id="fuyoDigitActiveText" class="fuyoseki-active-text">入力するマスを選択してください</div>
+    <input id="fuyoManualDirectInput" class="fuyoseki-manual-direct-input" inputmode="numeric" placeholder="手動入力" oninput="setFuyoManualDirectInput(this)">
+    <div id="fuyoDigitPlaceButtons" class="fuyoseki-place-buttons"></div>
+    <div id="fuyoDigitNumberButtons" class="fuyoseki-number-buttons"></div>
+    <div class="fuyoseki-modal-help">千〜一の位の各列から0〜9を押して入力します</div>
   </div>
 </div>
 
 <script>
 const KASHIN_FUYO_STATS = ["腕力","耐久","器用","知力","魅力","土","水","火","風"];
 const KASHIN_ALL_STATS = ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
-const KASHIN_FUYO_STORAGE_KEY = "kashin_fuyoseki_state_v1";
+const KASHIN_FUYO_STORAGE_KEY = "kashin_fuyoseki_state_v2_digit_layout";
 const kashinFuyoStatColors = {
   "生命":"#ffb3b3",
   "気合":"#ffcc99",
@@ -1162,446 +1298,248 @@ const kashinFuyoStatColors = {
   "火":"#ff6666",
   "風":"#99ffcc"
 };
-
-let fuyosekiData = [];
 let fuyosekiTargetSection = "";
 let fuyosekiTargetLabel = "";
-let fuyosekiSelected = [];
 let fuyosekiManualValues = {};
+let fuyosekiActiveTarget = null;
+let fuyosekiActivePlace = "ones";
 let fuyosekiSavedState = loadFuyoSavedStateAll();
-
+const FUYOKU_PLACE_INDEX = { thousands:0, hundreds:1, tens:2, ones:3 };
+const FUYOKU_PLACE_LABELS = [{key:"thousands", label:"千の位"},{key:"hundreds", label:"百の位"},{key:"tens", label:"十の位"},{key:"ones", label:"一の位"}];
+const FUYOKU_LAYOUT = [
+  {title:"1枠目",rows:[{key:"slot1_fuyo", title:"付与　or　神秘"},{key:"slot1_jingi", title:"神器石1"},{key:"slot1_tenro", title:"天楼武器1"},{key:"slot1_other", title:"その他1"},{key:"slot1_gohogu", title:"御法具"}]},
+  {title:"2枠目",rows:[{key:"slot2_fuyo", title:"付与　or　神秘"},{key:"slot2_jingi", title:"神器石2"},{key:"slot2_tenro", title:"天楼武器2"},{key:"slot2_other", title:"その他2"}]}
+];
 function kashinFuyoNum(value){
-  const n = Number(String(value || "").replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー]/g, "-").replace(/,/g, "").trim());
+  const n = Number(String(value || "").replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[－ー]/g, "-").replace(/,/g, "").replace(/[^0-9.\-]/g, "").trim());
   return Number.isFinite(n) ? n : 0;
 }
-
-function fuyosekiStatColor(stat){
-  return kashinFuyoStatColors[stat] || "#ffd0d0";
-}
-
-function loadFuyoSavedStateAll(){
-  try{
-    return JSON.parse(localStorage.getItem(KASHIN_FUYO_STORAGE_KEY) || "{}");
-  }catch(e){
-    return {};
-  }
-}
-
-function writeFuyoSavedStateAll(){
-  try{
-    localStorage.setItem(KASHIN_FUYO_STORAGE_KEY, JSON.stringify(fuyosekiSavedState));
-  }catch(e){}
-}
-
-function saveFuyoCurrentState(){
-  if(!fuyosekiTargetSection) return;
-  fuyosekiSavedState[fuyosekiTargetSection] = {
-    selected: JSON.parse(JSON.stringify(fuyosekiSelected)),
-    manual: Object.assign({}, fuyosekiManualValues)
-  };
-  writeFuyoSavedStateAll();
-}
-
-function loadFuyoTargetState(sectionClass){
-  const saved = fuyosekiSavedState[sectionClass] || {};
-  fuyosekiSelected = Array.isArray(saved.selected) ? JSON.parse(JSON.stringify(saved.selected)) : [];
-  fuyosekiManualValues = saved.manual ? Object.assign({}, saved.manual) : {};
-}
-
-async function loadFuyoCSV(){
-  const response = await fetch("./付与石.csv");
-  if(!response.ok){
-    alert("付与石.csvを読み込めませんでした");
-    return [];
-  }
-
-  const buffer = await response.arrayBuffer();
-  let text = "";
-  try{
-    text = new TextDecoder("shift_jis").decode(buffer);
-  }catch(e){
-    text = new TextDecoder("utf-8").decode(buffer);
-  }
-
-  text = text.replace(/^\uFEFF/, "").trim();
-  if(!text) return [];
-
-  const rows = text.split(/\r?\n/).map(row => row.split(",").map(col => {
-    let value = col.trim();
-    if(value.startsWith('"') && value.endsWith('"')){
-      value = value.slice(1, -1).replace(/""/g, '"');
-    }
-    return value;
-  }));
-
-  const headers = rows[0];
-  return rows.slice(1).map(cols => {
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i] || "");
-    return obj;
-  });
-}
-
-function renderFuyoButtons(){
-  const grid = document.getElementById("fuyosekiButtonGrid");
-  if(!grid) return;
-
-  let html = "";
-  KASHIN_FUYO_STATS.forEach(stat => {
-    html += `<div class="fuyoseki-grid-head" style="grid-column:span 2;color:${fuyosekiStatColor(stat)}">${stat}</div>`;
-  });
-
-  html += `<div class="fuyoseki-manual-title">開運付与石系</div>`;
-
-  fuyosekiData.forEach(row => {
-    const num = kashinFuyoNum(row["番号"]);
-    if(num < 1 || num > 8) return;
-    KASHIN_FUYO_STATS.forEach(stat => {
-      const value = kashinFuyoNum(row[stat]);
-      const seimeiValue = kashinFuyoNum(row["生命"]);
-      for(let copy=1; copy<=2; copy++){
-        const key = `${num}_${stat}_${copy}`;
-        const selected = fuyosekiSelected.some(item => item.key === key) ? " selected" : "";
-        html += `<button class="fuyoseki-choice-btn${selected}" style="color:${fuyosekiStatColor(stat)}" onclick="toggleFuyoSelection('${key}', '${num}', '${stat}', ${copy})">${seimeiValue}<br>${value}</button>`;
-      }
-    });
-  });
-
-  const manualRows = [
-    { num:"9", name:"神器石1" },
-    { num:"10", name:"神器石2" },
-    { num:"11", name:"天楼武器" },
-    { num:"12", name:"その他付与" }
-  ];
-
-  manualRows.forEach(info => {
-    html += `<div class="fuyoseki-manual-title">${info.num}：${info.name}</div>`;
-    html += `<div class="fuyoseki-manual-row">`;
-    KASHIN_ALL_STATS.forEach(stat => {
-      const key = `${info.num}_${stat}`;
-      const value = fuyosekiManualValues[key] || "";
-      html += `<div class="fuyoseki-manual-cell"><div class="fuyoseki-manual-label" style="color:${fuyosekiStatColor(stat)}">${stat}</div><input class="fuyoseki-manual-input" style="color:${fuyosekiStatColor(stat)}" value="${value}" inputmode="numeric" oninput="setFuyoManualValue('${info.num}', '${stat}', this.value)"></div>`;
-    });
-    html += `</div>`;
-  });
-
-  grid.innerHTML = html;
-  updateFuyoSelectedCount();
-}
-
-function updateFuyoSelectedCount(){
-  const count = document.getElementById("fuyosekiSelectedCount");
-  if(count){
-    count.textContent = `選択 ${fuyosekiSelected.length}/2`;
-  }
-}
-
-function setFuyoManualValue(num, stat, value){
-  const key = `${num}_${stat}`;
-  fuyosekiManualValues[key] = String(value || "").replace(/[^\d\-０-９－ー]/g, "");
-}
-
-function hasFuyoManualValue(){
-  return Object.values(fuyosekiManualValues).some(v => kashinFuyoNum(v) !== 0);
-}
-
-function addFuyoManualValues(total){
-  Object.entries(fuyosekiManualValues).forEach(([key, value]) => {
-    const parts = key.split("_");
-    const stat = parts[1];
-    if(KASHIN_ALL_STATS.includes(stat)){
-      total[stat] += kashinFuyoNum(value);
-    }
-  });
-}
-
-function toggleFuyoSelection(key, num, stat, copy){
-  const index = fuyosekiSelected.findIndex(item => item.key === key);
-  if(index >= 0){
-    fuyosekiSelected.splice(index, 1);
-  }else{
-    if(fuyosekiSelected.length >= 2){
-      alert("選択できる付与石は2個までです");
-      return;
-    }
-    fuyosekiSelected.push({ key, num:String(num), stat, copy });
-  }
-  renderFuyoButtons();
-}
-
-function clearFuyoModalSelectionState(){
-  fuyosekiSelected = [];
-  fuyosekiManualValues = {};
-}
-
-function resetFuyoModalSelection(){
-  clearFuyoModalSelectionState();
-  renderFuyoButtons();
-}
-
-function kashinInputsHaveAnyValue(inputs){
-  return inputs.some(input => String(input?.value || "").trim() !== "" && kashinFuyoNum(input.value) !== 0);
-}
-
-function readKashinInputsTotal(inputs){
-  const total = makeKashinFuyoTotal();
-  KASHIN_ALL_STATS.forEach((stat, i) => {
-    total[stat] = kashinFuyoNum(inputs[i]?.value || "");
-  });
-  return total;
-}
-
-function kashinTotalsEqual(a, b){
-  return KASHIN_ALL_STATS.every(stat => kashinFuyoNum(a[stat]) === kashinFuyoNum(b[stat]));
-}
-
-function isKashinFuyoReflected(sectionClass){
-  let inputs = [];
-  inputs = inputs.concat(getKashinFuyoInputs(sectionClass));
-  ["付与石1", "付与石2", "神器石1", "神器石2"].forEach(label => {
-    inputs = inputs.concat(getKashinFuyoDetailInputs(sectionClass, label));
-  });
-  return kashinInputsHaveAnyValue(inputs);
-}
-
-function loadFuyoManualRowFromTable(sectionClass, num, label){
-  const inputs = getKashinFuyoDetailInputs(sectionClass, label);
-  if(inputs.length !== 11) return;
-  KASHIN_ALL_STATS.forEach((stat, i) => {
-    const value = String(inputs[i]?.value || "").trim();
-    const key = `${num}_${stat}`;
-    if(value !== "" && kashinFuyoNum(value) !== 0){
-      fuyosekiManualValues[key] = value;
-    }else{
-      delete fuyosekiManualValues[key];
-    }
-  });
-}
-
+function fuyosekiStatColor(stat){return kashinFuyoStatColors[stat] || "#ffd0d0";}
+function loadFuyoSavedStateAll(){try{return JSON.parse(localStorage.getItem(KASHIN_FUYO_STORAGE_KEY) || "{}");}catch(e){return {};}}
+function writeFuyoSavedStateAll(){try{localStorage.setItem(KASHIN_FUYO_STORAGE_KEY, JSON.stringify(fuyosekiSavedState));}catch(e){}}
+function saveFuyoCurrentState(){if(!fuyosekiTargetSection) return; fuyosekiSavedState[fuyosekiTargetSection] = {manual:Object.assign({}, fuyosekiManualValues)}; writeFuyoSavedStateAll();}
+function makeFuyoValueKey(rowKey, stat){return `${rowKey}_${stat}`;}
+function getFuyoValue(rowKey, stat){return kashinFuyoNum(fuyosekiManualValues[makeFuyoValueKey(rowKey, stat)] || "");}
+function setFuyoValue(rowKey, stat, value){const key = makeFuyoValueKey(rowKey, stat); const n = kashinFuyoNum(value); if(n){fuyosekiManualValues[key] = String(Math.floor(n));}else{delete fuyosekiManualValues[key];}}
+function clearFuyoModalSelectionState(){fuyosekiManualValues = {}; fuyosekiActiveTarget = null; fuyosekiActivePlace = "ones";}
+function resetFuyoModalSelection(){closeFuyoDigitModal(); clearFuyoModalSelectionState(); renderFuyoButtons();}
+function kashinInputsHaveAnyValue(inputs){return inputs.some(input => String(input?.value || "").trim() !== "" && kashinFuyoNum(input.value) !== 0);}
+function readKashinInputsTotal(inputs){const total = makeKashinFuyoTotal(); KASHIN_ALL_STATS.forEach((stat, i) => {total[stat] = kashinFuyoNum(inputs[i]?.value || "");}); return total;}
+function putTotalIntoFuyoRow(rowKey, total){KASHIN_ALL_STATS.forEach(stat => setFuyoValue(rowKey, stat, total[stat] || 0));}
+function isKashinFuyoReflected(sectionClass){let inputs = []; inputs = inputs.concat(getKashinFuyoInputs(sectionClass)); ["付与石1","付与石2","神器石1","神器石2"].forEach(label => {inputs = inputs.concat(getKashinFuyoDetailInputs(sectionClass, label));}); return kashinInputsHaveAnyValue(inputs);}
 function loadFuyoTargetStateFromTable(sectionClass){
-  if(!isKashinFuyoReflected(sectionClass)){
-    clearFuyoModalSelectionState();
+  clearFuyoModalSelectionState();
+  if(!isKashinFuyoReflected(sectionClass)) return;
+  const saved = fuyosekiSavedState[sectionClass];
+  if(saved && saved.manual){
+    fuyosekiManualValues = Object.assign({}, saved.manual);
     return;
   }
-
-  loadFuyoTargetState(sectionClass);
-
-  const reconstructed = [];
-  ["付与石1", "付与石2"].forEach((label, index) => {
-    const inputs = getKashinFuyoDetailInputs(sectionClass, label);
-    if(inputs.length !== 11 || !kashinInputsHaveAnyValue(inputs)) return;
-
-    const targetTotal = readKashinInputsTotal(inputs);
-    let found = null;
-
-    fuyosekiData.forEach(row => {
-      if(found) return;
-      const num = String(kashinFuyoNum(row["番号"]));
-      if(kashinFuyoNum(num) < 1 || kashinFuyoNum(num) > 8) return;
-      KASHIN_FUYO_STATS.forEach(stat => {
-        if(found) return;
-        const item = { key:`${num}_${stat}_${index + 1}`, num, stat, copy:index + 1 };
-        const total = makeFuyoSelectedItemTotal(item);
-        if(total && kashinTotalsEqual(total, targetTotal)){
-          found = item;
-        }
-      });
-    });
-
-    if(found) reconstructed.push(found);
-  });
-
-  if(reconstructed.length){
-    fuyosekiSelected = reconstructed;
-  }
-
-  loadFuyoManualRowFromTable(sectionClass, "9", "神器石1");
-  loadFuyoManualRowFromTable(sectionClass, "10", "神器石2");
-}
-
-function openFuyoPicker(sectionClass, label){
-  fuyosekiTargetSection = sectionClass;
-  fuyosekiTargetLabel = label;
-
-  const modal = document.getElementById("fuyosekiModal");
-  const targetLabel = document.getElementById("fuyosekiTargetLabel");
-
-  if(targetLabel){
-    targetLabel.textContent = label;
-  }
-
-  if(modal){
-    modal.classList.remove("hidden");
-  }
-
-  const renderAfterStateLoad = () => {
-    loadFuyoTargetStateFromTable(sectionClass);
-    renderFuyoButtons();
-  };
-
-  if(fuyosekiData.length){
-    renderAfterStateLoad();
-  }else{
-    loadFuyoCSV().then(data => {
-      fuyosekiData = data;
-      renderAfterStateLoad();
-    });
-  }
-}
-
-function closeFuyoPicker(){
-  const modal = document.getElementById("fuyosekiModal");
-  if(modal){
-    modal.classList.add("hidden");
-  }
-  fuyosekiTargetSection = "";
-  fuyosekiTargetLabel = "";
-  fuyosekiSelected = [];
-  fuyosekiManualValues = {};
-  updateFuyoSelectedCount();
-}
-
-function getKashinInputsAfterLabelCell(labelCell){
-  let cell = labelCell;
-  const inputs = [];
-  for(let i=0; i<11; i++){
-    cell = cell ? cell.nextElementSibling : null;
-    const input = cell ? cell.querySelector("input") : null;
-    if(input) inputs.push(input);
-  }
-  return inputs;
-}
-
-function getKashinFuyoInputs(sectionClass){
-  const section = document.querySelector(`.table.${sectionClass}`);
-  if(!section) return [];
-  const button = section.querySelector(`.kashin-fuyo-row-label[data-fuyo-section="${sectionClass}"]`);
-  if(!button) return [];
-  return getKashinInputsAfterLabelCell(button.closest(".cell"));
-}
-
-function getKashinFuyoDetailInputs(sectionClass, rowLabel){
-  const section = document.querySelector(`.table.${sectionClass}`);
-  if(!section) return [];
-  const labels = Array.from(section.querySelectorAll(".cell.label"));
-  const labelCell = labels.find(cell => (cell.textContent || "").trim() === rowLabel);
-  if(!labelCell) return [];
-  return getKashinInputsAfterLabelCell(labelCell);
-}
-
-function makeKashinFuyoTotal(){
-  const total = {};
-  KASHIN_ALL_STATS.forEach(s => total[s] = 0);
-  return total;
-}
-
-function setKashinFuyoInputs(inputs, total){
-  if(inputs.length !== 11) return false;
-  KASHIN_ALL_STATS.forEach((stat, i) => {
-    const value = total[stat] || 0;
-    inputs[i].value = value ? String(Math.floor(value)) : "";
-    const cell = inputs[i].closest(".cell");
-    if(cell){
-      if(inputs[i].value.trim() !== ""){
-        cell.classList.add("filled");
-        cell.classList.remove("active");
-      }else{
-        cell.classList.remove("filled");
-      }
-    }
-  });
-  return true;
-}
-
-function addKashinFuyoTotals(target, source){
-  KASHIN_ALL_STATS.forEach(stat => {
-    target[stat] += source[stat] || 0;
-  });
-}
-
-function makeFuyoSelectedItemTotal(item){
-  const total = makeKashinFuyoTotal();
-  const row = fuyosekiData.find(x => String(kashinFuyoNum(x["番号"])) === String(item.num));
-  if(!row) return null;
-
-  total[item.stat] += kashinFuyoNum(row[item.stat]);
-
-  if(item.num !== "7" && item.num !== "8"){
-    total["生命"] += kashinFuyoNum(row["生命"]);
-    total["気合"] += kashinFuyoNum(row["気合"]);
-  }
-
-  return total;
-}
-
-function makeFuyoManualRowTotal(num){
-  const total = makeKashinFuyoTotal();
-  KASHIN_ALL_STATS.forEach(stat => {
-    total[stat] = kashinFuyoNum(fuyosekiManualValues[`${num}_${stat}`] || "");
-  });
-  return total;
-}
-
-function applyFuyoSelected(){
-  if(!fuyosekiTargetSection){
-    alert("反映先が不明です");
-    return;
-  }
-
-  if(!fuyosekiSelected.length && !hasFuyoManualValue()){
-    alert("付与石を選択、または9～12番に数値を入力してください");
-    return;
-  }
-
-  const total = makeKashinFuyoTotal();
-  const selectedItemTotals = [];
-
-  for(const item of fuyosekiSelected){
-    const itemTotal = makeFuyoSelectedItemTotal(item);
-    if(!itemTotal){
-      alert("付与石データが見つかりません");
-      return;
-    }
-    selectedItemTotals.push(itemTotal);
-    addKashinFuyoTotals(total, itemTotal);
-  }
-
-  const manual9Total = makeFuyoManualRowTotal("9");
-  const manual10Total = makeFuyoManualRowTotal("10");
-  const manual11Total = makeFuyoManualRowTotal("11");
-  const manual12Total = makeFuyoManualRowTotal("12");
-
-  addKashinFuyoTotals(total, manual9Total);
-  addKashinFuyoTotals(total, manual10Total);
-  addKashinFuyoTotals(total, manual11Total);
-  addKashinFuyoTotals(total, manual12Total);
-
-  const mainInputs = getKashinFuyoInputs(fuyosekiTargetSection);
-  if(mainInputs.length !== 11){
-    alert("反映先の付与欄が見つかりません");
-    return;
-  }
-
-  setKashinFuyoInputs(mainInputs, total);
 
   const detailMap = [
-    { label:"付与石1", total:selectedItemTotals[0] || makeKashinFuyoTotal() },
-    { label:"付与石2", total:selectedItemTotals[1] || makeKashinFuyoTotal() },
-    { label:"神器石1", total:manual9Total },
-    { label:"神器石2", total:manual10Total }
+    {rowKey:"slot1_fuyo", label:"付与石1"},
+    {rowKey:"slot2_fuyo", label:"付与石2"},
+    {rowKey:"slot1_jingi", label:"神器石1"},
+    {rowKey:"slot2_jingi", label:"神器石2"}
   ];
 
   detailMap.forEach(item => {
-    const inputs = getKashinFuyoDetailInputs(fuyosekiTargetSection, item.label);
-    setKashinFuyoInputs(inputs, item.total);
+    const inputs = getKashinFuyoDetailInputs(sectionClass, item.label);
+    if(inputs.length === 11){
+      putTotalIntoFuyoRow(item.rowKey, readKashinInputsTotal(inputs));
+    }
+  });
+
+  const mainInputs = getKashinFuyoInputs(sectionClass);
+  if(mainInputs.length === 11){
+    const mainTotal = readKashinInputsTotal(mainInputs);
+    const detailTotal = makeKashinFuyoTotal();
+    detailMap.forEach(item => addKashinFuyoTotals(detailTotal, makeFuyoRowTotal(item.rowKey)));
+
+    KASHIN_ALL_STATS.forEach(stat => {
+      const mainValue = mainTotal[stat] || 0;
+      const detailValue = detailTotal[stat] || 0;
+      const rest = mainValue > detailValue ? mainValue - detailValue : mainValue;
+      if(rest > 0){
+        setFuyoValue("slot1_other", stat, rest);
+      }
+    });
+  }
+}
+function updateFuyoSelectedCount(){const count = document.getElementById("fuyosekiSelectedCount"); if(!count) return; count.textContent = fuyosekiActiveTarget ? `入力中：${fuyosekiActiveTarget.title} / ${fuyosekiActiveTarget.stat}` : "入力セル未選択";}
+function renderFuyoDigitModal(){
+  const modal = document.getElementById("fuyoDigitModal");
+  const activeText = document.getElementById("fuyoDigitActiveText");
+  const placeBox = document.getElementById("fuyoDigitPlaceButtons");
+  const numberBox = document.getElementById("fuyoDigitNumberButtons");
+  const manualInput = document.getElementById("fuyoManualDirectInput");
+  if(!modal || !activeText || !placeBox || !numberBox) return;
+
+  if(!fuyosekiActiveTarget){
+    activeText.textContent = "入力するマスを選択してください";
+    if(manualInput){
+      manualInput.value = "";
+      manualInput.disabled = true;
+    }
+  }else{
+    const value = getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat);
+    activeText.textContent = `${fuyosekiActiveTarget.title} / ${fuyosekiActiveTarget.stat}　現在値：${value || "未入力"}`;
+    if(manualInput){
+      manualInput.disabled = false;
+      manualInput.value = value ? String(value) : "";
+    }
+  }
+
+  placeBox.innerHTML = "";
+
+  let numberHtml = `<div class="fuyoseki-digit-column-wrap">`;
+  FUYOKU_PLACE_LABELS.forEach(place => {
+    numberHtml += `<div class="fuyoseki-digit-column"><div class="fuyoseki-digit-column-title">${place.label}</div>`;
+    for(let i=0;i<=9;i++){
+      numberHtml += `<button class="fuyoseki-number-btn" onclick="setFuyoDigitAtPlace('${place.key}', ${i})">${i}</button>`;
+    }
+    numberHtml += `</div>`;
+  });
+  numberHtml += `</div>`;
+  numberHtml += `<div class="fuyoseki-digit-actions">`;
+  numberHtml += `<button class="fuyoseki-clear-btn" onclick="clearFuyoActiveValue()">このマスを消す</button>`;
+  numberHtml += `<button class="fuyoseki-digit-close-btn" onclick="closeFuyoDigitModal()">反映</button>`;
+  numberHtml += `</div>`;
+  numberBox.innerHTML = numberHtml;
+}
+function openFuyoDigitModal(){
+  const modal = document.getElementById("fuyoDigitModal");
+  if(modal){
+    renderFuyoDigitModal();
+    modal.classList.remove("hidden");
+  }
+}
+function closeFuyoDigitModal(){
+  const modal = document.getElementById("fuyoDigitModal");
+  if(modal){
+    modal.classList.add("hidden");
+  }
+}
+function renderFuyoValueRow(row){
+  let html = `<div class="fuyoseki-value-row">`;
+  KASHIN_ALL_STATS.forEach(stat => {
+    const value = getFuyoValue(row.key, stat);
+    const active = fuyosekiActiveTarget && fuyosekiActiveTarget.rowKey === row.key && fuyosekiActiveTarget.stat === stat ? " active" : "";
+    const valueText = value ? `<span class="fuyoseki-value-number">${value}</span>` : `<span class="fuyoseki-value-number">&nbsp;</span>`;
+    html += `<button class="fuyoseki-value-btn${active}" style="color:${fuyosekiStatColor(stat)}" onclick="selectFuyoValueCell('${row.key}', '${stat}', '${row.title}')"><span class="fuyoseki-value-stat">${stat}</span>${valueText}</button>`;
+  });
+  return html + `</div>`;
+}
+function renderFuyoFrame(frame){
+  const frameClass = frame.title === "1枠目" ? "fuyoseki-frame-slot1" : "fuyoseki-frame-slot2";
+  let html = `<div class="fuyoseki-frame ${frameClass}"><div class="fuyoseki-frame-title">${frame.title}</div>`;
+  frame.rows.forEach(row => {
+    let rowClass = "fuyoseki-entry-other";
+    if(row.key.includes("_fuyo")) rowClass = "fuyoseki-entry-fuyo";
+    if(row.key.includes("_jingi")) rowClass = "fuyoseki-entry-jingi";
+    if(row.key.includes("_tenro")) rowClass = "fuyoseki-entry-tenro";
+    if(row.key.includes("_gohogu")) rowClass = "fuyoseki-entry-gohogu";
+    html += `<div class="fuyoseki-entry-title ${rowClass}">${row.title}</div>` + renderFuyoValueRow(row);
+  });
+  return html + `</div>`;
+}
+function renderFuyoButtons(){
+  const grid = document.getElementById("fuyosekiButtonGrid");
+  if(!grid) return;
+  let html = `<div class="fuyoseki-modal-title">付 与 枠</div>`;
+  html += `<div class="fuyoseki-frame-wrap">`;
+  FUYOKU_LAYOUT.forEach(frame => html += renderFuyoFrame(frame));
+  html += `</div>`;
+  grid.innerHTML = html;
+  updateFuyoSelectedCount();
+  renderFuyoDigitModal();
+}
+function selectFuyoValueCell(rowKey, stat, title){
+  fuyosekiActiveTarget = {rowKey, stat, title};
+  renderFuyoButtons();
+  openFuyoDigitModal();
+}
+function normalizeFuyoManualInputValue(value){
+  return String(value || "")
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[－ー]/g, "-")
+    .replace(/[^0-9\-]/g, "");
+}
+function setFuyoManualDirectInput(input){
+  if(!input || !fuyosekiActiveTarget) return;
+  const value = normalizeFuyoManualInputValue(input.value);
+  input.value = value;
+  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, value);
+  renderFuyoButtons();
+  const nextInput = document.getElementById("fuyoManualDirectInput");
+  if(nextInput){
+    nextInput.focus();
+    const pos = nextInput.value.length;
+    try{ nextInput.setSelectionRange(pos, pos); }catch(e){}
+  }
+}
+function setFuyoDigitAtPlace(place, digit){
+  if(!fuyosekiActiveTarget) return;
+  const current = String(getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat) || 0).padStart(4,"0").slice(-4).split("");
+  const idx = FUYOKU_PLACE_INDEX[place];
+  if(idx == null) return;
+  current[idx] = String(digit);
+  const next = parseInt(current.join(""), 10) || 0;
+  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, next);
+  renderFuyoButtons();
+}
+function setFuyoDigitPlace(place){
+  fuyosekiActivePlace = place;
+  renderFuyoDigitModal();
+}
+function setFuyoDigit(digit){
+  if(!fuyosekiActiveTarget) return;
+  const current = String(getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat) || 0).padStart(4,"0").slice(-4).split("");
+  const idx = FUYOKU_PLACE_INDEX[fuyosekiActivePlace];
+  current[idx] = String(digit);
+  const next = parseInt(current.join(""), 10) || 0;
+  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, next);
+  renderFuyoButtons();
+}
+function clearFuyoActiveValue(){
+  if(!fuyosekiActiveTarget) return;
+  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, 0);
+  renderFuyoButtons();
+}
+function openFuyoPicker(sectionClass, label){fuyosekiTargetSection = sectionClass; fuyosekiTargetLabel = label; const modal = document.getElementById("fuyosekiModal"); const targetLabel = document.getElementById("fuyosekiTargetLabel"); const fuyosekiZoomArea = document.getElementById("fuyosekiZoomArea"); if(targetLabel) targetLabel.textContent = label; if(fuyosekiZoomArea) fuyosekiZoomArea.style.zoom = "100%"; if(modal){ modal.classList.remove("hidden"); modal.scrollTop = 0; modal.scrollLeft = 0; } loadFuyoTargetStateFromTable(sectionClass); renderFuyoButtons();}
+function closeFuyoPicker(){closeFuyoDigitModal(); const modal = document.getElementById("fuyosekiModal"); if(modal) modal.classList.add("hidden"); fuyosekiTargetSection = ""; fuyosekiTargetLabel = ""; clearFuyoModalSelectionState(); updateFuyoSelectedCount();}
+function getKashinInputsAfterLabelCell(labelCell){let cell = labelCell; const inputs = []; for(let i=0;i<11;i++){cell = cell ? cell.nextElementSibling : null; const input = cell ? cell.querySelector("input") : null; if(input) inputs.push(input);} return inputs;}
+function getKashinFuyoInputs(sectionClass){const section = document.querySelector(`.table.${sectionClass}`); if(!section) return []; const button = section.querySelector(`.kashin-fuyo-row-label[data-fuyo-section="${sectionClass}"]`); if(!button) return []; return getKashinInputsAfterLabelCell(button.closest(".cell"));}
+function getKashinFuyoDetailInputs(sectionClass, rowLabel){const section = document.querySelector(`.table.${sectionClass}`); if(!section) return []; const labels = Array.from(section.querySelectorAll(".cell.label")); const labelCell = labels.find(cell => (cell.textContent || "").trim() === rowLabel); if(!labelCell) return []; return getKashinInputsAfterLabelCell(labelCell);}
+function makeKashinFuyoTotal(){const total = {}; KASHIN_ALL_STATS.forEach(s => total[s] = 0); return total;}
+function setKashinFuyoInputs(inputs, total){if(inputs.length !== 11) return false; KASHIN_ALL_STATS.forEach((stat, i) => {const value = total[stat] || 0; inputs[i].value = value ? String(Math.floor(value)) : ""; const cell = inputs[i].closest(".cell"); if(cell){if(inputs[i].value.trim() !== ""){cell.classList.add("filled"); cell.classList.remove("active");}else{cell.classList.remove("filled");}}}); return true;}
+function addKashinFuyoTotals(target, source){KASHIN_ALL_STATS.forEach(stat => {target[stat] += source[stat] || 0;});}
+function makeFuyoRowTotal(rowKey){const total = makeKashinFuyoTotal(); KASHIN_ALL_STATS.forEach(stat => {total[stat] = getFuyoValue(rowKey, stat);}); return total;}
+function hasFuyoManualValue(){return Object.values(fuyosekiManualValues).some(v => kashinFuyoNum(v) !== 0);}
+function applyFuyoSelected(){
+  if(!fuyosekiTargetSection){alert("反映先が不明です"); return;}
+
+  const mainOnlyTotal = makeKashinFuyoTotal();
+  ["slot1_tenro", "slot1_other", "slot1_gohogu", "slot2_tenro", "slot2_other"].forEach(rowKey => {
+    addKashinFuyoTotals(mainOnlyTotal, makeFuyoRowTotal(rowKey));
+  });
+
+  const mainInputs = getKashinFuyoInputs(fuyosekiTargetSection);
+  if(mainInputs.length !== 11){alert("反映先の付与欄が見つかりません"); return;}
+
+  setKashinFuyoInputs(mainInputs, mainOnlyTotal);
+
+  [
+    {label:"付与石1", rowKey:"slot1_fuyo"},
+    {label:"付与石2", rowKey:"slot2_fuyo"},
+    {label:"神器石1", rowKey:"slot1_jingi"},
+    {label:"神器石2", rowKey:"slot2_jingi"}
+  ].forEach(item => {
+    setKashinFuyoInputs(getKashinFuyoDetailInputs(fuyosekiTargetSection, item.label), makeFuyoRowTotal(item.rowKey));
   });
 
   saveFuyoCurrentState();
-
-  if(typeof calc === "function"){
-    calc();
-  }
-
+  if(typeof calc === "function") calc();
   closeFuyoPicker();
 }
 </script>
