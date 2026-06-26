@@ -988,6 +988,65 @@ body{ background:#000; }
   border-color:#2f8f48;
 }
 
+
+/* ▼付与の数値入力モーダル：初期表示で全体が収まりやすいサイズへ調整 */
+.fuyoseki-digit-box{
+  min-width:520px;
+  max-width:calc(100vw - 80px);
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  box-sizing:border-box;
+  padding:10px;
+}
+.fuyoseki-active-text{
+  font-size:16px;
+  margin-bottom:6px;
+}
+.fuyoseki-manual-direct-input{
+  margin:6px 0 8px;
+  padding:6px 10px;
+  font-size:20px;
+}
+.fuyoseki-digit-column-wrap{
+  gap:8px;
+  margin:6px 0 8px;
+}
+.fuyoseki-digit-column{
+  padding:4px;
+}
+.fuyoseki-digit-column-title{
+  font-size:16px;
+  padding:2px 0 4px;
+}
+.fuyoseki-digit-column .fuyoseki-number-btn{
+  margin:2px 0;
+  padding:3px 0;
+  font-size:17px;
+  line-height:1.15;
+}
+.fuyoseki-digit-actions{
+  margin-top:6px;
+}
+.fuyoseki-clear-btn,
+.fuyoseki-digit-close-btn{
+  padding:8px 18px;
+  font-size:18px;
+}
+.fuyoseki-digit-close-btn{
+  background:#b00000;
+  color:#ffffff;
+  border:2px solid #ff3333;
+  box-shadow:
+    0 0 10px rgba(255,60,60,0.95),
+    0 0 24px rgba(255,0,0,0.9);
+}
+.fuyoseki-digit-close-btn:hover{
+  background:#ff0000;
+  color:#ffffff;
+  border-color:#ff7777;
+  filter:brightness(1.2);
+}
+
 </style>
 </head>
 
