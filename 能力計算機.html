@@ -32,7 +32,7 @@ html,body{
   padding:0;
   width:100%;
   min-height:100%;
-  overflow-x:hidden;
+  overflow-x:auto;
   overflow-y:auto;
   background:#000;
 }
@@ -899,18 +899,316 @@ td{
   font-size:12px;
 }
 
+
+/* ▼追加：能力計算機モーダル共通ボタン（倍率対象外） */
+.modal-top-buttons{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:8px 8px 4px 8px;
+  box-sizing:border-box;
+  flex-wrap:wrap;
+}
+.modal-top-btn{
+  padding:10px 20px;
+  font-size:20px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.6);
+  cursor:pointer;
+  transition:all .2s;
+  font-weight:900;
+}
+.modal-top-btn:hover{
+  color:#fff;
+  border-color:#ff0000;
+  box-shadow:
+    0 0 8px rgba(255,80,80,.9),
+    0 0 20px rgba(255,0,0,.9),
+    0 0 40px rgba(255,0,0,.8);
+  transform:scale(1.05);
+}
+.modal-zoom-area{
+  transform-origin:top left;
+}
+.fuyoseki-modal{
+  overflow:auto !important;
+}
+.fuyo-layout-title{
+  margin:6px 0 10px;
+  padding:8px 10px;
+  background:#f2f2f2;
+  color:#000;
+  text-align:center;
+  font-size:42px;
+  font-weight:900;
+  letter-spacing:1.5em;
+  border:1px solid #aaa;
+}
+.fuyo-frame-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  width:100%;
+  box-sizing:border-box;
+}
+.fuyo-frame{
+  border:2px solid #3b8cff;
+  box-shadow:0 0 14px rgba(50,120,255,.45);
+  background:#030303;
+}
+.fuyo-frame.slot2{
+  border-color:#d15cff;
+  box-shadow:0 0 14px rgba(210,80,255,.45);
+}
+.fuyo-frame-title{
+  text-align:center;
+  font-size:28px;
+  font-weight:900;
+  padding:5px;
+  color:#cfe2ff;
+  background:#06203c;
+}
+.fuyo-frame.slot2 .fuyo-frame-title{
+  color:#f1ccff;
+  background:#2b0b3b;
+}
+.fuyo-section-title{
+  text-align:center;
+  font-size:25px;
+  font-weight:900;
+  padding:4px;
+  border-top:1px solid #943333;
+  border-bottom:1px solid #943333;
+}
+.fuyo-section-fuyo{background:#3a0505;color:#ffc4c4;}
+.fuyo-section-jingi{background:#2c2400;color:#fff08a;}
+.fuyo-section-tenro{background:#002638;color:#bdefff;}
+.fuyo-section-other{background:#00350e;color:#b8ffc8;}
+.fuyo-section-gohogu{background:#063514;color:#c8ffd4;}
+.fuyo-stat-row{
+  display:grid;
+  grid-template-columns:repeat(11, 1fr);
+}
+.fuyo-stat-cell{
+  min-height:34px;
+  padding:3px 2px;
+  border:1px solid #7b2626;
+  background:#030303;
+  color:#fff;
+  font-weight:900;
+  font-size:15px;
+  text-align:center;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  line-height:1.1;
+}
+.fuyo-stat-cell:hover{
+  box-shadow:
+    inset 0 0 10px rgba(255,220,120,.8),
+    0 0 12px rgba(255,180,60,.8);
+  filter:brightness(1.35);
+}
+.fuyo-stat-name{
+  font-size:14px;
+  font-weight:900;
+}
+.fuyo-stat-value{
+  font-size:16px;
+  font-weight:900;
+  color:#fff;
+}
+.fuyo-digit-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.72);
+  z-index:100000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:auto;
+  padding:12px;
+  box-sizing:border-box;
+}
+.fuyo-digit-modal.hidden{
+  display:none;
+}
+.fuyo-digit-box{
+  width:min(1120px, calc(100vw - 72px));
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  border:4px solid #ff3b3b;
+  background:#060000;
+  padding:16px 20px 18px;
+  box-shadow:0 0 24px rgba(255,0,0,0.85);
+  color:#ffd0d0;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) 390px;
+  grid-template-areas:
+    "title title"
+    "input input"
+    "cols actions";
+  gap:14px 18px;
+}
+.fuyo-digit-title{
+  grid-area:title;
+  color:#ffd0d0;
+  font-size:24px;
+  font-weight:900;
+  margin:0;
+  text-align:center;
+}
+.fuyo-manual-input{
+  grid-area:input;
+  width:100%;
+  box-sizing:border-box;
+  margin:0;
+  padding:12px 14px;
+  background:#080808;
+  color:#ffffff;
+  border:3px solid #ff7777;
+  font-size:34px;
+  line-height:1.1;
+  font-weight:900;
+  text-align:center;
+  outline:none;
+}
+.fuyo-manual-input:focus{
+  border-color:#ffcccc;
+  box-shadow:
+    0 0 10px rgba(255,120,120,0.9),
+    0 0 22px rgba(255,40,40,0.75);
+}
+.fuyo-digit-cols{
+  grid-area:cols;
+  display:grid;
+  grid-template-columns:repeat(4, minmax(115px, 1fr));
+  gap:14px;
+  margin:0;
+}
+.fuyo-digit-cols > div{
+  border:1px solid #774444;
+  background:#090909;
+  padding:6px;
+  box-sizing:border-box;
+}
+.fuyo-digit-col-title{
+  color:#ffd0d0;
+  font-size:22px;
+  font-weight:900;
+  text-align:center;
+  padding:2px 0 6px;
+}
+.fuyo-digit-number{
+  display:block;
+  width:100%;
+  margin:3px 0;
+  padding:5px 0;
+  font-size:23px;
+  line-height:1.05;
+  font-weight:900;
+  color:#ffd0d0;
+  background:#111;
+  border:1px solid #774444;
+  cursor:pointer;
+}
+.fuyo-digit-number:hover{
+  color:#ffffff;
+  border-color:#ff9999;
+  filter:brightness(1.25);
+}
+.fuyo-digit-actions{
+  grid-area:actions;
+  display:grid;
+  grid-template-columns:minmax(220px, 1fr) 130px;
+  gap:14px;
+  justify-content:stretch;
+  align-items:stretch;
+  margin:0;
+}
+.fuyo-digit-action-btn{
+  background:#111;
+  color:#ffd0d0;
+  border:1px solid #774444;
+  padding:8px 14px;
+  font-size:24px;
+  font-weight:900;
+  cursor:pointer;
+  width:100%;
+  height:100%;
+}
+.fuyo-digit-action-btn:hover{
+  color:#ffffff;
+  border-color:#ff9999;
+  filter:brightness(1.25);
+}
+.fuyo-digit-action-btn.apply{
+  background:#b00000 !important;
+  color:#ffffff !important;
+  border:4px solid #ff3333 !important;
+  box-shadow:
+    0 0 12px rgba(255,80,80,1),
+    0 0 26px rgba(255,0,0,0.95),
+    inset 0 0 14px rgba(255,0,0,0.55);
+}
+.fuyo-digit-action-btn.apply:hover{
+  background:#ff0000 !important;
+  color:#ffffff !important;
+  border-color:#ff7777 !important;
+  filter:brightness(1.25);
+  box-shadow:
+    0 0 14px rgba(255,120,120,1),
+    0 0 30px rgba(255,0,0,1),
+    inset 0 0 16px rgba(255,100,100,0.65);
+}
+
+/* ▼元の表：上部操作ボタン（倍率対象外） */
+.main-top-buttons{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:12px 20px 0 0;
+  box-sizing:border-box;
+  flex-wrap:wrap;
+  background:#000;
+}
+.main-top-btn{
+  padding:10px 20px;
+  font-size:20px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.6);
+  cursor:pointer;
+  transition:all .2s;
+  font-weight:900;
+}
+.main-top-btn:hover{
+  color:#fff;
+  border-color:#ff0000;
+  box-shadow:
+    0 0 8px rgba(255,80,80,.9),
+    0 0 20px rgba(255,0,0,.9),
+    0 0 40px rgba(255,0,0,.8);
+  transform:scale(1.05);
+}
+
 </style>
 </head>
 <body>
 
-<!-- ▼追加：保存ボタン -->
-<div class="top-save no-capture" onclick="downloadScreen()">
-  保存
-</div>
-
-<!-- ▼追加：戻るボタン -->
-<div class="top-back no-capture" onclick="location.href='index.html'">
-  戻る
+<div class="main-top-buttons no-capture">
+  <button class="main-top-btn" onclick="resetNouryokuInputs()">リセット</button>
+  <button class="main-top-btn" onclick="setNouryokuSheetZoom(100)">100%</button>
+  <button class="main-top-btn" onclick="setNouryokuSheetZoom(125)">125%</button>
+  <button class="main-top-btn" onclick="setNouryokuSheetZoom(150)">150%</button>
+  <button class="main-top-btn" onclick="setNouryokuSheetZoom(175)">175%</button>
+  <button class="main-top-btn" onclick="setNouryokuSheetZoom(200)">200%</button>
+  <button class="main-top-btn" onclick="downloadScreen()">保存</button>
+  <button class="main-top-btn" onclick="location.href='index.html'">戻る</button>
 </div>
 
 <div id="viewport">
@@ -960,71 +1258,118 @@ td{
 
     <!-- 右テーブル（そのまま） -->
   </div>
+
 <div id="tsukumoModal" class="tsukumo-modal hidden">
-  <div class="tsukumo-actions">
+  <div class="modal-top-buttons no-capture">
+    <button class="modal-top-btn" onclick="resetTsukumoModal()">リセット</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
+    <button class="modal-top-btn" onclick="closeTsukumoPicker()">戻る</button>
+  </div>
+  <div class="tsukumo-actions no-capture">
     <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した8個の合計を反映</button>
     <button class="tsukumo-close-btn" onclick="closeTsukumoPicker()">閉じる</button>
     <span id="tsukumoCount">選択数：0 / 8</span>
   </div>
 
-  <div class="tsukumo-exclude-area">
-    <span>除外可能な九十九 系統</span>
-    <label id="tsukumoExcludeLabelA">
-      <input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()">
-      開運系・九十九
-    </label>
-    <label id="tsukumoExcludeLabelB">
-      <input type="checkbox" id="tsukumoExcludeB" onchange="onTsukumoExcludeChange()">
-      英雄系・九十九
-    </label>
-    <label id="tsukumoExcludeLabelC">
-      <input type="checkbox" id="tsukumoExcludeC" onchange="onTsukumoExcludeChange()">
-      上覧系・九十九
-    </label>
-  </div>
-
-  <div class="tsukumo-priority-wrap">
-    <div class="tsukumo-priority-area">
-      <div>第1優先</div>
-      <div id="tsukumoMainBtns"></div>
-
-      <div>第2優先</div>
-      <div id="tsukumoSubBtns"></div>
-
-      <div>第3優先</div>
-      <div id="tsukumoThirdBtns"></div>
+  <div id="tsukumoZoomArea" class="modal-zoom-area">
+    <div class="tsukumo-exclude-area">
+      <span>除外可能な九十九 系統</span>
+      <label id="tsukumoExcludeLabelA">
+        <input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()">
+        開運系・九十九
+      </label>
+      <label id="tsukumoExcludeLabelB">
+        <input type="checkbox" id="tsukumoExcludeB" onchange="onTsukumoExcludeChange()">
+        英雄系・九十九
+      </label>
+      <label id="tsukumoExcludeLabelC">
+        <input type="checkbox" id="tsukumoExcludeC" onchange="onTsukumoExcludeChange()">
+        上覧系・九十九
+      </label>
     </div>
-  </div>
 
-  <div class="tsukumo-selected-area">
-    <div class="tsukumo-selected-title">選択中（8個）</div>
-    <table id="tsukumoSelectedTable"></table>
-  </div>
+    <div class="tsukumo-priority-wrap">
+      <div class="tsukumo-priority-area">
+        <div>第1優先</div>
+        <div id="tsukumoMainBtns"></div>
 
-  <div class="tsukumo-list-title">一覧</div>
-  <table id="tsukumoPickerTable"></table>
+        <div>第2優先</div>
+        <div id="tsukumoSubBtns"></div>
+
+        <div>第3優先</div>
+        <div id="tsukumoThirdBtns"></div>
+      </div>
+    </div>
+
+    <div class="tsukumo-selected-area">
+      <div class="tsukumo-selected-title">選択中（8個）</div>
+      <table id="tsukumoSelectedTable"></table>
+    </div>
+
+    <div class="tsukumo-list-title">一覧</div>
+    <table id="tsukumoPickerTable"></table>
+  </div>
 </div>
 
 <div id="sousekiModal" class="tsukumo-modal hidden">
-  <div class="tsukumo-actions">
+  <div class="modal-top-buttons no-capture">
+    <button class="modal-top-btn" onclick="resetSousekiModal()">リセット</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
+    <button class="modal-top-btn" onclick="closeSousekiPicker()">戻る</button>
+  </div>
+  <div class="tsukumo-actions no-capture">
     <button class="tsukumo-close-btn" onclick="closeSousekiPicker()">閉じる</button>
     <span id="sousekiTargetLabel">装飾石</span>
   </div>
 
-  <div class="souseki-note">選んだボタンの数値を表へ反映して閉じます</div>
-  <div id="sousekiButtonGrid" class="souseki-button-grid"></div>
+  <div id="sousekiZoomArea" class="modal-zoom-area">
+    <div class="souseki-note">選んだボタンの数値を表へ反映して閉じます</div>
+    <div id="sousekiButtonGrid" class="souseki-button-grid"></div>
+  </div>
 </div>
 
 <div id="fuyosekiModal" class="tsukumo-modal fuyoseki-modal hidden">
-  <div class="tsukumo-actions">
-    <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">決定</button>
+  <div class="modal-top-buttons no-capture">
+    <button class="modal-top-btn" onclick="resetFuyoModal()">リセット</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
+    <button class="modal-top-btn" onclick="closeFuyoPicker()">戻る</button>
+  </div>
+  <div class="tsukumo-actions no-capture">
+    <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">表に反映</button>
     <button class="tsukumo-close-btn" onclick="closeFuyoPicker()">閉じる</button>
     <span id="fuyosekiTargetLabel">付与</span>
-    <span id="fuyosekiSelectedCount" class="fuyoseki-count">選択 0/2</span>
+    <span id="fuyosekiSelectedCount" class="fuyoseki-count">入力セル未選択</span>
   </div>
 
-  <div class="fuyoseki-note">最大2個選択できます。9～12番の入力欄も決定で合計して表へ反映します</div>
-  <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
+  <div id="fuyosekiZoomArea" class="modal-zoom-area">
+    <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
+    <div class="fuyo-layout-title">付与枠</div>
+    <div id="fuyoFrameWrap" class="fuyo-frame-wrap"></div>
+  </div>
+</div>
+
+<div id="fuyoDigitModal" class="fuyo-digit-modal hidden">
+  <div class="fuyo-digit-box">
+    <div id="fuyoDigitTitle" class="fuyo-digit-title">入力</div>
+    <input id="fuyoDigitManualInput" class="fuyo-manual-input" inputmode="numeric" oninput="setFuyoManualDigitInput(this.value)">
+    <div class="fuyo-digit-cols" id="fuyoDigitCols"></div>
+    <div class="fuyo-digit-actions">
+      <button class="fuyo-digit-action-btn" onclick="clearFuyoActiveCell()">このマスを消す</button>
+      <button class="fuyo-digit-action-btn apply" onclick="applyFuyoDigitModal()">反映</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1190,15 +1535,29 @@ window.addEventListener("load", recalcAll);
 </script>
 
 <script>
+let NOURYOKU_SHEET_ZOOM = 100;
+function setNouryokuSheetZoom(percent){
+  NOURYOKU_SHEET_ZOOM = percent;
+  fit();
+}
+function resetNouryokuInputs(){
+  document.querySelectorAll(".sheet-input").forEach(input => {
+    input.value = "";
+  });
+  document.querySelectorAll(".sheet-check").forEach(check => {
+    check.checked = false;
+  });
+  if(typeof recalcAll === "function") recalcAll();
+}
 function fit(){
   const sheet = document.getElementById('sheet');
 
-  // 横幅に合わせるだけにする
-  const scale = window.innerWidth / 1559;
+  // 横幅に合わせた倍率に、操作ボタンの倍率を掛ける
+  const scale = (window.innerWidth / 1559) * (NOURYOKU_SHEET_ZOOM / 100);
 
   sheet.style.transform = 'scale(' + scale + ')';
 
-  // 縮小後の高さに合わせて余計な下スクロールを減らす
+  // 縮小・拡大後の高さに合わせる
   sheet.style.height = (780 * scale) + 'px';
 }
 window.addEventListener('load', fit);
@@ -1232,6 +1591,50 @@ function downloadScreen(){
     link.href = canvas.toDataURL();
     link.click();
   });
+}
+</script>
+
+<script>
+function getVisibleNouryokuModalZoomArea(){
+  const pairs = [
+    ["fuyosekiModal", "fuyosekiZoomArea"],
+    ["fuyoDigitModal", null],
+    ["sousekiModal", "sousekiZoomArea"],
+    ["tsukumoModal", "tsukumoZoomArea"]
+  ];
+  for(const [modalId, areaId] of pairs){
+    const modal = document.getElementById(modalId);
+    if(modal && !modal.classList.contains("hidden")){
+      return areaId ? document.getElementById(areaId) : null;
+    }
+  }
+  return null;
+}
+function setNouryokuModalZoom(percent){
+  const area = getVisibleNouryokuModalZoomArea();
+  if(area){
+    area.style.zoom = percent + "%";
+  }
+}
+function resetTsukumoModal(){
+  tsukumoSelected = [];
+  tsukumoMainStat = null;
+  tsukumoSubStat = null;
+  tsukumoThirdStat = null;
+  tsukumoReplaceTarget = null;
+  ["A","B","C"].forEach(code => {
+    const cb = document.getElementById("tsukumoExclude" + code);
+    if(cb) cb.checked = false;
+  });
+  makeTsukumoPriorityBtns();
+  updateTsukumoExcludeLabels();
+  renderTsukumoPicker();
+}
+function resetSousekiModal(){
+  const grid = document.getElementById("sousekiButtonGrid");
+  if(grid){
+    grid.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
+  }
 }
 </script>
 <script>
@@ -1797,257 +2200,260 @@ function applySousekiSelection(stat, value){
 }
 
 
-const FUYOSEKI_STATS = ["腕力","耐久","器用","知力","魅力","土","水","火","風"];
-let fuyosekiData = [];
+
+const FUYOSEKI_STATS = ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 let fuyosekiTarget = "";
-let fuyosekiSelected = [];
-let fuyosekiManualValues = {};
-let fuyosekiSavedState = {};
-const FUYOSEKI_STORAGE_KEY = "nouryoku_fuyoseki_saved_state_v1";
-
-function loadFuyoSavedStateAll(){
-  try{
-    const raw = localStorage.getItem(FUYOSEKI_STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(parsed && typeof parsed === "object"){
-        fuyosekiSavedState = parsed;
-      }
-    }
-  }catch(e){
-    fuyosekiSavedState = {};
-  }
-}
-
-function writeFuyoSavedStateAll(){
-  try{
-    localStorage.setItem(FUYOSEKI_STORAGE_KEY, JSON.stringify(fuyosekiSavedState));
-  }catch(e){}
-}
-
-loadFuyoSavedStateAll();
-
-function saveFuyoCurrentState(){
-  if(!fuyosekiTarget) return;
-  fuyosekiSavedState[fuyosekiTarget] = {
-    selected: fuyosekiSelected.map(item => ({
-      key: item.key,
-      num: item.num,
-      stat: item.stat,
-      copy: item.copy
-    })),
-    manual: { ...fuyosekiManualValues }
-  };
-  writeFuyoSavedStateAll();
-}
-
-function loadFuyoTargetState(label){
-  loadFuyoSavedStateAll();
-  const saved = fuyosekiSavedState[label];
-  if(saved){
-    fuyosekiSelected = (saved.selected || []).map(item => ({
-      key: item.key,
-      num: item.num,
-      stat: item.stat,
-      copy: item.copy
-    }));
-    fuyosekiManualValues = { ...(saved.manual || {}) };
-  }else{
-    fuyosekiSelected = [];
-    fuyosekiManualValues = {};
-  }
-}
-
-async function loadFuyoCSV(){
-  const response = await fetch("./付与石.csv");
-  if(!response.ok){
-    alert("付与石.csvを読み込めませんでした");
-    return [];
-  }
-
-  const buffer = await response.arrayBuffer();
-  let text = "";
-  try{
-    text = new TextDecoder("shift_jis").decode(buffer);
-  }catch(e){
-    text = new TextDecoder("utf-8").decode(buffer);
-  }
-
-  text = text.replace(/^\uFEFF/, "").trim();
-  if(!text) return [];
-
-  const rows = text.split(/\r?\n/).map(row => row.split(",").map(col => {
-    let value = col.trim();
-    if(value.startsWith('"') && value.endsWith('"')){
-      value = value.slice(1, -1).replace(/""/g, '"');
-    }
-    return value;
-  }));
-
-  const headers = rows[0];
-  return rows.slice(1).map(cols => {
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i] || "");
-    return obj;
-  });
-}
+let fuyoModalValues = {};
+let fuyoActiveCellKey = "";
+let fuyoActiveRowTitle = "";
+let fuyoActiveStat = "";
+const FUYOSEKI_STORAGE_KEY = "nouryoku_fuyo_digit_modal_state_v1";
 
 function fuyosekiStatColor(stat){
   return tsukumoStatColors[stat] || "#ffd0d0";
 }
-
+function loadFuyoSavedStateAll(){
+  try{
+    const raw = localStorage.getItem(FUYOSEKI_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if(parsed && typeof parsed === "object") return parsed;
+  }catch(e){}
+  return {};
+}
+function writeFuyoSavedStateAll(all){
+  try{
+    localStorage.setItem(FUYOSEKI_STORAGE_KEY, JSON.stringify(all));
+  }catch(e){}
+}
+function saveFuyoCurrentState(){
+  if(!fuyosekiTarget) return;
+  const all = loadFuyoSavedStateAll();
+  all[fuyosekiTarget] = JSON.parse(JSON.stringify(fuyoModalValues || {}));
+  writeFuyoSavedStateAll(all);
+}
+function loadFuyoTargetState(label){
+  const all = loadFuyoSavedStateAll();
+  fuyoModalValues = all[label] ? JSON.parse(JSON.stringify(all[label])) : {};
+}
+function fuyoValue(key){
+  const v = fuyoModalValues[key];
+  return String(v == null ? "" : v);
+}
+function setFuyoValue(key, value){
+  const clean = normalizeFuyoInput(value);
+  if(clean === "" || Number(clean) === 0){
+    delete fuyoModalValues[key];
+  }else{
+    fuyoModalValues[key] = clean;
+  }
+}
+function normalizeFuyoInput(value){
+  return String(value || "")
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[－ー]/g, "-")
+    .replace(/[^\d\-]/g, "")
+    .slice(0, 5);
+}
+function makeFuyoCellKey(frame, row, stat){
+  return `${frame}_${row}_${stat}`;
+}
+function getFuyoRows(frame){
+  if(frame === 1){
+    return [
+      {key:"main", title:"付与　or　神秘", cls:"fuyo-section-fuyo"},
+      {key:"jingi", title:"神器石1", cls:"fuyo-section-jingi"},
+      {key:"tenro", title:"天楼武器", cls:"fuyo-section-tenro"},
+      {key:"other", title:"その他1", cls:"fuyo-section-other"}
+    ];
+  }
+  return [
+    {key:"main", title:"付与　or　神秘", cls:"fuyo-section-fuyo"},
+    {key:"jingi", title:"神器石2", cls:"fuyo-section-jingi"},
+    {key:"tenro", title:"御法具", cls:"fuyo-section-gohogu"},
+    {key:"other", title:"その他2", cls:"fuyo-section-other"}
+  ];
+}
 function renderFuyoButtons(){
-  const grid = document.getElementById("fuyosekiButtonGrid");
-  if(!grid) return;
+  const wrap = document.getElementById("fuyoFrameWrap");
+  if(!wrap) return;
 
   let html = "";
-  FUYOSEKI_STATS.forEach(stat => {
-    html += `<div class="fuyoseki-grid-head" style="grid-column:span 2;color:${fuyosekiStatColor(stat)}">${stat}</div>`;
-  });
-
-  fuyosekiData.forEach(row => {
-    const num = tsukumoNum(row["番号"]);
-    FUYOSEKI_STATS.forEach(stat => {
-      const value = tsukumoNum(row[stat]);
-      const seimeiValue = tsukumoNum(row["生命"]);
-      for(let copy=1; copy<=2; copy++){
-        const key = `${num}_${stat}_${copy}`;
-        const selected = fuyosekiSelected.some(item => item.key === key) ? " selected" : "";
-        html += `<button class="fuyoseki-choice-btn${selected}" style="color:${fuyosekiStatColor(stat)}" onclick="toggleFuyoSelection('${key}', '${num}', '${stat}', ${copy})">${seimeiValue}<br>${value}</button>`;
-      }
-    });
-  });
-
-  const manualRows = [
-    { num:"9", name:"神器石1" },
-    { num:"10", name:"神器石2" },
-    { num:"11", name:"天楼武器" },
-    { num:"12", name:"その他付与" }
-  ];
-
-  manualRows.forEach(info => {
-    html += `<div class="fuyoseki-manual-title">${info.num}：${info.name}</div>`;
-    html += `<div class="fuyoseki-manual-row">`;
-    TSUKUMO_STATS.forEach(stat => {
-      const key = `${info.num}_${stat}`;
-      const value = fuyosekiManualValues[key] || "";
-      html += `<div class="fuyoseki-manual-cell"><div class="fuyoseki-manual-label" style="color:${fuyosekiStatColor(stat)}">${stat}</div><input class="fuyoseki-manual-input" style="color:${fuyosekiStatColor(stat)}" value="${value}" inputmode="numeric" oninput="setFuyoManualValue('${info.num}', '${stat}', this.value)"></div>`;
+  [1,2].forEach(frame => {
+    html += `<div class="fuyo-frame ${frame === 2 ? "slot2" : ""}">`;
+    html += `<div class="fuyo-frame-title">${frame}枠目</div>`;
+    getFuyoRows(frame).forEach(row => {
+      html += `<div class="fuyo-section-title ${row.cls}">${row.title}</div>`;
+      html += `<div class="fuyo-stat-row">`;
+      FUYOSEKI_STATS.forEach(stat => {
+        const key = makeFuyoCellKey(frame, row.key, stat);
+        const value = fuyoValue(key);
+        html += `<button class="fuyo-stat-cell" style="color:${fuyosekiStatColor(stat)}" onclick="openFuyoDigitModal('${key}', '${row.title}', '${stat}')"><span class="fuyo-stat-name">${stat}</span><span class="fuyo-stat-value">${value}</span></button>`;
+      });
+      html += `</div>`;
     });
     html += `</div>`;
   });
 
-  grid.innerHTML = html;
+  wrap.innerHTML = html;
   updateFuyoSelectedCount();
 }
-
 function updateFuyoSelectedCount(){
   const count = document.getElementById("fuyosekiSelectedCount");
-  if(count){
-    count.textContent = `選択 ${fuyosekiSelected.length}/2`;
+  if(!count) return;
+  if(fuyoActiveCellKey){
+    const parts = fuyoActiveCellKey.split("_");
+    count.textContent = `入力中：${parts[2] || ""}`;
+  }else{
+    count.textContent = "入力セル未選択";
   }
 }
+function openFuyoPicker(label){
+  fuyosekiTarget = label;
+  loadFuyoTargetState(label);
 
-function setFuyoManualValue(num, stat, value){
-  const key = `${num}_${stat}`;
-  fuyosekiManualValues[key] = String(value || "").replace(/[^\d\-]/g, "");
+  const modal = document.getElementById("fuyosekiModal");
+  const targetLabel = document.getElementById("fuyosekiTargetLabel");
+  const zoomArea = document.getElementById("fuyosekiZoomArea");
+
+  if(targetLabel) targetLabel.textContent = label;
+  if(zoomArea) zoomArea.style.zoom = "100%";
+  if(modal){
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+    modal.classList.remove("hidden");
+  }
+  renderFuyoButtons();
+}
+function closeFuyoPicker(){
   saveFuyoCurrentState();
+  const modal = document.getElementById("fuyosekiModal");
+  if(modal) modal.classList.add("hidden");
+  closeFuyoDigitModal();
+  fuyosekiTarget = "";
+  fuyoActiveCellKey = "";
+  fuyoActiveRowTitle = "";
+  fuyoActiveStat = "";
+  updateFuyoSelectedCount();
 }
-
+function resetFuyoModal(){
+  fuyoModalValues = {};
+  fuyoActiveCellKey = "";
+  fuyoActiveRowTitle = "";
+  fuyoActiveStat = "";
+  renderFuyoButtons();
+  closeFuyoDigitModal();
+}
+function updateFuyoDigitTitle(){
+  const title = document.getElementById("fuyoDigitTitle");
+  if(!title || !fuyoActiveCellKey) return;
+  const value = fuyoValue(fuyoActiveCellKey);
+  title.textContent = `${fuyoActiveRowTitle || "付与　or　神秘"} / ${fuyoActiveStat || ""}　現在値：${value || "未入力"}`;
+}
+function openFuyoDigitModal(key, rowTitle, stat){
+  fuyoActiveCellKey = key;
+  fuyoActiveRowTitle = rowTitle || "";
+  fuyoActiveStat = stat || "";
+  const modal = document.getElementById("fuyoDigitModal");
+  if(modal && modal.parentElement !== document.body){
+    document.body.appendChild(modal);
+  }
+  const input = document.getElementById("fuyoDigitManualInput");
+  updateFuyoDigitTitle();
+  if(input) input.value = fuyoValue(key);
+  renderFuyoDigitColumns();
+  if(modal){
+    modal.classList.remove("hidden");
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+    const box = modal.querySelector(".fuyo-digit-box");
+    if(box){
+      box.scrollTop = 0;
+      box.scrollLeft = 0;
+    }
+  }
+  updateFuyoSelectedCount();
+}
+function closeFuyoDigitModal(){
+  const modal = document.getElementById("fuyoDigitModal");
+  if(modal) modal.classList.add("hidden");
+}
+function setFuyoManualDigitInput(value){
+  if(!fuyoActiveCellKey) return;
+  const input = document.getElementById("fuyoDigitManualInput");
+  const clean = normalizeFuyoInput(value);
+  if(input && input.value !== clean) input.value = clean;
+  setFuyoValue(fuyoActiveCellKey, clean);
+  updateFuyoDigitTitle();
+  renderFuyoButtons();
+}
+function renderFuyoDigitColumns(){
+  const box = document.getElementById("fuyoDigitCols");
+  if(!box) return;
+  const cols = [
+    {label:"千の位", index:0},
+    {label:"百の位", index:1},
+    {label:"十の位", index:2},
+    {label:"一の位", index:3}
+  ];
+  let html = "";
+  cols.forEach(col => {
+    html += `<div><div class="fuyo-digit-col-title">${col.label}</div>`;
+    for(let n=0; n<=9; n++){
+      html += `<button class="fuyo-digit-number" onclick="setFuyoDigitAt(${col.index}, ${n})">${n}</button>`;
+    }
+    html += `</div>`;
+  });
+  box.innerHTML = html;
+}
+function setFuyoDigitAt(index, number){
+  if(!fuyoActiveCellKey) return;
+  let raw = fuyoValue(fuyoActiveCellKey);
+  raw = raw.padStart(4, "0").slice(-4).split("");
+  raw[index] = String(number);
+  const clean = String(Number(raw.join("")) || "");
+  setFuyoValue(fuyoActiveCellKey, clean);
+  updateFuyoDigitTitle();
+  const input = document.getElementById("fuyoDigitManualInput");
+  if(input) input.value = clean;
+  renderFuyoButtons();
+}
+function clearFuyoActiveCell(){
+  if(!fuyoActiveCellKey) return;
+  delete fuyoModalValues[fuyoActiveCellKey];
+  const input = document.getElementById("fuyoDigitManualInput");
+  if(input) input.value = "";
+  renderFuyoButtons();
+}
+function applyFuyoDigitModal(){
+  renderFuyoButtons();
+  closeFuyoDigitModal();
+}
 function hasFuyoManualValue(){
-  return Object.values(fuyosekiManualValues).some(v => tsukumoNum(v) !== 0);
+  return Object.values(fuyoModalValues || {}).some(v => tsukumoNum(v) !== 0);
 }
-
-function addFuyoManualValues(total){
-  Object.entries(fuyosekiManualValues).forEach(([key, value]) => {
+function calcFuyoModalTotal(){
+  const total = {};
+  TSUKUMO_STATS.forEach(s => total[s] = 0);
+  Object.entries(fuyoModalValues || {}).forEach(([key, value]) => {
     const parts = key.split("_");
-    const stat = parts[1];
+    const stat = parts[2];
     if(TSUKUMO_STATS.includes(stat)){
       total[stat] += tsukumoNum(value);
     }
   });
+  return total;
 }
-
-function toggleFuyoSelection(key, num, stat, copy){
-  const index = fuyosekiSelected.findIndex(item => item.key === key);
-  if(index >= 0){
-    fuyosekiSelected.splice(index, 1);
-  }else{
-    if(fuyosekiSelected.length >= 2){
-      alert("選択できる付与石は2個までです");
-      return;
-    }
-    fuyosekiSelected.push({ key, num:String(num), stat, copy });
-  }
-  saveFuyoCurrentState();
-  renderFuyoButtons();
-}
-
-function openFuyoPicker(label){
-  fuyosekiTarget = label;
-  loadFuyoTargetState(label);
-  const modal = document.getElementById("fuyosekiModal");
-  const targetLabel = document.getElementById("fuyosekiTargetLabel");
-
-  if(targetLabel){
-    targetLabel.textContent = label;
-  }
-
-  if(modal){
-    modal.classList.remove("hidden");
-  }
-
-  if(fuyosekiData.length){
-    renderFuyoButtons();
-  }else{
-    loadFuyoCSV().then(data => {
-      fuyosekiData = data;
-      renderFuyoButtons();
-    });
-  }
-}
-
-function closeFuyoPicker(){
-  saveFuyoCurrentState();
-  const modal = document.getElementById("fuyosekiModal");
-  if(modal){
-    modal.classList.add("hidden");
-  }
-  fuyosekiTarget = "";
-  fuyosekiSelected = [];
-  fuyosekiManualValues = {};
-  updateFuyoSelectedCount();
-}
-
 function applyFuyoSelected(){
   if(!fuyosekiTarget){
     alert("反映先が不明です");
     return;
   }
-
-  if(!fuyosekiSelected.length && !hasFuyoManualValue()){
-    alert("付与石を選択、または9～12番に数値を入力してください");
+  if(!hasFuyoManualValue()){
+    alert("付与の数値を入力してください");
     return;
   }
 
-  const total = {};
-  TSUKUMO_STATS.forEach(s => total[s] = 0);
-
-  for(const item of fuyosekiSelected){
-    const row = fuyosekiData.find(x => String(tsukumoNum(x["番号"])) === String(item.num));
-    if(!row){
-      alert("付与石データが見つかりません");
-      return;
-    }
-
-    total[item.stat] += tsukumoNum(row[item.stat]);
-
-    if(item.num !== "7" && item.num !== "8"){
-      total["生命"] += tsukumoNum(row["生命"]);
-      total["気合"] += tsukumoNum(row["気合"]);
-    }
-  }
-
-  addFuyoManualValues(total);
+  const total = calcFuyoModalTotal();
 
   saveFuyoCurrentState();
   applyStatsToRow(fuyosekiTarget, total);
