@@ -16954,84 +16954,145 @@ body{padding-top:0 !important;}
 })();
 </script>
 
-<script id="step178-db-result-hero-name-title">
-/* step178: 検索結果の配置英傑名にマウスカーソルを合わせた時、titleでフルネームを表示する。
-   表示文字・レイアウト・検索処理・適用処理は変更しない。 */
-(function(){
-  'use strict';
-  if(window.__step178DbResultHeroNameTitle) return;
-  window.__step178DbResultHeroNameTitle = true;
 
-  function cleanHeroTitle(text){
-    return String(text || '')
-      .replace(/^\s*\d+\s*[\.．]\s*/, '')
-      .trim();
+
+<!-- step182-db-result-hero-name-fit-full-no-layout: 検索結果の配置英傑名を既存セル内で全表示（列幅/行高さ/検索処理は変更しない） -->
+<style id="step182-db-result-hero-name-fit-full-no-layout-style">
+  .dbPlacementMini > span.jinpoHeroNameFitApplied{
+    text-overflow:clip !important;
+  }
+  .dbPlacementMini > span.jinpoHeroNameFitApplied > .jinpoHeroNameFitText{
+    display:inline-block !important;
+    max-width:none !important;
+    white-space:nowrap !important;
+    vertical-align:middle !important;
+    font:inherit !important;
+    color:inherit !important;
+    text-shadow:inherit !important;
+    transform-origin:left center !important;
+    will-change:transform,font-size !important;
+  }
+</style>
+<script id="step182-db-result-hero-name-fit-full-no-layout-script">
+(function(){
+  if(window.__step182DbResultHeroNameFitFullNoLayout) return;
+  window.__step182DbResultHeroNameFitFullNoLayout = true;
+
+  function ready(fn){
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
+    else fn();
   }
 
-  function applyHeroNameTitles(root){
+  function directText(el){
+    var out = '';
     try{
-      var base = root && root.querySelectorAll ? root : document;
-      var nodes = base.querySelectorAll('.dbPlacementMini span');
-      nodes.forEach(function(span){
-        var name = cleanHeroTitle(span.textContent);
-        if(!name) return;
-        if(span.getAttribute('title') !== name) span.setAttribute('title', name);
+      Array.prototype.forEach.call(el.childNodes || [], function(n){
+        if(n.nodeType === 3) out += n.nodeValue || '';
       });
     }catch(e){}
+    return out;
   }
 
-  function startObserver(){
-    applyHeroNameTitles(document);
+  function stripGeneratedLabel(t){
+    return String(t || '').replace(/\s*文曲\s*$/, '');
+  }
+
+  function ensureTextWrap(el){
+    var wrap = el.querySelector(':scope > .jinpoHeroNameFitText');
+    if(wrap) return wrap;
+    var text = stripGeneratedLabel(directText(el));
+    if(!text.trim()) text = stripGeneratedLabel(el.textContent || '');
+    // 既存表示文字をそのまま内側へ移す。外側spanのサイズ・グリッド・行高は変更しない。
+    Array.prototype.slice.call(el.childNodes || []).forEach(function(n){
+      if(n.nodeType === 3) el.removeChild(n);
+    });
+    wrap = document.createElement('b');
+    wrap.className = 'jinpoHeroNameFitText';
+    wrap.textContent = text.trim();
+    el.insertBefore(wrap, el.firstChild);
+    return wrap;
+  }
+
+  function pseudoAfterWidth(el){
     try{
-      var target = document.getElementById('dbList') || document.body;
-      var timer = null;
-      var obs = new MutationObserver(function(){
-        if(timer) clearTimeout(timer);
-        timer = setTimeout(function(){
-          timer = null;
-          applyHeroNameTitles(document);
-        }, 30);
-      });
-      obs.observe(target, {childList:true, subtree:true});
+      var cs = window.getComputedStyle(el, '::after');
+      var content = cs && cs.content;
+      if(!content || content === 'none' || content === 'normal') return 0;
+      content = String(content).replace(/^['"]|['"]$/g, '');
+      if(!content) return 0;
+      var probe = document.createElement('span');
+      probe.textContent = content;
+      probe.style.position = 'fixed';
+      probe.style.left = '-9999px';
+      probe.style.top = '-9999px';
+      probe.style.visibility = 'hidden';
+      probe.style.whiteSpace = 'nowrap';
+      probe.style.fontFamily = cs.fontFamily;
+      probe.style.fontSize = cs.fontSize;
+      probe.style.fontWeight = cs.fontWeight;
+      probe.style.letterSpacing = cs.letterSpacing;
+      probe.style.paddingLeft = cs.paddingLeft;
+      probe.style.paddingRight = cs.paddingRight;
+      probe.style.borderLeft = cs.borderLeft;
+      probe.style.borderRight = cs.borderRight;
+      document.body.appendChild(probe);
+      var w = probe.getBoundingClientRect().width;
+      document.body.removeChild(probe);
+      var ml = parseFloat(cs.marginLeft) || 0;
+      var mr = parseFloat(cs.marginRight) || 0;
+      return Math.ceil(w + ml + mr + 2);
     }catch(e){
-      document.addEventListener('mouseover', function(ev){
-        var span = ev.target && ev.target.closest ? ev.target.closest('.dbPlacementMini span') : null;
-        if(!span) return;
-        var name = cleanHeroTitle(span.textContent);
-        if(name) span.setAttribute('title', name);
-      }, true);
+      return el.classList && el.classList.contains('factor4BunkyokuGlow') ? 34 : 0;
     }
   }
 
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startObserver, {once:true});
-  else startObserver();
+  function fitOne(el){
+    if(!el || !el.classList) return;
+    // 検索結果の配置英傑欄だけ。陣形表示・所持カード・9因縁DB自体には触らない。
+    if(!el.matches('.dbPlacementMini > span')) return;
+    var wrap = ensureTextWrap(el);
+    el.classList.add('jinpoHeroNameFitApplied');
+    wrap.style.fontSize = '';
+    wrap.style.transform = '';
+    var baseSize = parseFloat(window.getComputedStyle(el).fontSize) || 11;
+    var minSize = 7;
+    var reserve = 5;
+    var available = Math.max(12, el.clientWidth - pseudoAfterWidth(el) - reserve);
+    // 文字サイズを段階的に下げて、既存セル内に収める。
+    for(var size = baseSize; size >= minSize; size -= 0.5){
+      wrap.style.fontSize = size + 'px';
+      wrap.style.transform = '';
+      if(wrap.scrollWidth <= available) return;
+    }
+    // 将来さらに長い名前が来ても列幅や行高を変えず、横方向だけ圧縮して全体を表示する。
+    var sw = Math.max(1, wrap.scrollWidth);
+    var scale = Math.max(0.42, Math.min(1, available / sw));
+    wrap.style.fontSize = minSize + 'px';
+    wrap.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
+  }
+
+  function fitAll(root){
+    try{
+      var base = root && root.querySelectorAll ? root : document;
+      base.querySelectorAll('.dbPlacementMini > span').forEach(fitOne);
+    }catch(e){}
+  }
+
+  ready(function(){
+    fitAll(document);
+    var timer = null;
+    function schedule(){
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(function(){ timer = null; fitAll(document); }, 60);
+    }
+    try{
+      new MutationObserver(schedule).observe(document.getElementById('dbList') || document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style']});
+    }catch(e){}
+    window.addEventListener('resize', schedule);
+    window.addEventListener('load', schedule, {once:true});
+  });
 })();
 </script>
-
-
-<style id="step180-db-result-hero-name-bunkyoku-no-clipping">
-/* step180: 検索結果の配置英傑カード内だけを調整。表全体の幅・列幅・検索処理・DB・適用処理は変更しない。
-   長い英傑名と文曲バッジがカード内で見切れないよう、文字を折り返して表示する。 */
-#dbFormationList .dbPlacementMini span{
-  box-sizing:border-box !important;
-  min-width:0 !important;
-  max-width:100% !important;
-  white-space:normal !important;
-  overflow:visible !important;
-  text-overflow:clip !important;
-  overflow-wrap:anywhere !important;
-  word-break:keep-all !important;
-  line-break:anywhere !important;
-  line-height:1.18 !important;
-  padding:3px 4px !important;
-}
-#dbFormationList .dbPlacementMini span.factor4BunkyokuGlow::after{
-  display:inline-block !important;
-  white-space:nowrap !important;
-  margin-left:4px !important;
-  vertical-align:baseline !important;
-}
-</style>
 
 </body>
 </html>
