@@ -2192,6 +2192,9 @@ if(!names.length) return true;
 const rowNames = dbRowMembers(row).map(canonicalHeroName);
 return names.every(name=>rowNames.includes(name));
 }
+function dbRowMatchesExcludedHeroes(row){
+try{ return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(row); }catch(e){ return true; }
+}
 function dbRowMembers(row){
 return String(row?.eiketsu_ids || row?.members || "")
 .split("|")
@@ -2535,7 +2538,7 @@ if(token !== dbFormationListRenderToken) return;
 const startTime = performance.now();
 const all = resultDbByBondCount.get(selectedDbListBondCount) || [];
 const priorityRules = getDbPriorityRules();
-const predicates = [dbRowMatchesSelectedFormation, dbRowMatchesOwnedHeroes];
+const predicates = [dbRowMatchesSelectedFormation, dbRowMatchesOwnedHeroes, dbRowMatchesExcludedHeroes];
 if(grade3Cost6OnlyEnabled) predicates.push(dbRowAllHeroesCost6OrLess);
 for(const rule of priorityRules){
 if(rule.threshold !== null && Number.isFinite(rule.threshold)){
@@ -7716,7 +7719,7 @@ window.bindHardRequireFormation = bindHardRequireFormation;
       box.innerHTML='<div class="dbListNote">通常5〜6因縁DBは未作成です。等級3以下ONを押すと、事前DB由来の5〜6因縁を表示します。</div>';
       return true;
     }
-    var filtered=sort7(all.filter(function(r){return gradeSource7(r)&&formationOk7(r,f)&&ownedOk7(r)&&priorityOk7(r);}));
+    var filtered=sort7(all.filter(function(r){return gradeSource7(r)&&formationOk7(r,f)&&ownedOk7(r)&&(!window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r))&&priorityOk7(r);}));
     var shown=filtered.slice(0,300);
     shownRows7=shown;
     status.textContent=f+" / "+c+"因縁: 等級3以下ON DB "+all.length.toLocaleString()+"件 / 絞り込み "+filtered.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / DB表示のみ";
@@ -11975,7 +11978,7 @@ document.addEventListener("click", function(ev){
       box.innerHTML='<div class="dbListNote">通常5〜6因縁DBは未作成です。等級3以下ONを押すと、事前DB由来の5〜6因縁を表示します。</div>';
       return true;
     }
-    var filtered=sort8(all.filter(function(r){return gradeSource8(r)&&formationOk8(r,f)&&ownedOk8(r)&&priorityOk8(r);}));
+    var filtered=sort8(all.filter(function(r){return gradeSource8(r)&&formationOk8(r,f)&&ownedOk8(r)&&(!window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r))&&priorityOk8(r);}));
     var shown=filtered.slice(0,300);
     shownRows8=shown;
     status.textContent=f+" / "+c+"因縁: 等級3以下ON DB "+all.length.toLocaleString()+"件 / 絞り込み "+filtered.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / DB表示のみ";
@@ -13129,6 +13132,7 @@ document.addEventListener("click", function(ev){
         if(!formationMatch(r,form)) continue;
         if(!rowGradeMatch(r)) continue;
         if(!rowOwnedMatch(r)) continue;
+        if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(r)) continue;
         if(!priorityMatch(r)) continue;
         out.push(r);
       }
@@ -13814,7 +13818,7 @@ document.addEventListener("click", function(ev){
   function preview(row){ try{ if(typeof renderUpperPreview === "function") renderUpperPreview({count:String(row.bond_count||count()),formation:String(row.formation||formation()),heroes:members(row).map(function(x,i){return (i+1)+". "+x;}),bonds:bonds(row),stats:stats(row)}); }catch(e){} }
   function apply(row){ if(!row) return; try{ if(typeof applyDbFormationRow === "function"){ applyDbFormationRow(row); return; } }catch(e){} var m=members(row), next={}; for(var i=0;i<6;i++){ var h=heroByName(m[i]); if(h) next[i+1]=h; } if(Object.keys(next).length===6){ try{ placement=next; }catch(e){} try{ if(typeof renderSlots === "function") renderSlots(); }catch(e){} try{ if(typeof calculate === "function") calculate(); }catch(e){} } preview(row); }
   function table(rows,c){ return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){ var m=members(row), b=bonds(row); return '<tr class="dbMainRow"><td><button class="dbOnlyApplyBtn" data-step124-grade3-result="'+esc(idx)+'" type="button">適用</button></td><td>'+esc(row.bond_count||c)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+m.map(function(x,i){return '<span>'+esc(i+1)+'. '+esc(x)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+b.map(function(x){return '<span class="badge">'+esc(x)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+stats(row)+'</span></td></tr>'; }).join('')+'</tbody></table>'; }
-  function render(){ var c=count(); if(!gradeOn() || (c!==5 && c!==6)) return false; var box=document.getElementById("dbFormationList"), status=document.getElementById("dbListStatus"); if(!box||!status) return false; var f=formation(); if(!f){ activeRows=[]; status.textContent="陣形を選択してください。"; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true; } var my=++seq; activeRows=[]; status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。"; box.innerHTML=""; loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(ownedOk).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 絞り込み "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / JSON表示のみ"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。grade3_precomputed_5_6_7.json を参照済みです。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step124 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; }); return true; }
+  function render(){ var c=count(); if(!gradeOn() || (c!==5 && c!==6)) return false; var box=document.getElementById("dbFormationList"), status=document.getElementById("dbListStatus"); if(!box||!status) return false; var f=formation(); if(!f){ activeRows=[]; status.textContent="陣形を選択してください。"; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true; } var my=++seq; activeRows=[]; status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。"; box.innerHTML=""; loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(ownedOk).filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 絞り込み "+rows.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / JSON表示のみ"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。grade3_precomputed_5_6_7.json を参照済みです。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step124 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; }); return true; }
   window.renderDbFormationList=function(){ if(render()) return; return (typeof prevRender==="function")?prevRender.apply(this,arguments):undefined; };
   window.__step124RenderGrade356=function(c){ c=Number(c)||0; if(c===5||c===6){ setCount(c); try{ if(typeof renderDbCountButtons==="function") renderDbCountButtons(); }catch(e){} return render(); } return false; };
   window.handleDbCountButtonClick=function(c){ c=Number(c)||0; if(c===5||c===6){ if(window.__step124RenderGrade356(c)) return; } return (typeof prevHandle==="function")?prevHandle.apply(this,arguments):undefined; };
@@ -13886,7 +13890,7 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML="";
     if(!owned.length){
       status.textContent=c+"因縁の等級3以下表示用DBを読込中。数分お待ちください。";
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 配置英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; var note=pack&&pack.info&&pack.info.note ? " / "+pack.info.note : ""; status.textContent=f+" / "+c+"因縁: 等級3以下表示用DB "+all.length.toLocaleString()+"件 / 表示 "+shown.length.toLocaleString()+"件（最大300件） / 配置英傑なし: 総合値上位300件"+note; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq) return; console.error("step126 等級3以下5/6 JSON読込エラー",err); status.textContent="等級3以下5/6表示用DBを読み込めません。"; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
     status.textContent=c+"因縁の等級3以下DB本体を配置英傑で検索中。数分お待ちください。";
@@ -13994,7 +13998,7 @@ document.addEventListener("click", function(ev){
   function loadJson(){ if(jsonCache) return Promise.resolve(jsonCache); if(jsonLoading) return jsonLoading; jsonLoading=fetch(JSON_PATH,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(function(j){jsonCache=j;return j;}); return jsonLoading; }
   function loadCsv(c){ c=Number(c)||0; if(csvCache[c]) return Promise.resolve(csvCache[c]); if(csvLoading[c]) return csvLoading[c]; var path=DB_PATHS[c]; csvLoading[c]=(window.JinpoActivationEngine&&typeof window.JinpoActivationEngine.loadCSV==='function'?window.JinpoActivationEngine.loadCSV(path):fetch(path,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(parseCsv)).then(function(rows){csvCache[c]=Array.isArray(rows)?rows:[];return csvCache[c];}); return csvLoading[c]; }
   function table(rows,c){ return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){ var m=rowMembers(row), b=rowBonds(row); return '<tr class="dbMainRow"><td><button class="dbOnlyApplyBtn" data-step128-grade3-result="'+esc(idx)+'" type="button">適用</button></td><td>'+esc(rowCount(row)||c)+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+m.map(function(x,i){return '<span>'+esc(i+1)+'. '+esc(x)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+b.map(function(x){return '<span class="badge">'+esc(String(x).split(':').pop())+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値</span><span class="dbListStat">'+stats(row)+'</span></td></tr>'; }).join('')+'</tbody></table>'; }
-  function render(){ var c=count(); if(!gradeOn() || (c!==5&&c!==6)) return false; var box=document.getElementById('dbFormationList'), status=document.getElementById('dbListStatus'); if(!box||!status) return false; var f=formation(); if(!f){activeRows=[]; status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true;} var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML=''; if(!owned.length){ status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。'; loadJson().then(function(db){ if(my!==seq)return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }); return true; }
+  function render(){ var c=count(); if(!gradeOn() || (c!==5&&c!==6)) return false; var box=document.getElementById('dbFormationList'), status=document.getElementById('dbListStatus'); if(!box||!status) return false; var f=formation(); if(!f){activeRows=[]; status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、5〜6因縁ボタンで一覧を表示します。</div>'; return true;} var my=++seq, owned=ownedNames(); activeRows=[]; box.innerHTML=''; if(!owned.length){ status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。'; loadJson().then(function(db){ if(my!==seq)return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }); return true; }
     status.textContent=c+'因縁の等級3以下DB本体を配置英傑で検索中。数分お待ちください。';
     loadCsv(c).then(function(allRows){ if(my!==seq)return; var rows=[]; for(var i=0;i<allRows.length;i++){ var r=allRows[i]; if(rowCount(r)!==c) continue; if(rowFormation(r)!==f) continue; if(!rowAllCost6(r)) continue; if(!rowMatchesOwned(r)) continue; if(!priorityOk(r)) continue; rows.push(r); } rows=sortRows(rows); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: DB本体 '+allRows.length.toLocaleString()+'件 / 配置英傑全体検索 '+rows.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑: '+owned.join('・'); box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。DB本体内を配置英傑条件で検索済みです。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step128 等級3以下5/6検索エラー',err); status.textContent='等級3以下5/6のDB本体を読み込めません。'; box.innerHTML='<div class="dbListNote">data/jinpo_result_db_'+c+'.csv を確認してください。</div>'; }); return true; }
   window.__step128RenderGrade356=render;
@@ -14083,7 +14087,7 @@ document.addEventListener("click", function(ev){
     var my=++seq, owned=ownedSelected(); activeRows=[]; box.innerHTML='';
     if(!owned.ids.length && !owned.normNames.length){
       status.textContent=c+'因縁の等級3以下表示用DBを読込中。数分お待ちください。';
-      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
+      loadJson().then(function(db){ if(my!==seq) return; var pack=db&&db.formations&&db.formations[f]&&db.formations[f][String(c)]; var all=(pack&&Array.isArray(pack.rows))?pack.rows.slice():[]; var rows=sortRows(all.filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk)); var shown=rows.slice(0,300); activeRows=shown; status.textContent=f+' / '+c+'因縁: 等級3以下表示用DB '+all.length.toLocaleString()+'件 / 表示 '+shown.length.toLocaleString()+'件（最大300件） / 配置英傑なし: 総合値上位300件'; box.innerHTML=shown.length?table(shown,c):'<div class="dbListNote">該当行なし。</div>'; }).catch(function(err){ if(my!==seq)return; console.error('step129 表示用JSON読込エラー',err); status.textContent='等級3以下表示用DBを読み込めません。'; box.innerHTML='<div class="dbListNote">data/grade3_precomputed_5_6_7_8_9.json を確認してください。</div>'; });
       return true;
     }
     if(c===5){
@@ -14630,7 +14634,7 @@ body{padding-top:0 !important;}
       var hasOwned = owned148().length > 0;
       var hasValueFilter = hasThreshold148();
       var isInitialDisplay = !hasOwned && !hasValueFilter;
-      var rows = sort148(all.filter(ownedOk148).filter(priorityOk148));
+      var rows = sort148(all.filter(ownedOk148).filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk148));
       var max = 300;
       var shown = rows.slice(0,max);
       activeRows = shown;
@@ -14802,7 +14806,7 @@ body{padding-top:0 !important;}
       if(local !== seq) return;
       var pack = db && db.formations && db.formations[f] && db.formations[f][String(c)];
       var all = (pack && Array.isArray(pack.rows)) ? pack.rows.slice() : [];
-      var rows = sort150(all.filter(ownedOk150).filter(priorityOk150));
+      var rows = sort150(all.filter(ownedOk150).filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk150));
       var shown = rows.slice(0,LIMIT);
       activeRows = shown;
       try{ window.resultDbRows = shown; resultDbRows = shown; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
@@ -14984,7 +14988,7 @@ body{padding-top:0 !important;}
       if(local !== seq) return;
       var pack = db && db.formations && db.formations[f] && db.formations[f][String(c)];
       var all = (pack && Array.isArray(pack.rows)) ? pack.rows.slice() : [];
-      var rows = sort151(all.filter(ownedOk151).filter(priorityOk151));
+      var rows = sort151(all.filter(ownedOk151).filter(function(r){return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(r);}).filter(priorityOk151));
       var shown = rows.slice(0,LIMIT);
       activeRows = shown;
       try{ window.resultDbRows = shown; resultDbRows = shown; if(typeof rebuildResultDbIndex === 'function') rebuildResultDbIndex(); }catch(e){}
@@ -15963,6 +15967,7 @@ body{padding-top:0 !important;}
           if(String(r && (r.bond_count || r.ic || '')) !== '7') continue;
           if(!formationMatch(r,form)) continue;
           if(!rowOwnedMatch(r)) continue;
+        if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(r)) continue;
           if(!priorityMatch(r)) continue;
           matched++;
           addBest(best,r);
@@ -15981,6 +15986,7 @@ body{padding-top:0 !important;}
             if(String(ar && (ar.bond_count || ar.ic || '')) !== '7') continue;
             if(!formationMatch(ar,form)) continue;
             if(!rowOwnedMatch(ar)) continue;
+      if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(ar)) continue;
             if(!priorityMatch(ar)) continue;
             matched++;
             addBest(best,ar);
@@ -16208,6 +16214,7 @@ body{padding-top:0 !important;}
           if(String(r && (r.bond_count || r.ic || '')) !== '6') continue;
           if(!formationMatch(r,form)) continue;
           if(!rowOwnedMatch(r)) continue;
+        if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(r)) continue;
           if(!priorityMatch(r)) continue;
           matched++;
           addBest(best,r);
@@ -16423,6 +16430,7 @@ body{padding-top:0 !important;}
       if(sk && String(r.sort_key || '') !== sk) continue;
       if(!formationMatch(r,form)) continue;
       if(!rowOwnedMatch(r)) continue;
+        if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(r)) continue;
       if(!priorityMatch(r)) continue;
       out.push(r);
     }
@@ -16431,6 +16439,7 @@ body{padding-top:0 !important;}
       if(String(ar && (ar.bond_count || ar.ic || '')) !== '7') continue;
       if(!formationMatch(ar,form)) continue;
       if(!rowOwnedMatch(ar)) continue;
+      if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(ar)) continue;
       if(!priorityMatch(ar)) continue;
       out.push(ar);
     }
@@ -16449,6 +16458,7 @@ body{padding-top:0 !important;}
         if(String(r && (r.bond_count || r.ic || '')) !== '7') continue;
         if(!formationMatch(r,form)) continue;
         if(!rowOwnedMatch(r)) continue;
+        if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(r)) continue;
         if(!priorityMatch(r)) continue;
         matched++; addBest(best,r);
       }
@@ -16462,6 +16472,7 @@ body{padding-top:0 !important;}
       if(String(ar && (ar.bond_count || ar.ic || '')) !== '7') continue;
       if(!formationMatch(ar,form)) continue;
       if(!rowOwnedMatch(ar)) continue;
+      if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(ar)) continue;
       if(!priorityMatch(ar)) continue;
       matched++; addBest(best,ar);
     }
@@ -16535,7 +16546,7 @@ body{padding-top:0 !important;}
   window.__worker7Normal7SearchNonblockingFixInstalled = true;
 
   var LIMIT = Number(window.JINPO_RESULT_LIMIT || 300) || 300;
-  var WORKER_CODE = "/* jinpo-search-worker.js\n * 7因縁の大量CSV検索をメイン画面から分離するためのWorker。\n * 検索条件・並び順・表示件数はjinpo.html側の既存仕様に合わせる。\n */\n(function(){\n  'use strict';\n\n  function norm(v){\n    return String(v == null ? '' : v).trim()\n      .replace(/\\u5c71\\u4e2d\\u9e7f\\u4e4b\\u52a9/g,'山中鹿之介')\n      .replace(/・/g,'')\n      .replace(/[\\s　]+/g,'');\n  }\n  function split(v){\n    return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean);\n  }\n  function num(v){\n    var n = Number(String(v == null ? '' : v).replace(/,/g,''));\n    return Number.isFinite(n) ? n : 0;\n  }\n  function rowFormation(row){ return String((row && (row.formation || row.form || row['陣形'])) || '').trim(); }\n  function formationMatch(row, form){\n    if(!form) return false;\n    var rf = rowFormation(row);\n    if(!rf) return false;\n    if(rf === form) return true;\n    if(rf === '魚鱗と方円') return form === '魚鱗' || form === '方円' || form === '魚鱗と方円';\n    if(form === '魚鱗と方円') return rf.indexOf('魚鱗') !== -1 || rf.indexOf('方円') !== -1;\n    return rf.indexOf(form) !== -1;\n  }\n  function rowMembers(row){ return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['英傑'])); }\n  function rowOwnedMatch(row, owned){\n    owned = Array.isArray(owned) ? owned : [];\n    if(!owned.length) return true;\n    var mem = rowMembers(row).map(norm);\n    return owned.every(function(n){ return mem.indexOf(norm(n)) !== -1; });\n  }\n  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }\n  function priorityMatch(row, rules){\n    rules = Array.isArray(rules) ? rules : [];\n    for(var i=0;i<rules.length;i++){\n      var r = rules[i];\n      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;\n    }\n    return true;\n  }\n  function total(row){ return num(row && (row.total_score || row['総合値'])); }\n  function compareRows(a,b,rules){\n    rules = Array.isArray(rules) ? rules.filter(function(r){ return r && r.stat; }) : [];\n    for(var i=0;i<rules.length;i++){\n      var d = stat(b,rules[i].stat) - stat(a,rules[i].stat);\n      if(d) return d;\n    }\n    var td = total(b) - total(a);\n    if(td) return td;\n    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');\n  }\n  function addBest(best,row,rules,limit){\n    if(best.length < limit){\n      best.push(row);\n      if(best.length > 1) best.sort(function(a,b){ return compareRows(a,b,rules); });\n      return;\n    }\n    if(compareRows(row,best[best.length-1],rules) < 0){\n      best.push(row);\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      best.length = limit;\n    }\n  }\n  function parseCsv(text){\n    var rows=[], row=[], field='', quote=false, headers=null;\n    for(var i=0;i<text.length;i++){\n      var ch=text[i], nx=text[i+1];\n      if(quote){\n        if(ch==='\"' && nx==='\"'){ field+='\"'; i++; }\n        else if(ch==='\"') quote=false;\n        else field+=ch;\n      }else{\n        if(ch==='\"') quote=true;\n        else if(ch===','){ row.push(field); field=''; }\n        else if(ch==='\\n'){\n          row.push(field); field='';\n          if(row.length){\n            if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n            else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n          }\n          row=[];\n        }else if(ch!=='\\r') field+=ch;\n      }\n    }\n    if(field.length || row.length){\n      row.push(field);\n      if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n      else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n    }\n    return rows;\n  }\n  async function loadCsv(path, baseUrl){\n    var url = path;\n    try{ if(baseUrl) url = new URL(path, baseUrl).href; }catch(e){ url = path; }\n    var res = await fetch(url, {cache:'no-store'});\n    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);\n    return parseCsv(await res.text());\n  }\n  function rowOk(row, form, owned, rules){\n    if(String(row && (row.bond_count || row.ic || '')) !== '7') return false;\n    if(!formationMatch(row, form)) return false;\n    if(!rowOwnedMatch(row, owned)) return false;\n    if(!priorityMatch(row, rules)) return false;\n    return true;\n  }\n\n  self.onmessage = async function(ev){\n    var data = ev.data || {};\n    if(data.type !== 'search7') return;\n    var token = data.token;\n    var paths = Array.isArray(data.paths) ? data.paths : [];\n    var form = data.form || '';\n    var owned = Array.isArray(data.owned) ? data.owned : [];\n    var rules = Array.isArray(data.rules) ? data.rules : [];\n    var limit = Number(data.limit || 300) || 300;\n    var additionalRows = Array.isArray(data.additionalRows) ? data.additionalRows : [];\n    var baseUrl = data.baseUrl || '';\n    var best=[], loaded=0, matched=0;\n    try{\n      for(var p=0;p<paths.length;p++){\n        var rows = await loadCsv(paths[p], baseUrl);\n        loaded += rows.length;\n        for(var i=0;i<rows.length;i++){\n          var r = rows[i];\n          if(!rowOk(r, form, owned, rules)) continue;\n          matched++;\n          addBest(best, r, rules, limit);\n        }\n        self.postMessage({type:'progress', token:token, done:p+1, total:paths.length, loaded:loaded, matched:matched});\n        rows = null;\n      }\n      for(var a=0;a<additionalRows.length;a++){\n        var ar = additionalRows[a];\n        if(!rowOk(ar, form, owned, rules)) continue;\n        matched++;\n        addBest(best, ar, rules, limit);\n      }\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      self.postMessage({type:'done', token:token, rows:best.slice(0,limit), loaded:loaded + additionalRows.length, matched:matched, additional:additionalRows.length});\n    }catch(err){\n      self.postMessage({type:'error', token:token, message:err && err.message ? err.message : String(err)});\n    }\n  };\n})();\n";
+  var WORKER_CODE = "/* jinpo-search-worker.js\n * 7因縁の大量CSV検索をメイン画面から分離するためのWorker。\n * 検索条件・並び順・表示件数はjinpo.html側の既存仕様に合わせる。\n */\n(function(){\n  'use strict';\n\n  function norm(v){\n    return String(v == null ? '' : v).trim()\n      .replace(/\\u5c71\\u4e2d\\u9e7f\\u4e4b\\u52a9/g,'山中鹿之介')\n      .replace(/・/g,'')\n      .replace(/[\\s　]+/g,'');\n  }\n  function split(v){\n    return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean);\n  }\n  function num(v){\n    var n = Number(String(v == null ? '' : v).replace(/,/g,''));\n    return Number.isFinite(n) ? n : 0;\n  }\n  function rowFormation(row){ return String((row && (row.formation || row.form || row['陣形'])) || '').trim(); }\n  function formationMatch(row, form){\n    if(!form) return false;\n    var rf = rowFormation(row);\n    if(!rf) return false;\n    if(rf === form) return true;\n    if(rf === '魚鱗と方円') return form === '魚鱗' || form === '方円' || form === '魚鱗と方円';\n    if(form === '魚鱗と方円') return rf.indexOf('魚鱗') !== -1 || rf.indexOf('方円') !== -1;\n    return rf.indexOf(form) !== -1;\n  }\n  function rowMembers(row){ return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['英傑'])); }\n  function rowOwnedMatch(row, owned){\n    owned = Array.isArray(owned) ? owned : [];\n    if(!owned.length) return true;\n    var mem = rowMembers(row).map(norm);\n    return owned.every(function(n){ return mem.indexOf(norm(n)) !== -1; });\n  }\n  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }\n  function priorityMatch(row, rules){\n    rules = Array.isArray(rules) ? rules : [];\n    for(var i=0;i<rules.length;i++){\n      var r = rules[i];\n      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;\n    }\n    return true;\n  }\n  function total(row){ return num(row && (row.total_score || row['総合値'])); }\n  function compareRows(a,b,rules){\n    rules = Array.isArray(rules) ? rules.filter(function(r){ return r && r.stat; }) : [];\n    for(var i=0;i<rules.length;i++){\n      var d = stat(b,rules[i].stat) - stat(a,rules[i].stat);\n      if(d) return d;\n    }\n    var td = total(b) - total(a);\n    if(td) return td;\n    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');\n  }\n  function addBest(best,row,rules,limit){\n    if(best.length < limit){\n      best.push(row);\n      if(best.length > 1) best.sort(function(a,b){ return compareRows(a,b,rules); });\n      return;\n    }\n    if(compareRows(row,best[best.length-1],rules) < 0){\n      best.push(row);\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      best.length = limit;\n    }\n  }\n  function parseCsv(text){\n    var rows=[], row=[], field='', quote=false, headers=null;\n    for(var i=0;i<text.length;i++){\n      var ch=text[i], nx=text[i+1];\n      if(quote){\n        if(ch==='\"' && nx==='\"'){ field+='\"'; i++; }\n        else if(ch==='\"') quote=false;\n        else field+=ch;\n      }else{\n        if(ch==='\"') quote=true;\n        else if(ch===','){ row.push(field); field=''; }\n        else if(ch==='\\n'){\n          row.push(field); field='';\n          if(row.length){\n            if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n            else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n          }\n          row=[];\n        }else if(ch!=='\\r') field+=ch;\n      }\n    }\n    if(field.length || row.length){\n      row.push(field);\n      if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n      else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n    }\n    return rows;\n  }\n  async function loadCsv(path, baseUrl){\n    var url = path;\n    try{ if(baseUrl) url = new URL(path, baseUrl).href; }catch(e){ url = path; }\n    var res = await fetch(url, {cache:'no-store'});\n    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);\n    return parseCsv(await res.text());\n  }\n  function rowOk(row, form, owned, rules){\n    if(String(row && (row.bond_count || row.ic || '')) !== '7') return false;\n    if(!formationMatch(row, form)) return false;\n    if(!rowOwnedMatch(row, owned)) return false;\n    if(self.__excludedNames && self.__excludedNames.length){ var exMem = rowMembers(row).map(norm); for(var __ei=0; __ei<self.__excludedNames.length; __ei++){ if(exMem.indexOf(norm(self.__excludedNames[__ei])) !== -1) return false; } }\n    if(!priorityMatch(row, rules)) return false;\n    return true;\n  }\n\n  self.onmessage = async function(ev){\n    var data = ev.data || {};\n    if(data.type !== 'search7') return;\n    var token = data.token;\n    var paths = Array.isArray(data.paths) ? data.paths : [];\n    var form = data.form || '';\n    var owned = Array.isArray(data.owned) ? data.owned : [];\n    var rules = Array.isArray(data.rules) ? data.rules : [];\n    var excluded = Array.isArray(data.excluded) ? data.excluded : []; self.__excludedNames = excluded;\n    var limit = Number(data.limit || 300) || 300;\n    var additionalRows = Array.isArray(data.additionalRows) ? data.additionalRows : [];\n    var baseUrl = data.baseUrl || '';\n    var best=[], loaded=0, matched=0;\n    try{\n      for(var p=0;p<paths.length;p++){\n        var rows = await loadCsv(paths[p], baseUrl);\n        loaded += rows.length;\n        for(var i=0;i<rows.length;i++){\n          var r = rows[i];\n          if(!rowOk(r, form, owned, rules)) continue;\n          matched++;\n          addBest(best, r, rules, limit);\n        }\n        self.postMessage({type:'progress', token:token, done:p+1, total:paths.length, loaded:loaded, matched:matched});\n        rows = null;\n      }\n      for(var a=0;a<additionalRows.length;a++){\n        var ar = additionalRows[a];\n        if(!rowOk(ar, form, owned, rules)) continue;\n        matched++;\n        addBest(best, ar, rules, limit);\n      }\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      self.postMessage({type:'done', token:token, rows:best.slice(0,limit), loaded:loaded + additionalRows.length, matched:matched, additional:additionalRows.length});\n    }catch(err){\n      self.postMessage({type:'error', token:token, message:err && err.message ? err.message : String(err)});\n    }\n  };\n})();\n";
   var WORKER_BLOB_URL = null;
   var PARTS = [
     'data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv',
@@ -16727,6 +16738,7 @@ body{padding-top:0 !important;}
     if(String(row && (row.bond_count || row.ic || '')) !== '7') return false;
     if(!formationMatch(row, form)) return false;
     if(!rowOwnedMatch(row, owned)) return false;
+    if(window.__jinpoExcludedHeroRowOk && !window.__jinpoExcludedHeroRowOk(row)) return false;
     if(!priorityMatch(row, ruleList)) return false;
     return true;
   }
@@ -16840,7 +16852,7 @@ body{padding-top:0 !important;}
         hideProgress(myToken);
       }
     };
-    w.postMessage({type:'search7', token:myToken, paths:PARTS, form:form, owned:ownedNames(), rules:rules(), limit:LIMIT, additionalRows:additionalRows, baseUrl:document.baseURI});
+    w.postMessage({type:'search7', token:myToken, paths:PARTS, form:form, owned:ownedNames(), excluded:(window.__jinpoGetExcludedHeroes?window.__jinpoGetExcludedHeroes():[]), rules:rules(), limit:LIMIT, additionalRows:additionalRows, baseUrl:document.baseURI});
     return true;
   }
 
@@ -17247,6 +17259,92 @@ body{padding-top:0 !important;}
     window.addEventListener('scroll', hide, true);
     window.addEventListener('resize', hide);
   });
+})();
+</script>
+
+
+<!-- step184-excluded-heroes-filter: 検索結果の英傑名クリック除外＋除外リスト管理。既存DB/検索式/レイアウトを変更しない追加機能。 -->
+<style id="step184-excluded-heroes-filter-style">
+#jinpoExcludedHeroModal{position:fixed;inset:0;display:none;z-index:2147483000;background:rgba(0,0,0,.66);align-items:center;justify-content:center}
+#jinpoExcludedHeroModal.isOpen{display:flex}
+#jinpoExcludedHeroModal .jinpoExcludedHeroBox{width:min(760px,calc(100vw - 24px));max-height:86vh;overflow:auto;border:1px solid rgba(231,189,92,.9);border-radius:14px;background:#120d09;color:#f4ead2;box-shadow:0 0 28px rgba(231,189,92,.35);padding:12px;box-sizing:border-box}
+#jinpoExcludedHeroModal .jinpoExcludedHeroHead{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+#jinpoExcludedHeroModal .jinpoExcludedHeroTitle{font-weight:900;color:#ffe1a1}
+#jinpoExcludedHeroModal .jinpoExcludedHeroList{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px;margin-top:8px}
+#jinpoExcludedHeroModal label{border:1px solid rgba(231,189,92,.22);border-radius:8px;background:rgba(0,0,0,.18);padding:6px;line-height:1.3}
+#jinpoExcludedHeroModal input[type=search]{width:100%;box-sizing:border-box;margin:6px 0}
+.jinpoExcludeControlRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.jinpoExcludeHint{font-size:12px;color:#cbb98f;line-height:1.45}
+.jinpoExcludeCount{font-size:12px;color:#ffe1a1}
+.dbPlacementMini > span{cursor:pointer}
+</style>
+<script id="step184-excluded-heroes-filter-script">
+(function(){
+  'use strict';
+  if(window.__step184ExcludedHeroesFilterInstalled) return;
+  window.__step184ExcludedHeroesFilterInstalled = true;
+  var STORAGE_KEY = 'jinpo_excluded_heroes_v1';
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
+  function split(v){return String(v==null?'':v).split(/[|,、]/).map(function(x){return x.trim();}).filter(Boolean);}
+  function rowMembers(row){return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['配置英傑'] || row['英傑'] || ''));}
+  function getList(){try{var a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(a)?a.map(String).filter(Boolean):[];}catch(e){return [];} }
+  function saveList(list){var seen={}, out=[];(list||[]).forEach(function(n){n=String(n||'').trim(); if(!n) return; var k=norm(n); if(!k||seen[k]) return; seen[k]=1; out.push(n);}); localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); updateCount();}
+  function isExcludedName(name){var k=norm(name); if(!k) return false; return getList().map(norm).indexOf(k)!==-1;}
+  window.__jinpoGetExcludedHeroes = getList;
+  window.__jinpoExcludedHeroRowOk = function(row){var ex=getList().map(norm); if(!ex.length) return true; var mem=rowMembers(row).map(norm); return !mem.some(function(n){return ex.indexOf(n)!==-1;});};
+  function currentCount(){
+    var btn=document.querySelector('#dbCountButtons .dbCountBtn.active[data-count], #dbCountButtons button.active[data-count]');
+    if(btn) return Number(btn.getAttribute('data-count'))||0;
+    try{return Number(selectedDbListBondCount)||0;}catch(e){}
+    try{return Number(window.selectedDbListBondCount)||0;}catch(e){}
+    return 0;
+  }
+  function rerender(){
+    var c=currentCount();
+    setTimeout(function(){
+      try{
+        if(c){
+          try{ selectedDbListBondCount=Number(c)||0; }catch(e){}
+          try{ window.selectedDbListBondCount=Number(c)||0; }catch(e){}
+          var st=document.getElementById('dbListStatus');
+          if(st) st.textContent=String(c)+'因縁を再検索中。数分お待ちください。';
+        }
+        try{
+          if(window.jinpoSearchResultCache && typeof window.jinpoSearchResultCache.clear==='function') window.jinpoSearchResultCache.clear();
+        }catch(e){}
+        if(c && typeof window.__step55RunDbCount==='function'){
+          window.__step55RunDbCount(c);
+          return;
+        }
+        if(c && typeof window.__step38RenderDbCount==='function'){
+          window.__step38RenderDbCount(c);
+          return;
+        }
+        if(c && typeof window.handleDbCountButtonClick==='function'){
+          window.handleDbCountButtonClick(c);
+          return;
+        }
+        if(typeof window.renderDbFormationList==='function'){
+          window.renderDbFormationList();
+        }
+      }catch(e){
+        console.error('除外後再検索失敗(rerender)',e);
+      }
+    },0);
+  }
+  function heroNames(){var names=[]; try{(window.eiketsuMaster||eiketsuMaster||[]).forEach(function(h){var n=h && (h['英傑名']||h.name||h['名前']); if(n) names.push(String(n));});}catch(e){} if(!names.length){document.querySelectorAll('.dbPlacementMini > span').forEach(function(el){var n=spanName(el); if(n) names.push(n);});} var seen={}; return names.filter(function(n){var k=norm(n); if(!k||seen[k]) return false; seen[k]=1; return true;}).sort(function(a,b){return a.localeCompare(b,'ja');});}
+  function updateCount(){var c=getList().length; var el=document.getElementById('jinpoExcludedHeroCount'); if(el) el.textContent='除外中：'+c+'人'; var modalCount=document.getElementById('jinpoExcludedHeroModalCount'); if(modalCount) modalCount.textContent='除外中：'+c+'人';}
+  function ensureControls(){var anchor=document.getElementById('ownedHeroSelectedInfo'); if(anchor && !document.getElementById('jinpoExcludedHeroOpenBtn')){var row=document.createElement('div'); row.className='jinpoExcludeControlRow'; row.innerHTML='<button type="button" id="jinpoExcludedHeroOpenBtn">除外英傑設定</button><span id="jinpoExcludedHeroCount" class="jinpoExcludeCount">除外中：0人</span><span class="jinpoExcludeHint">検索結果の一覧から名前をクリックしても除外できます。</span>'; anchor.insertAdjacentElement('afterend', row); row.querySelector('#jinpoExcludedHeroOpenBtn').addEventListener('click', openModal);}
+    if(!document.getElementById('jinpoExcludedHeroModal')){var m=document.createElement('div'); m.id='jinpoExcludedHeroModal'; m.innerHTML='<div class="jinpoExcludedHeroBox" role="dialog" aria-modal="true"><div class="jinpoExcludedHeroHead"><div><div class="jinpoExcludedHeroTitle">除外英傑設定</div><div id="jinpoExcludedHeroModalCount" class="jinpoExcludeCount">除外中：0人</div></div><div><button type="button" id="jinpoExcludedHeroClearBtn">全解除</button> <button type="button" id="jinpoExcludedHeroCloseBtn">閉じる</button></div></div><input type="search" id="jinpoExcludedHeroSearch" placeholder="英傑名で検索"><div class="jinpoExcludeHint">チェックした英傑を含む検索結果を除外します。検索結果クリック除外ともリアルタイム連動します。</div><div id="jinpoExcludedHeroList" class="jinpoExcludedHeroList"></div></div>'; document.body.appendChild(m); m.querySelector('#jinpoExcludedHeroCloseBtn').addEventListener('click', closeModal); m.addEventListener('click',function(ev){if(ev.target===m) closeModal();}); m.querySelector('#jinpoExcludedHeroClearBtn').addEventListener('click',function(){if(confirm('除外英傑を全て解除しますか？')){saveList([]); renderModalList(); rerender();}}); m.querySelector('#jinpoExcludedHeroSearch').addEventListener('input',renderModalList);}
+    updateCount();}
+  function openModal(){ensureControls(); renderModalList(); document.getElementById('jinpoExcludedHeroModal').classList.add('isOpen');}
+  function closeModal(){var m=document.getElementById('jinpoExcludedHeroModal'); if(m) m.classList.remove('isOpen');}
+  function renderModalList(){var box=document.getElementById('jinpoExcludedHeroList'); if(!box) return; var q=norm(document.getElementById('jinpoExcludedHeroSearch')?.value||''); var ex=getList().map(norm); var list=heroNames().filter(function(n){return !q || norm(n).indexOf(q)!==-1;}); box.innerHTML=list.map(function(n){var checked=ex.indexOf(norm(n))!==-1?' checked':''; return '<label><input type="checkbox" data-jinpo-exclude-name="'+esc(n)+'"'+checked+'> '+esc(n)+'</label>';}).join('') || '<div class="jinpoExcludeHint">該当英傑なし</div>'; box.querySelectorAll('input[data-jinpo-exclude-name]').forEach(function(cb){cb.addEventListener('change',function(){var list=getList(); var n=cb.getAttribute('data-jinpo-exclude-name')||''; if(cb.checked){list.push(n);}else{var nk=norm(n); list=list.filter(function(x){return norm(x)!==nk;});} saveList(list); renderModalList(); rerender();});}); updateCount();}
+  function spanName(el){var t=''; var w=el&&el.querySelector&&el.querySelector(':scope > .jinpoHeroNameFitText'); if(w) t=w.textContent||''; if(!t && el) t=el.textContent||''; t=String(t||'').replace(/^\s*\d+\.\s*/,'').replace(/\s*文曲\s*$/,'').trim(); return t;}
+  function addExcludedByName(name){name=String(name||'').trim(); if(!name) return; if(isExcludedName(name)){return;} if(!confirm('「'+name+'」を除外して再検索しますか？')) return; var list=getList(); list.push(name); saveList(list); renderModalList(); rerender();}
+  function ready(fn){if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn,{once:true}); else fn();}
+  ready(function(){ensureControls(); document.addEventListener('click',function(ev){var el=ev.target&&ev.target.closest&&ev.target.closest('.dbPlacementMini > span'); if(!el) return; var n=spanName(el); if(!n) return; ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); addExcludedByName(n);},true);});
 })();
 </script>
 
