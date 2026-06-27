@@ -16954,5 +16954,84 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+<script id="step178-db-result-hero-name-title">
+/* step178: 検索結果の配置英傑名にマウスカーソルを合わせた時、titleでフルネームを表示する。
+   表示文字・レイアウト・検索処理・適用処理は変更しない。 */
+(function(){
+  'use strict';
+  if(window.__step178DbResultHeroNameTitle) return;
+  window.__step178DbResultHeroNameTitle = true;
+
+  function cleanHeroTitle(text){
+    return String(text || '')
+      .replace(/^\s*\d+\s*[\.．]\s*/, '')
+      .trim();
+  }
+
+  function applyHeroNameTitles(root){
+    try{
+      var base = root && root.querySelectorAll ? root : document;
+      var nodes = base.querySelectorAll('.dbPlacementMini span');
+      nodes.forEach(function(span){
+        var name = cleanHeroTitle(span.textContent);
+        if(!name) return;
+        if(span.getAttribute('title') !== name) span.setAttribute('title', name);
+      });
+    }catch(e){}
+  }
+
+  function startObserver(){
+    applyHeroNameTitles(document);
+    try{
+      var target = document.getElementById('dbList') || document.body;
+      var timer = null;
+      var obs = new MutationObserver(function(){
+        if(timer) clearTimeout(timer);
+        timer = setTimeout(function(){
+          timer = null;
+          applyHeroNameTitles(document);
+        }, 30);
+      });
+      obs.observe(target, {childList:true, subtree:true});
+    }catch(e){
+      document.addEventListener('mouseover', function(ev){
+        var span = ev.target && ev.target.closest ? ev.target.closest('.dbPlacementMini span') : null;
+        if(!span) return;
+        var name = cleanHeroTitle(span.textContent);
+        if(name) span.setAttribute('title', name);
+      }, true);
+    }
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startObserver, {once:true});
+  else startObserver();
+})();
+</script>
+
+
+<style id="step180-db-result-hero-name-bunkyoku-no-clipping">
+/* step180: 検索結果の配置英傑カード内だけを調整。表全体の幅・列幅・検索処理・DB・適用処理は変更しない。
+   長い英傑名と文曲バッジがカード内で見切れないよう、文字を折り返して表示する。 */
+#dbFormationList .dbPlacementMini span{
+  box-sizing:border-box !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  word-break:keep-all !important;
+  line-break:anywhere !important;
+  line-height:1.18 !important;
+  padding:3px 4px !important;
+}
+#dbFormationList .dbPlacementMini span.factor4BunkyokuGlow::after{
+  display:inline-block !important;
+  white-space:nowrap !important;
+  margin-left:4px !important;
+  vertical-align:baseline !important;
+}
+</style>
+
 </body>
 </html>
