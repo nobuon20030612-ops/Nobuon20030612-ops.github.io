@@ -15998,7 +15998,7 @@ body{padding-top:0 !important;}
       if(status) status.textContent='7因縁の分割DB読込に失敗しました。jinpo_result_db_7_parts のCSV配置を確認してください。';
       if(box) box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
     }finally{
-      hideProgress();
+      if(myToken === activeToken) hideProgress();
     }
     return true;
   }
@@ -16257,11 +16257,10 @@ body{padding-top:0 !important;}
   }, true);
 })();
 </script>
-
-
 <script id="step176-normal7-priority-sort-display-final-fix">
 /* step176: 7因縁の優先ソート時に検索結果が空表示/旧経路へ流れる問題だけを修正。
-   対象: 通常7因縁の表示経路のみ。DB/CSV/計算式/倍率/レイアウトは変更しない。 */
+   対象: 通常7因縁の表示経路のみ。DB/CSV/計算式/倍率/レイアウトは変更しない。
+   追記: 第1優先ソートの閾値だけなら分割DBを全読込せずsort indexで表示し、フリーズを防ぐ。 */
 (function(){
   'use strict';
   if(window.__step176Normal7PrioritySortDisplayFinalFix) return;
@@ -16493,7 +16492,7 @@ body{padding-top:0 !important;}
       console.error('step176 7因縁ソート表示失敗', err);
       status.textContent='7因縁のソート表示読込に失敗しました。';
       box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
-    }finally{ hideProgress(); }
+    }finally{ if(myToken === token) hideProgress(); }
     return true;
   }
 
@@ -16509,19 +16508,448 @@ body{padding-top:0 !important;}
 
   document.addEventListener('change', function(ev){
     var id = ev.target && ev.target.id || '';
-    if(/^dbPriority(Stat|Value)[123]$/.test(id) && selectedCount() === 7 && !gradeOn()){
+    if(/^dbPriority(Stat|Value)[123]$/.test(id) && selectedCount() === 7 && !gradeOn() && !window.__worker7Normal7SearchNonblockingFixInstalled){
       setTimeout(render7, 0);
     }
   }, true);
   document.addEventListener('click', function(ev){
     var statBtn = ev.target && ev.target.closest ? ev.target.closest('#dbStatButtons button[data-stat]') : null;
-    if(statBtn && selectedCount() === 7 && !gradeOn()) setTimeout(render7, 0);
+    if(statBtn && selectedCount() === 7 && !gradeOn() && !window.__worker7Normal7SearchNonblockingFixInstalled) setTimeout(render7, 0);
     var applyBtn = ev.target && ev.target.closest ? ev.target.closest('button[data-step176-db-idx]') : null;
     if(!applyBtn) return;
     var row = activeRows[Number(applyBtn.getAttribute('data-step176-db-idx'))];
     if(!row) return;
     try{ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }catch(e){}
     try{ if(typeof applyDbFormationRow === 'function') applyDbFormationRow(row); }catch(err){ console.error('step176 7因縁適用失敗', err); }
+  }, true);
+})();
+</script>
+
+
+
+<!-- worker7: 7因縁の閾値/配置指定検索をWeb Worker化。検索条件・表示仕様は既存step176に合わせ、画面フリーズだけを防止。 -->
+<script id="worker7-normal-7-search-nonblocking-fix">
+(function(){
+  'use strict';
+  if(window.__worker7Normal7SearchNonblockingFixInstalled) return;
+  window.__worker7Normal7SearchNonblockingFixInstalled = true;
+
+  var LIMIT = Number(window.JINPO_RESULT_LIMIT || 300) || 300;
+  var WORKER_CODE = "/* jinpo-search-worker.js\n * 7因縁の大量CSV検索をメイン画面から分離するためのWorker。\n * 検索条件・並び順・表示件数はjinpo.html側の既存仕様に合わせる。\n */\n(function(){\n  'use strict';\n\n  function norm(v){\n    return String(v == null ? '' : v).trim()\n      .replace(/\\u5c71\\u4e2d\\u9e7f\\u4e4b\\u52a9/g,'山中鹿之介')\n      .replace(/・/g,'')\n      .replace(/[\\s　]+/g,'');\n  }\n  function split(v){\n    return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean);\n  }\n  function num(v){\n    var n = Number(String(v == null ? '' : v).replace(/,/g,''));\n    return Number.isFinite(n) ? n : 0;\n  }\n  function rowFormation(row){ return String((row && (row.formation || row.form || row['陣形'])) || '').trim(); }\n  function formationMatch(row, form){\n    if(!form) return false;\n    var rf = rowFormation(row);\n    if(!rf) return false;\n    if(rf === form) return true;\n    if(rf === '魚鱗と方円') return form === '魚鱗' || form === '方円' || form === '魚鱗と方円';\n    if(form === '魚鱗と方円') return rf.indexOf('魚鱗') !== -1 || rf.indexOf('方円') !== -1;\n    return rf.indexOf(form) !== -1;\n  }\n  function rowMembers(row){ return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['英傑'])); }\n  function rowOwnedMatch(row, owned){\n    owned = Array.isArray(owned) ? owned : [];\n    if(!owned.length) return true;\n    var mem = rowMembers(row).map(norm);\n    return owned.every(function(n){ return mem.indexOf(norm(n)) !== -1; });\n  }\n  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }\n  function priorityMatch(row, rules){\n    rules = Array.isArray(rules) ? rules : [];\n    for(var i=0;i<rules.length;i++){\n      var r = rules[i];\n      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;\n    }\n    return true;\n  }\n  function total(row){ return num(row && (row.total_score || row['総合値'])); }\n  function compareRows(a,b,rules){\n    rules = Array.isArray(rules) ? rules.filter(function(r){ return r && r.stat; }) : [];\n    for(var i=0;i<rules.length;i++){\n      var d = stat(b,rules[i].stat) - stat(a,rules[i].stat);\n      if(d) return d;\n    }\n    var td = total(b) - total(a);\n    if(td) return td;\n    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');\n  }\n  function addBest(best,row,rules,limit){\n    if(best.length < limit){\n      best.push(row);\n      if(best.length > 1) best.sort(function(a,b){ return compareRows(a,b,rules); });\n      return;\n    }\n    if(compareRows(row,best[best.length-1],rules) < 0){\n      best.push(row);\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      best.length = limit;\n    }\n  }\n  function parseCsv(text){\n    var rows=[], row=[], field='', quote=false, headers=null;\n    for(var i=0;i<text.length;i++){\n      var ch=text[i], nx=text[i+1];\n      if(quote){\n        if(ch==='\"' && nx==='\"'){ field+='\"'; i++; }\n        else if(ch==='\"') quote=false;\n        else field+=ch;\n      }else{\n        if(ch==='\"') quote=true;\n        else if(ch===','){ row.push(field); field=''; }\n        else if(ch==='\\n'){\n          row.push(field); field='';\n          if(row.length){\n            if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n            else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n          }\n          row=[];\n        }else if(ch!=='\\r') field+=ch;\n      }\n    }\n    if(field.length || row.length){\n      row.push(field);\n      if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\\ufeff/,''); });\n      else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }\n    }\n    return rows;\n  }\n  async function loadCsv(path, baseUrl){\n    var url = path;\n    try{ if(baseUrl) url = new URL(path, baseUrl).href; }catch(e){ url = path; }\n    var res = await fetch(url, {cache:'no-store'});\n    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);\n    return parseCsv(await res.text());\n  }\n  function rowOk(row, form, owned, rules){\n    if(String(row && (row.bond_count || row.ic || '')) !== '7') return false;\n    if(!formationMatch(row, form)) return false;\n    if(!rowOwnedMatch(row, owned)) return false;\n    if(!priorityMatch(row, rules)) return false;\n    return true;\n  }\n\n  self.onmessage = async function(ev){\n    var data = ev.data || {};\n    if(data.type !== 'search7') return;\n    var token = data.token;\n    var paths = Array.isArray(data.paths) ? data.paths : [];\n    var form = data.form || '';\n    var owned = Array.isArray(data.owned) ? data.owned : [];\n    var rules = Array.isArray(data.rules) ? data.rules : [];\n    var limit = Number(data.limit || 300) || 300;\n    var additionalRows = Array.isArray(data.additionalRows) ? data.additionalRows : [];\n    var baseUrl = data.baseUrl || '';\n    var best=[], loaded=0, matched=0;\n    try{\n      for(var p=0;p<paths.length;p++){\n        var rows = await loadCsv(paths[p], baseUrl);\n        loaded += rows.length;\n        for(var i=0;i<rows.length;i++){\n          var r = rows[i];\n          if(!rowOk(r, form, owned, rules)) continue;\n          matched++;\n          addBest(best, r, rules, limit);\n        }\n        self.postMessage({type:'progress', token:token, done:p+1, total:paths.length, loaded:loaded, matched:matched});\n        rows = null;\n      }\n      for(var a=0;a<additionalRows.length;a++){\n        var ar = additionalRows[a];\n        if(!rowOk(ar, form, owned, rules)) continue;\n        matched++;\n        addBest(best, ar, rules, limit);\n      }\n      best.sort(function(a,b){ return compareRows(a,b,rules); });\n      self.postMessage({type:'done', token:token, rows:best.slice(0,limit), loaded:loaded + additionalRows.length, matched:matched, additional:additionalRows.length});\n    }catch(err){\n      self.postMessage({type:'error', token:token, message:err && err.message ? err.message : String(err)});\n    }\n  };\n})();\n";
+  var WORKER_BLOB_URL = null;
+  var PARTS = [
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part001.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part002.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part003.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part004.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part005.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part006.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part007.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part008.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part009.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part010.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part011.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part012.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part013.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part014.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part015.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part016.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part017.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part018.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part019.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part020.csv',
+    'data/jinpo_result_db_7_parts/jinpo_result_db_7_part021.csv'
+  ];
+  var STAT_KEYS = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
+  var activeToken = 0;
+  var activeRows = [];
+  var worker = null;
+
+  function q(id){ return document.getElementById(id); }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>\"']/g,function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m]; }); }
+  function norm(v){ return String(v == null ? '' : v).trim().replace(/\u5c71\u4e2d\u9e7f\u4e4b\u52a9/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,''); }
+  function split(v){ return String(v == null ? '' : v).split(/[|,、]/).map(function(x){ return x.trim(); }).filter(Boolean); }
+  function num(v){ var n=Number(String(v == null ? '' : v).replace(/,/g,'')); return Number.isFinite(n)?n:0; }
+  function selectedCount(){ try{ return Number(selectedDbListBondCount)||0; }catch(e){} return Number(window.selectedDbListBondCount)||0; }
+  function setSelectedCount(c){ try{ selectedDbListBondCount=Number(c)||null; }catch(e){} window.selectedDbListBondCount=Number(c)||null; }
+  function gradeOn(){ try{ return !!grade3Cost6OnlyEnabled; }catch(e){} return !!window.grade3Cost6OnlyEnabled; }
+  function currentFormation(){
+    var sel=q('formationSelect');
+    var raw=String((sel && (sel.value || (sel.selectedOptions && sel.selectedOptions[0] && sel.selectedOptions[0].textContent))) || '').trim();
+    if(raw.indexOf('衡軛')!==-1) return '衡軛';
+    if(raw.indexOf('鶴翼')!==-1) return '鶴翼';
+    if(raw.indexOf('魚鱗')!==-1) return '魚鱗';
+    if(raw.indexOf('方円')!==-1) return '方円';
+    return raw;
+  }
+  function ownedNames(){ try{ return (typeof ownedHeroNames === 'function' ? ownedHeroNames() : []).map(norm).filter(Boolean); }catch(e){ return []; } }
+  function rules(){ try{ return (typeof getDbPriorityRules === 'function' && getDbPriorityRules()) || []; }catch(e){ return []; } }
+  function hasThreshold(){ return rules().some(function(r){ return r && r.threshold !== null && Number.isFinite(Number(r.threshold)); }); }
+  function shouldWorker7(){ return selectedCount() === 7 && !gradeOn() && (ownedNames().length || hasThreshold()); }
+  function rowFormation(row){ return String((row && (row.formation || row.form || row['陣形'])) || '').trim(); }
+  function rowMembers(row){ return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['英傑'])); }
+  function rowBonds(row){ return split(row && (row.bond_names || row.bond_ids || row.inen || row['因縁'])); }
+  function stat(row,k){ return num(row && (row[k] != null ? row[k] : row[String(k).replace('属性','')])); }
+  function total(row){ return num(row && (row.total_score || row['総合値'])); }
+  function sortStat(){ var rs=rules().filter(function(r){ return r && r.stat; }); return rs.length ? String(rs[0].stat) : ''; }
+  function statText(row){ return STAT_KEYS.map(function(k){ return k+':'+(row && row[k] != null ? row[k] : ''); }).join(' / '); }
+  function table(rows){
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr></thead><tbody>'+rows.map(function(row,idx){
+      var mem=rowMembers(row), bd=rowBonds(row);
+      return '<tr class="dbMainRow"><td><button class="applyBtn" data-worker7-db-idx="'+idx+'" type="button">適用</button></td><td>'+esc(row.bond_count||7)+'</td><td>'+esc(rowFormation(row))+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span>'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbStatLabel">総合値 '+esc(total(row))+'</span><span class="dbListStat">'+esc(statText(row))+'</span></td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+  function showProgress(){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='block'; p.classList.add('active'); }
+    var t=q('dbSearchProgressTitle'); if(t) t.innerHTML='<span class="dbSearchSpinner"></span>7因縁 分割DB検索中・画面は固めません';
+    var c=q('dbSearchProgressCount'); if(c) c.textContent='Worker起動中';
+    var r=q('dbSearchProgressRemain'); if(r) r.textContent='検索条件は従来どおりです';
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='42%'; if(b.parentElement) b.parentElement.classList.add('indeterminate'); }
+  }
+  function updateProgress(msg){
+    var c=q('dbSearchProgressCount'); if(c) c.textContent=msg;
+  }
+  function hideProgress(token){
+    if(token !== activeToken) return;
+    forceHideProgress();
+  }
+  function forceHideProgress(){
+    var p=q('dbSearchProgress'); if(p){ p.style.display='none'; p.classList.remove('active'); }
+    var b=q('dbSearchProgressBar'); if(b){ b.style.width='0%'; if(b.parentElement) b.parentElement.classList.remove('indeterminate'); }
+  }
+  function cancelWorker7Search(){
+    activeToken++;
+    terminateOldWorker();
+    forceHideProgress();
+  }
+  function getWorker(){
+    if(worker) return worker;
+    if(!WORKER_BLOB_URL){
+      var blob = new Blob([WORKER_CODE], {type:'application/javascript'});
+      WORKER_BLOB_URL = URL.createObjectURL(blob);
+    }
+    worker = new Worker(WORKER_BLOB_URL);
+    return worker;
+  }
+  async function getAdditionalRows(){
+    try{
+      if(window.JINPO_ADDITIONAL_DB && typeof window.JINPO_ADDITIONAL_DB.getRows === 'function'){
+        var rows = await window.JINPO_ADDITIONAL_DB.getRows({bondCount:7});
+        return Array.isArray(rows) ? rows : [];
+      }
+    }catch(e){ console.warn('Worker7 追加用DB読込失敗', e); }
+    return [];
+  }
+  function terminateOldWorker(){
+    try{ if(worker){ worker.terminate(); worker=null; } }catch(e){}
+  }
+  function formationMatch(row, form){
+    if(!form) return false;
+    var rf = rowFormation(row);
+    if(!rf) return false;
+    if(rf === form) return true;
+    if(rf === '魚鱗と方円') return form === '魚鱗' || form === '方円' || form === '魚鱗と方円';
+    if(form === '魚鱗と方円') return rf.indexOf('魚鱗') !== -1 || rf.indexOf('方円') !== -1;
+    return rf.indexOf(form) !== -1;
+  }
+  function rowOwnedMatch(row, owned){
+    owned = Array.isArray(owned) ? owned : [];
+    if(!owned.length) return true;
+    var mem = rowMembers(row).map(norm);
+    return owned.every(function(n){ return mem.indexOf(norm(n)) !== -1; });
+  }
+  function priorityMatch(row, ruleList){
+    ruleList = Array.isArray(ruleList) ? ruleList : [];
+    for(var i=0;i<ruleList.length;i++){
+      var r = ruleList[i];
+      if(r && r.threshold !== null && Number.isFinite(Number(r.threshold)) && stat(row,r.stat) < Number(r.threshold)) return false;
+    }
+    return true;
+  }
+  function compareRowsByRules(a,b,ruleList){
+    ruleList = Array.isArray(ruleList) ? ruleList.filter(function(r){ return r && r.stat; }) : [];
+    for(var i=0;i<ruleList.length;i++){
+      var d = stat(b,ruleList[i].stat) - stat(a,ruleList[i].stat);
+      if(d) return d;
+    }
+    var td = total(b) - total(a);
+    if(td) return td;
+    return String(a && (a.result_id || a.id || '')).localeCompare(String(b && (b.result_id || b.id || '')),'ja');
+  }
+  function addBestRow(best,row,ruleList,limit){
+    if(best.length < limit){
+      best.push(row);
+      if(best.length > 1) best.sort(function(a,b){ return compareRowsByRules(a,b,ruleList); });
+      return;
+    }
+    if(compareRowsByRules(row,best[best.length-1],ruleList) < 0){
+      best.push(row);
+      best.sort(function(a,b){ return compareRowsByRules(a,b,ruleList); });
+      best.length = limit;
+    }
+  }
+  function parseCsvText(text){
+    var rows=[], row=[], field='', quote=false, headers=null;
+    for(var i=0;i<text.length;i++){
+      var ch=text[i], nx=text[i+1];
+      if(quote){
+        if(ch==='"' && nx==='"'){ field+='"'; i++; }
+        else if(ch==='"') quote=false;
+        else field+=ch;
+      }else{
+        if(ch==='"') quote=true;
+        else if(ch===','){ row.push(field); field=''; }
+        else if(ch==='\n'){
+          row.push(field); field='';
+          if(row.length){
+            if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); });
+            else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }
+          }
+          row=[];
+        }else if(ch!=='\r') field+=ch;
+      }
+    }
+    if(field.length || row.length){
+      row.push(field);
+      if(!headers) headers=row.map(function(h){ return String(h||'').replace(/^\ufeff/,''); });
+      else { var o={}; headers.forEach(function(h,idx){ o[h]=row[idx]||''; }); rows.push(o); }
+    }
+    return rows;
+  }
+  async function loadCsvRows(path){
+    var url = path;
+    try{ url = new URL(path, document.baseURI).href; }catch(e){}
+    var res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error(path + ' HTTP ' + res.status);
+    return parseCsvText(await res.text());
+  }
+  function rowOkForSearch(row, form, owned, ruleList){
+    if(String(row && (row.bond_count || row.ic || '')) !== '7') return false;
+    if(!formationMatch(row, form)) return false;
+    if(!rowOwnedMatch(row, owned)) return false;
+    if(!priorityMatch(row, ruleList)) return false;
+    return true;
+  }
+  function yieldMain(){ return new Promise(function(resolve){ setTimeout(resolve,0); }); }
+  async function search7MainThreadFallback(token, form, owned, ruleList, additionalRows){
+    var best=[], loaded=0, matched=0;
+    for(var p=0;p<PARTS.length;p++){
+      if(token !== activeToken) return null;
+      var rows = await loadCsvRows(PARTS[p]);
+      loaded += rows.length;
+      for(var i=0;i<rows.length;i++){
+        if(token !== activeToken) return null;
+        var r = rows[i];
+        if(!rowOkForSearch(r, form, owned, ruleList)) continue;
+        matched++;
+        addBestRow(best, r, ruleList, LIMIT);
+        if((i % 5000) === 0) await yieldMain();
+      }
+      updateProgress('fallback part '+(p+1)+' / '+PARTS.length+'・候補 '+Number(matched||0).toLocaleString()+'件');
+      rows = null;
+      await yieldMain();
+    }
+    additionalRows = Array.isArray(additionalRows) ? additionalRows : [];
+    for(var a=0;a<additionalRows.length;a++){
+      if(token !== activeToken) return null;
+      var ar = additionalRows[a];
+      if(!rowOkForSearch(ar, form, owned, ruleList)) continue;
+      matched++;
+      addBestRow(best, ar, ruleList, LIMIT);
+      if((a % 1000) === 0) await yieldMain();
+    }
+    best.sort(function(a,b){ return compareRowsByRules(a,b,ruleList); });
+    return {rows:best.slice(0,LIMIT), loaded:loaded+additionalRows.length, matched:matched, additional:additionalRows.length};
+  }
+
+  async function renderWorker7(){
+    if(!shouldWorker7()) return false;
+    var myToken = ++activeToken;
+    terminateOldWorker();
+    setSelectedCount(7);
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    var box=q('dbFormationList'), status=q('dbListStatus'), form=currentFormation();
+    if(status) status.style.display='';
+    if(!box || !status) return true;
+    if(!form){ status.textContent='陣形を選択してください。'; box.innerHTML='<div class="dbListNote">陣形選択後、7因縁ボタンで一覧を表示します。</div>'; return true; }
+    box.innerHTML='';
+    status.textContent=form+' / 7因縁: Worker検索中。数分お待ちください。';
+    showProgress();
+    var additionalRows = await getAdditionalRows();
+    if(myToken !== activeToken) return true;
+    var w;
+    try{ w = getWorker(); }catch(workerErr){
+      console.warn('Worker7起動失敗。非同期フォールバック検索へ切替', workerErr);
+      status.textContent=form+' / 7因縁: 非同期検索中。数分お待ちください。';
+      updateProgress('Worker非対応のため代替検索中');
+      try{
+        var fb = await search7MainThreadFallback(myToken, form, ownedNames(), rules(), additionalRows);
+        if(myToken !== activeToken || !fb) return true;
+        activeRows = Array.isArray(fb.rows) ? fb.rows : [];
+        var fbAddLabel = fb.additional ? ' + 追加用 ' + Number(fb.additional).toLocaleString() + '件' : '';
+        var fbSortLabel = sortStat() ? ' / 優先ソート: ' + sortStat() : ' / 総合値上位300件';
+        status.textContent = form+' / 7因縁: 非同期分割DB'+fbAddLabel+' 読込 '+Number(fb.loaded||0).toLocaleString()+'件 / 絞り込み '+Number(fb.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+fbSortLabel;
+        box.innerHTML = activeRows.length ? table(activeRows) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
+        hideProgress(myToken);
+      }catch(fallbackErr){
+        console.error('Worker7代替検索失敗', fallbackErr);
+        status.textContent='7因縁の非同期検索に失敗しました。';
+        box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
+        hideProgress(myToken);
+      }
+      return true;
+    }
+    w.onmessage = function(ev){
+      var msg = ev.data || {};
+      if(msg.token !== myToken) return;
+      if(msg.type === 'progress'){
+        updateProgress('part '+msg.done+' / '+msg.total+'・候補 '+Number(msg.matched||0).toLocaleString()+'件');
+        return;
+      }
+      if(msg.type === 'error'){
+        console.error('Worker7検索失敗。非同期フォールバック検索へ切替', msg.message);
+        status.textContent=form+' / 7因縁: Worker検索に失敗したため、非同期検索へ切替中。数分お待ちください。';
+        updateProgress('Worker検索失敗・代替検索中');
+        terminateOldWorker();
+        (async function(){
+          try{
+            var fb = await search7MainThreadFallback(myToken, form, ownedNames(), rules(), additionalRows);
+            if(myToken !== activeToken || !fb) return;
+            activeRows = Array.isArray(fb.rows) ? fb.rows : [];
+            var fbAddLabel = fb.additional ? ' + 追加用 ' + Number(fb.additional).toLocaleString() + '件' : '';
+            var fbSortLabel = sortStat() ? ' / 優先ソート: ' + sortStat() : ' / 総合値上位300件';
+            status.textContent = form+' / 7因縁: 非同期分割DB'+fbAddLabel+' 読込 '+Number(fb.loaded||0).toLocaleString()+'件 / 絞り込み '+Number(fb.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+fbSortLabel;
+            box.innerHTML = activeRows.length ? table(activeRows) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
+            hideProgress(myToken);
+          }catch(fallbackErr){
+            console.error('Worker7代替検索失敗', fallbackErr);
+            status.textContent='7因縁の非同期検索に失敗しました。';
+            box.innerHTML='<div class="dbListNote">表示読込エラー。</div>';
+            hideProgress(myToken);
+          }
+        })();
+        return;
+      }
+      if(msg.type === 'done'){
+        activeRows = Array.isArray(msg.rows) ? msg.rows : [];
+        // Worker検索結果は表示用activeRowsのみに保持。既存resultDbRowsは壊さない。
+        var addLabel = msg.additional ? ' + 追加用 ' + Number(msg.additional).toLocaleString() + '件' : '';
+        var sortLabel = sortStat() ? ' / 優先ソート: ' + sortStat() : ' / 総合値上位300件';
+        status.textContent = form+' / 7因縁: Worker分割DB'+addLabel+' 読込 '+Number(msg.loaded||0).toLocaleString()+'件 / 絞り込み '+Number(msg.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+sortLabel;
+        box.innerHTML = activeRows.length ? table(activeRows) : '<div class="dbListNote">該当DBなし。陣形・配置英傑・優先条件を確認してください。</div>';
+        hideProgress(myToken);
+      }
+    };
+    w.postMessage({type:'search7', token:myToken, paths:PARTS, form:form, owned:ownedNames(), rules:rules(), limit:LIMIT, additionalRows:additionalRows, baseUrl:document.baseURI});
+    return true;
+  }
+
+  var prevStep38 = window.__step38RenderDbCount;
+  var prevHandle = window.handleDbCountButtonClick;
+  var prevRender = window.renderDbFormationList;
+  window.__worker7RenderNormal7Search = renderWorker7;
+  window.__step38RenderDbCount = function(c){
+    c=Number(c)||0;
+    if(c===7){
+      setSelectedCount(7);
+      if(shouldWorker7()) return renderWorker7();
+    }else{
+      cancelWorker7Search();
+    }
+    return (typeof prevStep38 === 'function') ? prevStep38.apply(this,arguments) : undefined;
+  };
+  window.handleDbCountButtonClick = function(c){
+    c=Number(c)||0;
+    if(c===7){
+      setSelectedCount(7);
+      if(shouldWorker7()) return renderWorker7();
+    }else{
+      cancelWorker7Search();
+    }
+    return (typeof prevHandle === 'function') ? prevHandle.apply(this,arguments) : undefined;
+  };
+  window.renderDbFormationList = function(){ if(shouldWorker7()) return renderWorker7(); cancelWorker7Search(); return (typeof prevRender === 'function') ? prevRender.apply(this,arguments) : undefined; };
+  try{ handleDbCountButtonClick = window.handleDbCountButtonClick; }catch(e){}
+  try{ renderDbFormationList = window.renderDbFormationList; }catch(e){}
+
+  document.addEventListener('change', function(ev){
+    var id = ev.target && ev.target.id || '';
+    if(/^dbPriority(Stat|Value)[123]$/.test(id) && selectedCount() === 7 && !gradeOn()){
+      activeToken++;
+      setTimeout(function(){ if(shouldWorker7()) renderWorker7(); else { cancelWorker7Search(); if(typeof prevRender === 'function') prevRender(); } }, 0);
+    }
+  }, true);
+  document.addEventListener('click', function(ev){
+    var statBtn = ev.target && ev.target.closest ? ev.target.closest('#dbStatButtons button[data-stat]') : null;
+    if(statBtn && selectedCount() === 7 && !gradeOn()){
+      activeToken++;
+      setTimeout(function(){ if(shouldWorker7()) renderWorker7(); else { cancelWorker7Search(); if(typeof prevRender === 'function') prevRender(); } }, 0);
+    }
+    var applyBtn = ev.target && ev.target.closest ? ev.target.closest('button[data-worker7-db-idx]') : null;
+    if(!applyBtn) return;
+    var row = activeRows[Number(applyBtn.getAttribute('data-worker7-db-idx'))];
+    if(!row) return;
+    try{ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }catch(e){}
+    try{ if(typeof applyDbFormationRow === 'function') applyDbFormationRow(row); }catch(err){ console.error('Worker7 適用失敗', err); }
+  }, true);
+})();
+</script>
+
+
+<script id="step177-auto-rerun-priority-for-8-9-same-as-7">
+/* step177: 8/9因縁の優先ソート変更時も7因縁と同じく現在選択中の因縁検索を自動再実行する。
+   対象は dbPriorityStat1〜3 / dbPriorityValue1〜3 の変更のみ。
+   7因縁・検索条件・DB・表示レイアウト・適用処理は変更しない。 */
+(function(){
+  'use strict';
+  if(window.__step177AutoRerunPriorityFor89SameAs7) return;
+  window.__step177AutoRerunPriorityFor89SameAs7 = true;
+  var timer = null;
+
+  function selectedCount(){
+    try{ if(typeof selectedDbListBondCount !== 'undefined') return Number(selectedDbListBondCount) || 0; }catch(e){}
+    return Number(window.selectedDbListBondCount) || 0;
+  }
+
+  function runCurrentCount(c){
+    c = Number(c) || 0;
+    if(c !== 8 && c !== 9) return;
+    try{
+      if(typeof window.__step55RunDbCount === 'function'){
+        window.__step55RunDbCount(c);
+        return;
+      }
+    }catch(e){ console.warn('step177 __step55RunDbCount failed', e); }
+    try{
+      if(typeof window.handleDbCountButtonClick === 'function'){
+        window.handleDbCountButtonClick(c);
+        return;
+      }
+    }catch(e){ console.warn('step177 handleDbCountButtonClick failed', e); }
+    try{
+      if(typeof window.__step38RenderDbCount === 'function'){
+        window.__step38RenderDbCount(c);
+        return;
+      }
+    }catch(e){ console.warn('step177 __step38RenderDbCount failed', e); }
+    try{
+      if(typeof window.renderDbFormationList === 'function') window.renderDbFormationList();
+    }catch(e){ console.warn('step177 renderDbFormationList failed', e); }
+  }
+
+  function schedule(){
+    var c = selectedCount();
+    if(c !== 8 && c !== 9) return;
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(function(){
+      timer = null;
+      runCurrentCount(c);
+    }, 0);
+  }
+
+  document.addEventListener('change', function(ev){
+    var id = ev.target && ev.target.id || '';
+    if(/^dbPriority(Stat|Value)[123]$/.test(id)) schedule();
   }, true);
 })();
 </script>
