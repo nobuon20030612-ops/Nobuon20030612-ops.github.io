@@ -17094,5 +17094,161 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+
+
+<!-- step183-db-result-hero-name-hover-full-display: 検索結果の配置英傑名にカーソルを合わせた時だけフル表示を別表示する。既存レイアウト/検索処理変更なし。 -->
+<style id="step183-db-result-hero-name-hover-full-display-style">
+  #jinpoHeroNameHoverFullTip{
+    position:fixed !important;
+    z-index:2147483647 !important;
+    display:none !important;
+    max-width:calc(100vw - 24px) !important;
+    padding:6px 10px !important;
+    border:1px solid rgba(255,220,120,.95) !important;
+    border-radius:8px !important;
+    background:rgba(12,10,8,.96) !important;
+    color:#ffe9a8 !important;
+    font-size:13px !important;
+    font-weight:700 !important;
+    line-height:1.35 !important;
+    white-space:nowrap !important;
+    box-shadow:0 0 10px rgba(255,190,70,.45), 0 4px 14px rgba(0,0,0,.55) !important;
+    pointer-events:none !important;
+    box-sizing:border-box !important;
+  }
+  #jinpoHeroNameHoverFullTip.isShown{
+    display:block !important;
+  }
+</style>
+<script id="step183-db-result-hero-name-hover-full-display-script">
+(function(){
+  if(window.__step183DbResultHeroNameHoverFullDisplay) return;
+  window.__step183DbResultHeroNameHoverFullDisplay = true;
+
+  function ready(fn){
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
+    else fn();
+  }
+
+  function getTip(){
+    var tip = document.getElementById('jinpoHeroNameHoverFullTip');
+    if(tip) return tip;
+    tip = document.createElement('div');
+    tip.id = 'jinpoHeroNameHoverFullTip';
+    tip.setAttribute('role','tooltip');
+    document.body.appendChild(tip);
+    return tip;
+  }
+
+  function directText(el){
+    var out = '';
+    try{
+      Array.prototype.forEach.call(el.childNodes || [], function(n){
+        if(n.nodeType === 3) out += n.nodeValue || '';
+      });
+    }catch(e){}
+    return out;
+  }
+
+  function pseudoText(el){
+    try{
+      var cs = window.getComputedStyle(el, '::after');
+      var c = cs && cs.content;
+      if(!c || c === 'none' || c === 'normal') return '';
+      return String(c).replace(/^['"]|['"]$/g, '');
+    }catch(e){
+      return '';
+    }
+  }
+
+  function fullName(el){
+    if(!el) return '';
+    var name = '';
+    var wrap = el.querySelector(':scope > .jinpoHeroNameFitText');
+    if(wrap) name = wrap.textContent || '';
+    if(!name.trim()) name = directText(el);
+    if(!name.trim()) name = el.textContent || '';
+    name = String(name || '').replace(/\s+/g, ' ').trim();
+    var label = pseudoText(el).replace(/\s+/g, ' ').trim();
+    if(label && name.indexOf(label) === -1) name = name ? (name + ' ' + label) : label;
+    return name;
+  }
+
+  function targetFromEvent(ev){
+    var t = ev && ev.target;
+    if(!t || !t.closest) return null;
+    var el = t.closest('.dbPlacementMini > span');
+    if(!el) return null;
+    return el;
+  }
+
+  var current = null;
+
+  function placeTip(ev){
+    if(!current) return;
+    var tip = getTip();
+    var x = (ev && typeof ev.clientX === 'number') ? ev.clientX : 0;
+    var y = (ev && typeof ev.clientY === 'number') ? ev.clientY : 0;
+    var pad = 10;
+    var left = x + 14;
+    var top = y + 16;
+    var rect = tip.getBoundingClientRect();
+    if(left + rect.width + pad > window.innerWidth) left = Math.max(pad, window.innerWidth - rect.width - pad);
+    if(top + rect.height + pad > window.innerHeight) top = Math.max(pad, y - rect.height - 12);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function show(ev){
+    var el = targetFromEvent(ev);
+    if(!el) return;
+    var text = fullName(el);
+    if(!text) return;
+    current = el;
+    var tip = getTip();
+    tip.textContent = text;
+    tip.classList.add('isShown');
+    placeTip(ev);
+  }
+
+  function move(ev){
+    if(!current) return;
+    placeTip(ev);
+  }
+
+  function hide(){
+    current = null;
+    var tip = document.getElementById('jinpoHeroNameHoverFullTip');
+    if(tip) tip.classList.remove('isShown');
+  }
+
+  ready(function(){
+    document.addEventListener('mouseover', show, true);
+    document.addEventListener('mousemove', move, true);
+    document.addEventListener('mouseout', function(ev){
+      if(!current) return;
+      var to = ev.relatedTarget;
+      if(to && current.contains && current.contains(to)) return;
+      hide();
+    }, true);
+    document.addEventListener('focusin', function(ev){
+      var el = targetFromEvent(ev);
+      if(!el) return;
+      current = el;
+      var text = fullName(el);
+      if(!text) return;
+      var tip = getTip();
+      var r = el.getBoundingClientRect();
+      tip.textContent = text;
+      tip.classList.add('isShown');
+      placeTip({clientX:r.left, clientY:r.bottom});
+    }, true);
+    document.addEventListener('focusout', hide, true);
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+  });
+})();
+</script>
+
 </body>
 </html>
