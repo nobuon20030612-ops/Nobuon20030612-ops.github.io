@@ -2163,5 +2163,133 @@ document.querySelectorAll(".cell").forEach(cell=>{
 calc();
 </script>
 
+
+<script id="kashin-halfwidth-noime-arrow-navigation-20260628">
+(function(){
+  function normalizeHalfWidthNumeric(value){
+    return String(value || "")
+      .replace(/[０-９]/g, function(s){ return String.fromCharCode(s.charCodeAt(0) - 0xFEE0); })
+      .replace(/[－ー]/g, "-")
+      .replace(/[^0-9\-]/g, "");
+  }
+
+  function isKashinNumericInput(input){
+    if(!input || input.tagName !== "INPUT") return false;
+    if(input.type === "checkbox" || input.type === "radio" || input.type === "button" || input.type === "submit") return false;
+    return input.classList.contains("input") ||
+      input.classList.contains("fuyoseki-manual-input") ||
+      input.classList.contains("fuyoseki-manual-direct-input");
+  }
+
+  function applyNoImeAttributes(input){
+    if(!isKashinNumericInput(input)) return;
+    input.setAttribute("type", "tel");
+    input.setAttribute("inputmode", "numeric");
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    input.setAttribute("spellcheck", "false");
+    input.setAttribute("enterkeyhint", "next");
+    input.setAttribute("lang", "en");
+    input.style.imeMode = "disabled";
+  }
+
+  function normalizeInputValue(input){
+    if(!isKashinNumericInput(input)) return;
+    const normalized = normalizeHalfWidthNumeric(input.value);
+    if(input.value !== normalized){
+      const pos = normalized.length;
+      input.value = normalized;
+      try{ input.setSelectionRange(pos, pos); }catch(e){}
+    }
+  }
+
+  function setupKashinInputs(){
+    document.querySelectorAll("input").forEach(function(input){
+      applyNoImeAttributes(input);
+      normalizeInputValue(input);
+    });
+  }
+
+  function getInputInCell(cell){
+    return cell ? cell.querySelector("input.input") : null;
+  }
+
+  function moveKashinInput(currentInput, direction){
+    const currentCell = currentInput.closest(".cell");
+    const table = currentInput.closest(".table");
+    if(!currentCell || !table) return false;
+
+    const cells = Array.from(table.children).filter(function(el){ return el.classList && el.classList.contains("cell"); });
+    const currentIndex = cells.indexOf(currentCell);
+    if(currentIndex < 0) return false;
+
+    const columns = 12;
+    let step = 0;
+    if(direction === "ArrowLeft") step = -1;
+    if(direction === "ArrowRight") step = 1;
+    if(direction === "ArrowUp") step = -columns;
+    if(direction === "ArrowDown") step = columns;
+    if(!step) return false;
+
+    let nextIndex = currentIndex + step;
+    while(nextIndex >= 0 && nextIndex < cells.length){
+      const nextInput = getInputInCell(cells[nextIndex]);
+      if(nextInput){
+        document.querySelectorAll(".cell.active").forEach(function(cell){ cell.classList.remove("active"); });
+        const nextCell = nextInput.closest(".cell");
+        if(nextCell && !nextInput.value.trim()) nextCell.classList.add("active");
+        nextInput.focus();
+        try{ nextInput.select(); }catch(e){}
+        return true;
+      }
+      nextIndex += step;
+    }
+    return false;
+  }
+
+  setupKashinInputs();
+
+  document.addEventListener("focusin", function(e){
+    if(isKashinNumericInput(e.target)){
+      applyNoImeAttributes(e.target);
+      normalizeInputValue(e.target);
+    }
+  }, true);
+
+  document.addEventListener("beforeinput", function(e){
+    if(!isKashinNumericInput(e.target)) return;
+    if(e.inputType && e.inputType.indexOf("Composition") !== -1){
+      e.preventDefault();
+      return;
+    }
+    if(typeof e.data === "string" && normalizeHalfWidthNumeric(e.data) !== e.data){
+      const normalized = normalizeHalfWidthNumeric(e.data);
+      if(normalized === ""){
+        e.preventDefault();
+      }
+    }
+  }, true);
+
+  document.addEventListener("input", function(e){
+    if(isKashinNumericInput(e.target)){
+      normalizeInputValue(e.target);
+    }
+  }, true);
+
+  document.addEventListener("keydown", function(e){
+    if(!e.target || !e.target.classList || !e.target.classList.contains("input")) return;
+    if(e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].indexOf(e.key) === -1) return;
+    if(moveKashinInput(e.target, e.key)){
+      e.preventDefault();
+    }
+  }, true);
+
+  const observer = new MutationObserver(function(){ setupKashinInputs(); });
+  observer.observe(document.documentElement, {childList:true, subtree:true});
+})();
+</script>
+
 </body>
 </html>
