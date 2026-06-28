@@ -17348,5 +17348,102 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+
+
+<script id="fix-grade3-5-6-applied-bonds-preview-only">
+(function(){
+  if(window.__fixGrade356AppliedBondsPreviewOnlyInstalled) return;
+  window.__fixGrade356AppliedBondsPreviewOnlyInstalled = true;
+
+  function esc356(v){
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];
+    });
+  }
+  function split356(v){
+    return String(v == null ? "" : v)
+      .split(/[|,、]/)
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+  }
+  function count356(row){
+    return Number(row && (row.bond_count || row.ic || row["因縁数"] || 0)) || 0;
+  }
+  function formation356(row){
+    return String(row && (row.formation || row.form || row["陣形"] || "") || "").trim();
+  }
+  function members356(row){
+    var direct = row && (row.eiketsu_names || row.eiketsu_ids || row.members || row["配置英傑"] || row["英傑"]);
+    var arr = split356(direct);
+    if(arr.length) return arr;
+    for(var i=1, out=[]; i<=6; i++){
+      var v = row && (row["配置"+i] || row["配置名"+i] || row["英傑"+i]);
+      if(v) out.push(String(v).trim());
+    }
+    return out;
+  }
+  function bonds356(row){
+    return split356(row && (row.bond_names || row.bond_ids || row["発動因縁"] || row.inen || row["因縁"] || row.bonds));
+  }
+  function statText356(row){
+    var keys = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
+    return keys.map(function(k){
+      var v = row && row[k];
+      if(v == null || v === "") v = row && row[String(k).replace("属性","")];
+      if(v == null || v === "") v = "—";
+      return k + ":" + v;
+    }).join(" / ");
+  }
+  function ensureBox356(){
+    var box = document.getElementById("appliedRowPreviewUnderFormation");
+    if(box) return box;
+    var fv = document.getElementById("formationView");
+    if(!fv) return null;
+    box = document.createElement("div");
+    box.id = "appliedRowPreviewUnderFormation";
+    fv.insertAdjacentElement("afterend", box);
+    return box;
+  }
+  function hideLower356(){
+    var lower = document.getElementById("appliedDbRowDisplay");
+    if(lower){ lower.innerHTML = ""; lower.style.display = "none"; }
+  }
+  function render356(row){
+    var c = count356(row);
+    if(c !== 5 && c !== 6) return false;
+    var box = ensureBox356();
+    if(!box) return false;
+    var mem = members356(row);
+    var bd = bonds356(row);
+    hideLower356();
+    box.style.display = "";
+    box.innerHTML =
+      '<div class="appliedPreviewTitle">適用中の候補</div>'+
+      '<div class="appliedPreviewGrid">'+
+      '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁数</div><div class="appliedPreviewValue">'+esc356(c)+'</div></div>'+
+      '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">陣形</div><div class="appliedPreviewValue">'+esc356(formation356(row))+'</div></div>'+
+      '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">英傑</div><div class="appliedPreviewList">'+mem.map(function(n,i){ return '<span>'+esc356((i+1)+'. '+n)+'</span>'; }).join("")+'</div></div>'+
+      '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁</div><div class="appliedPreviewList">'+bd.map(function(n){ return '<span>'+esc356(n)+'</span>'; }).join("")+'</div></div>'+
+      '<div class="appliedPreviewBox appliedPreviewWide"><div class="appliedPreviewLabel">総合値</div><div class="appliedPreviewValue">'+esc356(statText356(row))+'</div></div>'+
+      '</div>';
+    return true;
+  }
+
+  var prevApply = window.applyDbFormationRow;
+  if(typeof prevApply === "function" && !prevApply.__fixGrade356AppliedBondsPreviewOnlyWrapped){
+    window.applyDbFormationRow = function(row){
+      var ret = prevApply.apply(this, arguments);
+      if(row && (count356(row) === 5 || count356(row) === 6)){
+        setTimeout(function(){ render356(row); }, 0);
+        setTimeout(function(){ render356(row); }, 120);
+        setTimeout(function(){ render356(row); }, 320);
+      }
+      return ret;
+    };
+    window.applyDbFormationRow.__fixGrade356AppliedBondsPreviewOnlyWrapped = true;
+  }
+})();
+</script>
+
 </body>
 </html>
