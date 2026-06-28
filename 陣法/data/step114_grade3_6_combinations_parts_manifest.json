@@ -1,47 +1,31 @@
 {
-  "source_file": "step114_grade3_6_combinations.csv",
-  "target_max_bytes": 24117248,
+  "version": "grade3_6_line3_rule_same6_dedup_20260628",
+  "rule": "陣形ライン3人判定・因子3個必須。5/6のみ、同じ陣形・同じ因縁数・同じ6人英傑セットは配置順違い重複として1件化。7〜9因縁DBは変更なし。",
+  "total_rows": 1870,
   "parts": [
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part001.csv",
-      "rows": 44989,
-      "bytes": 24116920,
-      "sha256": "1379a81580a808bbbd4e1e5edb10051db28d7b57b6b59bd30db6d00fe5dcbbef"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part001.csv",
+      "rows": 312
     },
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part002.csv",
-      "rows": 45437,
-      "bytes": 24117190,
-      "sha256": "9b17e4a28a1306bfc7ad62a427dc8fab06e70b64c9660418a3dc4317d533da68"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part002.csv",
+      "rows": 312
     },
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part003.csv",
-      "rows": 45950,
-      "bytes": 24116994,
-      "sha256": "3f5e01bd24ffca4fb2216eec8a34526c27f52f8e72519b74d9e40953719dfc17"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part003.csv",
+      "rows": 312
     },
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part004.csv",
-      "rows": 45146,
-      "bytes": 24117176,
-      "sha256": "8e6068b2dd5bb88a2d04a2c14e36f17581a35975e7677bdeb25ba631c0d7e650"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part004.csv",
+      "rows": 312
     },
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part005.csv",
-      "rows": 45137,
-      "bytes": 24117059,
-      "sha256": "7a7f0cc795fb859ad45fae7f55007b367f2ccaf1884702977d28e6ef49034140"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part005.csv",
+      "rows": 312
     },
     {
-      "file": "data/grade3_6_parts/step114_grade3_6_combinations_part006.csv",
-      "rows": 26753,
-      "bytes": 14318340,
-      "sha256": "5bce59c9e5196c52abffb28843086896f40836570162106b58b45f1668285386"
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part006.csv",
+      "rows": 310
     }
-  ],
-  "total_rows": 253412,
-  "total_bytes_source": 134901519,
-  "created_note": "Each part includes the CSV header. Use the HTML split loader; do not upload the original oversized CSV.",
-  "part_count": 6,
-  "total_bytes_parts": 134903679
+  ]
 }
