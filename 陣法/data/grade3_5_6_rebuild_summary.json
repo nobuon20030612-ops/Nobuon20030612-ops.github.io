@@ -1,0 +1,67 @@
+{
+  "rule": "同じ陣形・同じ因縁数で、配置順が違っても6人の英傑セットが同じなら重複扱い。7〜9因縁は変更禁止のため未変更。",
+  "raw_selected_rows": {
+    "TOP5": 62480,
+    "FULL6": 1910
+  },
+  "dedupe_scope": "formation + bond_count + sorted six hero IDs",
+  "forms": {
+    "衡軛": {
+      "5_dedup_pool": 1240,
+      "5_top_rows": 300,
+      "6_dedup_pool": 0,
+      "6_top_rows": 0
+    },
+    "鶴翼": {
+      "5_dedup_pool": 1240,
+      "5_top_rows": 300,
+      "6_dedup_pool": 0,
+      "6_top_rows": 0
+    },
+    "魚鱗": {
+      "5_dedup_pool": 4240,
+      "5_top_rows": 300,
+      "6_dedup_pool": 935,
+      "6_top_rows": 300
+    },
+    "方円": {
+      "5_dedup_pool": 4230,
+      "5_top_rows": 300,
+      "6_dedup_pool": 935,
+      "6_top_rows": 300
+    }
+  },
+  "full6_after_same6_dedup": 1870,
+  "manifest_parts": [
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part001.csv",
+      "rows": 312
+    },
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part002.csv",
+      "rows": 312
+    },
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part003.csv",
+      "rows": 312
+    },
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part004.csv",
+      "rows": 312
+    },
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part005.csv",
+      "rows": 312
+    },
+    {
+      "file": "grade3_6_parts/step114_grade3_6_combinations_part006.csv",
+      "rows": 310
+    }
+  ],
+  "validation": {
+    "same6_duplicate_problems": 0,
+    "csv6_rows": 1870,
+    "csv6_unique_same6": 1870
+  },
+  "seven_to_nine_hash_checked": 27
+}
