@@ -196,7 +196,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .digit-value-picker { margin-top:8px; }
 .digit-value-head { display:flex; align-items:center; gap:9px; margin-bottom:5px; color:#fff3b8; font-size:14px; text-shadow:0 2px 2px #000; }
 .digit-value-current { min-width:52px; color:#72eaff; font-size:18px; font-weight:800; text-shadow:0 0 8px rgba(86,234,255,.55), 0 2px 2px #000; }
-.digit-row { display:grid; grid-template-columns:.65fr 1.15fr 1.15fr; gap:6px; }
+.digit-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
 .digit-group { min-width:0; }
 .digit-title { color:#f4ffe7; font-size:12px; line-height:1.1; margin-bottom:3px; text-align:center; text-shadow:0 2px 2px #000; }
 .digit-options { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; }
@@ -313,6 +313,36 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .confirm-btn.no { border-color:rgba(255,255,255,.20); background:linear-gradient(180deg, rgba(55,55,55,.96), rgba(13,13,13,.96)); }
 .confirm-btn.yes.reset { border-color:rgba(255,91,120,.52); background:linear-gradient(180deg, rgba(110,35,48,.96), rgba(15,7,9,.96)); }
 
+
+/* 解放表をスクロールなしで見切れないようにするため、モーダル内だけ全体を圧縮 */
+.modal { width:min(1180px, 98vw); max-height:98vh; padding:8px; }
+.modal-head { padding-bottom:5px; margin-bottom:6px; }
+.modal-title { font-size:clamp(24px, 2.55vh, 30px); }
+.close { font-size:16px; padding:6px 11px; }
+.list-open-btn { font-size:16px; padding:6px 10px; }
+.selection-grid { gap:8px; }
+.box { padding:7px; }
+.box h3 { margin:0 0 4px; font-size:17px; }
+.job-grid { gap:5px; }
+.job-btn { font-size:clamp(16px, 1.85vh, 21px); padding:clamp(4px, .62vh, 7px) 5px; border-radius:8px; }
+.note { font-size:12px; line-height:1.18; margin:6px 0 0; }
+.digit-value-picker { margin-top:5px; }
+.digit-value-head { margin-bottom:3px; font-size:13px; }
+.digit-value-current { min-width:46px; font-size:16px; }
+.digit-row { gap:4px; }
+.digit-title { font-size:11px; margin-bottom:2px; }
+.digit-options { gap:2px; }
+.digit-btn { min-width:22px; border-radius:5px; padding:2px 0; font-size:12px; }
+.unlock-box { margin-top:6px; flex:1 1 auto; overflow:visible; }
+.unlock-box h3 { margin:0 0 4px; font-size:17px; }
+.unlock-box #unlockPreview { max-height:none; overflow:visible; padding-right:0; }
+.unlock-box #unlockPreview::-webkit-scrollbar { width:0; }
+.unlock-table { font-size:12px; line-height:1.08; }
+.unlock-table th,.unlock-table td { padding:2px 5px; line-height:1.1; vertical-align:middle; }
+.unlock-table th { position:static; }
+.actions { margin-top:6px; }
+.action { padding:6px 14px; font-size:16px; }
+
 @media (max-width:900px) {
  .app { width:900px; height:720px; }
  .modal { width:96vw; }
@@ -383,9 +413,9 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
         <div class="digit-value-picker" data-target="primary">
           <div class="digit-value-head">数値 <span class="digit-value-current" id="primaryManualValue">+0</span></div>
           <div class="digit-row">
-            <div class="digit-group"><div class="digit-title">百の位</div><div class="digit-options" data-target="primary" data-place="100"></div></div>
             <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="primary" data-place="10"></div></div>
             <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="primary" data-place="1"></div></div>
+            <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="primary" data-place="0.1"></div></div>
           </div>
         </div>
         <p class="note">侍・僧・神職・陰陽師・忍者・鍛冶屋・薬師・傾奇者の8種類から選択します。</p>
@@ -397,9 +427,9 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
         <div class="digit-value-picker" data-target="addon1">
           <div class="digit-value-head">数値 <span class="digit-value-current" id="addon1ManualValue">+0</span></div>
           <div class="digit-row">
-            <div class="digit-group"><div class="digit-title">百の位</div><div class="digit-options" data-target="addon1" data-place="100"></div></div>
             <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="addon1" data-place="10"></div></div>
             <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="addon1" data-place="1"></div></div>
+            <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="addon1" data-place="0.1"></div></div>
           </div>
         </div>
         <div class="locked hidden-future">
@@ -476,7 +506,11 @@ const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 function normalizeValue(value, fallback=0) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
-  return Math.max(0, Math.min(200, Math.round(n)));
+  return Math.max(0, Math.min(200, Math.round(n * 10) / 10));
+}
+function formatValue(value) {
+  const n = normalizeValue(value, 0);
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 function emptyEquip() { return { primary:'', primaryLevel:0, addons:['','',''], addonLevels:[0,0,0], level:0 }; }
@@ -614,7 +648,7 @@ function renderStatusPanel() {
   if (!summary || !details) return;
   const slots = POSITIONS.filter(pos => state.equips[pos] && state.equips[pos].primary).length;
   const jobLevels = registeredJobLevels();
-  summary.innerHTML = `<b>登録枠：</b>${slots} / 8<br><b>登録：</b>${jobLevels.length ? jobLevels.map(item => `${escapeHtml(item.job)} +${item.level}`).join(' / ') : 'なし'}`;
+  summary.innerHTML = `<b>登録枠：</b>${slots} / 8<br><b>登録：</b>${jobLevels.length ? jobLevels.map(item => `${escapeHtml(item.job)} +${formatValue(item.level)}`).join(' / ') : 'なし'}`;
   renderSideTotalPanel(jobLevels);
   if (!jobLevels.length) {
     details.innerHTML = '<div class="status-empty">鎮魂符を登録すると<br>解放内容を表示します</div>';
@@ -647,9 +681,9 @@ function renderSlots() {
       const fallback = Number(eq.level) || 0;
       const primaryLevel = normalizeValue(eq.primaryLevel, fallback);
       const addonLevels = Array.isArray(eq.addonLevels) ? eq.addonLevels : [fallback, fallback, fallback];
-      const lines = [`${escapeHtml(eq.primary)}＋${primaryLevel}`];
+      const lines = [`${escapeHtml(eq.primary)}＋${formatValue(primaryLevel)}`];
       (eq.addons || []).forEach((job, idx) => {
-        if (job) lines.push(`${escapeHtml(job)}＋${normalizeValue(addonLevels[idx], 0)}`);
+        if (job) lines.push(`${escapeHtml(job)}＋${formatValue(normalizeValue(addonLevels[idx], 0))}`);
       });
       content.innerHTML = lines.map(line => `<strong>${line}</strong>`).join('<br>');
     }
@@ -671,7 +705,7 @@ function buildDigitPickerOptions() {
   $$('.digit-options').forEach(wrap => {
     const place = Number(wrap.dataset.place) || 1;
     const target = wrap.dataset.target || '';
-    const maxDigit = place === 100 ? 2 : 9;
+    const maxDigit = 9;
     wrap.innerHTML = '';
     for (let digit = 0; digit <= maxDigit; digit++) {
       const b = document.createElement('button');
@@ -687,19 +721,19 @@ function buildDigitPickerOptions() {
   });
 }
 function getValueDigits(value) {
-  const safeValue = normalizeValue(value, 0);
+  const safeValue = Math.max(0, Math.min(99.9, normalizeValue(value, 0)));
+  const scaled = Math.round(safeValue * 10);
   return {
-    100: Math.floor(safeValue / 100),
-    10: Math.floor((safeValue % 100) / 10),
-    1: safeValue % 10
+    10: Math.floor(scaled / 100),
+    1: Math.floor((scaled % 100) / 10),
+    0.1: scaled % 10
   };
 }
 function setDraftDigit(target, place, digit) {
   if (!state.draft) return;
   const digits = getValueDigits(getDraftValue(target));
   digits[place] = Number(digit) || 0;
-  let nextValue = digits[100] * 100 + digits[10] * 10 + digits[1];
-  if (nextValue > 200) nextValue = 200;
+  let nextValue = digits[10] * 10 + digits[1] + (digits[0.1] / 10);
   setDraftValue(target, nextValue);
 }
 function syncDigitPicker(target, value) {
@@ -709,7 +743,6 @@ function syncDigitPicker(target, value) {
     const place = Number(btn.dataset.place) || 1;
     const digit = Number(btn.dataset.digit) || 0;
     btn.classList.toggle('selected', digits[place] === digit);
-    btn.disabled = digits[100] === 2 && place !== 100 && digit > 0;
   });
 }
 function setDraftValue(target, value) {
@@ -754,8 +787,8 @@ function renderDraft() {
   const addon1Level = normalizeValue(d.addonLevels[0], 0);
   syncDigitPicker('primary', d.primaryLevel);
   syncDigitPicker('addon1', addon1Level);
-  const primaryManual = $('#primaryManualValue'); if (primaryManual) primaryManual.textContent = `+${d.primaryLevel}`;
-  const addon1Manual = $('#addon1ManualValue'); if (addon1Manual) addon1Manual.textContent = `+${addon1Level}`;
+  const primaryManual = $('#primaryManualValue'); if (primaryManual) primaryManual.textContent = `+${formatValue(d.primaryLevel)}`;
+  const addon1Manual = $('#addon1ManualValue'); if (addon1Manual) addon1Manual.textContent = `+${formatValue(addon1Level)}`;
   for (const btn of $$('.job-btn')) {
     const kind = btn.dataset.kind, job = btn.dataset.job;
     btn.disabled = false; btn.classList.remove('selected');
@@ -788,8 +821,8 @@ function renderUnlockPreview() {
   const jobLevels = draftAdjustedJobLevels();
   if (!jobLevels.length && !d.primary) { $('#unlockPreview').innerHTML = '<div class="note">メインを選択すると、+25〜+200で解放される内容を表示します。</div>'; return; }
   if (!jobLevels.length) { $('#unlockPreview').innerHTML = '<div class="note">現在の合計対象はありません。</div>'; return; }
-  let html = `<div class="note">現在合計：${jobLevels.map(item => `${escapeHtml(item.job)} +${item.level}`).join(' / ')}</div>`;
-  html += '<table class="unlock-table"><thead><tr><th>必要値</th>' + jobLevels.map(item=>`<th>${escapeHtml(item.job)} +${item.level}</th>`).join('') + '</tr></thead><tbody>';
+  let html = `<div class="note">現在合計：${jobLevels.map(item => `${escapeHtml(item.job)} +${formatValue(item.level)}`).join(' / ')}</div>`;
+  html += '<table class="unlock-table"><thead><tr><th>必要値</th>' + jobLevels.map(item=>`<th>${escapeHtml(item.job)} +${formatValue(item.level)}</th>`).join('') + '</tr></thead><tbody>';
   for (const r of CHINKONFU_DATA.unlocks) {
     html += `<tr><th>+${r.level}</th>` + jobLevels.map(item => {
       const reached = Number(item.level) >= r.level;
