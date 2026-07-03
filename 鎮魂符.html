@@ -771,11 +771,36 @@ function saveScreenImage() {
 function saveScreenImageNow() {
   const app = $('.app');
   if (!app) return;
-  captureAppBySvg(app).catch(() => captureByDisplayMedia());
+  setTimeout(() => {
+    captureAppBySvg(app).catch(() => {
+      alert('画像保存に失敗しました。');
+    });
+  }, 80);
 }
 function downloadCanvas(canvas) {
+  const filename = 'chinkonfu-screen.png';
+  if (canvas.toBlob) {
+    canvas.toBlob(blob => {
+      if (!blob) {
+        downloadDataUrl(canvas, filename);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  } else {
+    downloadDataUrl(canvas, filename);
+  }
+}
+function downloadDataUrl(canvas, filename) {
   const a = document.createElement('a');
-  a.download = 'chinkonfu-screen.png';
+  a.download = filename;
   a.href = canvas.toDataURL('image/png');
   document.body.appendChild(a);
   a.click();
@@ -814,31 +839,6 @@ function captureAppBySvg(app) {
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   });
 }
-async function captureByDisplayMedia() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-    alert('画面保存に失敗しました。別のブラウザで試してください。');
-    return;
-  }
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio:false });
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    await video.play();
-    await new Promise(resolve => setTimeout(resolve, 250));
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    downloadCanvas(canvas);
-  } catch(e) {
-    alert('画面保存に失敗しました。');
-  } finally {
-    if (stream) stream.getTracks().forEach(track => track.stop());
-  }
-}
-
 function jobColumnClass(job) { return 'job-col-' + String(job).replace(/[^\u3040-\u30ff\u3400-\u9fff\w-]/g, ''); }
 
 function displayEffectHtml(text) {
