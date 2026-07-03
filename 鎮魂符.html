@@ -192,8 +192,18 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .unlock-box #unlockPreview::-webkit-scrollbar { width:8px; }
 .unlock-box #unlockPreview::-webkit-scrollbar-thumb { background:rgba(199,255,62,.36); border-radius:999px; }
 .hidden-future { display:none !important; }
-.level-pair { display:flex; align-items:center; gap:9px; margin-top:8px; flex-wrap:wrap; }
-.level-pair label { color:#f4ffe7; }
+.level-pair { display:none; }
+.digit-value-picker { margin-top:8px; }
+.digit-value-head { display:flex; align-items:center; gap:9px; margin-bottom:5px; color:#fff3b8; font-size:14px; text-shadow:0 2px 2px #000; }
+.digit-value-current { min-width:52px; color:#72eaff; font-size:18px; font-weight:800; text-shadow:0 0 8px rgba(86,234,255,.55), 0 2px 2px #000; }
+.digit-row { display:grid; grid-template-columns:.65fr 1.15fr 1.15fr; gap:6px; }
+.digit-group { min-width:0; }
+.digit-title { color:#f4ffe7; font-size:12px; line-height:1.1; margin-bottom:3px; text-align:center; text-shadow:0 2px 2px #000; }
+.digit-options { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; }
+.digit-btn { min-width:24px; border:1px solid rgba(133,255,52,.34); border-radius:6px; padding:3px 0; font-family:"Yu Mincho","Hiragino Mincho ProN",serif; font-size:13px; font-weight:800; color:#f4ffe7; background:linear-gradient(180deg, rgba(38,82,45,.92), rgba(8,12,8,.92)); cursor:pointer; }
+.digit-btn:hover { border-color:#9cff25; box-shadow:0 0 8px rgba(133,255,52,.36); }
+.digit-btn.selected { border-color:#9cff25; color:#fff; box-shadow:0 0 9px rgba(133,255,52,.62), inset 0 0 10px rgba(133,255,52,.16); }
+.digit-btn:disabled { opacity:.25; cursor:not-allowed; filter:grayscale(1); }
 
 .modal-title-wrap { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .list-open-btn {
@@ -370,9 +380,13 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
       <div class="box">
         <h3>メイン選択</h3>
         <div class="job-grid" id="primaryJobs"></div>
-        <div class="level-pair">
-          <label>数値</label>
-          <select id="primaryLevelSelect"></select>
+        <div class="digit-value-picker" data-target="primary">
+          <div class="digit-value-head">数値 <span class="digit-value-current" id="primaryManualValue">+0</span></div>
+          <div class="digit-row">
+            <div class="digit-group"><div class="digit-title">百の位</div><div class="digit-options" data-target="primary" data-place="100"></div></div>
+            <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="primary" data-place="10"></div></div>
+            <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="primary" data-place="1"></div></div>
+          </div>
         </div>
         <p class="note">侍・僧・神職・陰陽師・忍者・鍛冶屋・薬師・傾奇者の8種類から選択します。</p>
       </div>
@@ -380,9 +394,13 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
         <h3>2枠目選択</h3>
         <div class="note">メインと同じ選択はできません。</div>
         <div class="job-grid" id="addon1Jobs"></div>
-        <div class="level-pair">
-          <label>数値</label>
-          <select id="addon1LevelSelect"></select>
+        <div class="digit-value-picker" data-target="addon1">
+          <div class="digit-value-head">数値 <span class="digit-value-current" id="addon1ManualValue">+0</span></div>
+          <div class="digit-row">
+            <div class="digit-group"><div class="digit-title">百の位</div><div class="digit-options" data-target="addon1" data-place="100"></div></div>
+            <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="addon1" data-place="10"></div></div>
+            <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="addon1" data-place="1"></div></div>
+          </div>
         </div>
         <div class="locked hidden-future">
           <div class="job-grid" id="addon2Jobs"></div>
@@ -455,6 +473,11 @@ for (const pos of POSITIONS) state.equips[pos] = null;
 
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+function normalizeValue(value, fallback=0) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(200, Math.round(n)));
+}
 
 function emptyEquip() { return { primary:'', primaryLevel:0, addons:['','',''], addonLevels:[0,0,0], level:0 }; }
 function loadState() {
@@ -467,8 +490,8 @@ function loadState() {
       if (v && typeof v === 'object') {
         const addons = Array.isArray(v.addons) ? [v.addons[0]||'', v.addons[1]||'', v.addons[2]||''] : ['', '', ''];
         const oldLevel = Number(v.level) || 0;
-        const addonLevels = Array.isArray(v.addonLevels) ? [Number(v.addonLevels[0])||0, Number(v.addonLevels[1])||0, Number(v.addonLevels[2])||0] : [oldLevel, oldLevel, oldLevel];
-        state.equips[pos] = { primary:v.primary || '', primaryLevel:Number(v.primaryLevel) || oldLevel, addons:addons, addonLevels:addonLevels, level:oldLevel };
+        const addonLevels = Array.isArray(v.addonLevels) ? [normalizeValue(v.addonLevels[0], 0), normalizeValue(v.addonLevels[1], 0), normalizeValue(v.addonLevels[2], 0)] : [oldLevel, oldLevel, oldLevel];
+        state.equips[pos] = { primary:v.primary || '', primaryLevel:normalizeValue(v.primaryLevel, oldLevel), addons:addons, addonLevels:addonLevels, level:oldLevel };
       }
     }
   } catch(e) { console.warn('鎮魂符の保存データ読込に失敗しました', e); }
@@ -514,14 +537,14 @@ function registeredJobLevels() {
     const addonLevels = Array.isArray(eq.addonLevels) ? eq.addonLevels : [fallback, fallback, fallback];
     (eq.addons || []).forEach((job, idx) => {
       if (!job) return;
-      addJobLevel(levels, job, Number(addonLevels[idx]) || 0);
+      addJobLevel(levels, job, normalizeValue(addonLevels[idx], 0));
     });
   }
   return Array.from(levels, ([job, level]) => ({ job, level: Math.min(level, 200) }));
 }
 function addJobLevel(levels, job, level) {
   if (!job) return;
-  levels.set(job, (levels.get(job) || 0) + (Number(level) || 0));
+  levels.set(job, (levels.get(job) || 0) + normalizeValue(level, 0));
 }
 function collectActiveEffects(jobLevels) {
   const stats = new Map();
@@ -622,11 +645,11 @@ function renderSlots() {
     } else {
       btn.classList.remove('empty');
       const fallback = Number(eq.level) || 0;
-      const primaryLevel = Number(eq.primaryLevel) || fallback;
+      const primaryLevel = normalizeValue(eq.primaryLevel, fallback);
       const addonLevels = Array.isArray(eq.addonLevels) ? eq.addonLevels : [fallback, fallback, fallback];
       const lines = [`${escapeHtml(eq.primary)}＋${primaryLevel}`];
       (eq.addons || []).forEach((job, idx) => {
-        if (job) lines.push(`${escapeHtml(job)}＋${Number(addonLevels[idx]) || 0}`);
+        if (job) lines.push(`${escapeHtml(job)}＋${normalizeValue(addonLevels[idx], 0)}`);
       });
       content.innerHTML = lines.map(line => `<strong>${line}</strong>`).join('<br>');
     }
@@ -644,18 +667,73 @@ function buildJobButtons(containerId, kind) {
     wrap.appendChild(b);
   }
 }
-function fillValueSelect(selectId) {
-  const sel = $('#' + selectId); if (!sel) return;
-  sel.innerHTML = '';
-  for (let lv=0; lv<=200; lv+=25) {
-    const opt=document.createElement('option'); opt.value=lv; opt.textContent=`+${lv}`; sel.appendChild(opt);
+function buildDigitPickerOptions() {
+  $$('.digit-options').forEach(wrap => {
+    const place = Number(wrap.dataset.place) || 1;
+    const target = wrap.dataset.target || '';
+    const maxDigit = place === 100 ? 2 : 9;
+    wrap.innerHTML = '';
+    for (let digit = 0; digit <= maxDigit; digit++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'digit-btn';
+      b.textContent = String(digit);
+      b.dataset.target = target;
+      b.dataset.place = String(place);
+      b.dataset.digit = String(digit);
+      b.addEventListener('click', () => setDraftDigit(target, place, digit));
+      wrap.appendChild(b);
+    }
+  });
+}
+function getValueDigits(value) {
+  const safeValue = normalizeValue(value, 0);
+  return {
+    100: Math.floor(safeValue / 100),
+    10: Math.floor((safeValue % 100) / 10),
+    1: safeValue % 10
+  };
+}
+function setDraftDigit(target, place, digit) {
+  if (!state.draft) return;
+  const digits = getValueDigits(getDraftValue(target));
+  digits[place] = Number(digit) || 0;
+  let nextValue = digits[100] * 100 + digits[10] * 10 + digits[1];
+  if (nextValue > 200) nextValue = 200;
+  setDraftValue(target, nextValue);
+}
+function syncDigitPicker(target, value) {
+  const digits = getValueDigits(value);
+  $$('.digit-btn').forEach(btn => {
+    if (btn.dataset.target !== target) return;
+    const place = Number(btn.dataset.place) || 1;
+    const digit = Number(btn.dataset.digit) || 0;
+    btn.classList.toggle('selected', digits[place] === digit);
+    btn.disabled = digits[100] === 2 && place !== 100 && digit > 0;
+  });
+}
+function setDraftValue(target, value) {
+  if (!state.draft) return;
+  const safeValue = normalizeValue(value, 0);
+  if (!Array.isArray(state.draft.addonLevels)) state.draft.addonLevels = [0,0,0];
+  if (target === 'primary') {
+    state.draft.primaryLevel = safeValue;
+    state.draft.level = safeValue;
+  } else if (target === 'addon1') {
+    state.draft.addonLevels[0] = safeValue;
   }
+  renderDraft();
+}
+function getDraftValue(target) {
+  if (!state.draft) return 0;
+  const fallback = normalizeValue(state.draft.level, 0);
+  if (target === 'primary') return normalizeValue(state.draft.primaryLevel, fallback);
+  if (!Array.isArray(state.draft.addonLevels)) state.draft.addonLevels = [0,0,0];
+  if (target === 'addon1') return normalizeValue(state.draft.addonLevels[0], 0);
+  return 0;
 }
 function buildValueSelects() {
-  fillValueSelect('primaryLevelSelect');
-  fillValueSelect('addon1LevelSelect');
-  $('#primaryLevelSelect').addEventListener('change', () => { state.draft.primaryLevel = Number($('#primaryLevelSelect').value)||0; state.draft.level = state.draft.primaryLevel; renderDraft(); });
-  $('#addon1LevelSelect').addEventListener('change', () => { state.draft.addonLevels[0] = Number($('#addon1LevelSelect').value)||0; renderDraft(); });
+  buildDigitPickerOptions();
 }
 function selectJob(kind, job) {
   if (!state.draft) return;
@@ -670,11 +748,14 @@ function selectJob(kind, job) {
 }
 function renderDraft() {
   const d = state.draft || emptyEquip();
-  const fallback = Number(d.level) || 0;
+  const fallback = normalizeValue(d.level, 0);
   if (!Array.isArray(d.addonLevels)) d.addonLevels = [fallback, fallback, fallback];
-  d.primaryLevel = Number(d.primaryLevel) || fallback;
-  $('#primaryLevelSelect').value = String(d.primaryLevel || 0);
-  $('#addon1LevelSelect').value = String(Number(d.addonLevels[0]) || 0);
+  d.primaryLevel = normalizeValue(d.primaryLevel, fallback);
+  const addon1Level = normalizeValue(d.addonLevels[0], 0);
+  syncDigitPicker('primary', d.primaryLevel);
+  syncDigitPicker('addon1', addon1Level);
+  const primaryManual = $('#primaryManualValue'); if (primaryManual) primaryManual.textContent = `+${d.primaryLevel}`;
+  const addon1Manual = $('#addon1ManualValue'); if (addon1Manual) addon1Manual.textContent = `+${addon1Level}`;
   for (const btn of $$('.job-btn')) {
     const kind = btn.dataset.kind, job = btn.dataset.job;
     btn.disabled = false; btn.classList.remove('selected');
@@ -693,11 +774,11 @@ function draftAdjustedJobLevels() {
     const eq = (pos === state.activePos && state.draft) ? state.draft : state.equips[pos];
     if (!eq || !eq.primary) continue;
     const fallback = Number(eq.level) || 0;
-    addJobLevel(levels, eq.primary, Number(eq.primaryLevel) || fallback);
+    addJobLevel(levels, eq.primary, normalizeValue(eq.primaryLevel, fallback));
     const addonLevels = Array.isArray(eq.addonLevels) ? eq.addonLevels : [fallback, fallback, fallback];
     (eq.addons || []).forEach((job, idx) => {
       if (!job) return;
-      addJobLevel(levels, job, Number(addonLevels[idx]) || 0);
+      addJobLevel(levels, job, normalizeValue(addonLevels[idx], 0));
     });
   }
   return Array.from(levels, ([job, level]) => ({ job, level: Math.min(level, 200) }));
@@ -737,7 +818,7 @@ function saveDraft() {
   if (!state.activePos || !state.draft) return;
   if (!state.draft.primary) { alert('メインを選択してください。'); return; }
   if (!Array.isArray(state.draft.addonLevels)) state.draft.addonLevels = [0,0,0];
-  state.draft.level = Number(state.draft.primaryLevel) || 0;
+  state.draft.level = normalizeValue(state.draft.primaryLevel, 0);
   state.equips[state.activePos] = JSON.parse(JSON.stringify(state.draft));
   saveState(); renderSlots(); closeModal();
 }
