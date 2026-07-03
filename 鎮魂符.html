@@ -321,7 +321,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
     <div class="menu-item">装備共有</div>
     <div class="menu-item">旗指物</div>
     <div class="menu-item menu-current">鎮魂符</div>
-    <a class="index-back-btn" href="index.html">戻る</a>
+    <a class="index-back-btn no-capture" href="index.html">戻る</a>
     <div class="side-total-panel" id="sideTotalEffects">
       <div class="side-total-title">合計一覧</div>
       <div class="side-total-empty">鎮魂符を登録すると表示します</div>
@@ -343,7 +343,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
       <div class="slot-name name-right">右</div><button class="slot empty" data-pos="右"><span class="label">右</span><span class="content">空欄</span></button>
       <div class="slot-name name-foot">足</div><button class="slot empty" data-pos="足"><span class="label">足</span><span class="content">空欄</span></button>
     </div>
-    <div class="total screen-actions">
+    <div class="total screen-actions no-capture">
       <button class="screen-action reset" type="button" id="resetAll">リセット</button>
       <button class="screen-action" type="button" id="saveScreen">保存</button>
     </div>
@@ -432,6 +432,8 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
     </div>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
 'use strict';
@@ -769,13 +771,31 @@ function saveScreenImage() {
   openConfirm('現在の画面を画像として保存します。実行しますか？', 'はい', () => saveScreenImageNow(), 'save');
 }
 function saveScreenImageNow() {
-  const app = $('.app');
-  if (!app) return;
-  setTimeout(() => {
-    captureAppBySvg(app).catch(() => {
-      alert('画像保存に失敗しました。');
-    });
-  }, 80);
+  if (typeof html2canvas !== 'function') {
+    alert('画像保存に失敗しました。');
+    return;
+  }
+  html2canvas(document.body, {
+    backgroundColor: "#000000",
+    scale: 2,
+
+    x: window.scrollX,
+    y: window.scrollY,
+
+    width: window.innerWidth,
+    height: window.innerHeight,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+
+    ignoreElements: (el) => el.classList.contains("no-capture")
+  }).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "鎮魂符.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }).catch(() => {
+    alert('画像保存に失敗しました。');
+  });
 }
 function downloadCanvas(canvas) {
   const filename = 'chinkonfu-screen.png';
