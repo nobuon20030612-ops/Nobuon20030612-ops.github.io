@@ -441,12 +441,141 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .actions { margin-top:5px !important; position:relative !important; z-index:2 !important; flex:0 0 auto !important; }
 .action { padding:5px 13px !important; font-size:15px !important; }
 
+
+/* 数値選択：十の位・一の位・小数点以下を3色で見分けやすくする */
+.digit-options[data-place="10"] .digit-btn {
+  border-color:rgba(86,234,255,.55) !important;
+  color:#dffbff !important;
+  background:linear-gradient(180deg, rgba(30,74,88,.96), rgba(5,14,18,.96)) !important;
+  box-shadow:inset 0 0 8px rgba(86,234,255,.10) !important;
+}
+.digit-options[data-place="10"] .digit-btn:hover,
+.digit-options[data-place="10"] .digit-btn.selected {
+  border-color:#56eaff !important;
+  box-shadow:0 0 10px rgba(86,234,255,.78), inset 0 0 12px rgba(86,234,255,.22) !important;
+}
+.digit-options[data-place="1"] .digit-btn {
+  border-color:rgba(133,255,52,.58) !important;
+  color:#f1ffe5 !important;
+  background:linear-gradient(180deg, rgba(42,84,35,.96), rgba(7,16,7,.96)) !important;
+  box-shadow:inset 0 0 8px rgba(133,255,52,.10) !important;
+}
+.digit-options[data-place="1"] .digit-btn:hover,
+.digit-options[data-place="1"] .digit-btn.selected {
+  border-color:#9cff25 !important;
+  box-shadow:0 0 10px rgba(156,255,37,.78), inset 0 0 12px rgba(133,255,52,.22) !important;
+}
+.digit-options[data-place="0.1"] .digit-btn {
+  border-color:rgba(216,140,255,.58) !important;
+  color:#f8e7ff !important;
+  background:linear-gradient(180deg, rgba(70,39,88,.96), rgba(15,7,19,.96)) !important;
+  box-shadow:inset 0 0 8px rgba(216,140,255,.10) !important;
+}
+.digit-options[data-place="0.1"] .digit-btn:hover,
+.digit-options[data-place="0.1"] .digit-btn.selected {
+  border-color:#d88cff !important;
+  box-shadow:0 0 10px rgba(216,140,255,.78), inset 0 0 12px rgba(216,140,255,.22) !important;
+}
+
+
+
+/* 数値選択レイアウト：現在値を桁別の枠で表示し、数字ボタンは5個×2段に固定 */
+.digit-value-head {
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:clamp(34px, 4.2vh, 52px) !important;
+  margin-bottom:5px !important;
+}
+.digit-value-current {
+  min-width:0 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:5px !important;
+  color:#72eaff !important;
+  font-size:clamp(22px, 2.7vh, 32px) !important;
+  line-height:1 !important;
+}
+.digit-current-plus {
+  display:inline-block;
+  color:#72eaff;
+  font-size:clamp(30px, 3.8vh, 46px);
+  font-weight:900;
+  line-height:1;
+  text-shadow:0 0 9px rgba(86,234,255,.68), 0 2px 2px #000;
+  margin-right:2px;
+}
+.digit-current-box {
+  width:26px;
+  height:26px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(0,0,0,.62);
+  font-size:18px;
+  font-weight:900;
+  text-shadow:0 2px 2px #000;
+}
+.digit-current-box.place-10 {
+  color:#dffbff;
+  border-color:rgba(86,234,255,.70);
+  box-shadow:0 0 8px rgba(86,234,255,.52), inset 0 0 9px rgba(86,234,255,.18);
+}
+.digit-current-box.place-1 {
+  color:#f1ffe5;
+  border-color:rgba(156,255,37,.70);
+  box-shadow:0 0 8px rgba(156,255,37,.52), inset 0 0 9px rgba(133,255,52,.18);
+}
+.digit-current-box.place-decimal {
+  color:#f8e7ff;
+  border-color:rgba(216,140,255,.70);
+  box-shadow:0 0 8px rgba(216,140,255,.52), inset 0 0 9px rgba(216,140,255,.18);
+}
+.digit-current-dot {
+  color:#fff3b8;
+  font-size:clamp(30px, 3.7vh, 44px);
+  line-height:.7;
+  font-weight:900;
+  text-shadow:0 0 9px rgba(244,217,135,.65), 0 2px 2px #000;
+  margin:0 -1px;
+}
+.digit-options {
+  display:grid !important;
+  grid-template-columns:repeat(5, 26px) !important;
+  gap:3px !important;
+  justify-content:center !important;
+}
+.digit-btn {
+  min-width:26px !important;
+  width:26px !important;
+  height:24px !important;
+  padding:1px 0 !important;
+  font-size:13px !important;
+  line-height:1 !important;
+}
+
 @media (max-width:900px) {
  .app { width:900px; height:720px; }
  .modal { width:96vw; }
  .grid { grid-template-columns:1fr; }
  .job-grid { grid-template-columns:repeat(2,1fr); }
 }
+
+/* GitHub Pages表示時もローカル表示と同じ大きさに近づける：モーダルの表示サイズのみ調整 */
+.modal-backdrop.open {
+  align-items:center !important;
+  justify-content:center !important;
+  padding:8px !important;
+}
+.modal {
+  width:calc(100vw - 32px) !important;
+  max-width:none !important;
+  height:calc(100vh - 44px) !important;
+  max-height:calc(100vh - 44px) !important;
+}
+
 </style>
 </head>
 <body>
@@ -509,7 +638,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
         <h3>メイン選択</h3>
         <div class="job-grid" id="primaryJobs"></div>
         <div class="digit-value-picker" data-target="primary">
-          <div class="digit-value-head">数値 <span class="digit-value-current" id="primaryManualValue">+0</span></div>
+          <div class="digit-value-head">数値 <span class="digit-value-current" id="primaryManualValue"><span class="digit-current-plus">＋</span><span class="digit-current-box place-10">0</span><span class="digit-current-box place-1">0</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">0</span></span></div>
           <div class="digit-row">
             <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="primary" data-place="10"></div></div>
             <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="primary" data-place="1"></div></div>
@@ -523,7 +652,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
         <div class="note">メインと同じ選択はできません。</div>
         <div class="job-grid" id="addon1Jobs"></div>
         <div class="digit-value-picker" data-target="addon1">
-          <div class="digit-value-head">数値 <span class="digit-value-current" id="addon1ManualValue">+0</span></div>
+          <div class="digit-value-head">数値 <span class="digit-value-current" id="addon1ManualValue"><span class="digit-current-plus">＋</span><span class="digit-current-box place-10">0</span><span class="digit-current-box place-1">0</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">0</span></span></div>
           <div class="digit-row">
             <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="addon1" data-place="10"></div></div>
             <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="addon1" data-place="1"></div></div>
@@ -877,6 +1006,11 @@ function selectJob(kind, job) {
   }
   renderDraft();
 }
+
+function renderDigitValueHtml(value) {
+  const digits = getValueDigits(value);
+  return `<span class="digit-current-plus">＋</span><span class="digit-current-box place-10">${digits[10]}</span><span class="digit-current-box place-1">${digits[1]}</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">${digits[0.1]}</span>`;
+}
 function renderDraft() {
   const d = state.draft || emptyEquip();
   const fallback = normalizeValue(d.level, 0);
@@ -885,8 +1019,8 @@ function renderDraft() {
   const addon1Level = normalizeValue(d.addonLevels[0], 0);
   syncDigitPicker('primary', d.primaryLevel);
   syncDigitPicker('addon1', addon1Level);
-  const primaryManual = $('#primaryManualValue'); if (primaryManual) primaryManual.textContent = `+${formatValue(d.primaryLevel)}`;
-  const addon1Manual = $('#addon1ManualValue'); if (addon1Manual) addon1Manual.textContent = `+${formatValue(addon1Level)}`;
+  const primaryManual = $('#primaryManualValue'); if (primaryManual) primaryManual.innerHTML = renderDigitValueHtml(d.primaryLevel);
+  const addon1Manual = $('#addon1ManualValue'); if (addon1Manual) addon1Manual.innerHTML = renderDigitValueHtml(addon1Level);
   for (const btn of $$('.job-btn')) {
     const kind = btn.dataset.kind, job = btn.dataset.job;
     btn.disabled = false; btn.classList.remove('selected');
