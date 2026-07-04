@@ -1727,6 +1727,7 @@ function openChinkonfuPicker(){
   if(frame && !frame.getAttribute("src")){
     frame.setAttribute("src", "鎮魂符.html");
   }
+  bindChinkonfuFrameBackButton();
   if(modal){
     modal.classList.remove("hidden");
   }
@@ -1736,6 +1737,32 @@ function closeChinkonfuPicker(){
   if(modal){
     modal.classList.add("hidden");
   }
+}
+function bindChinkonfuFrameBackButton(){
+  const frame = document.getElementById("chinkonfuFrame");
+  if(!frame){ return; }
+  const applyBack = () => {
+    let doc = null;
+    try{
+      doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+    }catch(e){
+      return;
+    }
+    if(!doc){ return; }
+    const back = doc.querySelector(".index-back-btn");
+    if(!back || back.dataset.nouryokuBackFixed === "1"){ return; }
+    back.dataset.nouryokuBackFixed = "1";
+    back.setAttribute("href", "javascript:void(0)");
+    back.addEventListener("click", function(ev){
+      ev.preventDefault();
+      closeChinkonfuPicker();
+    });
+  };
+  if(!frame.dataset.nouryokuBackLoadBound){
+    frame.dataset.nouryokuBackLoadBound = "1";
+    frame.addEventListener("load", applyBack);
+  }
+  applyBack();
 }
 function applyChinkonfuSelection(){
   const frame = document.getElementById("chinkonfuFrame");
