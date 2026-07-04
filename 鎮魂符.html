@@ -576,6 +576,139 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
   max-height:calc(100vh - 44px) !important;
 }
 
+
+/* 余白活用：モーダル内の文字・数値・選択ボタン・解放表を拡大 */
+.modal-head { padding-bottom:6px !important; margin-bottom:7px !important; }
+.modal-title { font-size:clamp(27px, 3.0vh, 36px) !important; }
+.close { font-size:18px !important; padding:7px 14px !important; }
+.list-open-btn { font-size:18px !important; padding:7px 13px !important; }
+.selection-grid { gap:10px !important; }
+.box { padding:10px !important; }
+.box h3 { margin:0 0 6px !important; font-size:clamp(21px, 2.45vh, 28px) !important; line-height:1.15 !important; }
+.job-grid { gap:7px !important; }
+.job-btn { font-size:clamp(18px, 2.15vh, 25px) !important; padding:clamp(6px, .9vh, 10px) 6px !important; border-radius:9px !important; }
+.note { font-size:clamp(13px, 1.45vh, 16px) !important; line-height:1.22 !important; margin:7px 0 0 !important; }
+.digit-value-picker { margin-top:7px !important; }
+.digit-value-head { min-height:clamp(48px, 5.7vh, 66px) !important; margin-bottom:7px !important; font-size:clamp(16px, 1.7vh, 19px) !important; gap:14px !important; }
+.digit-value-current { gap:7px !important; font-size:clamp(28px, 3.2vh, 38px) !important; }
+.digit-current-plus { font-size:clamp(43px, 5.0vh, 60px) !important; }
+.digit-current-box { width:clamp(34px, 2.55vw, 42px) !important; height:clamp(34px, 3.9vh, 44px) !important; border-radius:8px !important; font-size:clamp(22px, 2.5vh, 30px) !important; }
+.digit-current-dot { font-size:clamp(44px, 5.1vh, 62px) !important; margin:0 -1px !important; }
+.digit-row { gap:8px !important; }
+.digit-title { font-size:clamp(14px, 1.55vh, 18px) !important; margin-bottom:4px !important; line-height:1.1 !important; }
+.digit-options { grid-template-columns:repeat(5, clamp(32px, 2.2vw, 40px)) !important; gap:4px !important; }
+.digit-btn { min-width:clamp(32px, 2.2vw, 40px) !important; width:clamp(32px, 2.2vw, 40px) !important; height:clamp(29px, 3.1vh, 36px) !important; border-radius:7px !important; padding:2px 0 !important; font-size:clamp(17px, 1.95vh, 23px) !important; line-height:1 !important; }
+.unlock-box { margin-top:8px !important; padding:8px 9px !important; }
+.unlock-box h3 { margin:0 0 5px !important; font-size:clamp(20px, 2.2vh, 26px) !important; line-height:1.1 !important; }
+#unlockPreview { font-size:clamp(13px, 1.45vh, 16px) !important; }
+.unlock-table { font-size:clamp(12px, 1.48vh, 16px) !important; line-height:1.09 !important; }
+.unlock-table th, .unlock-table td { padding:2px 5px !important; line-height:1.09 !important; }
+.actions { margin-top:8px !important; }
+.action { padding:8px 18px !important; font-size:clamp(18px, 2vh, 24px) !important; border-radius:9px !important; }
+
+
+
+/* 解放表の下切れ対策：不要な説明文と見出しだけ非表示にして上へ詰める */
+.selection-grid .box > p.note,
+.selection-grid .box > div.note {
+  display:none !important;
+}
+.unlock-box h3 {
+  display:none !important;
+}
+.unlock-box {
+  margin-top:4px !important;
+  padding-top:6px !important;
+}
+.unlock-box #unlockPreview {
+  margin-top:0 !important;
+}
+
+
+
+/* 安全な自動縮小：通常は基準サイズで表示し、画面に入りきらない時だけ全体を縮小 */
+.modal-backdrop.open {
+  overflow:hidden !important;
+  padding:0 !important;
+}
+.modal.auto-fit-modal {
+  width:var(--modal-fit-width, 1500px) !important;
+  height:var(--modal-fit-height, 760px) !important;
+  max-width:none !important;
+  max-height:none !important;
+  transform:scale(var(--modal-fit-scale, 1)) !important;
+  transform-origin:center center !important;
+  flex:0 0 auto !important;
+}
+@media (max-width:900px) {
+  .modal.auto-fit-modal {
+    width:var(--modal-fit-width, 900px) !important;
+    height:var(--modal-fit-height, 720px) !important;
+  }
+}
+
+
+/* 解放欄の文字拡大と下余白削減：解放表だけを広げて余白を使う */
+.modal.auto-fit-modal .unlock-box {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  margin-top:7px !important;
+  padding:7px 9px !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  overflow:visible !important;
+  padding-right:0 !important;
+}
+.modal.auto-fit-modal .unlock-table {
+  height:100% !important;
+  font-size:clamp(15px, 1.78vh, 19px) !important;
+  line-height:1.14 !important;
+}
+.modal.auto-fit-modal .unlock-table th,
+.modal.auto-fit-modal .unlock-table td {
+  padding:3px 7px !important;
+  line-height:1.14 !important;
+}
+.modal.auto-fit-modal .actions {
+  margin-top:7px !important;
+  flex:0 0 auto !important;
+}
+
+/* 小さい画面用：背景側ではなく、モーダル内の内容だけをスクロール可能にする */
+@media (max-height:760px), (max-width:900px) {
+  .modal-backdrop.open {
+    overflow:hidden !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  .modal.auto-fit-modal {
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+  }
+  .modal.auto-fit-modal::-webkit-scrollbar { width:8px; }
+  .modal.auto-fit-modal::-webkit-scrollbar-thumb { background:rgba(199,255,62,.36); border-radius:999px; }
+}
+
+
+/* 現在合計の位置復旧：unlockPreview内を縦並びに戻し、現在合計を表の上へ固定 */
+.modal.auto-fit-modal .unlock-box #unlockPreview {
+  display:block !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview > .note {
+  display:block !important;
+  margin:0 0 4px !important;
+  flex:none !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview > .unlock-table {
+  width:100% !important;
+}
+
 </style>
 </head>
 <body>
@@ -1187,7 +1320,76 @@ function captureAppBySvg(app) {
       catch(e) { return ''; }
     }).join('\n');
     styleText = styleText.replace(/url\(["']?data:image\/svg\+xml[^)]*\)/g, 'none');
-    const htmlText = `<div xmlns="http://www.w3.org/1999/xhtml"><style>${styleText}</style>${new XMLSerializer().serializeToString(clone)}</div>`;
+    const htmlText = `<div xmlns="http://www.w3.org/1999/xhtml"><style>${styleText}
+
+/* 安全な自動縮小：通常は基準サイズで表示し、画面に入りきらない時だけ全体を縮小 */
+.modal-backdrop.open {
+  overflow:hidden !important;
+  padding:0 !important;
+}
+.modal.auto-fit-modal {
+  width:var(--modal-fit-width, 1500px) !important;
+  height:var(--modal-fit-height, 760px) !important;
+  max-width:none !important;
+  max-height:none !important;
+  transform:scale(var(--modal-fit-scale, 1)) !important;
+  transform-origin:center center !important;
+  flex:0 0 auto !important;
+}
+@media (max-width:900px) {
+  .modal.auto-fit-modal {
+    width:var(--modal-fit-width, 900px) !important;
+    height:var(--modal-fit-height, 720px) !important;
+  }
+}
+
+
+/* 解放欄の文字拡大と下余白削減：解放表だけを広げて余白を使う */
+.modal.auto-fit-modal .unlock-box {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  margin-top:7px !important;
+  padding:7px 9px !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  overflow:visible !important;
+  padding-right:0 !important;
+}
+.modal.auto-fit-modal .unlock-table {
+  height:100% !important;
+  font-size:clamp(15px, 1.78vh, 19px) !important;
+  line-height:1.14 !important;
+}
+.modal.auto-fit-modal .unlock-table th,
+.modal.auto-fit-modal .unlock-table td {
+  padding:3px 7px !important;
+  line-height:1.14 !important;
+}
+.modal.auto-fit-modal .actions {
+  margin-top:7px !important;
+  flex:0 0 auto !important;
+}
+
+
+/* 現在合計の位置復旧：unlockPreview内を縦並びに戻し、現在合計を表の上へ固定 */
+.modal.auto-fit-modal .unlock-box #unlockPreview {
+  display:block !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview > .note {
+  display:block !important;
+  margin:0 0 4px !important;
+  flex:none !important;
+}
+.modal.auto-fit-modal .unlock-box #unlockPreview > .unlock-table {
+  width:100% !important;
+}
+
+</style>${new XMLSerializer().serializeToString(clone)}</div>`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(rect.width)}" height="${Math.ceil(rect.height)}"><foreignObject width="100%" height="100%">${htmlText}</foreignObject></svg>`;
     const img = new Image();
     img.onload = () => {
@@ -1316,5 +1518,46 @@ function init() {
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
+
+<script>
+(function(){
+  'use strict';
+  function fitChinkonfuModal(){
+    var modal = document.querySelector('#modalBackdrop .modal');
+    var backdrop = document.getElementById('modalBackdrop');
+    if (!modal || !backdrop) return;
+    modal.classList.add('auto-fit-modal');
+
+    var vw = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 0);
+    var vh = Math.max(320, window.innerHeight || document.documentElement.clientHeight || 0);
+    var isSmall = vw <= 900;
+    var baseW = isSmall ? 900 : 1500;
+    var baseH = isSmall ? 720 : 760;
+    var margin = isSmall ? 8 : 20;
+    var scale = Math.min(1, (vw - margin) / baseW, (vh - margin) / baseH);
+    if (!isFinite(scale) || scale <= 0) scale = 1;
+    scale = Math.max(scale, isSmall ? 0.36 : 0.68);
+
+    modal.style.setProperty('--modal-fit-width', baseW + 'px');
+    modal.style.setProperty('--modal-fit-height', baseH + 'px');
+    modal.style.setProperty('--modal-fit-scale', String(scale));
+
+    var needsScroll = scale < 0.999 || (baseH * scale) > (vh - margin) || (baseW * scale) > (vw - margin);
+    backdrop.classList.toggle('fit-scroll-needed', !!needsScroll);
+  }
+
+  window.addEventListener('resize', fitChinkonfuModal, { passive:true });
+  window.addEventListener('orientationchange', function(){ setTimeout(fitChinkonfuModal, 120); }, { passive:true });
+  document.addEventListener('click', function(){ setTimeout(fitChinkonfuModal, 0); }, true);
+  document.addEventListener('DOMContentLoaded', function(){
+    fitChinkonfuModal();
+    var backdrop = document.getElementById('modalBackdrop');
+    if (backdrop && 'MutationObserver' in window) {
+      new MutationObserver(fitChinkonfuModal).observe(backdrop, { attributes:true, attributeFilter:['class'] });
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
