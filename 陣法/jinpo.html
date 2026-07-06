@@ -79,7 +79,7 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
 }
 
 /* eiketsu-kishinseki top breakdown: 合計欄下に小さく内訳表示 */
-.eiketsuKishinsekiTopBreakdown{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:6px;margin-top:6px}
+.eiketsuKishinsekiTopBreakdown{display:none!important;grid-template-columns:repeat(11,minmax(0,1fr));gap:6px;margin-top:6px}
 .eiketsuKishinsekiTopBreakdownCell{min-width:0;border:1px solid rgba(231,189,92,.35);border-radius:8px;background:rgba(0,0,0,.22);padding:4px 4px;text-align:center;line-height:1.15}
 .eiketsuKishinsekiTopBreakdownCell .eksBdName{font-size:10px;color:#cbb98f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .eiketsuKishinsekiTopBreakdownCell .eksBdLine{display:flex;justify-content:center;gap:4px;white-space:nowrap;font-size:10px;font-weight:800}
@@ -422,7 +422,6 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
     </div>
     <div id="eiketsuKishinsekiCombinedResult" class="totalStatGrid eiketsuKishinsekiCombinedGrid"></div>
   </div>
-  <div id="eiketsuKishinsekiTopBreakdown" class="eiketsuKishinsekiTopBreakdown" aria-label="転生と見聞録と鬼神石の加算内訳"></div>
 </section>
 <a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="トップへ戻る">戻る</a>
 
@@ -17490,11 +17489,12 @@ body{padding-top:0 !important;}
 /* 2026-07-06 転生 Lv30 補正 */
 .eiketsuKishinsekiModal[data-panel="tensei"] .eiketsuKishinsekiJobBtn{font-size:20px!important;padding-right:6px!important;}
 .eiketsuTenseiRows{display:grid;gap:8px;margin-top:8px;}
-.eiketsuTenseiRow{display:grid;grid-template-columns:54px minmax(0,1fr) 96px;gap:8px;align-items:center;min-height:44px;border:1px solid rgba(255,230,79,.18);border-radius:8px;background:rgba(0,0,0,.16);padding:5px 8px;}
+.eiketsuTenseiRow{display:grid;grid-template-columns:54px minmax(0,1fr) 112px;gap:8px;align-items:center;min-height:44px;border:1px solid rgba(255,230,79,.18);border-radius:8px;background:rgba(0,0,0,.16);padding:5px 8px;}
 .eiketsuTenseiSlotNo{font-size:20px;font-weight:900;color:#ffe64f;text-align:center;white-space:nowrap;}
 .eiketsuTenseiHeroName{font-size:22px;font-weight:900;color:#fff;text-shadow:0 2px 0 #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .eiketsuTenseiToggleBtn{background:linear-gradient(#3f4732,#171c14)!important;border:1px solid #89915f!important;color:#f4ffe9!important;border-radius:6px!important;font-weight:900!important;padding:7px 8px!important;white-space:nowrap!important;}
 .eiketsuTenseiToggleBtn.active{background:linear-gradient(#5f9224,#2b5315)!important;border-color:#9deb71!important;box-shadow:0 0 8px rgba(113,228,154,.26)!important;}
+.eiketsuTenseiToggleBtn.blocked,.eiketsuTenseiToggleBtn:disabled{background:linear-gradient(#3a3028,#181410)!important;border-color:#c46a25!important;color:#ffd6a0!important;cursor:not-allowed!important;box-shadow:none!important;opacity:.95;}
 .eksTensei{color:#9feeff;margin-right:5px;white-space:nowrap;}
 
 /* 2026-07-06 見聞録＆鬼神石: 配置英傑名の2行化防止・読込表示 */
@@ -17720,10 +17720,64 @@ body{padding-top:0 !important;}
   function getKishinChoice(slot, stat){ return getKishinChoiceFrom(choices, slot, stat); }
   function getAppliedKenbunChoice(job, stat){ return getKenbunChoiceFrom(appliedChoices, job, stat); }
   function getAppliedKishinChoice(slot, stat){ return getKishinChoiceFrom(appliedChoices, slot, stat); }
-  function isTenseiOnFrom(src, slot){ slot=String(slot||1); return !!(src && src.tensei && src.tensei[slot]); }
+  function normalizeTenseiName(v){
+    try{ if(typeof canonicalHeroName === 'function') return canonicalHeroName(v); }catch(e){}
+    return String(v==null?'':v).replace(/・/g,'').replace(/\s+/g,'').replace(/　+/g,'').trim();
+  }
+  function tenseiFactor4Of(hero){ return String(hero && (hero['因子4'] || hero.factor4 || '') || '').trim(); }
+  function activationUsesHeroFactor4ForTensei(act, slot){
+    try{
+      slot = Number(slot)||0;
+      var hero = getPlacementHero(slot);
+      var f4 = tenseiFactor4Of(hero);
+      if(!hero || !f4) return false;
+      var lineSlots = act && (act.lineSlots || act.slots || act.line || act.line_slots);
+      if(typeof lineSlots === 'string') lineSlots = lineSlots.split(/[^0-9]+/).filter(Boolean).map(Number);
+      if(Array.isArray(lineSlots) && lineSlots.length && lineSlots.map(Number).indexOf(slot) < 0) return false;
+      var heroNm = normalizeTenseiName(heroName(hero));
+      var assigns = Array.isArray(act && act.assignments) ? act.assignments : [];
+      if(assigns.length){
+        for(var i=0;i<assigns.length;i++){
+          var a=assigns[i]||{};
+          if(String(a.requiredFactor||'').trim() === f4 && normalizeTenseiName(a.heroName||a.name||'') === heroNm) return true;
+        }
+      }
+      var factors = Array.isArray(act && act.factors) ? act.factors.map(function(v){return String(v||'').trim();}) : [];
+      return factors.indexOf(f4) >= 0;
+    }catch(e){ return false; }
+  }
+  function isTenseiBunkyokuBlocked(slot){
+    slot = Number(slot)||0;
+    if(!slot) return false;
+    try{
+      var root=document.getElementById('formationView');
+      if(root){
+        var found=false;
+        root.querySelectorAll('.fslot').forEach(function(el){
+          var st=el.querySelector('strong');
+          var n=Number(st ? st.textContent : '');
+          if(n===slot && el.classList.contains('factor4BunkyokuGlow')) found=true;
+        });
+        if(found) return true;
+      }
+    }catch(e){}
+    try{
+      var result=currentActivationResultForBonus();
+      var acts=Array.isArray(result && result.activated) ? result.activated : [];
+      for(var i=0;i<acts.length;i++){ if(activationUsesHeroFactor4ForTensei(acts[i], slot)) return true; }
+    }catch(e){}
+    return false;
+  }
+  function sanitizeTenseiChoices(src){
+    src = src || choices;
+    if(!src.tensei) src.tensei={};
+    SLOT_DEFS.forEach(function(n){ if(src.tensei[String(n)] && isTenseiBunkyokuBlocked(n)) src.tensei[String(n)] = false; });
+    return src;
+  }
+  function isTenseiOnFrom(src, slot){ slot=String(slot||1); return !!(src && src.tensei && src.tensei[slot]) && !isTenseiBunkyokuBlocked(slot); }
   function isTenseiOn(slot){ return isTenseiOnFrom(choices, slot); }
   function isAppliedTenseiOn(slot){ return isTenseiOnFrom(appliedChoices, slot); }
-  function setTenseiOn(slot, on){ slot=String(slot||1); if(!choices.tensei) choices.tensei={}; choices.tensei[slot]=!!on; }
+  function setTenseiOn(slot, on){ slot=String(slot||1); if(!choices.tensei) choices.tensei={}; choices.tensei[slot]=!!on && !isTenseiBunkyokuBlocked(slot); }
   function tenseiStatDiff(hero, stat){ var base=readHeroRawStat(hero, stat); if(!base) return 0; return Math.floor(base*TENSEI_RATE+1e-9)-base; }
   function tenseiStatsForHero(hero, slot){ var out=blankStats(); if(!isAppliedTenseiOn(slot)) return out; STAT_DEFS.forEach(function(def){ out[def.key]=tenseiStatDiff(hero, def.key); }); return out; }
   function bonusStatsForJob(job){
@@ -17786,14 +17840,9 @@ body{padding-top:0 !important;}
   }
   function formatPlus(v){ v=Number(v)||0; return v ? ('+'+v.toLocaleString()) : '+0'; }
   function renderTopBreakdown(){
+    /* 差分・内訳表示は不要。通常合計と「転生＆見聞録＆鬼神石込み合計」だけ残す。 */
     var box=document.getElementById('eiketsuKishinsekiTopBreakdown');
-    if(!box) return;
-    var data=sourceBonusTotals();
-    var keys=getStatKeys();
-    box.innerHTML=keys.map(function(k){
-      var kb=Number(data.kenbun[k]||0), ks=Number(data.kishin[k]||0), ts=Number(data.tensei[k]||0);
-      return '<div class="eiketsuKishinsekiTopBreakdownCell '+((kb||ks||ts)?'':'zero')+'"><div class="eksBdName">'+esc(k)+'</div><div class="eksBdLine"><span class="eksTensei">転 '+esc(formatPlus(ts))+'</span><span class="eksKenbun">見 '+esc(formatPlus(kb))+'</span><span class="eksKishin">鬼 '+esc(formatPlus(ks))+'</span></div></div>';
-    }).join('');
+    if(box){ box.innerHTML=''; box.style.display='none'; }
   }
   window.__jinpoRenderEiketsuKishinsekiTopBreakdown = renderTopBreakdown;
   window.__jinpoGetEiketsuKishinsekiBonusBreakdown = sourceBonusTotals;
@@ -17858,13 +17907,18 @@ body{padding-top:0 !important;}
   }
 
   function buildTenseiSlotButtons(){
-    return SLOT_DEFS.map(function(slot){ var h=getPlacementHero(slot), nm=heroName(h); return '<button type="button" class="eiketsuKishinsekiJobBtn '+(isTenseiOn(slot)?'active':'')+'" data-tensei-slot="'+slot+'" title="'+slot+'　'+esc(nm)+'">'+slot+'　'+esc(nm)+'</button>'; }).join('');
+    sanitizeTenseiChoices(choices);
+    return SLOT_DEFS.map(function(slot){
+      var h=getPlacementHero(slot), nm=heroName(h), blocked=isTenseiBunkyokuBlocked(slot), on=isTenseiOn(slot);
+      return '<button type="button" class="eiketsuKishinsekiJobBtn '+(on?'active ':'')+'" data-tensei-slot="'+slot+'" title="'+slot+'　'+esc(nm)+(blocked?'｜LV30不可':'')+'">'+slot+'　'+esc(nm)+'</button>';
+    }).join('');
   }
   function currentTenseiTitle(){ return '転生　LV30補正'; }
   function buildTenseiRows(){
+    sanitizeTenseiChoices(choices);
     return '<div class="eiketsuTenseiRows">'+SLOT_DEFS.map(function(slot){
-      var h=getPlacementHero(slot), nm=heroName(h), on=isTenseiOn(slot);
-      return '<div class="eiketsuTenseiRow" data-tensei-row="'+slot+'"><div class="eiketsuTenseiSlotNo">'+slot+'</div><div class="eiketsuTenseiHeroName" title="'+esc(nm)+'">'+esc(nm)+'</div><button type="button" class="eiketsuTenseiToggleBtn '+(on?'active':'')+'" data-tensei-toggle="'+slot+'">LV30 '+(on?'ON':'OFF')+'</button></div>';
+      var h=getPlacementHero(slot), nm=heroName(h), blocked=isTenseiBunkyokuBlocked(slot), on=isTenseiOn(slot);
+      return '<div class="eiketsuTenseiRow" data-tensei-row="'+slot+'"><div class="eiketsuTenseiSlotNo">'+slot+'</div><div class="eiketsuTenseiHeroName" title="'+esc(nm)+'">'+esc(nm)+'</div><button type="button" class="eiketsuTenseiToggleBtn '+(on?'active ':'')+(blocked?'blocked':'')+'" data-tensei-toggle="'+slot+'" '+(blocked?'disabled aria-disabled="true"':'')+'>'+ (blocked?'LV30不可':('LV30 '+(on?'ON':'OFF'))) +'</button></div>';
     }).join('')+'</div>';
   }
   function buildSlotButtons(){
@@ -17930,6 +17984,7 @@ body{padding-top:0 !important;}
     if(btn){ btn.disabled=!!show; btn.textContent=show?'反映中...':'反映'; }
   }
   async function applyBonusSettingsCore(){
+    sanitizeTenseiChoices(choices);
     appliedChoices = cloneBonusChoices(choices);
     updateNote();
     renderTopBreakdown();
@@ -17983,7 +18038,7 @@ body{padding-top:0 !important;}
       modal.querySelector('#eiketsuKishinsekiSubTitle').textContent=isTensei?currentTenseiTitle():(isKishin?currentKishinTitle():'英傑見聞　'+activeKenbunJob);
       modal.querySelector('#eiketsuKishinsekiRows').innerHTML=isTensei?buildTenseiRows():buildRows(activePanel);
       var allBtn=modal.querySelector('#eiketsuKishinsekiAllMaxBtn'); if(allBtn) allBtn.textContent=isTensei?'全ON':'全MAX';
-      modal.querySelector('#eiketsuKishinsekiHelp').innerHTML=isTensei?'転生ONの配置英傑は、素のLV20ステータスを <b>1.236倍</b> にしてから見聞録・鬼神石を加算':(isKishin?'鬼神石：配置<b>1〜6</b>選択中のみ加算｜生命・気合 <b>+1000×17</b>｜他 <b>+100×25</b>':'職業が <b>'+esc(activeKenbunJob)+'</b> の英傑に加算：生命・気合は1マス <b>+1000</b>／腕力〜魅力は1マス <b>+100</b>／土〜風は1マス <b>+200</b>');
+      modal.querySelector('#eiketsuKishinsekiHelp').innerHTML=isTensei?'転生ONの配置英傑は、素のLV20ステータスを <b>1.236倍</b> にしてから見聞録・鬼神石を加算。<b>文曲中の英傑はLV30不可</b>':(isKishin?'鬼神石：配置<b>1〜6</b>選択中のみ加算｜生命・気合 <b>+1000×17</b>｜他 <b>+100×25</b>':'職業が <b>'+esc(activeKenbunJob)+'</b> の英傑に加算：生命・気合は1マス <b>+1000</b>／腕力〜魅力は1マス <b>+100</b>／土〜風は1マス <b>+200</b>');
       modal.querySelectorAll('.eiketsuKishinsekiTab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-panel')===activePanel); });
       refreshSelectorList();
       if(isKishin) refreshSlotButtonsDelayed(modal);
@@ -17994,8 +18049,8 @@ body{padding-top:0 !important;}
     function bindJobButtons(){ modal.querySelectorAll('.eiketsuKishinsekiJobBtn[data-job]').forEach(function(btn){ if(btn.__eksJobBound) return; btn.__eksJobBound=true; btn.addEventListener('click',function(){ setKenbunJob(btn.getAttribute('data-job')||'侍'); }); }); }
     function bindSlotButtons(){ modal.querySelectorAll('.eiketsuKishinsekiJobBtn[data-slot]').forEach(function(btn){ if(btn.__eksSlotBound) return; btn.__eksSlotBound=true; btn.addEventListener('click',function(){ setKishinSlot(btn.getAttribute('data-slot')||'1'); }); }); }
     function bindTenseiButtons(){
-      modal.querySelectorAll('[data-tensei-slot]').forEach(function(btn){ if(btn.__eksTenseiSlotBound) return; btn.__eksTenseiSlotBound=true; btn.addEventListener('click',function(){ var slot=btn.getAttribute('data-tensei-slot')||'1'; setTenseiOn(slot,!isTenseiOn(slot)); setPanel('tensei'); onBonusChanged(); }); });
-      modal.querySelectorAll('[data-tensei-toggle]').forEach(function(btn){ if(btn.__eksTenseiToggleBound) return; btn.__eksTenseiToggleBound=true; btn.addEventListener('click',function(){ var slot=btn.getAttribute('data-tensei-toggle')||'1'; setTenseiOn(slot,!isTenseiOn(slot)); setPanel('tensei'); onBonusChanged(); }); });
+      modal.querySelectorAll('[data-tensei-slot]').forEach(function(btn){ if(btn.__eksTenseiSlotBound) return; btn.__eksTenseiSlotBound=true; btn.addEventListener('click',function(){ var slot=btn.getAttribute('data-tensei-slot')||'1'; if(isTenseiBunkyokuBlocked(slot)){ setTenseiOn(slot,false); setPanel('tensei'); return; } setTenseiOn(slot,!isTenseiOn(slot)); setPanel('tensei'); onBonusChanged(); }); });
+      modal.querySelectorAll('[data-tensei-toggle]').forEach(function(btn){ if(btn.__eksTenseiToggleBound) return; btn.__eksTenseiToggleBound=true; btn.addEventListener('click',function(){ var slot=btn.getAttribute('data-tensei-toggle')||'1'; if(isTenseiBunkyokuBlocked(slot)){ setTenseiOn(slot,false); setPanel('tensei'); return; } setTenseiOn(slot,!isTenseiOn(slot)); setPanel('tensei'); onBonusChanged(); }); });
     }
     function bindInputs(){
       modal.querySelectorAll('input[type="radio"]').forEach(function(input){
@@ -18048,12 +18103,8 @@ body{padding-top:0 !important;}
   function openModal(){ var m=ensureModal(); if(activePanel==='kishin') refreshSlotButtonsDelayed(m); updateBars(); renderTopBreakdown(); window.requestAnimationFrame(function(){ m.classList.add('open'); }); }
   function closeModal(){ var m=document.getElementById('eiketsuKishinsekiModalBackdrop'); if(m) m.classList.remove('open'); }
   function updateNote(){
-    var n=document.getElementById('eiketsuKishinsekiBonusNote'); if(!n) return;
-    var parts=[];
-    SLOT_DEFS.forEach(function(slot){ var h=getPlacementHero(slot); if(isTenseiOn(slot)){ parts.push('転生 '+slot+' '+heroName(h)+' LV30'); } });
-    JOB_DEFS.forEach(function(job){ var s=bonusStatsForJob(job); STAT_DEFS.forEach(function(d){ var v=Number(s[d.key]||0); if(v) parts.push('英傑見聞録 '+job+' '+d.label+' +'+v.toLocaleString()); }); });
-    SLOT_DEFS.forEach(function(slot){ var ks=kishinStatsForSlot(slot); STAT_DEFS.forEach(function(d){ var v=Number(ks[d.key]||0); if(v) parts.push('鬼神石 '+slot+' '+heroName(getPlacementHero(slot))+' '+d.label+' +'+v.toLocaleString()); }); });
-    n.innerHTML=parts.length?'<b>追加ステータス：</b>'+parts.map(esc).join(' / '):'追加ステータス：未選択'; updateBars();
+    /* 差分・内訳表示は削除済み。隠し注記も更新しない。 */
+    updateBars();
   }
   function ensureButton(){
     if(document.getElementById('eiketsuKishinsekiOpenBtn')) return;
