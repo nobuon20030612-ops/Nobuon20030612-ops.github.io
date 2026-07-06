@@ -18038,7 +18038,7 @@ body{padding-top:0 !important;}
       modal.querySelector('#eiketsuKishinsekiSubTitle').textContent=isTensei?currentTenseiTitle():(isKishin?currentKishinTitle():'英傑見聞　'+activeKenbunJob);
       modal.querySelector('#eiketsuKishinsekiRows').innerHTML=isTensei?buildTenseiRows():buildRows(activePanel);
       var allBtn=modal.querySelector('#eiketsuKishinsekiAllMaxBtn'); if(allBtn) allBtn.textContent=isTensei?'全ON':'全MAX';
-      modal.querySelector('#eiketsuKishinsekiHelp').innerHTML=isTensei?'転生ONの配置英傑は、素のLV20ステータスを <b>1.236倍</b> にしてから見聞録・鬼神石を加算。<b>文曲中の英傑はLV30不可</b>':(isKishin?'鬼神石：配置<b>1〜6</b>選択中のみ加算｜生命・気合 <b>+1000×17</b>｜他 <b>+100×25</b>':'職業が <b>'+esc(activeKenbunJob)+'</b> の英傑に加算：生命・気合は1マス <b>+1000</b>／腕力〜魅力は1マス <b>+100</b>／土〜風は1マス <b>+200</b>');
+      modal.querySelector('#eiketsuKishinsekiHelp').innerHTML=isTensei?'':(isKishin?'鬼神石：配置<b>1〜6</b>選択中のみ加算｜生命・気合 <b>+1000×17</b>｜他 <b>+100×25</b>':'職業が <b>'+esc(activeKenbunJob)+'</b> の英傑に加算：生命・気合は1マス <b>+1000</b>／腕力〜魅力は1マス <b>+100</b>／土〜風は1マス <b>+200</b>');
       modal.querySelectorAll('.eiketsuKishinsekiTab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-panel')===activePanel); });
       refreshSelectorList();
       if(isKishin) refreshSlotButtonsDelayed(modal);
