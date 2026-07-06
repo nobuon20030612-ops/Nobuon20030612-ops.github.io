@@ -761,6 +761,50 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
   line-height:.96 !important;
 }
 
+
+
+/* 鎮魂符一覧モーダルのみ拡大（その他レイアウト・機能は変更なし） */
+.bonus-list-backdrop.open {
+  align-items:flex-start !important;
+  justify-content:center !important;
+  padding:4px !important;
+}
+.bonus-list-modal {
+  width:calc(100vw - 8px) !important;
+  max-width:none !important;
+  max-height:calc(100vh - 8px) !important;
+  padding:12px !important;
+}
+.bonus-list-head {
+  padding-bottom:10px !important;
+  margin-bottom:2px !important;
+}
+.bonus-list-title {
+  font-size:clamp(30px, 3.4vh, 42px) !important;
+}
+.bonus-list-modal .close {
+  font-size:clamp(22px, 2.45vh, 30px) !important;
+  padding:10px 18px !important;
+}
+.bonus-table-wrap {
+  padding-top:10px !important;
+}
+.bonus-table {
+  font-size:clamp(16px, 1.9vh, 22px) !important;
+  line-height:1.24 !important;
+}
+.bonus-table th,
+.bonus-table td {
+  padding:6px 8px !important;
+  line-height:1.24 !important;
+}
+.bonus-table thead th {
+  font-size:clamp(17px, 2.05vh, 24px) !important;
+}
+.bonus-table .bonus-cell {
+  line-height:1.25 !important;
+}
+
 </style>
 </head>
 <body>
