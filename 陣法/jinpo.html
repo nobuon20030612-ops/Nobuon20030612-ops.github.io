@@ -1322,10 +1322,8 @@ if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandi
 setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 0);
 setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 80);
 }else{
-clearReachTotalStatsForUnregistered();
+if(nextResult && typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(nextResult);
 if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult);
-setTimeout(()=>{ clearReachTotalStatsForUnregistered(); if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult); }, 0);
-setTimeout(()=>{ clearReachTotalStatsForUnregistered(); if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult); }, 80);
 }
 }catch(e){
 console.error("リーチ適用後のトータル表示更新失敗", e);
@@ -7362,17 +7360,9 @@ window.bindHardRequireFormation = bindHardRequireFormation;
   }
   function applyDirect(slot, id){
     try{
-      slot = Number(slot);
-      var list = Array.isArray(eiketsuMaster) ? eiketsuMaster : [];
-      var hero = list.find(function(h){ return String(h && h.internal_id || "") === String(id); });
-      if(!hero) return;
-      placement[slot] = hero;
-      if(typeof renderSlots === "function") renderSlots();
-      var result = currentReachResultFinal();
-      try{ if(result && typeof renderFormation === "function") renderFormation(result); }catch(e){}
-      try{ if(result && typeof window.renderRealtimeTotalStats === "function") window.renderRealtimeTotalStats(result); }catch(e){}
-      try{ if(result && typeof window.updateFormulaStatsForCurrentPlacement === "function") window.updateFormulaStatsForCurrentPlacement(); }catch(e){}
-      setTimeout(function(){ window.renderReachSlotOnlyUi && window.renderReachSlotOnlyUi(result || currentReachResultFinal()); }, 0);
+      if(typeof window.applyReachSwapCandidate === "function"){
+        return window.applyReachSwapCandidate(slot, id);
+      }
     }catch(e){ console.error("差し替え適用失敗", e); }
   }
   function finalRenderReach(result){
@@ -13360,7 +13350,7 @@ document.addEventListener("click", function(ev){
 
 
 <style id="step66-reach-slot-modal-only-style">
-/* step66: リーチ欄だけ。候補英傑の大量展開を禁止し、配置英傑ボタン→モーダル選択に固定。 */
+/* step66: 英傑差し替え候補UI。既存レイアウトは維持し、候補色と凡例のみ追加。 */
 #reachList .reachDirectList,
 #reachList .reachReplacePanel,
 #reachList .reachReplaceList,
@@ -13375,6 +13365,12 @@ document.addEventListener("click", function(ev){
 #reachList .step66ReachSlotList{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
 #reachList .step66ReachSlotBtn{text-align:left;border:1px solid #d7ad54;background:#201309;color:#ffe8ad;border-radius:10px;padding:9px 14px;font-weight:800;cursor:pointer;}
 #reachList .step66ReachSlotBtn:hover{border-color:#ffe082;box-shadow:0 0 14px rgba(231,189,92,.30);}
+.step66ReachLegend{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:7px 0 10px;padding:6px 9px;border:1px solid rgba(231,189,92,.28);border-radius:8px;background:rgba(0,0,0,.18);font-size:12px;font-weight:800;}
+.step66ReachLegendItem{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.step66ReachLegendDot{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.35);}
+.step66ReachLegendUp .step66ReachLegendDot{background:#b72b2b;}
+.step66ReachLegendFlat .step66ReachLegendDot{background:#288a45;}
+.step66ReachLegendDown .step66ReachLegendDot{background:#286ab5;}
 #step66ReachModal{position:fixed;inset:0;z-index:100010;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;}
 #step66ReachModal.step66Open{display:flex;}
 #step66ReachModal .step66Box{width:min(1100px,96vw);max-height:86vh;overflow:hidden;border:1px solid #a67a2d;border-radius:14px;background:#120d08;color:#f4ead2;box-shadow:0 0 28px rgba(0,0,0,.65);display:flex;flex-direction:column;}
@@ -13383,175 +13379,140 @@ document.addEventListener("click", function(ev){
 #step66ReachModal .step66Close{border:1px solid #d7ad54;border-radius:9px;background:#4a160f;color:#fff0bf;font-weight:800;padding:8px 16px;cursor:pointer;}
 #step66ReachModal .step66Body{padding:12px;overflow:auto;}
 #step66ReachModal .step66Grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
-#step66ReachModal .step66HeroBtn{text-align:left;border:1px solid #7a5a29;background:#0d0a07;color:#f4ead2;border-radius:10px;padding:9px;cursor:pointer;}
-#step66ReachModal .step66HeroBtn:hover{border-color:#e7bd5c;box-shadow:0 0 12px rgba(231,189,92,.28);}
+#step66ReachModal .step66HeroBtn{text-align:left;color:#f4ead2;border-radius:10px;padding:9px;cursor:pointer;transition:filter .14s ease,box-shadow .14s ease,transform .14s ease;}
+#step66ReachModal .step66HeroBtn:hover{filter:brightness(1.14);transform:translateY(-1px);}
+#step66ReachModal .step66HeroBtn.step66Up{border:2px solid #e25353;background:rgba(125,25,25,.42);}
+#step66ReachModal .step66HeroBtn.step66Flat{border:2px solid #50b56c;background:rgba(25,100,48,.38);}
+#step66ReachModal .step66HeroBtn.step66Down{border:2px solid #4f91df;background:rgba(24,70,125,.42);}
 #step66ReachModal .step66HeroName{font-weight:800;color:#ffe1a1;}
-#step66ReachModal .step66HeroMeta{font-size:12px;color:#cbb98f;margin-top:3px;line-height:1.35;}
+#step66ReachModal .step66HeroMeta{font-size:12px;color:#d9c9a6;margin-top:3px;line-height:1.35;}
+#step66ReachModal .step66DeltaLabel{display:inline-block;margin-right:6px;font-weight:900;letter-spacing:.04em;}
+#step66ReachModal .step66Up .step66DeltaLabel{color:#ff7777;}
+#step66ReachModal .step66Flat .step66DeltaLabel{color:#78dc90;}
+#step66ReachModal .step66Down .step66DeltaLabel{color:#79b7ff;}
 </style>
 <script id="step66-reach-slot-modal-only-final">
-/* step66: その他変更禁止。リーチ欄だけ修正。
-   正しい仕様：
-   1) リーチ欄には差し替え可能な配置英傑ボタンだけ表示。
-   2) 候補英傑一覧は配置英傑ボタンを押した時だけモーダル表示。
-   3) 候補は現在表示DB/適用DBの「同じ因縁数・同じ陣形・1枠だけ違う行」だけ。
-   4) 全英傑一覧・全候補共通配列・登録外総流用は禁止。 */
+/* 英傑差し替え候補：
+   - 現在の6人から各1人を全英傑候補と入れ替えて因縁数を再計算。
+   - UP=増加、FLAT=同数、DOWN=1減のみ表示。2以上減は対象外。
+   - 計算結果は現在編成+陣形単位でキャッシュし、同じ状態での再計算を避ける。
+   - 適用時は既存の applyReachSwapCandidate を使用し、既存の再計算・再表示経路を維持する。 */
 (function(){
   'use strict';
   if(window.__step66ReachSlotModalOnlyFinal) return;
   window.__step66ReachSlotModalOnlyFinal = true;
   var timer=null, rendering=false, candidateMap={}, candidateStore={}, seq=1;
+  var cacheKey='', cacheMap=null, cacheStore=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];});}
-  function norm(v){return String(v==null?'':v).trim().replace(/\u5c71\u4e2d\u9e7f\u4e4b\u52a9/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
-  function split(v){return String(v==null?'':v).split(/[|,、]/).map(function(x){return x.trim();}).filter(Boolean);}
-  function cleanName(v){return String(v==null?'':v).replace(/^\s*\d+\s*[\.．、:：]\s*/,'').trim();}
-  function hName(h){
-    if(!h) return '';
-    if(typeof h==='string') return h;
-    try{ if(typeof heroName==='function') return heroName(h)||''; }catch(e){}
-    return h['英傑名']||h['名前']||h.name||h.hero_name||'';
-  }
+  function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
+  function hName(h){if(!h)return '';if(typeof h==='string')return h;try{if(typeof heroName==='function')return heroName(h)||'';}catch(e){}return h['英傑名']||h['名前']||h.name||h.hero_name||'';}
   function hId(h){return String(h&&(h.internal_id||h.id||h.ID||h['internal_id'])||'').trim();}
-  function heroMaster(){try{if(Array.isArray(eiketsuMaster)) return eiketsuMaster;}catch(e){} return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
-  function findHeroByName(name){var n=norm(name); if(!n) return null; var list=heroMaster(); for(var i=0;i<list.length;i++){if(norm(hName(list[i]))===n) return list[i];} return null;}
-  function placementObj(){try{if(typeof placement!=='undefined'&&placement) return placement;}catch(e){} return window.placement||null;}
-  function currentFormation(){try{var s=document.getElementById('formationSelect')||window.formationSelect; if(s&&s.value) return String(s.value).trim();}catch(e){} return '';}
-  function formationMatches(rowForm, curForm){rowForm=String(rowForm||'').trim(); curForm=String(curForm||'').trim(); return !rowForm||!curForm||rowForm===curForm||rowForm.indexOf(curForm)>=0||curForm.indexOf(rowForm)>=0;}
-  function rowMembers(row){return split(row&&(row.eiketsu_ids||row.eiketsu_names||row.members||row['英傑']||row['英傑名']));}
-  function rowBonds(row){return split(row&&(row.bond_ids||row.bond_names||row.inen||row['因縁']));}
-  function rowCount(row){var c=String(row&&(row.bond_count||row.ic||row['因縁数'])||'').trim(); if(c) return c; var b=rowBonds(row); return b.length?String(b.length):'';}
-  function rowFormation(row){return String(row&&(row.formation||row.form||row['陣形'])||'').trim();}
-  function textCountFromBox(box){
-    if(!box) return '';
-    var txt=box.textContent||'';
-    var m=txt.match(/因縁数\s*([0-9]+)/); if(m) return m[1];
-    var cells=box.querySelectorAll('.appliedPreviewBox,.appliedDbRowCell');
-    for(var i=0;i<cells.length;i++){
-      var lab=cells[i].querySelector('.appliedPreviewLabel,.appliedDbRowLabel');
-      var val=cells[i].querySelector('.appliedPreviewValue,.appliedDbRowValue');
-      if(lab&&val&&/因縁数/.test(lab.textContent||'')){var t=(val.textContent||'').trim(); if(t) return t;}
-    }
-    return '';
-  }
-  function selectedCount(){
-    try{if(typeof selectedDbListBondCount!=='undefined' && selectedDbListBondCount) return String(selectedDbListBondCount);}catch(e){}
-    if(window.selectedDbListBondCount) return String(window.selectedDbListBondCount);
-    return textCountFromBox(document.getElementById('appliedRowPreviewUnderFormation')) || textCountFromBox(document.getElementById('appliedDbRowDisplay')) || '';
-  }
-  function namesFromBox(box){
-    if(!box) return [];
-    var txt=box.textContent||'';
-    var cells=box.querySelectorAll('.appliedPreviewBox,.appliedDbRowCell');
-    for(var c=0;c<cells.length;c++){
-      var lab=cells[c].querySelector('.appliedPreviewLabel,.appliedDbRowLabel');
-      if(!lab || !/英傑/.test(lab.textContent||'')) continue;
-      var spans=cells[c].querySelectorAll('span,.badge');
-      var a=[]; spans.forEach(function(sp){var t=cleanName(sp.textContent||''); if(t) a.push(t);});
-      if(a.length>=6) return a.slice(0,6);
-    }
-    var m=txt.match(/英傑\s*([^\n]+)/);
-    if(m){var a2=split(m[1]).map(cleanName).filter(Boolean); if(a2.length>=6) return a2.slice(0,6);}
-    return [];
-  }
-  function currentNames(){
-    var p=placementObj(), arr=[];
-    if(p){for(var i=1;i<=6;i++) arr.push(hName(p[i]));}
-    if(arr.filter(Boolean).length===6) return arr;
-    var a=namesFromBox(document.getElementById('appliedRowPreviewUnderFormation')); if(a.length===6) return a;
-    a=namesFromBox(document.getElementById('appliedDbRowDisplay')); if(a.length===6) return a;
-    return arr;
-  }
-  function dataRows(){
-    var out=[], count=Number(selectedCount())||0;
-    try{ if(count && typeof resultDbByBondCount!=='undefined' && resultDbByBondCount && resultDbByBondCount.get(count)) out=out.concat(resultDbByBondCount.get(count)); }catch(e){}
-    try{ if(count && window.resultDbByBondCount && window.resultDbByBondCount.get(count)) out=out.concat(window.resultDbByBondCount.get(count)); }catch(e){}
-    try{ if(Array.isArray(resultDbRows)) out=out.concat(resultDbRows); }catch(e){}
-    try{ if(Array.isArray(window.resultDbRows)) out=out.concat(window.resultDbRows); }catch(e){}
-    var seen={};
-    return out.map(function(r){return {members:rowMembers(r),bonds:rowBonds(r),count:rowCount(r),formation:rowFormation(r),total:(r&&(r.total_score||r['総合値']||''))||'',row:r,button:null};}).filter(function(r){
-      if(!r.members||r.members.length!==6) return false;
-      if(count && Number(r.count)!==count) return false;
-      var key=r.members.map(norm).join('|')+'@@'+r.count+'@@'+r.formation+'@@'+r.bonds.map(norm).join('|');
-      if(seen[key]) return false; seen[key]=true; return true;
-    });
-  }
-  function domRows(){
-    var out=[], root=document.getElementById('dbFormationList'); if(!root) return out;
-    root.querySelectorAll('tr.dbMainRow').forEach(function(tr){
-      var mem=[]; tr.querySelectorAll('.dbPlacementMini span,.dbPlacementMiniCompact span').forEach(function(sp){var t=cleanName(sp.textContent||''); if(t) mem.push(t);});
-      if(mem.length!==6) return;
-      var tds=tr.children;
-      var btn=tr.querySelector('button.applyBtn,button[data-result-id],button[data-step38-db-idx],button[data-step35-db-idx],button[data-step33-db-idx],button[data-linegen-v6],button[data-linegen-v4],button[data-step2-db56-result]');
-      var bonds=[]; tr.querySelectorAll('.dbListBonds .badge,.badge').forEach(function(b){var x=(b.textContent||'').trim(); if(x) bonds.push(x);});
-      var total='', statTr=tr.nextElementSibling; if(statTr&&statTr.classList&&statTr.classList.contains('dbStatRow')){var m=(statTr.textContent||'').match(/総合値\s*([0-9]+)/); if(m) total=m[1];}
-      out.push({members:mem,bonds:bonds,count:tds&&tds[1]?(tds[1].textContent||'').trim():selectedCount(),formation:tds&&tds[2]?(tds[2].textContent||'').trim():'',total:total,row:null,button:btn});
-    });
-    return out;
-  }
+  function heroMaster(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
+  function placementObj(){try{if(typeof placement!=='undefined'&&placement)return placement;}catch(e){}return window.placement||null;}
+  function currentFormation(){try{var s=document.getElementById('formationSelect')||window.formationSelect;if(s&&s.value)return String(s.value).trim();}catch(e){}return '';}
+  function currentResult(p){try{var f=currentFormation();if(!f||!p||!window.JinpoActivationEngine||typeof window.JinpoActivationEngine.calculateFormation!=='function'||typeof inenMaster==='undefined')return null;return window.JinpoActivationEngine.calculateFormation(p,f,inenMaster,window.JINPO_FORMATION_CONFIG);}catch(e){return null;}}
+  function legendHtml(){return '<div class="step66ReachLegend" aria-label="差し替え候補の色説明"><span class="step66ReachLegendItem step66ReachLegendUp"><span class="step66ReachLegendDot"></span>赤＝UP</span><span class="step66ReachLegendItem step66ReachLegendFlat"><span class="step66ReachLegendDot"></span>緑＝FLAT</span><span class="step66ReachLegendItem step66ReachLegendDown"><span class="step66ReachLegendDot"></span>青＝DOWN</span></div>';}
+  function stateKey(){var p=placementObj(),ids=[];for(var i=1;i<=6;i++)ids.push(hId(p&&p[i])||norm(hName(p&&p[i])));return currentFormation()+'@@'+ids.join('|');}
   function buildMap(){
-    var cur=currentNames(), curN=cur.map(norm), count=Number(selectedCount())||0, form=currentFormation();
-    var map={}, seen={}; candidateStore={}; seq=1;
-    if(cur.filter(Boolean).length!==6) return map;
-    dataRows().concat(domRows()).forEach(function(r){
-      if(count && Number(r.count)!==count) return;
-      if(!formationMatches(r.formation, form)) return;
-      var diff=[]; for(var i=0;i<6;i++){if(norm(r.members[i])!==curN[i]) diff.push(i+1);}
-      if(diff.length!==1) return;
-      var slot=diff[0], after=r.members[slot-1];
-      if(!after || norm(after)===curN[slot-1]) return;
-      var key=slot+'@@'+norm(after)+'@@'+r.members.map(norm).join('|')+'@@'+(r.bonds||[]).map(norm).join('|');
-      if(seen[key]) return; seen[key]=true;
-      var hero=findHeroByName(after), id='s66_'+(seq++);
-      candidateStore[id]={slot:slot,after:after,afterId:hero?hId(hero):after,row:r.row,button:r.button,bonds:r.bonds,total:r.total};
-      if(!map[slot]) map[slot]=[]; map[slot].push(candidateStore[id]);
-    });
-    Object.keys(map).forEach(function(slot){map[slot].sort(function(a,b){return String(a.after).localeCompare(String(b.after),'ja');});});
-    return map;
+    var key=stateKey();
+    if(key&&key===cacheKey&&cacheMap&&cacheStore){candidateStore=cacheStore;return cacheMap;}
+    var p=placementObj(), base=currentResult(p), map={}, store={}, localSeq=1;
+    if(!p||!base) return map;
+    var currentCount=Array.isArray(base.activated)?base.activated.length:0;
+    var used=new Set();for(var s=1;s<=6;s++){var id=hId(p[s]);if(id)used.add(id);}
+    var heroes=heroMaster().filter(function(h){return h&&hId(h)&&!used.has(hId(h));});
+    for(var slot=1;slot<=6;slot++){
+      if(!p[slot]) continue;
+      for(var i=0;i<heroes.length;i++){
+        var cand=heroes[i], test={};
+        for(var j=1;j<=6;j++) test[j]=p[j];
+        test[slot]=cand;
+        var r=currentResult(test); if(!r) continue;
+        var nextCount=Array.isArray(r.activated)?r.activated.length:0;
+        var delta=nextCount-currentCount;
+        if(delta<-1) continue;
+        var cls=delta>0?'up':(delta===0?'flat':'down');
+        var id='s66_'+(localSeq++);
+        var item={slot:slot,after:hName(cand),afterId:hId(cand),from:currentCount,to:nextCount,delta:delta,level:cls};
+        store[id]=item;
+        if(!map[slot]) map[slot]=[];
+        item.storeId=id; map[slot].push(item);
+      }
+    }
+    Object.keys(map).forEach(function(slot){map[slot].sort(function(a,b){var rank={up:0,flat:1,down:2};if(rank[a.level]!==rank[b.level])return rank[a.level]-rank[b.level];if(a.to!==b.to)return b.to-a.to;return String(a.after).localeCompare(String(b.after),'ja');});});
+    cacheKey=key; cacheMap=map; cacheStore=store; candidateStore=store; return map;
   }
-  function titleText(){var root=document.getElementById('reachList'), h=root&&root.querySelector('h3'), t=h?(h.textContent||'').trim():''; return (/リーチ|差し替え/.test(t)?t:'英傑差し替え候補');}
+  function titleText(){var root=document.getElementById('reachList'),h=root&&root.querySelector('h3'),t=h?(h.textContent||'').trim():'';return (/リーチ|差し替え/.test(t)?t:'英傑差し替え候補');}
   function render(){
-    var root=document.getElementById('reachList'); if(!root||rendering) return; rendering=true;
+    var root=document.getElementById('reachList');if(!root||rendering)return;rendering=true;
     try{
-      candidateMap=buildMap(); window.__step66ReachCandidateMap=candidateMap;
-      var p=placementObj(), slots=Object.keys(candidateMap).map(Number).sort(function(a,b){return a-b;}), title=titleText();
-      if(currentNames().filter(Boolean).length!==6){root.innerHTML='<h3>'+esc(title)+'</h3><p class="small">6人配置後に差し替え候補を表示します。</p>';}
-      else if(!slots.length){root.innerHTML='<h3>'+esc(title)+'</h3><p class="small">差し替え候補なし</p>';}
+      candidateMap=buildMap();window.__step66ReachCandidateMap=candidateMap;
+      var p=placementObj(),slots=Object.keys(candidateMap).map(Number).filter(function(s){return (candidateMap[s]||[]).length>0;}).sort(function(a,b){return a-b;}),title=titleText();
+      var placed=0;for(var i=1;i<=6;i++)if(p&&p[i])placed++;
+      if(placed!==6){root.innerHTML='<h3>'+esc(title)+'</h3>'+legendHtml()+'<p class="small">6人配置後に差し替え候補を表示します。</p>';}
+      else if(!slots.length){root.innerHTML='<h3>'+esc(title)+'</h3>'+legendHtml()+'<p class="small">差し替え候補なし</p>';}
       else{
-        var html='<h3>'+esc(title)+'</h3><p class="small">差し替え可能な配置英傑のみ表示しています。</p><div class="step66ReachSlotList">';
-        slots.forEach(function(slot){var nm=(p&&p[slot]?hName(p[slot]):currentNames()[slot-1])||'未選択'; html+='<button type="button" class="step66ReachSlotBtn" data-step66-reach-slot="'+esc(slot)+'">'+esc(slot)+'. '+esc(nm)+' ('+esc((candidateMap[slot]||[]).length)+')</button>';});
-        html+='</div>'; root.innerHTML=html;
+        var html='<h3>'+esc(title)+'</h3><p class="small">差し替え可能な配置英傑のみ表示しています。</p>'+legendHtml()+'<div class="step66ReachSlotList">';
+        slots.forEach(function(slot){var nm=hName(p&&p[slot])||'未選択';html+='<button type="button" class="step66ReachSlotBtn" data-step66-reach-slot="'+esc(slot)+'">'+esc(slot)+'. '+esc(nm)+' ('+esc((candidateMap[slot]||[]).length)+')</button>';});
+        html+='</div>';root.innerHTML=html;
       }
     }finally{setTimeout(function(){rendering=false;},0);}
   }
-  function ensureModal(){var m=document.getElementById('step66ReachModal'); if(m) return m; m=document.createElement('div'); m.id='step66ReachModal'; m.innerHTML='<div class="step66Box" role="dialog" aria-modal="true"><div class="step66Head"><div class="step66Title">差し替え英傑を選択</div><button type="button" class="step66Close" data-step66-close="1">閉じる</button></div><div class="step66Body"></div></div>'; document.body.appendChild(m); return m;}
-  function closeModal(){var m=document.getElementById('step66ReachModal'); if(m) m.classList.remove('step66Open');}
+  function ensureModal(){var m=document.getElementById('step66ReachModal');if(m)return m;m=document.createElement('div');m.id='step66ReachModal';m.innerHTML='<div class="step66Box" role="dialog" aria-modal="true"><div class="step66Head"><div class="step66Title">差し替え英傑を選択</div><button type="button" class="step66Close" data-step66-close="1">閉じる</button></div><div class="step66Body"></div></div>';document.body.appendChild(m);return m;}
+  function closeModal(){var m=document.getElementById('step66ReachModal');if(m)m.classList.remove('step66Open');}
+  function ensureSwapLoading(){
+    var el=document.getElementById('step66SwapLoading');
+    if(el)return el;
+    el=document.createElement('div');
+    el.id='step66SwapLoading';
+    el.setAttribute('role','status');
+    el.setAttribute('aria-live','polite');
+    el.style.cssText='display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.42);align-items:center;justify-content:center;pointer-events:all;';
+    el.innerHTML='<div style="min-width:180px;padding:18px 24px;border-radius:12px;background:#fff;color:#222;font-weight:700;font-size:16px;text-align:center;box-shadow:0 10px 32px rgba(0,0,0,.28)">読み込み中…</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+  function showSwapLoading(){var el=ensureSwapLoading();el.style.display='flex';}
+  function hideSwapLoading(){var el=document.getElementById('step66SwapLoading');if(el)el.style.display='none';}
   function openModal(slot){
-    if(!candidateMap[slot]) candidateMap=buildMap();
-    var m=ensureModal(), body=m.querySelector('.step66Body'), p=placementObj(), cur=(p&&p[Number(slot)]?hName(p[Number(slot)]):currentNames()[Number(slot)-1])||'';
-    var list=candidateMap[slot]||[];
-    var html='<div class="small" style="margin-bottom:10px">'+esc(slot)+'番 '+esc(cur)+' と差し替える英傑を選択してください。</div>';
+    candidateMap=buildMap();
+    var m=ensureModal(),body=m.querySelector('.step66Body'),p=placementObj(),cur=hName(p&&p[Number(slot)])||'',list=candidateMap[slot]||[];
+    var html='<div class="small" style="margin-bottom:6px">'+esc(slot)+'番 '+esc(cur)+' と差し替える英傑を選択してください。</div>'+legendHtml();
     if(!list.length){html+='<p class="small">選択可能な英傑がありません。</p>';}
-    else{html+='<div class="step66Grid">'; Object.keys(candidateStore).forEach(function(id){var c=candidateStore[id]; if(!c||String(c.slot)!==String(slot)) return; var meta=[]; if(c.total) meta.push('総合値 '+c.total); if(c.bonds&&c.bonds.length) meta.push(c.bonds.join(' / ')); html+='<button type="button" class="step66HeroBtn" data-step66-candidate="'+esc(id)+'"><div class="step66HeroName">'+esc(c.after)+'</div><div class="step66HeroMeta">'+esc(meta.join(' / '))+'</div></button>';}); html+='</div>';}
-    body.innerHTML=html; m.classList.add('step66Open');
+    else{html+='<div class="step66Grid">';list.forEach(function(c){var css=c.level==='up'?'step66Up':(c.level==='flat'?'step66Flat':'step66Down');var label=c.level==='up'?'UP':(c.level==='flat'?'FLAT':'DOWN');html+='<button type="button" class="step66HeroBtn '+css+'" data-step66-candidate="'+esc(c.storeId)+'"><div class="step66HeroName">'+esc(c.after)+'</div><div class="step66HeroMeta"><span class="step66DeltaLabel">'+label+'</span>因縁数 '+esc(c.from)+' → '+esc(c.to)+'</div></button>';});html+='</div>';}
+    body.innerHTML=html;m.classList.add('step66Open');
   }
   function applyCandidate(id){
-    var c=candidateStore[id]; if(!c) return;
-    if(c.button&&typeof c.button.click==='function'){closeModal(); c.button.click(); setTimeout(schedule,100); return;}
-    if(c.row&&typeof window.applyDbFormationRow==='function'){closeModal(); window.applyDbFormationRow(c.row); setTimeout(schedule,100); return;}
-    var p=placementObj(), h=findHeroByName(c.after); if(!p||!h) return;
-    try{p[Number(c.slot)]=h; placement=p; window.placement=p;}catch(e){window.placement=p;}
-    try{if(typeof renderSlots==='function') renderSlots();}catch(e){}
-    closeModal(); setTimeout(schedule,100);
+    var c=candidateStore[id];if(!c)return;
+    closeModal();
+    showSwapLoading();
+    setTimeout(function(){
+      try{
+        cacheKey='';cacheMap=null;cacheStore=null;
+        if(typeof window.applyReachSwapCandidate==='function'){
+          window.applyReachSwapCandidate(c.slot,c.afterId);
+        }else{
+          var p=placementObj(),heroes=heroMaster(),h=heroes.find(function(x){return hId(x)===String(c.afterId);});if(!p||!h)return;
+          p[Number(c.slot)]=h;try{placement=p;}catch(e){}window.placement=p;
+          try{if(typeof renderSlots==='function')renderSlots();}catch(e){}
+          try{if(typeof calculate==='function')calculate();}catch(e){}
+        }
+      }finally{
+        hideSwapLoading();
+        setTimeout(function(){schedule(0);},60);
+      }
+    },30);
   }
-  function schedule(delay){clearTimeout(timer); timer=setTimeout(render, delay==null?30:delay);}
+  function schedule(delay){clearTimeout(timer);timer=setTimeout(render,delay==null?30:delay);}
   window.renderReachSlotOnlyUi=function(){schedule(0);};
   window.scheduleJinpoReachRefreshOnce=function(delay){schedule(delay==null?30:delay);};
   window.addEventListener('click',function(ev){
-    var close=ev.target&&ev.target.closest?ev.target.closest('[data-step66-close]'):null; if(close){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();closeModal();return;}
-    var cand=ev.target&&ev.target.closest?ev.target.closest('[data-step66-candidate]'):null; if(cand){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();applyCandidate(cand.getAttribute('data-step66-candidate'));return;}
-    var slot=ev.target&&ev.target.closest?ev.target.closest('[data-step66-reach-slot]'):null; if(slot){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();openModal(slot.getAttribute('data-step66-reach-slot'));return;}
+    var close=ev.target&&ev.target.closest?ev.target.closest('[data-step66-close]'):null;if(close){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();closeModal();return;}
+    var cand=ev.target&&ev.target.closest?ev.target.closest('[data-step66-candidate]'):null;if(cand){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();applyCandidate(cand.getAttribute('data-step66-candidate'));return;}
+    var slot=ev.target&&ev.target.closest?ev.target.closest('[data-step66-reach-slot]'):null;if(slot){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();openModal(slot.getAttribute('data-step66-reach-slot'));return;}
   },true);
-  document.addEventListener('keydown',function(ev){if(ev.key==='Escape') closeModal();});
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){schedule(180);}); else schedule(100);
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeModal();});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){schedule(180);});else schedule(100);
 })();
 </script>
 
@@ -18264,16 +18225,24 @@ body{padding-top:0 !important;}
     window.applyDbFormationRow.__eiketsuKishinsekiClearModeWrapped=true;
   }
   var oldApplyReachForBonus=(typeof window.applyReachSwapCandidate==='function')?window.applyReachSwapCandidate:null;
-  if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiClearModeWrapped){
+  if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiReachRefreshWrapped){
     window.applyReachSwapCandidate=function(){
-      setBonusAppliedMode(false);
-      try{ clearBonusCombinedPanel(); }catch(e){}
-      try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
+      var panel=document.getElementById('eiketsuKishinsekiCombinedPanel');
+      var resultBox=document.getElementById('eiketsuKishinsekiCombinedResult');
+      var wasApplied=!!(panel && panel.style.display!=='none' && resultBox && resultBox.children.length);
       var ret = oldApplyReachForBonus.apply(this, arguments);
+      try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
+      if(wasApplied){
+        Promise.resolve(loadBonusMultiplierMap()).then(function(){
+          var stats=null;
+          try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }catch(e){ console.error('英傑差し替え後の込み合計再計算失敗',e); }
+          drawBonusStats(stats, stats?'転生＆見聞録＆鬼神石込み / 反映済み':'転生＆見聞録＆鬼神石込み / 計算条件不足');
+        }).catch(function(e){ console.error('英傑差し替え後の込み合計更新失敗',e); });
+      }
       deferBonusPlacementRefresh();
       return ret;
     };
-    window.applyReachSwapCandidate.__eiketsuKishinsekiClearModeWrapped=true;
+    window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
   }
   function onBonusChanged(){
     updateNote();
