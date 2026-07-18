@@ -40,7 +40,7 @@
 
 <style>:root{--bg:#120d09;--card:#1d1710;--line:#7c5a24;--gold:#e7bd5c;--text:#f4ead2;--muted:#cbb98f;--red:#7a2118;--green:#71e49a}body{margin:0;background:radial-gradient(circle at top,#2b170c,#070605 70%);color:var(--text);font-family:system-ui,"Yu Gothic",sans-serif}header{padding:16px;background:#1b0f08;border-bottom:1px solid var(--gold);position:sticky;top:0;z-index:5}main{max-width:1280px;margin:auto;padding:14px}.card{background:rgba(29,23,16,.94);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}select,input,button{font:inherit}select,input{background:#080706;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}button{background:linear-gradient(#8b2d20,#56150f);color:#fff;border:1px solid var(--gold);border-radius:8px;padding:9px 12px;cursor:pointer}.small{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.slot{border:1px solid var(--line);border-radius:12px;background:#0d0a07;padding:10px;min-height:84px}.slot strong{color:var(--gold)}.slot select{width:100%;margin-top:6px}.formation{position:relative;min-height:420px;background:rgba(0,0,0,.25);border-radius:14px;border:1px solid #3a2a13;overflow:hidden}.fslot{position:absolute;width:170px;min-height:74px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:12px;background:#18120d;padding:8px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}.fslot.active{box-shadow:0 0 16px rgba(231,189,92,.7);border-color:var(--gold)}.line{position:absolute;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform-origin:left center;opacity:.55}.line.hit{height:4px;opacity:1;box-shadow:0 0 12px var(--gold)}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 7px;margin:2px;font-size:12px;background:#0c0906}.hitText{color:var(--green);font-weight:700}.warnText{color:#ffd166}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #3a2a13;padding:6px;vertical-align:top}th{background:#24170b;color:var(--gold)}@media(max-width:800px){.grid{grid-template-columns:1fr}.fslot{width:132px;font-size:12px}}.lineLabel{position:absolute;transform:translate(-50%,-50%);background:rgba(16,10,5,.86);border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:3px 8px;font-size:12px;white-space:nowrap;box-shadow:0 0 12px rgba(231,189,92,.35);pointer-events:none}.fslot.hitSlot{box-shadow:0 0 20px rgba(231,189,92,.9),inset 0 0 14px rgba(231,189,92,.18);border-color:var(--gold)}.activatedBanner{border:1px solid var(--gold);background:linear-gradient(90deg,rgba(122,33,24,.75),rgba(35,21,10,.92));border-radius:12px;padding:10px;margin:8px 0;box-shadow:0 0 18px rgba(231,189,92,.25)}.activatedBanner strong{color:var(--gold)}@keyframes sparkLine{0%{opacity:.45;filter:brightness(1)}50%{opacity:1;filter:brightness(1.8)}100%{opacity:.65;filter:brightness(1.15)}}.line.hit{animation:sparkLine 1.15s ease-in-out infinite}.mobileActionBar{display:none}@media(max-width:760px){body{padding-bottom:82px}header{padding:12px 10px}header h1{font-size:20px;margin:0 0 4px}main{padding:8px}.card{padding:10px;border-radius:12px;margin-bottom:10px}.row{gap:6px}.row input,.row select,.row button{width:100%;box-sizing:border-box;min-height:42px}.badge{font-size:10px;padding:1px 5px}.formation{min-height:360px}.fslot{width:112px;min-height:62px;font-size:11px;padding:6px}.lineLabel{font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}.mobileActionBar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;position:fixed;left:0;right:0;bottom:0;padding:8px;background:rgba(16,10,5,.94);border-top:1px solid var(--gold);z-index:50;box-shadow:0 -8px 24px rgba(0,0,0,.35)}.mobileActionBar button{min-height:44px;font-size:13px;border-radius:10px}}.statResultGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}.statResultCell{background:#0d0a07;border:1px solid #7a5a29;border-radius:10px;padding:8px;text-align:center}.statResultCell .name{font-size:12px;color:#cbb98f}.statResultCell .value{font-size:22px;color:#ffe1a1;font-weight:800}.statResultCell.zero .value{color:#8b806b}.statSourceNote{font-size:12px;color:#cbb98f;margin-top:8px}.effectTargetTable{margin-top:10px}.fslot.emptySlot{border-style:dashed;color:#cbb98f}#autoFillBtn{display:none !important}.totalStatPanel{position:sticky;top:58px;z-index:20;border:1px solid var(--gold);background:linear-gradient(90deg,rgba(122,33,24,.90),rgba(22,14,8,.96));border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 10px 28px rgba(0,0,0,.35),0 0 20px rgba(231,189,92,.18)}.totalStatHeader{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.totalStatHeader strong{color:#ffe1a1;font-size:18px}.totalStatMode{font-size:12px;color:#cbb98f}.totalStatGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}.totalStatItem{background:#0d0a07;border:1px solid #7a5a29;border-radius:10px;padding:8px;text-align:center}.totalStatItem .statName{font-size:12px;color:#cbb98f}.totalStatItem .statVal{font-size:24px;color:#ffe1a1;font-weight:900;line-height:1.15}.totalStatItem.zero .statVal{color:#7d735e}.totalStatItem.changed{animation:statFlash .35s ease}@keyframes statFlash{0%{transform:scale(1);box-shadow:0 0 0 rgba(231,189,92,0)}50%{transform:scale(1.05);box-shadow:0 0 18px rgba(231,189,92,.45)}100%{transform:scale(1);box-shadow:0 0 0 rgba(231,189,92,0)}}.totalEffectMini{margin-top:10px;font-size:12px;color:#f4ead2}.totalEffectMini .badge{margin-bottom:3px}.cleanNote{font-size:12px;color:#cbb98f}.hiddenNoise{display:none !important}@media(max-width:760px){.totalStatPanel{top:0;border-radius:10px;padding:9px}.totalStatGrid{grid-template-columns:repeat(3,1fr);gap:6px}.totalStatItem{padding:6px}.totalStatItem .statVal{font-size:18px}}.bondValueTable{width:100%;margin-top:8px;font-size:12px}.bondValueTable th,.bondValueTable td{white-space:normal}.bondValueUnknown{color:#ffd166}.dbCountButtonBar{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}.dbCountBtn{min-width:132px;border:1px solid #8d6a2f;background:#20150d;color:#f4d38b;border-radius:14px;padding:14px 18px;cursor:pointer;font-size:17px;font-weight:800;line-height:1.35}.dbCountBtn .small{display:block;font-size:12px;font-weight:500;margin-top:3px}.dbCountBtn.active{background:#7a4b16;color:#fff4d5;box-shadow:0 0 14px rgba(244,211,139,.38)}.dbCountBtn.empty{opacity:.55}.dbStatButtonBar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.dbStatBtn{min-width:86px;border:1px solid #6d542a;background:#120d08;color:#f4d38b;border-radius:12px;padding:10px 12px;cursor:pointer;font-size:14px;font-weight:700}.dbStatBtn.active{background:#31521f;color:#ecffe1;border-color:#71e49a;box-shadow:0 0 10px rgba(113,228,154,.22)}.dbPriorityControls{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:8px;margin:10px 0}.dbPriorityGroup{border:1px solid rgba(244,211,139,.18);border-radius:10px;padding:8px;background:rgba(0,0,0,.14)}.dbPriorityGroup label{display:block;font-size:12px;color:#cbb98f;margin-bottom:5px}.dbPriorityGroup select{width:100%;margin-bottom:6px}.dbListControls{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}.dbListBox{max-height:520px;overflow:auto;border:1px solid rgba(244,211,139,.18);border-radius:10px}.dbListTable{width:100%;font-size:12px;border-collapse:collapse}.dbListTable th{position:sticky;top:0;background:#1c120b;z-index:1}.dbListTable tr:hover{background:rgba(244,211,139,.08)}.dbListTable .applyBtn{padding:5px 8px;border-radius:6px;border:1px solid #71e49a;background:#17351f;color:#d8ffe0;cursor:pointer;white-space:nowrap}.dbListStat{white-space:nowrap;font-size:11px;color:#f4ead2}.dbListBonds{max-width:360px;white-space:normal;color:#f4d38b}.dbPlacementMini{display:grid;grid-template-columns:repeat(6,minmax(70px,1fr));gap:4px;min-width:520px}.dbPlacementMini span{border:1px solid rgba(244,211,139,.18);border-radius:6px;padding:3px;background:rgba(0,0,0,.18)}.dbListNote{color:#d9c497;font-size:12px;margin:6px 0}@media(max-width:760px){.dbListControls{grid-template-columns:1fr}.dbPlacementMini{min-width:760px}.dbListBox{max-height:420px}}#totalEffectMini,#bondValuePanel{display:none !important}.activatedBondList{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}.activatedBondCard{flex:1 1 220px;border:1px solid #7a5a29;border-radius:10px;background:#0d0a07;padding:8px;min-width:0}.activatedBondName{color:#ffe1a1;font-weight:800;margin-bottom:4px}.activatedBondMeta{font-size:12px;color:#cbb98f}.badgeRow{display:flex;flex-wrap:wrap;gap:3px;align-items:center}.dbListBonds{display:flex;flex-wrap:wrap;gap:3px;align-items:flex-start}.formation{min-height:460px;overflow:hidden}.fslot{box-sizing:border-box;max-width:24vw;min-height:70px;overflow:hidden}.fslot .small{display:block;max-height:32px;overflow:hidden;line-height:1.25}@media(max-width:760px){.formation{min-height:430px}.fslot{width:104px;max-width:30vw;min-height:58px;padding:5px;font-size:10px}.fslot .small{max-height:26px;font-size:9px}.activatedBondList{gap:6px}.activatedBondCard{flex:1 1 145px;padding:6px}}#totalEffectMini,#bondValuePanel,#lineDetails,#lineDetailsBox,.jinpo-line-detail,.result-line-detail,.totalEffectMini,.bondValueTable,.effectTargetTable{display:none !important}.dbListTable{table-layout:fixed;min-width:1260px}.dbListTable th:nth-child(1),.dbListTable td:nth-child(1){width:58px}.dbListTable th:nth-child(2),.dbListTable td:nth-child(2){width:64px}.dbListTable th:nth-child(3),.dbListTable td:nth-child(3){width:48px}.dbListTable th:nth-child(4),.dbListTable td:nth-child(4){width:520px}.dbListTable th:nth-child(5),.dbListTable td:nth-child(5){width:360px}.dbListTable th:nth-child(6),.dbListTable td:nth-child(6){width:520px}.dbListBondsCell{min-width:360px;white-space:normal !important;writing-mode:horizontal-tb !important;text-orientation:mixed !important}.dbListBonds,.dbListBonds .badge,.dbListTable .badge{writing-mode:horizontal-tb !important;text-orientation:mixed !important}.dbListBonds{display:flex !important;flex-direction:row !important;flex-wrap:wrap !important;gap:4px;align-items:center;max-width:none !important;min-width:340px;white-space:normal !important}.dbListBonds .badge,.dbListTable .badge{display:inline-flex !important;flex:0 0 auto;width:auto !important;min-width:0 !important;max-width:none !important;white-space:nowrap !important;line-height:1.35}.dbListStat{display:block;min-width:500px;white-space:nowrap !important;overflow:visible}.formation{position:relative !important;min-height:280px !important;overflow:hidden !important}.line{z-index:1}.lineLabel{z-index:3}.fslot{z-index:2;box-sizing:border-box;width:170px;max-width:170px !important}@media(max-width:760px){.formation{min-height:500px !important}.fslot{width:116px;max-width:116px !important}.dbListTable{min-width:1180px}}.formation{min-height:560px !important}.lineLabel{display:none !important}#formationView .lineLabel{display:none !important}
 .eiketsuKishinsekiModalBackdrop{overflow:hidden!important}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiBody{min-height:560px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiMain{padding:12px 18px 10px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiSubTitle{font-size:24px;margin-bottom:10px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiRows{gap:4px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiRow{grid-template-columns:118px 86px 1fr;gap:8px;min-height:32px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiName{font-size:21px}.eiketsuKishinsekiModal[data-panel="kishin"] .eiketsuKishinsekiValue{font-size:18px}.eiketsuKishinsekiChoices.kishinChoices{grid-template-columns:repeat(25,13px);gap:3px}.eiketsuKishinsekiChoices.kishinChoices .eiketsuKishinsekiChoice,.eiketsuKishinsekiChoices.kishinChoices .eiketsuKishinsekiChoice span{width:13px;height:20px}.eiketsuKishinsekiChoice.stepGroup1 span{border-color:#304733}.eiketsuKishinsekiChoice.stepGroup2 span{border-color:#4b4a29}.eiketsuKishinsekiChoice.stepGroup3 span{border-color:#4d3429}.eiketsuKishinsekiChoice.stepGroup1 input:checked+span,.eiketsuKishinsekiChoice.stepGroup1 span.filled{background:linear-gradient(#9edb72,#6eaa45);border-color:#416d36;box-shadow:inset 0 0 5px rgba(255,255,255,.25),0 0 5px rgba(134,220,96,.38)}.eiketsuKishinsekiChoice.stepGroup2 input:checked+span,.eiketsuKishinsekiChoice.stepGroup2 span.filled{background:linear-gradient(#d8c86c,#a79234);border-color:#756729;box-shadow:inset 0 0 5px rgba(255,255,255,.25),0 0 5px rgba(230,205,85,.38)}.eiketsuKishinsekiChoice.stepGroup3 input:checked+span,.eiketsuKishinsekiChoice.stepGroup3 span.filled{background:linear-gradient(#e89563,#b05d35);border-color:#7b402b;box-shadow:inset 0 0 5px rgba(255,255,255,.25),0 0 5px rgba(240,130,75,.38)}
-@media(max-width:900px){.dbPriorityControls{grid-template-columns:1fr}.dbCountBtn{min-width:104px;font-size:15px;padding:12px}.dbStatBtn{min-width:72px}}html,body{width:100%;max-width:none !important;overflow-x:hidden !important}main{max-width:none !important;width:100% !important;box-sizing:border-box;margin:0 !important;padding-left:8px !important;padding-right:8px !important}.card{box-sizing:border-box;width:100%}#dbCountBrowserCard{width:100%}.dbListTable .applyBtn{background:linear-gradient(#9a2e21,#64160f) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:8px !important;padding:7px 10px !important;font-weight:800 !important;white-space:nowrap !important}.dbListBox{overflow-x:hidden !important;overflow-y:auto !important;width:100% !important;max-width:100% !important}.dbListTable{width:100% !important;min-width:0 !important;table-layout:fixed !important;font-size:11px !important}.dbListTable th,.dbListTable td{box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;vertical-align:top}.dbListTable th:nth-child(1),.dbListTable td:nth-child(1){width:58px !important}.dbListTable th:nth-child(2),.dbListTable td:nth-child(2){width:54px !important}.dbListTable th:nth-child(3),.dbListTable td:nth-child(3){width:74px !important;white-space:nowrap !important}.dbListTable th:nth-child(4),.dbListTable td:nth-child(4){width:32% !important}.dbListTable th:nth-child(5),.dbListTable td:nth-child(5){width:28% !important}.dbListTable th:nth-child(6),.dbListTable td:nth-child(6){width:auto !important}.dbListTable td:nth-child(3),.dbListTable th:nth-child(3){white-space:nowrap !important}.dbPlacementMini{display:grid !important;grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:3px !important;min-width:0 !important;width:100% !important}.dbPlacementMini span{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;min-width:0 !important;padding:3px 4px !important}.dbListBondsCell,.dbListBonds,.dbListBonds .badge,.dbListTable .badge{writing-mode:horizontal-tb !important;text-orientation:mixed !important}.dbListBonds{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;gap:3px !important;align-items:center !important;min-width:0 !important;max-width:100% !important;overflow:hidden !important;white-space:nowrap !important}.dbListBonds .badge,.dbListTable .badge{display:inline-flex !important;flex:0 1 auto !important;min-width:0 !important;max-width:100% !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.dbListStat{display:block !important;min-width:0 !important;max-width:100% !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;font-size:10px !important}.dbCountButtonBar,.dbStatButtonBar{width:100%}.dbCountBtn{min-width:132px !important}.dbStatBtn{min-width:74px !important}.dbCountBtn:hover,.dbStatBtn:hover,.dbResetBtn:hover,.dbListTable .applyBtn:hover{filter:brightness(1.18);box-shadow:0 0 16px rgba(231,189,92,.55),inset 0 0 10px rgba(231,189,92,.16) !important;transform:translateY(-1px)}.dbCountBtn,.dbStatBtn,.dbResetBtn,.dbListTable .applyBtn{transition:filter .16s ease,box-shadow .16s ease,transform .16s ease}.dbResetBtn{background:linear-gradient(#51341a,#21140b);border:1px solid #e7bd5c;color:#fff4d5;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:800;white-space:nowrap}.dbListControls{grid-template-columns:minmax(260px,1fr) auto !important}@media(max-width:760px){.dbListControls{grid-template-columns:1fr !important}}.dbFormationSelectTop{margin:0 0 10px 0;padding:8px;border:1px solid rgba(244,211,139,.22);border-radius:10px;background:rgba(0,0,0,.14)}.dbFormationSelectTop .row{margin:0}.dbFormationSelectTop label{color:#f4d38b;font-weight:800}.dbListTwoRow{table-layout:fixed !important}.dbListTwoRow th:nth-child(1),.dbListTwoRow td:nth-child(1){width:58px !important}.dbListTwoRow th:nth-child(2),.dbListTwoRow td:nth-child(2){width:58px !important}.dbListTwoRow th:nth-child(3),.dbListTwoRow td:nth-child(3){width:80px !important;white-space:nowrap !important}.dbListTwoRow th:nth-child(4),.dbListTwoRow td:nth-child(4){width:40% !important}.dbListTwoRow th:nth-child(5),.dbListTwoRow td:nth-child(5){width:auto !important}.dbStatRow td{background:rgba(60,35,18,.42);border-top:0 !important;padding:5px 8px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.dbStatLabel{display:inline-block;color:#ffd166;font-weight:800;margin-right:8px}.dbStatRow .dbListStat{display:inline !important;white-space:nowrap !important}.dbMainRow td{border-bottom:0 !important}#calcBtn,#saveFormationBtn,#saveName{display:none !important}.dbFormationSelectTop{margin:0 0 14px 0 !important;padding:14px !important;border:2px solid rgba(231,189,92,.55) !important;border-radius:14px !important;background:linear-gradient(90deg,rgba(70,35,14,.65),rgba(12,8,5,.35)) !important}.dbFormationSelectTop .row{gap:12px !important}.dbFormationSelectTop label{font-size:24px !important;color:#ffe1a1 !important;font-weight:900 !important;display:flex !important;align-items:center !important;gap:12px !important}#formationSelect{font-size:26px !important;font-weight:900 !important;padding:12px 18px !important;min-width:170px !important;border:2px solid #e7bd5c !important;border-radius:12px !important;background:#080706 !important;color:#fff4d5 !important}.totalStatPanel{position:sticky !important;top:0 !important;z-index:9999 !important;background:linear-gradient(180deg,rgba(60,10,10,.98),rgba(35,8,8,.96)) !important;box-shadow:0 4px 18px rgba(0,0,0,.45) !important}.totalStatPanel{position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;z-index:20000 !important;box-sizing:border-box !important;margin:0 !important;border-radius:0 0 12px 12px !important;background:linear-gradient(180deg,rgba(60,10,10,.98),rgba(35,8,8,.96)) !important;box-shadow:0 6px 22px rgba(0,0,0,.55) !important}body{padding-top:132px !important}@media(max-width:760px){body{padding-top:150px !important}}#reachList table{width:100%;table-layout:fixed}#reachList th:nth-child(1),#reachList td:nth-child(1){width:110px}#reachList th:nth-child(2),#reachList td:nth-child(2){width:32%}#reachList th:nth-child(3),#reachList td:nth-child(3){width:90px;white-space:nowrap}#reachList td{vertical-align:top}#dbListSearch{display:none !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:minmax(360px,520px) minmax(420px,1fr) !important;gap:16px !important;align-items:start !important}.dbFormationSelectTop>.row{align-self:start !important}.formationMiniPanel{margin:0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.38) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;transform:none !important;width:100% !important}.formationMiniPanel h2{font-size:18px !important;margin:0 0 6px 0 !important}.formationMiniPanel .formation{min-height:330px !important;height:330px !important}.formationMiniPanel .fslot{width:138px !important;max-width:138px !important;min-height:58px !important;padding:6px !important;font-size:12px !important}.formationMiniPanel .fslot .small{font-size:10px !important;max-height:24px !important}.dbListControls{grid-template-columns:auto !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel .formation{min-height:300px !important;height:300px !important}}.formationMiniPanel .formation{min-height:420px !important;height:420px !important}.formationMiniPanel .fslot{width:156px !important;max-width:156px !important;min-height:66px !important;font-size:13px !important}.formationMiniPanel .formation{min-height:420px !important;height:420px !important;overflow:hidden !important}.formationMiniPanel{min-height:460px !important}#heroSearch,#dbListSearch{display:none !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:minmax(340px,500px) minmax(520px,1fr) !important;gap:18px !important;align-items:start !important}.formationMiniPanel{min-height:465px !important;margin:0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.38) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;transform:none !important;width:100% !important}#formationView{height:420px !important;min-height:420px !important;overflow:hidden !important;position:relative !important}#formationView .line{position:absolute !important;height:3px !important;background:linear-gradient(90deg,transparent,var(--gold),transparent) !important;transform-origin:left center !important;opacity:.65 !important;z-index:1 !important}#formationView .fslot{position:absolute !important;width:152px !important;max-width:152px !important;min-height:64px !important;transform:translate(-50%,-50%) !important;z-index:2 !important}#formationView .fslot .small{font-size:10px !important;max-height:24px !important;overflow:hidden !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}}.reachSwapTable{width:100%;table-layout:fixed;font-size:11px}.reachSwapTable th,.reachSwapTable td{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;vertical-align:middle !important;padding:4px 6px !important;line-height:1.25 !important}.reachSwapTable th:nth-child(1),.reachSwapTable td:nth-child(1){width:190px !important}.reachSwapTable th:nth-child(2),.reachSwapTable td:nth-child(2){width:15% !important}.reachSwapTable th:nth-child(3),.reachSwapTable td:nth-child(3){width:90px !important}.reachSwapTable th:nth-child(4),.reachSwapTable td:nth-child(4){width:34% !important}.reachSwapTable th:nth-child(5),.reachSwapTable td:nth-child(5){width:35% !important}.reachInlineBadges{display:inline-flex !important;flex-wrap:nowrap !important;gap:3px !important;max-width:100% !important;overflow:hidden !important;vertical-align:middle !important}.reachInlineBadges .badge{white-space:nowrap !important;flex:0 0 auto !important}#dbStatButtons{display:none !important}.dbCountBtn .small{display:none !important}#formationSelect{min-width:190px !important;min-height:64px !important;font-size:20px !important;padding:10px 18px !important}#formationSection,.formationSection,#formationArea,#formationPanel{padding-top:8px !important;padding-bottom:8px !important}.dbFormationSelectTop{min-height:0 !important;padding-top:8px !important;padding-bottom:8px !important;align-items:start !important}.dbFormationSelectTop>.row{min-height:0 !important;padding-top:0 !important;padding-bottom:0 !important;align-items:flex-start !important}#formationSelect{min-width:220px !important;min-height:70px !important;font-size:24px !important;padding:12px 20px !important}.formationMiniPanel{min-height:230px !important;height:230px !important;padding:8px !important}.formationMiniPanel .formation,#formationView{min-height:170px !important;height:170px !important}.formationMiniPanel .fslot,#formationView .fslot{min-height:48px !important}.dbFormationSelectTop{grid-template-columns:360px minmax(760px,1fr) !important;align-items:start !important;padding:10px !important}.dbFormationSelectTop>.row{align-self:start !important;min-height:120px !important;height:auto !important}.formationMiniPanel{min-height:230px !important;height:auto !important;padding:8px !important}.formationMiniPanel h2{margin:0 0 6px 0 !important}#formationView,.formationMiniPanel .formation{min-height:230px !important;height:230px !important;overflow:visible !important}#formationView .fslot{min-height:58px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel{min-height:460px !important}#formationView,.formationMiniPanel .formation{min-height:410px !important;height:410px !important}}.dbFormationSelectTop{display:grid !important;grid-template-columns:300px minmax(620px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:0 !important}.dbFormationSelectTop>.row{align-self:start !important;display:flex !important;flex-wrap:wrap !important;gap:8px !important;min-height:0 !important;height:auto !important;padding:0 !important;margin:0 !important}.dbFormationSelectTop label{font-size:20px !important;line-height:1.1 !important}#formationSelect{min-width:210px !important;min-height:64px !important;font-size:22px !important;padding:10px 18px !important}.formationMiniPanel{min-height:280px !important;height:280px !important;padding:6px !important;box-sizing:border-box !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:16px !important;line-height:1.1 !important}#formationView,.formationMiniPanel .formation{min-height:230px !important;height:230px !important;overflow:hidden !important}#formationView .fslot{width:132px !important;max-width:132px !important;min-height:50px !important;padding:5px !important;font-size:11px !important}#formationView .fslot .small{font-size:9px !important;max-height:20px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel{height:300px !important;min-height:300px !important}#formationView,.formationMiniPanel .formation{height:250px !important;min-height:250px !important}}.dbFormationSelectTop>.row{min-height:180px !important;height:180px !important;padding:10px !important;margin:0 !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important}.formationMiniPanel{min-height:180px !important;height:180px !important;padding:10px !important;margin:0 !important;box-sizing:border-box !important;display:grid !important;grid-template-rows:auto 1fr !important;border-radius:14px !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1 !important}#formationView,.formationMiniPanel .formation{min-height:145px !important;height:145px !important;width:100% !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:112px !important;max-width:112px !important;min-height:44px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important;max-height:16px !important}#formationSelect{min-width:210px !important;min-height:60px !important;font-size:22px !important;padding:8px 16px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.dbFormationSelectTop>.row,.formationMiniPanel{height:auto !important;min-height:160px !important}#formationView,.formationMiniPanel .formation{min-height:150px !important;height:150px !important}}.dbFormationSelectTop>.row{grid-column:1 !important;min-height:0 !important;height:auto !important;padding:6px !important;margin:0 !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important}#formationSelect{min-width:220px !important;min-height:62px !important;font-size:23px !important;padding:9px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;min-height:150px !important;height:150px !important;padding:5px !important;margin:0 !important;box-sizing:border-box !important;overflow:visible !important;border-radius:12px !important}.formationMiniPanel h2{margin:0 0 2px 0 !important;font-size:13px !important;line-height:1 !important}#formationView,.formationMiniPanel .formation{width:100% !important;min-height:125px !important;height:125px !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:108px !important;max-width:108px !important;min-height:40px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important;max-height:15px !important}#dbCountBrowserCard>h2{margin-top:8px !important}@media(max-width:980px){.dbFormationSelectTop{grid-template-columns:1fr !important;height:auto !important;min-height:0 !important}.formationMiniPanel{grid-column:1 !important;height:150px !important;min-height:150px !important}}.dbFormationSelectTop{display:grid !important;grid-template-columns:320px minmax(620px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:260px !important;height:260px !important;overflow:visible !important;box-sizing:border-box !important}.dbFormationSelectTop>.row{grid-column:1 !important;align-self:start !important;min-height:150px !important;height:150px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important}#formationSelect{min-width:220px !important;min-height:62px !important;font-size:22px !important;padding:9px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;min-height:250px !important;height:250px !important;padding:6px !important;margin:0 !important;overflow:visible !important;box-sizing:border-box !important}#formationView,.formationMiniPanel .formation{min-height:220px !important;height:220px !important;overflow:visible !important;width:100% !important}#formationView .fslot{width:118px !important;max-width:118px !important;min-height:48px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important}#dbCountBrowserCard{margin-top:4px !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:300px minmax(700px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:300px !important;height:300px !important;box-sizing:border-box !important;background:transparent !important;border:0 !important;overflow:visible !important}.dbFormationSelectTop>.row{grid-column:1 !important;width:100% !important;min-height:0 !important;height:auto !important;padding:10px !important;margin:0 !important;align-self:start !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:linear-gradient(90deg,rgba(70,35,14,.65),rgba(12,8,5,.35)) !important}.dbFormationSelectTop label{font-size:20px !important;line-height:1.1 !important;margin:0 !important}#formationSelect{min-width:210px !important;min-height:64px !important;font-size:22px !important;padding:10px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;width:100% !important;min-height:300px !important;height:300px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;overflow:visible !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1.1 !important}#formationView,.formationMiniPanel .formation{min-height:268px !important;height:268px !important;width:100% !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:126px !important;max-width:126px !important;min-height:52px !important;padding:5px !important;font-size:11px !important}#formationView .fslot .small{font-size:9px !important;max-height:18px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important;height:auto !important;min-height:0 !important}.formationMiniPanel{grid-column:1 !important;height:300px !important;min-height:300px !important}#formationView,.formationMiniPanel .formation{height:268px !important;min-height:268px !important}}header{position:relative !important;min-height:230px !important;box-sizing:border-box !important;padding:14px 16px !important}header h1{display:inline-block !important;margin:26px 0 10px 0 !important;padding:12px 24px !important;border:1px solid rgba(231,189,92,.75) !important;border-radius:12px !important;background:rgba(13,10,7,.72) !important;font-size:28px !important;line-height:1.15 !important}header>.small{width:360px !important;max-width:360px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}header>.formationMiniPanel{position:absolute !important;left:430px !important;right:14px !important;top:52px !important;height:165px !important;min-height:165px !important;padding:6px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;overflow:visible !important}header>.formationMiniPanel h2{margin:0 0 3px 0 !important;font-size:13px !important;line-height:1 !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{width:100% !important;height:140px !important;min-height:140px !important;overflow:visible !important;border-radius:10px !important}header>.formationMiniPanel #formationView .fslot{width:108px !important;max-width:108px !important;min-height:40px !important;padding:4px !important;font-size:10px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important}#dbCountBrowserCard .dbFormationSelectTop{display:block !important;height:88px !important;min-height:88px !important;padding:6px 8px !important;margin-bottom:8px !important;box-sizing:border-box !important;overflow:visible !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:12px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:74px !important;min-height:74px !important;width:360px !important;display:flex !important;align-items:flex-end !important;align-content:flex-end !important;gap:8px !important;padding:0 !important;margin:0 !important;box-sizing:border-box !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop label{font-size:18px !important;line-height:1.05 !important;margin:0 !important;display:flex !important;align-items:flex-end !important;gap:8px !important}#formationSelect{min-width:210px !important;min-height:56px !important;font-size:22px !important;padding:8px 14px !important}#clearBtn{align-self:flex-end !important;min-height:44px !important;padding:8px 12px !important}#dbCountBrowserCard>h2{margin-top:6px !important}@media(max-width:1100px){header{min-height:360px !important}header>.formationMiniPanel{position:relative !important;left:auto !important;right:auto !important;top:auto !important;margin-top:8px !important;height:190px !important;min-height:190px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:160px !important;min-height:160px !important}}header h1{display:block !important;margin:24px 0 6px 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header{min-height:235px !important}header>.formationMiniPanel{top:44px !important;height:178px !important;min-height:178px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:154px !important;min-height:154px !important}header>.formationMiniPanel #formationView .fslot{width:88px !important;max-width:88px !important;min-height:30px !important;padding:3px !important;font-size:8px !important;line-height:1.05 !important}header>.formationMiniPanel #formationView .fslot strong{font-size:9px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:7px !important;max-height:12px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop{height:70px !important;min-height:70px !important;padding:4px 8px !important;margin-bottom:6px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:60px !important;min-height:60px !important;align-items:center !important;align-content:center !important}#dbCountBrowserCard .dbFormationSelectTop label{align-items:center !important}#formationSelect{min-height:48px !important;font-size:20px !important;padding:6px 14px !important}#clearBtn{min-height:38px !important;padding:6px 10px !important}#dbCountBrowserCard .dbFormationSelectTop{height:52px !important;min-height:52px !important;padding:2px 8px !important;margin-top:-14px !important;margin-bottom:2px !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:48px !important;min-height:48px !important;width:auto !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:0 !important;margin:0 !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;font-size:16px !important;line-height:1 !important;margin:0 !important;white-space:nowrap !important}#formationSelect{min-width:190px !important;min-height:44px !important;font-size:19px !important;padding:6px 12px !important}#clearBtn{min-height:36px !important;padding:6px 10px !important;align-self:center !important}#dbCountBrowserCard>h2{margin-top:0 !important}header{min-height:250px !important}header>.formationMiniPanel{top:38px !important;height:200px !important;min-height:200px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:176px !important;min-height:176px !important}header>.formationMiniPanel #formationView .fslot{width:82px !important;max-width:82px !important;min-height:26px !important;padding:2px !important;font-size:7px !important;line-height:1 !important}header>.formationMiniPanel #formationView .fslot strong{font-size:8px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:6px !important;max-height:10px !important;line-height:1 !important}header{min-height:205px !important;padding-top:10px !important;padding-bottom:8px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:28px !important;line-height:1.15 !important}header>.small{max-width:330px !important;width:330px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}header>.formationMiniPanel{position:absolute !important;left:390px !important;right:12px !important;top:48px !important;height:140px !important;min-height:140px !important;padding:5px !important;margin:0 !important;box-sizing:border-box !important}header>.formationMiniPanel h2{font-size:12px !important;line-height:1 !important;margin:0 0 2px 0 !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:116px !important;min-height:116px !important;overflow:visible !important}header>.formationMiniPanel #formationView .fslot{width:76px !important;max-width:76px !important;min-height:24px !important;padding:2px !important;font-size:7px !important;line-height:1 !important}header>.formationMiniPanel #formationView .fslot .small{font-size:6px !important;max-height:9px !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop{display:inline-flex !important;width:auto !important;min-width:0 !important;height:auto !important;min-height:0 !important;padding:0 !important;margin:0 0 4px 0 !important;border:0 !important;background:transparent !important;box-shadow:none !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:auto !important;min-width:0 !important;height:auto !important;min-height:0 !important;display:flex !important;align-items:center !important;gap:8px !important;padding:0 !important;margin:0 !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;white-space:nowrap !important;font-size:16px !important;line-height:1 !important}#formationSelect{min-width:180px !important;min-height:42px !important;font-size:18px !important;padding:5px 12px !important}#clearBtn{min-height:34px !important;padding:5px 10px !important}#dbCountBrowserCard>h2{margin-top:4px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:30px !important;color:#ffe1a1 !important}header{min-height:150px !important;padding-bottom:8px !important}header>.formationMiniPanel{display:none !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px minmax(520px,760px) 1fr !important;gap:12px !important;align-items:start !important;height:280px !important;min-height:280px !important;padding:8px !important;margin:0 0 8px 0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:12px !important;background:rgba(0,0,0,.10) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:100% !important;height:auto !important;min-height:0 !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:10px !important;background:rgba(40,20,10,.32) !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;white-space:nowrap !important;font-size:18px !important;line-height:1 !important}#formationSelect{min-width:200px !important;min-height:50px !important;font-size:20px !important;padding:7px 14px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;display:block !important;position:relative !important;left:auto !important;right:auto !important;top:auto !important;width:100% !important;height:264px !important;min-height:264px !important;padding:6px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.18) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;height:236px !important;min-height:236px !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:112px !important;max-width:112px !important;min-height:44px !important;padding:4px !important;font-size:10px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:320px 620px 1fr !important;gap:12px !important;align-items:start !important;height:360px !important;min-height:360px !important;padding:0 !important;margin:0 0 8px 0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:320px !important;height:auto !important;min-height:104px !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:10px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(40,20,10,.32) !important}#formationSelect{min-width:195px !important;min-height:48px !important;font-size:20px !important;padding:7px 12px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;display:block !important;position:relative !important;left:auto !important;right:auto !important;top:auto !important;width:620px !important;height:360px !important;min-height:360px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.65) !important;border-radius:12px !important;background:rgba(0,0,0,.18) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;height:330px !important;min-height:330px !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:118px !important;max-width:118px !important;min-height:52px !important;padding:5px !important;font-size:11px !important;line-height:1.08 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{font-size:13px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:10px !important;max-height:23px !important;line-height:1.05 !important}header h1{display:block !important;width:max-content !important;max-width:220px !important;margin:18px 0 4px 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;text-align:left !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header>.small{display:block !important;width:260px !important;max-width:260px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;text-align:left !important}header{min-height:0 !important;height:auto !important;padding:8px 8px 6px 8px !important;margin:0 !important;border:0 !important;border-bottom:1px solid rgba(231,189,92,.65) !important;background:transparent !important;box-shadow:none !important}header h1{display:block !important;width:auto !important;max-width:none !important;margin:6px 0 4px 0 !important;padding:0 !important;border:0 !important;outline:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;text-align:left !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header>.small{display:block !important;width:300px !important;max-width:300px !important;margin:0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;text-align:left !important}header{min-height:8px !important;height:auto !important;padding:2px 8px !important;margin:0 !important}#dbCountBrowserCard{padding-top:4px !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px 1fr !important;gap:12px !important;align-items:start !important;padding:0 !important;margin:0 0 6px 0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;min-height:0 !important;height:auto !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:330px !important;min-height:0 !important;height:auto !important;padding:8px !important;margin:0 !important;display:flex !important;align-items:flex-start !important;gap:8px !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(40,20,10,.32) !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;width:330px !important;display:flex !important;gap:8px !important;margin:6px 0 0 0 !important;padding:0 !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn{flex:1 1 0 !important;min-width:0 !important;height:44px !important;padding:6px 8px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;justify-self:end !important;align-self:start !important;margin:0 !important}#dbCountBrowserCard>h2{margin:4px 0 6px 0 !important}#dbCountBrowserCard>h2+#dbCountButtons{display:none !important}#dbSortControls,.dbSortControls,#dbFilterControls,.dbFilterControls{margin-top:4px !important}body{gap:0 !important}#dbCountBrowserCard{margin-top:2px !important;padding-top:0 !important}#dbCountBrowserCard .dbFormationSelectTop{margin-top:0 !important;padding-top:0 !important;gap:6px !important;align-items:start !important}#dbCountBrowserCard .dbFormationSelectTop>.row{margin-top:-10px !important;padding-top:6px !important;padding-bottom:6px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{margin-top:-14px !important;align-self:start !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{margin-top:2px !important}#dbCountBrowserCard>h2{margin:2px 0 4px 0 !important;line-height:1 !important}.dbSortControls,#dbSortControls{margin-top:0 !important;padding-top:0 !important}section,.card,.panel{margin-top:4px !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px 1fr !important;grid-template-rows:auto !important;column-gap:12px !important;row-gap:0 !important;align-items:start !important;padding:0 !important;margin:0 0 6px 0 !important;min-height:0 !important;height:auto !important;border:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;grid-row:1 !important;margin:0 !important;padding:8px !important;width:330px !important;height:auto !important;min-height:0 !important;align-self:start !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;grid-row:2 !important;width:330px !important;margin:6px 0 0 0 !important;padding:0 !important;display:flex !important;gap:8px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;grid-row:1 / span 2 !important;justify-self:end !important;align-self:start !important;margin:0 !important;width:620px !important;height:236px !important;min-height:236px !important;padding:6px !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{margin:0 0 4px 0 !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:208px !important;min-height:208px !important;overflow:visible !important}#dbCountBrowserCard>h2{margin:8px 0 6px 0 !important;line-height:1.1 !important}#dbCountBrowserCard{padding-top:0 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{height:290px !important;min-height:290px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:258px !important;min-height:258px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{border-bottom:1px solid rgba(231,189,92,.65) !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:300px !important;min-height:300px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{height:330px !important;min-height:330px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:96px !important;max-width:96px !important;min-height:42px !important;padding:3px !important;font-size:10px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{font-size:11px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important;line-height:1.05 !important}#formationView{position:relative !important;overflow:visible !important}#formationView svg,#formationView .lines,#formationView .formation-lines{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;overflow:visible !important;z-index:1 !important;pointer-events:none !important}#formationView line,#formationView path{stroke:#b68a34 !important;stroke-width:4 !important;opacity:.78 !important}#formationView .fslot{position:absolute !important;z-index:2 !important}#formationView{overflow:visible !important}#formationView .line{display:block !important;z-index:1 !important}#formationView .fslot{z-index:2 !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:330px minmax(760px,1fr) !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:760px !important;max-width:760px !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:380px minmax(860px,1fr) !important;column-gap:18px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:860px !important;max-width:860px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:380px !important}#dbCountBrowserCard .dbFormationSelectTop select{width:200px !important;min-width:200px !important}#dbCountButtons{width:380px !important;display:flex !important;gap:12px !important}#dbCountButtons button{min-width:104px !important;padding:12px 18px !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:420px minmax(0,1fr) !important;column-gap:18px !important;width:100% !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:420px !important;max-width:420px !important;min-width:420px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:100% !important;max-width:none !important;min-width:0 !important;justify-self:stretch !important;grid-column:2 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;max-width:none !important}#formationSelect{width:230px !important;min-width:230px !important;max-width:230px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons,#dbCountButtons{width:420px !important;max-width:420px !important;min-width:420px !important;display:flex !important;gap:12px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn,#dbCountButtons .dbCountBtn,#dbCountButtons button{flex:1 1 0 !important;min-width:120px !important;height:52px !important;padding:10px 18px !important;font-size:16px !important}.reachApplyBtn.dbMissing{background:linear-gradient(#57422a,#20140b) !important;border-color:#ffd166 !important;color:#ffd166 !important}.reachApplyBtn.dbHit::after{content:""}.ownedHeroControl{display:flex !important;flex-wrap:wrap !important;align-items:center !important;gap:6px !important;width:420px !important;max-width:420px !important;min-width:420px !important;margin:6px 0 0 0 !important;padding:0 !important}.ownedHeroBtn{background:linear-gradient(#7a4b16,#2a190d) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:10px !important;padding:8px 12px !important;font-weight:800 !important;cursor:pointer !important;white-space:nowrap !important}.ownedHeroClearBtn{background:linear-gradient(#51341a,#21140b) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:10px !important;padding:8px 10px !important;font-weight:800 !important;cursor:pointer !important;white-space:nowrap !important}.ownedHeroSelected{display:flex !important;flex-wrap:wrap !important;gap:4px !important;min-width:0 !important;flex:1 1 0 !important}.ownedHeroChip{display:inline-flex !important;align-items:center !important;gap:3px !important;border:1px solid #7a5a29 !important;border-radius:999px !important;padding:3px 7px !important;background:#0d0a07 !important;color:#ffe1a1 !important;font-size:12px !important;max-width:130px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.ownedHeroCountNote{color:#cbb98f !important;font-size:12px !important}.ownedHeroCard.selectedOwned{border-color:#71e49a !important;box-shadow:0 0 14px rgba(113,228,154,.35) !important}.ownedHeroReliableNote{color:#cbb98f !important;font-size:12px !important;margin-bottom:8px !important}#dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{grid-column:1 !important;grid-row:2 !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;grid-row:3 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-row:1 / span 3 !important}@media(max-width:760px){.ownedHeroControl,#dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{width:100% !important;min-width:0 !important;max-width:none !important}}.ownedHeroSlotBtn{min-width:126px !important;max-width:132px !important;overflow:hidden !important;text-overflow:ellipsis !important}.ownedHeroSlotBtn.hasOwnedHero{background:linear-gradient(#31521f,#17351f) !important;border-color:#71e49a !important;color:#ecffe1 !important}.ownedHeroBtn:hover,.ownedHeroSlotBtn:hover,.ownedHeroClearBtn:hover{filter:brightness(1.22) !important;box-shadow:0 0 18px rgba(231,189,92,.65),inset 0 0 12px rgba(231,189,92,.18) !important;transform:translateY(-1px) !important}.ownedHeroBtn,.ownedHeroSlotBtn,.ownedHeroClearBtn{transition:filter .16s ease,box-shadow .16s ease,transform .16s ease !important}#ownedHeroControl,.ownedHeroControl,#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroClearBtn{position:relative !important;z-index:26050 !important;pointer-events:auto !important}#ownedHeroControl .ownedHeroSlotBtn{cursor:pointer !important}.appliedDbRowDisplay{margin:6px 0 8px 0 !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:10px !important;background:rgba(0,0,0,.18) !important;padding:8px !important;overflow:hidden !important}.appliedDbRowTitle{color:#ffe1a1 !important;font-weight:900 !important;margin:0 0 6px 0 !important;font-size:14px !important}.appliedDbRowDisplay .dbListTable{margin:0 !important}.appliedDbRowDisplay .dbStatRow td{white-space:nowrap !important}.factor4BunkyokuLegend{display:inline-flex !important;align-items:center !important;gap:8px !important;margin:6px 0 8px 0 !important;padding:6px 10px !important;border:1px solid rgba(255,96,96,.75) !important;border-radius:999px !important;background:rgba(90,0,0,.22) !important;color:#ffd6d6 !important;font-size:12px !important;font-weight:800 !important;box-shadow:0 0 14px rgba(255,60,60,.22) !important}.factor4BunkyokuGlow,#formationView .fslot.factor4BunkyokuGlow,.dbPlacementMini span.factor4BunkyokuGlow,.ownedHeroReliableCard.factor4BunkyokuGlow{border-color:#ff5b5b !important;box-shadow:0 0 18px rgba(255,48,48,.82),inset 0 0 12px rgba(255,48,48,.24) !important;background:linear-gradient(180deg,rgba(78,9,9,.86),rgba(20,8,6,.94)) !important}.factor4BunkyokuGlow::after{content:"文曲";display:inline-block;margin-left:4px;padding:1px 5px;border:1px solid rgba(255,120,120,.78);border-radius:999px;color:#ffd6d6;background:rgba(90,0,0,.55);font-size:10px;line-height:1.2;vertical-align:middle}#formationView .fslot.factor4BunkyokuGlow::after{display:block;width:max-content;margin:2px auto 0 auto}.factor4BunkyokuGlow,.factor4BunkyokuGlow strong,#formationView .fslot.factor4BunkyokuGlow,#formationView .fslot.factor4BunkyokuGlow strong,.dbPlacementMini span.factor4BunkyokuGlow .ownedHeroName,.ownedHeroReliableCard.factor4BunkyokuGlow .ownedHeroName{color:#ff6b6b !important;text-shadow:0 0 5px rgba(255,0,0,.95),0 0 12px rgba(255,40,40,.9),0 0 20px rgba(255,80,80,.55) !important}#formationView .fslot.factor4BunkyokuGlow .small{color:#ffb0b0 !important;text-shadow:0 0 8px rgba(255,40,40,.7) !important}.dbCountButtonBar{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important}.dbGradeToggleBtn{background:linear-gradient(#51341a,#21140b) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:14px !important;padding:10px 12px !important;font-weight:900 !important;cursor:pointer !important}.dbGradeToggleBtn.active{background:#31521f !important;color:#ecffe1 !important;border-color:#71e49a !important;box-shadow:0 0 14px rgba(113,228,154,.28) !important}.dbGradeToggleBtn:hover{filter:brightness(1.18);box-shadow:0 0 16px rgba(231,189,92,.55),inset 0 0 10px rgba(231,189,92,.16) !important;transform:translateY(-1px)}#dbCountButtons .dbCountBtn{width:100% !important}.dbSearchProgressPanel{display:none;position:fixed !important;left:50% !important;top:50% !important;transform:translate(-50%,-50%) !important;width:min(720px,calc(100vw - 36px)) !important;z-index:50000 !important;border:2px solid rgba(231,189,92,.95);border-radius:18px;background:linear-gradient(180deg,rgba(63,20,12,.98),rgba(10,7,5,.98));padding:22px;margin:0;box-shadow:0 0 0 9999px rgba(0,0,0,.62),0 0 34px rgba(231,189,92,.42)}.dbSearchProgressPanel.active{display:block !important}.dbSearchProgressTitle{color:#ffe1a1;font-weight:900;font-size:30px;line-height:1.25;margin-bottom:14px;text-align:center}.dbSearchProgressMeta{color:#f4ead2;font-size:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.dbSearchProgressMeta span{border:1px solid rgba(231,189,92,.35);border-radius:10px;background:#0b0805;padding:10px;text-align:center;font-weight:800}.dbSearchProgressBar{width:100%;height:24px;background:#0b0805;border:1px solid rgba(231,189,92,.65);border-radius:999px;overflow:hidden;margin-top:18px}.dbSearchProgressBar>div{width:0%;height:100%;background:linear-gradient(90deg,#7a2118,#e7bd5c);transition:width .10s linear}.dbSearchProgressBar.indeterminate>div{width:42% !important;background:linear-gradient(90deg,#7a2118,#e7bd5c,#7a2118);animation:dbSearchProgressMove 1.05s ease-in-out infinite}@keyframes dbSearchProgressMove{0%{transform:translateX(-110%)}100%{transform:translateX(250%)}}.dbSearchSpinner{display:inline-block;width:28px;height:28px;border:4px solid rgba(231,189,92,.28);border-top-color:#ffe1a1;border-radius:50%;animation:dbSearchSpin .8s linear infinite;vertical-align:-6px;margin-right:12px}@keyframes dbSearchSpin{to{transform:rotate(360deg)}}@media(max-width:760px){.dbSearchProgressPanel{padding:16px;width:calc(100vw - 24px) !important}.dbSearchProgressTitle{font-size:22px}.dbSearchProgressMeta{grid-template-columns:1fr;font-size:15px}}.totalStatPanel{padding-bottom:58px !important}.jinpoBackBtn{position:fixed !important;right:18px !important;top:112px !important;min-width:150px !important;min-height:44px !important;padding:8px 18px !important;display:flex !important;align-items:center !important;justify-content:center !important;box-sizing:border-box !important;font-size:18px !important;font-weight:900 !important;line-height:1 !important;text-decoration:none !important;border-radius:12px !important;border:2px solid #e7bd5c !important;background:linear-gradient(#8b2d20,#56150f) !important;color:#fff4d5 !important;box-shadow:0 0 16px rgba(231,189,92,.35) !important;z-index:999999 !important;pointer-events:auto !important;cursor:pointer !important;transition:filter .16s ease,box-shadow .16s ease,transform .16s ease,background .16s ease !important}.jinpoBackBtn:hover,.jinpoBackBtn:focus-visible{filter:brightness(1.35) !important;background:linear-gradient(#b83b28,#7a1d12) !important;box-shadow:0 0 28px rgba(231,189,92,.95),0 0 14px rgba(255,240,180,.55) inset !important;transform:translateY(-2px) scale(1.03) !important;outline:none !important}body{padding-top:190px !important}@media(max-width:760px){body{padding-top:210px !important}.jinpoBackBtn{right:10px !important;top:126px !important;min-width:120px !important;min-height:40px !important;font-size:15px !important}}#dbListStatus{display:none !important}@media (max-width:900px){html,body{overflow-x:auto !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch}main{min-width:1180px !important}.dbListBox{overflow:auto !important;-webkit-overflow-scrolling:touch}.formation,#formationView{overflow:visible !important}}.totalStatPanel,#totalStatPanel{display:block !important;visibility:visible !important}#appliedDbRowDisplay{margin:8px 0 0 0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:10px !important;background:rgba(0,0,0,.22) !important}#appliedDbRowDisplay .appliedDbRowInner strong{color:#ffe1a1;margin-right:8px}.ownedHeroSelectedInfo{margin-top:6px;color:#ffe1a1;font-size:12px;line-height:1.4}@media (max-width:900px){html,body{height:auto !important;min-height:100% !important;overflow-y:auto !important;-webkit-overflow-scrolling:auto !important;overscroll-behavior:none}.totalStatPanel,#totalStatPanel{position:sticky !important;top:0 !important;left:auto !important;right:auto !important;width:100% !important;transform:none !important;will-change:auto !important;contain:layout paint !important;-webkit-transform:translateZ(0);backface-visibility:hidden}body{padding-top:0 !important}main{transform:none !important;will-change:auto !important;contain:none !important}.formation,#formationView,.formationMiniPanel{overflow:hidden !important;transform:none !important;will-change:auto !important}.dbListBox{-webkit-overflow-scrolling:auto !important;transform:none !important;will-change:auto !important}}@supports (-webkit-touch-callout:none){@media (max-width:900px){.totalStatPanel,#totalStatPanel{position:sticky !important;top:0 !important}.dbListTable,.reachSwapTable{transform:none !important;will-change:auto !important}}}
+@media(max-width:900px){.dbPriorityControls{grid-template-columns:1fr}.dbCountBtn{min-width:104px;font-size:15px;padding:12px}.dbStatBtn{min-width:72px}}html,body{width:100%;max-width:none !important;overflow-x:hidden !important}main{max-width:none !important;width:100% !important;box-sizing:border-box;margin:0 !important;padding-left:8px !important;padding-right:8px !important}.card{box-sizing:border-box;width:100%}#dbCountBrowserCard{width:100%}.dbListTable .applyBtn{background:linear-gradient(#9a2e21,#64160f) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:8px !important;padding:7px 10px !important;font-weight:800 !important;white-space:nowrap !important}.dbListBox{overflow-x:hidden !important;overflow-y:auto !important;width:100% !important;max-width:100% !important}.dbListTable{width:100% !important;min-width:0 !important;table-layout:fixed !important;font-size:11px !important}.dbListTable th,.dbListTable td{box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;vertical-align:top}.dbListTable th:nth-child(1),.dbListTable td:nth-child(1){width:58px !important}.dbListTable th:nth-child(2),.dbListTable td:nth-child(2){width:54px !important}.dbListTable th:nth-child(3),.dbListTable td:nth-child(3){width:74px !important;white-space:nowrap !important}.dbListTable th:nth-child(4),.dbListTable td:nth-child(4){width:32% !important}.dbListTable th:nth-child(5),.dbListTable td:nth-child(5){width:28% !important}.dbListTable th:nth-child(6),.dbListTable td:nth-child(6){width:auto !important}.dbListTable td:nth-child(3),.dbListTable th:nth-child(3){white-space:nowrap !important}.dbPlacementMini{display:grid !important;grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:3px !important;min-width:0 !important;width:100% !important}.dbPlacementMini span{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;min-width:0 !important;padding:3px 4px !important}.dbListBondsCell,.dbListBonds,.dbListBonds .badge,.dbListTable .badge{writing-mode:horizontal-tb !important;text-orientation:mixed !important}.dbListBonds{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;gap:3px !important;align-items:center !important;min-width:0 !important;max-width:100% !important;overflow:hidden !important;white-space:nowrap !important}.dbListBonds .badge,.dbListTable .badge{display:inline-flex !important;flex:0 1 auto !important;min-width:0 !important;max-width:100% !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.dbListStat{display:block !important;min-width:0 !important;max-width:100% !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;font-size:10px !important}.dbCountButtonBar,.dbStatButtonBar{width:100%}.dbCountBtn{min-width:132px !important}.dbStatBtn{min-width:74px !important}.dbCountBtn:hover,.dbStatBtn:hover,.dbResetBtn:hover,.dbListTable .applyBtn:hover{filter:brightness(1.18);box-shadow:0 0 16px rgba(231,189,92,.55),inset 0 0 10px rgba(231,189,92,.16) !important;transform:translateY(-1px)}.dbCountBtn,.dbStatBtn,.dbResetBtn,.dbListTable .applyBtn{transition:filter .16s ease,box-shadow .16s ease,transform .16s ease}.dbResetBtn{background:linear-gradient(#51341a,#21140b);border:1px solid #e7bd5c;color:#fff4d5;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:800;white-space:nowrap}.dbListControls{grid-template-columns:minmax(260px,1fr) auto !important}@media(max-width:760px){.dbListControls{grid-template-columns:1fr !important}}.dbFormationSelectTop{margin:0 0 10px 0;padding:8px;border:1px solid rgba(244,211,139,.22);border-radius:10px;background:rgba(0,0,0,.14)}.dbFormationSelectTop .row{margin:0}.dbFormationSelectTop label{color:#f4d38b;font-weight:800}.dbListTwoRow{table-layout:fixed !important}.dbListTwoRow th:nth-child(1),.dbListTwoRow td:nth-child(1){width:58px !important}.dbListTwoRow th:nth-child(2),.dbListTwoRow td:nth-child(2){width:58px !important}.dbListTwoRow th:nth-child(3),.dbListTwoRow td:nth-child(3){width:80px !important;white-space:nowrap !important}.dbListTwoRow th:nth-child(4),.dbListTwoRow td:nth-child(4){width:40% !important}.dbListTwoRow th:nth-child(5),.dbListTwoRow td:nth-child(5){width:auto !important}.dbStatRow td{background:rgba(60,35,18,.42);border-top:0 !important;padding:5px 8px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.dbStatLabel{display:inline-block;color:#ffd166;font-weight:800;margin-right:8px}.dbStatRow .dbListStat{display:inline !important;white-space:nowrap !important}.dbMainRow td{border-bottom:0 !important}#calcBtn,#saveFormationBtn,#saveName{display:none !important}.dbFormationSelectTop{margin:0 0 14px 0 !important;padding:14px !important;border:2px solid rgba(231,189,92,.55) !important;border-radius:14px !important;background:linear-gradient(90deg,rgba(70,35,14,.65),rgba(12,8,5,.35)) !important}.dbFormationSelectTop .row{gap:12px !important}.dbFormationSelectTop label{font-size:24px !important;color:#ffe1a1 !important;font-weight:900 !important;display:flex !important;align-items:center !important;gap:12px !important}#formationSelect{font-size:26px !important;font-weight:900 !important;padding:12px 18px !important;min-width:170px !important;border:2px solid #e7bd5c !important;border-radius:12px !important;background:#080706 !important;color:#fff4d5 !important}.totalStatPanel{position:sticky !important;top:0 !important;z-index:9999 !important;background:linear-gradient(180deg,rgba(60,10,10,.98),rgba(35,8,8,.96)) !important;box-shadow:0 4px 18px rgba(0,0,0,.45) !important}.totalStatPanel{position:fixed !important;top:0 !important;left:0 !important;right:0 !important;width:100% !important;z-index:20000 !important;box-sizing:border-box !important;margin:0 !important;border-radius:0 0 12px 12px !important;background:linear-gradient(180deg,rgba(60,10,10,.98),rgba(35,8,8,.96)) !important;box-shadow:0 6px 22px rgba(0,0,0,.55) !important}body{padding-top:132px !important}@media(max-width:760px){body{padding-top:150px !important}}#reachList table{width:100%;table-layout:fixed}#reachList th:nth-child(1),#reachList td:nth-child(1){width:110px}#reachList th:nth-child(2),#reachList td:nth-child(2){width:32%}#reachList th:nth-child(3),#reachList td:nth-child(3){width:90px;white-space:nowrap}#reachList td{vertical-align:top}#dbListSearch{display:none !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:minmax(360px,520px) minmax(420px,1fr) !important;gap:16px !important;align-items:start !important}.dbFormationSelectTop>.row{align-self:start !important}.formationMiniPanel{margin:0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.38) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;transform:none !important;width:100% !important}.formationMiniPanel h2{font-size:18px !important;margin:0 0 6px 0 !important}.formationMiniPanel .formation{min-height:330px !important;height:330px !important}.formationMiniPanel .fslot{width:138px !important;max-width:138px !important;min-height:58px !important;padding:6px !important;font-size:12px !important}.formationMiniPanel .fslot .small{font-size:10px !important;max-height:24px !important}.dbListControls{grid-template-columns:auto !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel .formation{min-height:300px !important;height:300px !important}}.formationMiniPanel .formation{min-height:420px !important;height:420px !important}.formationMiniPanel .fslot{width:156px !important;max-width:156px !important;min-height:66px !important;font-size:13px !important}.formationMiniPanel .formation{min-height:420px !important;height:420px !important;overflow:hidden !important}.formationMiniPanel{min-height:460px !important}#heroSearch,#dbListSearch{display:none !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:minmax(340px,500px) minmax(520px,1fr) !important;gap:18px !important;align-items:start !important}.formationMiniPanel{min-height:465px !important;margin:0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.38) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;transform:none !important;width:100% !important}#formationView{height:420px !important;min-height:420px !important;overflow:hidden !important;position:relative !important}#formationView .line{position:absolute !important;height:3px !important;background:linear-gradient(90deg,transparent,var(--gold),transparent) !important;transform-origin:left center !important;opacity:.65 !important;z-index:1 !important}#formationView .fslot{position:absolute !important;width:152px !important;max-width:152px !important;min-height:64px !important;transform:translate(-50%,-50%) !important;z-index:2 !important}#formationView .fslot .small{font-size:10px !important;max-height:24px !important;overflow:hidden !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}}.reachInlineBadges{display:inline-flex !important;flex-wrap:nowrap !important;gap:3px !important;max-width:100% !important;overflow:hidden !important;vertical-align:middle !important}.reachInlineBadges .badge{white-space:nowrap !important;flex:0 0 auto !important}#dbStatButtons{display:none !important}.dbCountBtn .small{display:none !important}#formationSelect{min-width:190px !important;min-height:64px !important;font-size:20px !important;padding:10px 18px !important}#formationSection,.formationSection,#formationArea,#formationPanel{padding-top:8px !important;padding-bottom:8px !important}.dbFormationSelectTop{min-height:0 !important;padding-top:8px !important;padding-bottom:8px !important;align-items:start !important}.dbFormationSelectTop>.row{min-height:0 !important;padding-top:0 !important;padding-bottom:0 !important;align-items:flex-start !important}#formationSelect{min-width:220px !important;min-height:70px !important;font-size:24px !important;padding:12px 20px !important}.formationMiniPanel{min-height:230px !important;height:230px !important;padding:8px !important}.formationMiniPanel .formation,#formationView{min-height:170px !important;height:170px !important}.formationMiniPanel .fslot,#formationView .fslot{min-height:48px !important}.dbFormationSelectTop{grid-template-columns:360px minmax(760px,1fr) !important;align-items:start !important;padding:10px !important}.dbFormationSelectTop>.row{align-self:start !important;min-height:120px !important;height:auto !important}.formationMiniPanel{min-height:230px !important;height:auto !important;padding:8px !important}.formationMiniPanel h2{margin:0 0 6px 0 !important}#formationView,.formationMiniPanel .formation{min-height:230px !important;height:230px !important;overflow:visible !important}#formationView .fslot{min-height:58px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel{min-height:460px !important}#formationView,.formationMiniPanel .formation{min-height:410px !important;height:410px !important}}.dbFormationSelectTop{display:grid !important;grid-template-columns:300px minmax(620px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:0 !important}.dbFormationSelectTop>.row{align-self:start !important;display:flex !important;flex-wrap:wrap !important;gap:8px !important;min-height:0 !important;height:auto !important;padding:0 !important;margin:0 !important}.dbFormationSelectTop label{font-size:20px !important;line-height:1.1 !important}#formationSelect{min-width:210px !important;min-height:64px !important;font-size:22px !important;padding:10px 18px !important}.formationMiniPanel{min-height:280px !important;height:280px !important;padding:6px !important;box-sizing:border-box !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:16px !important;line-height:1.1 !important}#formationView,.formationMiniPanel .formation{min-height:230px !important;height:230px !important;overflow:hidden !important}#formationView .fslot{width:132px !important;max-width:132px !important;min-height:50px !important;padding:5px !important;font-size:11px !important}#formationView .fslot .small{font-size:9px !important;max-height:20px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.formationMiniPanel{height:300px !important;min-height:300px !important}#formationView,.formationMiniPanel .formation{height:250px !important;min-height:250px !important}}.dbFormationSelectTop>.row{min-height:180px !important;height:180px !important;padding:10px !important;margin:0 !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important}.formationMiniPanel{min-height:180px !important;height:180px !important;padding:10px !important;margin:0 !important;box-sizing:border-box !important;display:grid !important;grid-template-rows:auto 1fr !important;border-radius:14px !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1 !important}#formationView,.formationMiniPanel .formation{min-height:145px !important;height:145px !important;width:100% !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:112px !important;max-width:112px !important;min-height:44px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important;max-height:16px !important}#formationSelect{min-width:210px !important;min-height:60px !important;font-size:22px !important;padding:8px 16px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important}.dbFormationSelectTop>.row,.formationMiniPanel{height:auto !important;min-height:160px !important}#formationView,.formationMiniPanel .formation{min-height:150px !important;height:150px !important}}.dbFormationSelectTop>.row{grid-column:1 !important;min-height:0 !important;height:auto !important;padding:6px !important;margin:0 !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important}#formationSelect{min-width:220px !important;min-height:62px !important;font-size:23px !important;padding:9px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;min-height:150px !important;height:150px !important;padding:5px !important;margin:0 !important;box-sizing:border-box !important;overflow:visible !important;border-radius:12px !important}.formationMiniPanel h2{margin:0 0 2px 0 !important;font-size:13px !important;line-height:1 !important}#formationView,.formationMiniPanel .formation{width:100% !important;min-height:125px !important;height:125px !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:108px !important;max-width:108px !important;min-height:40px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important;max-height:15px !important}#dbCountBrowserCard>h2{margin-top:8px !important}@media(max-width:980px){.dbFormationSelectTop{grid-template-columns:1fr !important;height:auto !important;min-height:0 !important}.formationMiniPanel{grid-column:1 !important;height:150px !important;min-height:150px !important}}.dbFormationSelectTop{display:grid !important;grid-template-columns:320px minmax(620px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:260px !important;height:260px !important;overflow:visible !important;box-sizing:border-box !important}.dbFormationSelectTop>.row{grid-column:1 !important;align-self:start !important;min-height:150px !important;height:150px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important}#formationSelect{min-width:220px !important;min-height:62px !important;font-size:22px !important;padding:9px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;min-height:250px !important;height:250px !important;padding:6px !important;margin:0 !important;overflow:visible !important;box-sizing:border-box !important}#formationView,.formationMiniPanel .formation{min-height:220px !important;height:220px !important;overflow:visible !important;width:100% !important}#formationView .fslot{width:118px !important;max-width:118px !important;min-height:48px !important;padding:4px !important;font-size:10px !important}#formationView .fslot .small{font-size:8px !important}#dbCountBrowserCard{margin-top:4px !important}.dbFormationSelectTop{display:grid !important;grid-template-columns:300px minmax(700px,1fr) !important;gap:10px !important;align-items:start !important;padding:8px !important;min-height:300px !important;height:300px !important;box-sizing:border-box !important;background:transparent !important;border:0 !important;overflow:visible !important}.dbFormationSelectTop>.row{grid-column:1 !important;width:100% !important;min-height:0 !important;height:auto !important;padding:10px !important;margin:0 !important;align-self:start !important;align-content:flex-start !important;align-items:flex-start !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:linear-gradient(90deg,rgba(70,35,14,.65),rgba(12,8,5,.35)) !important}.dbFormationSelectTop label{font-size:20px !important;line-height:1.1 !important;margin:0 !important}#formationSelect{min-width:210px !important;min-height:64px !important;font-size:22px !important;padding:10px 16px !important}.formationMiniPanel{grid-column:2 !important;align-self:start !important;width:100% !important;min-height:300px !important;height:300px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;overflow:visible !important}.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1.1 !important}#formationView,.formationMiniPanel .formation{min-height:268px !important;height:268px !important;width:100% !important;overflow:visible !important;border-radius:10px !important}#formationView .fslot{width:126px !important;max-width:126px !important;min-height:52px !important;padding:5px !important;font-size:11px !important}#formationView .fslot .small{font-size:9px !important;max-height:18px !important}@media(max-width:1100px){.dbFormationSelectTop{grid-template-columns:1fr !important;height:auto !important;min-height:0 !important}.formationMiniPanel{grid-column:1 !important;height:300px !important;min-height:300px !important}#formationView,.formationMiniPanel .formation{height:268px !important;min-height:268px !important}}header{position:relative !important;min-height:230px !important;box-sizing:border-box !important;padding:14px 16px !important}header h1{display:inline-block !important;margin:26px 0 10px 0 !important;padding:12px 24px !important;border:1px solid rgba(231,189,92,.75) !important;border-radius:12px !important;background:rgba(13,10,7,.72) !important;font-size:28px !important;line-height:1.15 !important}header>.small{width:360px !important;max-width:360px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}header>.formationMiniPanel{position:absolute !important;left:430px !important;right:14px !important;top:52px !important;height:165px !important;min-height:165px !important;padding:6px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.16) !important;overflow:visible !important}header>.formationMiniPanel h2{margin:0 0 3px 0 !important;font-size:13px !important;line-height:1 !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{width:100% !important;height:140px !important;min-height:140px !important;overflow:visible !important;border-radius:10px !important}header>.formationMiniPanel #formationView .fslot{width:108px !important;max-width:108px !important;min-height:40px !important;padding:4px !important;font-size:10px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important}#dbCountBrowserCard .dbFormationSelectTop{display:block !important;height:88px !important;min-height:88px !important;padding:6px 8px !important;margin-bottom:8px !important;box-sizing:border-box !important;overflow:visible !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:12px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:74px !important;min-height:74px !important;width:360px !important;display:flex !important;align-items:flex-end !important;align-content:flex-end !important;gap:8px !important;padding:0 !important;margin:0 !important;box-sizing:border-box !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop label{font-size:18px !important;line-height:1.05 !important;margin:0 !important;display:flex !important;align-items:flex-end !important;gap:8px !important}#formationSelect{min-width:210px !important;min-height:56px !important;font-size:22px !important;padding:8px 14px !important}#clearBtn{align-self:flex-end !important;min-height:44px !important;padding:8px 12px !important}#dbCountBrowserCard>h2{margin-top:6px !important}@media(max-width:1100px){header{min-height:360px !important}header>.formationMiniPanel{position:relative !important;left:auto !important;right:auto !important;top:auto !important;margin-top:8px !important;height:190px !important;min-height:190px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:160px !important;min-height:160px !important}}header h1{display:block !important;margin:24px 0 6px 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header{min-height:235px !important}header>.formationMiniPanel{top:44px !important;height:178px !important;min-height:178px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:154px !important;min-height:154px !important}header>.formationMiniPanel #formationView .fslot{width:88px !important;max-width:88px !important;min-height:30px !important;padding:3px !important;font-size:8px !important;line-height:1.05 !important}header>.formationMiniPanel #formationView .fslot strong{font-size:9px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:7px !important;max-height:12px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop{height:70px !important;min-height:70px !important;padding:4px 8px !important;margin-bottom:6px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:60px !important;min-height:60px !important;align-items:center !important;align-content:center !important}#dbCountBrowserCard .dbFormationSelectTop label{align-items:center !important}#formationSelect{min-height:48px !important;font-size:20px !important;padding:6px 14px !important}#clearBtn{min-height:38px !important;padding:6px 10px !important}#dbCountBrowserCard .dbFormationSelectTop{height:52px !important;min-height:52px !important;padding:2px 8px !important;margin-top:-14px !important;margin-bottom:2px !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop>.row{height:48px !important;min-height:48px !important;width:auto !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:0 !important;margin:0 !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;font-size:16px !important;line-height:1 !important;margin:0 !important;white-space:nowrap !important}#formationSelect{min-width:190px !important;min-height:44px !important;font-size:19px !important;padding:6px 12px !important}#clearBtn{min-height:36px !important;padding:6px 10px !important;align-self:center !important}#dbCountBrowserCard>h2{margin-top:0 !important}header{min-height:250px !important}header>.formationMiniPanel{top:38px !important;height:200px !important;min-height:200px !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:176px !important;min-height:176px !important}header>.formationMiniPanel #formationView .fslot{width:82px !important;max-width:82px !important;min-height:26px !important;padding:2px !important;font-size:7px !important;line-height:1 !important}header>.formationMiniPanel #formationView .fslot strong{font-size:8px !important}header>.formationMiniPanel #formationView .fslot .small{font-size:6px !important;max-height:10px !important;line-height:1 !important}header{min-height:205px !important;padding-top:10px !important;padding-bottom:8px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:28px !important;line-height:1.15 !important}header>.small{max-width:330px !important;width:330px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}header>.formationMiniPanel{position:absolute !important;left:390px !important;right:12px !important;top:48px !important;height:140px !important;min-height:140px !important;padding:5px !important;margin:0 !important;box-sizing:border-box !important}header>.formationMiniPanel h2{font-size:12px !important;line-height:1 !important;margin:0 0 2px 0 !important}header>.formationMiniPanel #formationView,header>.formationMiniPanel .formation{height:116px !important;min-height:116px !important;overflow:visible !important}header>.formationMiniPanel #formationView .fslot{width:76px !important;max-width:76px !important;min-height:24px !important;padding:2px !important;font-size:7px !important;line-height:1 !important}header>.formationMiniPanel #formationView .fslot .small{font-size:6px !important;max-height:9px !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop{display:inline-flex !important;width:auto !important;min-width:0 !important;height:auto !important;min-height:0 !important;padding:0 !important;margin:0 0 4px 0 !important;border:0 !important;background:transparent !important;box-shadow:none !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:auto !important;min-width:0 !important;height:auto !important;min-height:0 !important;display:flex !important;align-items:center !important;gap:8px !important;padding:0 !important;margin:0 !important;border:0 !important;background:transparent !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;white-space:nowrap !important;font-size:16px !important;line-height:1 !important}#formationSelect{min-width:180px !important;min-height:42px !important;font-size:18px !important;padding:5px 12px !important}#clearBtn{min-height:34px !important;padding:5px 10px !important}#dbCountBrowserCard>h2{margin-top:4px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:30px !important;color:#ffe1a1 !important}header{min-height:150px !important;padding-bottom:8px !important}header>.formationMiniPanel{display:none !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px minmax(520px,760px) 1fr !important;gap:12px !important;align-items:start !important;height:280px !important;min-height:280px !important;padding:8px !important;margin:0 0 8px 0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:12px !important;background:rgba(0,0,0,.10) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:100% !important;height:auto !important;min-height:0 !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:10px !important;background:rgba(40,20,10,.32) !important}#dbCountBrowserCard .dbFormationSelectTop label{display:flex !important;align-items:center !important;gap:8px !important;white-space:nowrap !important;font-size:18px !important;line-height:1 !important}#formationSelect{min-width:200px !important;min-height:50px !important;font-size:20px !important;padding:7px 14px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;display:block !important;position:relative !important;left:auto !important;right:auto !important;top:auto !important;width:100% !important;height:264px !important;min-height:264px !important;padding:6px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(0,0,0,.18) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{margin:0 0 4px 0 !important;font-size:14px !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;height:236px !important;min-height:236px !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:112px !important;max-width:112px !important;min-height:44px !important;padding:4px !important;font-size:10px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important}header h1{display:block !important;margin:22px 0 4px 0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;border-radius:0 !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:320px 620px 1fr !important;gap:12px !important;align-items:start !important;height:360px !important;min-height:360px !important;padding:0 !important;margin:0 0 8px 0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:320px !important;height:auto !important;min-height:104px !important;display:flex !important;align-items:flex-start !important;align-content:flex-start !important;gap:8px !important;padding:10px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(40,20,10,.32) !important}#formationSelect{min-width:195px !important;min-height:48px !important;font-size:20px !important;padding:7px 12px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;display:block !important;position:relative !important;left:auto !important;right:auto !important;top:auto !important;width:620px !important;height:360px !important;min-height:360px !important;padding:8px !important;margin:0 !important;box-sizing:border-box !important;border:1px solid rgba(231,189,92,.65) !important;border-radius:12px !important;background:rgba(0,0,0,.18) !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;height:330px !important;min-height:330px !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:118px !important;max-width:118px !important;min-height:52px !important;padding:5px !important;font-size:11px !important;line-height:1.08 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{font-size:13px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:10px !important;max-height:23px !important;line-height:1.05 !important}header h1{display:block !important;width:max-content !important;max-width:220px !important;margin:18px 0 4px 0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;text-align:left !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header>.small{display:block !important;width:260px !important;max-width:260px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;text-align:left !important}header{min-height:0 !important;height:auto !important;padding:8px 8px 6px 8px !important;margin:0 !important;border:0 !important;border-bottom:1px solid rgba(231,189,92,.65) !important;background:transparent !important;box-shadow:none !important}header h1{display:block !important;width:auto !important;max-width:none !important;margin:6px 0 4px 0 !important;padding:0 !important;border:0 !important;outline:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;text-align:left !important;font-size:30px !important;line-height:1.15 !important;color:#ffe1a1 !important}header>.small{display:block !important;width:300px !important;max-width:300px !important;margin:0 !important;padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;text-align:left !important}header{min-height:8px !important;height:auto !important;padding:2px 8px !important;margin:0 !important}#dbCountBrowserCard{padding-top:4px !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px 1fr !important;gap:12px !important;align-items:start !important;padding:0 !important;margin:0 0 6px 0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;min-height:0 !important;height:auto !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;width:330px !important;min-height:0 !important;height:auto !important;padding:8px !important;margin:0 !important;display:flex !important;align-items:flex-start !important;gap:8px !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:12px !important;background:rgba(40,20,10,.32) !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;width:330px !important;display:flex !important;gap:8px !important;margin:6px 0 0 0 !important;padding:0 !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn{flex:1 1 0 !important;min-width:0 !important;height:44px !important;padding:6px 8px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;justify-self:end !important;align-self:start !important;margin:0 !important}#dbCountBrowserCard>h2{margin:4px 0 6px 0 !important}#dbCountBrowserCard>h2+#dbCountButtons{display:none !important}#dbSortControls,.dbSortControls,#dbFilterControls,.dbFilterControls{margin-top:4px !important}body{gap:0 !important}#dbCountBrowserCard{margin-top:2px !important;padding-top:0 !important}#dbCountBrowserCard .dbFormationSelectTop{margin-top:0 !important;padding-top:0 !important;gap:6px !important;align-items:start !important}#dbCountBrowserCard .dbFormationSelectTop>.row{margin-top:-10px !important;padding-top:6px !important;padding-bottom:6px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{margin-top:-14px !important;align-self:start !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{margin-top:2px !important}#dbCountBrowserCard>h2{margin:2px 0 4px 0 !important;line-height:1 !important}.dbSortControls,#dbSortControls{margin-top:0 !important;padding-top:0 !important}section,.card,.panel{margin-top:4px !important}#dbCountBrowserCard .dbFormationSelectTop{display:grid !important;grid-template-columns:330px 1fr !important;grid-template-rows:auto !important;column-gap:12px !important;row-gap:0 !important;align-items:start !important;padding:0 !important;margin:0 0 6px 0 !important;min-height:0 !important;height:auto !important;border:0 !important;background:transparent !important;box-shadow:none !important;overflow:visible !important}#dbCountBrowserCard .dbFormationSelectTop>.row{grid-column:1 !important;grid-row:1 !important;margin:0 !important;padding:8px !important;width:330px !important;height:auto !important;min-height:0 !important;align-self:start !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;grid-row:2 !important;width:330px !important;margin:6px 0 0 0 !important;padding:0 !important;display:flex !important;gap:8px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-column:2 !important;grid-row:1 / span 2 !important;justify-self:end !important;align-self:start !important;margin:0 !important;width:620px !important;height:236px !important;min-height:236px !important;padding:6px !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{margin:0 0 4px 0 !important;line-height:1 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:208px !important;min-height:208px !important;overflow:visible !important}#dbCountBrowserCard>h2{margin:8px 0 6px 0 !important;line-height:1.1 !important}#dbCountBrowserCard{padding-top:0 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{height:290px !important;min-height:290px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:258px !important;min-height:258px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{border-bottom:1px solid rgba(231,189,92,.65) !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{height:300px !important;min-height:300px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{height:330px !important;min-height:330px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{width:96px !important;max-width:96px !important;min-height:42px !important;padding:3px !important;font-size:10px !important;line-height:1.05 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{font-size:11px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{font-size:8px !important;max-height:14px !important;line-height:1.05 !important}#formationView{position:relative !important;overflow:visible !important}#formationView svg,#formationView .lines,#formationView .formation-lines{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;overflow:visible !important;z-index:1 !important;pointer-events:none !important}#formationView line,#formationView path{stroke:#b68a34 !important;stroke-width:4 !important;opacity:.78 !important}#formationView .fslot{position:absolute !important;z-index:2 !important}#formationView{overflow:visible !important}#formationView .line{display:block !important;z-index:1 !important}#formationView .fslot{z-index:2 !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:330px minmax(760px,1fr) !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:760px !important;max-width:760px !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:380px minmax(860px,1fr) !important;column-gap:18px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:860px !important;max-width:860px !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:380px !important}#dbCountBrowserCard .dbFormationSelectTop select{width:200px !important;min-width:200px !important}#dbCountButtons{width:380px !important;display:flex !important;gap:12px !important}#dbCountButtons button{min-width:104px !important;padding:12px 18px !important}#dbCountBrowserCard .dbFormationSelectTop{grid-template-columns:420px minmax(0,1fr) !important;column-gap:18px !important;width:100% !important}#dbCountBrowserCard .dbFormationSelectTop>.row{width:420px !important;max-width:420px !important;min-width:420px !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{width:100% !important;max-width:none !important;min-width:0 !important;justify-self:stretch !important;grid-column:2 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{width:100% !important;max-width:none !important}#formationSelect{width:230px !important;min-width:230px !important;max-width:230px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons,#dbCountButtons{width:420px !important;max-width:420px !important;min-width:420px !important;display:flex !important;gap:12px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn,#dbCountButtons .dbCountBtn,#dbCountButtons button{flex:1 1 0 !important;min-width:120px !important;height:52px !important;padding:10px 18px !important;font-size:16px !important}.reachApplyBtn.dbMissing{background:linear-gradient(#57422a,#20140b) !important;border-color:#ffd166 !important;color:#ffd166 !important}.reachApplyBtn.dbHit::after{content:""}.ownedHeroControl{display:flex !important;flex-wrap:wrap !important;align-items:center !important;gap:6px !important;width:420px !important;max-width:420px !important;min-width:420px !important;margin:6px 0 0 0 !important;padding:0 !important}.ownedHeroBtn{background:linear-gradient(#7a4b16,#2a190d) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:10px !important;padding:8px 12px !important;font-weight:800 !important;cursor:pointer !important;white-space:nowrap !important}.ownedHeroClearBtn{background:linear-gradient(#51341a,#21140b) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:10px !important;padding:8px 10px !important;font-weight:800 !important;cursor:pointer !important;white-space:nowrap !important}.ownedHeroSelected{display:flex !important;flex-wrap:wrap !important;gap:4px !important;min-width:0 !important;flex:1 1 0 !important}.ownedHeroChip{display:inline-flex !important;align-items:center !important;gap:3px !important;border:1px solid #7a5a29 !important;border-radius:999px !important;padding:3px 7px !important;background:#0d0a07 !important;color:#ffe1a1 !important;font-size:12px !important;max-width:130px !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}.ownedHeroCountNote{color:#cbb98f !important;font-size:12px !important}.ownedHeroCard.selectedOwned{border-color:#71e49a !important;box-shadow:0 0 14px rgba(113,228,154,.35) !important}.ownedHeroReliableNote{color:#cbb98f !important;font-size:12px !important;margin-bottom:8px !important}#dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{grid-column:1 !important;grid-row:2 !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons{grid-column:1 !important;grid-row:3 !important}#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{grid-row:1 / span 3 !important}@media(max-width:760px){.ownedHeroControl,#dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{width:100% !important;min-width:0 !important;max-width:none !important}}.ownedHeroSlotBtn{min-width:126px !important;max-width:132px !important;overflow:hidden !important;text-overflow:ellipsis !important}.ownedHeroSlotBtn.hasOwnedHero{background:linear-gradient(#31521f,#17351f) !important;border-color:#71e49a !important;color:#ecffe1 !important}.ownedHeroBtn:hover,.ownedHeroSlotBtn:hover,.ownedHeroClearBtn:hover{filter:brightness(1.22) !important;box-shadow:0 0 18px rgba(231,189,92,.65),inset 0 0 12px rgba(231,189,92,.18) !important;transform:translateY(-1px) !important}.ownedHeroBtn,.ownedHeroSlotBtn,.ownedHeroClearBtn{transition:filter .16s ease,box-shadow .16s ease,transform .16s ease !important}#ownedHeroControl,.ownedHeroControl,#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroClearBtn{position:relative !important;z-index:26050 !important;pointer-events:auto !important}#ownedHeroControl .ownedHeroSlotBtn{cursor:pointer !important}.appliedDbRowDisplay{margin:6px 0 8px 0 !important;border:1px solid rgba(231,189,92,.55) !important;border-radius:10px !important;background:rgba(0,0,0,.18) !important;padding:8px !important;overflow:hidden !important}.appliedDbRowTitle{color:#ffe1a1 !important;font-weight:900 !important;margin:0 0 6px 0 !important;font-size:14px !important}.appliedDbRowDisplay .dbListTable{margin:0 !important}.appliedDbRowDisplay .dbStatRow td{white-space:nowrap !important}.factor4BunkyokuLegend{display:inline-flex !important;align-items:center !important;gap:8px !important;margin:6px 0 8px 0 !important;padding:6px 10px !important;border:1px solid rgba(255,96,96,.75) !important;border-radius:999px !important;background:rgba(90,0,0,.22) !important;color:#ffd6d6 !important;font-size:12px !important;font-weight:800 !important;box-shadow:0 0 14px rgba(255,60,60,.22) !important}.factor4BunkyokuGlow,#formationView .fslot.factor4BunkyokuGlow,.dbPlacementMini span.factor4BunkyokuGlow,.ownedHeroReliableCard.factor4BunkyokuGlow{border-color:#ff5b5b !important;box-shadow:0 0 18px rgba(255,48,48,.82),inset 0 0 12px rgba(255,48,48,.24) !important;background:linear-gradient(180deg,rgba(78,9,9,.86),rgba(20,8,6,.94)) !important}.factor4BunkyokuGlow::after{content:"文曲";display:inline-block;margin-left:4px;padding:1px 5px;border:1px solid rgba(255,120,120,.78);border-radius:999px;color:#ffd6d6;background:rgba(90,0,0,.55);font-size:10px;line-height:1.2;vertical-align:middle}#formationView .fslot.factor4BunkyokuGlow::after{display:block;width:max-content;margin:2px auto 0 auto}.factor4BunkyokuGlow,.factor4BunkyokuGlow strong,#formationView .fslot.factor4BunkyokuGlow,#formationView .fslot.factor4BunkyokuGlow strong,.dbPlacementMini span.factor4BunkyokuGlow .ownedHeroName,.ownedHeroReliableCard.factor4BunkyokuGlow .ownedHeroName{color:#ff6b6b !important;text-shadow:0 0 5px rgba(255,0,0,.95),0 0 12px rgba(255,40,40,.9),0 0 20px rgba(255,80,80,.55) !important}#formationView .fslot.factor4BunkyokuGlow .small{color:#ffb0b0 !important;text-shadow:0 0 8px rgba(255,40,40,.7) !important}.dbCountButtonBar{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important}.dbGradeToggleBtn{background:linear-gradient(#51341a,#21140b) !important;border:1px solid #e7bd5c !important;color:#fff4d5 !important;border-radius:14px !important;padding:10px 12px !important;font-weight:900 !important;cursor:pointer !important}.dbGradeToggleBtn.active{background:#31521f !important;color:#ecffe1 !important;border-color:#71e49a !important;box-shadow:0 0 14px rgba(113,228,154,.28) !important}.dbGradeToggleBtn:hover{filter:brightness(1.18);box-shadow:0 0 16px rgba(231,189,92,.55),inset 0 0 10px rgba(231,189,92,.16) !important;transform:translateY(-1px)}#dbCountButtons .dbCountBtn{width:100% !important}.dbSearchProgressPanel{display:none;position:fixed !important;left:50% !important;top:50% !important;transform:translate(-50%,-50%) !important;width:min(720px,calc(100vw - 36px)) !important;z-index:50000 !important;border:2px solid rgba(231,189,92,.95);border-radius:18px;background:linear-gradient(180deg,rgba(63,20,12,.98),rgba(10,7,5,.98));padding:22px;margin:0;box-shadow:0 0 0 9999px rgba(0,0,0,.62),0 0 34px rgba(231,189,92,.42)}.dbSearchProgressPanel.active{display:block !important}.dbSearchProgressTitle{color:#ffe1a1;font-weight:900;font-size:30px;line-height:1.25;margin-bottom:14px;text-align:center}.dbSearchProgressMeta{color:#f4ead2;font-size:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.dbSearchProgressMeta span{border:1px solid rgba(231,189,92,.35);border-radius:10px;background:#0b0805;padding:10px;text-align:center;font-weight:800}.dbSearchProgressBar{width:100%;height:24px;background:#0b0805;border:1px solid rgba(231,189,92,.65);border-radius:999px;overflow:hidden;margin-top:18px}.dbSearchProgressBar>div{width:0%;height:100%;background:linear-gradient(90deg,#7a2118,#e7bd5c);transition:width .10s linear}.dbSearchProgressBar.indeterminate>div{width:42% !important;background:linear-gradient(90deg,#7a2118,#e7bd5c,#7a2118);animation:dbSearchProgressMove 1.05s ease-in-out infinite}@keyframes dbSearchProgressMove{0%{transform:translateX(-110%)}100%{transform:translateX(250%)}}.dbSearchSpinner{display:inline-block;width:28px;height:28px;border:4px solid rgba(231,189,92,.28);border-top-color:#ffe1a1;border-radius:50%;animation:dbSearchSpin .8s linear infinite;vertical-align:-6px;margin-right:12px}@keyframes dbSearchSpin{to{transform:rotate(360deg)}}@media(max-width:760px){.dbSearchProgressPanel{padding:16px;width:calc(100vw - 24px) !important}.dbSearchProgressTitle{font-size:22px}.dbSearchProgressMeta{grid-template-columns:1fr;font-size:15px}}.totalStatPanel{padding-bottom:58px !important}.jinpoBackBtn{position:fixed !important;right:18px !important;top:112px !important;min-width:150px !important;min-height:44px !important;padding:8px 18px !important;display:flex !important;align-items:center !important;justify-content:center !important;box-sizing:border-box !important;font-size:18px !important;font-weight:900 !important;line-height:1 !important;text-decoration:none !important;border-radius:12px !important;border:2px solid #e7bd5c !important;background:linear-gradient(#8b2d20,#56150f) !important;color:#fff4d5 !important;box-shadow:0 0 16px rgba(231,189,92,.35) !important;z-index:999999 !important;pointer-events:auto !important;cursor:pointer !important;transition:filter .16s ease,box-shadow .16s ease,transform .16s ease,background .16s ease !important}.jinpoBackBtn:hover,.jinpoBackBtn:focus-visible{filter:brightness(1.35) !important;background:linear-gradient(#b83b28,#7a1d12) !important;box-shadow:0 0 28px rgba(231,189,92,.95),0 0 14px rgba(255,240,180,.55) inset !important;transform:translateY(-2px) scale(1.03) !important;outline:none !important}body{padding-top:190px !important}@media(max-width:760px){body{padding-top:210px !important}.jinpoBackBtn{right:10px !important;top:126px !important;min-width:120px !important;min-height:40px !important;font-size:15px !important}}#dbListStatus{display:none !important}@media (max-width:900px){html,body{overflow-x:auto !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch}main{min-width:1180px !important}.dbListBox{overflow:auto !important;-webkit-overflow-scrolling:touch}.formation,#formationView{overflow:visible !important}}.totalStatPanel,#totalStatPanel{display:block !important;visibility:visible !important}#appliedDbRowDisplay{margin:8px 0 0 0 !important;padding:8px !important;border:1px solid rgba(231,189,92,.45) !important;border-radius:10px !important;background:rgba(0,0,0,.22) !important}#appliedDbRowDisplay .appliedDbRowInner strong{color:#ffe1a1;margin-right:8px}.ownedHeroSelectedInfo{margin-top:6px;color:#ffe1a1;font-size:12px;line-height:1.4}@media (max-width:900px){html,body{height:auto !important;min-height:100% !important;overflow-y:auto !important;-webkit-overflow-scrolling:auto !important;overscroll-behavior:none}.totalStatPanel,#totalStatPanel{position:sticky !important;top:0 !important;left:auto !important;right:auto !important;width:100% !important;transform:none !important;will-change:auto !important;contain:layout paint !important;-webkit-transform:translateZ(0);backface-visibility:hidden}body{padding-top:0 !important}main{transform:none !important;will-change:auto !important;contain:none !important}.formation,#formationView,.formationMiniPanel{overflow:hidden !important;transform:none !important;will-change:auto !important}.dbListBox{-webkit-overflow-scrolling:auto !important;transform:none !important;will-change:auto !important}}@supports (-webkit-touch-callout:none){@media (max-width:900px){.totalStatPanel,#totalStatPanel{position:sticky !important;top:0 !important}.dbListTable,.reachSwapTable{transform:none !important;will-change:auto !important}}}
 
 /* step109 viewport-full-width-fix: 画面が小さく見える原因の1280px中央寄せだけ解除 / DB読込表示は維持 */
 *{box-sizing:border-box}
@@ -460,21 +460,24 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
 </div>
 <h2></h2>
 <div id="dbStatButtons" class="dbStatButtonBar"></div>
-  <div class="dbPriorityControls">
-    <div class="dbPriorityGroup">
+  <div class="dbPriorityControls dbPriorityButtonMode">
+    <div class="dbPriorityGroup dbPriorityButtonGroup" data-priority-index="1">
       <label>第1優先ソート</label>
-      <select id="dbPriorityStat1"></select>
-      <select id="dbPriorityValue1"></select>
+      <div id="dbPriorityStatButtons1" class="dbPriorityStatButtons" aria-label="第1優先ソート項目"></div>
+      <div id="dbPriorityValueButtons1" class="dbPriorityValueButtons" aria-label="第1優先ソート数値"></div>
+      <select id="dbPriorityStat1" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
+      <select id="dbPriorityValue1" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
     </div>
-    <div class="dbPriorityGroup">
+    <div class="dbPriorityGroup dbPriorityButtonGroup" data-priority-index="2">
       <label>第2優先ソート</label>
-      <select id="dbPriorityStat2"></select>
-      <select id="dbPriorityValue2"></select>
+      <div id="dbPriorityStatButtons2" class="dbPriorityStatButtons" aria-label="第2優先ソート項目"></div>
+      <div id="dbPriorityValueButtons2" class="dbPriorityValueButtons" aria-label="第2優先ソート数値"></div>
+      <select id="dbPriorityStat2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
+      <select id="dbPriorityValue2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
     </div>
-    <div class="dbPriorityGroup">
-      <label>第3優先ソート</label>
-      <select id="dbPriorityStat3"></select>
-      <select id="dbPriorityValue3"></select>
+    <div class="dbPriorityRemovedThird" aria-hidden="true">
+      <select id="dbPriorityStat3" tabindex="-1"></select>
+      <select id="dbPriorityValue3" tabindex="-1"></select>
     </div>
   </div>
   <div class="dbListControls">
@@ -1318,31 +1321,17 @@ try{ if(typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats
 try{
 if(dbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
 renderRealtimeTotalStatsFromReachDbRow(dbRow);
-if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult);
-setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 0);
-setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(dbRow, nextResult); }, 80);
+setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); }, 0);
+setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); }, 80);
 }else{
 if(nextResult && typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(nextResult);
-if(typeof renderReachAppliedCandidateUnregistered === "function") renderReachAppliedCandidateUnregistered(nextResult);
 }
 }catch(e){
 console.error("リーチ適用後のトータル表示更新失敗", e);
 }
 }
 window.applyReachSwapCandidate = applyReachSwapCandidate;
-function bindReachApplyButtons(){
-const root = document.getElementById("reachList");
-if(!root) return;
-root.querySelectorAll("button[data-reach-slot][data-reach-after]").forEach(btn=>{
-if(btn.dataset.reachApplyBound === "1") return;
-btn.dataset.reachApplyBound = "1";
-btn.addEventListener("click", (ev)=>{
-ev.preventDefault();
-ev.stopPropagation();
-window.applyReachSwapCandidate(btn.dataset.reachSlot, btn.dataset.reachAfter);
-}, true);
-});
-}
+
 function renderResults(result){
 document.getElementById("summary").innerHTML = `
 <div class="activatedBanner">
@@ -1362,38 +1351,7 @@ ${result.activated.map(a=>`
 <div class="small">${a.assignments.map(x=>`${esc(x.requiredFactor)}=${esc(x.heroName)}`).join(" / ")}</div>
 </div>`).join("")}
 </div>` : `<p class="small">発動因縁なし</p>`;
-const reachCandidates = buildReachOnlyCandidates(result);
-document.getElementById("reachList").innerHTML = reachCandidates.length ? `
-<h3>リーチ</h3>
-<table class="reachSwapTable">
-<thead>
-<tr>
-<th>種類</th>
-<th>差し替え</th>
-<th>因縁数</th>
-<th>因縁変化</th>
-<th>適用</th>
-</tr>
-</thead>
-<tbody>
-${reachCandidates.map(c=>`
-<tr>
-<td>${esc(c.kind)}</td>
-<td>${esc(c.slot)}番 ${esc(c.before)} → ${esc(c.after)}</td>
-<td>${esc(c.from)} → ${esc(c.to)}</td>
-<td>
-${c.sameSet
-? `発動因縁は同じ ${reachSameBondSetText(c.kept)}`
-: (Number(c.to) > Number(c.from)
-? `${c.added.length ? `増加 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 消滅 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`
-: `${c.added.length ? `変更後 ${reachSameBondSetText(c.added)}` : ""}${c.removed.length ? ` 変更前 ${reachSameBondSetText(c.removed)}` : ""}${c.kept.length ? ` 維持 ${reachSameBondSetText(c.kept)}` : ""}`)}
-</td>
-<td><button type="button" class="applyBtn reachApplyBtn ${c.hasDbStats ? "dbHit" : "dbMissing"}" data-reach-slot="${esc(c.slot)}" data-reach-after="${esc(c.afterId)}" onclick="window.applyReachSwapCandidate&&window.applyReachSwapCandidate(this.dataset.reachSlot,this.dataset.reachAfter)" title="${esc(c.dbStatusText || "")}">${c.hasDbStats ? "適用" : "登録外"}</button></td>
-</tr>
-`).join("")}
-</tbody>
-</table>` : `<p class="small">リーチ候補なし</p>`;
-bindReachApplyButtons();
+
 document.getElementById("lineDetails").innerHTML = `
 <table><thead><tr><th>ライン</th><th>英傑</th><th>因子</th><th>発動数</th><th>リーチ数</th></tr></thead><tbody>
 ${result.lineResults.map(l=>`
@@ -6828,151 +6786,6 @@ document.addEventListener("DOMContentLoaded", function(){
 window.bindHardRequireFormation = bindHardRequireFormation;
 })();
 </script>
-
-
-<style id="reach-direct-candidate-ui-style-20260526">
-#reachList .reachDirectList{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:8px;max-height:280px;overflow:auto}
-#reachList .reachDirectHeroBtn{text-align:left;border:1px solid #7a5a29;background:#0d0a07;color:#f4ead2;border-radius:10px;padding:8px;cursor:pointer}
-#reachList .reachDirectHeroBtn:hover{border-color:#e7bd5c;box-shadow:0 0 12px rgba(231,189,92,.28)}
-#reachList .reachDirectName{color:#ffe1a1;font-weight:800}
-#reachList .reachDirectMeta{font-size:12px;color:#cbb98f;margin-top:3px}
-</style>
-<script id="reach-direct-candidate-ui-20260526">
-(function(){
-  if(window.__reachDirectCandidateUi20260526) return;
-  window.__reachDirectCandidateUi20260526 = true;
-  var renderTimer = null;
-
-  function escD(v){
-    try{ if(typeof esc === 'function') return esc(v); }catch(e){}
-    return String(v == null ? '' : v).replace(/[&<>\"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[m];});
-  }
-  function hNameD(h){
-    try{ if(typeof heroName === 'function') return heroName(h) || ''; }catch(e){}
-    return h && (h['英傑名'] || h['名前'] || h.name || h.hero_name || '') || '';
-  }
-  function hIdD(h){ return String(h && (h.internal_id || h.id || h.ID || h['internal_id']) || '').trim(); }
-  function placementD(){
-    try{ if(typeof placement !== 'undefined' && placement) return placement; }catch(e){}
-    return window.placement || null;
-  }
-  function heroMasterD(){
-    try{ if(Array.isArray(eiketsuMaster)) return eiketsuMaster; }catch(e){}
-    return Array.isArray(window.eiketsuMaster) ? window.eiketsuMaster : [];
-  }
-  function formationD(){
-    try{ if(typeof currentFormationCanonical === 'function') return currentFormationCanonical(); }catch(e){}
-    var s = document.getElementById('formationSelect');
-    var v = String((s && (s.value || (s.selectedOptions && s.selectedOptions[0] && s.selectedOptions[0].textContent))) || '').trim();
-    if(v.indexOf('衡軛') !== -1) return '衡軛';
-    if(v.indexOf('鶴翼') !== -1) return '鶴翼';
-    if(v.indexOf('魚鱗') !== -1) return '魚鱗';
-    if(v.indexOf('方円') !== -1) return '方円';
-    return v;
-  }
-  function calcD(p){
-    try{
-      var f = formationD();
-      if(!p || !f || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== 'function') return null;
-      if(typeof inenMaster === 'undefined' || !inenMaster) return null;
-      return window.JinpoActivationEngine.calculateFormation(p, f, inenMaster, window.JINPO_FORMATION_CONFIG);
-    }catch(e){ return null; }
-  }
-  function rowsD(result){
-    var rows = [];
-    try{
-      var r = result || calcD(placementD());
-      if(typeof window.buildReachOnlyCandidates === 'function') rows = window.buildReachOnlyCandidates(r) || [];
-      else if(typeof buildReachOnlyCandidates === 'function') rows = buildReachOnlyCandidates(r) || [];
-    }catch(e){ rows = []; console.error('リーチ差し替え候補生成失敗', e); }
-    var seen = new Set();
-    rows = rows.filter(function(c){
-      if(!c || !c.afterId || !c.slot) return false;
-      var key = [c.slot, c.afterId, c.from||'', c.to||'', (c.added||[]).join('|'), (c.removed||[]).join('|')].join('@@');
-      if(seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    rows.sort(function(a,b){
-      if(Number(a.to||0) !== Number(b.to||0)) return Number(b.to||0) - Number(a.to||0);
-      return String(a.after || '').localeCompare(String(b.after || ''), 'ja');
-    });
-    return rows.slice(0,120);
-  }
-  function renderD(result){
-    var root = document.getElementById('reachList');
-    if(!root) return;
-    var p = placementD();
-    if(!formationD()){
-      root.innerHTML = '<h3>リーチ</h3><p class="small">陣形を選択してください。</p>';
-      return;
-    }
-    if(!p || ![1,2,3,4,5,6].every(function(n){ return !!p[n]; })){
-      root.innerHTML = '<h3>リーチ</h3><p class="small">6人配置後に差し替え候補を表示します。</p>';
-      return;
-    }
-    var list = rowsD(result);
-    if(!list.length){
-      root.innerHTML = '<h3>リーチ</h3><p class="small">差し替え候補なし</p>';
-      return;
-    }
-    var html = '<h3>リーチ</h3><p class="small">差し替え候補名をクリックすると適用します。</p><div class="reachDirectList">';
-    list.forEach(function(c){
-      var meta = [];
-      if(c.kind) meta.push(String(c.kind));
-      if(c.from || c.to) meta.push('因縁数 '+String(c.from||'')+'→'+String(c.to||''));
-      meta.push(c.hasDbStats ? 'DBあり' : '登録外');
-      html += '<button type="button" class="reachDirectHeroBtn" data-reach-direct-slot="'+escD(c.slot)+'" data-reach-direct-id="'+escD(c.afterId)+'">'
-        + '<div class="reachDirectName">'+escD(c.after || '')+'</div>'
-        + '<div class="reachDirectMeta">'+escD(meta.filter(Boolean).join(' / '))+'</div>'
-        + '</button>';
-    });
-    html += '</div>';
-    root.innerHTML = html;
-  }
-  function applyD(slot, id){
-    var p = placementD();
-    var h = heroMasterD().find(function(x){ return hIdD(x) === String(id); });
-    if(!p || !h) return;
-    try{ p[Number(slot)] = h; placement = p; window.placement = p; }catch(e){ window.placement = p; }
-    try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
-    var result = calcD(p);
-    try{ if(result && typeof renderFormation === 'function') renderFormation(result); }catch(e){}
-    try{ if(result && typeof window.renderRealtimeTotalStats === 'function') window.renderRealtimeTotalStats(result); }catch(e){}
-    try{ if(result && typeof window.updateFormulaStatsForCurrentPlacement === 'function') window.updateFormulaStatsForCurrentPlacement(); }catch(e){}
-    scheduleD(0, result);
-  }
-  function scheduleD(delay, result){
-    clearTimeout(renderTimer);
-    renderTimer = setTimeout(function(){ renderD(result); }, delay == null ? 20 : delay);
-  }
-
-  window.renderReachSlotOnlyUi = function(result){ renderD(result); };
-  window.scheduleJinpoReachRefreshOnce = function(delay){ scheduleD(delay == null ? 20 : delay); };
-
-  document.addEventListener('click', function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-reach-direct-slot][data-reach-direct-id]') : null;
-    if(!btn) return;
-    ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-    applyD(btn.getAttribute('data-reach-direct-slot'), btn.getAttribute('data-reach-direct-id'));
-  }, true);
-
-  var oldRenderResultsD = window.renderResults || (typeof renderResults === 'function' ? renderResults : null);
-  if(typeof oldRenderResultsD === 'function' && !oldRenderResultsD.__reachDirectCandidateUi20260526){
-    var wrappedD = function(result){
-      var ret = oldRenderResultsD.apply(this, arguments);
-      scheduleD(0, result);
-      return ret;
-    };
-    wrappedD.__reachDirectCandidateUi20260526 = true;
-    try{ renderResults = wrappedD; }catch(e){}
-    window.renderResults = wrappedD;
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ scheduleD(120); });
-  else scheduleD(80);
-})();
-</script>
-
 <script id="fixed-csv-only-current-line-formula-verified-20260524">
 /* 原因特定後の最終固定:
    - 陣法説明(6).xlsxの新式へ変更済み
@@ -7327,102 +7140,6 @@ window.bindHardRequireFormation = bindHardRequireFormation;
   };
 })();
 </script>
-
-<script id="reach-display-final-visible-fix-20260525">
-(function(){
-  if(window.__reachDisplayFinalVisibleFix20260525) return;
-  window.__reachDisplayFinalVisibleFix20260525 = true;
-  var activeSlot = null;
-  function escReach(v){return String(v==null?"":v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m];});}
-  function hName(h){
-    try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
-    return h && (h["英傑名"] || h["名前"] || h.name || h.hero_name || "") || "";
-  }
-  function currentReachResultFinal(){
-    try{
-      var sel = document.getElementById("formationSelect");
-      var form = sel ? String(sel.value || "").trim() : "";
-      if(!form || typeof placement === "undefined" || !placement) return null;
-      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
-      if(typeof inenMaster === "undefined" || !inenMaster) return null;
-      return window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-    }catch(e){ return null; }
-  }
-  function rowsBySlot(rows, slot){
-    var seen = new Set();
-    return (rows||[]).filter(function(c){
-      if(Number(c.slot)!==Number(slot)) return false;
-      var key = String(c.afterId||"") + "||" + String(c.after||"");
-      if(!c.afterId || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }
-  function applyDirect(slot, id){
-    try{
-      if(typeof window.applyReachSwapCandidate === "function"){
-        return window.applyReachSwapCandidate(slot, id);
-      }
-    }catch(e){ console.error("差し替え適用失敗", e); }
-  }
-  function finalRenderReach(result){
-    var root = document.getElementById("reachList");
-    if(!root) return;
-    result = result || currentReachResultFinal();
-    var rows = [];
-    try{
-      if(typeof window.buildReachOnlyCandidates === "function") rows = window.buildReachOnlyCandidates(result) || [];
-      else if(typeof buildReachOnlyCandidates === "function") rows = buildReachOnlyCandidates(result) || [];
-    }catch(e){ rows = []; console.error("リーチ候補生成失敗", e); }
-    var slotMap = new Map();
-    rows.forEach(function(c){ var s=Number(c.slot); if(s && !slotMap.has(s)) slotMap.set(s,true); });
-    var slots = Array.from(slotMap.keys()).sort(function(a,b){return a-b;});
-    if(!slots.length){
-      root.innerHTML = '<h3>リーチ</h3><p class="small">差し替え可能候補なし</p>';
-      return;
-    }
-    if(!activeSlot || !slotMap.has(Number(activeSlot))) activeSlot = slots[0];
-    var html = '<h3>リーチ</h3><div class="small">差し替え可能な配置英傑のみ表示しています。</div><div class="reachSlotBar">';
-    slots.forEach(function(slot){
-      var h = (typeof placement !== "undefined" && placement) ? placement[slot] : null;
-      var count = rowsBySlot(rows, slot).length;
-      html += '<button type="button" class="reachSlotPickBtn" data-reach-slot-pick-final="'+escReach(slot)+'">'+escReach(slot)+'. '+escReach(hName(h)||"未選択")+' ('+escReach(count)+')</button>';
-    });
-    html += '</div><div id="reachReplacePanel" class="reachReplacePanel">';
-    var current = (typeof placement !== "undefined" && placement) ? placement[activeSlot] : null;
-    var list = rowsBySlot(rows, activeSlot);
-    if(!list.length){
-      html += '<div class="small">'+escReach(activeSlot)+'番 '+escReach(hName(current)||"未選択")+' は差し替え可能候補なし</div>';
-    }else{
-      html += '<div class="small">差し替え対象: '+escReach(activeSlot)+'番 '+escReach(hName(current)||"未選択")+'</div><div class="reachReplaceList">';
-      list.forEach(function(c){
-        var meta = String(c.kind || "") + " / 因縁数 " + String(c.from || "") + "→" + String(c.to || "");
-        html += '<button type="button" class="reachReplaceHeroBtn" data-reach-replace-slot-final="'+escReach(activeSlot)+'" data-reach-replace-id-final="'+escReach(c.afterId)+'"><div class="reachReplaceName">'+escReach(c.after)+'</div><div class="reachReplaceMeta">'+escReach(meta)+'</div></button>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-    root.innerHTML = html;
-  }
-  window.renderReachSlotOnlyUi = finalRenderReach;
-  document.addEventListener("click", function(ev){
-    var slotBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-slot-pick-final]") : null;
-    if(slotBtn){ ev.preventDefault(); activeSlot = Number(slotBtn.getAttribute("data-reach-slot-pick-final")); finalRenderReach(); return; }
-    var heroBtn = ev.target && ev.target.closest ? ev.target.closest("[data-reach-replace-slot-final][data-reach-replace-id-final]") : null;
-    if(heroBtn){ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); applyDirect(heroBtn.getAttribute("data-reach-replace-slot-final"), heroBtn.getAttribute("data-reach-replace-id-final")); return; }
-  }, true);
-  var oldRenderResults = window.renderResults || (typeof renderResults === "function" ? renderResults : null);
-  if(typeof oldRenderResults === "function" && !oldRenderResults.__reachDisplayFinalVisibleFix20260525){
-    var wrapped = function(result){ var ret = oldRenderResults.apply(this, arguments); try{ finalRenderReach(result); }catch(e){} return ret; };
-    wrapped.__reachDisplayFinalVisibleFix20260525 = true;
-    try{ renderResults = wrapped; }catch(e){}
-    window.renderResults = wrapped;
-  }
-  setTimeout(function(){ finalRenderReach(); }, 0);
-})();
-</script>
-
-
 <script id="step2-db-only-5-6-display">
 /* 2026-05-25 step2: 5/6因縁は重いHTML全探索へ落とさず、統合DBに存在する行だけを表示する。
    式・倍率・レイアウトは変更しない。7〜9因縁と等級3以下ONの既存DB表示は維持。 */
@@ -9559,18 +9276,6 @@ function restoreFromButton(btn){
 function restoreRegisteredOut(){
   var data = previewFromCurrentPlacementAndResult();
   renderUpperPreview(data);
-}
-
-var prevApplyReach = window.applyReachSwapCandidate;
-if(typeof prevApplyReach === "function" && !prevApplyReach.__registeredOutPreviewRecoveryWrapped){
-  window.applyReachSwapCandidate = function(){
-    var ret = prevApplyReach.apply(this, arguments);
-    setTimeout(restoreRegisteredOut, 0);
-    setTimeout(restoreRegisteredOut, 100);
-    setTimeout(restoreRegisteredOut, 250);
-    return ret;
-  };
-  window.applyReachSwapCandidate.__registeredOutPreviewRecoveryWrapped = true;
 }
 
 document.addEventListener("click", function(ev){
@@ -13351,7 +13056,6 @@ document.addEventListener("click", function(ev){
 
 <style id="step66-reach-slot-modal-only-style">
 /* step66: 英傑差し替え候補UI。既存レイアウトは維持し、候補色と凡例のみ追加。 */
-#reachList .reachDirectList,
 #reachList .reachReplacePanel,
 #reachList .reachReplaceList,
 #reachList .step58ReachDirectList,
@@ -13465,15 +13169,15 @@ document.addEventListener("click", function(ev){
     if(el)return el;
     el=document.createElement('div');
     el.id='step66SwapLoading';
+    el.className='dbSearchProgressPanel';
     el.setAttribute('role','status');
     el.setAttribute('aria-live','polite');
-    el.style.cssText='display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.42);align-items:center;justify-content:center;pointer-events:all;';
-    el.innerHTML='<div style="min-width:180px;padding:18px 24px;border-radius:12px;background:#fff;color:#222;font-weight:700;font-size:16px;text-align:center;box-shadow:0 10px 32px rgba(0,0,0,.28)">読み込み中…</div>';
+    el.innerHTML='<div class="dbSearchProgressTitle"><span class="dbSearchSpinner"></span>読み込み中</div><div class="dbSearchProgressBar indeterminate"><div></div></div>';
     document.body.appendChild(el);
     return el;
   }
-  function showSwapLoading(){var el=ensureSwapLoading();el.style.display='flex';}
-  function hideSwapLoading(){var el=document.getElementById('step66SwapLoading');if(el)el.style.display='none';}
+  function showSwapLoading(){var el=ensureSwapLoading();el.classList.add('active');}
+  function hideSwapLoading(){var el=document.getElementById('step66SwapLoading');if(el)el.classList.remove('active');}
   function openModal(slot){
     candidateMap=buildMap();
     var m=ensureModal(),body=m.querySelector('.step66Body'),p=placementObj(),cur=hName(p&&p[Number(slot)])||'',list=candidateMap[slot]||[];
@@ -17860,7 +17564,7 @@ body{padding-top:0 !important;}
     return STAT_DEFS.map(function(def){
       var steps = stepsFor(type, def.key);
       return '<div class="eiketsuKishinsekiRow" data-type="'+esc(type)+'" data-key="'+esc(key)+'" data-stat="'+esc(def.key)+'"><div class="eiketsuKishinsekiName">'+esc(def.label)+'</div><div class="eiketsuKishinsekiValue">(0)</div><div class="'+choiceClass+'">'
-        + steps.map(function(v){return buildChoice(type, def.key, v, key);}).join('') + '</div><button type="button" class="eiketsuKishinsekiMaxBtn" data-max-row="1" data-type="'+esc(type)+'" data-key="'+esc(key)+'" data-stat="'+esc(def.key)+'">MAX</button><button type="button" class="eiketsuKishinsekiClearBtn" data-clear-row="1" data-type="'+esc(type)+'" data-key="'+esc(key)+'" data-stat="'+esc(def.key)+'">解除</button></div>';
+        + steps.map(function(v){return buildChoice(type, def.key, v, key);}).join('') + '</div><div class="eiketsuKishinsekiRightName">'+esc(def.label)+'</div><button type="button" class="eiketsuKishinsekiMaxBtn" data-max-row="1" data-type="'+esc(type)+'" data-key="'+esc(key)+'" data-stat="'+esc(def.key)+'">MAX</button><button type="button" class="eiketsuKishinsekiClearBtn" data-clear-row="1" data-type="'+esc(type)+'" data-key="'+esc(key)+'" data-stat="'+esc(def.key)+'">解除</button></div>';
     }).join('');
   }
   function buildJobButtons(){
@@ -17989,6 +17693,8 @@ body{padding-top:0 !important;}
       + '<div class="eiketsuKishinsekiMain"><div class="eiketsuKishinsekiSubTitle" id="eiketsuKishinsekiSubTitle">英傑見聞　'+esc(activeKenbunJob)+'</div><div class="eiketsuKishinsekiMaxBar"><button type="button" class="eiketsuKishinsekiAllMaxBtn" id="eiketsuKishinsekiAllMaxBtn">全MAX</button></div><div class="eiketsuKishinsekiRows" id="eiketsuKishinsekiRows">'+buildRows('kenbun')+'</div><div class="eiketsuKishinsekiHelp" id="eiketsuKishinsekiHelp">職業が <b>'+esc(activeKenbunJob)+'</b> の英傑に加算：生命・気合は1マス +1000／腕力〜魅力は1マス +100／土〜風は1マス +200</div><div class="eiketsuKishinsekiBonusNote" id="eiketsuKishinsekiBonusNote">追加ステータス：未選択</div></div></div>'
       + '</div>';
     document.body.appendChild(modal);
+    /* 初回表示時から現在パネル用レイアウトを適用する */
+    modal.dataset.panel=activePanel;
 
     function refreshSelectorList(){ var j=modal.querySelector('#eiketsuKishinsekiJobList'); if(j){ j.innerHTML=(activePanel==='tensei'?buildTenseiSlotButtons():(activePanel==='kishin'?buildSlotButtons():buildJobButtons())); bindJobButtons(); bindSlotButtons(); bindTenseiButtons(); } }
     function setPanel(panel){
@@ -18203,6 +17909,15 @@ body{padding-top:0 !important;}
     wrappedRenderDbRow.__eiketsuKishinsekiWrapped=true;
     try{ renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; window.renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; }catch(e){}
   }
+  function recalcBonusCombinedAfterPlacementChange(){
+    Promise.resolve(loadBonusMultiplierMap()).then(function(){
+      var stats=null;
+      try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
+      catch(e){ console.error('編成変更後の込み合計再計算失敗',e); }
+      drawBonusStats(stats, stats?'転生＆見聞録＆鬼神石込み / 未反映':'転生＆見聞録＆鬼神石込み / 計算条件不足');
+    }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); });
+  }
+
   function deferBonusPlacementRefresh(){
     [0, 40, 120, 300].forEach(function(ms){
       setTimeout(function(){
@@ -18220,6 +17935,8 @@ body{padding-top:0 !important;}
       try{ window.__jinpoBonusBaseDbRow = arguments[0] || null; }catch(e){}
       var ret = oldApplyDbForBonus.apply(this, arguments);
       deferBonusPlacementRefresh();
+      setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
+      setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
       return ret;
     };
     window.applyDbFormationRow.__eiketsuKishinsekiClearModeWrapped=true;
@@ -18227,19 +17944,13 @@ body{padding-top:0 !important;}
   var oldApplyReachForBonus=(typeof window.applyReachSwapCandidate==='function')?window.applyReachSwapCandidate:null;
   if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiReachRefreshWrapped){
     window.applyReachSwapCandidate=function(){
-      var panel=document.getElementById('eiketsuKishinsekiCombinedPanel');
-      var resultBox=document.getElementById('eiketsuKishinsekiCombinedResult');
-      var wasApplied=!!(panel && panel.style.display!=='none' && resultBox && resultBox.children.length);
       var ret = oldApplyReachForBonus.apply(this, arguments);
+      setBonusAppliedMode(false);
+      try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
-      if(wasApplied){
-        Promise.resolve(loadBonusMultiplierMap()).then(function(){
-          var stats=null;
-          try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }catch(e){ console.error('英傑差し替え後の込み合計再計算失敗',e); }
-          drawBonusStats(stats, stats?'転生＆見聞録＆鬼神石込み / 反映済み':'転生＆見聞録＆鬼神石込み / 計算条件不足');
-        }).catch(function(e){ console.error('英傑差し替え後の込み合計更新失敗',e); });
-      }
       deferBonusPlacementRefresh();
+      setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
+      setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
       return ret;
     };
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
@@ -18428,6 +18139,465 @@ body{padding-top:0 !important;}
   },true);
 })();
 </script>
+
+
+<style id="priority-button-mode-user-request">
+/* 第1・第2優先ソートのみを既存全幅内で横一列に配置。既存ソートロジックはhidden selectを介して維持。 */
+.dbPriorityControls.dbPriorityButtonMode{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.dbPriorityButtonGroup{
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+.dbPriorityHiddenSelect,
+.dbPriorityRemovedThird{
+  display:none !important;
+}
+.dbPriorityStatButtons{
+  display:grid !important;
+  grid-template-columns:repeat(11,minmax(0,1fr)) !important;
+  gap:4px !important;
+  width:100% !important;
+}
+.dbPriorityValueButtons{
+  display:grid !important;
+  grid-template-columns:repeat(8,minmax(0,1fr)) !important;
+  gap:4px !important;
+  width:100% !important;
+  margin-top:7px !important;
+  min-height:36px !important;
+}
+.dbPriorityStatChoice,
+.dbPriorityValueChoice{
+  min-width:0 !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  border-radius:8px !important;
+  padding:8px 3px !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  line-height:1.1 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+  transition:filter .12s ease,box-shadow .12s ease,transform .12s ease !important;
+}
+.dbPriorityStatChoice:hover,
+.dbPriorityValueChoice:hover{
+  filter:brightness(1.08) !important;
+  transform:translateY(-1px) !important;
+}
+.dbPriorityStatChoice.active,
+.dbPriorityValueChoice.active{
+  outline:2px solid #fff4b8 !important;
+  outline-offset:1px !important;
+  box-shadow:0 0 12px rgba(255,239,170,.72) !important;
+}
+.dbPriorityValueChoice{
+  background:#17110b !important;
+  color:#ffe9b4 !important;
+  border:1px solid #8d6a2f !important;
+}
+/* 指定色 */
+.dbPriorityStatChoice[data-stat="生命"]{background:#fff !important;color:#111 !important;border:1px solid #cfcfcf !important}
+.dbPriorityStatChoice[data-stat="気合"]{background:#cfefff !important;color:#102633 !important;border:1px solid #78b8da !important}
+.dbPriorityStatChoice[data-stat="腕力"]{background:#c93333 !important;color:#fff !important;border:1px solid #ff7777 !important}
+.dbPriorityStatChoice[data-stat="耐久力"]{background:#245fc7 !important;color:#fff !important;border:1px solid #70a0ff !important}
+.dbPriorityStatChoice[data-stat="器用さ"]{background:#3a9b55 !important;color:#fff !important;border:1px solid #75d28d !important}
+.dbPriorityStatChoice[data-stat="知力"]{background:#f2d93b !important;color:#241f00 !important;border:1px solid #fff083 !important}
+.dbPriorityStatChoice[data-stat="魅力"]{background:#8b4bb4 !important;color:#fff !important;border:1px solid #c88fe8 !important}
+.dbPriorityStatChoice[data-stat="土属性"]{background:#fff1a8 !important;color:#332800 !important;border:1px solid #d9c35d !important}
+.dbPriorityStatChoice[data-stat="水属性"]{background:#73d7f3 !important;color:#073340 !important;border:1px solid #b5efff !important}
+.dbPriorityStatChoice[data-stat="火属性"]{background:#f3a0a0 !important;color:#4b1111 !important;border:1px solid #ffd0d0 !important}
+.dbPriorityStatChoice[data-stat="風属性"]{background:#a8e2a6 !important;color:#173a16 !important;border:1px solid #d2f4d0 !important}
+@media(max-width:900px){
+  .dbPriorityControls.dbPriorityButtonMode{
+    grid-template-columns:repeat(2,minmax(560px,1fr)) !important;
+  }
+}
+</style>
+
+<script id="priority-button-mode-user-request">
+(function(){
+  'use strict';
+  if(window.__priorityButtonModeUserRequest) return;
+  window.__priorityButtonModeUserRequest = true;
+
+  var STATS = [
+    {value:"生命", label:"生命"},
+    {value:"気合", label:"気合"},
+    {value:"腕力", label:"腕力"},
+    {value:"耐久力", label:"耐久"},
+    {value:"器用さ", label:"器用"},
+    {value:"知力", label:"知力"},
+    {value:"魅力", label:"魅力"},
+    {value:"土属性", label:"土"},
+    {value:"水属性", label:"水"},
+    {value:"火属性", label:"火"},
+    {value:"風属性", label:"風"}
+  ];
+  var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000];
+  var NORMAL_VALUES = [1600,1400,1200,1000,800,600,400,200];
+
+  function dispatchChange(el){
+    if(!el) return;
+    try{ el.dispatchEvent(new Event('change',{bubbles:true})); }
+    catch(e){
+      var ev=document.createEvent('Event');
+      ev.initEvent('change',true,true);
+      el.dispatchEvent(ev);
+    }
+  }
+
+  function valuesFor(stat){
+    return (stat==="生命" || stat==="気合") ? LARGE_VALUES : NORMAL_VALUES;
+  }
+
+  function render(index){
+    var statSel=document.getElementById('dbPriorityStat'+index);
+    var valueSel=document.getElementById('dbPriorityValue'+index);
+    var statBox=document.getElementById('dbPriorityStatButtons'+index);
+    var valueBox=document.getElementById('dbPriorityValueButtons'+index);
+    if(!statSel || !valueSel || !statBox || !valueBox) return;
+
+    var currentStat=statSel.value || "";
+    var currentValue=valueSel.value || "";
+
+    statBox.innerHTML="";
+    STATS.forEach(function(item){
+      var b=document.createElement('button');
+      b.type='button';
+      b.className='dbPriorityStatChoice'+(currentStat===item.value?' active':'');
+      b.setAttribute('data-stat',item.value);
+      b.textContent=item.label;
+      b.title=item.label;
+      b.addEventListener('click',function(){
+        var same=statSel.value===item.value;
+        statSel.value=same ? "" : item.value;
+        valueSel.value="";
+        dispatchChange(statSel);
+        dispatchChange(valueSel);
+        render(index);
+      });
+      statBox.appendChild(b);
+    });
+
+    valueBox.innerHTML="";
+    if(!currentStat) return;
+
+    var allowed=valuesFor(currentStat);
+    allowed.forEach(function(v){
+      var b=document.createElement('button');
+      b.type='button';
+      b.className='dbPriorityValueChoice'+(String(currentValue)===String(v)?' active':'');
+      b.textContent=String(v)+'以上';
+      b.addEventListener('click',function(){
+        valueSel.value=(String(valueSel.value)===String(v)) ? "" : String(v);
+        dispatchChange(valueSel);
+        render(index);
+      });
+      valueBox.appendChild(b);
+    });
+  }
+
+  function clearThird(){
+    var s3=document.getElementById('dbPriorityStat3');
+    var v3=document.getElementById('dbPriorityValue3');
+    if(s3 && s3.value){ s3.value=""; dispatchChange(s3); }
+    if(v3 && v3.value){ v3.value=""; dispatchChange(v3); }
+  }
+
+  function init(){
+    clearThird();
+    [1,2].forEach(function(i){
+      var s=document.getElementById('dbPriorityStat'+i);
+      var v=document.getElementById('dbPriorityValue'+i);
+      if(s) s.addEventListener('change',function(){ setTimeout(function(){render(i);},0); });
+      if(v) v.addEventListener('change',function(){ setTimeout(function(){render(i);},0); });
+      render(i);
+    });
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){setTimeout(init,0);},{once:true});
+  }else{
+    setTimeout(init,0);
+  }
+})();
+</script>
+
+
+<style id="formation-step1-emphasis-user-request">
+/* 陣形選択を最初の操作として明確化。既存機能・配置・検索ロジックは変更しない。 */
+#dbCountBrowserCard .dbFormationSelectTop > .row{
+  position:relative !important;
+}
+#dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect){
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:16px !important;
+  padding:44px 18px 18px !important;
+  border:3px solid #ffd75c !important;
+  border-radius:18px !important;
+  background:
+    linear-gradient(135deg,rgba(101,57,6,.96),rgba(47,25,4,.96)) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,215,92,.26),
+    0 0 24px rgba(255,190,45,.68),
+    inset 0 0 18px rgba(255,217,92,.10) !important;
+  color:#fff2b8 !important;
+  font-size:22px !important;
+  font-weight:900 !important;
+  letter-spacing:.02em !important;
+  overflow:visible !important;
+}
+#dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect)::before{
+  content:"最初に陣形を選択してください";
+  position:absolute;
+  left:18px;
+  top:10px;
+  padding:5px 12px;
+  border-radius:999px;
+  background:#ffd75c;
+  color:#2b1700;
+  font-size:13px;
+  font-weight:1000;
+  letter-spacing:.03em;
+  box-shadow:0 0 12px rgba(255,215,92,.52);
+}
+#formationSelect{
+  min-width:340px !important;
+  min-height:58px !important;
+  padding:8px 54px 8px 18px !important;
+  border:3px solid #ffe88c !important;
+  border-radius:14px !important;
+  background:#090806 !important;
+  color:#fff8da !important;
+  font-size:24px !important;
+  font-weight:1000 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.05),
+    0 0 14px rgba(255,213,76,.48) !important;
+}
+body:not(.jinpoFormationSelected) #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect){
+  animation:jinpoFormationStepPulse 1.35s ease-in-out infinite;
+}
+body.jinpoFormationSelected #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect){
+  border-color:#9f7b36 !important;
+  box-shadow:0 0 0 1px rgba(231,189,92,.18),0 0 10px rgba(231,189,92,.18) !important;
+  background:linear-gradient(135deg,rgba(52,34,13,.92),rgba(29,23,16,.96)) !important;
+}
+body.jinpoFormationSelected #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect)::before{
+  content:"陣形選択済み";
+  background:#8fa75a;
+  color:#101608;
+  box-shadow:none;
+}
+@keyframes jinpoFormationStepPulse{
+  0%,100%{
+    transform:scale(1);
+    box-shadow:0 0 0 2px rgba(255,215,92,.24),0 0 20px rgba(255,190,45,.52),inset 0 0 18px rgba(255,217,92,.08);
+  }
+  50%{
+    transform:scale(1.012);
+    box-shadow:0 0 0 4px rgba(255,224,120,.34),0 0 38px rgba(255,187,38,.92),inset 0 0 22px rgba(255,217,92,.15);
+  }
+}
+/* 陣形未選択中は配置英傑ボタンを視覚的に一段弱く見せ、操作順を伝える */
+body:not(.jinpoFormationSelected) #ownedHeroControl .ownedHeroSlotBtn{
+  opacity:.48 !important;
+  filter:grayscale(.22) brightness(.82) !important;
+}
+body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
+  opacity:1 !important;
+  filter:none !important;
+}
+@media(max-width:900px){
+  #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect){
+    width:100% !important;
+    box-sizing:border-box !important;
+  }
+  #formationSelect{
+    min-width:0 !important;
+    width:100% !important;
+  }
+}
+</style>
+
+<script id="formation-step1-emphasis-user-request">
+(function(){
+  'use strict';
+  if(window.__formationStep1EmphasisUserRequest) return;
+  window.__formationStep1EmphasisUserRequest = true;
+
+  function sync(){
+    var sel=document.getElementById('formationSelect');
+    if(!sel) return;
+    var selected=!!String(sel.value||'').trim();
+    document.body.classList.toggle('jinpoFormationSelected',selected);
+  }
+
+  function init(){
+    var sel=document.getElementById('formationSelect');
+    if(!sel) return;
+    sel.addEventListener('change',sync);
+    sync();
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',init,{once:true});
+  }else{
+    init();
+  }
+})();
+</script>
+
+
+<style id="priority-sort-readability-user-request">
+/* 第1・第2優先ソートのみ視認性を改善。既存機能・ロジックは変更しない。 */
+.dbPriorityButtonGroup > label{
+  display:block !important;
+  margin-bottom:8px !important;
+  font-size:18px !important;
+  font-weight:1000 !important;
+  color:#ffe7a0 !important;
+  letter-spacing:.03em !important;
+}
+.dbPriorityStatButtons{
+  gap:6px !important;
+}
+.dbPriorityValueButtons{
+  gap:6px !important;
+  margin-top:10px !important;
+}
+.dbPriorityStatChoice,
+.dbPriorityValueChoice{
+  min-height:46px !important;
+  padding:10px 5px !important;
+  font-size:15px !important;
+  font-weight:1000 !important;
+  border-width:2px !important;
+}
+.dbPriorityValueChoice{
+  font-size:14px !important;
+}
+/* 現在選択中の能力を、枠・発光・チェック表示で明確化 */
+.dbPriorityStatChoice.active{
+  position:relative !important;
+  transform:translateY(-2px) scale(1.03) !important;
+  outline:4px solid #fff7cf !important;
+  outline-offset:2px !important;
+  box-shadow:
+    0 0 0 2px #3a2500,
+    0 0 18px rgba(255,235,130,.98),
+    0 0 30px rgba(255,194,45,.72) !important;
+  filter:saturate(1.12) brightness(1.08) !important;
+}
+.dbPriorityStatChoice.active::after{
+  content:"✓";
+  position:absolute;
+  right:5px;
+  top:3px;
+  width:18px;
+  height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#111 !important;
+  color:#fff8bf !important;
+  border:1px solid #fff8bf !important;
+  font-size:12px;
+  font-weight:1000;
+  line-height:1;
+}
+.dbPriorityValueChoice.active{
+  transform:translateY(-1px) !important;
+  outline:3px solid #fff2a3 !important;
+  outline-offset:2px !important;
+  box-shadow:0 0 16px rgba(255,212,74,.88) !important;
+  background:#6a4305 !important;
+  color:#fff9db !important;
+}
+</style>
+
+
+
+<style id="kenbun-kishin-single-clean-layout">
+/* 英傑見聞録・鬼神石：右側項目名を含め、各ステータスを一行表示。
+   過去の重複ホットフィックスを統合した単一定義。転生・その他UIには影響させない。 */
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiModal,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+  width:min(1600px,calc(100vw - 8px)) !important;
+  max-width:none !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiBody,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+  grid-template-columns:220px minmax(0,1fr) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMain,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMain{
+  min-width:0 !important;
+  overflow-x:auto !important;
+  padding-left:18px !important;
+  padding-right:18px !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRow,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRow{
+  display:grid !important;
+  grid-template-columns:150px 82px minmax(600px,1fr) 100px 72px 72px !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-width:1120px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiValue,
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRightName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiValue,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRightName{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRightName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRightName{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  min-width:0 !important;
+  padding-right:4px !important;
+  font-size:17px !important;
+  font-weight:800 !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoices,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoices{
+  min-width:600px !important;
+  width:100% !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow:visible !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMaxBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiClearBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMaxBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiClearBtn{
+  width:72px !important;
+  min-width:72px !important;
+  white-space:nowrap !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="tensei"] .eiketsuKishinsekiRightName{
+  display:none !important;
+}
+</style>
 
 </body>
 </html>
