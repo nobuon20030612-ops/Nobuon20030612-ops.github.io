@@ -18677,6 +18677,17 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   }
 
   window.addEventListener('click', function(ev){
+    var clearBtn=ev.target && ev.target.closest
+      ? ev.target.closest('#clearBtn')
+      : null;
+    if(clearBtn){
+      setTimeout(function(){
+        var root=document.getElementById('dbFormationList');
+        if(root) clearMarks(root);
+      },0);
+      return;
+    }
+
     var btn=ev.target && ev.target.closest
       ? ev.target.closest('#dbFormationList button.applyBtn,#dbFormationList button.dbOnlyApplyBtn')
       : null;
