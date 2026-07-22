@@ -1,0 +1,48 @@
+{
+  "schema": "jinpo追加用_diff_5_6_7_8_9_summary/v1",
+  "source_file": "jinpo追加用_diff_5_6_7_8_9_5.json",
+  "target": "北条氏邦(獅子)",
+  "new_registration_only": true,
+  "total_rows": 59,
+  "summary": {
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 59,
+    "9": 0
+  },
+  "summary_by_formation": {
+    "衡軛": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "鶴翼": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "魚鱗": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "方円": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 59,
+      "9": 0
+    }
+  },
+  "file_size_bytes": 110481,
+  "file_limit_bytes": 25000000,
+  "file_limit_ok": true,
+  "existing_additional_db_preserved": true
+}
