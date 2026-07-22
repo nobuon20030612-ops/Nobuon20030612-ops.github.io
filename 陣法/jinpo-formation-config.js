@@ -96,3 +96,107 @@ window.JINPO_FORMATION_CONFIG = {
     }
   }
 };
+
+/* jinpo-update-info-from-summary-20260722
+ * 陣形ライン右上に「最終更新日 / 最後に追加された英傑」を表示する。
+ * 表示内容は追加DBの最新summaryから取得し、jinpo.htmlは変更しない。
+ */
+(function(){
+  'use strict';
+  if(window.__jinpoUpdateInfoFromSummaryInstalled) return;
+  window.__jinpoUpdateInfoFromSummaryInstalled = true;
+
+  var INFO_ID = 'jinpoUpdateInfoFromSummary';
+  var STYLE_ID = 'jinpoUpdateInfoFromSummaryStyle';
+
+  function ensureStyle(){
+    if(document.getElementById(STYLE_ID)) return;
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent =
+      '.formationMiniPanel.jinpoUpdateInfoHost{position:relative !important;}' +
+      '#'+INFO_ID+'{position:absolute;top:9px;right:12px;z-index:6;max-width:68%;' +
+      'font-size:12px;line-height:1.35;color:#d9bf83;white-space:nowrap;overflow:hidden;' +
+      'text-overflow:ellipsis;text-align:right;pointer-events:none;}' +
+      '@media(max-width:760px){#'+INFO_ID+'{font-size:10px;max-width:62%;right:9px;top:10px;}}';
+    document.head.appendChild(style);
+  }
+
+  function formatDate(value){
+    var s = String(value == null ? '' : value).trim();
+    var m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+    if(!m) return s;
+    return m[1] + '/' + String(m[2]).padStart(2,'0') + '/' + String(m[3]).padStart(2,'0');
+  }
+
+  function latestHeroText(summary){
+    if(!summary || typeof summary !== 'object') return '';
+    var target = String(summary.target == null ? '' : summary.target).trim();
+    if(target) return target;
+    var heroes = Array.isArray(summary.new_heroes) ? summary.new_heroes : [];
+    var names = [];
+    heroes.forEach(function(hero){
+      if(!hero || typeof hero !== 'object') return;
+      var name = String(hero['英傑名'] || hero['名前'] || '').trim();
+      if(name && names.indexOf(name) < 0) names.push(name);
+    });
+    return names.join('、');
+  }
+
+  function render(summary){
+    var panel = document.querySelector('.formationMiniPanel');
+    if(!panel) return false;
+    ensureStyle();
+    panel.classList.add('jinpoUpdateInfoHost');
+
+    var el = document.getElementById(INFO_ID);
+    if(!el){
+      el = document.createElement('div');
+      el.id = INFO_ID;
+      el.setAttribute('aria-live','polite');
+      panel.appendChild(el);
+    }
+
+    var dateText = formatDate(summary && summary.updated_at);
+    var heroText = latestHeroText(summary);
+    if(!dateText && !heroText){
+      el.style.display = 'none';
+      return true;
+    }
+
+    var text = '最終更新 ' + (dateText || '未設定') + '　｜　追加英傑 ' + (heroText || '未設定');
+    el.textContent = text;
+    el.title = text;
+    el.style.display = '';
+    return true;
+  }
+
+  function loadLatestSummary(){
+    var loader = window.JINPO_ADDITIONAL_DB;
+    if(!loader || typeof loader.discover !== 'function') return Promise.resolve(false);
+    return loader.discover().then(function(found){
+      var parts = found && Array.isArray(found.parts) ? found.parts : [];
+      var latest = null;
+      for(var i=parts.length-1;i>=0;i--){
+        if(parts[i] && parts[i].summary){ latest = parts[i].summary; break; }
+      }
+      if(!latest) return false;
+      return render(latest);
+    }).catch(function(){ return false; });
+  }
+
+  function boot(){
+    var tries = 0;
+    function attempt(){
+      tries++;
+      loadLatestSummary().then(function(ok){
+        if(!ok && tries < 30) setTimeout(attempt, 200);
+      });
+    }
+    attempt();
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
+  else setTimeout(boot, 0);
+})();
+
