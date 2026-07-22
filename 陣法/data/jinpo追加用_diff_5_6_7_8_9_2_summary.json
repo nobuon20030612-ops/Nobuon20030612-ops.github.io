@@ -2,12 +2,13 @@
   "schema": "jinpo追加用_diff_5_6_7_8_9_summary/v1",
   "source_file": "jinpo追加用_diff_5_6_7_8_9_2.json",
   "target": "北条氏邦(獅子)",
+  "updated_at": "2026-07-22",
   "new_registration_only": true,
-  "total_rows": 13526,
+  "total_rows": 12541,
   "summary": {
     "5": 0,
     "6": 0,
-    "7": 13526,
+    "7": 12541,
     "8": 0,
     "9": 0
   },
@@ -15,21 +16,21 @@
     "衡軛": {
       "5": 0,
       "6": 0,
-      "7": 266,
+      "7": 252,
       "8": 0,
       "9": 0
     },
     "鶴翼": {
       "5": 0,
       "6": 0,
-      "7": 266,
+      "7": 252,
       "8": 0,
       "9": 0
     },
     "魚鱗": {
       "5": 0,
       "6": 0,
-      "7": 12994,
+      "7": 12037,
       "8": 0,
       "9": 0
     },
@@ -41,8 +42,21 @@
       "9": 0
     }
   },
-  "file_size_bytes": 24009587,
+  "file_size_bytes": 22251678,
   "file_limit_bytes": 25000000,
   "file_limit_ok": true,
-  "existing_additional_db_preserved": true
+  "existing_additional_db_preserved": true,
+  "new_heroes": [
+    {
+      "internal_id": "EIK_0392",
+      "英傑名": "北条氏邦(獅子)",
+      "コスト": "7",
+      "因子1": "武芸",
+      "因子2": "根性",
+      "因子3": "猛将",
+      "因子4": "宿将",
+      "職": "侍",
+      "特化": "武芸"
+    }
+  ]
 }
