@@ -1,6 +1,6 @@
 /*
  * jinpo-factor4-filter.js
- * 文曲除外人数（因子4で因縁発動した英傑人数）の検索フィルター。
+ * 文曲除外人数（実際の因縁成立assignmentsで因子4を使用した英傑人数）の検索フィルター。
  * 既存検索は選択値0では完全に従来処理へ委譲し、1〜6選択時だけ本処理を使用する。
  */
 (function(){
@@ -17,6 +17,10 @@
   var LIMIT = Number(window.JINPO_RESULT_LIMIT || 300) || 300;
   var prevRender = null;
   var prevHandle = null;
+  var prevStep55 = null;
+  var prevStep38 = null;
+  var prevStep124 = null;
+  var prevStep151 = null;
 
   function q(id){ return document.getElementById(id); }
   function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; }); }
@@ -300,6 +304,21 @@
     }finally{ if(token===renderToken) hideProgress(); }
   }
 
+  function installEntryWrapper(name, holder){
+    var old=window[name];
+    if(typeof old!=='function' || old.__jinpoFactor4FilterWrapped) return holder;
+    var wrapped=function(c){
+      if(selectedExclude<=0) return old.apply(this,arguments);
+      c=Number(c)||selectedCount();
+      if(c) setSelectedCount(c);
+      try{ if(typeof renderDbCountButtons==='function') renderDbCountButtons(); }catch(e){}
+      setTimeout(ensureControls,0);
+      return renderFiltered();
+    };
+    wrapped.__jinpoFactor4FilterWrapped=true;
+    window[name]=wrapped;
+    return old;
+  }
   function installWrappers(){
     if(window.renderDbFormationList && !window.renderDbFormationList.__jinpoFactor4FilterWrapped){
       prevRender=window.renderDbFormationList;
@@ -319,6 +338,10 @@
       h.__jinpoFactor4FilterWrapped=true; window.handleDbCountButtonClick=h;
       try{ handleDbCountButtonClick=window.handleDbCountButtonClick; }catch(e){}
     }
+    prevStep55=installEntryWrapper('__step55RunDbCount',prevStep55);
+    prevStep38=installEntryWrapper('__step38RenderDbCount',prevStep38);
+    prevStep124=installEntryWrapper('__step124RenderGrade356',prevStep124);
+    prevStep151=installEntryWrapper('__step151RenderGrade378',prevStep151);
   }
 
   document.addEventListener('click',function(ev){
