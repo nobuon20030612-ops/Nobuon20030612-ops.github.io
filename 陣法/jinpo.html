@@ -3443,15 +3443,9 @@ var f4 = factor4Of(hero);
 if(!hero || !f4) return false;
 var name = normalizeName(hName(hero));
 var assigns = Array.isArray(act && act.assignments) ? act.assignments : [];
-var factors = Array.isArray(act && act.factors) ? act.factors.map(safeText) : [];
-if(assigns.length){
-var exact = assigns.some(function(a){
+return assigns.some(function(a){
 return safeText(a.requiredFactor) === f4 && normalizeName(a.heroName) === name;
 });
-if(exact) return true;
-}
-/* assignments側の英傑名表記がずれる場合でも、成立因縁の因子にその英傑の因子4が含まれるなら文曲扱い */
-return factors.indexOf(f4) !== -1;
 }catch(e){ return false; }
 }
 function currentFactor4Slots(result){
@@ -3517,14 +3511,44 @@ factorsForBondName(b.textContent).forEach(function(f){ set.add(f); });
 }catch(e){}
 return set;
 }
+function dbRowFactor4SlotsExact(row){
+var slots = new Set();
+try{
+if(!row || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return slots;
+if(typeof inenMaster === "undefined" || !Array.isArray(inenMaster)) return slots;
+var cells = row.children || [];
+var formText = safeText(cells[2] ? cells[2].textContent : "");
+var form = "";
+["衡軛","鶴翼","魚鱗","方円"].some(function(name){ if(formText.indexOf(name) !== -1){ form=name; return true; } return false; });
+if(!form || !window.JINPO_FORMATION_CONFIG || !window.JINPO_FORMATION_CONFIG[form]) return slots;
+var localPlacement = {};
+var heroCount = 0;
+row.querySelectorAll(".dbPlacementMini span").forEach(function(span, idx){
+var raw = safeText(span.textContent).replace(/^\d+\.\s*/,"").replace(/\s*文曲\s*$/,"");
+var hero = findHeroByName(raw);
+if(hero){ localPlacement[idx+1] = hero; heroCount++; }
+});
+if(heroCount !== 6) return slots;
+var result = window.JinpoActivationEngine.calculateFormation(localPlacement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+(result && result.activated || []).forEach(function(act){
+var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
+(Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
+var hi = Number(a.heroIndex);
+if(!Number.isInteger(hi) || hi < 0 || hi >= line.length) return;
+var slot = Number(line[hi]);
+var hero = localPlacement[slot];
+var f4 = factor4Of(hero);
+if(f4 && safeText(a.requiredFactor) === f4) slots.add(slot);
+});
+});
+}catch(e){}
+return slots;
+}
 function applyDbListFactor4Glow(){
 document.querySelectorAll(".dbMainRow").forEach(function(row){
-var fset = rowBondFactors(row);
-row.querySelectorAll(".dbPlacementMini span").forEach(function(span){
-var raw = safeText(span.textContent).replace(/^\d+\.\s*/,"");
-var hero = findHeroByName(raw);
-var f4 = factor4Of(hero);
-var on = !!(f4 && fset.has(f4));
+var slots = dbRowFactor4SlotsExact(row);
+row.querySelectorAll(".dbPlacementMini span").forEach(function(span, idx){
+var on = slots.has(idx + 1);
 span.classList.toggle("factor4BunkyokuGlow", on);
 span.removeAttribute("title");
 });
@@ -13439,11 +13463,14 @@ document.addEventListener("click", function(ev){
       if(!form) return slots;
       var result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
       (result && result.activated || []).forEach(function(act){
-        var factors = (act.factors || []).map(txt);
-        (act.lineSlots || []).forEach(function(slot){
+        var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
+        (Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
+          var hi = Number(a.heroIndex);
+          if(!Number.isInteger(hi) || hi < 0 || hi >= line.length) return;
+          var slot = Number(line[hi]);
           var h = placement[slot];
           var f4 = heroFactor4(h);
-          if(f4 && factors.indexOf(f4) >= 0) slots.add(Number(slot));
+          if(f4 && txt(a.requiredFactor) === f4) slots.add(slot);
         });
       });
     }catch(e){}
@@ -13453,7 +13480,6 @@ document.addEventListener("click", function(ev){
     var root = document.getElementById('formationView');
     if(!root) return;
     var slots = factor4SlotsByEngine();
-    factor4SlotsByDisplayedBonds().forEach(function(s){ slots.add(s); });
     root.querySelectorAll('.fslot').forEach(function(el){
       var strong = el.querySelector('strong');
       var slot = Number(strong ? strong.textContent : '');
@@ -17531,14 +17557,11 @@ body{padding-top:0 !important;}
       if(Array.isArray(lineSlots) && lineSlots.length && lineSlots.map(Number).indexOf(slot) < 0) return false;
       var heroNm = normalizeTenseiName(heroName(hero));
       var assigns = Array.isArray(act && act.assignments) ? act.assignments : [];
-      if(assigns.length){
-        for(var i=0;i<assigns.length;i++){
-          var a=assigns[i]||{};
-          if(String(a.requiredFactor||'').trim() === f4 && normalizeTenseiName(a.heroName||a.name||'') === heroNm) return true;
-        }
+      for(var i=0;i<assigns.length;i++){
+        var a=assigns[i]||{};
+        if(String(a.requiredFactor||'').trim() === f4 && normalizeTenseiName(a.heroName||a.name||'') === heroNm) return true;
       }
-      var factors = Array.isArray(act && act.factors) ? act.factors.map(function(v){return String(v||'').trim();}) : [];
-      return factors.indexOf(f4) >= 0;
+      return false;
     }catch(e){ return false; }
   }
   function isTenseiBunkyokuBlocked(slot){
