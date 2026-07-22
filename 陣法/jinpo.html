@@ -449,6 +449,9 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
     <button id="ownedHeroClearBtn" type="button" class="ownedHeroClearBtn">解除</button>
     <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">配置英傑：未選択</div>
   </div>
+  <div id="grade3OnlySearchNote" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:420px;max-width:100%;margin:8px 0 -2px 0;">
+    <span style="grid-column:1;text-align:center;font-size:10px;line-height:1.2;color:#cbb98f;white-space:nowrap;">※ON時：等級3以下のみ検索</span>
+  </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
 
   <section class="formationMiniPanel">
@@ -3006,8 +3009,21 @@ const width = __step173MobileFormationLine ? Math.max(root.clientWidth || 320, 3
 const height = Math.max(root.clientHeight || 300, 300);
 const padX = 50;
 const padY = 46;
+// 非ワイド画面では鶴翼・魚鱗の近接スロットだけ横方向へ広げ、配置枠の重なりを防ぐ。
+// ワイド画面では従来座標をそのまま使用する。
+const __narrowFormationSlots = width < 1200 ? (
+form === "鶴翼" ? {
+1:{x:18,y:18}, 4:{x:82,y:18},
+2:{x:30,y:50}, 5:{x:70,y:50},
+3:{x:24,y:82}, 6:{x:76,y:82}
+} : form === "魚鱗" ? {
+1:{x:50,y:8},
+2:{x:30,y:48}, 6:{x:70,y:48},
+3:{x:16,y:86}, 4:{x:50,y:86}, 5:{x:84,y:86}
+} : null
+) : null;
 function pos(slot){
-const p = cfg.slots[slot];
+const p = (__narrowFormationSlots && __narrowFormationSlots[slot]) || cfg.slots[slot];
 return {
 x: padX + (p.x / 100) * (width - padX * 2),
 y: padY + (p.y / 100) * (height - padY * 2)
@@ -14873,15 +14889,25 @@ body{padding-top:0 !important;}
   if(window.__jinpoGenericAdditionalDbLoaderInstalled) return;
   window.__jinpoGenericAdditionalDbLoaderInstalled = true;
 
-  var ADDITIONAL_DB_PATH = 'data/jinpo追加用_diff_5_6_7_8_9.json';
-  var cache = null;
-  var loading = null;
+  // 追加DBは連番で増やすだけで自動認識する。
+  // 例: ..._5_6_7_8_9.json, ..._5_6_7_8_9_2.json, ..._3.json ...
+  // 各DBには同番号の summary JSON を必ず置き、番号は欠番なしで追加する。
+  var ADDITIONAL_DB_BASE = 'data/jinpo追加用_diff_5_6_7_8_9';
+  var MAX_ADDITIONAL_DB_PARTS = 9999;
+  var discoveryCache = null;
+  var discoveryLoading = null;
+  var partCache = Object.create(null);
+  var partLoading = Object.create(null);
+  var allCache = null;
+  var allLoading = null;
   var enginePatchTimer = null;
 
   function norm(v){ return String(v == null ? '' : v).trim(); }
   function normalizeName(v){ return norm(v).replace(/\u5c71\u4e2d\u9e7f\u4e4b\u52a9/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,''); }
   function countOf(row){ return Number(row && (row.bond_count || row.ic || row['因縁数'] || 0)) || 0; }
   function rowKey(row){ return norm(row && (row.duplicate_key || row.result_id || row.id || [row.formation,row.bond_count,row.eiketsu_ids,row.eiketsu_names,row.bond_ids,row.bond_names].join('||'))); }
+  function additionalDbPath(part){ return ADDITIONAL_DB_BASE + (part > 1 ? '_' + part : '') + '.json'; }
+  function additionalSummaryPath(part){ return ADDITIONAL_DB_BASE + (part > 1 ? '_' + part : '') + '_summary.json'; }
   function collectRows(node,out){
     if(Array.isArray(node)){
       for(var i=0;i<node.length;i++){
@@ -14903,8 +14929,6 @@ body{padding-top:0 !important;}
     out.internal_id = norm(out.internal_id || out['番号'] || out.id || name);
     out['番号'] = out['番号'] || out.internal_id;
     out['コスト'] = out['コスト'] || out.cost || '';
-    // 追加用DBの新英傑で「職」が未入力でも、配置一覧の「特化 / コスト」表示が欠けないようにする。
-    // 今後の追加でも、職/特化/job が無ければ因子1を特化表示へ使う。
     out['職'] = out['職'] || out['特化'] || out.job || out['因子1'] || '';
     out['特化'] = out['特化'] || out['職'] || out['因子1'] || '';
     return out;
@@ -14918,12 +14942,17 @@ body{padding-top:0 !important;}
       return (id && xid===id) || (name && xn===name);
     });
   }
+  function mergeHeroList(base, heroes){
+    base = Array.isArray(base) ? base : [];
+    (Array.isArray(heroes) ? heroes : []).map(normalizeHero).filter(Boolean).forEach(function(h){
+      if(!heroExists(base,h)) base.push(h);
+    });
+    return base;
+  }
   function mergeHeroesIntoMasters(heroes){
     if(!Array.isArray(heroes) || !heroes.length) return;
     var normalized = heroes.map(normalizeHero).filter(Boolean);
     if(!normalized.length) return;
-    // 既存英傑マスター読込前に追加英傑だけを入れると、配置一覧が追加英傑1件だけになるため禁止。
-    // 既存マスターが十分に読込済みの時だけ、末尾へ重複なし追加する。
     function masterReady(list){ return Array.isArray(list) && list.length > 10; }
     try{
       if(typeof eiketsuMaster !== 'undefined' && masterReady(eiketsuMaster)){
@@ -14940,7 +14969,6 @@ body{padding-top:0 !important;}
         normalized.forEach(function(h){ if(!heroExists(window.eiketsuMaster,h)) window.eiketsuMaster.push(Object.assign({},h)); });
       }
     }catch(e){}
-    // 配置一覧元データは置き換えない。既存リストが存在し、かつ十分な件数がある時だけ末尾に重複なし追加する。
     try{
       if(masterReady(window.OWNED_HERO_LIST_FROM_UPLOAD)){
         normalized.forEach(function(h){ if(!heroExists(window.OWNED_HERO_LIST_FROM_UPLOAD,h)) window.OWNED_HERO_LIST_FROM_UPLOAD.push(Object.assign({},h)); });
@@ -14952,24 +14980,126 @@ body{padding-top:0 !important;}
       }
     }catch(e){}
   }
-  async function load(){
-    if(cache) return cache;
-    if(loading) return loading;
-    loading = fetch(ADDITIONAL_DB_PATH,{cache:'no-store'}).then(function(res){
-      if(!res.ok) throw new Error(ADDITIONAL_DB_PATH+' HTTP '+res.status);
-      return res.json();
-    }).then(function(data){
-      var rows=[]; collectRows(data && data.formations ? data.formations : data, rows);
-      var heroes = Array.isArray(data && data.new_heroes) ? data.new_heroes : [];
-      cache = {raw:data, rows:rows, heroes:heroes, path:ADDITIONAL_DB_PATH};
+  function mergeRows(baseRows, addRows){
+    baseRows = Array.isArray(baseRows) ? baseRows.slice() : [];
+    addRows = Array.isArray(addRows) ? addRows : [];
+    if(!addRows.length) return baseRows;
+    var seen = Object.create(null);
+    baseRows.forEach(function(r){ var k=rowKey(r); if(k) seen[k]=true; });
+    addRows.forEach(function(r){ var k=rowKey(r); if(!k || !seen[k]){ if(k) seen[k]=true; baseRows.push(r); } });
+    return baseRows;
+  }
+  async function fetchJson(path, missingIsEnd){
+    var res = await fetch(path,{cache:'no-store'});
+    if(!res.ok){
+      if(missingIsEnd && res.status === 404) return null;
+      throw new Error(path + ' HTTP ' + res.status);
+    }
+    return res.json();
+  }
+  async function discover(){
+    if(discoveryCache) return discoveryCache;
+    if(discoveryLoading) return discoveryLoading;
+    discoveryLoading = (async function(){
+      var parts=[];
+      var heroes=[];
+      for(var part=1; part<=MAX_ADDITIONAL_DB_PARTS; part++){
+        var summaryPath = additionalSummaryPath(part);
+        var summary = null;
+        try{
+          summary = await fetchJson(summaryPath, part > 1);
+        }catch(err){
+          if(part === 1){
+            console.warn('追加用DB summary読込なし:', err && err.message ? err.message : err);
+            // 旧構成互換: summaryがない場合でも第1DBは読む。
+            parts.push({part:1, path:additionalDbPath(1), summaryPath:summaryPath, summary:null});
+          }else{
+            console.warn('追加用DB summary読込停止:', err && err.message ? err.message : err);
+          }
+          break;
+        }
+        if(!summary) break; // 連番の最初の欠番で終了
+        parts.push({part:part, path:additionalDbPath(part), summaryPath:summaryPath, summary:summary});
+        heroes = mergeHeroList(heroes, Array.isArray(summary.new_heroes) ? summary.new_heroes : []);
+      }
+      discoveryCache = {parts:parts, heroes:heroes, paths:parts.map(function(p){ return p.path; })};
       mergeHeroesIntoMasters(heroes);
-      return cache;
-    }).catch(function(err){
-      console.warn('追加用DB読込なし:', err && err.message ? err.message : err);
-      cache = {raw:null, rows:[], heroes:[], path:ADDITIONAL_DB_PATH, error:err};
-      return cache;
+      return discoveryCache;
+    })().catch(function(err){
+      console.warn('追加用DB連番検出失敗:', err && err.message ? err.message : err);
+      discoveryCache = {parts:[], heroes:[], paths:[], error:err};
+      return discoveryCache;
     });
-    return loading;
+    return discoveryLoading;
+  }
+  async function loadPart(meta){
+    var part = Number(meta && meta.part) || 1;
+    if(partCache[part]) return partCache[part];
+    if(partLoading[part]) return partLoading[part];
+    var path = meta && meta.path ? meta.path : additionalDbPath(part);
+    partLoading[part] = fetchJson(path,false).then(function(data){
+      var rows=[];
+      collectRows(data && data.formations ? data.formations : data, rows);
+      var heroes = Array.isArray(data && data.new_heroes) ? data.new_heroes : [];
+      var loaded = {raw:data, rows:rows, heroes:heroes, path:path, part:part};
+      partCache[part] = loaded;
+      delete partLoading[part];
+      mergeHeroesIntoMasters(heroes);
+      return loaded;
+    }).catch(function(err){
+      delete partLoading[part];
+      console.warn('追加用DB読込失敗:', path, err && err.message ? err.message : err);
+      return {raw:null, rows:[], heroes:[], path:path, part:part, error:err};
+    });
+    return partLoading[part];
+  }
+  function summaryCount(meta, count){
+    if(!count) return null;
+    var s = meta && meta.summary && meta.summary.summary;
+    if(!s || s[String(count)] == null) return null;
+    var n = Number(s[String(count)]);
+    return Number.isFinite(n) ? n : null;
+  }
+  async function loadForCount(count){
+    var found = await discover();
+    var rows=[];
+    var heroes=(found && found.heroes) ? found.heroes.slice() : [];
+    var parts=(found && found.parts) || [];
+    for(var i=0;i<parts.length;i++){
+      var meta=parts[i];
+      var sc=summaryCount(meta,count);
+      if(sc === 0) continue;
+      var loaded=await loadPart(meta);
+      heroes=mergeHeroList(heroes,loaded.heroes);
+      var partRows=loaded.rows || [];
+      if(count) partRows=partRows.filter(function(r){ return countOf(r)===Number(count); });
+      rows=mergeRows(rows,partRows);
+    }
+    mergeHeroesIntoMasters(heroes);
+    return {rows:rows, heroes:heroes, paths:(found && found.paths)||[]};
+  }
+  async function load(){
+    if(allCache) return allCache;
+    if(allLoading) return allLoading;
+    allLoading=(async function(){
+      var found=await discover();
+      var rows=[];
+      var heroes=(found && found.heroes) ? found.heroes.slice() : [];
+      var parts=(found && found.parts) || [];
+      for(var i=0;i<parts.length;i++){
+        var loaded=await loadPart(parts[i]);
+        rows=mergeRows(rows,loaded.rows || []);
+        heroes=mergeHeroList(heroes,loaded.heroes);
+      }
+      allCache={raw:null, rows:rows, heroes:heroes, path:additionalDbPath(1), paths:(found && found.paths)||[]};
+      mergeHeroesIntoMasters(heroes);
+      return allCache;
+    })().catch(function(err){
+      console.warn('追加用DB読込なし:', err && err.message ? err.message : err);
+      allCache={raw:null, rows:[], heroes:[], path:additionalDbPath(1), paths:[], error:err};
+      return allCache;
+    });
+    return allLoading;
   }
   function filterRows(data, opts){
     opts = opts || {};
@@ -14979,7 +15109,12 @@ body{padding-top:0 !important;}
     if(opts.formation){ rows = rows.filter(function(r){ return norm(r.formation || r['陣形']) === norm(opts.formation); }); }
     return rows.slice();
   }
-  async function getRows(opts){ return filterRows(await load(), opts || {}); }
+  async function getRows(opts){
+    opts=opts || {};
+    var c=Number(opts.bondCount || opts.count || 0) || 0;
+    var data=c ? await loadForCount(c) : await load();
+    return filterRows(data,opts);
+  }
   function inferCountFromPath(path){
     var p = norm(path);
     if(p === '__JINPO_SPLIT_DB_7__') return 7;
@@ -14988,15 +15123,6 @@ body{padding-top:0 !important;}
     if(m) return Number(m[1]) || 0;
     if(/jinpo_result_db_7_parts\//.test(p)) return 7;
     return 0;
-  }
-  function mergeRows(baseRows, addRows){
-    baseRows = Array.isArray(baseRows) ? baseRows.slice() : [];
-    addRows = Array.isArray(addRows) ? addRows : [];
-    if(!addRows.length) return baseRows;
-    var seen = Object.create(null);
-    baseRows.forEach(function(r){ var k=rowKey(r); if(k) seen[k]=true; });
-    addRows.forEach(function(r){ var k=rowKey(r); if(!k || !seen[k]){ if(k) seen[k]=true; baseRows.push(r); } });
-    return baseRows;
   }
   function installEnginePatch(){
     try{
@@ -15020,18 +15146,22 @@ body{padding-top:0 !important;}
     }catch(e){ return false; }
   }
   function boot(){
-    load().then(function(data){ mergeHeroesIntoMasters(data.heroes); });
+    // 起動時は小さいsummaryだけを連番検出し、新英傑だけ先にマスターへ追加する。
+    // 大きい追加DB本体は、その因縁数が必要になった時だけ読み込む。
+    discover().then(function(data){ mergeHeroesIntoMasters(data.heroes); });
     if(!installEnginePatch()){
       var tries=0;
       enginePatchTimer = setInterval(function(){ tries++; if(installEnginePatch() || tries>30) clearInterval(enginePatchTimer); }, 200);
     }
   }
   window.JINPO_ADDITIONAL_DB = {
-    path: ADDITIONAL_DB_PATH,
+    path: additionalDbPath(1),
+    base: ADDITIONAL_DB_BASE,
+    discover: discover,
     load: load,
     getRows: getRows,
     mergeRows: mergeRows,
-    mergeHeroes: function(){ return load().then(function(data){ mergeHeroesIntoMasters(data.heroes); return data.heroes; }); },
+    mergeHeroes: function(){ return discover().then(function(data){ mergeHeroesIntoMasters(data.heroes); return data.heroes; }); },
     countOf: countOf
   };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
@@ -18697,5 +18827,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 })();
 </script>
 
+<script src="jinpo-factor4-filter.js"></script>
 </body>
 </html>
