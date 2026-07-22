@@ -2,6 +2,7 @@
   "schema": "jinpo追加用_diff_5_6_7_8_9_summary/v1",
   "source_file": "jinpo追加用_diff_5_6_7_8_9_5.json",
   "target": "北条氏邦(獅子)",
+  "updated_at": "2026-07-22",
   "new_registration_only": true,
   "total_rows": 59,
   "summary": {
@@ -44,5 +45,18 @@
   "file_size_bytes": 110481,
   "file_limit_bytes": 25000000,
   "file_limit_ok": true,
-  "existing_additional_db_preserved": true
+  "existing_additional_db_preserved": true,
+  "new_heroes": [
+    {
+      "internal_id": "EIK_0392",
+      "英傑名": "北条氏邦(獅子)",
+      "コスト": "7",
+      "因子1": "武芸",
+      "因子2": "根性",
+      "因子3": "猛将",
+      "因子4": "宿将",
+      "職": "侍",
+      "特化": "武芸"
+    }
+  ]
 }
