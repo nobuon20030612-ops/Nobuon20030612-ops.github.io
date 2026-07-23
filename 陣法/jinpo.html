@@ -17477,12 +17477,8 @@ body{padding-top:0 !important;}
   }
   function heroJob(hero){
     if(!hero) return '';
-    var fields = [hero['職'], hero['特化'], hero.job, hero['因子1(特化)'], hero['因子1']];
-    for(var i=0;i<fields.length;i++){
-      var j = normalizeJobName(fields[i]);
-      if(j) return j;
-    }
-    return '';
+    // 英傑見聞録の職業判定は英傑マスタの「職業」列だけを参照する。
+    return normalizeJobName(hero['職業']);
   }
   function heroName(hero){ return String((hero&&(hero['名前']||hero.name||hero['英傑名']||hero.heroName||hero['名称']))||'未配置'); }
   function getPlacementRef(){ try{ if(window.placement) return window.placement; }catch(e){} try{ if(typeof placement!=='undefined') return placement; }catch(e){} return null; }
@@ -18011,14 +18007,10 @@ body{padding-top:0 !important;}
       });
     });
     if(!matched) return null;
-    var delta = deltaRaw, full = fullRaw;
-    try{ if(typeof applyFormationBonusToStats === 'function'){ delta = applyFormationBonusToStats(deltaRaw); full = applyFormationBonusToStats(fullRaw); } }catch(e){}
-    var base = currentDbBaseStatsForBonus();
-    if(base){
-      var out={};
-      keys.forEach(function(k){ out[k] = Math.floor(Number(base[k]||0) + Number(delta[k]||0)); });
-      return out;
-    }
+    var full = fullRaw;
+    try{ if(typeof applyFormationBonusToStats === 'function') full = applyFormationBonusToStats(fullRaw); }catch(e){}
+    // 込み合計は、強化後6人ステータスを通常と同じ因縁倍率式へ入れて完全再計算する。
+    // 通常合計DB・検索結果・鬼神石/転生の設定ロジック自体は変更しない。
     return full;
   }
   function clearBonusCombinedPanel(){
