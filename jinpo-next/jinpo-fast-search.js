@@ -54,8 +54,22 @@
   function recommendLabel(stat){return RECOMMEND_LABELS[String(stat||'')]||String(stat||'');}
   function dispatchChange(el){if(!el)return;try{el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){var ev=document.createEvent('Event');ev.initEvent('change',true,true);el.dispatchEvent(ev);}}
   function prepareRecommendPriority(target,clearSecond){
-    var s1=q('dbPriorityStat1'),v1=q('dbPriorityValue1'),s2=q('dbPriorityStat2'),v2=q('dbPriorityValue2');recommendState.syncingPriority=true;
-    try{if(s1&&String(s1.value||'')!==target){s1.value=target;if(v1)v1.value='';dispatchChange(s1);if(v1)dispatchChange(v1);}if(clearSecond&&s2){if(s2.value){s2.value='';dispatchChange(s2);}if(v2&&v2.value){v2.value='';dispatchChange(v2);}}if(s2&&String(s2.value||'')===target){s2.value='';if(v2)v2.value='';dispatchChange(s2);if(v2)dispatchChange(v2);}}finally{recommendState.syncingPriority=false;}
+    target=String(target||'').trim();if(!validRecommendStat(target))return;
+    var s1=q('dbPriorityStat1'),v1=q('dbPriorityValue1'),s2=q('dbPriorityStat2'),v2=q('dbPriorityValue2');
+    var changedS1=false,changedV1=false,changedS2=false,changedV2=false;
+    recommendState.syncingPriority=true;
+    try{
+      if(s1&&String(s1.value||'')!==target){s1.value=target;changedS1=true;}
+      if(clearSecond&&v1&&String(v1.value||'')!==''){v1.value='';changedV1=true;}
+      if(clearSecond&&s2&&String(s2.value||'')!==''){s2.value='';changedS2=true;}
+      if(clearSecond&&v2&&String(v2.value||'')!==''){v2.value='';changedV2=true;}
+      if(s2&&String(s2.value||'')===target){s2.value='';changedS2=true;if(v2&&String(v2.value||'')!==''){v2.value='';changedV2=true;}}
+      if(changedS1)dispatchChange(s1);
+      if(changedV1)dispatchChange(v1);
+      if(changedS2)dispatchChange(s2);
+      if(changedV2)dispatchChange(v2);
+    }finally{recommendState.syncingPriority=false;}
+    try{window.dispatchEvent(new CustomEvent('jinpo:recommend-priority-sync',{detail:{targetStat:target,clearSecond:!!clearSecond}}));}catch(e){}
   }
   function currentRecommendSecondary(target){var s=q('dbPriorityStat2'),v=String(s&&s.value||'').trim();return validRecommendStat(v)&&v!==target?v:'';}
   function syncRecommendUi(){
@@ -246,7 +260,10 @@
   }
   async function renderRecommended(opts){
     opts=opts||{};var target=String(opts.targetStat||recommendState.targetStat||'').trim();if(!validRecommendStat(target))return false;var targetChanged=!recommendState.active||String(recommendState.targetStat||'')!==target;
-    ensureEnhancementUi();setSwapStale(false);prepareRecommendPriority(target,targetChanged);recommendState.active=true;recommendState.targetStat=target;recommendState.secondaryStat=currentRecommendSecondary(target);syncRecommendUi();
+    ensureEnhancementUi();setSwapStale(false);
+    recommendState.active=true;recommendState.targetStat=target;
+    if(targetChanged){recommendState.secondaryStat='';recommendState.formation='';}
+    prepareRecommendPriority(target,targetChanged);recommendState.secondaryStat=currentRecommendSecondary(target);syncRecommendUi();
     var secondary=recommendState.secondaryStat,myToken=++activeToken,box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;listSort=secondary?{key:'',dir:'desc'}:{key:target,dir:'desc'};setCount(null);renderUnifiedCountButtons();
     var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded();var query={mode:mode,targetStat:target,secondaryStat:secondary,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('おすすめ陣法を検索中');setSummarySearching();box.innerHTML='';

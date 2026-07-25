@@ -60,7 +60,12 @@
       '#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{margin:0 !important;}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
       'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
-      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ中は第2優先を選ぶと合計値順へ自動切替";margin-left:auto;padding:3px 8px;border:1px solid var(--jinpo-rec-accent,rgba(231,189,92,.45));border-radius:8px;background:var(--jinpo-rec-soft,transparent);color:var(--jinpo-rec-accent,#ffe1a1);font-size:12px;font-weight:900;white-space:nowrap;}',
+      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:none!important;display:none!important;}',
+      '#jinpoRecommendSumGuide{display:none;grid-column:1 / -1;flex:1 1 100%;width:100%;box-sizing:border-box;margin:2px 0 10px 0;padding:14px 20px;border:2px solid var(--jinpo-rec-accent,#ffd463);border-radius:15px;background:linear-gradient(90deg,var(--jinpo-rec-bg2,#26100a),var(--jinpo-rec-bg1,#6f2419),var(--jinpo-rec-bg2,#26100a));color:var(--jinpo-rec-text,#fff5d4);font-size:clamp(18px,1.35vw,25px);font-weight:1000;line-height:1.35;letter-spacing:.025em;text-align:center;box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(231,189,92,.46)),inset 0 0 0 1px var(--jinpo-rec-soft,rgba(231,189,92,.18));text-shadow:0 1px 0 rgba(0,0,0,.55);}',
+      'body.jinpo-recommend-active #jinpoRecommendSumGuide{display:flex;align-items:center;justify-content:center;}',
+      '#jinpoScrollTopBtn{position:fixed;right:4px;top:calc(52% + 142px);z-index:9490;display:flex;align-items:center;justify-content:center;gap:7px;min-width:62px;max-width:72px;min-height:136px;padding:10px 8px;border:2px solid #ffd08a;border-radius:15px 0 0 15px;background:linear-gradient(180deg,#ff9b21,#b54c00 64%,#542000);color:#fffdf6;box-shadow:0 0 18px rgba(255,143,28,.58),inset 0 0 10px rgba(255,237,202,.18);box-sizing:border-box;cursor:pointer;writing-mode:vertical-rl;text-orientation:upright;font-size:17px;font-weight:1000;letter-spacing:.07em;text-shadow:0 2px 0 rgba(75,24,0,.72);transition:filter .16s ease,box-shadow .16s ease,transform .16s ease;}',
+      '#jinpoScrollTopBtn:hover,#jinpoScrollTopBtn:focus-visible{filter:brightness(1.15);box-shadow:0 0 24px rgba(255,153,40,.82),inset 0 0 12px rgba(255,246,222,.28);transform:translateX(-2px);outline:none;}',
+      '#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:23px;line-height:1;writing-mode:horizontal-tb;text-orientation:mixed;}',
       'body.jinpo-recommend-active #dbListStatus{color:var(--jinpo-rec-accent) !important;text-shadow:0 0 10px var(--jinpo-rec-glow);font-weight:900 !important;}',
       'body.jinpo-recommend-active #jinpoResultSummary .jinpoResultSummaryItem{border-color:var(--jinpo-rec-accent) !important;background:linear-gradient(180deg,var(--jinpo-rec-soft),rgba(16,11,7,.96)) !important;box-shadow:0 0 13px var(--jinpo-rec-soft) !important;}',
       'body.jinpo-recommend-active #jinpoResultSummary .jinpoResultSummaryValue{color:var(--jinpo-rec-accent) !important;text-shadow:0 0 8px var(--jinpo-rec-glow);}',
@@ -90,7 +95,7 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}.jinpoRecommendNav{overflow-x:auto;padding-bottom:3px}.jinpoRecommendLabel{font-size:13px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:8px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModeGlow 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}.jinpoRecommendNav{overflow-x:auto;padding-bottom:3px}.jinpoRecommendLabel{font-size:13px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModeGlow 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{right:8px;top:auto;bottom:8px;min-width:126px;max-width:none;min-height:46px;padding:8px 14px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:15px;letter-spacing:.02em;gap:8px}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -200,7 +205,52 @@
     });
   }
 
+  function ensureRecommendSumGuide(){
+    var guide=document.getElementById('jinpoRecommendSumGuide');
+    if(guide) return guide;
+    var sum=document.getElementById('jinpoSumPrioritySort');
+    if(!sum||!sum.parentNode) return null;
+    guide=document.createElement('div');
+    guide.id='jinpoRecommendSumGuide';
+    guide.setAttribute('role','status');
+    guide.setAttribute('aria-live','polite');
+    guide.textContent='おすすめ中は第2優先を選ぶと、第1＋第2の合計値が高い順へ自動で切り替わります';
+    sum.parentNode.insertBefore(guide,sum);
+    return guide;
+  }
+
+  function ensureScrollTopButton(){
+    var btn=document.getElementById('jinpoScrollTopBtn');
+    if(btn) return btn;
+    btn=document.createElement('button');
+    btn.type='button';
+    btn.id='jinpoScrollTopBtn';
+    btn.setAttribute('aria-label','ページの一番上へ戻る');
+    btn.title='ページの一番上へ戻る';
+    btn.innerHTML='<span class="jinpoScrollTopArrow" aria-hidden="true">↑</span><span>上へ戻る</span>';
+    btn.addEventListener('click',function(){
+      try{window.scrollTo({top:0,left:0,behavior:'smooth'});}catch(e){window.scrollTo(0,0);}
+    });
+    document.body.appendChild(btn);
+    return btn;
+  }
+
+  function scrollToRecommendResults(stat){
+    try{
+      if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.getRecommendState==='function'){
+        var state=window.JINPO_FAST_SEARCH.getRecommendState();
+        if(!state||!state.active||text(state.targetStat)!==text(stat)) return;
+      }
+    }catch(e){}
+    var target=document.getElementById('jinpoResultSummary')||document.getElementById('dbFormationList')||document.getElementById('dbListStatus');
+    if(!target) return;
+    var top=target.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0)-18;
+    try{window.scrollTo({top:Math.max(0,top),left:0,behavior:'smooth'});}catch(e){window.scrollTo(0,Math.max(0,top));}
+  }
+
   function ensureActions(){
+    ensureScrollTopButton();
+    ensureRecommendSumGuide();
     var back = document.getElementById('jinpoBackBtn');
     if(!back) return;
     var wrap = document.getElementById('jinpoBondNavActions');
@@ -226,7 +276,8 @@
         var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-recommend-stat]');if(!btn)return;
         var stat=text(btn.getAttribute('data-jinpo-recommend-stat'));if(!stat)return;
         if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.runRecommended==='function'){
-          window.JINPO_FAST_SEARCH.runRecommended(stat);
+          var run=window.JINPO_FAST_SEARCH.runRecommended(stat);
+          Promise.resolve(run).then(function(){ setTimeout(function(){ scrollToRecommendResults(stat); },40); });
         }else{
           console.error('おすすめ陣法検索機能がまだ準備できていません');
         }
