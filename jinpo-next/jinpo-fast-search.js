@@ -3,7 +3,7 @@
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
   var LIMIT=500,worker=null,seq=0,activeToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
-  var listSort={key:'',dir:'desc'};
+  var listSort={key:'',dir:'desc'},appliedListRowKey='';
   window.JINPO_RESULT_LIMIT=LIMIT;
 
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -39,8 +39,9 @@
     if(q('jinpoResultUiEnhanceStyle'))return;
     var st=document.createElement('style');st.id='jinpoResultUiEnhanceStyle';st.textContent=`
       .dbPriorityControls.dbPriorityButtonMode{grid-template-columns:repeat(2,minmax(0,1fr)) !important;align-items:stretch !important}
-      .dbPriorityButtonGroup > label{display:inline-block !important;margin:0 10px 8px 0 !important;vertical-align:middle !important}
-      .jinpoPrioritySortNotice{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;margin:0 0 8px 0;padding:4px 10px;border:2px solid #e7bd5c;border-radius:9px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-size:16px;font-weight:950;line-height:1.25;letter-spacing:.02em;box-shadow:0 0 10px rgba(231,189,92,.30),inset 0 0 8px rgba(255,231,167,.08);white-space:nowrap}
+      .jinpoPriorityTitleRow{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:10px !important;min-width:0 !important;margin:0 0 8px 0 !important;white-space:nowrap !important}
+      .jinpoPriorityTitleRow > label{display:block !important;flex:0 0 auto !important;margin:0 !important}
+      .jinpoPrioritySortNotice{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;box-sizing:border-box;margin:0;padding:4px 10px;border:2px solid #e7bd5c;border-radius:9px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-size:16px;font-weight:950;line-height:1.25;letter-spacing:.02em;box-shadow:0 0 10px rgba(231,189,92,.30),inset 0 0 8px rgba(255,231,167,.08);white-space:nowrap}
       #jinpoResultSummary{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:10px;margin:10px 0 6px 0}
       .jinpoResultSummaryItem{display:flex;align-items:baseline;justify-content:center;gap:8px;min-height:50px;padding:7px 12px;box-sizing:border-box;border:1px solid rgba(231,189,92,.55);border-radius:11px;background:linear-gradient(180deg,rgba(48,30,14,.92),rgba(16,11,7,.95));box-shadow:0 0 13px rgba(231,189,92,.13)}
       .jinpoResultSummaryLabel{font-size:13px;font-weight:900;color:#d7c08d;white-space:nowrap}
@@ -69,6 +70,10 @@
       #dbFormationList .jinpoStat-wind{color:#a8e2a6 !important;--jinpo-glow:rgba(168,226,166,.55);--jinpo-bg:rgba(168,226,166,.15)}
       #dbFormationList .jinpoStatSortButton.jinpoSortActive,#dbFormationList .jinpoStatCell.jinpoSortActive{background:var(--jinpo-bg) !important;border-color:var(--jinpo-glow) !important;box-shadow:0 0 8px var(--jinpo-glow),inset 0 0 8px var(--jinpo-bg) !important}
       #dbFormationList .jinpoStatSortButton.jinpoSortActive{outline:1px solid var(--jinpo-glow) !important;outline-offset:1px !important}
+      #dbFormationList .dbMainRow.jinpoAppliedRow>td,#dbFormationList .dbStatRow.jinpoAppliedRow>td{background:linear-gradient(90deg,rgba(41,98,58,.32),rgba(15,52,30,.26)) !important;border-top-color:rgba(113,228,154,.88) !important;border-bottom-color:rgba(113,228,154,.88) !important;box-shadow:inset 0 0 14px rgba(113,228,154,.16) !important}
+      #dbFormationList .dbMainRow.jinpoAppliedRow>td:first-child,#dbFormationList .dbStatRow.jinpoAppliedRow>td:first-child{border-left-color:#71e49a !important}
+      #dbFormationList .dbMainRow.jinpoAppliedRow>td:last-child,#dbFormationList .dbStatRow.jinpoAppliedRow>td:last-child{border-right-color:#71e49a !important}
+      #dbFormationList .dbMainRow.jinpoAppliedRow .applyBtn{background:linear-gradient(#31521f,#17351f) !important;border-color:#71e49a !important;color:#ecffe1 !important;box-shadow:0 0 14px rgba(113,228,154,.50) !important}
       @media(max-width:900px){.dbPriorityControls.dbPriorityButtonMode{grid-template-columns:460px 460px !important}.jinpoPrioritySortNotice{font-size:14px !important;padding:4px 7px !important}#jinpoResultSummary{grid-template-columns:1fr 1fr !important}.jinpoResultSummaryValue{font-size:23px !important}}
     `;document.head.appendChild(st);
   }
@@ -77,10 +82,14 @@
     ensureUiStyle();
     document.querySelectorAll('.dbPriorityButtonGroup[data-priority-index="1"],.dbPriorityButtonGroup[data-priority-index="2"]').forEach(function(group){
       var idx=group.getAttribute('data-priority-index')||'';
-      var noteId='jinpoPrioritySortNotice'+idx;
-      if(!q(noteId)){
+      var rowId='jinpoPriorityTitleRow'+idx,noteId='jinpoPrioritySortNotice'+idx;
+      if(!q(rowId)){
         var label=group.querySelector(':scope > label');
-        if(label){var note=document.createElement('span');note.id=noteId;note.className='jinpoPrioritySortNotice';note.textContent='ステータスのみ選択時は高い順で表示します';label.insertAdjacentElement('afterend',note);}
+        if(label){
+          var titleRow=document.createElement('div');titleRow.id=rowId;titleRow.className='jinpoPriorityTitleRow';
+          group.insertBefore(titleRow,label);titleRow.appendChild(label);
+          var note=document.createElement('span');note.id=noteId;note.className='jinpoPrioritySortNotice';note.textContent='ステータスのみ選択時は高い順で表示します';titleRow.appendChild(note);
+        }
       }
     });
     var box=q('dbFormationList');
@@ -119,6 +128,10 @@
 
   function members(row){return String(row&&row.eiketsu_names||row&&row.eiketsu_ids||'').split('|').filter(Boolean);}
   function bonds(row){return String(row&&row.bond_names||row&&row.bond_ids||'').split('|').filter(Boolean);}
+  function stableRowKey(row){
+    var mem=members(row).map(norm).sort(),bd=bonds(row).map(norm).sort();
+    return [String(row&&row.formation||''),String(row&&row.bond_count||''),mem.join('|'),bd.join('|')].join('\u001f');
+  }
   function sortValue(row,key){if(key==='総合値')return Number(row&&((row.total_score!=null)?row.total_score:row['総合値']))||0;return Number(row&&row[key])||0;}
   function sortedRows(rows){
     var copy=(rows||[]).map(function(row,i){return {row:row,i:i};});if(!listSort.key)return copy.map(function(x){return x.row;});
@@ -133,7 +146,7 @@
     return SORT_FIELDS.map(function(f){var active=listSort.key===f.key,v=sortValue(row,f.key);return '<span class="jinpoStatCell jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-stat-key="'+esc(f.key)+'"><span class="jinpoStatCellName">'+esc(f.label)+(f.key==='総合値'?' ':':')+'</span><span class="jinpoStatCellValue">'+esc(v)+'</span><span class="jinpoCompatSep"> / </span></span>';}).join('');
   }
   function table(rows,count){
-    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row);return '<tr class="dbMainRow"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">適用</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span>'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span>'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   function rerenderList(count){var box=q('dbFormationList');if(!box)return;displayRows=sortedRows(activeRows);box.innerHTML=displayRows.length?table(displayRows,count||selectedCount()):'<div class="dbListNote">該当DBなし。陣形・配置英傑・除外英傑・優先条件・文曲除外人数を確認してください。</div>';try{if(typeof window.applyFactor4BunkyokuGlow==='function')setTimeout(window.applyFactor4BunkyokuGlow,0);}catch(e){}}
 
@@ -179,7 +192,7 @@
     var sortBtn=ev.target&&ev.target.closest?ev.target.closest('button[data-list-sort]'):null;
     if(sortBtn){ev.preventDefault();var key=sortBtn.getAttribute('data-list-sort')||'';if(!key)return;if(listSort.key===key)listSort.dir=listSort.dir==='desc'?'asc':'desc';else listSort={key:key,dir:'desc'};rerenderList(selectedCount());return;}
     var fb=ev.target&&ev.target.closest?ev.target.closest('button[data-factor4-exclude]'):null;if(fb){ev.preventDefault();selectedExclude=Number(fb.getAttribute('data-factor4-exclude'))||0;syncFactor4();renderCurrent({count:selectedCount()});return;}
-    var b=ev.target&&ev.target.closest?ev.target.closest('button[data-unified-db-idx]'):null;if(!b)return;var row=displayRows[Number(b.getAttribute('data-unified-db-idx'))];if(!row)return;ev.preventDefault();try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}
+    var b=ev.target&&ev.target.closest?ev.target.closest('button[data-unified-db-idx]'):null;if(!b)return;var row=displayRows[Number(b.getAttribute('data-unified-db-idx'))];if(!row)return;ev.preventDefault();appliedListRowKey=stableRowKey(row);rerenderList(selectedCount());try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}
   },true);
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 

@@ -194,7 +194,8 @@ def main():
             'jinpo_result_db_', 'factor4_usage_index.json', 'data-linegen-', '__jinpoLineGen', '__jinpoActualLineRows'
         ],
         'jinpo-fast-search.js': [
-            'LIMIT=300', 'LIMIT = 300', 'Top300', 'top300', 'jinpo_result_db_'
+            'LIMIT=300', 'LIMIT = 300', 'Top300', 'top300', 'jinpo_result_db_',
+            "label.insertAdjacentElement('afterend',note)"
         ],
         'jinpo-fast-search-worker.js': [
             'q.limit||300', 'q.limit || 300', 'Top300', 'top300', 'jinpo_result_db_'
@@ -233,6 +234,13 @@ def main():
         '.jinpoStat-fire{color:#f3a0a0',
         '.jinpoStat-wind{color:#a8e2a6',
         '.jinpoStatSortButton.jinpoSortActive,#dbFormationList .jinpoStatCell.jinpoSortActive',
+        '.jinpoPriorityTitleRow{display:flex !important',
+        "titleRow.appendChild(label)",
+        "titleRow.appendChild(note)",
+        "function stableRowKey(row)",
+        "appliedListRowKey=stableRowKey(row)",
+        "jinpoAppliedRow",
+        "(isApplied?'適用中':'適用')",
     ]
     for frag in required_fast_fragments:
         if frag not in fast_text:
@@ -251,6 +259,8 @@ def main():
         'list_sort_desc_asc_toggle': True,
         'stat_colors_and_active_column_glow': True,
         'stat_font_enlarged': True,
+        'priority_notice_next_to_each_heading': True,
+        'applied_row_glow_survives_list_sort': True,
         'legacy_csv_search_refs_removed': True,
         'legacy_linegen_search_refs_removed': True,
     }
