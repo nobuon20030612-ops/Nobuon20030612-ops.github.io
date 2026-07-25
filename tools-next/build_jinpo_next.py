@@ -154,7 +154,7 @@ def main():
 
     # Static-site integrity checks for staging.
     required_site = [
-        SITE/'index.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js',
+        SITE/'index.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js', SITE/'jinpo-activation-engine.js',
         SITE/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
     ]
     for p in required_site:
@@ -187,6 +187,7 @@ def main():
     index_text = (SITE/'index.html').read_text(encoding='utf-8')
     fast_text = (SITE/'jinpo-fast-search.js').read_text(encoding='utf-8')
     worker_text = (SITE/'jinpo-fast-search-worker.js').read_text(encoding='utf-8')
+    activation_text = (SITE/'jinpo-activation-engine.js').read_text(encoding='utf-8')
 
     forbidden_fragments = {
         'index.html': [
@@ -205,6 +206,7 @@ def main():
         'index.html': index_text,
         'jinpo-fast-search.js': fast_text,
         'jinpo-fast-search-worker.js': worker_text,
+        'jinpo-activation-engine.js': activation_text,
     }
     for name, fragments in forbidden_fragments.items():
         for frag in fragments:
@@ -241,15 +243,67 @@ def main():
         "appliedListRowKey=stableRowKey(row)",
         "jinpoAppliedRow",
         "(isApplied?'適用中':'適用')",
+        'data-hero-internal-id',
     ]
     for frag in required_fast_fragments:
         if frag not in fast_text:
             fail(f'確定済み500件/UI仕様が欠落: jinpo-fast-search.js: {frag}', report)
 
-    required_worker_fragments = ['q.limit||500', 'Top500正式運用']
+    required_worker_fragments = [
+        'q.limit||500', 'Top500正式運用', '_heroNameToIds', 'ownedInternalIds',
+        'eiketsu_internal_ids:internalIds.join', "d.type==='lookupExact'",
+        'function lookupExact(q,token)', 'function exactBondIds(names,m)', "cache:'no-cache'",
+        'function normalFiveSixUnsupported(q)', "reason:'normal_5_6_not_supported'"
+    ]
     for frag in required_worker_fragments:
         if frag not in worker_text:
-            fail(f'Top500 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
+            fail(f'Top500/内部ID/完全照合 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
+    if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
+        fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
+
+    required_function_fragments = {
+        'jinpo-fast-search.js': [
+            'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function lookupExactState(opts)',
+            'worker.terminate()', "(c===5||c===6)&&!gradeOn()",
+            'selectedExclude=0;syncFactor4()', 'eiketsu_internal_ids||',
+        ],
+        'index.html': [
+            'function sameReachInternalIdSet', 'function sameReachBondSet',
+            'function dbRowMatchesReachState', 'function lookupReachSwapExactDbRow',
+            'dbRowMatchesReachState(row,placement,liveResult',
+            'function buildHeroInternalIdLookup', 'internalIds.length === 6',
+            '同名英傑が複数いるため、名前よりinternal_idを必ず優先する',
+            '所持英傑はinternal_idを正とする。同名別個体を名前でまとめない',
+            "+'@@g3='+(grade3On66()?'1':'0')+'@@owned='",
+            "+'@@excluded='+excluded.join(',')",
+            "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroes',
+            'source:"current_result_db_exact"', 'if(modern) return null;',
+            'if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];',
+            'return [1600,1400,1200,1000,800,600,400,200];',
+            'function findHeroByInternalId', 'heroFactor4IdentityKey', 'data-hero-internal-id',
+            'Number(a.heroIndex) === rel', 'function activatedLinesText(act)',
+            'return lookupPromise;', 'swapApplySeq=0', 'Promise.resolve(ret).catch',
+            'if(applySeq===swapApplySeq) hideSwapLoading()',
+            'function bonusHeroInternalId(hero)', 'function bonusRowInternalIds(row)',
+            'function bonusHeroByInternalId(id)', "if(ret && typeof ret.then==='function')",
+        ],
+        'jinpo-activation-engine.js': [
+            'const activatedOccurrences = [];', 'const activatedByName = new Map();',
+            'occurrences:[occurrence]', 'activated: activatedFlat', 'activatedOccurrences', 'heroInternalId:',
+        ],
+    }
+    for name, fragments in required_function_fragments.items():
+        for frag in fragments:
+            if frag not in texts[name]:
+                fail(f'検索/適用/差替の確定済み回帰ガード欠落: {name}: {frag}', report)
+
+    # 見聞録の職業判定は、過去に確定した通り英傑マスタ「職業」列を直接見る。
+    hero_job_match = re.search(r'function\s+heroJob\s*\(hero\)\s*\{(?P<body>.*?)\n\s*\}', index_text, re.S)
+    if not hero_job_match:
+        fail('見聞録のheroJob関数が見つかりません', report)
+    hero_job_body = hero_job_match.group('body')
+    if "hero['職業']" not in hero_job_body or "hero['因子1']" in hero_job_body:
+        fail('見聞録の職業判定が英傑マスタ「職業」列直接参照ではありません', report)
 
     report['regression_guards'] = {
         'top300_removed': True,
@@ -263,6 +317,27 @@ def main():
         'applied_row_glow_survives_list_sort': True,
         'legacy_csv_search_refs_removed': True,
         'legacy_linegen_search_refs_removed': True,
+        'duplicate_name_internal_id_search': True,
+        'owned_hero_internal_id_priority': True,
+        'exact_bond_set_db_match': True,
+        'full_db_exact_lookup_after_swap': True,
+        'stale_async_swap_lookup_rejected': True,
+        'swap_cache_tracks_grade_owned_excluded': True,
+        'grade3_swap_cost_guard': True,
+        'excluded_swap_guard': True,
+        'search_cancel_terminates_worker': True,
+        'factor4_reset': True,
+        'priority_threshold_values_match_visible_buttons': True,
+        'factor4_duplicate_name_uses_internal_id': True,
+        'unique_bond_count_with_line_occurrences_preserved': True,
+        'manifest_fetch_fresh_before_versioned_db_cache': True,
+        'normal_5_6_worker_access_blocked': True,
+        'factor4_assignment_uses_line_hero_index': True,
+        'swap_loading_waits_for_exact_lookup': True,
+        'swap_loading_stale_completion_guard': True,
+        'bonus_fallback_internal_id_first': True,
+        'bonus_recalc_after_exact_lookup': True,
+        'kenbun_job_uses_master_job_column_directly': True,
     }
 
     # 文字化け/UTF-8/CSV/JSONを毎回自動検査する。
@@ -317,8 +392,36 @@ def main():
     # compact DBをmanifestと突き合わせる。件数・magic・record size・gzipハッシュを検査。
     compact_checked = 0
     seen_compact = set()
-    def verify_compact_entry(info, label):
-        nonlocal compact_checked
+    # Current master IDs are sparse by design; compact numeric hero ID is the numeric part of internal_id.
+    master_id_to_row = {}
+    for r in master_rows:
+        iid = str(r.get('internal_id','')).strip()
+        mm = re.fullmatch(r'EIK_(\d+)', iid, flags=re.I)
+        if not mm:
+            fail(f'英傑マスタ internal_id 形式不正: {iid}', report)
+        hid = int(mm.group(1))
+        if hid in master_id_to_row:
+            fail(f'英傑マスタ internal_id 重複: {iid}', report)
+        master_id_to_row[hid] = r
+    hero_names_manifest = manifest.get('hero_names', [])
+    for hid, r in master_id_to_row.items():
+        if hid >= len(hero_names_manifest):
+            fail(f'compact manifestに英傑IDがありません: EIK_{hid:04d}', report)
+        expected_name = str(r.get('英傑名','')).strip()
+        if str(hero_names_manifest[hid] or '').strip() != expected_name:
+            fail(f'compact hero_names/internal_id対応不一致: EIK_{hid:04d} {expected_name} != {hero_names_manifest[hid]}', report)
+    name_counts = {}
+    for r in master_rows:
+        n = str(r.get('英傑名','')).strip()
+        name_counts[n] = name_counts.get(n, 0) + 1
+    duplicate_display_names = sorted(n for n,c in name_counts.items() if n and c > 1)
+
+    semantic_records = 0
+    semantic_duplicate_combos = 0
+    legacy_inaccessible_orphans = {}
+
+    def verify_compact_entry(info, label, semantic=None):
+        nonlocal compact_checked, semantic_records, semantic_duplicate_combos
         if not isinstance(info, dict) or not info.get('file'):
             fail(f'compact DB manifest不正: {label}', report)
         rel = str(info['file'])
@@ -347,14 +450,60 @@ def main():
         rows = (len(raw)-16)//rec
         if rows != int(info.get('rows', -1)):
             fail(f'compact DB件数不一致: {label}: {rel}: {rows} != {info.get("rows")}', report)
+        header_rows = struct.unpack_from('<I', raw, 8)[0]
+        if header_rows != rows:
+            fail(f'compact DBヘッダー件数不一致: {label}: {rel}: header={header_rows} body={rows}', report)
         if info.get('raw_bytes') is not None and len(raw) != int(info['raw_bytes']):
             fail(f'compact DB rawサイズ不一致: {label}: {rel}', report)
+
+        if semantic is not None:
+            mode, count, formation = semantic
+            count = int(count)
+            seen = set()
+            accessible = (mode == 'grade3' or count >= 7)
+            orphan_counts = {}
+            for idx in range(rows):
+                off = 16 + idx * rec
+                hero_ids = struct.unpack_from('<6H', raw, off)
+                if len(set(hero_ids)) != 6:
+                    fail(f'compact DB 1編成内の英傑重複: {label}: row={idx}', report)
+                active_bonds = tuple(raw[off+12:off+12+count])
+                rest_bonds = raw[off+12+count:off+21]
+                if any(b == 0 for b in active_bonds) or len(set(active_bonds)) != count:
+                    fail(f'compact DB 発動因縁の欠損/重複: {label}: row={idx}', report)
+                if any(rest_bonds):
+                    fail(f'compact DB 因縁余剰スロット不正: {label}: row={idx}', report)
+                for b in active_bonds:
+                    if b >= len(manifest.get('bond_names', [])):
+                        fail(f'compact DB 因縁ID範囲外: {label}: row={idx}: {b}', report)
+                f4 = raw[off+47]
+                if f4 > 6:
+                    fail(f'compact DB 文曲使用数不正: {label}: row={idx}: {f4}', report)
+                for hid in hero_ids:
+                    if hid >= len(hero_names_manifest) or not str(hero_names_manifest[hid] or '').strip():
+                        fail(f'compact DB 英傑ID範囲外/名称なし: {label}: row={idx}: {hid}', report)
+                    if hid not in master_id_to_row:
+                        orphan_counts[hid] = orphan_counts.get(hid, 0) + 1
+                        if accessible:
+                            fail(f'現在利用可能DBに英傑マスタ未登録ID: {label}: row={idx}: EIK_{hid:04d}', report)
+                    elif mode == 'grade3':
+                        cost = int(float(str(master_id_to_row[hid].get('コスト','999') or '999')))
+                        if cost > 6:
+                            fail(f'等級3以下DBにコスト7以上を検出: {label}: row={idx}: EIK_{hid:04d} cost={cost}', report)
+                combo_key = struct.pack('<6H', *sorted(hero_ids)) + bytes(sorted(active_bonds))
+                if combo_key in seen:
+                    semantic_duplicate_combos += 1
+                    fail(f'正しい重複定義でcompact DB重複: {label}: row={idx}', report)
+                seen.add(combo_key)
+            semantic_records += rows
+            if orphan_counts:
+                legacy_inaccessible_orphans[label] = {f'EIK_{hid:04d}': n for hid,n in sorted(orphan_counts.items())}
         compact_checked += 1
 
     for mode, counts in manifest.get('datasets', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():
-                verify_compact_entry(info, f'datasets/{mode}/{count}/{formation}')
+                verify_compact_entry(info, f'datasets/{mode}/{count}/{formation}', (mode, count, formation))
     for mode, counts in manifest.get('top', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():
@@ -364,7 +513,46 @@ def main():
             for formation, stats in forms.items():
                 for stat, info in stats.items():
                     verify_compact_entry(info, f'sort_top/{mode}/{count}/{formation}/{stat}')
-    report['compact_integrity'] = {'files': compact_checked, 'errors': 0}
+    report['compact_integrity'] = {
+        'files': compact_checked, 'errors': 0,
+        'full_records_semantic_checked': semantic_records,
+        'duplicate_combo_errors': semantic_duplicate_combos,
+        'duplicate_display_names_kept_distinct_by_internal_id': duplicate_display_names,
+        'legacy_normal_5_6_inaccessible_master_orphans': legacy_inaccessible_orphans,
+        'header_row_count_errors': 0,
+    }
+
+
+    rebuild_top_path = ROOT/'tools-next'/'rebuild_top500.py'
+    if rebuild_top_path.exists():
+        rebuild_top_text = rebuild_top_path.read_text(encoding='utf-8')
+        for frag in ["fingerprint=hashlib.sha256", "m['version']='unified-v2-top500-'+fingerprint", 'LIMIT = 500']:
+            if frag not in rebuild_top_text:
+                fail(f'Top500再生成のcache version自動更新仕様が欠落: {frag}', report)
+        report['top500_rebuild_cache_version_guard'] = True
+
+    # 検索可能な全件DBについて、実際の発動因縁集合/文曲人数とDB記録を全件照合。
+    # さらに全件DBからTop500/単一優先Top500を独立再計算し、内容と順序まで一致させる。
+    integrity_audit = ROOT/'tools-next'/'audit_search_integrity.py'
+    if not integrity_audit.exists():
+        fail('検索DB全件監査スクリプトがありません: tools-next/audit_search_integrity.py', report)
+    cp = subprocess.run([sys.executable, str(integrity_audit)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('検索DB全件監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    audit_report_path = REPORT_DIR/'search_integrity_report.json'
+    if not audit_report_path.exists():
+        fail('検索DB全件監査レポートが生成されませんでした', report)
+    audit_report = json.loads(audit_report_path.read_text(encoding='utf-8'))
+    if audit_report.get('status') != 'PASS':
+        fail('検索DB全件監査レポートがPASSではありません', report)
+    report['search_integrity_audit'] = {
+        'accessible_full_records': audit_report.get('accessible_full_records'),
+        'bondset_errors': audit_report.get('bondset_errors'),
+        'factor4_errors': audit_report.get('factor4_errors'),
+        'top_files_exact': audit_report.get('top_files_exact'),
+        'sort_top_files_exact': audit_report.get('sort_top_files_exact'),
+        'seconds': audit_report.get('seconds'),
+    }
 
     # JS構文をGitHub Actions上でも検査。外部JSとindex.html内のinline scriptを対象にする。
     node = shutil.which('node')

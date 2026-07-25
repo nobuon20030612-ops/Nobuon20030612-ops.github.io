@@ -89,6 +89,7 @@
             requiredFactor: req.factor,
             requiredIndex: req.idx,
             heroIndex: h,
+            heroInternalId: heroOptions[h].hero.internal_id || "",
             heroName: heroOptions[h].hero["英傑名"] || heroOptions[h].hero.name || "",
             providedFactors: heroOptions[h].factors
           });
@@ -126,6 +127,7 @@
             requiredFactor:req.factor,
             requiredIndex:req.idx,
             heroIndex:h,
+            heroInternalId:heroOptions[h].hero.internal_id || "",
             heroName:heroOptions[h].hero["英傑名"] || "",
             providedFactors:heroOptions[h].factors
           }]));
@@ -188,14 +190,24 @@
     const lines = config.activeLines || [];
     const lineResults = lines.map(line=>calculateLineResult(line, placement, inenMaster));
 
+    // 因縁数は「発動した因縁の種類数」。
+    // 同じ因縁が複数ラインで成立しても1因縁として数える。
+    // 一方、文曲(因子4)やライン発光は各ラインの成立情報が必要なので、
+    // activatedOccurrences には全ライン分をそのまま保持する。
+    const activatedOccurrences = [];
     const activatedFlat = [];
-    const seen = new Set();
+    const activatedByName = new Map();
     for(const lr of lineResults){
       for(const a of lr.activated){
-        const key = `${a.name}|${lr.lineSlots.join("-")}`;
-        if(!seen.has(key)){
-          seen.add(key);
-          activatedFlat.push({...a, lineSlots:lr.lineSlots, heroes:lr.heroes});
+        const occurrence = {...a, lineSlots:lr.lineSlots, heroes:lr.heroes};
+        activatedOccurrences.push(occurrence);
+        const key = String(a.name || "").trim();
+        if(!activatedByName.has(key)){
+          const uniqueAct = {...occurrence, occurrences:[occurrence]};
+          activatedByName.set(key, uniqueAct);
+          activatedFlat.push(uniqueAct);
+        }else{
+          activatedByName.get(key).occurrences.push(occurrence);
         }
       }
     }
@@ -217,6 +229,7 @@
       config,
       lineResults,
       activated: activatedFlat,
+      activatedOccurrences,
       reach: reachFlat
     };
   }

@@ -1017,10 +1017,11 @@ try{
 if(typeof ownedHeroFilterIds === "undefined") return {ids,names};
 for(const key of ownedHeroFilterIds || []){
 const hero = ownedHeroById(key);
-if(hero){
-if(hero.internal_id) ids.add(String(hero.internal_id));
-names.add(canonicalHeroName(heroName(hero)));
+if(hero && hero.internal_id){
+/* 所持英傑はinternal_idを正とする。同名別個体を名前でまとめない。 */
+ids.add(String(hero.internal_id));
 }else if(key){
+/* 旧保存値などIDへ解決できない時だけ名前互換。 */
 names.add(canonicalHeroName(key));
 }
 }
@@ -1124,7 +1125,13 @@ return String(name ?? "")
 .replace(/　+/g, "");
 }
 function dbRowMembersForReachMatch(row){
-return String(row?.eiketsu_ids || row?.members || row?.m || "")
+return String(row?.eiketsu_names || row?.eiketsu_ids || row?.members || row?.m || "")
+.split("|")
+.map(x=>x.trim())
+.filter(Boolean);
+}
+function dbRowInternalIdsForReachMatch(row){
+return String(row?.eiketsu_internal_ids || "")
 .split("|")
 .map(x=>x.trim())
 .filter(Boolean);
@@ -1133,6 +1140,16 @@ function sameReachHeroNameSet(a, b){
 const aa = a.map(normalizeReachDbHeroName).sort().join("|");
 const bb = b.map(normalizeReachDbHeroName).sort().join("|");
 return !!aa && aa === bb;
+}
+function sameReachInternalIdSet(a,b){
+const aa=(a||[]).map(x=>String(x||"").trim()).filter(Boolean).sort().join("|");
+const bb=(b||[]).map(x=>String(x||"").trim()).filter(Boolean).sort().join("|");
+return !!aa && aa===bb;
+}
+function sameReachBondSet(a,b){
+const aa=(a||[]).map(x=>String(x||"").trim()).filter(Boolean).sort().join("|");
+const bb=(b||[]).map(x=>String(x||"").trim()).filter(Boolean).sort().join("|");
+return aa===bb;
 }
 function dbRowFormationMatchesReach(row, formation){
 const f = String(row?.formation || row?.form || row?.陣形 || row?.f || "").trim();
@@ -1143,38 +1160,33 @@ if(f.includes(current)) return true;
 if((current === "魚鱗" || current === "方円") && f.includes("魚鱗") && f.includes("方円")) return true;
 return false;
 }
+function dbRowMatchesReachState(row,targetPlacement,targetResult,formation){
+if(!row || !targetPlacement) return false;
+const names=[1,2,3,4,5,6].map(s=>heroName(targetPlacement[s])||"");
+const internalIds=[1,2,3,4,5,6].map(s=>String(targetPlacement[s]?.internal_id||"").trim());
+if(names.some(n=>!n)) return false;
+const expectedBonds=(targetResult?.activated||[]).map(a=>String(a?.name||"").trim()).filter(Boolean);
+if(Number(row.bond_count||row.ic||0)!==expectedBonds.length) return false;
+if(!dbRowFormationMatchesReach(row,formation)) return false;
+const rowIds=dbRowInternalIdsForReachMatch(row);
+const heroOk=rowIds.length===6&&internalIds.every(Boolean)?sameReachInternalIdSet(rowIds,internalIds):sameReachHeroNameSet(dbRowMembersForReachMatch(row),names);
+if(!heroOk) return false;
+const rowBonds=typeof dbRowBondList==="function"?dbRowBondList(row):String(row?.bond_names||row?.bond_ids||row?.inen||"").split("|").filter(Boolean);
+return sameReachBondSet(rowBonds,expectedBonds);
+}
 function findResultDbRowForPlacementState(targetPlacement, targetResult){
-const formation = String(formationSelect.value || "").trim();
-const names = [1,2,3,4,5,6].map(s=>heroName(targetPlacement[s]) || "");
-if(names.some(n=>!n)) return null;
-const expectedBondCount = Number((targetResult?.activated || []).length || 0);
-const nameKey = makeHeroNameKey(names);
-const formationKeys = [formation];
-if(formation === "魚鱗" || formation === "方円") formationKeys.push(formation);
-let candidates = [];
-for(const f of formationKeys){
-candidates = candidates.concat(resultDbByHeroNamesFormation.get(`${f}||${nameKey}`) || []);
-}
-candidates = candidates.concat(resultDbByHeroNames.get(nameKey) || []);
-let matched = candidates.filter(row=>{
-const countOk = expectedBondCount ? Number(row.bond_count || row.ic || 0) === expectedBondCount : true;
-return countOk && dbRowFormationMatchesReach(row, formation);
-});
-if(!matched.length){
-const source = Array.isArray(resultDbRows) ? resultDbRows : [];
-matched = source.filter(row=>{
-const countOk = expectedBondCount ? Number(row.bond_count || row.ic || 0) === expectedBondCount : true;
-if(!countOk) return false;
-if(!dbRowFormationMatchesReach(row, formation)) return false;
-return sameReachHeroNameSet(dbRowMembersForReachMatch(row), names);
-});
-}
-if(!matched.length && candidates.length){
-matched = expectedBondCount
-? candidates.filter(row => Number(row.bond_count || row.ic || 0) === expectedBondCount)
-: candidates.slice();
-}
-return matched[0] || null;
+const formation=String(formationSelect.value||"").trim();
+const source=Array.isArray(resultDbRows)?resultDbRows:[];
+for(const row of source){if(dbRowMatchesReachState(row,targetPlacement,targetResult,formation))return row;}
+/* 現在の500件から外れた後も、直前に正確照合済みの行を利用できるようにする。
+   必ず6英傑internal_id＋発動因縁集合＋陣形を再照合し、古い行の流用はしない。 */
+const remembered=[];
+try{remembered.push(window.__jinpoExactAppliedDbRow);}catch(e){}
+try{remembered.push(window.__lastReachAppliedDbRow);}catch(e){}
+try{remembered.push(window.__jinpoBonusBaseDbRow);}catch(e){}
+try{remembered.push(window.__currentAppliedDbRow);}catch(e){}
+for(const row of remembered){if(row&&dbRowMatchesReachState(row,targetPlacement,targetResult,formation))return row;}
+return null;
 }
 function renderRealtimeTotalStatsFromReachDbRow(row){
 const box = document.getElementById("totalStatResult");
@@ -1246,6 +1258,40 @@ box.innerHTML = `
 <div class="appliedDbRowCell appliedDbRowFull"><div class="appliedDbRowLabel">総合値</div><div class="appliedDbRowValue">登録外 / ステータス未登録</div></div>
 </div>`;
 }
+function lookupReachSwapExactDbRow(nextPlacement,nextResult){
+try{
+if(!window.JINPO_FAST_SEARCH || typeof window.JINPO_FAST_SEARCH.lookupExactState !== "function") return Promise.resolve(null);
+const ids=[1,2,3,4,5,6].map(s=>String(nextPlacement[s]?.internal_id || "").trim());
+const bondNames=(nextResult?.activated || []).map(a=>String(a?.name || "").trim()).filter(Boolean);
+const count=bondNames.length;
+if(ids.some(x=>!x) || count<5 || count>9) return Promise.resolve(null);
+const grade3 = (typeof grade3Cost6OnlyEnabled !== "undefined") ? !!grade3Cost6OnlyEnabled : !!window.grade3Cost6OnlyEnabled;
+return window.JINPO_FAST_SEARCH.lookupExactState({mode:grade3?"grade3":"normal",count:count,formation:String(formationSelect.value||""),heroInternalIds:ids,bondNames:bondNames}).then(r=>r&&r.row?r.row:null);
+}catch(e){
+console.error("差替後の全件DB完全照合準備失敗",e);
+return Promise.resolve(null);
+}
+}
+function applyReachExactDbRowIfCurrent(row,nextPlacement,nextResult,lookupSeq){
+if(!row || Number(window.__jinpoReachExactLookupSeq||0)!==Number(lookupSeq)) return false;
+const currentIds=[1,2,3,4,5,6].map(s=>String(placement[s]?.internal_id || "").trim()).sort().join("|");
+const lookupIds=[1,2,3,4,5,6].map(s=>String(nextPlacement[s]?.internal_id || "").trim()).sort().join("|");
+if(!currentIds || currentIds!==lookupIds) return false;
+/* lookup中に陣形を変更した場合など、古い非同期結果を適用しない。 */
+let liveResult=null;
+try{
+liveResult=window.JinpoActivationEngine.calculateFormation(placement,String(formationSelect.value||""),inenMaster,window.JINPO_FORMATION_CONFIG);
+}catch(e){}
+if(!liveResult || !dbRowMatchesReachState(row,placement,liveResult,String(formationSelect.value||""))) return false;
+selectedDbResultId=String(row.result_id || row.id || "");
+window.__lastReachAppliedDbRow=row;
+window.__jinpoExactAppliedDbRow=row;
+try{ window.__jinpoBonusBaseDbRow=row; }catch(e){}
+try{ if(typeof renderRealtimeTotalStatsFromReachDbRow === "function") renderRealtimeTotalStatsFromReachDbRow(row); }catch(e){ console.error(e); }
+try{ if(typeof renderReachAppliedCandidateBox === "function") renderReachAppliedCandidateBox(row,nextResult); }catch(e){ console.error(e); }
+try{ if(typeof renderMasterResult === "function") renderMasterResult(); }catch(e){}
+return true;
+}
 function applyReachSwapCandidate(slot, afterId){
 const s = Number(slot);
 const afterKey = String(afterId ?? "").trim();
@@ -1258,11 +1304,11 @@ String(e.name ?? "") === afterKey
 );
 if(!s || !hero){
 alert("差し替え対象の英傑が見つかりません");
-return;
+return Promise.resolve(null);
 }
 if(typeof isHeroAlreadyPlaced === "function" && isHeroAlreadyPlaced(hero.internal_id, s)){
 alert("同じ英傑は複数配置できません");
-return;
+return Promise.resolve(null);
 }
 const nextPlacement = {...placement, [s]:hero};
 let nextResult = null;
@@ -1284,6 +1330,8 @@ dbRow = findResultDbRowForPlacementState(nextPlacement, nextResult);
 }catch(e){
 console.error("リーチ適用後のDB照合失敗", e);
 }
+const exactLookupSeq = (Number(window.__jinpoReachExactLookupSeq || 0) + 1);
+window.__jinpoReachExactLookupSeq = exactLookupSeq;
 placement = nextPlacement;
 selectedDbResultId = dbRow ? String(dbRow.result_id || dbRow.id || "") : "";
 window.__lastReachAppliedDbRow = dbRow || null;
@@ -1317,9 +1365,23 @@ if(nextResult && typeof renderRealtimeTotalStats === "function") renderRealtimeT
 }catch(e){
 console.error("リーチ適用後のトータル表示更新失敗", e);
 }
+let lookupPromise = Promise.resolve(dbRow || null);
+if(!dbRow && nextResult){
+lookupPromise = lookupReachSwapExactDbRow(nextPlacement,nextResult).then(function(exactRow){
+if(!exactRow) return null;
+return applyReachExactDbRowIfCurrent(exactRow,nextPlacement,nextResult,exactLookupSeq) ? exactRow : null;
+}).catch(function(e){ console.error("差替後の全件DB完全照合失敗",e); return null; });
+}
+/* 差替の「読み込み中」は、全件DB完全照合が終わるまで維持できるようPromiseを返す。
+   通常5・6（検索対象外）のDOWN状態はlookupが即nullでも、新式リアルタイム計算は既存経路で維持する。 */
+return lookupPromise;
 }
 window.applyReachSwapCandidate = applyReachSwapCandidate;
 
+function activatedLinesText(act){
+const occ = Array.isArray(act?.occurrences) && act.occurrences.length ? act.occurrences : [act];
+return Array.from(new Set(occ.map(x=>(x?.lineSlots||[]).join("-")).filter(Boolean))).join(" / ");
+}
 function renderResults(result){
 document.getElementById("summary").innerHTML = `
 <div class="activatedBanner">
@@ -1333,7 +1395,7 @@ document.getElementById("activatedList").innerHTML = result.activated.length ? `
 ${result.activated.map(a=>`
 <div class="activatedBondCard">
 <div class="activatedBondName">${esc(a.name)}</div>
-<div class="activatedBondMeta">ライン ${esc(a.lineSlots.join("-"))}${a.type ? ` / ${esc(a.type)}` : ""}</div>
+<div class="activatedBondMeta">ライン ${esc(activatedLinesText(a))}${a.type ? ` / ${esc(a.type)}` : ""}</div>
 <div class="badgeRow">${a.factors.map(f=>`<span class="badge">${esc(f)}</span>`).join("")}</div>
 <div class="badgeRow">${a.effects.map(e=>`<span class="badge">${esc(e)}</span>`).join("")}</div>
 <div class="small">${a.assignments.map(x=>`${esc(x.requiredFactor)}=${esc(x.heroName)}`).join(" / ")}</div>
@@ -1958,15 +2020,39 @@ function calcRealTimeStatsFromMultiplierMaster(result){
 return null;
 }
 function getCurrentMasterHit(){
+/* 新compact DBでは名前だけで一致させない。
+   同名別個体・同じ6人で発動因縁が異なる行を誤ってDB一致扱いしないため、
+   internal_id 6人＋発動因縁集合＋陣形の完全一致を最優先にする。 */
+try{
+if(window.JinpoActivationEngine && formationSelect && String(formationSelect.value||"").trim()){
+const result=window.JinpoActivationEngine.calculateFormation(placement,formationSelect.value,inenMaster,window.JINPO_FORMATION_CONFIG);
+const exact=findResultDbRowForPlacementState(placement,result);
+if(exact){
+return {
+source:"current_result_db_exact",
+bond_count:String(exact.bond_count || exact.ic || ""),
+stats:getStatsFromMasterHit({raw:exact}),
+raw:exact,
+candidates:[exact],
+allCandidates:[exact],
+ambiguous:false,
+selectedResultId:String(exact.result_id || exact.id || "")
+};
+}
+}
+}catch(e){}
 const candidates = getResultDbCandidatesByCurrentPlacement();
 if(candidates.length){
+/* internal_idを持つ新DBで完全一致しなかった場合、名前一致へフォールバックしない。 */
+const modern = candidates.some(r=>dbRowInternalIds(r).length===6);
+if(modern) return null;
 const selected = selectedDbResultId
 ? candidates.find(r=>String(r.result_id || r.id || "") === String(selectedDbResultId))
 : null;
 const raw = selected || candidates[0];
 const exactSelected = selected ? [selected] : candidates;
 return {
-source:"current_result_db",
+source:"legacy_result_db",
 bond_count: selected ? String(raw.bond_count || raw.ic || "") : summarizeCandidateBondCount(candidates),
 stats: selected ? getStatsFromMasterHit({raw}) : summarizeCandidateStats(candidates),
 raw,
@@ -2118,7 +2204,7 @@ if(mode) mode.textContent = modeText;
 if(mini){
 const singleFormula = !hit ? calcSingleInenStatsFromMultiplierMaster(result) : null;
 mini.innerHTML = hit
-? ((result?.activated || []).map(a=>`<span class="badge">${esc(a.lineSlots.join("-"))} ${esc(a.name)}</span>`).join(""))
+? ((result?.activated || []).map(a=>`<span class="badge">${esc(activatedLinesText(a))} ${esc(a.name)}</span>`).join(""))
 : (singleFormula
 ? `<span class="badge">${esc(singleFormula.act.lineSlots.join("-"))} ${esc(singleFormula.act.name)} 単独式</span>`
 : `<span class="cleanNote">DB未一致時は単独因縁1件のみ式計算表示。</span>`);
@@ -2160,17 +2246,40 @@ function dbRowMatchesExcludedHeroes(row){
 try{ return !window.__jinpoExcludedHeroRowOk || window.__jinpoExcludedHeroRowOk(row); }catch(e){ return true; }
 }
 function dbRowMembers(row){
-return String(row?.eiketsu_ids || row?.members || "")
+return String(row?.eiketsu_names || row?.eiketsu_ids || row?.members || "")
 .split("|")
 .map(x=>normalizeHeroDisplayName(x))
 .map(x=>x.trim())
 .filter(Boolean);
 }
-function dbRowBondList(row){
-return String(row?.bond_ids || row?.inen || "")
+function dbRowInternalIds(row){
+return String(row?.eiketsu_internal_ids || "")
 .split("|")
 .map(x=>x.trim())
 .filter(Boolean);
+}
+function dbRowBondList(row){
+return String(row?.bond_names || row?.bond_ids || row?.inen || "")
+.split("|")
+.map(x=>x.trim())
+.filter(Boolean);
+}
+function dbRowExternalIds(row){
+return String(row?.eiketsu_external_ids || row?.external_ids || "")
+.split("|")
+.map(x=>x.trim())
+.filter(Boolean);
+}
+function dbRowFormations(row){
+return splitDbFormations(row?.formation || row?.form || row?.陣形 || "");
+}
+function buildHeroInternalIdLookup(){
+const map = new Map();
+for(const h of eiketsuMaster){
+const id = String(h?.internal_id || "").trim();
+if(id) map.set(id, h);
+}
+return map;
 }
 function buildHeroNameLookup(){
 const map = new Map();
@@ -2281,13 +2390,9 @@ renderDbStatButtons();
 }
 function dbThresholdValuesForStat(stat){
 if(!stat) return [];
-const out = [];
-if(stat === "生命" || stat === "気合"){
-for(let v=20000; v>=5000; v-=1000) out.push(v);
-return out;
-}
-for(let v=1500; v>=100; v-=100) out.push(v);
-return out;
+/* 優先ソートの表示ボタンと検索用selectは必ず同じ正式値を使う。 */
+if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];
+return [1600,1400,1200,1000,800,600,400,200];
 }
 function populateDbPriorityControls(){
 for(let i=1;i<=3;i++){
@@ -2491,18 +2596,29 @@ box.innerHTML = "";
 }
 function applyDbFormationRow(row){
 const members = dbRowMembers(row);
+const internalIds = dbRowInternalIds(row);
 if(members.length !== 6){
 alert("DB行の配置英傑が6人ではありません");
 return;
 }
-const lookup = buildHeroNameLookup();
 const next = {};
 const missing = [];
+if(internalIds.length === 6){
+const idLookup = buildHeroInternalIdLookup();
+internalIds.forEach((id, idx)=>{
+const h = idLookup.get(String(id).trim());
+if(h) next[idx+1] = h;
+else missing.push((members[idx] || id) + " (" + id + ")");
+});
+}else{
+/* 旧データ互換。新compact DBはinternal_idを必ず持つ。 */
+const lookup = buildHeroNameLookup();
 members.forEach((name, idx)=>{
 const h = lookup.get(canonicalHeroName(name));
 if(h) next[idx+1] = h;
 else missing.push(name);
 });
+}
 if(missing.length){
 alert("英傑マスターに見つからない英傑があります: " + missing.join(" / "));
 return;
@@ -3094,13 +3210,19 @@ return !isGrade3OwnedHeroCost6OnlyActive() || ownedHeroReliableCost(row) <= 6;
 function rowName(row){return String(row["名前"] || row["英傑名"] || "").trim();}
 function rowKey(row){
 const name = rowName(row);
+const explicitId = String((row && (row["番号"] || row.internal_id || row["internal_id"])) || "").trim();
 try{
 if(typeof eiketsuMaster !== "undefined" && Array.isArray(eiketsuMaster)){
-const hit = eiketsuMaster.find(e => String(e["英傑名"] || "").trim() === name || String(e.internal_id || "") === String(row["番号"] || ""));
-if(hit && hit.internal_id) return String(hit.internal_id);
+/* 同名英傑が複数いるため、名前よりinternal_idを必ず優先する。 */
+if(explicitId){
+const byId = eiketsuMaster.find(e => String(e.internal_id || "") === explicitId);
+if(byId && byId.internal_id) return String(byId.internal_id);
+}
+const byName = eiketsuMaster.find(e => String(e["英傑名"] || "").trim() === name);
+if(byName && byName.internal_id) return String(byName.internal_id);
 }
 }catch(e){}
-return name || String(row["番号"] || "").trim();
+return explicitId || name;
 }
 function displayNameFromKey(key){
 const k = String(key || "").trim();
@@ -3316,17 +3438,24 @@ try{
 var hero = placement[slot];
 var f4 = factor4Of(hero);
 if(!hero || !f4) return false;
-var name = normalizeName(hName(hero));
 var assigns = Array.isArray(act && act.assignments) ? act.assignments : [];
+var line = Array.isArray(act && act.lineSlots) ? act.lineSlots.map(Number) : [];
+var rel = line.indexOf(Number(slot));
+if(rel >= 0){
+return assigns.some(function(a){ return Number(a.heroIndex) === rel && safeText(a.requiredFactor) === f4; });
+}
+var iid = safeText(hero.internal_id), name = normalizeName(hName(hero));
 return assigns.some(function(a){
-return safeText(a.requiredFactor) === f4 && normalizeName(a.heroName) === name;
+if(safeText(a.requiredFactor) !== f4) return false;
+if(iid && safeText(a.heroInternalId)) return safeText(a.heroInternalId) === iid;
+return normalizeName(a.heroName) === name;
 });
 }catch(e){ return false; }
 }
 function currentFactor4Slots(result){
 var slots = new Set();
 try{
-(result && result.activated || []).forEach(function(act){
+(result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
 (act.lineSlots || []).forEach(function(slot){
 if(assignmentUsesHeroFactor4(act, Number(slot))) slots.add(Number(slot));
 });
@@ -3367,6 +3496,22 @@ return eiketsuMaster.find(function(h){ return normalizeName(hName(h)) === n; }) 
 }catch(e){}
 return null;
 }
+function findHeroByInternalId(id){
+var key = safeText(id);
+if(!key) return null;
+try{
+if(Array.isArray(eiketsuMaster)){
+return eiketsuMaster.find(function(h){ return safeText(h && h.internal_id) === key; }) || null;
+}
+}catch(e){}
+return null;
+}
+function heroFactor4IdentityKey(hero){
+if(!hero) return "";
+var iid = safeText(hero.internal_id);
+var ident = iid ? ("id:" + iid) : ("name:" + normalizeName(hName(hero)));
+return ident + "|" + factor4Of(hero);
+}
 function factorsForBondName(bondName){
 var n = safeText(bondName);
 try{
@@ -3400,12 +3545,13 @@ var localPlacement = {};
 var heroCount = 0;
 row.querySelectorAll(".dbPlacementMini span").forEach(function(span, idx){
 var raw = safeText(span.textContent).replace(/^\d+\.\s*/,"").replace(/\s*文曲\s*$/,"");
-var hero = findHeroByName(raw);
+var internalId = safeText(span.getAttribute("data-hero-internal-id"));
+var hero = findHeroByInternalId(internalId) || findHeroByName(raw);
 if(hero){ localPlacement[idx+1] = hero; heroCount++; }
 });
 if(heroCount !== 6) return slots;
 var result = window.JinpoActivationEngine.calculateFormation(localPlacement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-(result && result.activated || []).forEach(function(act){
+(result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
 var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
 (Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
 var hi = Number(a.heroIndex);
@@ -3436,14 +3582,15 @@ var result = getCurrentResult();
 currentFactor4Slots(result).forEach(function(slot){
 var h = placement[slot];
 var f4 = factor4Of(h);
-if(f4) activeFactor4.add(normalizeName(hName(h)) + "|" + f4);
+if(f4) activeFactor4.add(heroFactor4IdentityKey(h));
 });
 }catch(e){}
 document.querySelectorAll(".ownedHeroReliableCard").forEach(function(card){
 var nameEl = card.querySelector(".ownedHeroName");
 var name = safeText(nameEl ? nameEl.textContent.replace(/選択中/g,"") : "");
-var hero = findHeroByName(name);
-var key = hero ? normalizeName(hName(hero)) + "|" + factor4Of(hero) : "";
+var internalId = safeText(card.getAttribute("data-owned-reliable-key"));
+var hero = findHeroByInternalId(internalId) || findHeroByName(name);
+var key = hero ? heroFactor4IdentityKey(hero) : "";
 card.classList.toggle("factor4BunkyokuGlow", !!key && activeFactor4.has(key));
 });
 }
@@ -3700,13 +3847,9 @@ return {"&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;","'":"&#39;"}[ch] || ch
 });
 }
 function priorityValuesFinal(stat){
-var out=[];
-if(stat === "生命" || stat === "気合"){
-for(var v=20000; v>=5000; v-=1000) out.push(v);
-return out;
-}
-for(var v=1500; v>=100; v-=100) out.push(v);
-return out;
+/* 表示ボタン仕様: 生命/気合=2000刻み、その他=200刻み。検索用selectも完全一致させる。 */
+if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];
+return [1600,1400,1200,1000,800,600,400,200];
 }
 function buildStatOptionsFinal(current){
 var html='<option value="">指定なし</option>';
@@ -4912,6 +5055,10 @@ function findCurrentRegisteredRow(result){
       var r = findResultDbRowForPlacementState(placement, result || getCurrentResult());
       if(r) return r;
     }
+  }catch(e){}
+  try{
+    var exactRow = window.__jinpoExactAppliedDbRow || window.__lastReachAppliedDbRow || null;
+    if(exactRow && typeof dbRowMatchesReachState === "function" && dbRowMatchesReachState(exactRow, placement, result || getCurrentResult(), String(formationSelect && formationSelect.value || ""))) return exactRow;
   }catch(e){}
   try{
     var sid = String(typeof selectedDbResultId !== "undefined" ? selectedDbResultId : "").trim();
@@ -6355,18 +6502,29 @@ document.addEventListener("click", function(ev){
   'use strict';
   if(window.__step66ReachSlotModalOnlyFinal) return;
   window.__step66ReachSlotModalOnlyFinal = true;
-  var timer=null, rendering=false, candidateMap={}, candidateStore={}, seq=1;
+  var timer=null, rendering=false, candidateMap={}, candidateStore={}, seq=1, swapApplySeq=0;
   var cacheKey='', cacheMap=null, cacheStore=null;
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];});}
   function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
   function hName(h){if(!h)return '';if(typeof h==='string')return h;try{if(typeof heroName==='function')return heroName(h)||'';}catch(e){}return h['英傑名']||h['名前']||h.name||h.hero_name||'';}
   function hId(h){return String(h&&(h.internal_id||h.id||h.ID||h['internal_id'])||'').trim();}
+  function hCost(h){var v=Number(h&&(h['コスト']??h.cost));return Number.isFinite(v)?v:999;}
+  function grade3On66(){try{return !!grade3Cost6OnlyEnabled;}catch(e){return !!window.grade3Cost6OnlyEnabled;}}
+  function ownedLock66(){try{if(typeof ownedHeroReachLockState==='function')return ownedHeroReachLockState();}catch(e){}return {ids:new Set(),names:new Set()};}
+  function isLocked66(h,lock){try{if(typeof isOwnedReachLockedHero==='function')return isOwnedReachLockedHero(h,lock);}catch(e){}return !!(h&&lock&&lock.ids&&lock.ids.has(hId(h)));}
+  function keepsOwned66(test,lock){try{if(typeof placementKeepsOwnedReachHeroes==='function')return placementKeepsOwnedReachHeroes(test,lock);}catch(e){}return true;}
+  function excludedNameSet66(){var set=new Set();try{var a=typeof window.__jinpoGetExcludedHeroes==='function'?window.__jinpoGetExcludedHeroes():[];(a||[]).forEach(function(n){set.add(norm(n));});}catch(e){}return set;}
   function heroMaster(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
   function placementObj(){try{if(typeof placement!=='undefined'&&placement)return placement;}catch(e){}return window.placement||null;}
   function currentFormation(){try{var s=document.getElementById('formationSelect')||window.formationSelect;if(s&&s.value)return String(s.value).trim();}catch(e){}return '';}
   function currentResult(p){try{var f=currentFormation();if(!f||!p||!window.JinpoActivationEngine||typeof window.JinpoActivationEngine.calculateFormation!=='function'||typeof inenMaster==='undefined')return null;return window.JinpoActivationEngine.calculateFormation(p,f,inenMaster,window.JINPO_FORMATION_CONFIG);}catch(e){return null;}}
   function legendHtml(){return '<div class="step66ReachLegend" aria-label="差し替え候補の色説明"><span class="step66ReachLegendItem step66ReachLegendUp"><span class="step66ReachLegendDot"></span>赤＝UP</span><span class="step66ReachLegendItem step66ReachLegendFlat"><span class="step66ReachLegendDot"></span>緑＝FLAT</span><span class="step66ReachLegendItem step66ReachLegendDown"><span class="step66ReachLegendDot"></span>青＝DOWN</span></div>';}
-  function stateKey(){var p=placementObj(),ids=[];for(var i=1;i<=6;i++)ids.push(hId(p&&p[i])||norm(hName(p&&p[i])));return currentFormation()+'@@'+ids.join('|');}
+  function stateKey(){
+    var p=placementObj(),ids=[];for(var i=1;i<=6;i++)ids.push(hId(p&&p[i])||norm(hName(p&&p[i])));
+    var lock=ownedLock66(),lockIds=Array.from(lock&&lock.ids||[]).map(String).sort(),lockNames=Array.from(lock&&lock.names||[]).map(norm).sort();
+    var excluded=Array.from(excludedNameSet66()).sort();
+    return currentFormation()+'@@'+ids.join('|')+'@@g3='+(grade3On66()?'1':'0')+'@@owned='+lockIds.join(',')+';'+lockNames.join(',')+'@@excluded='+excluded.join(',');
+  }
   function buildMap(){
     var key=stateKey();
     if(key&&key===cacheKey&&cacheMap&&cacheStore){candidateStore=cacheStore;return cacheMap;}
@@ -6374,13 +6532,15 @@ document.addEventListener("click", function(ev){
     if(!p||!base) return map;
     var currentCount=Array.isArray(base.activated)?base.activated.length:0;
     var used=new Set();for(var s=1;s<=6;s++){var id=hId(p[s]);if(id)used.add(id);}
-    var heroes=heroMaster().filter(function(h){return h&&hId(h)&&!used.has(hId(h));});
+    var lock=ownedLock66(), excluded=excludedNameSet66(), grade3=grade3On66();
+    var heroes=heroMaster().filter(function(h){return h&&hId(h)&&!used.has(hId(h))&&(!grade3||hCost(h)<=6)&&!excluded.has(norm(hName(h)));});
     for(var slot=1;slot<=6;slot++){
-      if(!p[slot]) continue;
+      if(!p[slot] || isLocked66(p[slot],lock)) continue;
       for(var i=0;i<heroes.length;i++){
         var cand=heroes[i], test={};
         for(var j=1;j<=6;j++) test[j]=p[j];
         test[slot]=cand;
+        if(!keepsOwned66(test,lock)) continue;
         var r=currentResult(test); if(!r) continue;
         var nextCount=Array.isArray(r.activated)?r.activated.length:0;
         var delta=nextCount-currentCount;
@@ -6438,23 +6598,33 @@ document.addEventListener("click", function(ev){
   }
   function applyCandidate(id){
     var c=candidateStore[id];if(!c)return;
+    var applySeq=++swapApplySeq;
     closeModal();
     showSwapLoading();
     setTimeout(function(){
+      var ret=null;
       try{
         cacheKey='';cacheMap=null;cacheStore=null;
         if(typeof window.applyReachSwapCandidate==='function'){
-          window.applyReachSwapCandidate(c.slot,c.afterId);
+          ret=window.applyReachSwapCandidate(c.slot,c.afterId);
         }else{
-          var p=placementObj(),heroes=heroMaster(),h=heroes.find(function(x){return hId(x)===String(c.afterId);});if(!p||!h)return;
-          p[Number(c.slot)]=h;try{placement=p;}catch(e){}window.placement=p;
-          try{if(typeof renderSlots==='function')renderSlots();}catch(e){}
-          try{if(typeof calculate==='function')calculate();}catch(e){}
+          var p=placementObj(),heroes=heroMaster(),h=heroes.find(function(x){return hId(x)===String(c.afterId);});if(!p||!h){ret=Promise.resolve(null);}
+          else{
+            p[Number(c.slot)]=h;try{placement=p;}catch(e){}window.placement=p;
+            try{if(typeof renderSlots==='function')renderSlots();}catch(e){}
+            try{if(typeof calculate==='function')calculate();}catch(e){}
+            ret=Promise.resolve(h);
+          }
         }
-      }finally{
-        hideSwapLoading();
-        setTimeout(function(){schedule(0);},60);
+      }catch(e){
+        console.error('差替適用失敗',e);
+        ret=Promise.reject(e);
       }
+      Promise.resolve(ret).catch(function(e){ console.error('差替後処理失敗',e); }).then(function(){
+        /* 古い差替処理の完了で、新しい差替の読み込み表示を消さない。 */
+        if(applySeq===swapApplySeq) hideSwapLoading();
+        setTimeout(function(){schedule(0);},60);
+      });
     },30);
   }
   function schedule(delay){clearTimeout(timer);timer=setTimeout(render,delay==null?30:delay);}
@@ -6672,7 +6842,7 @@ document.addEventListener("click", function(ev){
       var form = currentFormationName();
       if(!form) return slots;
       var result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-      (result && result.activated || []).forEach(function(act){
+      (result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
         var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
         (Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
           var hi = Number(a.heroIndex);
@@ -8008,6 +8178,20 @@ body{padding-top:0 !important;}
     }
     return out.filter(Boolean);
   }
+  function bonusHeroInternalId(hero){
+    return String((hero && (hero.internal_id || hero['internal_id'] || hero.id || hero.ID)) || '').trim();
+  }
+  function bonusRowInternalIds(row){
+    if(!row) return [];
+    var raw = row.eiketsu_internal_ids || row.internal_ids || '';
+    if(Array.isArray(raw)) return raw.map(function(v){return String(v||'').trim();}).filter(Boolean);
+    return String(raw||'').split('|').map(function(v){return v.trim();}).filter(Boolean);
+  }
+  function bonusHeroByInternalId(id){
+    id=String(id||'').trim(); if(!id) return null;
+    try{ return (eiketsuMaster || []).find(function(h){ return bonusHeroInternalId(h)===id; }) || null; }catch(e){}
+    return null;
+  }
   function bonusHeroByName(name){
     if(!name) return null;
     try{ var lookup = (typeof buildHeroNameLookup === 'function') ? buildHeroNameLookup() : null; if(lookup && typeof canonicalHeroName === 'function') return lookup.get(canonicalHeroName(name)) || null; }catch(e){}
@@ -8018,16 +8202,26 @@ body{padding-top:0 !important;}
     var pl=getPlacementRef();
     if(pl && pl[slot]) return pl[slot];
     var row=bonusDbRowForPlacementFallback();
+    var pos=Number(slot)-1;
+    var ids=bonusRowInternalIds(row);
+    var exact=bonusHeroByInternalId(ids[pos]);
+    if(exact) return exact;
+    /* internal_idの無い旧データだけ名前フォールバック。 */
     var names=bonusRowMembers(row);
-    var name=names[Number(slot)-1];
+    var name=names[pos];
     return bonusHeroByName(name);
   }
   function findHeroPlacementSlot(hero){
     if(!hero) return null;
     var pl=getPlacementRef(); if(!pl) return null;
     for(var i=1;i<=6;i++){ if(pl[i]===hero) return i; }
+    var iid=bonusHeroInternalId(hero);
+    if(iid){
+      for(var k=1;k<=6;k++){ if(pl[k] && bonusHeroInternalId(pl[k])===iid) return k; }
+    }
+    /* internal_idの無い旧データだけ名前フォールバック。 */
     var nm=heroName(hero); if(!nm || nm==='未配置') return null;
-    for(var j=1;j<=6;j++){ if(pl[j] && heroName(pl[j])===nm) return j; }
+    for(var j=1;j<=6;j++){ if(pl[j] && !bonusHeroInternalId(pl[j]) && heroName(pl[j])===nm) return j; }
     return null;
   }
   function stepUnit(type, stat){
@@ -8061,10 +8255,15 @@ body{padding-top:0 !important;}
       if(typeof lineSlots === 'string') lineSlots = lineSlots.split(/[^0-9]+/).filter(Boolean).map(Number);
       if(Array.isArray(lineSlots) && lineSlots.length && lineSlots.map(Number).indexOf(slot) < 0) return false;
       var heroNm = normalizeTenseiName(heroName(hero));
+      var heroId = String(hero && hero.internal_id || '').trim();
       var assigns = Array.isArray(act && act.assignments) ? act.assignments : [];
+      var rel = Array.isArray(lineSlots) ? lineSlots.map(Number).indexOf(slot) : -1;
       for(var i=0;i<assigns.length;i++){
         var a=assigns[i]||{};
-        if(String(a.requiredFactor||'').trim() === f4 && normalizeTenseiName(a.heroName||a.name||'') === heroNm) return true;
+        if(String(a.requiredFactor||'').trim() !== f4) continue;
+        if(rel >= 0 && Number(a.heroIndex) === rel) return true;
+        if(rel < 0 && heroId && String(a.heroInternalId||'').trim() && String(a.heroInternalId||'').trim() === heroId) return true;
+        if(rel < 0 && !String(a.heroInternalId||'').trim() && normalizeTenseiName(a.heroName||a.name||'') === heroNm) return true;
       }
       return false;
     }catch(e){ return false; }
@@ -8086,7 +8285,7 @@ body{padding-top:0 !important;}
     }catch(e){}
     try{
       var result=currentActivationResultForBonus();
-      var acts=Array.isArray(result && result.activated) ? result.activated : [];
+      var acts=Array.isArray(result && result.activatedOccurrences) ? result.activatedOccurrences : (Array.isArray(result && result.activated) ? result.activated : []);
       for(var i=0;i<acts.length;i++){ if(activationUsesHeroFactor4ForTensei(acts[i], slot)) return true; }
     }catch(e){}
     return false;
@@ -8605,6 +8804,13 @@ body{padding-top:0 !important;}
       deferBonusPlacementRefresh();
       setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
       setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
+      /* 全件DB照合が120msを超えても、確定した配置/DB行で込み合計を再計算する。 */
+      if(ret && typeof ret.then==='function'){
+        ret.then(function(){
+          deferBonusPlacementRefresh();
+          recalcBonusCombinedAfterPlacementChange();
+        },function(e){ console.error('差替後の込み合計確定更新失敗',e); });
+      }
       return ret;
     };
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;

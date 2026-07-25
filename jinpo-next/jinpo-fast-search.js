@@ -2,7 +2,7 @@
   'use strict';
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
-  var LIMIT=500,worker=null,seq=0,activeToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
+  var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='';
   window.JINPO_RESULT_LIMIT=LIMIT;
 
@@ -30,6 +30,12 @@
   function gradeOn(){try{return !!grade3Cost6OnlyEnabled;}catch(e){return !!window.grade3Cost6OnlyEnabled;}}
   function form(){var s=q('formationSelect'),t=String((s&&(s.value||(s.selectedOptions&&s.selectedOptions[0]&&s.selectedOptions[0].textContent)))||'');if(t.indexOf('衡軛')>=0)return'衡軛';if(t.indexOf('鶴翼')>=0)return'鶴翼';if(t.indexOf('魚鱗')>=0)return'魚鱗';if(t.indexOf('方円')>=0)return'方円';return'';}
   function owned(){try{return (typeof ownedHeroNames==='function'?ownedHeroNames():[]).map(norm).filter(Boolean);}catch(e){return[];}}
+  function ownedInternalIds(){
+    try{
+      var a=(typeof ownedHeroFilterIds!=='undefined'&&Array.isArray(ownedHeroFilterIds))?ownedHeroFilterIds:(Array.isArray(window.ownedHeroFilterIds)?window.ownedHeroFilterIds:[]);
+      return a.map(function(x){return String(x==null?'':x).trim();}).filter(Boolean);
+    }catch(e){return[];}
+  }
   function excluded(){try{return (typeof window.__jinpoGetExcludedHeroes==='function'?window.__jinpoGetExcludedHeroes():[]).map(norm).filter(Boolean);}catch(e){return[];}}
   function rules(){try{return ((typeof getDbPriorityRules==='function'?getDbPriorityRules():[])||[]).filter(function(r){return r&&r.stat;});}catch(e){return[];}}
   function hasThreshold(rs){return (rs||rules()).some(function(r){var n=Number(r&&r.threshold);return r&&r.threshold!==null&&r.threshold!==''&&Number.isFinite(n);});}
@@ -113,23 +119,39 @@
     worker=new Worker('jinpo-fast-search-worker.js');
     worker.onmessage=function(ev){
       var m=ev.data||{},p=pending.get(m.token);if(!p)return;
-      if(m.type==='progress'){showProgress(m.message||'検索DB読込中',m.bytes||0);return;}
+      if(m.type==='progress'){if(p.showProgress&&m.token===activeWorkerToken&&!window.__jinpoSearchCancelRequested)showProgress(m.message||'検索DB読込中',m.bytes||0);return;}
       pending.delete(m.token);
       if(m.type==='error')p.reject(new Error(m.message||'統一検索エラー'));else p.resolve(m.result||{});
     };
     return worker;
   }
+  function requestWorker(type,query,show){
+    var t=++seq;if(show)activeWorkerToken=t;
+    return new Promise(function(resolve,reject){pending.set(t,{resolve:resolve,reject:reject,showProgress:!!show});workerObj().postMessage({type:type,token:t,query:query});});
+  }
+  function cancelWorkerRequests(){
+    try{if(worker){worker.terminate();worker=null;}}catch(e){}
+    var err=new Error('検索を中止しました。');err.jinpoCancelled=true;
+    pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();activeWorkerToken=0;
+  }
   function sourceFor(mode,rs,own,ex){var th=hasThreshold(rs),f4=selectedExclude>0;if(own.length||ex.length||th||f4)return{type:'full',sortStat:''};if(mode==='normal'&&rs.length===1)return{type:'sort',sortStat:String(rs[0].stat||'')};if(rs.length)return{type:'full',sortStat:''};return{type:'top',sortStat:''};}
-  function keyFor(x){return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);}
+  function keyFor(x){return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);}
   function search(query){
     var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
-    var t=++seq;return new Promise(function(resolve,reject){pending.set(t,{resolve:resolve,reject:reject});workerObj().postMessage({type:'search',token:t,query:query});}).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+    return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+  }
+  function lookupExactState(opts){
+    opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||(gradeOn()?'grade3':'normal');
+    var heroInternalIds=Array.isArray(opts.heroInternalIds)?opts.heroInternalIds:[],bondNames=Array.isArray(opts.bondNames)?opts.bondNames:[];
+    if(c<5||c>9||!f||heroInternalIds.length!==6||bondNames.length!==c)return Promise.resolve({row:null,matched:0,reason:'invalid_lookup_state'});
+    return requestWorker('lookupExact',{mode:mode,count:c,formation:f,heroInternalIds:heroInternalIds,bondNames:bondNames},false);
   }
 
   function members(row){return String(row&&row.eiketsu_names||row&&row.eiketsu_ids||'').split('|').filter(Boolean);}
   function bonds(row){return String(row&&row.bond_names||row&&row.bond_ids||'').split('|').filter(Boolean);}
   function stableRowKey(row){
-    var mem=members(row).map(norm).sort(),bd=bonds(row).map(norm).sort();
+    var internal=String(row&&row.eiketsu_internal_ids||'').split('|').map(function(x){return x.trim();}).filter(Boolean).sort();
+    var mem=internal.length===6?internal:members(row).map(norm).sort(),bd=bonds(row).map(norm).sort();
     return [String(row&&row.formation||''),String(row&&row.bond_count||''),mem.join('|'),bd.join('|')].join('\u001f');
   }
   function sortValue(row,key){if(key==='総合値')return Number(row&&((row.total_score!=null)?row.total_score:row['総合値']))||0;return Number(row&&row[key])||0;}
@@ -146,7 +168,7 @@
     return SORT_FIELDS.map(function(f){var active=listSort.key===f.key,v=sortValue(row,f.key);return '<span class="jinpoStatCell jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-stat-key="'+esc(f.key)+'"><span class="jinpoStatCellName">'+esc(f.label)+(f.key==='総合値'?' ':':')+'</span><span class="jinpoStatCellValue">'+esc(v)+'</span><span class="jinpoCompatSep"> / </span></span>';}).join('');
   }
   function table(rows,count){
-    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span>'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
+    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),internalIds=String(row&&row.eiketsu_internal_ids||'').split('|'),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span data-hero-internal-id="'+esc(internalIds[i]||'')+'">'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   function rerenderList(count){var box=q('dbFormationList');if(!box)return;displayRows=sortedRows(activeRows);box.innerHTML=displayRows.length?table(displayRows,count||selectedCount()):'<div class="dbListNote">該当DBなし。陣形・配置英傑・除外英傑・優先条件・文曲除外人数を確認してください。</div>';try{if(typeof window.applyFactor4BunkyokuGlow==='function')setTimeout(window.applyFactor4BunkyokuGlow,0);}catch(e){}}
 
@@ -159,8 +181,9 @@
     ensureEnhancementUi();opts=opts||{};var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
     listSort={key:'',dir:'desc'};
     if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
-    if(!f){hideProgress();activeRows=[];displayRows=[];status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
-    var mode=gradeOn()?'grade3':'normal',rs=rules(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,own,ex),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
+    if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
+    if((c===5||c===6)&&!gradeOn()){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='5・6因縁は「等級3以下 ON」の時だけ検索できます。';setSummary(0,0);box.innerHTML='<div class="dbListNote">5・6因縁を検索する場合は「等級3以下」をONにしてください。</div>';return true;}
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,ownIds.length?ownIds:own,ex),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('検索DBで検索中');setSummarySearching();box.innerHTML='';
     function acceptResult(r){
       if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return;
@@ -194,11 +217,14 @@
     var fb=ev.target&&ev.target.closest?ev.target.closest('button[data-factor4-exclude]'):null;if(fb){ev.preventDefault();selectedExclude=Number(fb.getAttribute('data-factor4-exclude'))||0;syncFactor4();renderCurrent({count:selectedCount()});return;}
     var b=ev.target&&ev.target.closest?ev.target.closest('button[data-unified-db-idx]'):null;if(!b)return;var row=displayRows[Number(b.getAttribute('data-unified-db-idx'))];if(!row)return;ev.preventDefault();appliedListRowKey=stableRowKey(row);rerenderList(selectedCount());try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}
   },true);
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbFilterResetBtn'):null;if(!b)return;selectedExclude=0;syncFactor4();},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#clearBtn'):null;if(!b)return;appliedListRowKey='';},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 
   function install(){ensureEnhancementUi();ensureFactor4Controls();ensureCancelButton();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
-    window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,renderCurrent:renderCurrent,clear:function(){queryCache.clear();try{if(worker){worker.postMessage({type:'clear'});worker.terminate();worker=null;}}catch(e){}}};
+    if(typeof window.applyReachSwapCandidate==='function'&&!window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped){var prevReachApply=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){appliedListRowKey='';return prevReachApply.apply(this,arguments);};window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
+    window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
+    window.JINPO_FAST_SEARCH={search:search,renderCurrent:renderCurrent,lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();}};
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){install();setTimeout(ensureFactor4Controls,0);},{once:true});else{install();setTimeout(ensureFactor4Controls,0);}
 })();

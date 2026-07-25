@@ -69,7 +69,6 @@ def build_from_full(full_path: Path, out_path: Path, primary: str | None) -> tup
 def main():
     m=json.loads(MANIFEST.read_text(encoding='utf-8'))
     old_version=m.get('version','')
-    m['version']='20260725-unified-v2-top500'
     m['top_limit']=LIMIT
     m['sort_top_limit']=LIMIT
 
@@ -100,6 +99,22 @@ def main():
                     out_path=ROOT/'jinpo-next'/entry['file']
                     write_gz(out_path,out_raw)
                     entry.update(meta(out_path,out_raw,len(idx)))
+
+    # Browser cache version is derived from every compact file hash.
+    # Re-running after a DB update can never silently reuse an older cached binary.
+    version_parts=[]
+    for section in ('datasets','top'):
+        for mode,counts in m.get(section,{}).items():
+            for count,forms in counts.items():
+                for formation,entry in forms.items():
+                    version_parts.append(f'{section}/{mode}/{count}/{formation}:{entry.get("sha256_16","")}')
+    for mode,counts in m.get('sort_top',{}).items():
+        for count,forms in counts.items():
+            for formation,stats in forms.items():
+                for stat,entry in stats.items():
+                    version_parts.append(f'sort_top/{mode}/{count}/{formation}/{stat}:{entry.get("sha256_16","")}')
+    fingerprint=hashlib.sha256('\n'.join(sorted(version_parts)).encode('utf-8')).hexdigest()[:12]
+    m['version']='unified-v2-top500-'+fingerprint
 
     notes=[x for x in m.get('notes',[]) if 'top' not in str(x).lower() or '500' in str(x)]
     notes += ['default and priority top datasets rebuilt from authoritative full DB', 'Top500正式運用']
