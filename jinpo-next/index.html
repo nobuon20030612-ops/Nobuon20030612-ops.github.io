@@ -1657,7 +1657,8 @@ if(Array.isArray(state.slots)){
 placement = {};
 state.slots.forEach((id, idx)=>{
 if(!id) return;
-const hero = eiketsuMaster.find(e=>e.internal_id===id);
+const migratedId = String(id) === "EIK_0125" ? "EIK_0246" : String(id);
+const hero = eiketsuMaster.find(e=>e.internal_id===migratedId);
 if(hero) placement[idx+1] = hero;
 });
 }
@@ -7820,7 +7821,7 @@ body{padding-top:0 !important;}
   function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
   function split(v){return String(v==null?'':v).split(/[|,、]/).map(function(x){return x.trim();}).filter(Boolean);}
   function rowMembers(row){return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['配置英傑'] || row['英傑'] || ''));}
-  function getList(){try{var a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(a)?a.map(String).filter(Boolean):[];}catch(e){return [];} }
+  function getList(){try{var a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');var out=Array.isArray(a)?a.map(String).filter(Boolean):[];var hasLegacy=out.some(function(n){return norm(n)===norm('竹中半兵衛');});var hasCanonical=out.some(function(n){return norm(n)===norm('竹中半兵衛(知将)');});if(hasLegacy&&!hasCanonical){out.push('竹中半兵衛(知将)');localStorage.setItem(STORAGE_KEY,JSON.stringify(out));}return out;}catch(e){return [];} }
   function saveList(list){var seen={}, out=[];(list||[]).forEach(function(n){n=String(n||'').trim(); if(!n) return; var k=norm(n); if(!k||seen[k]) return; seen[k]=1; out.push(n);}); localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); updateCount();}
   function isExcludedName(name){var k=norm(name); if(!k) return false; return getList().map(norm).indexOf(k)!==-1;}
   window.__jinpoGetExcludedHeroes = getList;

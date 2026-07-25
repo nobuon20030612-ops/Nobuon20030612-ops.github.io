@@ -4,11 +4,34 @@
 */
 (function(){
   const KEY = "jinpo_internal_saved_formations";
+  function migrateLegacyHeroId(v){
+    const id = String(v || "");
+    return id === "EIK_0125" ? "EIK_0246" : id;
+  }
+  function migrateSavedItem(item){
+    if(!item || typeof item !== "object") return item;
+    if(Array.isArray(item.members)){
+      item.members = item.members.map(function(member){
+        if(!member || typeof member !== "object") return member;
+        const oldId = String(member.internal_id || "");
+        const newId = migrateLegacyHeroId(oldId);
+        if(newId !== oldId){
+          member.internal_id = newId;
+          member.name = "竹中半兵衛(知将)";
+        }
+        return member;
+      });
+    }
+    return item;
+  }
   function read(){
     try{
       const raw = localStorage.getItem(KEY);
       const data = raw ? JSON.parse(raw) : [];
-      return Array.isArray(data) ? data : [];
+      if(!Array.isArray(data)) return [];
+      const migrated = data.map(migrateSavedItem);
+      if(JSON.stringify(migrated) !== JSON.stringify(data)) write(migrated);
+      return migrated;
     }catch(e){
       return [];
     }
