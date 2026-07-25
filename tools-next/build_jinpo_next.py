@@ -208,7 +208,7 @@ def main():
         'index.html': [
             'DB_LIST_MAX = 300', 'DB_LIST_MAX=300', 'Top300', 'top300',
             'jinpo_result_db_', 'factor4_usage_index.json', 'data-linegen-', '__jinpoLineGen', '__jinpoActualLineRows',
-            'confirm(' , 'window.confirm('
+            'confirm(', 'window.confirm(', 'alert(', 'window.alert(', 'prompt(', 'window.prompt('
         ],
         'jinpo-fast-search.js': [
             'LIMIT=300', 'LIMIT = 300', 'Top300', 'top300', 'jinpo_result_db_',
@@ -227,7 +227,7 @@ def main():
     for name, fragments in forbidden_fragments.items():
         for frag in fragments:
             if frag in texts[name]:
-                fail(f'旧方式/300件制限の残骸を検出: {name}: {frag}', report)
+                fail(f'禁止仕様/旧方式の残骸を検出: {name}: {frag}', report)
 
     required_fast_fragments = [
         'var LIMIT=500',

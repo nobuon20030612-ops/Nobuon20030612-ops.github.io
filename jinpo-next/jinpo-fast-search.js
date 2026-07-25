@@ -3,7 +3,7 @@
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
   var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
-  var listSort={key:'',dir:'desc'},appliedListRowKey='';
+  var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false;
   window.JINPO_RESULT_LIMIT=LIMIT;
 
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -21,6 +21,9 @@
     {key:'火属性',label:'火',cls:'fire'},
     {key:'風属性',label:'風',cls:'wind'}
   ];
+  // 検索結果一覧は総合値を表示せず、生命～風だけを左詰めで表示する。
+  // 総合値データ自体は検索・順位判定等の内部処理用として保持する。
+  var DISPLAY_FIELDS=SORT_FIELDS.filter(function(f){return f.key!=='総合値';});
 
   function q(id){return document.getElementById(id);}
   function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
@@ -54,8 +57,9 @@
       .jinpoResultSummaryValue{font-size:25px;font-weight:950;color:#fff0b8;line-height:1}
       .jinpoResultSummarySuffix{font-size:14px;font-weight:900;color:#f4ead2;white-space:nowrap}
       #jinpoResultSortHint{margin:6px 0 7px 0;padding:7px 10px;text-align:center;border:1px solid rgba(113,228,154,.45);border-radius:9px;background:rgba(35,74,46,.22);color:#dfffe7;font-size:15px;font-weight:900;letter-spacing:.01em}
+      #jinpoSwapStaleNotice{margin:6px 0 7px 0;padding:7px 10px;text-align:center;border:1px solid rgba(231,189,92,.62);border-radius:9px;background:rgba(103,55,15,.28);color:#ffe1a1;font-size:15px;font-weight:900;letter-spacing:.01em}
       #dbFormationList .dbStatSortHeaderRow th{position:sticky !important;top:31px !important;z-index:3 !important;padding:3px 5px !important;background:#120d08 !important}
-      #dbFormationList .jinpoStatGrid{display:grid !important;grid-template-columns:1.15fr repeat(11,minmax(0,1fr)) !important;gap:3px !important;min-width:1060px !important;width:100% !important;box-sizing:border-box !important}
+      #dbFormationList .jinpoStatGrid{display:grid !important;grid-template-columns:repeat(11,minmax(0,1fr)) !important;gap:3px !important;min-width:0 !important;width:100% !important;box-sizing:border-box !important}
       #dbFormationList .jinpoStatSortButton{appearance:none !important;width:100% !important;min-width:0 !important;height:30px !important;padding:3px 2px !important;margin:0 !important;border:1px solid rgba(255,255,255,.18) !important;border-radius:7px !important;background:#17110b !important;font-size:12px !important;font-weight:950 !important;line-height:1 !important;cursor:pointer !important;box-sizing:border-box !important;box-shadow:none !important;white-space:nowrap !important}
       #dbFormationList .jinpoStatSortButton:hover{filter:brightness(1.28) !important;transform:none !important}
       #dbFormationList .dbStatRow>td{padding:3px 5px !important;background:rgba(0,0,0,.15)}
@@ -84,6 +88,23 @@
     `;document.head.appendChild(st);
   }
 
+  function syncSwapStaleNotice(){
+    var el=q('jinpoSwapStaleNotice');
+    if(!el)return;
+    el.hidden=!resultsStaleBySwap;
+    el.style.display=resultsStaleBySwap?'block':'none';
+  }
+  function setSwapStale(flag){resultsStaleBySwap=!!flag;syncSwapStaleNotice();}
+  function currentPlacementKey(){
+    try{
+      var p=(typeof placement!=='undefined'&&placement)?placement:window.placement;
+      if(!p)return'';
+      var ids=[];
+      for(var i=1;i<=6;i++)ids.push(String((p[i]&&(p[i].internal_id||p[i].id||p[i]['番号']||p[i]['英傑名']||p[i].name))||'').trim());
+      return ids.join('|');
+    }catch(e){return'';}
+  }
+
   function ensureEnhancementUi(){
     ensureUiStyle();
     document.querySelectorAll('.dbPriorityButtonGroup[data-priority-index="1"],.dbPriorityButtonGroup[data-priority-index="2"]').forEach(function(group){
@@ -104,6 +125,11 @@
       var hint=document.createElement('div');hint.id='jinpoResultSortHint';hint.textContent='検索結果は各ステータスで並べ替えできます';
       box.parentNode.insertBefore(summary,box);box.parentNode.insertBefore(hint,box);
     }
+    if(box&&!q('jinpoSwapStaleNotice')){
+      var stale=document.createElement('div');stale.id='jinpoSwapStaleNotice';stale.setAttribute('aria-live','polite');stale.textContent='※差替後も検索結果一覧は差替前の検索結果です';stale.hidden=true;stale.style.display='none';
+      box.parentNode.insertBefore(stale,box);
+    }
+    syncSwapStaleNotice();
   }
 
   function setSummary(hit,shown){
@@ -162,10 +188,10 @@
     return copy.map(function(x){return x.row;});
   }
   function sortFieldHtml(){
-    return SORT_FIELDS.map(function(f){var active=listSort.key===f.key,arrow=active?(listSort.dir==='asc'?'▲':'▼'):'↕';return '<button type="button" class="jinpoStatSortButton jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-list-sort="'+esc(f.key)+'" title="'+esc(f.label)+'で並べ替え">'+esc(f.label)+' '+arrow+'</button>';}).join('');
+    return DISPLAY_FIELDS.map(function(f){var active=listSort.key===f.key,arrow=active?(listSort.dir==='asc'?'▲':'▼'):'↕';return '<button type="button" class="jinpoStatSortButton jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-list-sort="'+esc(f.key)+'" title="'+esc(f.label)+'で並べ替え">'+esc(f.label)+' '+arrow+'</button>';}).join('');
   }
   function statGridHtml(row){
-    return SORT_FIELDS.map(function(f){var active=listSort.key===f.key,v=sortValue(row,f.key);return '<span class="jinpoStatCell jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-stat-key="'+esc(f.key)+'"><span class="jinpoStatCellName">'+esc(f.label)+(f.key==='総合値'?' ':':')+'</span><span class="jinpoStatCellValue">'+esc(v)+'</span><span class="jinpoCompatSep"> / </span></span>';}).join('');
+    return DISPLAY_FIELDS.map(function(f){var active=listSort.key===f.key,v=sortValue(row,f.key);return '<span class="jinpoStatCell jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-stat-key="'+esc(f.key)+'"><span class="jinpoStatCellName">'+esc(f.label)+(f.key==='総合値'?' ':':')+'</span><span class="jinpoStatCellValue">'+esc(v)+'</span><span class="jinpoCompatSep"> / </span></span>';}).join('');
   }
   function table(rows,count){
     return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),internalIds=String(row&&row.eiketsu_internal_ids||'').split('|'),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span data-hero-internal-id="'+esc(internalIds[i]||'')+'">'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
@@ -178,7 +204,7 @@
   function updateGlobals(rows){try{window.resultDbRows=rows;resultDbRows=rows;if(typeof rebuildResultDbIndex==='function')rebuildResultDbIndex();}catch(e){try{window.resultDbRows=rows;}catch(_){}}}
 
   async function renderCurrent(opts){
-    ensureEnhancementUi();opts=opts||{};var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
+    ensureEnhancementUi();setSwapStale(false);opts=opts||{};var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
     listSort={key:'',dir:'desc'};
     if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
     if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
@@ -222,11 +248,17 @@
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 
   function install(){ensureEnhancementUi();ensureFactor4Controls();ensureCancelButton();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
-    if(typeof window.applyReachSwapCandidate==='function'&&!window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped){var prevReachApply=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){appliedListRowKey='';return prevReachApply.apply(this,arguments);};window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
+    if(typeof window.applyReachSwapCandidate==='function'&&!window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped){var prevReachApply=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){
+      appliedListRowKey='';
+      var beforeKey=currentPlacementKey(),ret=prevReachApply.apply(this,arguments),afterKey=currentPlacementKey();
+      if(afterKey&&afterKey!==beforeKey)setSwapStale(true);
+      if(ret&&typeof ret.then==='function')ret.then(function(){var settledKey=currentPlacementKey();if(settledKey&&settledKey!==beforeKey)setSwapStale(true);},function(){});
+      return ret;
+    };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
     window.JINPO_FAST_SEARCH={search:search,renderCurrent:renderCurrent,lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
-      selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();renderUnifiedCountButtons();setSummary(0,0);
+      selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';
       window.__jinpoSearchCancelRequested=false;return true;
     }};

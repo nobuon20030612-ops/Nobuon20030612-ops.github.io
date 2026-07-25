@@ -1304,11 +1304,11 @@ String(e["英傑名"] ?? "") === afterKey ||
 String(e.name ?? "") === afterKey
 );
 if(!s || !hero){
-alert("差し替え対象の英傑が見つかりません");
+console.warn("差し替え対象の英傑が見つかりません");
 return Promise.resolve(null);
 }
 if(typeof isHeroAlreadyPlaced === "function" && isHeroAlreadyPlaced(hero.internal_id, s)){
-alert("同じ英傑は複数配置できません");
+console.warn("同じ英傑は複数配置できません");
 return Promise.resolve(null);
 }
 const nextPlacement = {...placement, [s]:hero};
@@ -1590,7 +1590,7 @@ try{
 const added = await window.JinpoMasterLookup.loadFile(file);
 total += added;
 }catch(e){
-alert(`${file.name} の読み込み失敗: ${e.message}`);
+console.error(`${file.name} の読み込み失敗: ${e.message}`, e);
 }
 }
 const s = window.JinpoMasterLookup.getSummary();
@@ -2600,7 +2600,7 @@ function applyDbFormationRow(row){
 const members = dbRowMembers(row);
 const internalIds = dbRowInternalIds(row);
 if(members.length !== 6){
-alert("DB行の配置英傑が6人ではありません");
+console.warn("DB行の配置英傑が6人ではありません");
 return;
 }
 const next = {};
@@ -2622,7 +2622,7 @@ else missing.push(name);
 });
 }
 if(missing.length){
-alert("英傑マスターに見つからない英傑があります: " + missing.join(" / "));
+console.warn("英傑マスターに見つからない英傑があります: " + missing.join(" / "));
 return;
 }
 const form = chooseFormationFromDbRow(row);
@@ -2719,7 +2719,7 @@ document.getElementById("calcBtn").addEventListener("click", calculate);
 const applyOverrideMasterBtnEl = document.getElementById("applyOverrideMasterBtn");
 if(applyOverrideMasterBtnEl){ applyOverrideMasterBtnEl.addEventListener("click", async ()=>{
 const file = document.getElementById("overrideMasterFile").files[0];
-if(!file){ alert("CSVを選択してください"); return; }
+if(!file){ return; }
 try{
 const rows = await readOverrideCsvFile(file);
 applyEiketsuMasterRows(rows, file.name);
@@ -2735,7 +2735,7 @@ if(overrideMasterStatusEl) overrideMasterStatusEl.textContent = "標準マスタ
 }); }
 document.getElementById("applyOverrideInenBtn").addEventListener("click", async ()=>{
 const file = document.getElementById("overrideInenFile").files[0];
-if(!file){ alert("CSVを選択してください"); return; }
+if(!file){ return; }
 try{
 const rows = await readOverrideCsvFile(file);
 applyInenMasterRows(rows, file.name);
@@ -2817,13 +2817,14 @@ a.remove();
 });
 document.getElementById("importJsonBtn")?.addEventListener("click", async ()=>{
 const f = document.getElementById("importJsonFile")?.files?.[0];
-if(!f){ alert("JSONを選択してください"); return; }
+if(!f){ return; }
 try{
 const state = JSON.parse(await f.text());
 applyShareState(state);
 document.getElementById("shareStatus").textContent = "JSONから編成を復元しました";
 }catch(e){
-alert("JSON読込失敗");
+document.getElementById("shareStatus").textContent = "JSON読込失敗";
+console.error("JSON読込失敗", e);
 }
 });
 loadShareFromUrl();
@@ -3354,7 +3355,7 @@ if(ev){ ev.preventDefault(); ev.stopPropagation(); }
 if(state.justOpenedAt && Date.now() - state.justOpenedAt < 350) return false;
 if(!key) return false;
 const dup = state.selected.findIndex((v,i) => v === key && i !== state.active);
-if(dup !== -1){ alert("同じ英傑は配置英傑1〜3に重複して選択できません"); return false; }
+if(dup !== -1){ return false; }
 state.selected[state.active] = key;
 syncExistingFilter();
 refreshButtons();
@@ -4091,7 +4092,7 @@ function applyRowMembersDirect(row){
     var name = normalizeApplyHeroName(rawName);
     var h = lookup.get(name) || lookup.get(String(rawName || "").trim());
     if(!h){
-      alert("英傑マスターに見つからない英傑があります: " + rawName);
+      console.warn("英傑マスターに見つからない英傑があります: " + rawName);
       return true;
     }
     next[i+1] = h;
@@ -4240,7 +4241,7 @@ document.addEventListener("change", function(ev){
       ev.target.value = "";
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      alert("上の段の優先ソートを先に選択してください");
+      // ブラウザ標準alertは出さない。値を戻してUI状態だけ同期する。
     }
     syncPriorityValueEnabled();
   }
@@ -4332,7 +4333,7 @@ document.addEventListener("click", function(ev){
     var box = document.getElementById("dbFormationList");
     if(status) status.textContent = "先に陣形を選択してください";
     if(box) box.innerHTML = '<div class="dbListNote">陣形を選択してから5〜9因縁ボタンを押してください。</div>';
-    alert("先に陣形を選択してください");
+    // 案内は上のインライン表示だけにし、ブラウザ標準alertは出さない。
     return false;
   }
 }, true);
@@ -5112,12 +5113,63 @@ function renderUpperFromRegisteredRow(row, result){
   return true;
 }
 
+function currentPlacementMembersFix(){
+  var out=[];
+  try{
+    for(var i=1;i<=6;i++){
+      var h=placement&&placement[i];
+      var n='';
+      try{ n=(typeof heroName==='function')?heroName(h):(h&&(h['英傑名']||h.name||h['名前'])); }catch(e){}
+      if(n) out.push(n);
+    }
+  }catch(e){}
+  return out;
+}
+
+function currentStatsTextFix(){
+  try{
+    var total=document.getElementById('totalStatResult');
+    if(!total)return '';
+    var out=[];
+    total.querySelectorAll('.totalStatItem').forEach(function(item){
+      var name=item.querySelector('.statName'),val=item.querySelector('.statVal');
+      var k=String(name?name.textContent:'').trim(),v=String(val?val.textContent:'').trim();
+      if(k)out.push(k+':'+(v||'—'));
+    });
+    return out.join(' / ');
+  }catch(e){return '';}
+}
+
+function renderUpperFromCurrentState(result){
+  hideLower();
+  var box=ensureUpperBox();
+  if(!box)return false;
+  result=result||getCurrentResult();
+  var members=currentPlacementMembersFix();
+  var bonds=[];
+  try{ bonds=(result&&result.activated?result.activated:[]).map(function(a){return a&&a.name;}).filter(Boolean); }catch(e){}
+  var formation=String((typeof formationSelect!=='undefined'&&formationSelect)?formationSelect.value||'':'');
+  var stats=currentStatsTextFix()||'登録外 / ステータス未登録';
+  box.style.display='';
+  box.innerHTML=
+    '<div class="appliedPreviewTitle">適用中の候補</div>'+ 
+    '<div class="appliedPreviewGrid">'+
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁数</div><div class="appliedPreviewValue">'+escFix(bonds.length)+'</div></div>'+ 
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">陣形</div><div class="appliedPreviewValue">'+escFix(formation)+'</div></div>'+ 
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">英傑</div><div class="appliedPreviewList">'+members.map(function(n,i){return '<span>'+escFix((i+1)+'. '+n)+'</span>';}).join('')+'</div></div>'+ 
+    '<div class="appliedPreviewBox"><div class="appliedPreviewLabel">因縁</div><div class="appliedPreviewList">'+bonds.map(function(n){return '<span>'+escFix(n)+'</span>';}).join('')+'</div></div>'+ 
+    '<div class="appliedPreviewBox appliedPreviewWide"><div class="appliedPreviewLabel">総合値</div><div class="appliedPreviewValue">'+escFix(stats)+'</div></div>'+ 
+    '</div>';
+  return true;
+}
+
 function syncRegisteredHitPreview(){
   var result = getCurrentResult();
   var row = findCurrentRegisteredRow(result);
-  if(!row) return false;
+  if(!row) return renderUpperFromCurrentState(result);
 
   try{ window.__lastReachAppliedDbRow = row; }catch(e){}
+  try{ window.__currentAppliedDbRow = row; }catch(e){}
   try{ currentAppliedDbRow = row; }catch(e){}
   try{ selectedDbResultId = String(row.result_id || row.id || ""); }catch(e){}
 
@@ -5142,6 +5194,24 @@ if(typeof prevApplyStable === "function" && !prevApplyStable.__registeredHitTota
     return ret;
   };
   window.applyDbFormationRow.__registeredHitTotalPreviewSyncWrapped = true;
+}
+
+var prevReachStable = window.applyReachSwapCandidate;
+if(typeof prevReachStable === "function" && !prevReachStable.__registeredHitPreviewAfterSwapWrapped){
+  window.applyReachSwapCandidate = function(){
+    var ret = prevReachStable.apply(this, arguments);
+    setTimeout(syncRegisteredHitPreview, 0);
+    setTimeout(syncRegisteredHitPreview, 120);
+    setTimeout(syncRegisteredHitPreview, 320);
+    if(ret && typeof ret.then === "function"){
+      ret.then(function(){
+        syncRegisteredHitPreview();
+        setTimeout(syncRegisteredHitPreview, 80);
+      }, function(e){ console.error("差替後の適用中候補更新失敗", e); });
+    }
+    return ret;
+  };
+  window.applyReachSwapCandidate.__registeredHitPreviewAfterSwapWrapped = true;
 }
 
 document.addEventListener("click", function(ev){
@@ -5635,7 +5705,7 @@ document.addEventListener("click", function(ev){
     var next = {};
     for(var i=0;i<6;i++){
       var h = findHeroFix(members[i]);
-      if(!h){ alert("英傑マスターに見つからない英傑があります: " + members[i]); return true; }
+      if(!h){ console.warn("英傑マスターに見つからない英傑があります: " + members[i]); return true; }
       next[i+1] = h;
     }
     try{ placement = next; }catch(e){}
@@ -6127,7 +6197,7 @@ document.addEventListener("click", function(ev){
     for(var i=0;i<6;i++){
       var h = findHeroByName(names[i]);
       if(!h){
-        alert("英傑マスターに見つからない英傑があります: " + names[i]);
+        console.warn("英傑マスターに見つからない英傑があります: " + names[i]);
         return true;
       }
       next[i+1] = h;
@@ -6488,6 +6558,7 @@ document.addEventListener("click", function(ev){
 #step66ReachModal .step66HeroBtn.step66Flat{border:2px solid #50b56c;background:rgba(25,100,48,.38);}
 #step66ReachModal .step66HeroBtn.step66Down{border:2px solid #4f91df;background:rgba(24,70,125,.42);}
 #step66ReachModal .step66HeroName{font-weight:800;color:#ffe1a1;}
+#step66ReachModal .step66BunkyokuMark{margin-left:6px;color:#ff8a8a;font-weight:900;white-space:nowrap;text-shadow:0 0 8px rgba(255,70,70,.55);}
 #step66ReachModal .step66HeroMeta{font-size:12px;color:#d9c9a6;margin-top:3px;line-height:1.35;}
 #step66ReachModal .step66DeltaLabel{display:inline-block;margin-right:6px;font-weight:900;letter-spacing:.04em;}
 #step66ReachModal .step66Up .step66DeltaLabel{color:#ff7777;}
@@ -6511,6 +6582,25 @@ document.addEventListener("click", function(ev){
   function hName(h){if(!h)return '';if(typeof h==='string')return h;try{if(typeof heroName==='function')return heroName(h)||'';}catch(e){}return h['英傑名']||h['名前']||h.name||h.hero_name||'';}
   function hId(h){return String(h&&(h.internal_id||h.id||h.ID||h['internal_id'])||'').trim();}
   function hCost(h){var v=Number(h&&(h['コスト']??h.cost));return Number.isFinite(v)?v:999;}
+  function hCostLabel(h){var v=hCost(h);return Number.isFinite(v)&&v!==999?'['+String(v)+']':'';}
+  function hFactor4(h){return String(h&&(h['因子4']||h['因子4(文曲)']||h.factor4)||'').trim();}
+  function resultUsesHeroFactor4(result,p,slot){
+    try{
+      var hero=p&&p[Number(slot)],f4=hFactor4(hero);
+      if(!hero||!f4||!result)return false;
+      var acts=Array.isArray(result.activatedOccurrences)?result.activatedOccurrences:(Array.isArray(result.activated)?result.activated:[]);
+      for(var ai=0;ai<acts.length;ai++){
+        var act=acts[ai]||{},line=Array.isArray(act.lineSlots)?act.lineSlots.map(Number):[],rel=line.indexOf(Number(slot));
+        if(rel<0)continue;
+        var assigns=Array.isArray(act.assignments)?act.assignments:[];
+        for(var aj=0;aj<assigns.length;aj++){
+          var a=assigns[aj]||{};
+          if(Number(a.heroIndex)===rel&&String(a.requiredFactor||'').trim()===f4)return true;
+        }
+      }
+    }catch(e){}
+    return false;
+  }
   function grade3On66(){try{return !!grade3Cost6OnlyEnabled;}catch(e){return !!window.grade3Cost6OnlyEnabled;}}
   function ownedLock66(){try{if(typeof ownedHeroReachLockState==='function')return ownedHeroReachLockState();}catch(e){}return {ids:new Set(),names:new Set()};}
   function isLocked66(h,lock){try{if(typeof isOwnedReachLockedHero==='function')return isOwnedReachLockedHero(h,lock);}catch(e){}return !!(h&&lock&&lock.ids&&lock.ids.has(hId(h)));}
@@ -6549,7 +6639,7 @@ document.addEventListener("click", function(ev){
         if(delta<-1) continue;
         var cls=delta>0?'up':(delta===0?'flat':'down');
         var id='s66_'+(localSeq++);
-        var item={slot:slot,after:hName(cand),afterId:hId(cand),from:currentCount,to:nextCount,delta:delta,level:cls};
+        var item={slot:slot,after:hName(cand),afterId:hId(cand),costLabel:hCostLabel(cand),usesFactor4:resultUsesHeroFactor4(r,test,slot),from:currentCount,to:nextCount,delta:delta,level:cls};
         store[id]=item;
         if(!map[slot]) map[slot]=[];
         item.storeId=id; map[slot].push(item);
@@ -6569,7 +6659,7 @@ document.addEventListener("click", function(ev){
       else if(!slots.length){root.innerHTML='<h3>'+esc(title)+'</h3>'+legendHtml()+'<p class="small">差し替え候補なし</p>';}
       else{
         var html='<h3>'+esc(title)+'</h3><p class="small">差し替え可能な配置英傑のみ表示しています。</p>'+legendHtml()+'<div class="step66ReachSlotList">';
-        slots.forEach(function(slot){var nm=hName(p&&p[slot])||'未選択';html+='<button type="button" class="step66ReachSlotBtn" data-step66-reach-slot="'+esc(slot)+'">'+esc(slot)+'. '+esc(nm)+' ('+esc((candidateMap[slot]||[]).length)+')</button>';});
+        slots.forEach(function(slot){var hero=p&&p[slot],nm=hName(hero)||'未選択',cost=hCostLabel(hero);html+='<button type="button" class="step66ReachSlotBtn" data-step66-reach-slot="'+esc(slot)+'">'+esc(slot)+'. '+esc(cost)+esc(nm)+' ('+esc((candidateMap[slot]||[]).length)+')</button>';});
         html+='</div>';root.innerHTML=html;
       }
     }finally{setTimeout(function(){rendering=false;},0);}
@@ -6592,10 +6682,10 @@ document.addEventListener("click", function(ev){
   function hideSwapLoading(){var el=document.getElementById('step66SwapLoading');if(el)el.classList.remove('active');}
   function openModal(slot){
     candidateMap=buildMap();
-    var m=ensureModal(),body=m.querySelector('.step66Body'),p=placementObj(),cur=hName(p&&p[Number(slot)])||'',list=candidateMap[slot]||[];
-    var html='<div class="small" style="margin-bottom:6px">'+esc(slot)+'番 '+esc(cur)+' と差し替える英傑を選択してください。</div>'+legendHtml();
+    var m=ensureModal(),body=m.querySelector('.step66Body'),p=placementObj(),curHero=p&&p[Number(slot)],cur=hName(curHero)||'',curCost=hCostLabel(curHero),list=candidateMap[slot]||[];
+    var html='<div class="small" style="margin-bottom:6px">'+esc(slot)+'番 '+esc(curCost)+esc(cur)+' と差し替える英傑を選択してください。</div>'+legendHtml();
     if(!list.length){html+='<p class="small">選択可能な英傑がありません。</p>';}
-    else{html+='<div class="step66Grid">';list.forEach(function(c){var css=c.level==='up'?'step66Up':(c.level==='flat'?'step66Flat':'step66Down');var label=c.level==='up'?'UP':(c.level==='flat'?'FLAT':'DOWN');html+='<button type="button" class="step66HeroBtn '+css+'" data-step66-candidate="'+esc(c.storeId)+'"><div class="step66HeroName">'+esc(c.after)+'</div><div class="step66HeroMeta"><span class="step66DeltaLabel">'+label+'</span>因縁数 '+esc(c.from)+' → '+esc(c.to)+'</div></button>';});html+='</div>';}
+    else{html+='<div class="step66Grid">';list.forEach(function(c){var css=c.level==='up'?'step66Up':(c.level==='flat'?'step66Flat':'step66Down');var label=c.level==='up'?'UP':(c.level==='flat'?'FLAT':'DOWN');var f4=c.usesFactor4?'<span class="step66BunkyokuMark">←文曲</span>':'';html+='<button type="button" class="step66HeroBtn '+css+'" data-step66-candidate="'+esc(c.storeId)+'"><div class="step66HeroName">'+esc(c.costLabel)+esc(c.after)+f4+'</div><div class="step66HeroMeta"><span class="step66DeltaLabel">'+label+'</span>因縁数 '+esc(c.from)+' → '+esc(c.to)+'</div></button>';});html+='</div>';}
     body.innerHTML=html;m.classList.add('step66Open');
   }
   function applyCandidate(id){
