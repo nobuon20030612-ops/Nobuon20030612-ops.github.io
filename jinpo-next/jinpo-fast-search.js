@@ -38,8 +38,9 @@
   function ensureUiStyle(){
     if(q('jinpoResultUiEnhanceStyle'))return;
     var st=document.createElement('style');st.id='jinpoResultUiEnhanceStyle';st.textContent=`
-      .dbPriorityControls.dbPriorityButtonMode{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 260px !important;align-items:stretch !important}
-      #jinpoPrioritySortNotice{display:flex;align-items:center;justify-content:center;text-align:center;min-height:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e7bd5c;border-radius:12px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-size:18px;font-weight:950;line-height:1.35;letter-spacing:.02em;box-shadow:0 0 14px rgba(231,189,92,.34),inset 0 0 12px rgba(255,231,167,.08)}
+      .dbPriorityControls.dbPriorityButtonMode{grid-template-columns:repeat(2,minmax(0,1fr)) !important;align-items:stretch !important}
+      .dbPriorityButtonGroup > label{display:inline-block !important;margin:0 10px 8px 0 !important;vertical-align:middle !important}
+      .jinpoPrioritySortNotice{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;box-sizing:border-box;margin:0 0 8px 0;padding:4px 10px;border:2px solid #e7bd5c;border-radius:9px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-size:16px;font-weight:950;line-height:1.25;letter-spacing:.02em;box-shadow:0 0 10px rgba(231,189,92,.30),inset 0 0 8px rgba(255,231,167,.08);white-space:nowrap}
       #jinpoResultSummary{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:10px;margin:10px 0 6px 0}
       .jinpoResultSummaryItem{display:flex;align-items:baseline;justify-content:center;gap:8px;min-height:50px;padding:7px 12px;box-sizing:border-box;border:1px solid rgba(231,189,92,.55);border-radius:11px;background:linear-gradient(180deg,rgba(48,30,14,.92),rgba(16,11,7,.95));box-shadow:0 0 13px rgba(231,189,92,.13)}
       .jinpoResultSummaryLabel{font-size:13px;font-weight:900;color:#d7c08d;white-space:nowrap}
@@ -68,14 +69,20 @@
       #dbFormationList .jinpoStat-wind{color:#a8e2a6 !important;--jinpo-glow:rgba(168,226,166,.55);--jinpo-bg:rgba(168,226,166,.15)}
       #dbFormationList .jinpoStatSortButton.jinpoSortActive,#dbFormationList .jinpoStatCell.jinpoSortActive{background:var(--jinpo-bg) !important;border-color:var(--jinpo-glow) !important;box-shadow:0 0 8px var(--jinpo-glow),inset 0 0 8px var(--jinpo-bg) !important}
       #dbFormationList .jinpoStatSortButton.jinpoSortActive{outline:1px solid var(--jinpo-glow) !important;outline-offset:1px !important}
-      @media(max-width:900px){.dbPriorityControls.dbPriorityButtonMode{grid-template-columns:460px 460px 240px !important}#jinpoPrioritySortNotice{font-size:16px !important}#jinpoResultSummary{grid-template-columns:1fr 1fr !important}.jinpoResultSummaryValue{font-size:23px !important}}
+      @media(max-width:900px){.dbPriorityControls.dbPriorityButtonMode{grid-template-columns:460px 460px !important}.jinpoPrioritySortNotice{font-size:14px !important;padding:4px 7px !important}#jinpoResultSummary{grid-template-columns:1fr 1fr !important}.jinpoResultSummaryValue{font-size:23px !important}}
     `;document.head.appendChild(st);
   }
 
   function ensureEnhancementUi(){
     ensureUiStyle();
-    var controls=document.querySelector('.dbPriorityControls.dbPriorityButtonMode');
-    if(controls&&!q('jinpoPrioritySortNotice')){var note=document.createElement('div');note.id='jinpoPrioritySortNotice';note.textContent='ステータスのみ選択時は高い順で表示します';controls.appendChild(note);}
+    document.querySelectorAll('.dbPriorityButtonGroup[data-priority-index="1"],.dbPriorityButtonGroup[data-priority-index="2"]').forEach(function(group){
+      var idx=group.getAttribute('data-priority-index')||'';
+      var noteId='jinpoPrioritySortNotice'+idx;
+      if(!q(noteId)){
+        var label=group.querySelector(':scope > label');
+        if(label){var note=document.createElement('span');note.id=noteId;note.className='jinpoPrioritySortNotice';note.textContent='ステータスのみ選択時は高い順で表示します';label.insertAdjacentElement('afterend',note);}
+      }
+    });
     var box=q('dbFormationList');
     if(box&&!q('jinpoResultSummary')){
       var summary=document.createElement('div');summary.id='jinpoResultSummary';summary.setAttribute('aria-live','polite');summary.innerHTML='<div class="jinpoResultSummaryItem"><span class="jinpoResultSummaryLabel">検索結果</span><strong id="jinpoResultHitValue" class="jinpoResultSummaryValue">—</strong><span class="jinpoResultSummarySuffix">件 HIT</span></div><div class="jinpoResultSummaryItem"><span class="jinpoResultSummaryLabel">一覧表示</span><strong id="jinpoResultShownValue" class="jinpoResultSummaryValue">—</strong><span id="jinpoResultShownSuffix" class="jinpoResultSummarySuffix">件</span></div>';
