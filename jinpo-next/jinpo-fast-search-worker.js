@@ -81,10 +81,19 @@
   function hasAnyHero(dv,base,ids){for(var j=0;j<ids.length;j++)if(hasHero(dv,base,ids[j]))return true;return false;}
   function statAt(dv,base,stat){var o=STAT_OFFSETS[stat];return o==null?0:dv.getUint16(base+o,true);}
   function totalAt(dv,base){return dv.getUint32(base+43,true);}function tieAt(dv,base){return dv.getUint32(base+48,true);}
-  function better(dv,a,b,rules){for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=statAt(dv,a,k),bv=statAt(dv,b,k);if(av!==bv)return av>bv;}var at=totalAt(dv,a),bt=totalAt(dv,b);if(at!==bt)return at>bt;return tieAt(dv,a)<tieAt(dv,b);}
-  function worse(dv,a,b,rules){return better(dv,b,a,rules);}
-  function heapPush(heap,off,dv,rules){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
-  function heapDown(heap,i,dv,rules){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
+  function normalizedSumSort(raw){var s1=String(raw&&raw.stat1||''),s2=String(raw&&raw.stat2||'');return {enabled:!!(raw&&raw.enabled&&STAT_OFFSETS[s1]&&STAT_OFFSETS[s2]),stat1:s1,stat2:s2,tiePrefer:(raw&&raw.tiePrefer==='second')?'second':'first'};}
+  function better(dv,a,b,rules,sumSort){
+    var ss=normalizedSumSort(sumSort);
+    if(ss.enabled){
+      var a1=statAt(dv,a,ss.stat1),a2=statAt(dv,a,ss.stat2),b1=statAt(dv,b,ss.stat1),b2=statAt(dv,b,ss.stat2),as=a1+a2,bs=b1+b2;if(as!==bs)return as>bs;
+      var ap=ss.tiePrefer==='second'?a2:a1,bp=ss.tiePrefer==='second'?b2:b1;if(ap!==bp)return ap>bp;
+      var ao=ss.tiePrefer==='second'?a1:a2,bo=ss.tiePrefer==='second'?b1:b2;if(ao!==bo)return ao>bo;
+    }else{for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=statAt(dv,a,k),bv=statAt(dv,b,k);if(av!==bv)return av>bv;}}
+    var at=totalAt(dv,a),bt=totalAt(dv,b);if(at!==bt)return at>bt;return tieAt(dv,a)<tieAt(dv,b);
+  }
+  function worse(dv,a,b,rules,sumSort){return better(dv,b,a,rules,sumSort);}
+  function heapPush(heap,off,dv,rules,sumSort){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules,sumSort))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
+  function heapDown(heap,i,dv,rules,sumSort){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules,sumSort))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules,sumSort))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
   function materialize(dv,base,q,m,rowIndex,source){
     var names=[],numericIds=[],internalIds=[];
     for(var i=0;i<6;i++){var id=dv.getUint16(base+i*2,true);numericIds.push(id);internalIds.push(eikInternalId(id));names.push((m.hero_names||[])[id]||('英傑#'+id));}
@@ -95,12 +104,93 @@
   }
   function materializeFirst(data,q,m,limit){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,data.info.file));return rows;}
 
+  var RECOMMEND_FORMS=['衡軛','鶴翼','魚鱗','方円'];
+  function recommendCounts(mode,m){
+    var src=m&&m.datasets&&m.datasets[mode==='grade3'?'grade3':'normal']||{},out=[];
+    (mode==='grade3'?[5,6,7,8,9]:[7,8,9]).forEach(function(c){if(src[String(c)])out.push(c);});return out;
+  }
+  function recommendRowBetter(a,b,target){
+    var av=Number(a&&a[target])||0,bv=Number(b&&b[target])||0;if(av!==bv)return av>bv;
+    var ak=String(a&&a.result_id||''),bk=String(b&&b.result_id||'');return ak<bk;
+  }
+  function sortRecommendRows(rows,target,limit){
+    rows.sort(function(a,b){return recommendRowBetter(a,b,target)?-1:(recommendRowBetter(b,a,target)?1:0);});
+    if(rows.length>limit)rows.length=limit;return rows;
+  }
+  function recommendEntryBetter(a,b){
+    if(a.stat!==b.stat)return a.stat>b.stat;if(a.tie!==b.tie)return a.tie<b.tie;if(a.count!==b.count)return a.count<b.count;return a.rowIndex<b.rowIndex;
+  }
+  function recommendEntryWorse(a,b){return recommendEntryBetter(b,a);}
+  function recommendHeapPush(heap,item){heap.push(item);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!recommendEntryWorse(heap[i],heap[p]))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
+  function recommendHeapDown(heap,i){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&recommendEntryWorse(heap[l],heap[w]))w=l;if(r<heap.length&&recommendEntryWorse(heap[r],heap[w]))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
+  function recommendFilters(q,m){
+    var owned=ownedGroups(q,m),excluded=excludedIds(q,m),thresholds=[];
+    (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){if(!r||!r.stat)return;var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
+    var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max);
+    return {owned:owned,excluded:excluded,thresholds:thresholds,f4max:f4max,noFilters:owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null};
+  }
+  function recommendRecordMatches(dv,base,filters){
+    var oi,ei,ti;for(oi=0;oi<filters.owned.length;oi++)if(!hasAnyHero(dv,base,filters.owned[oi]))return false;
+    for(ei=0;ei<filters.excluded.length;ei++)if(hasHero(dv,base,filters.excluded[ei]))return false;
+    if(filters.f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>filters.f4max)return false;}
+    for(ti=0;ti<filters.thresholds.length;ti++)if(statAt(dv,base,filters.thresholds[ti].stat)<filters.thresholds[ti].v)return false;
+    return true;
+  }
+  function canUseRecommendSortTop(m,target){
+    var counts=recommendCounts('normal',m),datasets=m&&m.datasets&&m.datasets.normal||{},sort=m&&m.sort_top&&m.sort_top.normal||{};
+    for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi];for(var ci=0;ci<counts.length;ci++){var c=String(counts[ci]),full=datasets[c]&&datasets[c][f];if(!full||Number(full.rows||0)<=0)continue;if(!(sort[c]&&sort[c][f]&&sort[c][f][target]))return false;}}
+    return true;
+  }
+  async function recommendFromSortTop(q,token,m,target,limit){
+    var counts=recommendCounts('normal',m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0;
+    for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){
+      var f=RECOMMEND_FORMS[fi],rows=[],matched=0;
+      for(var ci=0;ci<counts.length;ci++){
+        var c=counts[ci],full=fullDatasetInfo(m,{mode:'normal',count:c,formation:f});if(!full||Number(full.rows||0)<=0)continue;matched+=Number(full.rows||0);
+        var dataQ={mode:'normal',count:c,formation:f,sourceType:'sort',sortStat:target};if(!datasetInfo(m,dataQ))continue;
+        var data=await loadData(dataQ,token,false);scanned+=data.rows;rows=rows.concat(materializeFirst(data,dataQ,m,Math.min(limit,data.rows)));
+      }
+      byForm[f]=sortRecommendRows(rows,target,limit);matchedByForm[f]=matched;
+    }
+    var chosen='',best=-Infinity;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;var v=Number(list[0][target])||0;if(v>best){best=v;chosen=form;}}
+    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-sort-top'};
+  }
+  async function recommendFromFull(q,token,m,target,limit,filters){
+    var mode=q.mode==='grade3'?'grade3':'normal',counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0;
+    if(filters.owned.some(function(g){return !g.length;}))return {formation:'',rows:[],matched:0,scanned:0,sourceType:'recommend-full'};
+    for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){
+      var f=RECOMMEND_FORMS[fi],heap=[],matched=0;
+      for(var ci=0;ci<counts.length;ci++){
+        var c=counts[ci],dataQ={mode:mode,count:c,formation:f,sourceType:'full',sortStat:''};if(!datasetInfo(m,dataQ))continue;
+        var data=await loadData(dataQ,token,false),dv=data.dv,rec=data.recSize,base=16;scanned+=data.rows;
+        for(var idx=0;idx<data.rows;idx++,base+=rec){
+          if(!recommendRecordMatches(dv,base,filters))continue;matched++;
+          var item={data:data,dv:dv,base:base,count:c,formation:f,rowIndex:idx,stat:statAt(dv,base,target),tie:tieAt(dv,base)};
+          if(heap.length<limit)recommendHeapPush(heap,item);else if(recommendEntryBetter(item,heap[0])){heap[0]=item;recommendHeapDown(heap,0);}
+        }
+      }
+      heap.sort(function(a,b){return recommendEntryBetter(a,b)?-1:(recommendEntryBetter(b,a)?1:0);});
+      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};return materialize(it.dv,it.base,mq,m,it.rowIndex,it.data.info.file);});matchedByForm[f]=matched;
+    }
+    var chosen='',best=-Infinity;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;var v=Number(list[0][target])||0;if(v>best){best=v;chosen=form;}}
+    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-full'};
+  }
+  async function recommend(q,token){
+    var started=performance.now(),m=await loadManifest(),target=String(q&&q.targetStat||'').trim(),limit=Math.max(1,Number(q&&q.limit||500)||500);
+    if(STAT_OFFSETS[target]==null)throw new Error('おすすめ陣法のステータスが不正です: '+target);
+    var filters=recommendFilters(q,m),result;
+    if((q.mode!=='grade3')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
+    else result=await recommendFromFull(q,token,m,target,limit,filters);
+    result.ms=performance.now()-started;result.targetStat=target;return result;
+  }
+
   async function search(q,token){
     if(normalFiveSixUnsupported(q))throw new Error('通常5・6因縁は検索対象外です（等級3以下ON専用）');
     var started=performance.now(),m=await loadManifest(),data=await loadData(q,token,false),dv=data.dv,rec=data.recSize;
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m);
     if(owned.some(function(g){return !g.length;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info};
     var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
+    var sumSort=normalizedSumSort(q.sumSort);
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
     var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
 
@@ -126,9 +216,9 @@
       if(ok&&f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>f4max)ok=false;}
       for(var ti=0;ti<thresholds.length&&ok;ti++)if(statAt(dv,base,thresholds[ti].stat)<thresholds[ti].v)ok=false;
       if(!ok)continue;matched++;
-      if(heap.length<limit)heapPush(heap,base,dv,rules);else if(better(dv,base,heap[0],rules)){heap[0]=base;heapDown(heap,0,dv,rules);}
+      if(heap.length<limit)heapPush(heap,base,dv,rules,sumSort);else if(better(dv,base,heap[0],rules,sumSort)){heap[0]=base;heapDown(heap,0,dv,rules,sumSort);}
     }
-    heap.sort(function(a,b){return better(dv,a,b,rules)?-1:(better(dv,b,a,rules)?1:0);});
+    heap.sort(function(a,b){return better(dv,a,b,rules,sumSort)?-1:(better(dv,b,a,rules,sumSort)?1:0);});
     var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),data.info.file);});
     return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
   }
@@ -157,6 +247,10 @@
     var token=d.token;
     if(d.type==='search'){
       search(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
+      return;
+    }
+    if(d.type==='recommend'){
+      recommend(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
       return;
     }
     if(d.type==='lookupExact'){

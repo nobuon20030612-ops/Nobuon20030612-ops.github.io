@@ -464,6 +464,20 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
       <select id="dbPriorityStat2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
       <select id="dbPriorityValue2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
     </div>
+    <div id="jinpoSumPrioritySort" class="jinpoSumPrioritySort" data-enabled="0" data-tie-prefer="first">
+      <div class="jinpoSumPriorityHeader">
+        <strong>2項目合計ソート</strong>
+        <span id="jinpoSumPriorityPair" class="jinpoSumPriorityPair">第1・第2優先を選択してください</span>
+      </div>
+      <div class="jinpoSumPriorityControls">
+        <span class="jinpoSumPriorityLabel">合計値で並べる</span>
+        <button type="button" class="jinpoSumPriorityToggle active" data-sum-priority-enabled="0">使用しない</button>
+        <button type="button" class="jinpoSumPriorityToggle" data-sum-priority-enabled="1">使用する</button>
+        <span class="jinpoSumPriorityLabel jinpoSumTieLabel">合計が同じ場合</span>
+        <button type="button" class="jinpoSumPriorityTie active" data-sum-tie="first">第1優先を高い順</button>
+        <button type="button" class="jinpoSumPriorityTie" data-sum-tie="second">第2優先を高い順</button>
+      </div>
+    </div>
     <div class="dbPriorityRemovedThird" aria-hidden="true">
       <select id="dbPriorityStat3" tabindex="-1"></select>
       <select id="dbPriorityValue3" tabindex="-1"></select>
@@ -7648,13 +7662,17 @@ body{padding-top:0 !important;}
     return wrap;
   }
 
+  var bunkyokuReserveCache = null;
   function pseudoAfterWidth(el){
+    if(!el || !el.classList || !el.classList.contains('factor4BunkyokuGlow')) return 0;
+    if(bunkyokuReserveCache !== null) return bunkyokuReserveCache;
+    // 文曲ラベルは同じCSSなので、英傑ごとではなく最初の1回だけ実測して再利用する。
     try{
       var cs = window.getComputedStyle(el, '::after');
       var content = cs && cs.content;
-      if(!content || content === 'none' || content === 'normal') return 0;
+      if(!content || content === 'none' || content === 'normal') return (bunkyokuReserveCache = 0);
       content = String(content).replace(/^['"]|['"]$/g, '');
-      if(!content) return 0;
+      if(!content) return (bunkyokuReserveCache = 0);
       var probe = document.createElement('span');
       probe.textContent = content;
       probe.style.position = 'fixed';
@@ -7675,10 +7693,11 @@ body{padding-top:0 !important;}
       document.body.removeChild(probe);
       var ml = parseFloat(cs.marginLeft) || 0;
       var mr = parseFloat(cs.marginRight) || 0;
-      return Math.ceil(w + ml + mr + 2);
+      bunkyokuReserveCache = Math.ceil(w + ml + mr + 2);
     }catch(e){
-      return el.classList && el.classList.contains('factor4BunkyokuGlow') ? 34 : 0;
+      bunkyokuReserveCache = 34;
     }
+    return bunkyokuReserveCache;
   }
 
   function fitOne(el){
@@ -7687,44 +7706,79 @@ body{padding-top:0 !important;}
     if(!el.matches('.dbPlacementMini > span')) return;
     var wrap = ensureTextWrap(el);
     el.classList.add('jinpoHeroNameFitApplied');
-    wrap.style.fontSize = '';
-    wrap.style.transform = '';
-    var baseSize = parseFloat(window.getComputedStyle(el).fontSize) || 11;
-    var minSize = 7;
-    var reserve = 5;
-    var available = Math.max(12, el.clientWidth - pseudoAfterWidth(el) - reserve);
-    // 文字サイズを段階的に下げて、既存セル内に収める。
-    for(var size = baseSize; size >= minSize; size -= 0.5){
-      wrap.style.fontSize = size + 'px';
-      wrap.style.transform = '';
-      if(wrap.scrollWidth <= available) return;
-    }
-    // 将来さらに長い名前が来ても列幅や行高を変えず、横方向だけ圧縮して全体を表示する。
-    var sw = Math.max(1, wrap.scrollWidth);
-    var scale = Math.max(0.42, Math.min(1, available / sw));
-    wrap.style.fontSize = minSize + 'px';
-    wrap.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
-  }
 
-  function fitAll(root){
-    try{
-      var base = root && root.querySelectorAll ? root : document;
-      base.querySelectorAll('.dbPlacementMini > span').forEach(fitOne);
-    }catch(e){}
+    var cellWidth = el.clientWidth || 0;
+    if(cellWidth <= 0) return;
+    var hasBunkyoku = el.classList.contains('factor4BunkyokuGlow');
+    var fitKey = String(cellWidth) + '|' + (hasBunkyoku ? '1' : '0') + '|' + String(wrap.textContent || '');
+    // 同じ幅・同じ名前・同じ文曲状態なら再計測しない。
+    if(el.getAttribute('data-jinpo-fit-key') === fitKey) return;
+
+    var reserve = 5;
+    var available = Math.max(12, cellWidth - pseudoAfterWidth(el) - reserve);
+
+    // 現在の見た目を維持したまま1回だけ計測し、必要な場合だけ横方向へ圧縮する。
+    // 従来の0.5px刻み反復計測を廃止し、強制レイアウト回数を抑える。
+    wrap.style.removeProperty('font-size');
+    wrap.style.removeProperty('transform');
+    var sw = Math.max(1, wrap.scrollWidth);
+    if(sw > available){
+      var scale = Math.max(0.42, Math.min(1, available / sw));
+      wrap.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
+    }
+    el.setAttribute('data-jinpo-fit-key', fitKey);
   }
 
   ready(function(){
-    fitAll(document);
+    var target = document.getElementById('dbList') || document.body;
     var timer = null;
-    function schedule(){
-      if(timer) clearTimeout(timer);
-      timer = setTimeout(function(){ timer = null; fitAll(document); }, 60);
+    var observer = null;
+    var runId = 0;
+    var chunkSize = 120;
+
+    function observe(){
+      if(!observer) return;
+      try{
+        observer.observe(target, {childList:true, subtree:true, characterData:true});
+      }catch(e){}
     }
+
+    function runChunked(){
+      var nodes;
+      try{ nodes = Array.prototype.slice.call(target.querySelectorAll('.dbPlacementMini > span')); }
+      catch(e){ nodes = []; }
+      var id = ++runId;
+      var index = 0;
+
+      function step(){
+        if(id !== runId) return;
+        try{ if(observer) observer.disconnect(); }catch(e){}
+        var end = Math.min(index + chunkSize, nodes.length);
+        for(; index < end; index++) fitOne(nodes[index]);
+        observe();
+        if(index < nodes.length){
+          if(window.requestAnimationFrame) window.requestAnimationFrame(step);
+          else setTimeout(step, 0);
+        }
+      }
+      step();
+    }
+
+    function schedule(delay){
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(function(){ timer = null; runChunked(); }, delay);
+    }
+
     try{
-      new MutationObserver(schedule).observe(document.getElementById('dbList') || document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style']});
+      // 自分自身が行うclass/style変更は監視しない。検索結果の追加・文字変更だけを対象にする。
+      observer = new MutationObserver(function(){ schedule(100); });
+      observe();
     }catch(e){}
-    window.addEventListener('resize', schedule);
-    window.addEventListener('load', schedule, {once:true});
+
+    // 初回は描画後に1回。リサイズ中は動かさず、操作が止まってから1回だけ再調整する。
+    schedule(0);
+    window.addEventListener('resize', function(){ schedule(280); }, {passive:true});
+    window.addEventListener('load', function(){ schedule(80); }, {once:true});
   });
 })();
 </script>
@@ -9128,6 +9182,93 @@ body{padding-top:0 !important;}
 })();
 </script>
 
+<style id="sum-priority-sort-user-request">
+#jinpoSumPrioritySort{
+  grid-column:1 / -1;
+  margin-top:2px;
+  padding:10px 12px;
+  border:1px solid rgba(231,189,92,.55);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(45,29,13,.88),rgba(18,12,8,.94));
+  box-sizing:border-box;
+}
+.jinpoSumPriorityHeader{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.jinpoSumPriorityHeader strong{font-size:18px;color:#ffe1a1;white-space:nowrap}
+.jinpoSumPriorityPair{font-size:14px;font-weight:900;color:#d9c79f}
+.jinpoSumPriorityControls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.jinpoSumPriorityLabel{font-size:13px;font-weight:900;color:#cbb98f;white-space:nowrap}
+.jinpoSumTieLabel{margin-left:10px}
+.jinpoSumPriorityToggle,.jinpoSumPriorityTie{
+  min-height:34px;padding:5px 11px;border-radius:9px;border:1px solid #8d6a2f;
+  background:#17110b;color:#f4ead2;font-size:13px;font-weight:900;line-height:1.1;
+}
+.jinpoSumPriorityToggle.active,.jinpoSumPriorityTie.active{
+  border-color:#ffe584;background:linear-gradient(#754319,#3b220d);color:#fff3bd;
+  box-shadow:0 0 10px rgba(255,220,116,.36),inset 0 0 7px rgba(255,228,143,.08);
+}
+.jinpoSumPriorityToggle:disabled,.jinpoSumPriorityTie:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.35)}
+#jinpoSumPrioritySort[data-enabled="1"]{border-color:#e7bd5c;box-shadow:0 0 13px rgba(231,189,92,.18)}
+@media(max-width:900px){#jinpoSumPrioritySort{min-width:1120px}.jinpoSumPriorityControls{flex-wrap:nowrap}}
+</style>
+<script id="sum-priority-sort-user-request">
+(function(){
+  'use strict';
+  if(window.__jinpoSumPrioritySortInstalled) return;
+  window.__jinpoSumPrioritySortInstalled=true;
+  var LABELS={'生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};
+  var state={enabled:false,tiePrefer:'first'};
+  function byId(id){return document.getElementById(id);}
+  function stat(i){var e=byId('dbPriorityStat'+i);return String(e&&e.value||'').trim();}
+  function label(v){return LABELS[v]||v||'';}
+  function current(){
+    var s1=stat(1),s2=stat(2),ok=!!s1&&!!s2;
+    return {enabled:!!state.enabled&&ok,stat1:s1,stat2:s2,tiePrefer:state.tiePrefer==='second'?'second':'first'};
+  }
+  function sync(){
+    var root=byId('jinpoSumPrioritySort');if(!root)return;
+    var s1=stat(1),s2=stat(2),ok=!!s1&&!!s2;
+    if(!ok)state.enabled=false;
+    root.dataset.enabled=state.enabled?'1':'0';root.dataset.tiePrefer=state.tiePrefer;
+    var pair=byId('jinpoSumPriorityPair');
+    if(pair)pair.textContent=ok?(label(s1)+' ＋ '+label(s2)+' の合計が高い順'):'第1・第2優先を選択してください';
+    root.querySelectorAll('[data-sum-priority-enabled]').forEach(function(b){
+      var on=b.getAttribute('data-sum-priority-enabled')==='1';b.classList.toggle('active',on===state.enabled);if(on)b.disabled=!ok;
+    });
+    root.querySelectorAll('[data-sum-tie]').forEach(function(b){
+      var v=b.getAttribute('data-sum-tie')||'first';b.classList.toggle('active',v===state.tiePrefer);b.disabled=!state.enabled||!ok;
+    });
+  }
+  function rerun(){
+    try{
+      if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.renderCurrent==='function'){
+        return window.JINPO_FAST_SEARCH.renderCurrent({count:Number(window.selectedDbListBondCount)||0});
+      }
+      if(typeof window.renderDbFormationList==='function')return window.renderDbFormationList();
+    }catch(e){console.error('2項目合計ソート再検索エラー',e);}
+  }
+  function reset(rerender){state.enabled=false;state.tiePrefer='first';sync();if(rerender)rerun();}
+  function init(){
+    var root=byId('jinpoSumPrioritySort');if(!root)return;
+    root.addEventListener('click',function(ev){
+      var enableBtn=ev.target&&ev.target.closest&&ev.target.closest('[data-sum-priority-enabled]');
+      if(enableBtn){
+        if(enableBtn.disabled)return;
+        state.enabled=enableBtn.getAttribute('data-sum-priority-enabled')==='1';sync();rerun();return;
+      }
+      var tieBtn=ev.target&&ev.target.closest&&ev.target.closest('[data-sum-tie]');
+      if(tieBtn){
+        if(tieBtn.disabled)return;
+        state.tiePrefer=tieBtn.getAttribute('data-sum-tie')==='second'?'second':'first';sync();rerun();
+      }
+    });
+    [1,2].forEach(function(i){var e=byId('dbPriorityStat'+i);if(e)e.addEventListener('change',function(){setTimeout(sync,0);});});
+    sync();
+  }
+  window.__jinpoGetSumPrioritySort=current;
+  window.__jinpoResetSumPrioritySort=reset;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 
 <style id="formation-step1-emphasis-user-request">
 /* 陣形選択を最初の操作として明確化。既存機能・配置・検索ロジックは変更しない。 */

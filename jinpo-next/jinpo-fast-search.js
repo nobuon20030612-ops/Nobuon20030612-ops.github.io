@@ -4,6 +4,7 @@
 
   var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false;
+  var recommendState={active:false,targetStat:'',formation:'',applyingFormation:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
 
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -41,6 +42,28 @@
   }
   function excluded(){try{return (typeof window.__jinpoGetExcludedHeroes==='function'?window.__jinpoGetExcludedHeroes():[]).map(norm).filter(Boolean);}catch(e){return[];}}
   function rules(){try{return ((typeof getDbPriorityRules==='function'?getDbPriorityRules():[])||[]).filter(function(r){return r&&r.stat;});}catch(e){return[];}}
+  function sumSortConfig(){
+    try{
+      var raw=typeof window.__jinpoGetSumPrioritySort==='function'?window.__jinpoGetSumPrioritySort():null;
+      var s1=String(raw&&raw.stat1||'').trim(),s2=String(raw&&raw.stat2||'').trim();
+      return {enabled:!!(raw&&raw.enabled&&s1&&s2),stat1:s1,stat2:s2,tiePrefer:(raw&&raw.tiePrefer==='second')?'second':'first'};
+    }catch(e){return{enabled:false,stat1:'',stat2:'',tiePrefer:'first'};}
+  }
+  var RECOMMEND_LABELS={'生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};
+  function validRecommendStat(stat){return STATS.indexOf(String(stat||''))>=0;}
+  function recommendLabel(stat){return RECOMMEND_LABELS[String(stat||'')]||String(stat||'');}
+  function syncRecommendUi(){
+    var active=!!recommendState.active,target=active?String(recommendState.targetStat||''):'';
+    document.querySelectorAll('[data-jinpo-recommend-stat]').forEach(function(btn){
+      var on=active&&String(btn.getAttribute('data-jinpo-recommend-stat')||'')===target;
+      btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
+    });
+    var sum=q('jinpoSumPrioritySort');if(sum)sum.dataset.recommendMode=active?'1':'0';
+    try{window.dispatchEvent(new CustomEvent('jinpo:recommend-state',{detail:{active:active,targetStat:target,formation:String(recommendState.formation||'')}}));}catch(e){}
+  }
+  function exitRecommendMode(){
+    recommendState.active=false;recommendState.targetStat='';recommendState.formation='';recommendState.applyingFormation=false;syncRecommendUi();
+  }
   function hasThreshold(rs){return (rs||rules()).some(function(r){var n=Number(r&&r.threshold);return r&&r.threshold!==null&&r.threshold!==''&&Number.isFinite(n);});}
   function factor4Max(){return selectedExclude>0?6-selectedExclude:null;}
 
@@ -160,11 +183,25 @@
     var err=new Error('検索を中止しました。');err.jinpoCancelled=true;
     pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();activeWorkerToken=0;
   }
-  function sourceFor(mode,rs,own,ex){var th=hasThreshold(rs),f4=selectedExclude>0;if(own.length||ex.length||th||f4)return{type:'full',sortStat:''};if(mode==='normal'&&rs.length===1)return{type:'sort',sortStat:String(rs[0].stat||'')};if(rs.length)return{type:'full',sortStat:''};return{type:'top',sortStat:''};}
-  function keyFor(x){return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);}
+  function sourceFor(mode,rs,own,ex,sumCfg){
+    var th=hasThreshold(rs),f4=selectedExclude>0;
+    if(own.length||ex.length||th||f4)return{type:'full',sortStat:''};
+    if(sumCfg&&sumCfg.enabled)return{type:'full',sortStat:''};
+    if(mode==='normal'&&rs.length===1)return{type:'sort',sortStat:String(rs[0].stat||'')};
+    if(rs.length)return{type:'full',sortStat:''};
+    return{type:'top',sortStat:''};
+  }
+  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
   function search(query){
     var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
     return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+  }
+  function recommendKeyFor(x){
+    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
+  }
+  function searchRecommended(query){
+    var k=recommendKeyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
+    return requestWorker('recommend',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
   }
   function lookupExactState(opts){
     opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||(gradeOn()?'grade3':'normal');
@@ -203,19 +240,54 @@
   function hideProgress(){var cb=q('dbSearchProgressCancel');if(cb)cb.style.display='none';var p=q('dbSearchProgress');if(p){p.style.display='none';p.classList.remove('active');}var b=q('dbSearchProgressBar');if(b){b.style.width='0%';if(b.parentElement)b.parentElement.classList.remove('indeterminate');}}
   function updateGlobals(rows){try{window.resultDbRows=rows;resultDbRows=rows;if(typeof rebuildResultDbIndex==='function')rebuildResultDbIndex();}catch(e){try{window.resultDbRows=rows;}catch(_){}}}
 
+  function applyRecommendedFormation(formation){
+    formation=String(formation||'').trim();if(!formation)return;var sel=q('formationSelect');if(!sel||String(sel.value||'')===formation)return;
+    var has=Array.prototype.some.call(sel.options||[],function(o){return String(o.value||'')===formation;});if(!has)return;
+    recommendState.applyingFormation=true;
+    try{sel.value=formation;sel.dispatchEvent(new Event('change',{bubbles:true}));}finally{recommendState.applyingFormation=false;}
+  }
+  async function renderRecommended(opts){
+    opts=opts||{};var target=String(opts.targetStat||recommendState.targetStat||'').trim();if(!validRecommendStat(target))return false;
+    ensureEnhancementUi();setSwapStale(false);recommendState.active=true;recommendState.targetStat=target;syncRecommendUi();
+    var myToken=++activeToken,box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
+    listSort={key:target,dir:'desc'};setCount(null);renderUnifiedCountButtons();
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded();
+    var query={mode:mode,targetStat:target,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
+    window.__jinpoSearchCancelRequested=false;showProgress('おすすめ陣法を検索中');setSummarySearching();box.innerHTML='';
+    try{
+      var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;
+      var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;syncRecommendUi();
+      if(formation)applyRecommendedFormation(formation);
+      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;
+      activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);
+      var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'';
+      if(formation){
+        status.textContent='おすすめ陣法：'+recommendLabel(target)+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+recommendLabel(target)+'が高い順 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;
+      }else{
+        status.textContent='おすすめ陣法：'+recommendLabel(target)+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text;
+      }
+      setSummary(r.matched||0,activeRows.length);rerenderList(null);return true;
+    }catch(err){
+      if(myToken!==activeToken)return true;console.error('おすすめ陣法検索エラー',err);status.textContent='おすすめ陣法の検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">おすすめ陣法の検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;
+    }finally{if(myToken===activeToken)hideProgress();}
+  }
+
   async function renderCurrent(opts){
-    ensureEnhancementUi();setSwapStale(false);opts=opts||{};var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
+    opts=opts||{};
+    if(recommendState.active&&!recommendState.applyingFormation&&!opts.forceNormal)return renderRecommended({targetStat:recommendState.targetStat});
+    if(recommendState.applyingFormation)return true;
+    ensureEnhancementUi();setSwapStale(false);var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
     listSort={key:'',dir:'desc'};
     if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
     if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
     if((c===5||c===6)&&!gradeOn()){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='5・6因縁は「等級3以下 ON」の時だけ検索できます。';setSummary(0,0);box.innerHTML='<div class="dbListNote">5・6因縁を検索する場合は「等級3以下」をONにしてください。</div>';return true;}
-    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,ownIds.length?ownIds:own,ex),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),sumCfg=sumSortConfig(),ownIds=ownedInternalIds(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,ownIds.length?ownIds:own,ex,sumCfg),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,sumSort:sumCfg,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('検索DBで検索中');setSummarySearching();box.innerHTML='';
     function acceptResult(r){
       if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return;
       activeRows=Array.isArray(r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);
-      var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'';
-      status.textContent=f+' / '+c+'因縁: 高速検索DB / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;
+      var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',sumText=sumCfg.enabled?(' / 合計ソート '+sumCfg.stat1+'＋'+sumCfg.stat2+' / 同値時 '+(sumCfg.tiePrefer==='second'?'第2優先':'第1優先')):'';
+      status.textContent=f+' / '+c+'因縁: 高速検索DB / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+sumText;
       setSummary(r.matched||0,activeRows.length);
       rerenderList(c);
     }
@@ -226,7 +298,7 @@
   }
 
   function renderUnifiedCountButtons(){
-    var box=q('dbCountButtons');if(!box)return;var c=selectedCount(),g=gradeOn();
+    var box=q('dbCountButtons');if(!box)return;var c=recommendState.active?0:selectedCount(),g=gradeOn();
     box.classList.add('dbCountButtonBar');
     box.innerHTML='<button class="dbGradeToggleBtn '+(g?'active':'')+'" data-grade3-toggle="1" type="button">等級3以下 '+(g?'ON':'OFF')+'</button>'+[5,6,7,8,9].map(function(n){return '<button class="dbCountBtn '+(c===n?'active':'')+'" data-count="'+n+'" type="button">'+n+'因縁</button>';}).join('');
     box.style.setProperty('display','grid','important');box.style.setProperty('grid-template-columns','repeat(3, minmax(0, 1fr))','important');box.style.setProperty('grid-auto-rows','52px','important');box.style.setProperty('gap','10px','important');box.style.setProperty('width','420px','important');box.style.setProperty('min-width','420px','important');box.style.setProperty('max-width','420px','important');
@@ -236,7 +308,9 @@
   function syncFactor4(){document.querySelectorAll('.jinpoFactor4FilterBtn').forEach(function(btn){var on=Number(btn.getAttribute('data-factor4-exclude'))===selectedExclude;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});}
   function ensureFactor4Controls(){ensureFactor4Style();var legend=q('factor4BunkyokuLegend');if(!legend)return false;if(q('jinpoFactor4FilterControl')){syncFactor4();return true;}var parent=legend.parentNode;if(!parent)return false;var row=document.createElement('div');row.className='jinpoFactor4FilterRow';row.id='jinpoFactor4FilterRow';parent.insertBefore(row,legend);row.appendChild(legend);var ctl=document.createElement('div');ctl.id='jinpoFactor4FilterControl';ctl.className='jinpoFactor4FilterControl';ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');row.appendChild(ctl);return true;}
 
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c});},true);
+  document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation)return;var t=ev.target;if(t&&t.id==='formationSelect')exitRecommendMode();},true);
+
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
   document.addEventListener('click',function(ev){
     var sortBtn=ev.target&&ev.target.closest?ev.target.closest('button[data-list-sort]'):null;
     if(sortBtn){ev.preventDefault();var key=sortBtn.getAttribute('data-list-sort')||'';if(!key)return;if(listSort.key===key)listSort.dir=listSort.dir==='desc'?'asc':'desc';else listSort={key:key,dir:'desc'};rerenderList(selectedCount());return;}
@@ -247,7 +321,7 @@
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#clearBtn'):null;if(!b)return;appliedListRowKey='';},true);
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 
-  function install(){ensureEnhancementUi();ensureFactor4Controls();ensureCancelButton();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
+  function install(){ensureEnhancementUi();ensureFactor4Controls();ensureCancelButton();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){exitRecommendMode();setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c,forceNormal:true});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
     if(typeof window.applyReachSwapCandidate==='function'&&!window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped){var prevReachApply=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){
       appliedListRowKey='';
       var beforeKey=currentPlacementKey(),ret=prevReachApply.apply(this,arguments),afterKey=currentPlacementKey();
@@ -256,9 +330,9 @@
       return ret;
     };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,renderCurrent:renderCurrent,lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
+    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
-      selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();renderUnifiedCountButtons();setSummary(0,0);
+      exitRecommendMode();selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();try{if(typeof window.__jinpoResetSumPrioritySort==='function')window.__jinpoResetSumPrioritySort(false);}catch(e){}renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';
       window.__jinpoSearchCancelRequested=false;return true;
     }};

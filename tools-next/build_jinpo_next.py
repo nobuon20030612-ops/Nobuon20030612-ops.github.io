@@ -52,7 +52,7 @@ def fail(msg: str, report: dict):
 
 def main():
     report = {
-        'phase': 'phase1-safe-staging',
+        'phase': 'phase2-auto-regeneration',
         'status': 'CHECKING',
         'generated_at_utc': datetime.now(timezone.utc).isoformat(),
         'source': str(SOURCE.relative_to(ROOT)),
@@ -62,6 +62,17 @@ def main():
     }
     if not SOURCE.exists(): fail('source-next/英傑一覧.csv がありません', report)
     if not MASTER.exists(): fail('jinpo-next/data/jinpo_eiketsu_master.csv がありません', report)
+
+    # Phase2: 英傑一覧を唯一の日常更新入力として、internal_idを維持しながら英傑マスタへ同期する。
+    sync_script = ROOT/'tools-next'/'sync_eiketsu_master.py'
+    if not sync_script.exists(): fail('Phase2英傑マスタ同期スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(sync_script)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('英傑マスタ自動同期FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    sync_report_path = REPORT_DIR/'master_sync.json'
+    if not sync_report_path.exists(): fail('英傑マスタ同期レポートがありません', report)
+    sync_report = json.loads(sync_report_path.read_text(encoding='utf-8'))
+    if sync_report.get('status') != 'PASS': fail('英傑マスタ同期レポートがPASSではありません', report)
 
     source_rows, source_headers = read_csv(SOURCE)
     master_rows, _ = read_csv(MASTER)
@@ -99,58 +110,68 @@ def main():
     if any(not x for x in nums): fail('番号が空の行があります', report)
     if any(not x for x in names): fail('名前が空の行があります', report)
     if len(nums) != len(set(nums)): fail('英傑一覧の番号重複を検出', report)
-    # 同名英傑は実データ上存在するため、名前だけを主キーにはしない。
-    # 同名内の出現順を含む occurrence key で既存行を対応させる。
-    def occurrence_map(rows, name_field):
-        counts = {}
-        out = {}
-        for r in rows:
-            name = str(r.get(name_field,'')).strip()
-            if not name:
-                continue
-            counts[name] = counts.get(name, 0) + 1
-            out[(name, counts[name])] = r
-        return out
-
-    by_master = occurrence_map(master_rows, '英傑名')
-    by_source = occurrence_map(source_rows, '名前')
-    new_keys = sorted(set(by_source) - set(by_master))
-    removed_keys = sorted(set(by_master) - set(by_source))
-    new_names = [f'{n}#{i}' if i > 1 else n for n,i in new_keys]
-    removed_names = [f'{n}#{i}' if i > 1 else n for n,i in removed_keys]
-    changed = []
-    for key in sorted(set(by_source) & set(by_master)):
-        name, occurrence = key
-        s, m = by_source[key], by_master[key]
-        diffs = []
-        for mc, sc in MAP.items():
-            mv, sv = str(m.get(mc,'')).strip(), str(s.get(sc,'')).strip()
-            # Current master uses 対象外 while source may use blank for factor slots.
-            if mc in ('因子2','因子3','因子4') and mv == '対象外' and sv == '':
-                continue
-            if mv != sv:
-                diffs.append({'field': mc, 'master': mv, 'source': sv})
-        if diffs:
-            changed.append({'name': name, 'occurrence': occurrence, 'diffs': diffs})
+    # 新旧対応・変更判定はsync_eiketsu_master.pyの番号↔internal_id対応表だけを正とする。
 
     report.update({
-        'source_rows': len(source_rows),
+        'source_rows_input': sync_report.get('source_rows_input', len(source_rows)),
+        'source_rows': sync_report.get('source_rows', len(source_rows)),
         'master_rows': len(master_rows),
-        'new_heroes': new_names,
-        'removed_heroes': removed_names,
-        'changed_existing': changed,
+        'new_heroes': sync_report.get('new_heroes', []),
+        'removed_heroes': sync_report.get('removed_heroes', []),
+        'retired_source_rows_skipped': sync_report.get('retired_source_rows_skipped', []),
+        'changed_existing': sync_report.get('changed_existing', []),
+        'dirty_internal_ids': sync_report.get('dirty_internal_ids', []),
+        'id_map_entries': sync_report.get('id_map_entries'),
         'source_sha256': sha256(SOURCE),
         'master_sha256': sha256(MASTER),
     })
 
-    # Phase 1 is deliberately fail-safe: existing-data changes or new heroes do not publish until
-    # the combination generator is connected in Phase 2.
-    if removed_names:
-        fail('既存英傑の削除を検出。自動公開を停止します: ' + ' / '.join(removed_names[:10]), report)
-    if changed:
-        fail('既存英傑の値変更を検出。誤字等を勝手に上書きしないため停止します。', report)
-    if new_names:
-        fail('新英傑を検出しました。Phase 2の組み合わせ再生成エンジン接続前なので安全停止します: ' + ' / '.join(new_names), report)
+    # Phase2: 現在の英傑マスタから検索可能な5～9因縁を完全再評価し、compact DBを再生成する。
+    full_generator = ROOT/'tools-next'/'rebuild_all_compact.py'
+    if not full_generator.exists(): fail('Phase2全組み合わせ再生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(full_generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('5～9因縁 全組み合わせ再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    generation_report_path = REPORT_DIR/'generation_report.json'
+    if not generation_report_path.exists(): fail('組み合わせ生成レポートがありません', report)
+    generation_report = json.loads(generation_report_path.read_text(encoding='utf-8'))
+    if generation_report.get('status') != 'PASS': fail('組み合わせ生成レポートがPASSではありません', report)
+    report['generation'] = {
+        'full_records': generation_report.get('full_records'),
+        'added_records': generation_report.get('added_records'),
+        'removed_records': generation_report.get('removed_records'),
+        'seconds': generation_report.get('seconds'),
+        'full_regeneration': True,
+    }
+
+    rebuild_top = ROOT/'tools-next'/'rebuild_top500.py'
+    cp = subprocess.run([sys.executable, str(rebuild_top)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('Top500/優先Top500再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+
+    # 最終更新表示もCSV更新だけで自動更新。
+    new_infos = sync_report.get('new_heroes', [])
+    changed_infos = sync_report.get('changed_existing', [])
+    target_names = [str(x.get('英傑名','')).strip() for x in new_infos if str(x.get('英傑名','')).strip()]
+    if not target_names:
+        target_names = [str(x.get('英傑名','')).strip() for x in changed_infos if str(x.get('英傑名','')).strip()]
+    if new_infos or changed_infos:
+        from zoneinfo import ZoneInfo
+        update_summary = {
+            'schema':'jinpo-next-phase2-auto-update/v1',
+            'source_file':'source-next/英傑一覧.csv',
+            'target':'、'.join(target_names),
+            'updated_at':datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y-%m-%d'),
+            'new_registration_only': bool(new_infos) and not changed_infos,
+            'new_heroes': new_infos,
+            'changed_existing': changed_infos,
+            'generation': report['generation'],
+            'note':'英傑一覧.csvから英傑マスタ・配置/除外候補・5～9因縁compact DB・Top500を自動更新',
+        }
+        (SITE/'data'/'jinpo_latest_update_summary.json').write_text(json.dumps(update_summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        report['latest_update_summary_updated'] = True
+    else:
+        report['latest_update_summary_updated'] = False
 
     # Static-site integrity checks for staging.
     required_site = [
@@ -613,7 +634,7 @@ def main():
     }
 
     report['status'] = 'PASS'
-    report['message'] = 'Phase 1: 現行384英傑と一致。/jinpo-next/ の安全な別入口を公開可能。'
+    report['message'] = 'Phase 2: 英傑一覧から英傑マスタ・配置/除外候補・5～9因縁・Top500を自動再生成し、全検証PASS。'
     REPORT_DIR.mkdir(exist_ok=True)
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))

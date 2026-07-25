@@ -13,17 +13,7 @@ REPORT=REPORT_DIR/'search_integrity_report.json'
 REC=52
 STAT_OFF={'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41}
 LINES={'衡軛':[(0,1,2),(3,4,5)],'鶴翼':[(0,1,2),(3,4,5)],'魚鱗':[(0,1,2),(2,3,4),(4,5,0)],'方円':[(1,2,3),(3,4,5),(1,0,5)]}
-EXPECTED_ACCESSIBLE_COUNTS={
- ('normal',7,'衡軛'):7336,('normal',7,'鶴翼'):7336,('normal',7,'魚鱗'):733743,('normal',7,'方円'):733743,
- ('normal',8,'衡軛'):57,('normal',8,'鶴翼'):57,('normal',8,'魚鱗'):8917,('normal',8,'方円'):8917,
- ('normal',9,'衡軛'):0,('normal',9,'鶴翼'):0,('normal',9,'魚鱗'):44,('normal',9,'方円'):44,
- ('grade3',5,'衡軛'):1240,('grade3',5,'鶴翼'):1240,('grade3',5,'魚鱗'):131607,('grade3',5,'方円'):131607,
- ('grade3',6,'衡軛'):0,('grade3',6,'鶴翼'):0,('grade3',6,'魚鱗'):955,('grade3',6,'方円'):955,
- ('grade3',7,'衡軛'):0,('grade3',7,'鶴翼'):0,('grade3',7,'魚鱗'):2,('grade3',7,'方円'):2,
- ('grade3',8,'衡軛'):0,('grade3',8,'鶴翼'):0,('grade3',8,'魚鱗'):0,('grade3',8,'方円'):0,
- ('grade3',9,'衡軛'):0,('grade3',9,'鶴翼'):0,('grade3',9,'魚鱗'):0,('grade3',9,'方円'):0,
-}
-
+GEN_REPORT=REPORT_DIR/'generation_report.json'
 def csv_rows(path:Path):
     with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
 
@@ -116,10 +106,22 @@ def main():
         line_cache[line]=result;return result
 
     accessible_rows=0;bond_errors=0;f4_errors=0;datasets={}
-    for (mode,count,formation),expected in EXPECTED_ACCESSIBLE_COUNTS.items():
-        info=m['datasets'][mode][str(count)][formation]
-        if int(info['rows'])!=expected:
-            raise RuntimeError(f'理論件数不一致 {mode}/{count}/{formation}: {info["rows"]}!={expected}')
+    generation_counts={}
+    if GEN_REPORT.exists():
+        gr=json.loads(GEN_REPORT.read_text(encoding='utf-8'))
+        if gr.get('status')!='PASS':raise RuntimeError('generation_reportがPASSではありません')
+        generation_counts={k:int(v.get('rows',-1)) for k,v in gr.get('datasets',{}).items()}
+    specs=[]
+    for mode,counts in m.get('datasets',{}).items():
+        for count_s,forms in counts.items():
+            if mode=='normal' and str(count_s) in {'5','6'}:
+                raise RuntimeError(f'廃止済み通常{count_s}因縁DBがmanifestに存在します')
+            for formation,info in forms.items():
+                specs.append((mode,int(count_s),formation,info))
+    for mode,count,formation,info in specs:
+        label=f'{mode}/{count}/{formation}'
+        if generation_counts and label in generation_counts and int(info['rows'])!=generation_counts[label]:
+            raise RuntimeError(f'生成レポート件数不一致 {label}: {info["rows"]}!={generation_counts[label]}')
         raw,rows=read_raw(info);be=fe=0
         for i in range(rows):
             off=16+i*REC;ids=struct.unpack_from('<6H',raw,off)
@@ -161,7 +163,7 @@ def main():
     report={
       'status':'PASS','accessible_full_records':accessible_rows,
       'bondset_errors':bond_errors,'factor4_errors':f4_errors,
-      'expected_count_datasets':len(EXPECTED_ACCESSIBLE_COUNTS),
+      'dataset_count':len(specs),
       'top_files_exact':top_files,'sort_top_files_exact':sort_files,
       'triple_map_entries':len(triple_bonds),'line_cache_entries':len(line_cache),
       'datasets':datasets,'seconds':round(time.time()-started,3)

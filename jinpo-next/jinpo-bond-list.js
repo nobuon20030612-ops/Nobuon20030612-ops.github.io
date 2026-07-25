@@ -36,8 +36,16 @@
     var style = document.createElement('style');
     style.id = 'jinpoBondListStyle';
     style.textContent = [
-      '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
+      '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
+      '#jinpoRecommendNav{display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;}',
+      '.jinpoRecommendLabel{flex:0 0 auto;margin-right:3px;color:#ffe1a1;font-size:15px;font-weight:950;white-space:nowrap;}',
+      '.jinpoRecommendBtn{flex:1 1 0;min-width:46px;min-height:38px;padding:6px 7px;border-radius:10px;border:1px solid #9a7538;background:linear-gradient(#382718,#17100a);color:#f7e9c9;font-size:13px;font-weight:950;line-height:1;cursor:pointer;white-space:nowrap;box-sizing:border-box;}',
+      '.jinpoRecommendBtn:hover{filter:brightness(1.15);box-shadow:0 0 12px rgba(231,189,92,.30);}',
+      '.jinpoRecommendBtn.active{border-color:#ffe584;background:linear-gradient(#8a4d1c,#48280e);color:#fff6c5;box-shadow:0 0 13px rgba(255,225,110,.62),inset 0 0 8px rgba(255,236,174,.12);}',
+      '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
       '#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{margin:0 !important;}',
+      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
+      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ検索中は2項目合計ソートを使用しません";margin-left:auto;padding:3px 8px;border:1px solid rgba(231,189,92,.45);border-radius:8px;color:#ffe1a1;font-size:12px;font-weight:900;white-space:nowrap;}',
       '.jinpoBondNavBtn{min-height:38px;padding:7px 14px;border-radius:12px;border:2px solid #b99043;background:linear-gradient(#5e4020,#35230f);color:#fff1c9;font-size:15px;font-weight:900;line-height:1;box-shadow:0 0 12px rgba(231,189,92,.20);cursor:pointer;white-space:nowrap;}',
       '.jinpoBondNavBtn:hover{filter:brightness(1.12);box-shadow:0 0 16px rgba(231,189,92,.36);}',
       '#jinpoBondModalBackdrop{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
@@ -61,7 +69,8 @@
       '.jinpoBondFactors{display:flex;flex-wrap:wrap;gap:5px;}',
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
-      '@media(max-width:760px){#jinpoBondNavActions{justify-content:flex-end;gap:6px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
+      '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}.jinpoRecommendNav{overflow-x:auto;padding-bottom:3px}.jinpoRecommendLabel{font-size:13px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -74,26 +83,51 @@
       wrap = document.createElement('div');
       wrap.id = 'jinpoBondNavActions';
       back.parentNode.insertBefore(wrap, back);
-
-      var allBtn = document.createElement('button');
-      allBtn.type = 'button';
-      allBtn.id = 'jinpoBondAllBtn';
-      allBtn.className = 'jinpoBondNavBtn';
-      allBtn.textContent = '因縁一覧';
-      allBtn.addEventListener('click', function(){ openModal('all'); });
-      wrap.appendChild(allBtn);
-
-      var activeBtn = document.createElement('button');
-      activeBtn.type = 'button';
-      activeBtn.id = 'jinpoBondActiveBtn';
-      activeBtn.className = 'jinpoBondNavBtn';
-      activeBtn.textContent = '現在発動中因縁';
-      activeBtn.addEventListener('click', function(){ openModal('active'); });
-      wrap.appendChild(activeBtn);
-
-      wrap.appendChild(back);
     }
+
+    var recommend = document.getElementById('jinpoRecommendNav');
+    if(!recommend){
+      recommend = document.createElement('div');
+      recommend.id = 'jinpoRecommendNav';
+      recommend.setAttribute('aria-label','おすすめ陣法');
+      var stats = [
+        ['生命','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力'],
+        ['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']
+      ];
+      recommend.innerHTML = '<span class="jinpoRecommendLabel">おすすめ陣法</span>' + stats.map(function(x){
+        return '<button type="button" class="jinpoRecommendBtn" data-jinpo-recommend-stat="'+esc(x[0])+'" aria-pressed="false">'+esc(x[1])+'</button>';
+      }).join('');
+      recommend.addEventListener('click',function(ev){
+        var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-recommend-stat]');if(!btn)return;
+        var stat=text(btn.getAttribute('data-jinpo-recommend-stat'));if(!stat)return;
+        if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.runRecommended==='function'){
+          window.JINPO_FAST_SEARCH.runRecommended(stat);
+        }else{
+          console.error('おすすめ陣法検索機能がまだ準備できていません');
+        }
+      });
+      wrap.insertBefore(recommend,wrap.firstChild);
+    }
+
+    var right = document.getElementById('jinpoBondNavRight');
+    if(!right){right=document.createElement('div');right.id='jinpoBondNavRight';wrap.appendChild(right);}
+
+    var allBtn = document.getElementById('jinpoBondAllBtn');
+    if(!allBtn){
+      allBtn = document.createElement('button');allBtn.type='button';allBtn.id='jinpoBondAllBtn';allBtn.className='jinpoBondNavBtn';allBtn.textContent='因縁一覧';
+      allBtn.addEventListener('click', function(){ openModal('all'); });
+    }
+    if(allBtn.parentNode!==right)right.appendChild(allBtn);
+
+    var activeBtn = document.getElementById('jinpoBondActiveBtn');
+    if(!activeBtn){
+      activeBtn = document.createElement('button');activeBtn.type='button';activeBtn.id='jinpoBondActiveBtn';activeBtn.className='jinpoBondNavBtn';activeBtn.textContent='現在発動中因縁';
+      activeBtn.addEventListener('click', function(){ openModal('active'); });
+    }
+    if(activeBtn.parentNode!==right)right.appendChild(activeBtn);
+    if(back.parentNode!==right)right.appendChild(back);
   }
+
 
   function ensureModal(){
     if(document.getElementById('jinpoBondModalBackdrop')) return;
