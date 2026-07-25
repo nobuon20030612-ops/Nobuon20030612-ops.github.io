@@ -207,7 +207,8 @@ def main():
     forbidden_fragments = {
         'index.html': [
             'DB_LIST_MAX = 300', 'DB_LIST_MAX=300', 'Top300', 'top300',
-            'jinpo_result_db_', 'factor4_usage_index.json', 'data-linegen-', '__jinpoLineGen', '__jinpoActualLineRows'
+            'jinpo_result_db_', 'factor4_usage_index.json', 'data-linegen-', '__jinpoLineGen', '__jinpoActualLineRows',
+            'confirm(' , 'window.confirm('
         ],
         'jinpo-fast-search.js': [
             'LIMIT=300', 'LIMIT = 300', 'Top300', 'top300', 'jinpo_result_db_',
@@ -281,6 +282,7 @@ def main():
             'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function lookupExactState(opts)',
             'worker.terminate()', "(c===5||c===6)&&!gradeOn()",
             'selectedExclude=0;syncFactor4()', 'eiketsu_internal_ids||',
+            'resetAll:function()', "listSort={key:'',dir:'desc'};appliedListRowKey=''",
         ],
         'index.html': [
             'function sameReachInternalIdSet', 'function sameReachBondSet',
@@ -301,6 +303,9 @@ def main():
             'if(applySeq===swapApplySeq) hideSwapLoading()',
             'function bonusHeroInternalId(hero)', 'function bonusRowInternalIds(row)',
             'function bonusHeroByInternalId(id)', "if(ret && typeof ret.then==='function')",
+            'id="jinpoGlobalResetBtn"', 'window.__jinpoAskYesNo=function(opts)',
+            'window.__jinpoPerformGlobalReset=performGlobalReset', 'window.__jinpoClearExcludedHeroes = function(opts)',
+            'window.__jinpoResetEiketsuBonusAll = function(opts)', 'いいえ</button><button type="button" id="jinpoCommonConfirmYes"',
         ],
         'jinpo-activation-engine.js': [
             'const activatedOccurrences = [];', 'const activatedByName = new Map();',
@@ -354,6 +359,9 @@ def main():
         'bonus_fallback_internal_id_first': True,
         'bonus_recalc_after_exact_lookup': True,
         'kenbun_job_uses_master_job_column_directly': True,
+        'global_reset_button_and_state_reset': True,
+        'all_yes_no_confirmations_use_common_modal': True,
+        'native_confirm_removed': True,
     }
 
     # 文字化け/UTF-8/CSV/JSONを毎回自動検査する。

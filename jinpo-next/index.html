@@ -417,6 +417,7 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
   
   <div class="dbFormationSelectTop">
 <div class="row">
+    <div id="jinpoGlobalResetRow"><button id="jinpoGlobalResetBtn" type="button">全解除</button></div>
     <label>陣形選択
       <select id="formationSelect"></select>
     </label>
@@ -7823,6 +7824,7 @@ body{padding-top:0 !important;}
   function saveList(list){var seen={}, out=[];(list||[]).forEach(function(n){n=String(n||'').trim(); if(!n) return; var k=norm(n); if(!k||seen[k]) return; seen[k]=1; out.push(n);}); localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); updateCount();}
   function isExcludedName(name){var k=norm(name); if(!k) return false; return getList().map(norm).indexOf(k)!==-1;}
   window.__jinpoGetExcludedHeroes = getList;
+  window.__jinpoClearExcludedHeroes = function(opts){opts=opts||{}; saveList([]); try{renderModalList();}catch(e){} if(!opts.silent) rerender(); return true;};
   window.__jinpoExcludedHeroRowOk = function(row){var ex=getList().map(norm); if(!ex.length) return true; var mem=rowMembers(row).map(norm); return !mem.some(function(n){return ex.indexOf(n)!==-1;});};
   function currentCount(){
     var btn=document.querySelector('#dbCountButtons .dbCountBtn.active[data-count], #dbCountButtons button.active[data-count]');
@@ -7856,13 +7858,13 @@ body{padding-top:0 !important;}
   function heroNames(){var names=[]; try{(window.eiketsuMaster||eiketsuMaster||[]).forEach(function(h){var n=h && (h['英傑名']||h.name||h['名前']); if(n) names.push(String(n));});}catch(e){} if(!names.length){document.querySelectorAll('.dbPlacementMini > span').forEach(function(el){var n=spanName(el); if(n) names.push(n);});} var seen={}; return names.filter(function(n){var k=norm(n); if(!k||seen[k]) return false; seen[k]=1; return true;}).sort(function(a,b){return a.localeCompare(b,'ja');});}
   function updateCount(){var c=getList().length; var el=document.getElementById('jinpoExcludedHeroCount'); if(el) el.textContent='除外中：'+c+'人'; var modalCount=document.getElementById('jinpoExcludedHeroModalCount'); if(modalCount) modalCount.textContent='除外中：'+c+'人';}
   function ensureControls(){var anchor=document.getElementById('ownedHeroSelectedInfo'); if(anchor && !document.getElementById('jinpoExcludedHeroOpenBtn')){var row=document.createElement('div'); row.className='jinpoExcludeControlRow'; row.innerHTML='<button type="button" id="jinpoExcludedHeroOpenBtn">除外英傑設定</button><span id="jinpoExcludedHeroCount" class="jinpoExcludeCount">除外中：0人</span><span class="jinpoExcludeHint">検索結果の一覧から名前をクリックしても除外できます。</span>'; anchor.insertAdjacentElement('afterend', row); row.querySelector('#jinpoExcludedHeroOpenBtn').addEventListener('click', openModal);}
-    if(!document.getElementById('jinpoExcludedHeroModal')){var m=document.createElement('div'); m.id='jinpoExcludedHeroModal'; m.innerHTML='<div class="jinpoExcludedHeroBox" role="dialog" aria-modal="true"><div class="jinpoExcludedHeroHead"><div><div class="jinpoExcludedHeroTitle">除外英傑設定</div><div id="jinpoExcludedHeroModalCount" class="jinpoExcludeCount">除外中：0人</div></div><div><button type="button" id="jinpoExcludedHeroClearBtn">全解除</button> <button type="button" id="jinpoExcludedHeroCloseBtn">閉じる</button></div></div><input type="search" id="jinpoExcludedHeroSearch" placeholder="英傑名で検索"><div class="jinpoExcludeHint">チェックした英傑を含む検索結果を除外します。検索結果クリック除外ともリアルタイム連動します。</div><div id="jinpoExcludedHeroList" class="jinpoExcludedHeroList"></div></div>'; document.body.appendChild(m); m.querySelector('#jinpoExcludedHeroCloseBtn').addEventListener('click', closeModal); m.addEventListener('click',function(ev){if(ev.target===m) closeModal();}); m.querySelector('#jinpoExcludedHeroClearBtn').addEventListener('click',function(){if(confirm('除外英傑を全て解除しますか？')){saveList([]); renderModalList(); rerender();}}); m.querySelector('#jinpoExcludedHeroSearch').addEventListener('input',renderModalList);}
+    if(!document.getElementById('jinpoExcludedHeroModal')){var m=document.createElement('div'); m.id='jinpoExcludedHeroModal'; m.innerHTML='<div class="jinpoExcludedHeroBox" role="dialog" aria-modal="true"><div class="jinpoExcludedHeroHead"><div><div class="jinpoExcludedHeroTitle">除外英傑設定</div><div id="jinpoExcludedHeroModalCount" class="jinpoExcludeCount">除外中：0人</div></div><div><button type="button" id="jinpoExcludedHeroClearBtn">全解除</button> <button type="button" id="jinpoExcludedHeroCloseBtn">閉じる</button></div></div><input type="search" id="jinpoExcludedHeroSearch" placeholder="英傑名で検索"><div class="jinpoExcludeHint">チェックした英傑を含む検索結果を除外します。検索結果クリック除外ともリアルタイム連動します。</div><div id="jinpoExcludedHeroList" class="jinpoExcludedHeroList"></div></div>'; document.body.appendChild(m); m.querySelector('#jinpoExcludedHeroCloseBtn').addEventListener('click', closeModal); m.addEventListener('click',function(ev){if(ev.target===m) closeModal();}); m.querySelector('#jinpoExcludedHeroClearBtn').addEventListener('click',function(){var ask=window.__jinpoAskYesNo; if(typeof ask!=='function') return; ask({title:'除外英傑の全解除',message:'除外英傑をすべて解除しますか？'}).then(function(ok){if(!ok)return; saveList([]); renderModalList(); rerender();});}); m.querySelector('#jinpoExcludedHeroSearch').addEventListener('input',renderModalList);}
     updateCount();}
   function openModal(){ensureControls(); renderModalList(); document.getElementById('jinpoExcludedHeroModal').classList.add('isOpen');}
   function closeModal(){var m=document.getElementById('jinpoExcludedHeroModal'); if(m) m.classList.remove('isOpen');}
   function renderModalList(){var box=document.getElementById('jinpoExcludedHeroList'); if(!box) return; var q=norm(document.getElementById('jinpoExcludedHeroSearch')?.value||''); var ex=getList().map(norm); var list=heroNames().filter(function(n){return !q || norm(n).indexOf(q)!==-1;}); box.innerHTML=list.map(function(n){var checked=ex.indexOf(norm(n))!==-1?' checked':''; return '<label><input type="checkbox" data-jinpo-exclude-name="'+esc(n)+'"'+checked+'> '+esc(n)+'</label>';}).join('') || '<div class="jinpoExcludeHint">該当英傑なし</div>'; box.querySelectorAll('input[data-jinpo-exclude-name]').forEach(function(cb){cb.addEventListener('change',function(){var list=getList(); var n=cb.getAttribute('data-jinpo-exclude-name')||''; if(cb.checked){list.push(n);}else{var nk=norm(n); list=list.filter(function(x){return norm(x)!==nk;});} saveList(list); renderModalList(); rerender();});}); updateCount();}
   function spanName(el){var t=''; var w=el&&el.querySelector&&el.querySelector(':scope > .jinpoHeroNameFitText'); if(w) t=w.textContent||''; if(!t && el) t=el.textContent||''; t=String(t||'').replace(/^\s*\d+\.\s*/,'').replace(/\s*文曲\s*$/,'').trim(); return t;}
-  function addExcludedByName(name){name=String(name||'').trim(); if(!name) return; if(isExcludedName(name)){return;} if(!confirm('「'+name+'」を除外して再検索しますか？')) return; var list=getList(); list.push(name); saveList(list); renderModalList(); rerender();}
+  function addExcludedByName(name){name=String(name||'').trim(); if(!name) return; if(isExcludedName(name)){return;} var ask=window.__jinpoAskYesNo; if(typeof ask!=='function') return; ask({title:'英傑を除外',message:'「'+name+'」を除外して再検索しますか？'}).then(function(ok){if(!ok)return; var list=getList(); list.push(name); saveList(list); renderModalList(); rerender();});}
   function ready(fn){if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn,{once:true}); else fn();}
   ready(function(){ensureControls(); document.addEventListener('click',function(ev){var el=ev.target&&ev.target.closest&&ev.target.closest('.dbPlacementMini > span'); if(!el) return; var n=spanName(el); if(!n) return; ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); addExcludedByName(n);},true);});
 })();
@@ -8377,6 +8379,25 @@ body{padding-top:0 !important;}
   window.__jinpoGetEiketsuKishinsekiBonusStats = bonusStats;
   window.__jinpoGetEiketsuKishinsekiBonusStatsForHero = bonusStatsForHero;
   window.__jinpoHasEiketsuKishinsekiBonus = hasBonus;
+  window.__jinpoResetEiketsuBonusAll = function(opts){
+    opts=opts||{};
+    choices={kenbun:{},kishin:{},tensei:{}};
+    JOB_DEFS.forEach(function(j){choices.kenbun[j]={};});
+    SLOT_DEFS.forEach(function(n){choices.kishin[String(n)]={};choices.tensei[String(n)]=false;});
+    appliedChoices=cloneBonusChoices(choices);
+    setBonusAppliedMode(false);
+    try{window.__jinpoBonusBaseDbRow=null;}catch(e){}
+    try{clearBonusCombinedPanel();}catch(e){}
+    var modal=document.getElementById('eiketsuKishinsekiModalBackdrop');
+    if(modal){
+      modal.querySelectorAll('input[type="radio"]').forEach(function(i){i.checked=false;});
+      try{updateBars();}catch(e){}
+      if(opts.close!==false) modal.classList.remove('open');
+    }
+    try{renderTopBreakdown();}catch(e){}
+    try{updateNote();}catch(e){}
+    return true;
+  };
   var lastActivationResultForBonus = null;
   var bonusChangeTimer = null;
   var oldRenderFormationForBonus=(typeof renderFormation==='function')?renderFormation:null;
@@ -9379,6 +9400,121 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
     if(!btn) return;
     setTimeout(function(){ mark(btn); },0);
   }, true);
+})();
+</script>
+
+<style id="jinpo-common-confirm-and-global-reset-style">
+#jinpoGlobalResetRow{flex:1 1 100%;width:100%;display:flex;align-items:center;justify-content:flex-start;margin:0 0 10px 0;box-sizing:border-box}
+#jinpoGlobalResetBtn{width:min(420px,100%);min-height:64px;padding:12px 24px;border:3px solid #ffd75c!important;border-radius:16px!important;background:linear-gradient(180deg,#b93625,#6c140d)!important;color:#fff4d5!important;font-size:28px!important;font-weight:1000!important;letter-spacing:.08em!important;text-shadow:0 2px 0 #3b0905,0 0 10px rgba(255,225,128,.28)!important;box-shadow:0 0 0 2px rgba(255,215,92,.20),0 0 24px rgba(255,73,45,.58),inset 0 0 16px rgba(255,221,111,.14)!important;cursor:pointer!important;transition:filter .14s ease,box-shadow .14s ease,transform .14s ease!important}
+#jinpoGlobalResetBtn:hover,#jinpoGlobalResetBtn:focus-visible{filter:brightness(1.18)!important;box-shadow:0 0 0 3px rgba(255,215,92,.28),0 0 36px rgba(255,76,45,.82),inset 0 0 20px rgba(255,221,111,.20)!important;transform:translateY(-1px)!important;outline:none!important}
+#jinpoGlobalResetBtn:active{transform:translateY(1px)!important}
+#jinpoCommonConfirmBackdrop{position:fixed;inset:0;z-index:2147483646;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(0,0,0,.76);backdrop-filter:blur(2px)}
+#jinpoCommonConfirmBackdrop.isOpen{display:flex}
+.jinpoCommonConfirmBox{width:min(620px,94vw);overflow:hidden;border:2px solid #e7bd5c;border-radius:18px;background:linear-gradient(180deg,#2b170d,#100b07 82%);box-shadow:0 24px 80px rgba(0,0,0,.72),0 0 30px rgba(231,189,92,.28)}
+.jinpoCommonConfirmHead{padding:17px 20px;border-bottom:1px solid rgba(231,189,92,.42);background:linear-gradient(90deg,rgba(122,33,24,.92),rgba(42,22,9,.96));color:#ffe8a6;font-size:25px;font-weight:1000;text-align:center;letter-spacing:.03em}
+.jinpoCommonConfirmMessage{padding:26px 24px 20px;color:#fff3d1;font-size:20px;font-weight:800;line-height:1.65;text-align:center;white-space:pre-line}
+.jinpoCommonConfirmActions{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 22px 22px}
+.jinpoCommonConfirmBtn{min-height:58px;border:2px solid #e7bd5c!important;border-radius:12px!important;font-size:21px!important;font-weight:1000!important;letter-spacing:.05em!important;cursor:pointer!important}
+#jinpoCommonConfirmNo{background:linear-gradient(#3b3328,#17120d)!important;color:#f7e8c1!important}
+#jinpoCommonConfirmYes{background:linear-gradient(#a83224,#63150f)!important;color:#fff4d5!important;box-shadow:0 0 16px rgba(255,67,43,.34)!important}
+.jinpoCommonConfirmBtn:hover,.jinpoCommonConfirmBtn:focus-visible{filter:brightness(1.18)!important;box-shadow:0 0 20px rgba(231,189,92,.54)!important;outline:none!important}
+@media(max-width:760px){#jinpoGlobalResetBtn{width:100%;font-size:24px!important;min-height:58px}.jinpoCommonConfirmHead{font-size:21px}.jinpoCommonConfirmMessage{font-size:17px;padding:20px 16px}.jinpoCommonConfirmActions{gap:10px;padding:0 14px 16px}.jinpoCommonConfirmBtn{min-height:54px;font-size:18px!important}}
+</style>
+<script id="jinpo-common-confirm-and-global-reset-script">
+(function(){
+  'use strict';
+  if(window.__jinpoCommonConfirmAndGlobalResetInstalled) return;
+  window.__jinpoCommonConfirmAndGlobalResetInstalled=true;
+  var resolver=null,lastFocus=null;
+  function ensureConfirm(){
+    var back=document.getElementById('jinpoCommonConfirmBackdrop');
+    if(back) return back;
+    back=document.createElement('div');
+    back.id='jinpoCommonConfirmBackdrop';
+    back.innerHTML='<div class="jinpoCommonConfirmBox" role="dialog" aria-modal="true" aria-labelledby="jinpoCommonConfirmTitle" aria-describedby="jinpoCommonConfirmMessage"><div id="jinpoCommonConfirmTitle" class="jinpoCommonConfirmHead">確認</div><div id="jinpoCommonConfirmMessage" class="jinpoCommonConfirmMessage"></div><div class="jinpoCommonConfirmActions"><button type="button" id="jinpoCommonConfirmNo" class="jinpoCommonConfirmBtn">いいえ</button><button type="button" id="jinpoCommonConfirmYes" class="jinpoCommonConfirmBtn">はい</button></div></div>';
+    document.body.appendChild(back);
+    function finish(ok){
+      if(!back.classList.contains('isOpen')) return;
+      back.classList.remove('isOpen');
+      var r=resolver; resolver=null;
+      try{if(lastFocus&&typeof lastFocus.focus==='function')lastFocus.focus();}catch(e){}
+      lastFocus=null;
+      if(r) r(!!ok);
+    }
+    back.querySelector('#jinpoCommonConfirmNo').addEventListener('click',function(){finish(false);});
+    back.querySelector('#jinpoCommonConfirmYes').addEventListener('click',function(){finish(true);});
+    back.addEventListener('click',function(ev){if(ev.target===back)finish(false);});
+    document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&back.classList.contains('isOpen')){ev.preventDefault();finish(false);}});
+    back.__jinpoFinish=finish;
+    return back;
+  }
+  window.__jinpoAskYesNo=function(opts){
+    opts=opts||{};
+    var back=ensureConfirm();
+    if(resolver && back.__jinpoFinish) back.__jinpoFinish(false);
+    var title=back.querySelector('#jinpoCommonConfirmTitle'),msg=back.querySelector('#jinpoCommonConfirmMessage');
+    if(title) title.textContent=String(opts.title||'確認');
+    if(msg) msg.textContent=String(opts.message||'実行しますか？');
+    lastFocus=document.activeElement;
+    back.classList.add('isOpen');
+    return new Promise(function(resolve){resolver=resolve;setTimeout(function(){var no=back.querySelector('#jinpoCommonConfirmNo');if(no)no.focus();},0);});
+  };
+
+  function dispatchChange(el){if(!el)return;try{el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}}
+  function clearHtml(id){var el=document.getElementById(id);if(el)el.innerHTML='';}
+  function resetPriority(){
+    try{dbQuickStatOrder=[];}catch(e){}
+    for(var i=1;i<=3;i++){
+      var s=document.getElementById('dbPriorityStat'+i),v=document.getElementById('dbPriorityValue'+i);
+      if(s){s.value='';try{if(typeof updateDbPriorityValueOptions==='function')updateDbPriorityValueOptions(i);}catch(e){}dispatchChange(s);}
+      if(v){v.value='';dispatchChange(v);}
+    }
+    try{if(typeof renderDbStatButtons==='function')renderDbStatButtons();}catch(e){}
+  }
+  function closeOtherModals(){
+    var ex=document.getElementById('jinpoExcludedHeroModal');if(ex)ex.classList.remove('isOpen');
+    var own=document.getElementById('ownedHeroReliableModal');if(own){own.classList.remove('open');own.style.display='none';}
+    var bonus=document.getElementById('eiketsuKishinsekiModalBackdrop');if(bonus)bonus.classList.remove('open');
+  }
+  function performGlobalReset(){
+    /* 保存済み編成やマスターデータは削除せず、現在の画面状態だけを初期化する。 */
+    try{if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.resetAll==='function')window.JINPO_FAST_SEARCH.resetAll();else if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.clear==='function')window.JINPO_FAST_SEARCH.clear();}catch(e){console.error('検索状態全解除失敗',e);}
+    try{grade3Cost6OnlyEnabled=false;}catch(e){} try{window.grade3Cost6OnlyEnabled=false;}catch(e){}
+    try{selectedDbListBondCount=null;}catch(e){} try{window.selectedDbListBondCount=null;}catch(e){}
+    try{selectedDbResultId='';}catch(e){}
+    try{window.__currentAppliedDbRow=null;window.__lastReachAppliedDbRow=null;window.__jinpoExactAppliedDbRow=null;window.__jinpoBonusBaseDbRow=null;}catch(e){}
+    var form=document.getElementById('formationSelect');if(form)form.value='';
+    try{placement={};}catch(e){}
+    var clearBtn=document.getElementById('clearBtn');if(clearBtn)clearBtn.click();
+    try{if(typeof window.__ownedHeroClearReliable==='function')window.__ownedHeroClearReliable();else{ownedHeroFilterIds=[];}}catch(e){console.error('配置英傑解除失敗',e);}
+    try{if(typeof window.__jinpoClearExcludedHeroes==='function')window.__jinpoClearExcludedHeroes({silent:true});}catch(e){console.error('除外英傑解除失敗',e);}
+    resetPriority();
+    try{if(typeof window.__jinpoResetEiketsuBonusAll==='function')window.__jinpoResetEiketsuBonusAll({close:true});}catch(e){console.error('能力付加全解除失敗',e);}
+    try{if(typeof clearAppliedDbRowDisplay==='function')clearAppliedDbRowDisplay();}catch(e){}
+    try{if(typeof window.clearAppliedPreviewUnderFormation==='function')window.clearAppliedPreviewUnderFormation();}catch(e){}
+    try{if(typeof renderSlots==='function')renderSlots();}catch(e){}
+    try{if(typeof renderFormation==='function')renderFormation(null);}catch(e){}
+    try{if(typeof renderRealtimeTotalStats==='function')renderRealtimeTotalStats({activated:[]});}catch(e){}
+    try{if(typeof renderDbCountButtons==='function')renderDbCountButtons();}catch(e){}
+    clearHtml('summary');clearHtml('activatedList');clearHtml('reachList');clearHtml('lineDetails');clearHtml('masterResult');clearHtml('statIncreaseResult');clearHtml('totalEffectMini');clearHtml('bondValuePanel');
+    var saveName=document.getElementById('saveName');if(saveName)saveName.value='';
+    var body=document.body;if(body)body.classList.remove('jinpoFormationSelected');
+    closeOtherModals();
+    try{if(window.JINPO_FACTOR4_FILTER&&typeof window.JINPO_FACTOR4_FILTER.reset==='function')window.JINPO_FACTOR4_FILTER.reset();}catch(e){}
+    try{if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.resetAll==='function')window.JINPO_FAST_SEARCH.resetAll();}catch(e){}
+    return true;
+  }
+  window.__jinpoPerformGlobalReset=performGlobalReset;
+  function bind(){
+    ensureConfirm();
+    var btn=document.getElementById('jinpoGlobalResetBtn');
+    if(!btn||btn.__jinpoResetBound)return;
+    btn.__jinpoResetBound=true;
+    btn.addEventListener('click',function(){
+      window.__jinpoAskYesNo({title:'全解除',message:'現在の選択・検索条件・ソート・除外・適用中・差替状態・転生／見聞録／鬼神石をすべて解除します。\n\n全解除しますか？'}).then(function(ok){if(ok)performGlobalReset();});
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();
 </script>
 
