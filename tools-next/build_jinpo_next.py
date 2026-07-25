@@ -149,6 +149,17 @@ def main():
     if cp.returncode != 0:
         fail('Top500/優先Top500再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
 
+    rebuild_recommend_sum = ROOT/'tools-next'/'rebuild_recommend_sum_top.py'
+    if not rebuild_recommend_sum.exists(): fail('おすすめ陣法合計Top500再生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(rebuild_recommend_sum)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('おすすめ陣法 第1＋第2合計Top500再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    recommend_report_path = REPORT_DIR/'recommend_sum_top_report.json'
+    if not recommend_report_path.exists(): fail('おすすめ陣法合計Top500レポートがありません', report)
+    recommend_report = json.loads(recommend_report_path.read_text(encoding='utf-8'))
+    if recommend_report.get('status') != 'PASS': fail('おすすめ陣法合計Top500レポートがPASSではありません', report)
+    report['recommend_sum_top'] = {'files':recommend_report.get('files'),'rows':recommend_report.get('rows'),'limit_per_formation':recommend_report.get('limit_per_formation'),'seconds':recommend_report.get('seconds')}
+
     # 最終更新表示もCSV更新だけで自動更新。
     new_infos = sync_report.get('new_heroes', [])
     changed_infos = sync_report.get('changed_existing', [])
@@ -201,6 +212,28 @@ def main():
 
     if int(manifest.get('top_limit', 0)) != 500 or int(manifest.get('sort_top_limit', 0)) != 500:
         fail('Top500設定不一致: manifest top_limit/sort_top_limit が500ではありません', report)
+    if int(manifest.get('recommend_sum_top_limit', 0)) != 500 or int(manifest.get('recommend_sum_top_record_size', 0)) != 54:
+        fail('おすすめ合計Top500設定不一致', report)
+    recommend_stats = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
+    recommend_files = 0
+    for mode in ('normal','grade3'):
+        for primary in recommend_stats:
+            for secondary in recommend_stats:
+                if secondary == primary: continue
+                info = manifest.get('recommend_sum_top', {}).get(mode, {}).get(primary, {}).get(secondary)
+                if not info: fail(f'おすすめ合計Top500不足: {mode}/{primary}/{secondary}', report)
+                fp = SITE / str(info.get('file',''))
+                if not fp.exists(): fail(f'おすすめ合計Top500ファイル不足: {fp.relative_to(ROOT)}', report)
+                gz = fp.read_bytes()
+                if hashlib.sha256(gz).hexdigest()[:16] != str(info.get('sha256_16','')): fail(f'おすすめ合計Top500 SHA不一致: {fp.relative_to(ROOT)}', report)
+                try: raw = gzip.decompress(gz)
+                except Exception as e: fail(f'おすすめ合計Top500 gzip不正: {fp.relative_to(ROOT)}: {e}', report)
+                if len(raw) < 16 or raw[:4] != b'JRS1': fail(f'おすすめ合計Top500 magic不一致: {fp.relative_to(ROOT)}', report)
+                rec = struct.unpack_from('<H', raw, 6)[0]; rows = struct.unpack_from('<I', raw, 8)[0]
+                if rec != 54 or rows != int(info.get('rows', -1)) or len(raw) != 16 + rows * rec: fail(f'おすすめ合計Top500構造不一致: {fp.relative_to(ROOT)}', report)
+                if rows > 4 * 500: fail(f'おすすめ合計Top500件数超過: {fp.relative_to(ROOT)} rows={rows}', report)
+                recommend_files += 1
+    report['recommend_sum_top_integrity'] = {'files':recommend_files,'errors':0}
     for mode, counts in manifest.get('top', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():

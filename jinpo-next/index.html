@@ -9049,6 +9049,10 @@ body{padding-top:0 !important;}
   outline-offset:1px !important;
   box-shadow:0 0 12px rgba(255,239,170,.72) !important;
 }
+.dbPriorityStatChoice:disabled{cursor:not-allowed !important;transform:none !important;}
+.dbPriorityStatChoice:disabled:not(.active){opacity:.34 !important;filter:grayscale(.35) !important;}
+.dbPriorityStatChoice.jinpoRecommendFixed{opacity:1 !important;filter:none !important;outline:3px solid #fff4b8 !important;box-shadow:0 0 15px rgba(255,239,170,.86) !important;}
+.dbPriorityButtonGroup[data-recommend-fixed="1"] > label::after{content:"【おすすめ固定】";margin-left:8px;color:#ffe1a1;font-size:12px;font-weight:950;white-space:nowrap;}
 .dbPriorityValueChoice{
   background:#17110b !important;
   color:#ffe9b4 !important;
@@ -9094,6 +9098,7 @@ body{padding-top:0 !important;}
   ];
   var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000];
   var NORMAL_VALUES = [1600,1400,1200,1000,800,600,400,200];
+  var recommendLock = {active:false,targetStat:""};
 
   function dispatchChange(el){
     if(!el) return;
@@ -9118,16 +9123,23 @@ body{padding-top:0 !important;}
 
     var currentStat=statSel.value || "";
     var currentValue=valueSel.value || "";
+    var group=statBox.closest('.dbPriorityButtonGroup');
+    var lockedPrimary=!!recommendLock.active && index===1;
+    if(group) group.dataset.recommendFixed=lockedPrimary?'1':'0';
 
     statBox.innerHTML="";
     STATS.forEach(function(item){
       var b=document.createElement('button');
+      var blockedSecondary=!!recommendLock.active && index===2 && item.value===recommendLock.targetStat;
+      var fixed=lockedPrimary && item.value===recommendLock.targetStat;
       b.type='button';
-      b.className='dbPriorityStatChoice'+(currentStat===item.value?' active':'');
+      b.className='dbPriorityStatChoice'+(currentStat===item.value?' active':'')+(fixed?' jinpoRecommendFixed':'');
       b.setAttribute('data-stat',item.value);
       b.textContent=item.label;
-      b.title=item.label;
+      b.title=fixed?(item.label+'（おすすめ固定）'):item.label;
+      b.disabled=lockedPrimary||blockedSecondary;
       b.addEventListener('click',function(){
+        if(b.disabled)return;
         var same=statSel.value===item.value;
         statSel.value=same ? "" : item.value;
         valueSel.value="";
@@ -9165,6 +9177,12 @@ body{padding-top:0 !important;}
 
   function init(){
     clearThird();
+    window.addEventListener('jinpo:recommend-state',function(ev){
+      var d=ev&&ev.detail||{};
+      recommendLock.active=!!d.active;
+      recommendLock.targetStat=recommendLock.active?String(d.targetStat||''):'';
+      setTimeout(function(){render(1);render(2);},0);
+    });
     [1,2].forEach(function(i){
       var s=document.getElementById('dbPriorityStat'+i);
       var v=document.getElementById('dbPriorityValue'+i);

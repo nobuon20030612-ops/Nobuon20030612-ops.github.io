@@ -30,6 +30,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: 生成依存ライブラリ準備
+        run: python -m pip install --disable-pip-version-check numpy
+
       - name: 新陣法を検証・生成
         run: python tools-next/build_jinpo_next.py
 

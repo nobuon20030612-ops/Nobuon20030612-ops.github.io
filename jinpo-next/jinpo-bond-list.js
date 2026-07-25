@@ -41,11 +41,12 @@
       '.jinpoRecommendLabel{flex:0 0 auto;margin-right:3px;color:#ffe1a1;font-size:15px;font-weight:950;white-space:nowrap;}',
       '.jinpoRecommendBtn{flex:1 1 0;min-width:46px;min-height:38px;padding:6px 7px;border-radius:10px;border:1px solid #9a7538;background:linear-gradient(#382718,#17100a);color:#f7e9c9;font-size:13px;font-weight:950;line-height:1;cursor:pointer;white-space:nowrap;box-sizing:border-box;}',
       '.jinpoRecommendBtn:hover{filter:brightness(1.15);box-shadow:0 0 12px rgba(231,189,92,.30);}',
-      '.jinpoRecommendBtn.active{border-color:#ffe584;background:linear-gradient(#8a4d1c,#48280e);color:#fff6c5;box-shadow:0 0 13px rgba(255,225,110,.62),inset 0 0 8px rgba(255,236,174,.12);}',
+      '.jinpoRecommendBtn.active{outline:2px solid #fff4b8;outline-offset:1px;box-shadow:0 0 13px rgba(255,239,170,.72),inset 0 0 8px rgba(255,255,255,.12);}',
+      '.jinpoRecommendBtn[data-stat="生命"]{background:#fff;color:#111;border-color:#cfcfcf}.jinpoRecommendBtn[data-stat="気合"]{background:#cfefff;color:#102633;border-color:#78b8da}.jinpoRecommendBtn[data-stat="腕力"]{background:#c93333;color:#fff;border-color:#ff7777}.jinpoRecommendBtn[data-stat="耐久力"]{background:#245fc7;color:#fff;border-color:#70a0ff}.jinpoRecommendBtn[data-stat="器用さ"]{background:#3a9b55;color:#fff;border-color:#75d28d}.jinpoRecommendBtn[data-stat="知力"]{background:#f2d93b;color:#241f00;border-color:#fff083}.jinpoRecommendBtn[data-stat="魅力"]{background:#8b4bb4;color:#fff;border-color:#c88fe8}.jinpoRecommendBtn[data-stat="土属性"]{background:#fff1a8;color:#332800;border-color:#d9c35d}.jinpoRecommendBtn[data-stat="水属性"]{background:#73d7f3;color:#073340;border-color:#b5efff}.jinpoRecommendBtn[data-stat="火属性"]{background:#f3a0a0;color:#4b1111;border-color:#ffd0d0}.jinpoRecommendBtn[data-stat="風属性"]{background:#a8e2a6;color:#173a16;border-color:#d2f4d0}',
       '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
       '#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{margin:0 !important;}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
-      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ検索中は2項目合計ソートを使用しません";margin-left:auto;padding:3px 8px;border:1px solid rgba(231,189,92,.45);border-radius:8px;color:#ffe1a1;font-size:12px;font-weight:900;white-space:nowrap;}',
+      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ中は第2優先を選ぶと合計値順へ自動切替";margin-left:auto;padding:3px 8px;border:1px solid rgba(231,189,92,.45);border-radius:8px;color:#ffe1a1;font-size:12px;font-weight:900;white-space:nowrap;}',
       '.jinpoBondNavBtn{min-height:38px;padding:7px 14px;border-radius:12px;border:2px solid #b99043;background:linear-gradient(#5e4020,#35230f);color:#fff1c9;font-size:15px;font-weight:900;line-height:1;box-shadow:0 0 12px rgba(231,189,92,.20);cursor:pointer;white-space:nowrap;}',
       '.jinpoBondNavBtn:hover{filter:brightness(1.12);box-shadow:0 0 16px rgba(231,189,92,.36);}',
       '#jinpoBondModalBackdrop{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
@@ -95,7 +96,7 @@
         ['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']
       ];
       recommend.innerHTML = '<span class="jinpoRecommendLabel">おすすめ陣法</span>' + stats.map(function(x){
-        return '<button type="button" class="jinpoRecommendBtn" data-jinpo-recommend-stat="'+esc(x[0])+'" aria-pressed="false">'+esc(x[1])+'</button>';
+        return '<button type="button" class="jinpoRecommendBtn" data-jinpo-recommend-stat="'+esc(x[0])+'" data-stat="'+esc(x[0])+'" aria-pressed="false">'+esc(x[1])+'</button>';
       }).join('');
       recommend.addEventListener('click',function(ev){
         var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-recommend-stat]');if(!btn)return;

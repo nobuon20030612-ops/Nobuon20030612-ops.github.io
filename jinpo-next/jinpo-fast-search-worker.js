@@ -2,7 +2,7 @@
   'use strict';
   var MANIFEST_PATH='data/compact_search_v2/jinpo_unified_search_manifest.json';
   var manifest=null,manifestPromise=null;
-  var buffers=new Map(),lruSeq=0,MAX_RAW_CACHE=96*1024*1024;
+  var buffers=new Map(),recommendSumBuffers=new Map(),lruSeq=0,MAX_RAW_CACHE=96*1024*1024;
   var STAT_OFFSETS={'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41};
   var FORM_CODE={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'};
   function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
@@ -109,20 +109,29 @@
     var src=m&&m.datasets&&m.datasets[mode==='grade3'?'grade3':'normal']||{},out=[];
     (mode==='grade3'?[5,6,7,8,9]:[7,8,9]).forEach(function(c){if(src[String(c)])out.push(c);});return out;
   }
-  function recommendRowBetter(a,b,target){
-    var av=Number(a&&a[target])||0,bv=Number(b&&b[target])||0;if(av!==bv)return av>bv;
+  function recommendRowBetter(a,b,target,secondary){
+    var av=Number(a&&a[target])||0,bv=Number(b&&b[target])||0;
+    if(secondary){
+      var asv=Number(a&&a[secondary])||0,bsv=Number(b&&b[secondary])||0,as=av+asv,bs=bv+bsv;if(as!==bs)return as>bs;
+      if(av!==bv)return av>bv;if(asv!==bsv)return asv>bsv;
+      var at=Number(a&&((a.total_score!=null)?a.total_score:a['総合値']))||0,bt=Number(b&&((b.total_score!=null)?b.total_score:b['総合値']))||0;if(at!==bt)return at>bt;
+      var az=Number(a&&a.__recommendTie),bz=Number(b&&b.__recommendTie);if(Number.isFinite(az)&&Number.isFinite(bz)&&az!==bz)return az<bz;
+    }else if(av!==bv)return av>bv;
     var ak=String(a&&a.result_id||''),bk=String(b&&b.result_id||'');return ak<bk;
   }
-  function sortRecommendRows(rows,target,limit){
-    rows.sort(function(a,b){return recommendRowBetter(a,b,target)?-1:(recommendRowBetter(b,a,target)?1:0);});
+  function sortRecommendRows(rows,target,secondary,limit){
+    rows.sort(function(a,b){return recommendRowBetter(a,b,target,secondary)?-1:(recommendRowBetter(b,a,target,secondary)?1:0);});
     if(rows.length>limit)rows.length=limit;return rows;
   }
-  function recommendEntryBetter(a,b){
-    if(a.stat!==b.stat)return a.stat>b.stat;if(a.tie!==b.tie)return a.tie<b.tie;if(a.count!==b.count)return a.count<b.count;return a.rowIndex<b.rowIndex;
+  function recommendEntryBetter(a,b,secondary){
+    if(secondary){
+      if(a.sum!==b.sum)return a.sum>b.sum;if(a.primary!==b.primary)return a.primary>b.primary;if(a.secondary!==b.secondary)return a.secondary>b.secondary;if(a.total!==b.total)return a.total>b.total;
+    }else if(a.primary!==b.primary)return a.primary>b.primary;
+    if(a.tie!==b.tie)return a.tie<b.tie;if(a.count!==b.count)return a.count<b.count;return a.rowIndex<b.rowIndex;
   }
-  function recommendEntryWorse(a,b){return recommendEntryBetter(b,a);}
-  function recommendHeapPush(heap,item){heap.push(item);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!recommendEntryWorse(heap[i],heap[p]))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
-  function recommendHeapDown(heap,i){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&recommendEntryWorse(heap[l],heap[w]))w=l;if(r<heap.length&&recommendEntryWorse(heap[r],heap[w]))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
+  function recommendEntryWorse(a,b,secondary){return recommendEntryBetter(b,a,secondary);}
+  function recommendHeapPush(heap,item,secondary){heap.push(item);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!recommendEntryWorse(heap[i],heap[p],secondary))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
+  function recommendHeapDown(heap,i,secondary){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&recommendEntryWorse(heap[l],heap[w],secondary))w=l;if(r<heap.length&&recommendEntryWorse(heap[r],heap[w],secondary))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
   function recommendFilters(q,m){
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m),thresholds=[];
     (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){if(!r||!r.stat)return;var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
@@ -150,12 +159,30 @@
         var dataQ={mode:'normal',count:c,formation:f,sourceType:'sort',sortStat:target};if(!datasetInfo(m,dataQ))continue;
         var data=await loadData(dataQ,token,false);scanned+=data.rows;rows=rows.concat(materializeFirst(data,dataQ,m,Math.min(limit,data.rows)));
       }
-      byForm[f]=sortRecommendRows(rows,target,limit);matchedByForm[f]=matched;
+      byForm[f]=sortRecommendRows(rows,target,'',limit);matchedByForm[f]=matched;
     }
-    var chosen='',best=-Infinity;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;var v=Number(list[0][target])||0;if(v>best){best=v;chosen=form;}}
+    var chosen='',bestRow=null;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,'')){bestRow=list[0];chosen=form;}}
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-sort-top'};
   }
-  async function recommendFromFull(q,token,m,target,limit,filters){
+  function recommendSumInfo(m,mode,target,secondary){return m&&m.recommend_sum_top&&m.recommend_sum_top[mode]&&m.recommend_sum_top[mode][target]&&m.recommend_sum_top[mode][target][secondary];}
+  async function loadRecommendSumTop(m,mode,target,secondary,token){
+    var info=recommendSumInfo(m,mode,target,secondary);if(!info)return null;var key=[mode,target,secondary,info.file||''].join('|'),hit=recommendSumBuffers.get(key);if(hit)return hit;
+    self.postMessage({type:'progress',token:token,phase:'download',message:'おすすめ合計Top500 読込中',bytes:info.gzip_bytes||0});
+    var zipped=await cachedFetch(info.file,m.version),ab=await gunzip(zipped),dv=new DataView(ab);
+    if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JRS1')throw new Error('おすすめ合計DB magic不一致');
+    var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);if(rec!==54||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('おすすめ合計DB構造不一致');
+    var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info};recommendSumBuffers.set(key,obj);return obj;
+  }
+  async function recommendFromSumTop(q,token,m,target,secondary,limit){
+    var mode=q.mode==='grade3'?'grade3':'normal',data=await loadRecommendSumTop(m,mode,target,secondary,token);if(!data)return null;
+    var codeToForm={1:'衡軛',2:'鶴翼',3:'魚鱗',4:'方円'},byForm=Object.create(null),matchedByForm=Object.create(null),counts=recommendCounts(mode,m);
+    for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi],matched=0;for(var ci=0;ci<counts.length;ci++){var full=fullDatasetInfo(m,{mode:mode,count:counts[ci],formation:f});if(full)matched+=Number(full.rows||0);}matchedByForm[f]=matched;byForm[f]=[];}
+    for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;var originalBase=base+2,mq={mode:mode,count:count,formation:form};var row=materialize(data.dv,originalBase,mq,m,i,data.info.file);row.__recommendTie=tieAt(data.dv,originalBase);byForm[form].push(row);}
+    for(var fj=0;fj<RECOMMEND_FORMS.length;fj++){var ff=RECOMMEND_FORMS[fj];if(byForm[ff].length>limit)byForm[ff].length=limit;}
+    var chosen='',bestRow=null;for(var j=0;j<RECOMMEND_FORMS.length;j++){var f2=RECOMMEND_FORMS[j],list=byForm[f2]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=f2;}}
+    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:data.rows,sourceType:'recommend-sum-top'};
+  }
+  async function recommendFromFull(q,token,m,target,secondary,limit,filters){
     var mode=q.mode==='grade3'?'grade3':'normal',counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0;
     if(filters.owned.some(function(g){return !g.length;}))return {formation:'',rows:[],matched:0,scanned:0,sourceType:'recommend-full'};
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){
@@ -163,25 +190,23 @@
       for(var ci=0;ci<counts.length;ci++){
         var c=counts[ci],dataQ={mode:mode,count:c,formation:f,sourceType:'full',sortStat:''};if(!datasetInfo(m,dataQ))continue;
         var data=await loadData(dataQ,token,false),dv=data.dv,rec=data.recSize,base=16;scanned+=data.rows;
-        for(var idx=0;idx<data.rows;idx++,base+=rec){
-          if(!recommendRecordMatches(dv,base,filters))continue;matched++;
-          var item={data:data,dv:dv,base:base,count:c,formation:f,rowIndex:idx,stat:statAt(dv,base,target),tie:tieAt(dv,base)};
-          if(heap.length<limit)recommendHeapPush(heap,item);else if(recommendEntryBetter(item,heap[0])){heap[0]=item;recommendHeapDown(heap,0);}
-        }
+        for(var idx=0;idx<data.rows;idx++,base+=rec){if(!recommendRecordMatches(dv,base,filters))continue;matched++;var primary=statAt(dv,base,target),second=secondary?statAt(dv,base,secondary):0;var item={data:data,dv:dv,base:base,count:c,formation:f,rowIndex:idx,primary:primary,secondary:second,sum:primary+second,total:totalAt(dv,base),tie:tieAt(dv,base)};if(heap.length<limit)recommendHeapPush(heap,item,secondary);else if(recommendEntryBetter(item,heap[0],secondary)){heap[0]=item;recommendHeapDown(heap,0,secondary);}}
       }
-      heap.sort(function(a,b){return recommendEntryBetter(a,b)?-1:(recommendEntryBetter(b,a)?1:0);});
-      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};return materialize(it.dv,it.base,mq,m,it.rowIndex,it.data.info.file);});matchedByForm[f]=matched;
+      heap.sort(function(a,b){return recommendEntryBetter(a,b,secondary)?-1:(recommendEntryBetter(b,a,secondary)?1:0);});
+      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};var row=materialize(it.dv,it.base,mq,m,it.rowIndex,it.data.info.file);row.__recommendTie=it.tie;return row;});matchedByForm[f]=matched;
     }
-    var chosen='',best=-Infinity;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;var v=Number(list[0][target])||0;if(v>best){best=v;chosen=form;}}
+    var chosen='',bestRow=null;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=form;}}
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-full'};
   }
   async function recommend(q,token){
-    var started=performance.now(),m=await loadManifest(),target=String(q&&q.targetStat||'').trim(),limit=Math.max(1,Number(q&&q.limit||500)||500);
+    var started=performance.now(),m=await loadManifest(),target=String(q&&q.targetStat||'').trim(),secondary=String(q&&q.secondaryStat||'').trim(),limit=Math.max(1,Number(q&&q.limit||500)||500);
     if(STAT_OFFSETS[target]==null)throw new Error('おすすめ陣法のステータスが不正です: '+target);
-    var filters=recommendFilters(q,m),result;
-    if((q.mode!=='grade3')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
-    else result=await recommendFromFull(q,token,m,target,limit,filters);
-    result.ms=performance.now()-started;result.targetStat=target;return result;
+    if(secondary===target)secondary='';if(secondary&&STAT_OFFSETS[secondary]==null)throw new Error('おすすめ陣法の第2ステータスが不正です: '+secondary);
+    var filters=recommendFilters(q,m),result=null,mode=q.mode==='grade3'?'grade3':'normal';
+    if(filters.noFilters&&secondary&&recommendSumInfo(m,mode,target,secondary))result=await recommendFromSumTop(q,token,m,target,secondary,limit);
+    if(!result&&!secondary&&(q.mode!=='grade3')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
+    if(!result)result=await recommendFromFull(q,token,m,target,secondary,limit,filters);
+    result.ms=performance.now()-started;result.targetStat=target;result.secondaryStat=secondary;return result;
   }
 
   async function search(q,token){

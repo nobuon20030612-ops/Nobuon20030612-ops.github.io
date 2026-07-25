@@ -4,7 +4,7 @@
 
   var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false;
-  var recommendState={active:false,targetStat:'',formation:'',applyingFormation:false};
+  var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
 
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -52,18 +52,16 @@
   var RECOMMEND_LABELS={'生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};
   function validRecommendStat(stat){return STATS.indexOf(String(stat||''))>=0;}
   function recommendLabel(stat){return RECOMMEND_LABELS[String(stat||'')]||String(stat||'');}
+  function dispatchChange(el){if(!el)return;try{el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){var ev=document.createEvent('Event');ev.initEvent('change',true,true);el.dispatchEvent(ev);}}
+  function prepareRecommendPriority(target,clearSecond){
+    var s1=q('dbPriorityStat1'),v1=q('dbPriorityValue1'),s2=q('dbPriorityStat2'),v2=q('dbPriorityValue2');recommendState.syncingPriority=true;
+    try{if(s1&&String(s1.value||'')!==target){s1.value=target;if(v1)v1.value='';dispatchChange(s1);if(v1)dispatchChange(v1);}if(clearSecond&&s2){if(s2.value){s2.value='';dispatchChange(s2);}if(v2&&v2.value){v2.value='';dispatchChange(v2);}}if(s2&&String(s2.value||'')===target){s2.value='';if(v2)v2.value='';dispatchChange(s2);if(v2)dispatchChange(v2);}}finally{recommendState.syncingPriority=false;}
+  }
+  function currentRecommendSecondary(target){var s=q('dbPriorityStat2'),v=String(s&&s.value||'').trim();return validRecommendStat(v)&&v!==target?v:'';}
   function syncRecommendUi(){
-    var active=!!recommendState.active,target=active?String(recommendState.targetStat||''):'';
-    document.querySelectorAll('[data-jinpo-recommend-stat]').forEach(function(btn){
-      var on=active&&String(btn.getAttribute('data-jinpo-recommend-stat')||'')===target;
-      btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
-    });
-    var sum=q('jinpoSumPrioritySort');if(sum)sum.dataset.recommendMode=active?'1':'0';
-    try{window.dispatchEvent(new CustomEvent('jinpo:recommend-state',{detail:{active:active,targetStat:target,formation:String(recommendState.formation||'')}}));}catch(e){}
+    var active=!!recommendState.active,target=active?String(recommendState.targetStat||''):'',secondary=active?String(recommendState.secondaryStat||''):'';document.querySelectorAll('[data-jinpo-recommend-stat]').forEach(function(btn){var on=active&&String(btn.getAttribute('data-jinpo-recommend-stat')||'')===target;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});var sum=q('jinpoSumPrioritySort');if(sum){sum.dataset.recommendMode=active?'1':'0';sum.dataset.recommendSecondary=secondary?'1':'0';}try{window.dispatchEvent(new CustomEvent('jinpo:recommend-state',{detail:{active:active,targetStat:target,secondaryStat:secondary,formation:String(recommendState.formation||'')}}));}catch(e){}
   }
-  function exitRecommendMode(){
-    recommendState.active=false;recommendState.targetStat='';recommendState.formation='';recommendState.applyingFormation=false;syncRecommendUi();
-  }
+  function exitRecommendMode(){recommendState.active=false;recommendState.targetStat='';recommendState.secondaryStat='';recommendState.formation='';recommendState.applyingFormation=false;recommendState.syncingPriority=false;syncRecommendUi();}
   function hasThreshold(rs){return (rs||rules()).some(function(r){var n=Number(r&&r.threshold);return r&&r.threshold!==null&&r.threshold!==''&&Number.isFinite(n);});}
   function factor4Max(){return selectedExclude>0?6-selectedExclude:null;}
 
@@ -197,7 +195,7 @@
     return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
   }
   function recommendKeyFor(x){
-    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
+    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedNames,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
   }
   function searchRecommended(query){
     var k=recommendKeyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
@@ -247,26 +245,12 @@
     try{sel.value=formation;sel.dispatchEvent(new Event('change',{bubbles:true}));}finally{recommendState.applyingFormation=false;}
   }
   async function renderRecommended(opts){
-    opts=opts||{};var target=String(opts.targetStat||recommendState.targetStat||'').trim();if(!validRecommendStat(target))return false;
-    ensureEnhancementUi();setSwapStale(false);recommendState.active=true;recommendState.targetStat=target;syncRecommendUi();
-    var myToken=++activeToken,box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
-    listSort={key:target,dir:'desc'};setCount(null);renderUnifiedCountButtons();
-    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded();
-    var query={mode:mode,targetStat:target,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
+    opts=opts||{};var target=String(opts.targetStat||recommendState.targetStat||'').trim();if(!validRecommendStat(target))return false;var targetChanged=!recommendState.active||String(recommendState.targetStat||'')!==target;
+    ensureEnhancementUi();setSwapStale(false);prepareRecommendPriority(target,targetChanged);recommendState.active=true;recommendState.targetStat=target;recommendState.secondaryStat=currentRecommendSecondary(target);syncRecommendUi();
+    var secondary=recommendState.secondaryStat,myToken=++activeToken,box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;listSort=secondary?{key:'',dir:'desc'}:{key:target,dir:'desc'};setCount(null);renderUnifiedCountButtons();
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded();var query={mode:mode,targetStat:target,secondaryStat:secondary,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('おすすめ陣法を検索中');setSummarySearching();box.innerHTML='';
-    try{
-      var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;
-      var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;syncRecommendUi();
-      if(formation)applyRecommendedFormation(formation);
-      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;
-      activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);
-      var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'';
-      if(formation){
-        status.textContent='おすすめ陣法：'+recommendLabel(target)+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+recommendLabel(target)+'が高い順 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;
-      }else{
-        status.textContent='おすすめ陣法：'+recommendLabel(target)+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text;
-      }
-      setSummary(r.matched||0,activeRows.length);rerenderList(null);return true;
+    try{var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順');if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text;}setSummary(r.matched||0,activeRows.length);rerenderList(null);return true;
     }catch(err){
       if(myToken!==activeToken)return true;console.error('おすすめ陣法検索エラー',err);status.textContent='おすすめ陣法の検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">おすすめ陣法の検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;
     }finally{if(myToken===activeToken)hideProgress();}
@@ -308,7 +292,7 @@
   function syncFactor4(){document.querySelectorAll('.jinpoFactor4FilterBtn').forEach(function(btn){var on=Number(btn.getAttribute('data-factor4-exclude'))===selectedExclude;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});}
   function ensureFactor4Controls(){ensureFactor4Style();var legend=q('factor4BunkyokuLegend');if(!legend)return false;if(q('jinpoFactor4FilterControl')){syncFactor4();return true;}var parent=legend.parentNode;if(!parent)return false;var row=document.createElement('div');row.className='jinpoFactor4FilterRow';row.id='jinpoFactor4FilterRow';parent.insertBefore(row,legend);row.appendChild(legend);var ctl=document.createElement('div');ctl.id='jinpoFactor4FilterControl';ctl.className='jinpoFactor4FilterControl';ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');row.appendChild(ctl);return true;}
 
-  document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation)return;var t=ev.target;if(t&&t.id==='formationSelect')exitRecommendMode();},true);
+  document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation||recommendState.syncingPriority)return;var t=ev.target;if(!t)return;if(t.id==='formationSelect'){exitRecommendMode();return;}if(t.id==='dbPriorityStat1'){if(String(t.value||'')!==String(recommendState.targetStat||''))prepareRecommendPriority(recommendState.targetStat,false);return;}if(t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'){Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:recommendState.targetStat});});}},true);
 
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
   document.addEventListener('click',function(ev){
@@ -330,7 +314,7 @@
       return ret;
     };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
+    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
       exitRecommendMode();selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();try{if(typeof window.__jinpoResetSumPrioritySort==='function')window.__jinpoResetSumPrioritySort(false);}catch(e){}renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';
