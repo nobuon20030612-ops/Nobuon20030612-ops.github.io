@@ -1,0 +1,51 @@
+{
+  "schema": "jinpo追加用_diff_5_6_7_8_9_summary/v1",
+  "source_file": "jinpo追加用_diff_5_6_7_8_9_6.json",
+  "target": "8因縁不足828組",
+  "updated_at": "2026-07-25",
+  "new_registration_only": true,
+  "total_rows": 828,
+  "summary": {
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 828,
+    "9": 0
+  },
+  "summary_by_formation": {
+    "衡軛": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "鶴翼": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "魚鱗": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 414,
+      "9": 0
+    },
+    "方円": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 414,
+      "9": 0
+    }
+  },
+  "file_size_bytes": 1957491,
+  "file_limit_bytes": 25000000,
+  "file_limit_ok": true,
+  "existing_additional_db_preserved": false,
+  "new_heroes": [],
+  "note": "既存追加DBは7〜9因縁の重複余剰削除のみ実施。7因縁の誤登録・不足は未修正。"
+}
