@@ -1,0 +1,1545 @@
+{
+  "version": 2,
+  "description": "source-next/英傑一覧.csv の番号と internal_id の安定対応。新英傑だけ新規採番し、削除済み重複行はretired_entriesで再登録を防止する。",
+  "entries": {
+    "1": {
+      "internal_id": "EIK_0001",
+      "last_name": "豊臣秀長"
+    },
+    "2": {
+      "internal_id": "EIK_0002",
+      "last_name": "片倉景綱(右腕)"
+    },
+    "3": {
+      "internal_id": "EIK_0003",
+      "last_name": "竹中半兵衛(右腕)"
+    },
+    "4": {
+      "internal_id": "EIK_0004",
+      "last_name": "酒井忠次(通)"
+    },
+    "5": {
+      "internal_id": "EIK_0005",
+      "last_name": "薄田兼相"
+    },
+    "6": {
+      "internal_id": "EIK_0006",
+      "last_name": "島津日新斎"
+    },
+    "7": {
+      "internal_id": "EIK_0007",
+      "last_name": "百地三太夫(野望)"
+    },
+    "8": {
+      "internal_id": "EIK_0008",
+      "last_name": "風魔小太郎(野望)"
+    },
+    "9": {
+      "internal_id": "EIK_0009",
+      "last_name": "毛利隆元"
+    },
+    "10": {
+      "internal_id": "EIK_0010",
+      "last_name": "斎藤義龍(新春)"
+    },
+    "11": {
+      "internal_id": "EIK_0011",
+      "last_name": "斎藤義龍"
+    },
+    "12": {
+      "internal_id": "EIK_0012",
+      "last_name": "前田利家(雄材)"
+    },
+    "13": {
+      "internal_id": "EIK_0013",
+      "last_name": "安国寺恵瓊"
+    },
+    "14": {
+      "internal_id": "EIK_0014",
+      "last_name": "上杉憲政"
+    },
+    "15": {
+      "internal_id": "EIK_0015",
+      "last_name": "武田晴信"
+    },
+    "16": {
+      "internal_id": "EIK_0016",
+      "last_name": "三条の方"
+    },
+    "17": {
+      "internal_id": "EIK_0017",
+      "last_name": "堀秀政"
+    },
+    "18": {
+      "internal_id": "EIK_0018",
+      "last_name": "雫の者"
+    },
+    "19": {
+      "internal_id": "EIK_0019",
+      "last_name": "伊達政宗(起源)"
+    },
+    "20": {
+      "internal_id": "EIK_0020",
+      "last_name": "北条氏照(剛柔)"
+    },
+    "21": {
+      "internal_id": "EIK_0021",
+      "last_name": "甲斐宗運"
+    },
+    "22": {
+      "internal_id": "EIK_0022",
+      "last_name": "佐竹義重"
+    },
+    "23": {
+      "internal_id": "EIK_0023",
+      "last_name": "片倉景綱"
+    },
+    "24": {
+      "internal_id": "EIK_0024",
+      "last_name": "今川義元"
+    },
+    "25": {
+      "internal_id": "EIK_0025",
+      "last_name": "平手政秀"
+    },
+    "26": {
+      "internal_id": "EIK_0026",
+      "last_name": "島津家久"
+    },
+    "27": {
+      "internal_id": "EIK_0027",
+      "last_name": "上杉謙信"
+    },
+    "28": {
+      "internal_id": "EIK_0028",
+      "last_name": "長宗我部元親"
+    },
+    "29": {
+      "internal_id": "EIK_0029",
+      "last_name": "本願寺顕如"
+    },
+    "30": {
+      "internal_id": "EIK_0030",
+      "last_name": "吉川元春"
+    },
+    "31": {
+      "internal_id": "EIK_0031",
+      "last_name": "黒百合(納涼)"
+    },
+    "32": {
+      "internal_id": "EIK_0032",
+      "last_name": "黒百合"
+    },
+    "33": {
+      "internal_id": "EIK_0033",
+      "last_name": "丹羽長秀(風雲)"
+    },
+    "34": {
+      "internal_id": "EIK_0034",
+      "last_name": "直江兼続(王佐)"
+    },
+    "35": {
+      "internal_id": "EIK_0035",
+      "last_name": "安宅冬康"
+    },
+    "36": {
+      "internal_id": "EIK_0036",
+      "last_name": "稲葉一鉄"
+    },
+    "37": {
+      "internal_id": "EIK_0037",
+      "last_name": "斎藤朝信"
+    },
+    "38": {
+      "internal_id": "EIK_0038",
+      "last_name": "支倉常長"
+    },
+    "39": {
+      "internal_id": "EIK_0039",
+      "last_name": "十河一存"
+    },
+    "40": {
+      "internal_id": "EIK_0040",
+      "last_name": "北条氏邦"
+    },
+    "41": {
+      "internal_id": "EIK_0041",
+      "last_name": "井伊直政"
+    },
+    "42": {
+      "internal_id": "EIK_0042",
+      "last_name": "谷忠澄"
+    },
+    "43": {
+      "internal_id": "EIK_0043",
+      "last_name": "伊奈忠次"
+    },
+    "44": {
+      "internal_id": "EIK_0044",
+      "last_name": "唐沢玄蕃"
+    },
+    "45": {
+      "internal_id": "EIK_0045",
+      "last_name": "御子神典膳"
+    },
+    "46": {
+      "internal_id": "EIK_0046",
+      "last_name": "大熊朝秀"
+    },
+    "47": {
+      "internal_id": "EIK_0047",
+      "last_name": "関口氏広"
+    },
+    "48": {
+      "internal_id": "EIK_0048",
+      "last_name": "岡国高"
+    },
+    "49": {
+      "internal_id": "EIK_0049",
+      "last_name": "鈴木元信"
+    },
+    "50": {
+      "internal_id": "EIK_0050",
+      "last_name": "渡辺了"
+    },
+    "51": {
+      "internal_id": "EIK_0051",
+      "last_name": "安藤良整"
+    },
+    "52": {
+      "internal_id": "EIK_0052",
+      "last_name": "大沢正秀"
+    },
+    "53": {
+      "internal_id": "EIK_0053",
+      "last_name": "下間頼竜"
+    },
+    "54": {
+      "internal_id": "EIK_0054",
+      "last_name": "斎藤利三(神祇)"
+    },
+    "55": {
+      "internal_id": "EIK_0055",
+      "last_name": "斎藤利三"
+    },
+    "56": {
+      "internal_id": "EIK_0056",
+      "last_name": "織田信忠"
+    },
+    "57": {
+      "internal_id": "EIK_0057",
+      "last_name": "大野治長"
+    },
+    "58": {
+      "internal_id": "EIK_0058",
+      "last_name": "早川殿"
+    },
+    "59": {
+      "internal_id": "EIK_0059",
+      "last_name": "武田信繁"
+    },
+    "60": {
+      "internal_id": "EIK_0060",
+      "last_name": "庵原将監"
+    },
+    "61": {
+      "internal_id": "EIK_0061",
+      "last_name": "林崎甚助"
+    },
+    "62": {
+      "internal_id": "EIK_0062",
+      "last_name": "直江景綱"
+    },
+    "63": {
+      "internal_id": "EIK_0063",
+      "last_name": "山上道及"
+    },
+    "64": {
+      "internal_id": "EIK_0064",
+      "last_name": "雑賀孫市(道化)"
+    },
+    "65": {
+      "internal_id": "EIK_0065",
+      "last_name": "望月千代女(道化)"
+    },
+    "66": {
+      "internal_id": "EIK_0066",
+      "last_name": "鍋島直茂(乱雲)"
+    },
+    "67": {
+      "internal_id": "EIK_0067",
+      "last_name": "鍋島直茂"
+    },
+    "68": {
+      "internal_id": "EIK_0068",
+      "last_name": "島津義久"
+    },
+    "69": {
+      "internal_id": "EIK_0069",
+      "last_name": "蜂須賀正勝"
+    },
+    "70": {
+      "internal_id": "EIK_0070",
+      "last_name": "前田利家(兎忍)"
+    },
+    "71": {
+      "internal_id": "EIK_0071",
+      "last_name": "納涼忍お綾"
+    },
+    "72": {
+      "internal_id": "EIK_0072",
+      "last_name": "九鬼嘉隆"
+    },
+    "73": {
+      "internal_id": "EIK_0073",
+      "last_name": "大谷吉継(西軍)"
+    },
+    "74": {
+      "internal_id": "EIK_0074",
+      "last_name": "大谷吉継"
+    },
+    "75": {
+      "internal_id": "EIK_0075",
+      "last_name": "島津豊久"
+    },
+    "76": {
+      "internal_id": "EIK_0076",
+      "last_name": "伊賀崎道順"
+    },
+    "77": {
+      "internal_id": "EIK_0077",
+      "last_name": "石川数正(臥薪)"
+    },
+    "78": {
+      "internal_id": "EIK_0078",
+      "last_name": "石川数正"
+    },
+    "79": {
+      "internal_id": "EIK_0079",
+      "last_name": "赤尾清綱"
+    },
+    "80": {
+      "internal_id": "EIK_0080",
+      "last_name": "望月吉棟"
+    },
+    "81": {
+      "internal_id": "EIK_0081",
+      "last_name": "陶晴賢"
+    },
+    "82": {
+      "internal_id": "EIK_0082",
+      "last_name": "山中鹿之介"
+    },
+    "83": {
+      "internal_id": "EIK_0083",
+      "last_name": "豊臣秀吉"
+    },
+    "84": {
+      "internal_id": "EIK_0084",
+      "last_name": "高台院"
+    },
+    "85": {
+      "internal_id": "EIK_0085",
+      "last_name": "愛姫(起源)"
+    },
+    "86": {
+      "internal_id": "EIK_0086",
+      "last_name": "毛利勝永"
+    },
+    "87": {
+      "internal_id": "EIK_0087",
+      "last_name": "香宗我部親泰"
+    },
+    "88": {
+      "internal_id": "EIK_0088",
+      "last_name": "井伊直政(勇猛)"
+    },
+    "89": {
+      "internal_id": "EIK_0089",
+      "last_name": "村上義清"
+    },
+    "90": {
+      "internal_id": "EIK_0090",
+      "last_name": "渡辺守綱"
+    },
+    "91": {
+      "internal_id": "EIK_0091",
+      "last_name": "豊臣秀次"
+    },
+    "92": {
+      "internal_id": "EIK_0092",
+      "last_name": "細川忠興(山紫)"
+    },
+    "93": {
+      "internal_id": "EIK_0093",
+      "last_name": "大内義隆"
+    },
+    "94": {
+      "internal_id": "EIK_0094",
+      "last_name": "金森長近"
+    },
+    "95": {
+      "internal_id": "EIK_0095",
+      "last_name": "柳生宗矩"
+    },
+    "96": {
+      "internal_id": "EIK_0096",
+      "last_name": "大久保忠世"
+    },
+    "97": {
+      "internal_id": "EIK_0097",
+      "last_name": "妙玖"
+    },
+    "98": {
+      "internal_id": "EIK_0098",
+      "last_name": "義姫"
+    },
+    "99": {
+      "internal_id": "EIK_0099",
+      "last_name": "明石全登"
+    },
+    "100": {
+      "internal_id": "EIK_0100",
+      "last_name": "竹中重門"
+    },
+    "101": {
+      "internal_id": "EIK_0101",
+      "last_name": "山県昌景(泰然)"
+    },
+    "102": {
+      "internal_id": "EIK_0102",
+      "last_name": "真田信幸(泰然)"
+    },
+    "103": {
+      "internal_id": "EIK_0103",
+      "last_name": "長野業正"
+    },
+    "104": {
+      "internal_id": "EIK_0104",
+      "last_name": "霧隠才蔵"
+    },
+    "105": {
+      "internal_id": "EIK_0105",
+      "last_name": "尼子経久"
+    },
+    "106": {
+      "internal_id": "EIK_0106",
+      "last_name": "木下秀長"
+    },
+    "107": {
+      "internal_id": "EIK_0107",
+      "last_name": "井伊直虎"
+    },
+    "108": {
+      "internal_id": "EIK_0108",
+      "last_name": "名古屋山三郎"
+    },
+    "109": {
+      "internal_id": "EIK_0109",
+      "last_name": "大祝鶴"
+    },
+    "110": {
+      "internal_id": "EIK_0110",
+      "last_name": "下間頼廉(籠城)"
+    },
+    "111": {
+      "internal_id": "EIK_0111",
+      "last_name": "北条綱成(籠城)"
+    },
+    "112": {
+      "internal_id": "EIK_0112",
+      "last_name": "甲斐姫"
+    },
+    "113": {
+      "internal_id": "EIK_0113",
+      "last_name": "宇喜多直家"
+    },
+    "114": {
+      "internal_id": "EIK_0114",
+      "last_name": "細川藤孝(立役)"
+    },
+    "115": {
+      "internal_id": "EIK_0115",
+      "last_name": "羽柴秀吉"
+    },
+    "116": {
+      "internal_id": "EIK_0116",
+      "last_name": "小早川隆景"
+    },
+    "117": {
+      "internal_id": "EIK_0117",
+      "last_name": "藤堂高虎(名臣)"
+    },
+    "118": {
+      "internal_id": "EIK_0118",
+      "last_name": "宝蔵院胤栄"
+    },
+    "119": {
+      "internal_id": "EIK_0119",
+      "last_name": "上泉信綱"
+    },
+    "120": {
+      "internal_id": "EIK_0120",
+      "last_name": "朝倉宗滴"
+    },
+    "121": {
+      "internal_id": "EIK_0121",
+      "last_name": "加藤段蔵"
+    },
+    "122": {
+      "internal_id": "EIK_0122",
+      "last_name": "藤林正保"
+    },
+    "123": {
+      "internal_id": "EIK_0123",
+      "last_name": "望月千代女"
+    },
+    "124": {
+      "internal_id": "EIK_0124",
+      "last_name": "黒田官兵衛"
+    },
+    "126": {
+      "internal_id": "EIK_0126",
+      "last_name": "竹中半兵衛"
+    },
+    "127": {
+      "internal_id": "EIK_0127",
+      "last_name": "本多正信"
+    },
+    "128": {
+      "internal_id": "EIK_0128",
+      "last_name": "浅井長政"
+    },
+    "129": {
+      "internal_id": "EIK_0129",
+      "last_name": "朝倉義景"
+    },
+    "130": {
+      "internal_id": "EIK_0130",
+      "last_name": "石田三成"
+    },
+    "131": {
+      "internal_id": "EIK_0131",
+      "last_name": "蒲生氏郷"
+    },
+    "132": {
+      "internal_id": "EIK_0132",
+      "last_name": "真柄直隆"
+    },
+    "133": {
+      "internal_id": "EIK_0133",
+      "last_name": "伊達政宗"
+    },
+    "134": {
+      "internal_id": "EIK_0134",
+      "last_name": "雑賀孫市"
+    },
+    "135": {
+      "internal_id": "EIK_0135",
+      "last_name": "愛姫"
+    },
+    "136": {
+      "internal_id": "EIK_0136",
+      "last_name": "鈴木重意"
+    },
+    "137": {
+      "internal_id": "EIK_0137",
+      "last_name": "岡吉正"
+    },
+    "138": {
+      "internal_id": "EIK_0138",
+      "last_name": "原田宗時"
+    },
+    "139": {
+      "internal_id": "EIK_0139",
+      "last_name": "足利義輝"
+    },
+    "140": {
+      "internal_id": "EIK_0140",
+      "last_name": "朝比奈泰朝"
+    },
+    "141": {
+      "internal_id": "EIK_0141",
+      "last_name": "和田惟政"
+    },
+    "142": {
+      "internal_id": "EIK_0142",
+      "last_name": "三淵晴員"
+    },
+    "143": {
+      "internal_id": "EIK_0143",
+      "last_name": "瀬名氏俊"
+    },
+    "144": {
+      "internal_id": "EIK_0144",
+      "last_name": "猿飛佐助"
+    },
+    "145": {
+      "internal_id": "EIK_0145",
+      "last_name": "杉谷善住坊"
+    },
+    "146": {
+      "internal_id": "EIK_0146",
+      "last_name": "室賀正武"
+    },
+    "147": {
+      "internal_id": "EIK_0147",
+      "last_name": "植田光次"
+    },
+    "148": {
+      "internal_id": "EIK_0148",
+      "last_name": "斎藤道三"
+    },
+    "149": {
+      "internal_id": "EIK_0149",
+      "last_name": "武田勝頼"
+    },
+    "150": {
+      "internal_id": "EIK_0150",
+      "last_name": "直江兼続"
+    },
+    "151": {
+      "internal_id": "EIK_0151",
+      "last_name": "本願寺証如"
+    },
+    "152": {
+      "internal_id": "EIK_0152",
+      "last_name": "七里頼周"
+    },
+    "153": {
+      "internal_id": "EIK_0153",
+      "last_name": "本庄繁長"
+    },
+    "154": {
+      "internal_id": "EIK_0376",
+      "last_name": "ねね(納涼)"
+    },
+    "155": {
+      "internal_id": "EIK_0155",
+      "last_name": "羽柴秀吉(納涼)"
+    },
+    "156": {
+      "internal_id": "EIK_0156",
+      "last_name": "前田慶次"
+    },
+    "157": {
+      "internal_id": "EIK_0157",
+      "last_name": "筒井順慶"
+    },
+    "158": {
+      "internal_id": "EIK_0158",
+      "last_name": "小西行長"
+    },
+    "159": {
+      "internal_id": "EIK_0159",
+      "last_name": "北条氏康"
+    },
+    "160": {
+      "internal_id": "EIK_0160",
+      "last_name": "風魔小太郎"
+    },
+    "161": {
+      "internal_id": "EIK_0161",
+      "last_name": "服部半蔵"
+    },
+    "162": {
+      "internal_id": "EIK_0162",
+      "last_name": "板部岡江雪斎"
+    },
+    "163": {
+      "internal_id": "EIK_0163",
+      "last_name": "雑賀孫六"
+    },
+    "164": {
+      "internal_id": "EIK_0164",
+      "last_name": "本願寺教如"
+    },
+    "165": {
+      "internal_id": "EIK_0165",
+      "last_name": "三好長慶"
+    },
+    "166": {
+      "internal_id": "EIK_0166",
+      "last_name": "太原雪斎"
+    },
+    "167": {
+      "internal_id": "EIK_0167",
+      "last_name": "松永久秀"
+    },
+    "168": {
+      "internal_id": "EIK_0168",
+      "last_name": "真田昌幸"
+    },
+    "169": {
+      "internal_id": "EIK_0169",
+      "last_name": "真田幸村"
+    },
+    "170": {
+      "internal_id": "EIK_0170",
+      "last_name": "遠山景任"
+    },
+    "171": {
+      "internal_id": "EIK_0171",
+      "last_name": "浅井久政"
+    },
+    "172": {
+      "internal_id": "EIK_0172",
+      "last_name": "足利義昭"
+    },
+    "173": {
+      "internal_id": "EIK_0173",
+      "last_name": "北条幻庵"
+    },
+    "174": {
+      "internal_id": "EIK_0174",
+      "last_name": "明智光安"
+    },
+    "175": {
+      "internal_id": "EIK_0175",
+      "last_name": "織田信長"
+    },
+    "176": {
+      "internal_id": "EIK_0176",
+      "last_name": "明智光秀(十七)"
+    },
+    "177": {
+      "internal_id": "EIK_0177",
+      "last_name": "立花誾千代"
+    },
+    "178": {
+      "internal_id": "EIK_0178",
+      "last_name": "徳川家康"
+    },
+    "179": {
+      "internal_id": "EIK_0179",
+      "last_name": "森田浄雲"
+    },
+    "180": {
+      "internal_id": "EIK_0180",
+      "last_name": "百地三太夫"
+    },
+    "181": {
+      "internal_id": "EIK_0181",
+      "last_name": "本多忠勝"
+    },
+    "182": {
+      "internal_id": "EIK_0182",
+      "last_name": "武田信玄"
+    },
+    "183": {
+      "internal_id": "EIK_0183",
+      "last_name": "宇佐美定満"
+    },
+    "184": {
+      "internal_id": "EIK_0184",
+      "last_name": "真田幸隆"
+    },
+    "185": {
+      "internal_id": "EIK_0185",
+      "last_name": "お市(婚礼)"
+    },
+    "186": {
+      "internal_id": "EIK_0186",
+      "last_name": "伊達政宗(新星)"
+    },
+    "187": {
+      "internal_id": "EIK_0187",
+      "last_name": "今川義元(周年)"
+    },
+    "188": {
+      "internal_id": "EIK_0188",
+      "last_name": "斎藤道三(巳)"
+    },
+    "189": {
+      "internal_id": "EIK_0189",
+      "last_name": "雑賀孫市(陣羽織)"
+    },
+    "190": {
+      "internal_id": "EIK_0190",
+      "last_name": "三好長慶(生殺)"
+    },
+    "191": {
+      "internal_id": "EIK_0191",
+      "last_name": "上杉謙信(野望)"
+    },
+    "192": {
+      "internal_id": "EIK_0192",
+      "last_name": "織田信長(周年)"
+    },
+    "193": {
+      "internal_id": "EIK_0193",
+      "last_name": "織田信長(覇王)"
+    },
+    "194": {
+      "internal_id": "EIK_0194",
+      "last_name": "真田幸村(新星)"
+    },
+    "195": {
+      "internal_id": "EIK_0195",
+      "last_name": "真田昌幸(吸血)"
+    },
+    "196": {
+      "internal_id": "EIK_0196",
+      "last_name": "浅井長政(婚礼)"
+    },
+    "197": {
+      "internal_id": "EIK_0197",
+      "last_name": "足利義輝(野望)"
+    },
+    "198": {
+      "internal_id": "EIK_0198",
+      "last_name": "大友宗麟"
+    },
+    "199": {
+      "internal_id": "EIK_0199",
+      "last_name": "長宗我部元親(納涼)"
+    },
+    "200": {
+      "internal_id": "EIK_0200",
+      "last_name": "長尾景虎"
+    },
+    "201": {
+      "internal_id": "EIK_0201",
+      "last_name": "長尾虎"
+    },
+    "202": {
+      "internal_id": "EIK_0202",
+      "last_name": "徳川家康(東軍)"
+    },
+    "203": {
+      "internal_id": "EIK_0203",
+      "last_name": "武田信玄(野望)"
+    },
+    "204": {
+      "internal_id": "EIK_0204",
+      "last_name": "北条氏康(獅子)"
+    },
+    "205": {
+      "internal_id": "EIK_0205",
+      "last_name": "毛利元就"
+    },
+    "206": {
+      "internal_id": "EIK_0206",
+      "last_name": "おまつ(奇譚)"
+    },
+    "207": {
+      "internal_id": "EIK_0207",
+      "last_name": "お江"
+    },
+    "208": {
+      "internal_id": "EIK_0208",
+      "last_name": "ガラシャ(聖)"
+    },
+    "209": {
+      "internal_id": "EIK_0209",
+      "last_name": "ねね(和装)"
+    },
+    "210": {
+      "internal_id": "EIK_0210",
+      "last_name": "まつ(兎忍)"
+    },
+    "211": {
+      "internal_id": "EIK_0211",
+      "last_name": "もののふ小町"
+    },
+    "212": {
+      "internal_id": "EIK_0212",
+      "last_name": "愛姫(特別)"
+    },
+    "213": {
+      "internal_id": "EIK_0213",
+      "last_name": "梓"
+    },
+    "214": {
+      "internal_id": "EIK_0214",
+      "last_name": "遠足娘まり"
+    },
+    "215": {
+      "internal_id": "EIK_0215",
+      "last_name": "加藤清正"
+    },
+    "216": {
+      "internal_id": "EIK_0216",
+      "last_name": "帰蝶"
+    },
+    "217": {
+      "internal_id": "EIK_0217",
+      "last_name": "宮本武蔵(涼)"
+    },
+    "218": {
+      "internal_id": "EIK_0218",
+      "last_name": "蛍(吸血)"
+    },
+    "219": {
+      "internal_id": "EIK_0219",
+      "last_name": "後藤又兵衛"
+    },
+    "220": {
+      "internal_id": "EIK_0220",
+      "last_name": "江里口信常"
+    },
+    "221": {
+      "internal_id": "EIK_0221",
+      "last_name": "降神祈祷師"
+    },
+    "222": {
+      "internal_id": "EIK_0222",
+      "last_name": "高橋紹運"
+    },
+    "223": {
+      "internal_id": "EIK_0223",
+      "last_name": "黒田長政"
+    },
+    "224": {
+      "internal_id": "EIK_0224",
+      "last_name": "黒猫ノア"
+    },
+    "225": {
+      "internal_id": "EIK_0225",
+      "last_name": "佐々木小次郎(涼)"
+    },
+    "226": {
+      "internal_id": "EIK_0226",
+      "last_name": "柴田勝家(風雲)"
+    },
+    "227": {
+      "internal_id": "EIK_0227",
+      "last_name": "種子島時堯"
+    },
+    "228": {
+      "internal_id": "EIK_0228",
+      "last_name": "出雲阿国(周年)"
+    },
+    "229": {
+      "internal_id": "EIK_0229",
+      "last_name": "出雲阿国(神将)"
+    },
+    "230": {
+      "internal_id": "EIK_0230",
+      "last_name": "出雲阿国(野望)"
+    },
+    "231": {
+      "internal_id": "EIK_0231",
+      "last_name": "小松姫(航海)"
+    },
+    "232": {
+      "internal_id": "EIK_0232",
+      "last_name": "小松姫(水練)"
+    },
+    "233": {
+      "internal_id": "EIK_0233",
+      "last_name": "小早川隆景(羽織)"
+    },
+    "234": {
+      "internal_id": "EIK_0234",
+      "last_name": "晶"
+    },
+    "235": {
+      "internal_id": "EIK_0235",
+      "last_name": "松永久秀(野望)"
+    },
+    "236": {
+      "internal_id": "EIK_0236",
+      "last_name": "城大工かんな"
+    },
+    "237": {
+      "internal_id": "EIK_0237",
+      "last_name": "森長可"
+    },
+    "238": {
+      "internal_id": "EIK_0238",
+      "last_name": "森蘭丸(凶禍)"
+    },
+    "239": {
+      "internal_id": "EIK_0239",
+      "last_name": "真田幸村(水練)"
+    },
+    "240": {
+      "internal_id": "EIK_0240",
+      "last_name": "真田信幸(航海)"
+    },
+    "241": {
+      "internal_id": "EIK_0241",
+      "last_name": "石田三成(西軍)"
+    },
+    "242": {
+      "internal_id": "EIK_0242",
+      "last_name": "仙桃院"
+    },
+    "243": {
+      "internal_id": "EIK_0243",
+      "last_name": "前田慶次(神将)"
+    },
+    "244": {
+      "internal_id": "EIK_0244",
+      "last_name": "前田慶次(野望)"
+    },
+    "245": {
+      "internal_id": "EIK_0245",
+      "last_name": "滝川一益(風雲)"
+    },
+    "246": {
+      "internal_id": "EIK_0246",
+      "last_name": "竹中半兵衛(知将)"
+    },
+    "247": {
+      "internal_id": "EIK_0247",
+      "last_name": "島左近"
+    },
+    "248": {
+      "internal_id": "EIK_0248",
+      "last_name": "道場娘まり"
+    },
+    "249": {
+      "internal_id": "EIK_0249",
+      "last_name": "道場娘まり(和装)"
+    },
+    "250": {
+      "internal_id": "EIK_0250",
+      "last_name": "鍋島直茂(人狼)"
+    },
+    "251": {
+      "internal_id": "EIK_0380",
+      "last_name": "濃姫"
+    },
+    "252": {
+      "internal_id": "EIK_0252",
+      "last_name": "濃姫(特別)"
+    },
+    "253": {
+      "internal_id": "EIK_0253",
+      "last_name": "福島正則"
+    },
+    "254": {
+      "internal_id": "EIK_0254",
+      "last_name": "北条氏政(獅子)"
+    },
+    "255": {
+      "internal_id": "EIK_0255",
+      "last_name": "本多忠勝(盛夏)"
+    },
+    "256": {
+      "internal_id": "EIK_0256",
+      "last_name": "魔女ルシア"
+    },
+    "257": {
+      "internal_id": "EIK_0257",
+      "last_name": "魔女娘まり"
+    },
+    "258": {
+      "internal_id": "EIK_0258",
+      "last_name": "明智光秀(闇)"
+    },
+    "259": {
+      "internal_id": "EIK_0259",
+      "last_name": "明智光秀(初期)"
+    },
+    "260": {
+      "internal_id": "EIK_0260",
+      "last_name": "立花宗茂"
+    },
+    "261": {
+      "internal_id": "EIK_0261",
+      "last_name": "立花宗茂(盛夏)"
+    },
+    "262": {
+      "internal_id": "EIK_0262",
+      "last_name": "立花誾千代(猫又)"
+    },
+    "263": {
+      "internal_id": "EIK_0263",
+      "last_name": "お知恵"
+    },
+    "264": {
+      "internal_id": "EIK_0264",
+      "last_name": "サンチョ"
+    },
+    "265": {
+      "internal_id": "EIK_0265",
+      "last_name": "もの知り爺"
+    },
+    "266": {
+      "internal_id": "EIK_0266",
+      "last_name": "愛弟子ノア"
+    },
+    "267": {
+      "internal_id": "EIK_0267",
+      "last_name": "安藤守就"
+    },
+    "268": {
+      "internal_id": "EIK_0268",
+      "last_name": "伊達成実"
+    },
+    "269": {
+      "internal_id": "EIK_0269",
+      "last_name": "雨森弥兵衛"
+    },
+    "270": {
+      "internal_id": "EIK_0270",
+      "last_name": "鵜殿長持"
+    },
+    "271": {
+      "internal_id": "EIK_0271",
+      "last_name": "遠藤直経"
+    },
+    "272": {
+      "internal_id": "EIK_0272",
+      "last_name": "岡部元信"
+    },
+    "273": {
+      "internal_id": "EIK_0273",
+      "last_name": "岡部正綱"
+    },
+    "274": {
+      "internal_id": "EIK_0274",
+      "last_name": "海北綱親"
+    },
+    "275": {
+      "internal_id": "EIK_0275",
+      "last_name": "鎧鍛冶次郎"
+    },
+    "276": {
+      "internal_id": "EIK_0276",
+      "last_name": "柿崎景家"
+    },
+    "277": {
+      "internal_id": "EIK_0277",
+      "last_name": "関掃部"
+    },
+    "278": {
+      "internal_id": "EIK_0278",
+      "last_name": "願証寺証恵"
+    },
+    "279": {
+      "internal_id": "EIK_0279",
+      "last_name": "鬼庭綱元"
+    },
+    "280": {
+      "internal_id": "EIK_0280",
+      "last_name": "鬼庭左月斎"
+    },
+    "281": {
+      "internal_id": "EIK_0281",
+      "last_name": "京極高吉"
+    },
+    "282": {
+      "internal_id": "EIK_0282",
+      "last_name": "興正寺顕尊"
+    },
+    "283": {
+      "internal_id": "EIK_0283",
+      "last_name": "光教寺顕誓"
+    },
+    "284": {
+      "internal_id": "EIK_0284",
+      "last_name": "高坂昌信"
+    },
+    "285": {
+      "internal_id": "EIK_0285",
+      "last_name": "細川晴元"
+    },
+    "286": {
+      "internal_id": "EIK_0286",
+      "last_name": "細川藤孝"
+    },
+    "287": {
+      "internal_id": "EIK_0287",
+      "last_name": "榊原康政"
+    },
+    "288": {
+      "internal_id": "EIK_0288",
+      "last_name": "三井遊雲軒"
+    },
+    "289": {
+      "internal_id": "EIK_0289",
+      "last_name": "三好義賢"
+    },
+    "290": {
+      "internal_id": "EIK_0290",
+      "last_name": "三好長逸"
+    },
+    "291": {
+      "internal_id": "EIK_0291",
+      "last_name": "山県昌景"
+    },
+    "292": {
+      "internal_id": "EIK_0292",
+      "last_name": "山中俊房"
+    },
+    "293": {
+      "internal_id": "EIK_0293",
+      "last_name": "氏家卜全"
+    },
+    "294": {
+      "internal_id": "EIK_0294",
+      "last_name": "柴田勝家"
+    },
+    "295": {
+      "internal_id": "EIK_0295",
+      "last_name": "酒井忠次"
+    },
+    "296": {
+      "internal_id": "EIK_0296",
+      "last_name": "出浦盛清"
+    },
+    "297": {
+      "internal_id": "EIK_0297",
+      "last_name": "小松姫"
+    },
+    "298": {
+      "internal_id": "EIK_0298",
+      "last_name": "色部勝長"
+    },
+    "299": {
+      "internal_id": "EIK_0299",
+      "last_name": "伸介"
+    },
+    "300": {
+      "internal_id": "EIK_0300",
+      "last_name": "森蘭丸"
+    },
+    "301": {
+      "internal_id": "EIK_0301",
+      "last_name": "真田信幸"
+    },
+    "302": {
+      "internal_id": "EIK_0302",
+      "last_name": "陣蔵"
+    },
+    "303": {
+      "internal_id": "EIK_0303",
+      "last_name": "西光寺真敬"
+    },
+    "304": {
+      "internal_id": "EIK_0304",
+      "last_name": "滝川一益"
+    },
+    "305": {
+      "internal_id": "EIK_0305",
+      "last_name": "丹羽長秀"
+    },
+    "306": {
+      "internal_id": "EIK_0306",
+      "last_name": "池田勝正"
+    },
+    "307": {
+      "internal_id": "EIK_0307",
+      "last_name": "朝倉景紀"
+    },
+    "308": {
+      "internal_id": "EIK_0308",
+      "last_name": "朝倉景鏡"
+    },
+    "309": {
+      "internal_id": "EIK_0309",
+      "last_name": "朝倉景隆"
+    },
+    "310": {
+      "internal_id": "EIK_0310",
+      "last_name": "朝倉景連"
+    },
+    "311": {
+      "internal_id": "EIK_0311",
+      "last_name": "的場源四郎"
+    },
+    "312": {
+      "internal_id": "EIK_0312",
+      "last_name": "藤岡屋伝助"
+    },
+    "313": {
+      "internal_id": "EIK_0313",
+      "last_name": "道場忍お綾"
+    },
+    "314": {
+      "internal_id": "EIK_0314",
+      "last_name": "内藤昌豊"
+    },
+    "315": {
+      "internal_id": "EIK_0315",
+      "last_name": "馬場信春"
+    },
+    "316": {
+      "internal_id": "EIK_0316",
+      "last_name": "伴長信"
+    },
+    "317": {
+      "internal_id": "EIK_0317",
+      "last_name": "不破光治"
+    },
+    "318": {
+      "internal_id": "EIK_0318",
+      "last_name": "片倉重長"
+    },
+    "319": {
+      "internal_id": "EIK_0319",
+      "last_name": "北条高広"
+    },
+    "320": {
+      "internal_id": "EIK_0320",
+      "last_name": "北条氏規"
+    },
+    "321": {
+      "internal_id": "EIK_0321",
+      "last_name": "北条氏照"
+    },
+    "322": {
+      "internal_id": "EIK_0322",
+      "last_name": "北条氏政"
+    },
+    "323": {
+      "internal_id": "EIK_0323",
+      "last_name": "魔導士ルシア"
+    },
+    "324": {
+      "internal_id": "EIK_0324",
+      "last_name": "明智光秀"
+    },
+    "325": {
+      "internal_id": "EIK_0325",
+      "last_name": "矢沢頼綱"
+    },
+    "326": {
+      "internal_id": "EIK_0326",
+      "last_name": "窯隠れの才蔵"
+    },
+    "327": {
+      "internal_id": "EIK_0327",
+      "last_name": "鈴木重朝"
+    },
+    "328": {
+      "internal_id": "EIK_0328",
+      "last_name": "粟津元隈"
+    },
+    "329": {
+      "internal_id": "EIK_0329",
+      "last_name": "伊達実元"
+    },
+    "330": {
+      "internal_id": "EIK_0330",
+      "last_name": "一宮宗是"
+    },
+    "331": {
+      "internal_id": "EIK_0331",
+      "last_name": "果心居士"
+    },
+    "332": {
+      "internal_id": "EIK_0332",
+      "last_name": "岩成友通"
+    },
+    "333": {
+      "internal_id": "EIK_0333",
+      "last_name": "蛍"
+    },
+    "334": {
+      "internal_id": "EIK_0334",
+      "last_name": "原虎胤"
+    },
+    "335": {
+      "internal_id": "EIK_0335",
+      "last_name": "古田織部"
+    },
+    "336": {
+      "internal_id": "EIK_0336",
+      "last_name": "甲山太郎次郎"
+    },
+    "337": {
+      "internal_id": "EIK_0337",
+      "last_name": "荒木村重"
+    },
+    "338": {
+      "internal_id": "EIK_0338",
+      "last_name": "高力清長"
+    },
+    "339": {
+      "internal_id": "EIK_0339",
+      "last_name": "今川氏真"
+    },
+    "340": {
+      "internal_id": "EIK_0340",
+      "last_name": "佐久間信盛"
+    },
+    "341": {
+      "internal_id": "EIK_0341",
+      "last_name": "佐々成政"
+    },
+    "342": {
+      "internal_id": "EIK_0342",
+      "last_name": "細川忠興"
+    },
+    "343": {
+      "internal_id": "EIK_0343",
+      "last_name": "山本勘助"
+    },
+    "344": {
+      "internal_id": "EIK_0344",
+      "last_name": "上杉景勝"
+    },
+    "345": {
+      "internal_id": "EIK_0345",
+      "last_name": "新庄直頼"
+    },
+    "346": {
+      "internal_id": "EIK_0346",
+      "last_name": "新発田長敦"
+    },
+    "347": {
+      "internal_id": "EIK_0347",
+      "last_name": "真田信尹"
+    },
+    "348": {
+      "internal_id": "EIK_0348",
+      "last_name": "石川昭光"
+    },
+    "349": {
+      "internal_id": "EIK_0349",
+      "last_name": "朝倉景恒"
+    },
+    "350": {
+      "internal_id": "EIK_0350",
+      "last_name": "鳥居景近"
+    },
+    "351": {
+      "internal_id": "EIK_0351",
+      "last_name": "鳥居元忠"
+    },
+    "352": {
+      "internal_id": "EIK_0352",
+      "last_name": "津田監物"
+    },
+    "353": {
+      "internal_id": "EIK_0353",
+      "last_name": "福島勝広"
+    },
+    "354": {
+      "internal_id": "EIK_0354",
+      "last_name": "北条綱成"
+    },
+    "355": {
+      "internal_id": "EIK_0355",
+      "last_name": "本願寺実悟"
+    },
+    "356": {
+      "internal_id": "EIK_0356",
+      "last_name": "来福寺左京"
+    },
+    "357": {
+      "internal_id": "EIK_0357",
+      "last_name": "井伊直親"
+    },
+    "358": {
+      "internal_id": "EIK_0358",
+      "last_name": "印牧能信"
+    },
+    "359": {
+      "internal_id": "EIK_0359",
+      "last_name": "塩屋秋貞"
+    },
+    "360": {
+      "internal_id": "EIK_0360",
+      "last_name": "下間頼廉"
+    },
+    "361": {
+      "internal_id": "EIK_0361",
+      "last_name": "下津一通"
+    },
+    "362": {
+      "internal_id": "EIK_0362",
+      "last_name": "可児才蔵"
+    },
+    "363": {
+      "internal_id": "EIK_0363",
+      "last_name": "鬼小島弥太郎"
+    },
+    "364": {
+      "internal_id": "EIK_0364",
+      "last_name": "小山田信茂"
+    },
+    "365": {
+      "internal_id": "EIK_0365",
+      "last_name": "小雀"
+    },
+    "366": {
+      "internal_id": "EIK_0366",
+      "last_name": "新開実綱"
+    },
+    "367": {
+      "internal_id": "EIK_0367",
+      "last_name": "清水康英"
+    },
+    "368": {
+      "internal_id": "EIK_0368",
+      "last_name": "石川五右衛門"
+    },
+    "369": {
+      "internal_id": "EIK_0369",
+      "last_name": "泉田重光"
+    },
+    "370": {
+      "internal_id": "EIK_0370",
+      "last_name": "内藤正成"
+    },
+    "371": {
+      "internal_id": "EIK_0371",
+      "last_name": "脇坂安治"
+    },
+    "372": {
+      "internal_id": "EIK_0372",
+      "last_name": "簗田新八"
+    },
+    "373": {
+      "internal_id": "EIK_0373",
+      "last_name": "藤堂高虎"
+    },
+    "374": {
+      "internal_id": "EIK_0374",
+      "last_name": "筧十蔵"
+    },
+    "375": {
+      "internal_id": "EIK_0375",
+      "last_name": "母里太兵衛"
+    },
+    "376": {
+      "internal_id": "EIK_0384",
+      "last_name": "甲斐姫(鷹爪)"
+    },
+    "377": {
+      "internal_id": "EIK_0385",
+      "last_name": "尼子晴久"
+    },
+    "378": {
+      "internal_id": "EIK_0386",
+      "last_name": "小田氏治"
+    },
+    "379": {
+      "internal_id": "EIK_0387",
+      "last_name": "朝倉義景(八雷)"
+    },
+    "380": {
+      "internal_id": "EIK_0388",
+      "last_name": "お市(八雷)"
+    },
+    "381": {
+      "internal_id": "EIK_0389",
+      "last_name": "荒木村重(風雅)"
+    },
+    "382": {
+      "internal_id": "EIK_0390",
+      "last_name": "真田幸村(神魔)"
+    },
+    "383": {
+      "internal_id": "EIK_0391",
+      "last_name": "茶々"
+    },
+    "384": {
+      "internal_id": "EIK_0392",
+      "last_name": "北条氏邦(獅子)"
+    }
+  },
+  "retired_entries": {
+    "125": {
+      "last_name": "竹中半兵衛",
+      "replacement_internal_id": "EIK_0246",
+      "reason": "2026-07-25確認済み重複。EIK_0125は削除し、EIK_0246 竹中半兵衛(知将)を正規個体として維持。"
+    }
+  }
+}

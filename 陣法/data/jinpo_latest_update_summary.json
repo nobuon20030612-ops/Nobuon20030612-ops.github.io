@@ -1,0 +1,60 @@
+{
+  "schema": "jinpo-next-update-summary/v2",
+  "source_file": "jinpo追加用_diff_5_6_7_8_9_6.json",
+  "updated_at": "2026-07-26",
+  "new_registration_only": true,
+  "total_rows": 828,
+  "summary": {
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 828,
+    "9": 0
+  },
+  "summary_by_formation": {
+    "衡軛": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "鶴翼": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    },
+    "魚鱗": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 414,
+      "9": 0
+    },
+    "方円": {
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 414,
+      "9": 0
+    }
+  },
+  "file_size_bytes": 1957491,
+  "file_limit_bytes": 25000000,
+  "file_limit_ok": true,
+  "existing_additional_db_preserved": false,
+  "new_heroes": [],
+  "note": "既存追加DBは7〜9因縁の重複余剰削除のみ実施。7因縁の誤登録・不足は未修正。",
+  "maintenance": {
+    "removed_internal_id": "EIK_0125",
+    "canonical_internal_id": "EIK_0246",
+    "compact_search_rows_removed": 32642,
+    "reason": "duplicate hero cleanup",
+    "combination_db_rebuilt_top500": true,
+    "saved_formation_legacy_id_migration": true,
+    "share_state_legacy_id_migration": true
+  },
+  "last_added_hero": "北条氏邦(獅子)"
+}
