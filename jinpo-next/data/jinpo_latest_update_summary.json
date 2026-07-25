@@ -1,8 +1,7 @@
 {
-  "schema": "jinpo追加用_diff_5_6_7_8_9_summary/v1",
+  "schema": "jinpo-next-update-summary/v2",
   "source_file": "jinpo追加用_diff_5_6_7_8_9_6.json",
-  "target": "8因縁不足828組",
-  "updated_at": "2026-07-25",
+  "updated_at": "2026-07-26",
   "new_registration_only": true,
   "total_rows": 828,
   "summary": {
@@ -56,5 +55,6 @@
     "combination_db_rebuilt_top500": true,
     "saved_formation_legacy_id_migration": true,
     "share_state_legacy_id_migration": true
-  }
+  },
+  "last_added_hero": "北条氏邦(獅子)"
 }

@@ -3,7 +3,7 @@
   "accessible_full_records": 1767802,
   "bondset_errors": 0,
   "factor4_errors": 0,
-  "expected_count_datasets": 32,
+  "dataset_count": 32,
   "top_files_exact": 32,
   "sort_top_files_exact": 132,
   "triple_map_entries": 646605,
@@ -170,5 +170,5 @@
       "factor4_errors": 0
     }
   },
-  "seconds": 16.855
+  "seconds": 16.848
 }

@@ -50,6 +50,59 @@ def fail(msg: str, report: dict):
     print('ERROR:', msg, file=sys.stderr)
     sys.exit(1)
 
+def last_added_hero_from_summary(summary: dict) -> str:
+    """Return only a genuine previously-added hero name; never reuse generic target text."""
+    if not isinstance(summary, dict):
+        return ''
+    direct = str(summary.get('last_added_hero', '')).strip()
+    if direct:
+        return direct
+    heroes = summary.get('new_heroes', [])
+    if isinstance(heroes, list):
+        for item in reversed(heroes):
+            if isinstance(item, dict):
+                name = str(item.get('英傑名') or item.get('名前') or '').strip()
+                if name:
+                    return name
+    return ''
+
+
+def write_latest_update_summary(summary_path: Path, new_infos: list, changed_infos: list, generation: dict, updated_at: str | None = None):
+    """Update date for a real hero-list change, but change added-hero text only for true new registrations."""
+    previous_summary = {}
+    if summary_path.exists():
+        try:
+            previous_summary = json.loads(summary_path.read_text(encoding='utf-8'))
+        except Exception:
+            previous_summary = {}
+
+    previous_last_added = last_added_hero_from_summary(previous_summary)
+    last_added_hero = previous_last_added
+    if new_infos:
+        # sync_eiketsu_master.py emits new_heroes in source-number order; the final item is the latest addition.
+        last_added_hero = str(new_infos[-1].get('英傑名', '')).strip() or previous_last_added
+
+    if not (new_infos or changed_infos):
+        return False, previous_last_added
+
+    if updated_at is None:
+        from zoneinfo import ZoneInfo
+        updated_at = datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y-%m-%d')
+
+    update_summary = {
+        'schema': 'jinpo-next-phase2-auto-update/v2',
+        'source_file': 'source-next/英傑一覧.csv',
+        'updated_at': updated_at,
+        'last_added_hero': last_added_hero,
+        'new_registration_only': bool(new_infos) and not changed_infos,
+        'new_heroes': new_infos,
+        'changed_existing': changed_infos,
+        'generation': generation,
+        'note': '英傑一覧.csvから英傑マスタ・配置/除外候補・5～9因縁compact DB・Top500を自動更新',
+    }
+    summary_path.write_text(json.dumps(update_summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    return True, last_added_hero
+
 def main():
     report = {
         'phase': 'phase2-auto-regeneration',
@@ -160,29 +213,17 @@ def main():
     if recommend_report.get('status') != 'PASS': fail('おすすめ陣法合計Top500レポートがPASSではありません', report)
     report['recommend_sum_top'] = {'files':recommend_report.get('files'),'rows':recommend_report.get('rows'),'limit_per_formation':recommend_report.get('limit_per_formation'),'seconds':recommend_report.get('seconds')}
 
-    # 最終更新表示もCSV更新だけで自動更新。
+    # ヘッダー表示:
+    # - 最終更新日は、英傑一覧に実変更があった更新日に変更してよい。
+    # - 「追加英傑」は最後に本当に追加された1人だけを保持し、既存英傑修正やDB整備では変更しない。
     new_infos = sync_report.get('new_heroes', [])
     changed_infos = sync_report.get('changed_existing', [])
-    target_names = [str(x.get('英傑名','')).strip() for x in new_infos if str(x.get('英傑名','')).strip()]
-    if not target_names:
-        target_names = [str(x.get('英傑名','')).strip() for x in changed_infos if str(x.get('英傑名','')).strip()]
-    if new_infos or changed_infos:
-        from zoneinfo import ZoneInfo
-        update_summary = {
-            'schema':'jinpo-next-phase2-auto-update/v1',
-            'source_file':'source-next/英傑一覧.csv',
-            'target':'、'.join(target_names),
-            'updated_at':datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y-%m-%d'),
-            'new_registration_only': bool(new_infos) and not changed_infos,
-            'new_heroes': new_infos,
-            'changed_existing': changed_infos,
-            'generation': report['generation'],
-            'note':'英傑一覧.csvから英傑マスタ・配置/除外候補・5～9因縁compact DB・Top500を自動更新',
-        }
-        (SITE/'data'/'jinpo_latest_update_summary.json').write_text(json.dumps(update_summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-        report['latest_update_summary_updated'] = True
-    else:
-        report['latest_update_summary_updated'] = False
+    summary_path = SITE/'data'/'jinpo_latest_update_summary.json'
+    summary_updated, last_added_hero = write_latest_update_summary(
+        summary_path, new_infos, changed_infos, report['generation']
+    )
+    report['latest_update_summary_updated'] = summary_updated
+    report['last_added_hero'] = last_added_hero
 
     # Static-site integrity checks for staging.
     required_site = [

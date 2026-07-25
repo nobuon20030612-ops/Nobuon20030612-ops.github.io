@@ -131,16 +131,21 @@ window.JINPO_FORMATION_CONFIG = {
 
   function latestHeroText(summary){
     if(!summary || typeof summary !== 'object') return '';
-    var target = String(summary.target == null ? '' : summary.target).trim();
-    if(target) return target;
+
+    // 「追加英傑」は専用項目だけを表示する。
+    // 組み合わせ件数・修正対象など汎用の target は絶対に表示へ流用しない。
+    var direct = String(summary.last_added_hero == null ? '' : summary.last_added_hero).trim();
+    if(direct) return direct;
+
+    // v1 summary互換: 新英傑配列がある場合は、その最後の1人だけを表示する。
     var heroes = Array.isArray(summary.new_heroes) ? summary.new_heroes : [];
-    var names = [];
-    heroes.forEach(function(hero){
-      if(!hero || typeof hero !== 'object') return;
+    for(var i=heroes.length-1;i>=0;i--){
+      var hero = heroes[i];
+      if(!hero || typeof hero !== 'object') continue;
       var name = String(hero['英傑名'] || hero['名前'] || '').trim();
-      if(name && names.indexOf(name) < 0) names.push(name);
-    });
-    return names.join('、');
+      if(name) return name;
+    }
+    return '';
   }
 
   function render(summary){
@@ -164,7 +169,10 @@ window.JINPO_FORMATION_CONFIG = {
       return true;
     }
 
-    var text = '最終更新 ' + (dateText || '未設定') + '　｜　追加英傑 ' + (heroText || '未設定');
+    var parts = [];
+    if(dateText) parts.push('最終更新 ' + dateText);
+    if(heroText) parts.push('追加英傑 ' + heroText);
+    var text = parts.join('　｜　');
     el.textContent = text;
     el.title = text;
     el.style.display = '';
@@ -172,7 +180,7 @@ window.JINPO_FORMATION_CONFIG = {
   }
 
   function loadLatestSummary(){
-    return fetch('data/jinpo_latest_update_summary.json',{cache:'force-cache'}).then(function(res){
+    return fetch('data/jinpo_latest_update_summary.json',{cache:'no-store'}).then(function(res){
       if(!res.ok) return false;
       return res.json();
     }).then(function(summary){

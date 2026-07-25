@@ -38,15 +38,17 @@
     style.textContent = [
       '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
       '#jinpoRecommendNav{display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;}',
+      'body.jinpo-recommend-active{--jinpo-rec-accent:#ffd463;--jinpo-rec-accent2:#e7bd5c;--jinpo-rec-bg1:#6f2419;--jinpo-rec-bg2:#26100a;--jinpo-rec-text:#fff5d4;--jinpo-rec-soft:rgba(231,189,92,.18);--jinpo-rec-glow:rgba(231,189,92,.46);}',
       '.jinpoRecommendLabel{flex:0 0 auto;margin-right:3px;color:#ffe1a1;font-size:15px;font-weight:950;white-space:nowrap;}',
+      'body.jinpo-recommend-active .jinpoRecommendLabel{color:var(--jinpo-rec-accent);text-shadow:0 0 9px var(--jinpo-rec-glow);}',
       '.jinpoRecommendExitBtn{flex:0 0 auto;min-width:104px;min-height:38px;padding:6px 11px;border-radius:10px;border:2px solid #d6aa50;background:linear-gradient(#3d2a18,#1a1009);color:#a88f68;font-size:13px;font-weight:950;line-height:1;cursor:not-allowed;white-space:nowrap;box-sizing:border-box;opacity:.52;transition:filter .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease;}',
-      '.jinpoRecommendExitBtn.is-active{background:linear-gradient(#9e2d22,#57110c);color:#fff2d0;border-color:#ffd463;cursor:pointer;opacity:1;box-shadow:0 0 13px rgba(255,76,48,.38),inset 0 0 8px rgba(255,220,120,.12);}',
-      '.jinpoRecommendExitBtn.is-active:hover,.jinpoRecommendExitBtn.is-active:focus-visible{filter:brightness(1.17);box-shadow:0 0 18px rgba(255,83,52,.64),0 0 10px rgba(231,189,92,.40);transform:translateY(-1px);outline:none;}',
-      '.jinpoRecommendModeNotice{display:none;flex:1 1 100%;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:8px;padding:7px 12px;margin:0 0 2px 0;border:1px solid rgba(255,205,87,.72);border-radius:10px;background:linear-gradient(90deg,rgba(112,24,16,.92),rgba(50,20,10,.90),rgba(112,24,16,.92));color:#fff0bd;font-size:14px;font-weight:950;letter-spacing:.02em;text-align:center;box-shadow:0 0 12px rgba(255,81,45,.22);}',
+      '.jinpoRecommendExitBtn.is-active{background:linear-gradient(var(--jinpo-rec-bg1,#9e2d22),var(--jinpo-rec-bg2,#57110c));color:var(--jinpo-rec-text,#fff2d0);border-color:var(--jinpo-rec-accent,#ffd463);cursor:pointer;opacity:1;box-shadow:0 0 13px var(--jinpo-rec-glow,rgba(255,76,48,.38)),inset 0 0 8px var(--jinpo-rec-soft,rgba(255,220,120,.12));}',
+      '.jinpoRecommendExitBtn.is-active:hover,.jinpoRecommendExitBtn.is-active:focus-visible{filter:brightness(1.17);box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(255,83,52,.64)),0 0 10px var(--jinpo-rec-soft,rgba(231,189,92,.40));transform:translateY(-1px);outline:none;}',
+      '.jinpoRecommendModeNotice{display:none;flex:1 1 100%;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:8px;padding:7px 12px;margin:0 0 2px 0;border:1px solid var(--jinpo-rec-accent,#ffcd57);border-radius:10px;background:linear-gradient(90deg,var(--jinpo-rec-bg1,#701810),var(--jinpo-rec-bg2,#32140a),var(--jinpo-rec-bg1,#701810));color:var(--jinpo-rec-text,#fff0bd);font-size:14px;font-weight:950;letter-spacing:.02em;text-align:center;box-shadow:0 0 12px var(--jinpo-rec-glow,rgba(255,81,45,.22));}',
       '.jinpoRecommendModeNotice.is-active{display:flex;}',
-      '#jinpoRecommendModeBadge{position:fixed;right:4px;top:52%;z-index:9500;display:none;min-width:62px;max-width:72px;min-height:250px;padding:14px 9px;border:2px solid #ffd45e;border-radius:16px 0 0 16px;background:linear-gradient(180deg,#9f2c20,#571009 58%,#2a1009);color:#fff5d4;box-shadow:0 0 22px rgba(255,72,42,.52),inset 0 0 14px rgba(255,220,110,.14);box-sizing:border-box;pointer-events:none;writing-mode:vertical-rl;text-orientation:upright;font-size:21px;font-weight:1000;letter-spacing:.08em;text-shadow:0 2px 0 rgba(50,0,0,.65);transform:translateY(-50%);}',
+      '#jinpoRecommendModeBadge{position:fixed;right:4px;top:52%;z-index:9500;display:none;min-width:62px;max-width:72px;min-height:250px;padding:14px 9px;border:2px solid var(--jinpo-rec-accent,#ffd45e);border-radius:16px 0 0 16px;background:linear-gradient(180deg,var(--jinpo-rec-bg1,#9f2c20),var(--jinpo-rec-bg2,#571009) 68%,#090706);color:var(--jinpo-rec-text,#fff5d4);box-shadow:0 0 22px var(--jinpo-rec-glow,rgba(255,72,42,.52)),inset 0 0 14px var(--jinpo-rec-soft,rgba(255,220,110,.14));box-sizing:border-box;pointer-events:none;writing-mode:vertical-rl;text-orientation:upright;font-size:21px;font-weight:1000;letter-spacing:.08em;text-shadow:0 2px 0 rgba(0,0,0,.62);transform:translateY(-50%);}',
       '#jinpoRecommendModeBadge.is-active{display:flex;align-items:center;justify-content:center;gap:10px;animation:jinpoRecommendModeFloat 1.8s ease-in-out infinite,jinpoRecommendModePulse 1.2s ease-in-out infinite alternate;}',
-      '#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,235,170,.55);font-size:15px;color:#ffe598;letter-spacing:.03em;}',
+      '#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin-top:8px;padding-top:8px;border-top:1px solid var(--jinpo-rec-accent,#ffebaa);font-size:15px;color:var(--jinpo-rec-accent,#ffe598);letter-spacing:.03em;}',
       '@keyframes jinpoRecommendModeFloat{0%,100%{transform:translateY(-50%) translateX(0)}50%{transform:translateY(calc(-50% - 5px)) translateX(-2px)}}',
       '@keyframes jinpoRecommendModePulse{from{opacity:.86}to{opacity:1}}',
       '@media(prefers-reduced-motion:reduce){#jinpoRecommendModeBadge.is-active{animation:none;}}',
@@ -57,7 +59,13 @@
       '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
       '#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{margin:0 !important;}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
-      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ中は第2優先を選ぶと合計値順へ自動切替";margin-left:auto;padding:3px 8px;border:1px solid rgba(231,189,92,.45);border-radius:8px;color:#ffe1a1;font-size:12px;font-weight:900;white-space:nowrap;}',
+      'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
+      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:"おすすめ中は第2優先を選ぶと合計値順へ自動切替";margin-left:auto;padding:3px 8px;border:1px solid var(--jinpo-rec-accent,rgba(231,189,92,.45));border-radius:8px;background:var(--jinpo-rec-soft,transparent);color:var(--jinpo-rec-accent,#ffe1a1);font-size:12px;font-weight:900;white-space:nowrap;}',
+      'body.jinpo-recommend-active #dbListStatus{color:var(--jinpo-rec-accent) !important;text-shadow:0 0 10px var(--jinpo-rec-glow);font-weight:900 !important;}',
+      'body.jinpo-recommend-active #jinpoResultSummary .jinpoResultSummaryItem{border-color:var(--jinpo-rec-accent) !important;background:linear-gradient(180deg,var(--jinpo-rec-soft),rgba(16,11,7,.96)) !important;box-shadow:0 0 13px var(--jinpo-rec-soft) !important;}',
+      'body.jinpo-recommend-active #jinpoResultSummary .jinpoResultSummaryValue{color:var(--jinpo-rec-accent) !important;text-shadow:0 0 8px var(--jinpo-rec-glow);}',
+      'body.jinpo-recommend-active #jinpoResultSummary .jinpoResultSummaryLabel{color:var(--jinpo-rec-accent) !important;}',
+      'body.jinpo-recommend-active #jinpoResultSortHint{border-color:var(--jinpo-rec-accent) !important;background:var(--jinpo-rec-soft) !important;color:var(--jinpo-rec-text) !important;box-shadow:0 0 10px var(--jinpo-rec-soft);}',
       '.jinpoBondNavBtn{min-height:38px;padding:7px 14px;border-radius:12px;border:2px solid #b99043;background:linear-gradient(#5e4020,#35230f);color:#fff1c9;font-size:15px;font-weight:900;line-height:1;box-shadow:0 0 12px rgba(231,189,92,.20);cursor:pointer;white-space:nowrap;}',
       '.jinpoBondNavBtn:hover{filter:brightness(1.12);box-shadow:0 0 16px rgba(231,189,92,.36);}',
       '#jinpoBondModalBackdrop{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
@@ -82,15 +90,42 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}.jinpoRecommendNav{overflow-x:auto;padding-bottom:3px}.jinpoRecommendLabel{font-size:13px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:8px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModeGlow 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid rgba(255,235,170,.55);font-size:13px}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}.jinpoRecommendNav{overflow-x:auto;padding-bottom:3px}.jinpoRecommendLabel{font-size:13px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:8px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModeGlow 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}.jinpoBondModalHeader h3{font-size:18px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
     ].join('\n');
     document.head.appendChild(style);
   }
 
   var recommendDecorState = {active:false,targetStat:'',secondaryStat:''};
   var recommendStatLabels = {'生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};
+  var recommendThemes = {
+    '生命': {accent:'#ffffff',accent2:'#d6d6d6',bg1:'#5a5a5a',bg2:'#171717',text:'#ffffff',soft:'rgba(255,255,255,.16)',glow:'rgba(255,255,255,.48)'},
+    '気合': {accent:'#bfeaff',accent2:'#78b8da',bg1:'#2d6683',bg2:'#0b2330',text:'#effbff',soft:'rgba(115,215,243,.16)',glow:'rgba(115,215,243,.50)'},
+    '腕力': {accent:'#ff7777',accent2:'#c93333',bg1:'#8d2525',bg2:'#290a0a',text:'#fff2f2',soft:'rgba(201,51,51,.18)',glow:'rgba(255,90,90,.50)'},
+    '耐久力': {accent:'#70a0ff',accent2:'#245fc7',bg1:'#214f9f',bg2:'#091936',text:'#f1f6ff',soft:'rgba(36,95,199,.20)',glow:'rgba(80,139,255,.55)'},
+    '器用さ': {accent:'#75d28d',accent2:'#3a9b55',bg1:'#2b7440',bg2:'#0b2713',text:'#effff3',soft:'rgba(58,155,85,.18)',glow:'rgba(80,205,112,.48)'},
+    '知力': {accent:'#fff083',accent2:'#f2d93b',bg1:'#7c6b12',bg2:'#2a2305',text:'#fffbea',soft:'rgba(242,217,59,.17)',glow:'rgba(255,232,77,.50)'},
+    '魅力': {accent:'#c88fe8',accent2:'#8b4bb4',bg1:'#673887',bg2:'#24102f',text:'#fbf2ff',soft:'rgba(139,75,180,.19)',glow:'rgba(190,112,232,.52)'},
+    '土属性': {accent:'#fff1a8',accent2:'#d9c35d',bg1:'#766628',bg2:'#281f08',text:'#fffbea',soft:'rgba(217,195,93,.18)',glow:'rgba(255,232,135,.48)'},
+    '水属性': {accent:'#b5efff',accent2:'#73d7f3',bg1:'#28758b',bg2:'#082833',text:'#effcff',soft:'rgba(115,215,243,.18)',glow:'rgba(107,220,250,.52)'},
+    '火属性': {accent:'#ffd0d0',accent2:'#f3a0a0',bg1:'#8f4c4c',bg2:'#351414',text:'#fff5f5',soft:'rgba(243,160,160,.18)',glow:'rgba(255,150,150,.50)'},
+    '風属性': {accent:'#d2f4d0',accent2:'#a8e2a6',bg1:'#4f8150',bg2:'#142c15',text:'#f4fff3',soft:'rgba(168,226,166,.18)',glow:'rgba(155,230,155,.50)'}
+  };
 
   function recommendStatLabel(v){ return recommendStatLabels[text(v)] || text(v); }
+  function applyRecommendTheme(active,targetStat){
+    var body=document.body;if(!body)return;
+    body.classList.toggle('jinpo-recommend-active',!!active);
+    var props=['--jinpo-rec-accent','--jinpo-rec-accent2','--jinpo-rec-bg1','--jinpo-rec-bg2','--jinpo-rec-text','--jinpo-rec-soft','--jinpo-rec-glow'];
+    if(!active){props.forEach(function(k){body.style.removeProperty(k);});return;}
+    var t=recommendThemes[text(targetStat)]||recommendThemes['生命'];
+    body.style.setProperty('--jinpo-rec-accent',t.accent);
+    body.style.setProperty('--jinpo-rec-accent2',t.accent2);
+    body.style.setProperty('--jinpo-rec-bg1',t.bg1);
+    body.style.setProperty('--jinpo-rec-bg2',t.bg2);
+    body.style.setProperty('--jinpo-rec-text',t.text);
+    body.style.setProperty('--jinpo-rec-soft',t.soft);
+    body.style.setProperty('--jinpo-rec-glow',t.glow);
+  }
 
   function ensureRecommendModeBadge(){
     var badge=document.getElementById('jinpoRecommendModeBadge');
@@ -111,6 +146,7 @@
     recommendDecorState.targetStat=recommendDecorState.active?text(detail.targetStat):'';
     recommendDecorState.secondaryStat=recommendDecorState.active?text(detail.secondaryStat):'';
     var active=recommendDecorState.active;
+    applyRecommendTheme(active,recommendDecorState.targetStat);
     var exitBtn=document.getElementById('jinpoRecommendExitBtn');
     if(exitBtn){
       exitBtn.disabled=!active;
