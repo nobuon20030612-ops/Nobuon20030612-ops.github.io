@@ -163,6 +163,21 @@ def main():
     # Top500正式運用の整合性。初期表示用/単一優先ソート用は全件DBから事前生成した最大500件のみ。
     manifest_path = SITE/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+
+    # 通常5・6因縁は等級3以下ON専用の画面仕様であり、旧通常DBは不正データを含んでいたため完全廃止。
+    # manifest参照だけでなく物理ファイルの残存も公開前に拒否する。
+    for section in ('datasets', 'top', 'sort_top'):
+        normal_counts = manifest.get(section, {}).get('normal', {})
+        for count in ('5', '6'):
+            if count in normal_counts:
+                fail(f'廃止済み通常{count}因縁DBがmanifestに残っています: {section}/normal/{count}', report)
+    legacy_normal56_files = sorted(
+        x.name for x in (SITE/'data'/'compact_search_v2').glob('*.bin.gz')
+        if ('normal_c5_' in x.name or 'normal_c6_' in x.name)
+    )
+    if legacy_normal56_files:
+        fail('廃止済み通常5・6因縁DBの物理ファイルが残っています: ' + ' / '.join(legacy_normal56_files[:10]), report)
+
     if int(manifest.get('top_limit', 0)) != 500 or int(manifest.get('sort_top_limit', 0)) != 500:
         fail('Top500設定不一致: manifest top_limit/sort_top_limit が500ではありません', report)
     for mode, counts in manifest.get('top', {}).items():
@@ -332,6 +347,7 @@ def main():
         'unique_bond_count_with_line_occurrences_preserved': True,
         'manifest_fetch_fresh_before_versioned_db_cache': True,
         'normal_5_6_worker_access_blocked': True,
+        'legacy_normal_5_6_manifest_and_files_removed': True,
         'factor4_assignment_uses_line_hero_index': True,
         'swap_loading_waits_for_exact_lookup': True,
         'swap_loading_stale_completion_guard': True,
@@ -418,7 +434,6 @@ def main():
 
     semantic_records = 0
     semantic_duplicate_combos = 0
-    legacy_inaccessible_orphans = {}
 
     def verify_compact_entry(info, label, semantic=None):
         nonlocal compact_checked, semantic_records, semantic_duplicate_combos
@@ -460,8 +475,6 @@ def main():
             mode, count, formation = semantic
             count = int(count)
             seen = set()
-            accessible = (mode == 'grade3' or count >= 7)
-            orphan_counts = {}
             for idx in range(rows):
                 off = 16 + idx * rec
                 hero_ids = struct.unpack_from('<6H', raw, off)
@@ -483,9 +496,7 @@ def main():
                     if hid >= len(hero_names_manifest) or not str(hero_names_manifest[hid] or '').strip():
                         fail(f'compact DB 英傑ID範囲外/名称なし: {label}: row={idx}: {hid}', report)
                     if hid not in master_id_to_row:
-                        orphan_counts[hid] = orphan_counts.get(hid, 0) + 1
-                        if accessible:
-                            fail(f'現在利用可能DBに英傑マスタ未登録ID: {label}: row={idx}: EIK_{hid:04d}', report)
+                        fail(f'compact DBに英傑マスタ未登録ID: {label}: row={idx}: EIK_{hid:04d}', report)
                     elif mode == 'grade3':
                         cost = int(float(str(master_id_to_row[hid].get('コスト','999') or '999')))
                         if cost > 6:
@@ -496,8 +507,6 @@ def main():
                     fail(f'正しい重複定義でcompact DB重複: {label}: row={idx}', report)
                 seen.add(combo_key)
             semantic_records += rows
-            if orphan_counts:
-                legacy_inaccessible_orphans[label] = {f'EIK_{hid:04d}': n for hid,n in sorted(orphan_counts.items())}
         compact_checked += 1
 
     for mode, counts in manifest.get('datasets', {}).items():
@@ -518,7 +527,7 @@ def main():
         'full_records_semantic_checked': semantic_records,
         'duplicate_combo_errors': semantic_duplicate_combos,
         'duplicate_display_names_kept_distinct_by_internal_id': duplicate_display_names,
-        'legacy_normal_5_6_inaccessible_master_orphans': legacy_inaccessible_orphans,
+        'legacy_normal_5_6_removed': True,
         'header_row_count_errors': 0,
     }
 
