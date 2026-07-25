@@ -115,6 +115,12 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
 #formationView .fslot:hover{filter:none !important;}
 </style>
 
+
+<style id="jinpo-recommend-count-lock-note-style">
+#dbCountButtons .grade3OnlySearchNote{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 2px 0;text-align:left;font-size:12px;line-height:1.25;color:#d7bd84;white-space:nowrap;}
+#dbCountButtons .dbCountBtn.recommendModeLocked{opacity:.34!important;filter:grayscale(.9) brightness(.62)!important;cursor:not-allowed!important;box-shadow:none!important;transform:none!important;}
+#dbCountButtons .dbCountBtn.recommendModeLocked:hover{filter:grayscale(.9) brightness(.62)!important;box-shadow:none!important;transform:none!important;}
+</style>
 </head>
 <body>
 
@@ -290,6 +296,9 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
     var formed = hasFormation();
     if(isGradeButton(btn)) return !formed;
     var c = countOf(btn);
+    var recommendActive = false;
+    try{ recommendActive = !!(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isRecommendMode === 'function' && window.JINPO_FAST_SEARCH.isRecommendMode()); }catch(e){}
+    if(c >= 5 && c <= 9 && recommendActive) return true;
     if(c >= 5 && c <= 9 && !formed) return true;
     if((c === 5 || c === 6) && formed && !grade3On()) return true;
     return false;
@@ -434,9 +443,6 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
     <button id="ownedHeroSlotBtn3" type="button" class="ownedHeroBtn ownedHeroSlotBtn" data-owned-slot="2" onclick="window.__ownedHeroOpenReliable&&window.__ownedHeroOpenReliable(2,event)">配置英傑3：未選択</button>
     <button id="ownedHeroClearBtn" type="button" class="ownedHeroClearBtn">解除</button>
     <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">配置英傑：未選択</div>
-  </div>
-  <div id="grade3OnlySearchNote" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:420px;max-width:100%;margin:8px 0 -2px 0;">
-    <span style="grid-column:1;text-align:center;font-size:10px;line-height:1.2;color:#cbb98f;white-space:nowrap;">※ON時：等級3以下のみ検索</span>
   </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
 
