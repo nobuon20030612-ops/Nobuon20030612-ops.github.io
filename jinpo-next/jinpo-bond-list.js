@@ -61,7 +61,8 @@
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
       'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:none!important;display:none!important;}',
-      '#jinpoRecommendSumGuide{display:none;grid-column:1 / -1;flex:1 1 100%;width:100%;box-sizing:border-box;margin:2px 0 10px 0;padding:14px 20px;border:2px solid var(--jinpo-rec-accent,#ffd463);border-radius:15px;background:linear-gradient(90deg,var(--jinpo-rec-bg2,#26100a),var(--jinpo-rec-bg1,#6f2419),var(--jinpo-rec-bg2,#26100a));color:var(--jinpo-rec-text,#fff5d4);font-size:clamp(18px,1.35vw,25px);font-weight:1000;line-height:1.35;letter-spacing:.025em;text-align:center;box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(231,189,92,.46)),inset 0 0 0 1px var(--jinpo-rec-soft,rgba(231,189,92,.18));text-shadow:0 1px 0 rgba(0,0,0,.55);}',
+      '#jinpoRecommendSumGuide{display:none;grid-column:1 / -1;flex:1 1 100%;width:100%;box-sizing:border-box;margin:2px 0 10px 0;padding:14px 20px;border:2px solid var(--jinpo-rec-accent,#ffd463);border-radius:15px;background:linear-gradient(90deg,var(--jinpo-rec-bg2,#26100a),var(--jinpo-rec-bg1,#6f2419),var(--jinpo-rec-bg2,#26100a));color:var(--jinpo-rec-text,#fff5d4);font-size:clamp(18px,1.35vw,25px);font-weight:1000;line-height:1.35;letter-spacing:.025em;text-align:center;box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(231,189,92,.46)),inset 0 0 0 1px var(--jinpo-rec-soft,rgba(231,189,92,.18));text-shadow:0 1px 0 rgba(0,0,0,.55);flex-direction:column;gap:5px;}',
+      '#jinpoRecommendSumGuide .jinpoRecommendSumGuideSub{font-size:clamp(14px,1.0vw,18px);font-weight:900;line-height:1.35;opacity:.96;}',
       'body.jinpo-recommend-active #jinpoRecommendSumGuide{display:flex;align-items:center;justify-content:center;}',
       '#jinpoScrollTopBtn{position:fixed;right:4px;top:calc(52% + 142px);z-index:9490;display:flex;align-items:center;justify-content:center;gap:7px;min-width:62px;max-width:72px;min-height:136px;padding:10px 8px;border:2px solid #ffd08a;border-radius:15px 0 0 15px;background:linear-gradient(180deg,#ff9b21,#b54c00 64%,#542000);color:#fffdf6;box-shadow:0 0 18px rgba(255,143,28,.58),inset 0 0 10px rgba(255,237,202,.18);box-sizing:border-box;cursor:pointer;writing-mode:vertical-rl;text-orientation:upright;font-size:17px;font-weight:1000;letter-spacing:.07em;text-shadow:0 2px 0 rgba(75,24,0,.72);transition:filter .16s ease,box-shadow .16s ease,transform .16s ease;}',
       '#jinpoScrollTopBtn:hover,#jinpoScrollTopBtn:focus-visible{filter:brightness(1.15);box-shadow:0 0 24px rgba(255,153,40,.82),inset 0 0 12px rgba(255,246,222,.28);transform:translateX(-2px);outline:none;}',
@@ -214,7 +215,7 @@
     guide.id='jinpoRecommendSumGuide';
     guide.setAttribute('role','status');
     guide.setAttribute('aria-live','polite');
-    guide.textContent='おすすめ中は第2優先を選ぶと、第1＋第2の合計値が高い順へ自動で切り替わります';
+    guide.innerHTML='<span>おすすめ中は第2優先を選ぶと、第1＋第2の合計値が高い順へ自動で切り替わります</span><span class="jinpoRecommendSumGuideSub">※第1・第2優先の数値条件を指定すると、その条件に応じて検索結果も変わります</span>';
     sum.parentNode.insertBefore(guide,sum);
     return guide;
   }

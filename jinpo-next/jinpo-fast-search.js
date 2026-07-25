@@ -40,7 +40,7 @@
       return a.map(function(x){return String(x==null?'':x).trim();}).filter(Boolean);
     }catch(e){return[];}
   }
-  function excluded(){try{return (typeof window.__jinpoGetExcludedHeroes==='function'?window.__jinpoGetExcludedHeroes():[]).map(norm).filter(Boolean);}catch(e){return[];}}
+  function excludedInternalIds(){try{return (typeof window.__jinpoGetExcludedHeroInternalIds==='function'?window.__jinpoGetExcludedHeroInternalIds():[]).map(function(x){return String(x==null?'':x).trim();}).filter(Boolean);}catch(e){return[];}}
   function rules(){try{return ((typeof getDbPriorityRules==='function'?getDbPriorityRules():[])||[]).filter(function(r){return r&&r.stat;});}catch(e){return[];}}
   function sumSortConfig(){
     try{
@@ -203,13 +203,13 @@
     if(rs.length)return{type:'full',sortStat:''};
     return{type:'top',sortStat:''};
   }
-  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
+  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
   function search(query){
     var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
     return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
   }
   function recommendKeyFor(x){
-    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedNames,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
+    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
   }
   function searchRecommended(query){
     var k=recommendKeyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
@@ -265,7 +265,7 @@
     if(targetChanged){recommendState.secondaryStat='';recommendState.formation='';}
     prepareRecommendPriority(target,targetChanged);recommendState.secondaryStat=currentRecommendSecondary(target);syncRecommendUi();
     var secondary=recommendState.secondaryStat,myToken=++activeToken,box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;listSort=secondary?{key:'',dir:'desc'}:{key:target,dir:'desc'};setCount(null);renderUnifiedCountButtons();
-    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),ex=excluded();var query={mode:mode,targetStat:target,secondaryStat:secondary,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),ownIds=ownedInternalIds(),own=owned(),exIds=excludedInternalIds();var query={mode:mode,targetStat:target,secondaryStat:secondary,ownedInternalIds:ownIds,ownedNames:own,excludedInternalIds:exIds,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('おすすめ陣法を検索中');setSummarySearching();box.innerHTML='';
     try{var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順');if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text;}setSummary(r.matched||0,activeRows.length);rerenderList(null);return true;
     }catch(err){
@@ -282,7 +282,7 @@
     if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
     if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
     if((c===5||c===6)&&!gradeOn()){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='5・6因縁は「等級3以下 ON」の時だけ検索できます。';setSummary(0,0);box.innerHTML='<div class="dbListNote">5・6因縁を検索する場合は「等級3以下」をONにしてください。</div>';return true;}
-    var mode=gradeOn()?'grade3':'normal',rs=rules(),sumCfg=sumSortConfig(),ownIds=ownedInternalIds(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,ownIds.length?ownIds:own,ex,sumCfg),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedInternalIds:ownIds,ownedNames:own,excludedNames:ex,rules:rs,sumSort:sumCfg,factor4Max:factor4Max(),limit:LIMIT};
+    var mode=gradeOn()?'grade3':'normal',rs=rules(),sumCfg=sumSortConfig(),ownIds=ownedInternalIds(),own=owned(),exIds=excludedInternalIds(),src=sourceFor(mode,rs,ownIds.length?ownIds:own,exIds,sumCfg),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedInternalIds:ownIds,ownedNames:own,excludedInternalIds:exIds,rules:rs,sumSort:sumCfg,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('検索DBで検索中');setSummarySearching();box.innerHTML='';
     function acceptResult(r){
       if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return;

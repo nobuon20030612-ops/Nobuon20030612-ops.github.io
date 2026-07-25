@@ -6625,7 +6625,7 @@ document.addEventListener("click", function(ev){
   function ownedLock66(){try{if(typeof ownedHeroReachLockState==='function')return ownedHeroReachLockState();}catch(e){}return {ids:new Set(),names:new Set()};}
   function isLocked66(h,lock){try{if(typeof isOwnedReachLockedHero==='function')return isOwnedReachLockedHero(h,lock);}catch(e){}return !!(h&&lock&&lock.ids&&lock.ids.has(hId(h)));}
   function keepsOwned66(test,lock){try{if(typeof placementKeepsOwnedReachHeroes==='function')return placementKeepsOwnedReachHeroes(test,lock);}catch(e){}return true;}
-  function excludedNameSet66(){var set=new Set();try{var a=typeof window.__jinpoGetExcludedHeroes==='function'?window.__jinpoGetExcludedHeroes():[];(a||[]).forEach(function(n){set.add(norm(n));});}catch(e){}return set;}
+  function excludedIdSet66(){var set=new Set();try{var a=typeof window.__jinpoGetExcludedHeroInternalIds==='function'?window.__jinpoGetExcludedHeroInternalIds():[];(a||[]).forEach(function(id){id=String(id||'').trim();if(id)set.add(id);});}catch(e){}return set;}
   function heroMaster(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
   function placementObj(){try{if(typeof placement!=='undefined'&&placement)return placement;}catch(e){}return window.placement||null;}
   function currentFormation(){try{var s=document.getElementById('formationSelect')||window.formationSelect;if(s&&s.value)return String(s.value).trim();}catch(e){}return '';}
@@ -6634,7 +6634,7 @@ document.addEventListener("click", function(ev){
   function stateKey(){
     var p=placementObj(),ids=[];for(var i=1;i<=6;i++)ids.push(hId(p&&p[i])||norm(hName(p&&p[i])));
     var lock=ownedLock66(),lockIds=Array.from(lock&&lock.ids||[]).map(String).sort(),lockNames=Array.from(lock&&lock.names||[]).map(norm).sort();
-    var excluded=Array.from(excludedNameSet66()).sort();
+    var excluded=Array.from(excludedIdSet66()).sort();
     return currentFormation()+'@@'+ids.join('|')+'@@g3='+(grade3On66()?'1':'0')+'@@owned='+lockIds.join(',')+';'+lockNames.join(',')+'@@excluded='+excluded.join(',');
   }
   function buildMap(){
@@ -6644,8 +6644,8 @@ document.addEventListener("click", function(ev){
     if(!p||!base) return map;
     var currentCount=Array.isArray(base.activated)?base.activated.length:0;
     var used=new Set();for(var s=1;s<=6;s++){var id=hId(p[s]);if(id)used.add(id);}
-    var lock=ownedLock66(), excluded=excludedNameSet66(), grade3=grade3On66();
-    var heroes=heroMaster().filter(function(h){return h&&hId(h)&&!used.has(hId(h))&&(!grade3||hCost(h)<=6)&&!excluded.has(norm(hName(h)));});
+    var lock=ownedLock66(), excluded=excludedIdSet66(), grade3=grade3On66();
+    var heroes=heroMaster().filter(function(h){return h&&hId(h)&&!used.has(hId(h))&&(!grade3||hCost(h)<=6)&&!excluded.has(hId(h));});
     for(var slot=1;slot<=6;slot++){
       if(!p[slot] || isLocked66(p[slot],lock)) continue;
       for(var i=0;i<heroes.length;i++){
@@ -7959,6 +7959,7 @@ body{padding-top:0 !important;}
 .jinpoExcludeControlRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .jinpoExcludeHint{font-size:12px;color:#cbb98f;line-height:1.45}
 .jinpoExcludeCount{font-size:12px;color:#ffe1a1}
+.jinpoExcludeInternalId{display:inline-block;margin-left:4px;font-size:10px;color:#8f8268;opacity:.82}
 .dbPlacementMini > span{cursor:pointer}
 </style>
 <script id="step184-excluded-heroes-filter-script">
@@ -7966,20 +7967,53 @@ body{padding-top:0 !important;}
   'use strict';
   if(window.__step184ExcludedHeroesFilterInstalled) return;
   window.__step184ExcludedHeroesFilterInstalled = true;
-  var STORAGE_KEY = 'jinpo_excluded_heroes_v1';
+  var STORAGE_KEY = 'jinpo_excluded_hero_internal_ids_v2';
+  var LEGACY_STORAGE_KEY = 'jinpo_excluded_heroes_v1';
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
   function split(v){return String(v==null?'':v).split(/[|,、]/).map(function(x){return x.trim();}).filter(Boolean);}
+  function heroMaster(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
+  function heroId(h){return String(h&&(h.internal_id||h['internal_id']||h.id||h.ID)||'').trim();}
+  function heroName(h){return String(h&&(h['英傑名']||h['名前']||h.name||h.hero_name)||'').trim();}
+  function heroCost(h){var v=Number(h&&(h['コスト']??h.cost));return Number.isFinite(v)?v:null;}
+  function heroById(id){id=String(id||'').trim();if(!id)return null;var a=heroMaster();for(var i=0;i<a.length;i++)if(heroId(a[i])===id)return a[i];return null;}
+  function heroRecords(){return heroMaster().map(function(h){return{id:heroId(h),name:heroName(h),cost:heroCost(h),hero:h};}).filter(function(x){return x.id&&x.name;}).sort(function(a,b){var n=a.name.localeCompare(b.name,'ja');if(n)return n;var ac=a.cost==null?999:a.cost,bc=b.cost==null?999:b.cost;if(ac!==bc)return ac-bc;return a.id.localeCompare(b.id);});}
+  function matchingIdsByLegacyName(name){var k=norm(name),out=[];heroRecords().forEach(function(r){if(norm(r.name)===k)out.push(r.id);});return out;}
+  function readRawIds(){try{var a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(a)?a.map(String).map(function(x){return x.trim();}).filter(Boolean):[];}catch(e){return[];}}
+  function migrateLegacy(){
+    var existing=readRawIds();if(existing.length||localStorage.getItem(STORAGE_KEY)!==null)return existing;
+    var legacy=[];try{var a=JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY)||'[]');legacy=Array.isArray(a)?a.map(String).filter(Boolean):[];}catch(e){}
+    if(!legacy.length)return existing;
+    if(!heroMaster().length)return existing;
+    var seen={},out=[];
+    function addId(id){id=String(id||'').trim();if(!id||seen[id])return;seen[id]=1;out.push(id);}
+    legacy.forEach(function(name){matchingIdsByLegacyName(name).forEach(addId);});
+    /* 旧仕様で「竹中半兵衛」除外時に知将も除外へ引き継いでいた意味を、ID移行時だけ維持する。 */
+    if(legacy.some(function(n){return norm(n)===norm('竹中半兵衛');})) matchingIdsByLegacyName('竹中半兵衛(知将)').forEach(addId);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(out));
+    try{localStorage.removeItem(LEGACY_STORAGE_KEY);}catch(e){}
+    return out;
+  }
+  function getList(){var ids=migrateLegacy();if(!ids.length)ids=readRawIds();var seen={},out=[];ids.forEach(function(id){id=String(id||'').trim();if(!id||seen[id])return;seen[id]=1;out.push(id);});return out;}
+  function saveList(list){var seen={},out=[];(list||[]).forEach(function(id){id=String(id||'').trim();if(!id||seen[id])return;seen[id]=1;out.push(id);});localStorage.setItem(STORAGE_KEY,JSON.stringify(out));try{localStorage.removeItem(LEGACY_STORAGE_KEY);}catch(e){}updateCount();}
+  function excludedIdSet(){return new Set(getList());}
+  function isExcludedId(id){return excludedIdSet().has(String(id||'').trim());}
+  function excludedNamesForLegacy(){var out=[];getList().forEach(function(id){var h=heroById(id),n=heroName(h);if(n)out.push(n);});return out;}
   function rowMembers(row){return split(row && (row.eiketsu_names || row.eiketsu_ids || row.members || row['配置英傑'] || row['英傑'] || ''));}
-  function getList(){try{var a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');var out=Array.isArray(a)?a.map(String).filter(Boolean):[];var hasLegacy=out.some(function(n){return norm(n)===norm('竹中半兵衛');});var hasCanonical=out.some(function(n){return norm(n)===norm('竹中半兵衛(知将)');});if(hasLegacy&&!hasCanonical){out.push('竹中半兵衛(知将)');localStorage.setItem(STORAGE_KEY,JSON.stringify(out));}return out;}catch(e){return [];} }
-  function saveList(list){var seen={}, out=[];(list||[]).forEach(function(n){n=String(n||'').trim(); if(!n) return; var k=norm(n); if(!k||seen[k]) return; seen[k]=1; out.push(n);}); localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); updateCount();}
-  function isExcludedName(name){var k=norm(name); if(!k) return false; return getList().map(norm).indexOf(k)!==-1;}
-  window.__jinpoGetExcludedHeroes = getList;
-  window.__jinpoClearExcludedHeroes = function(opts){opts=opts||{}; saveList([]); try{renderModalList();}catch(e){} if(!opts.silent) rerender(); return true;};
-  window.__jinpoExcludedHeroRowOk = function(row){var ex=getList().map(norm); if(!ex.length) return true; var mem=rowMembers(row).map(norm); return !mem.some(function(n){return ex.indexOf(n)!==-1;});};
+  function rowInternalIds(row){return split(row && (row.eiketsu_internal_ids || row.internal_ids || ''));}
+  window.__jinpoGetExcludedHeroInternalIds = getList;
+  /* 旧拡張との互換用。検索・差替の正規判定では使用しない。 */
+  window.__jinpoGetExcludedHeroes = excludedNamesForLegacy;
+  window.__jinpoClearExcludedHeroes = function(opts){opts=opts||{};saveList([]);try{renderModalList();}catch(e){}if(!opts.silent)rerender();return true;};
+  window.__jinpoExcludedHeroRowOk = function(row){
+    var ex=excludedIdSet();if(!ex.size)return true;
+    var ids=rowInternalIds(row);if(ids.length)return !ids.some(function(id){return ex.has(String(id||'').trim());});
+    /* internal_idを持たない旧行だけ、除外IDから得た名前で互換判定する。 */
+    var names=new Set(excludedNamesForLegacy().map(norm));return !rowMembers(row).map(norm).some(function(n){return names.has(n);});
+  };
   function currentCount(){
     var btn=document.querySelector('#dbCountButtons .dbCountBtn.active[data-count], #dbCountButtons button.active[data-count]');
-    if(btn) return Number(btn.getAttribute('data-count'))||0;
+    if(btn)return Number(btn.getAttribute('data-count'))||0;
     try{return Number(selectedDbListBondCount)||0;}catch(e){}
     try{return Number(window.selectedDbListBondCount)||0;}catch(e){}
     return 0;
@@ -7989,35 +8023,38 @@ body{padding-top:0 !important;}
     setTimeout(function(){
       try{
         if(c){
-          try{ selectedDbListBondCount=Number(c)||0; }catch(e){}
-          try{ window.selectedDbListBondCount=Number(c)||0; }catch(e){}
-          var st=document.getElementById('dbListStatus');
-          if(st) st.textContent=String(c)+'因縁を再検索中。';
+          try{selectedDbListBondCount=Number(c)||0;}catch(e){}
+          try{window.selectedDbListBondCount=Number(c)||0;}catch(e){}
+          var st=document.getElementById('dbListStatus');if(st)st.textContent=String(c)+'因縁を再検索中。';
         }
-        if(c && typeof window.handleDbCountButtonClick==='function'){
-          window.handleDbCountButtonClick(c);
-          return;
-        }
-        if(typeof window.renderDbFormationList==='function'){
-          window.renderDbFormationList();
-        }
-      }catch(e){
-        console.error('除外後再検索失敗(rerender)',e);
-      }
+        if(c&&typeof window.handleDbCountButtonClick==='function'){window.handleDbCountButtonClick(c);return;}
+        if(typeof window.renderDbFormationList==='function')window.renderDbFormationList();
+      }catch(e){console.error('除外後再検索失敗(rerender)',e);}
     },0);
   }
-  function heroNames(){var names=[]; try{(window.eiketsuMaster||eiketsuMaster||[]).forEach(function(h){var n=h && (h['英傑名']||h.name||h['名前']); if(n) names.push(String(n));});}catch(e){} if(!names.length){document.querySelectorAll('.dbPlacementMini > span').forEach(function(el){var n=spanName(el); if(n) names.push(n);});} var seen={}; return names.filter(function(n){var k=norm(n); if(!k||seen[k]) return false; seen[k]=1; return true;}).sort(function(a,b){return a.localeCompare(b,'ja');});}
-  function updateCount(){var c=getList().length; var el=document.getElementById('jinpoExcludedHeroCount'); if(el) el.textContent='除外中：'+c+'人'; var modalCount=document.getElementById('jinpoExcludedHeroModalCount'); if(modalCount) modalCount.textContent='除外中：'+c+'人';}
-  function ensureControls(){var anchor=document.getElementById('ownedHeroSelectedInfo'); if(anchor && !document.getElementById('jinpoExcludedHeroOpenBtn')){var row=document.createElement('div'); row.className='jinpoExcludeControlRow'; row.innerHTML='<button type="button" id="jinpoExcludedHeroOpenBtn">除外英傑設定</button><span id="jinpoExcludedHeroCount" class="jinpoExcludeCount">除外中：0人</span><span class="jinpoExcludeHint">検索結果の一覧から名前をクリックしても除外できます。</span>'; anchor.insertAdjacentElement('afterend', row); row.querySelector('#jinpoExcludedHeroOpenBtn').addEventListener('click', openModal);}
-    if(!document.getElementById('jinpoExcludedHeroModal')){var m=document.createElement('div'); m.id='jinpoExcludedHeroModal'; m.innerHTML='<div class="jinpoExcludedHeroBox" role="dialog" aria-modal="true"><div class="jinpoExcludedHeroHead"><div><div class="jinpoExcludedHeroTitle">除外英傑設定</div><div id="jinpoExcludedHeroModalCount" class="jinpoExcludeCount">除外中：0人</div></div><div><button type="button" id="jinpoExcludedHeroClearBtn">全解除</button> <button type="button" id="jinpoExcludedHeroCloseBtn">閉じる</button></div></div><input type="search" id="jinpoExcludedHeroSearch" placeholder="英傑名で検索"><div class="jinpoExcludeHint">チェックした英傑を含む検索結果を除外します。検索結果クリック除外ともリアルタイム連動します。</div><div id="jinpoExcludedHeroList" class="jinpoExcludedHeroList"></div></div>'; document.body.appendChild(m); m.querySelector('#jinpoExcludedHeroCloseBtn').addEventListener('click', closeModal); m.addEventListener('click',function(ev){if(ev.target===m) closeModal();}); m.querySelector('#jinpoExcludedHeroClearBtn').addEventListener('click',function(){var ask=window.__jinpoAskYesNo; if(typeof ask!=='function') return; ask({title:'除外英傑の全解除',message:'除外英傑をすべて解除しますか？'}).then(function(ok){if(!ok)return; saveList([]); renderModalList(); rerender();});}); m.querySelector('#jinpoExcludedHeroSearch').addEventListener('input',renderModalList);}
-    updateCount();}
-  function openModal(){ensureControls(); renderModalList(); document.getElementById('jinpoExcludedHeroModal').classList.add('isOpen');}
-  function closeModal(){var m=document.getElementById('jinpoExcludedHeroModal'); if(m) m.classList.remove('isOpen');}
-  function renderModalList(){var box=document.getElementById('jinpoExcludedHeroList'); if(!box) return; var q=norm(document.getElementById('jinpoExcludedHeroSearch')?.value||''); var ex=getList().map(norm); var list=heroNames().filter(function(n){return !q || norm(n).indexOf(q)!==-1;}); box.innerHTML=list.map(function(n){var checked=ex.indexOf(norm(n))!==-1?' checked':''; return '<label><input type="checkbox" data-jinpo-exclude-name="'+esc(n)+'"'+checked+'> '+esc(n)+'</label>';}).join('') || '<div class="jinpoExcludeHint">該当英傑なし</div>'; box.querySelectorAll('input[data-jinpo-exclude-name]').forEach(function(cb){cb.addEventListener('change',function(){var list=getList(); var n=cb.getAttribute('data-jinpo-exclude-name')||''; if(cb.checked){list.push(n);}else{var nk=norm(n); list=list.filter(function(x){return norm(x)!==nk;});} saveList(list); renderModalList(); rerender();});}); updateCount();}
-  function spanName(el){var t=''; var w=el&&el.querySelector&&el.querySelector(':scope > .jinpoHeroNameFitText'); if(w) t=w.textContent||''; if(!t && el) t=el.textContent||''; t=String(t||'').replace(/^\s*\d+\.\s*/,'').replace(/\s*文曲\s*$/,'').trim(); return t;}
-  function addExcludedByName(name){name=String(name||'').trim(); if(!name) return; if(isExcludedName(name)){return;} var ask=window.__jinpoAskYesNo; if(typeof ask!=='function') return; ask({title:'英傑を除外',message:'「'+name+'」を除外して再検索しますか？'}).then(function(ok){if(!ok)return; var list=getList(); list.push(name); saveList(list); renderModalList(); rerender();});}
-  function ready(fn){if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn,{once:true}); else fn();}
-  ready(function(){ensureControls(); document.addEventListener('click',function(ev){var el=ev.target&&ev.target.closest&&ev.target.closest('.dbPlacementMini > span'); if(!el) return; var n=spanName(el); if(!n) return; ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); addExcludedByName(n);},true);});
+  function updateCount(){var c=getList().length;var el=document.getElementById('jinpoExcludedHeroCount');if(el)el.textContent='除外中：'+c+'人';var modalCount=document.getElementById('jinpoExcludedHeroModalCount');if(modalCount)modalCount.textContent='除外中：'+c+'人';}
+  function ensureControls(){
+    var anchor=document.getElementById('ownedHeroSelectedInfo');
+    if(anchor&&!document.getElementById('jinpoExcludedHeroOpenBtn')){var row=document.createElement('div');row.className='jinpoExcludeControlRow';row.innerHTML='<button type="button" id="jinpoExcludedHeroOpenBtn">除外英傑設定</button><span id="jinpoExcludedHeroCount" class="jinpoExcludeCount">除外中：0人</span><span class="jinpoExcludeHint">検索結果の一覧から名前をクリックしても除外できます。</span>';anchor.insertAdjacentElement('afterend',row);row.querySelector('#jinpoExcludedHeroOpenBtn').addEventListener('click',openModal);}
+    if(!document.getElementById('jinpoExcludedHeroModal')){var m=document.createElement('div');m.id='jinpoExcludedHeroModal';m.innerHTML='<div class="jinpoExcludedHeroBox" role="dialog" aria-modal="true"><div class="jinpoExcludedHeroHead"><div><div class="jinpoExcludedHeroTitle">除外英傑設定</div><div id="jinpoExcludedHeroModalCount" class="jinpoExcludeCount">除外中：0人</div></div><div><button type="button" id="jinpoExcludedHeroClearBtn">全解除</button> <button type="button" id="jinpoExcludedHeroCloseBtn">閉じる</button></div></div><input type="search" id="jinpoExcludedHeroSearch" placeholder="英傑名・internal_idで検索"><div class="jinpoExcludeHint">チェックした英傑だけをinternal_idで個別に除外します。同名英傑も別個体として扱います。</div><div id="jinpoExcludedHeroList" class="jinpoExcludedHeroList"></div></div>';document.body.appendChild(m);m.querySelector('#jinpoExcludedHeroCloseBtn').addEventListener('click',closeModal);m.addEventListener('click',function(ev){if(ev.target===m)closeModal();});m.querySelector('#jinpoExcludedHeroClearBtn').addEventListener('click',function(){var ask=window.__jinpoAskYesNo;if(typeof ask!=='function')return;ask({title:'除外英傑の全解除',message:'除外英傑をすべて解除しますか？'}).then(function(ok){if(!ok)return;saveList([]);renderModalList();rerender();});});m.querySelector('#jinpoExcludedHeroSearch').addEventListener('input',renderModalList);}
+    updateCount();
+  }
+  function openModal(){ensureControls();renderModalList();document.getElementById('jinpoExcludedHeroModal').classList.add('isOpen');}
+  function closeModal(){var m=document.getElementById('jinpoExcludedHeroModal');if(m)m.classList.remove('isOpen');}
+  function renderModalList(){
+    var box=document.getElementById('jinpoExcludedHeroList');if(!box)return;
+    var q=norm(document.getElementById('jinpoExcludedHeroSearch')?.value||''),ex=excludedIdSet();
+    var list=heroRecords().filter(function(r){return !q||norm(r.name).indexOf(q)!==-1||norm(r.id).indexOf(q)!==-1||String(r.cost==null?'':r.cost).indexOf(q)!==-1;});
+    box.innerHTML=list.map(function(r){var checked=ex.has(r.id)?' checked':'',cost=r.cost==null?'':'['+r.cost+'] ';return '<label title="'+esc(r.id)+'"><input type="checkbox" data-jinpo-exclude-id="'+esc(r.id)+'"'+checked+'> '+esc(cost+r.name)+' <span class="jinpoExcludeInternalId">'+esc(r.id)+'</span></label>';}).join('')||'<div class="jinpoExcludeHint">該当英傑なし</div>';
+    box.querySelectorAll('input[data-jinpo-exclude-id]').forEach(function(cb){cb.addEventListener('change',function(){var list=getList(),id=String(cb.getAttribute('data-jinpo-exclude-id')||'').trim();if(!id)return;if(cb.checked){if(list.indexOf(id)===-1)list.push(id);}else{list=list.filter(function(x){return String(x)!==id;});}saveList(list);renderModalList();rerender();});});
+    updateCount();
+  }
+  function spanName(el){var t='',w=el&&el.querySelector&&el.querySelector(':scope > .jinpoHeroNameFitText');if(w)t=w.textContent||'';if(!t&&el)t=el.textContent||'';t=String(t||'').replace(/^\s*\d+\.\s*/,'').replace(/\s*文曲\s*$/,'').trim();return t;}
+  function spanInternalId(el){return String(el&&el.getAttribute&&el.getAttribute('data-hero-internal-id')||'').trim();}
+  function uniqueIdByName(name){var k=norm(name),hits=heroRecords().filter(function(r){return norm(r.name)===k;});return hits.length===1?hits[0].id:'';}
+  function addExcludedById(id,name){id=String(id||'').trim();name=String(name||'').trim();if(!id)return;if(isExcludedId(id))return;var ask=window.__jinpoAskYesNo;if(typeof ask!=='function')return;var label=name||heroName(heroById(id))||id;ask({title:'英傑を除外',message:'「'+label+'」を除外して再検索しますか？'}).then(function(ok){if(!ok)return;var list=getList();if(list.indexOf(id)===-1)list.push(id);saveList(list);renderModalList();rerender();});}
+  function ready(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn,{once:true});else fn();}
+  ready(function(){ensureControls();document.addEventListener('click',function(ev){var el=ev.target&&ev.target.closest&&ev.target.closest('.dbPlacementMini > span');if(!el)return;var n=spanName(el),id=spanInternalId(el)||uniqueIdByName(n);if(!id)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();addExcludedById(id,n);},true);});
 })();
 </script>
 

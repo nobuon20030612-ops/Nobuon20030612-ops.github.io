@@ -371,10 +371,12 @@ def main():
             fail(f'Top500/内部ID/完全照合 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
         fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
+    if 'excludedNames:ex' in fast_text or 'excludedNameSet66' in index_text:
+        fail('除外英傑の名前基準検索/差替判定が残っています。internal_id基準へ統一してください', report)
 
     required_function_fragments = {
         'jinpo-fast-search.js': [
-            'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function lookupExactState(opts)',
+            'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function excludedInternalIds()', 'excludedInternalIds:exIds', 'function lookupExactState(opts)',
             'worker.terminate()', "(c===5||c===6)&&!gradeOn()",
             'selectedExclude=0;syncFactor4()', 'eiketsu_internal_ids||',
             'resetAll:function()', "listSort={key:'',dir:'desc'};appliedListRowKey=''",
@@ -388,7 +390,7 @@ def main():
             '所持英傑はinternal_idを正とする。同名別個体を名前でまとめない',
             "+'@@g3='+(grade3On66()?'1':'0')+'@@owned='",
             "+'@@excluded='+excluded.join(',')",
-            "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroes',
+            "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
             'source:"current_result_db_exact"', 'if(modern) return null;',
             'if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];',
             'return [1600,1400,1200,1000,800,600,400,200];',
@@ -400,6 +402,7 @@ def main():
             'function bonusHeroByInternalId(id)', "if(ret && typeof ret.then==='function')",
             'id="jinpoGlobalResetBtn"', 'window.__jinpoAskYesNo=function(opts)',
             'window.__jinpoPerformGlobalReset=performGlobalReset', 'window.__jinpoClearExcludedHeroes = function(opts)',
+            "jinpo_excluded_hero_internal_ids_v2", 'window.__jinpoGetExcludedHeroInternalIds = getList',
             'window.__jinpoResetEiketsuBonusAll = function(opts)', 'いいえ</button><button type="button" id="jinpoCommonConfirmYes"',
         ],
         'jinpo-activation-engine.js': [
