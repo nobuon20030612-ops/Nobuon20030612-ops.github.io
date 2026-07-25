@@ -1655,7 +1655,6 @@ let selectedDbListBondCount = null;
 var grade3Cost6OnlyEnabled = false;
 let selectedDbResultId = "";
 let ownedHeroFilterIds = [];
-const DB_LIST_MAX = 300;
 const DB_PRIORITY_STATS = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
 const DB_PRIORITY_LABELS = {"生命":"生命","気合":"気合","腕力":"腕力","耐久力":"耐久","器用さ":"器用","知力":"知力","魅力":"魅力","土属性":"土","水属性":"水","火属性":"火","風属性":"風"};
 let dbQuickStatOrder = [];
@@ -3585,7 +3584,7 @@ window.clearAppliedPreviewUnderFormation = clearAppliedPreview;
 document.addEventListener("click", function(ev){
 var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn") : null;
 if(!btn) return;
-if(!btn.hasAttribute("data-result-id") && !btn.hasAttribute("data-linegen-actual") && !btn.hasAttribute("data-linegen-v5") && !btn.hasAttribute("data-linegen-v6") && !btn.hasAttribute("data-linegen-single") && !btn.hasAttribute("data-linegen-v3") && !btn.hasAttribute("data-linegen-v4") && !btn.hasAttribute("data-generated-line-row")) return;
+if(!btn.hasAttribute("data-result-id") && !btn.hasAttribute("data-generated-line-row")) return;
 var data = readAppliedRowFromButton(btn);
 if(data){
 setTimeout(function(){ renderAppliedPreview(data); }, 0);
@@ -3995,37 +3994,10 @@ function findApplyRowFromButton(btn){
     }catch(e){}
   }
 
-  id = btn.getAttribute("data-linegen-v6");
-  if(id){
-    try{
-      var rows6 = window.__jinpoLineGenV6Rows || [];
-      var hit6 = rows6.find(function(r){ return String(r.result_id) === String(id); });
-      if(hit6) return hit6;
-    }catch(e){}
-  }
-
-  id = btn.getAttribute("data-linegen-actual");
-  if(id){
-    try{
-      var rowsA = window.__jinpoActualLineRows || [];
-      var hitA = rowsA.find(function(r){ return String(r.result_id) === String(id); });
-      if(hitA) return hitA;
-    }catch(e){}
-  }
-
-  id = btn.getAttribute("data-linegen-v4");
-  if(id){
-    try{
-      var rows4 = window.__jinpoLineGenV4Rows || [];
-      var hit4 = rows4.find(function(r){ return String(r.result_id) === String(id); });
-      if(hit4) return hit4;
-    }catch(e){}
-  }
-
   id = btn.getAttribute("data-generated-line-row");
   if(id){
     try{
-      var rowsG = window.__jinpoGeneratedLineRows || window.__jinpoLineGenRows || [];
+      var rowsG = window.__jinpoGeneratedLineRows || [];
       var hitG = rowsG.find(function(r){ return String(r.result_id) === String(id); });
       if(hitG) return hitG;
     }catch(e){}
@@ -4039,12 +4011,6 @@ document.addEventListener("click", function(ev){
 
   var isDbApply =
     btn.hasAttribute("data-result-id") ||
-    btn.hasAttribute("data-linegen-actual") ||
-    btn.hasAttribute("data-linegen-v5") ||
-    btn.hasAttribute("data-linegen-v6") ||
-    btn.hasAttribute("data-linegen-single") ||
-    btn.hasAttribute("data-linegen-v3") ||
-    btn.hasAttribute("data-linegen-v4") ||
     btn.hasAttribute("data-generated-line-row");
 
   if(!isDbApply) return;
@@ -5373,7 +5339,7 @@ document.addEventListener("click", function(ev){
   }
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-actual],[data-generated-line-row],[data-result-id]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-generated-line-row],[data-result-id]") : null;
     if(!btn) return;
     setTimeout(function(){
       try{
@@ -5566,7 +5532,7 @@ document.addEventListener("click", function(ev){
   };
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-linegen-v5],[data-linegen-v6],[data-linegen-v3],[data-linegen-v4],[data-linegen-single],[data-linegen-actual],[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result]") : null;
     if(!btn) return;
     showOverlayFix();
     recalcOnceFix(220);

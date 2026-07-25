@@ -84,11 +84,11 @@
     }
   }
 
-  function setSummary(hit,shown,partial){
+  function setSummary(hit,shown){
     ensureEnhancementUi();hit=Math.max(0,Number(hit)||0);shown=Math.max(0,Number(shown)||0);
     var h=q('jinpoResultHitValue'),s=q('jinpoResultShownValue'),x=q('jinpoResultShownSuffix');
     if(h)h.textContent=hit.toLocaleString();if(s)s.textContent=shown.toLocaleString();
-    if(x){if(partial&&hit>shown)x.textContent='件（最大500件まで読込中）';else if(hit>shown)x.textContent='件（上位最大500件）';else x.textContent='件（すべて表示）';}
+    if(x){if(hit>shown)x.textContent='件（上位最大500件）';else x.textContent='件（すべて表示）';}
   }
   function setSummarySearching(){ensureEnhancementUi();var h=q('jinpoResultHitValue'),s=q('jinpoResultShownValue'),x=q('jinpoResultShownSuffix');if(h)h.textContent='検索中';if(s)s.textContent='—';if(x)x.textContent='件';}
 
@@ -98,17 +98,16 @@
     worker.onmessage=function(ev){
       var m=ev.data||{},p=pending.get(m.token);if(!p)return;
       if(m.type==='progress'){showProgress(m.message||'検索DB読込中',m.bytes||0);return;}
-      if(m.type==='partial'){if(typeof p.partial==='function')p.partial(m.result||{});return;}
       pending.delete(m.token);
       if(m.type==='error')p.reject(new Error(m.message||'統一検索エラー'));else p.resolve(m.result||{});
     };
     return worker;
   }
-  function sourceFor(mode,rs,own,ex){var th=hasThreshold(rs),f4=selectedExclude>0;if(own.length||ex.length||th||f4)return{type:'full',sortStat:''};if(mode==='normal'&&rs.length)return{type:'sort',sortStat:String(rs[0].stat||'')};return{type:'top',sortStat:''};}
+  function sourceFor(mode,rs,own,ex){var th=hasThreshold(rs),f4=selectedExclude>0;if(own.length||ex.length||th||f4)return{type:'full',sortStat:''};if(mode==='normal'&&rs.length===1)return{type:'sort',sortStat:String(rs[0].stat||'')};if(rs.length)return{type:'full',sortStat:''};return{type:'top',sortStat:''};}
   function keyFor(x){return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedNames,x.excludedNames,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);}
-  function search(query,onPartial){
+  function search(query){
     var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
-    var t=++seq;return new Promise(function(resolve,reject){pending.set(t,{resolve:resolve,reject:reject,partial:onPartial});workerObj().postMessage({type:'search',token:t,query:query});}).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+    var t=++seq;return new Promise(function(resolve,reject){pending.set(t,{resolve:resolve,reject:reject});workerObj().postMessage({type:'search',token:t,query:query});}).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
   }
 
   function members(row){return String(row&&row.eiketsu_names||row&&row.eiketsu_ids||'').split('|').filter(Boolean);}
@@ -139,22 +138,22 @@
   async function renderCurrent(opts){
     ensureEnhancementUi();opts=opts||{};var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
     listSort={key:'',dir:'desc'};
-    if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0,false);return true;}setCount(c);
-    if(!f){hideProgress();activeRows=[];displayRows=[];status.textContent='陣形を選択してください。';setSummary(0,0,false);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
+    if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
+    if(!f){hideProgress();activeRows=[];displayRows=[];status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
     var mode=gradeOn()?'grade3':'normal',rs=rules(),own=owned(),ex=excluded(),src=sourceFor(mode,rs,own,ex),query={mode:mode,count:c,formation:f,sourceType:src.type,sortStat:src.sortStat,ownedNames:own,excludedNames:ex,rules:rs,factor4Max:factor4Max(),limit:LIMIT};
     window.__jinpoSearchCancelRequested=false;showProgress('検索DBで検索中');setSummarySearching();box.innerHTML='';
-    function acceptResult(r,isPartial){
+    function acceptResult(r){
       if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return;
       activeRows=Array.isArray(r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);
       var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'';
-      status.textContent=f+' / '+c+'因縁: 高速検索DB / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+(isPartial?' / 500件まで拡張中':'');
-      setSummary(r.matched||0,activeRows.length,isPartial);
+      status.textContent=f+' / '+c+'因縁: 高速検索DB / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;
+      setSummary(r.matched||0,activeRows.length);
       rerenderList(c);
     }
     try{
-      var r=await search(query,function(partial){acceptResult(partial,true);});
-      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;acceptResult(r,false);return true;
-    }catch(err){if(myToken!==activeToken)return true;console.error('統一コンパクト検索エラー',err);status.textContent='検索中にエラーが発生しました。';setSummary(0,0,false);box.innerHTML='<div class="dbListNote">検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;}finally{if(myToken===activeToken)hideProgress();}
+      var r=await search(query);
+      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;acceptResult(r);return true;
+    }catch(err){if(myToken!==activeToken)return true;console.error('統一コンパクト検索エラー',err);status.textContent='検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;}finally{if(myToken===activeToken)hideProgress();}
   }
 
   function renderUnifiedCountButtons(){
@@ -175,7 +174,7 @@
     var fb=ev.target&&ev.target.closest?ev.target.closest('button[data-factor4-exclude]'):null;if(fb){ev.preventDefault();selectedExclude=Number(fb.getAttribute('data-factor4-exclude'))||0;syncFactor4();renderCurrent({count:selectedCount()});return;}
     var b=ev.target&&ev.target.closest?ev.target.closest('button[data-unified-db-idx]'):null;if(!b)return;var row=displayRows[Number(b.getAttribute('data-unified-db-idx'))];if(!row)return;ev.preventDefault();try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}
   },true);
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0,false);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 
   function install(){ensureEnhancementUi();ensureFactor4Controls();ensureCancelButton();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};

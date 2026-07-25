@@ -77,26 +77,20 @@
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
     var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
 
-    /* Phase1互換: 既存の小型Top300/優先Top300を先に即表示し、301〜500件目は全件compact DBからバックグラウンド拡張する。
-       Top DBと全件DBの件数が矛盾する旧シード系データは、正しいHIT件数を優先して全件DBへ切り替える。 */
+    /* Top500正式運用: 初期表示は事前生成済みTop500を直接返す。
+       単一ステータス優先は事前生成済みSortTop500内で並べ替える。
+       複数優先・閾値・所持/除外・文曲条件は全件DBを検索して正確な上位500件を返す。 */
+    var matchedOverride=null;
     if(q.sourceType!=='full'&&fullInfo&&noFilters){
       var fullRows=Number(fullInfo.rows||0);
-      if(fullRows<data.rows){
-        /* 既存Topに検索シードが含まれるケースは、現行表示件数を変えない。 */
-        var seeded=materializeFirst(data,q,m,Math.min(limit,data.rows));return {rows:seeded,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:q.sourceType};
-      }else if(fullRows<=limit&&data.rows!==fullRows){
-        var fqSmall=Object.assign({},q,{sourceType:'full',sortStat:''});
-        data=await loadData(fqSmall,token);dv=data.dv;rec=data.recSize;base=16;
-      }else if(data.rows<limit&&fullRows>data.rows){
-        var partialRows=materializeFirst(data,q,m,Math.min(limit,data.rows));
-        self.postMessage({type:'partial',token:token,result:{rows:partialRows,scanned:fullRows,matched:fullRows,ms:performance.now()-started,info:data.info,sourceType:q.sourceType,partial:true}});
-        var fq=Object.assign({},q,{sourceType:'full',sortStat:''});
-        data=await loadData(fq,token);dv=data.dv;rec=data.recSize;base=16;
-      }else if(q.sourceType==='top'&&rules.length===0){
-        var direct=materializeFirst(data,q,m,Math.min(limit,fullRows||data.rows));return {rows:direct,scanned:fullRows||data.rows,matched:fullRows||data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
+      matchedOverride=fullRows;
+      if(q.sourceType==='top'&&rules.length===0){
+        var direct=materializeFirst(data,q,m,Math.min(limit,data.rows));
+        return {rows:direct,scanned:fullRows,matched:fullRows,ms:performance.now()-started,info:data.info,sourceType:'top'};
       }
     }else if(q.sourceType==='top'&&noFilters&&rules.length===0){
-      var directFallback=materializeFirst(data,q,m,limit);return {rows:directFallback,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
+      var directFallback=materializeFirst(data,q,m,Math.min(limit,data.rows));
+      return {rows:directFallback,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
     }
 
     for(var idx=0;idx<data.rows;idx++,base+=rec){
@@ -106,7 +100,7 @@
     }
     heap.sort(function(a,b){return better(dv,a,b,rules)?-1:(better(dv,b,a,rules)?1:0);});
     var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),data.info.file);});
-    return {rows:rows,scanned:data.rows,matched:matched,ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
+    return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
   }
   self.onmessage=function(ev){var d=ev.data||{};if(d.type==='clear'){buffers.clear();return;}if(d.type!=='search')return;var token=d.token;search(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});};
 })();
