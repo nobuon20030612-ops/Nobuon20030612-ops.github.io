@@ -35,10 +35,10 @@
     if(q.sourceType==='top')return m.top&&m.top[mode]&&m.top[mode][c]&&m.top[mode][c][f];
     return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];
   }
+  function fullDatasetInfo(m,q){var c=String(Number(q.count)||0),f=String(q.formation||''),mode=q.mode==='grade3'?'grade3':'normal';return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];}
   function cacheKey(q,info){return [q.mode||'normal',q.sourceType||'full',q.count,q.formation,q.sortStat||'',info&&info.file||''].join('|');}
   function evictIfNeeded(keep){
-    var total=0;buffers.forEach(function(v){total+=v.rawBytes||0;});
-    if(total<=MAX_RAW_CACHE)return;
+    var total=0;buffers.forEach(function(v){total+=v.rawBytes||0;});if(total<=MAX_RAW_CACHE)return;
     var arr=[];buffers.forEach(function(v,k){if(k!==keep)arr.push([k,v.last||0,v.rawBytes||0]);});arr.sort(function(a,b){return a[1]-b[1];});
     for(var i=0;i<arr.length&&total>MAX_RAW_CACHE;i++){var v=buffers.get(arr[i][0]);if(v){total-=v.rawBytes||0;buffers.delete(arr[i][0]);}}
   }
@@ -68,19 +68,45 @@
     var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='grade3'?'等級3以下ON':'通常',bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:'',bond_ids:bonds.join('|'),bond_names:bonds.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
     Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);return row;
   }
+  function materializeFirst(data,q,m,limit){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,data.info.file));return rows;}
+
   async function search(q,token){
     var started=performance.now(),m=await loadManifest(),data=await loadData(q,token),dv=data.dv,rec=data.recSize;
     var owned=idsFromNames(q.ownedNames,m),excluded=idsFromNames(q.excludedNames,m);if(owned.some(function(x){return x<0;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info};excluded=excluded.filter(function(x){return x>=0;});
     var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
-    var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||300)||300),heap=[],matched=0,base=16;
-    if(q.sourceType==='top'&&owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null&&rules.length===0){var direct=[];for(var di=0,dbase=16;di<data.rows&&di<limit;di++,dbase+=rec)direct.push(materialize(dv,dbase,q,m,di,data.info.file));return {rows:direct,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};}
+    var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
+    var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
+
+    /* Phase1互換: 既存の小型Top300/優先Top300を先に即表示し、301〜500件目は全件compact DBからバックグラウンド拡張する。
+       Top DBと全件DBの件数が矛盾する旧シード系データは、正しいHIT件数を優先して全件DBへ切り替える。 */
+    if(q.sourceType!=='full'&&fullInfo&&noFilters){
+      var fullRows=Number(fullInfo.rows||0);
+      if(fullRows<data.rows){
+        /* 既存Topに検索シードが含まれるケースは、現行表示件数を変えない。 */
+        var seeded=materializeFirst(data,q,m,Math.min(limit,data.rows));return {rows:seeded,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:q.sourceType};
+      }else if(fullRows<=limit&&data.rows!==fullRows){
+        var fqSmall=Object.assign({},q,{sourceType:'full',sortStat:''});
+        data=await loadData(fqSmall,token);dv=data.dv;rec=data.recSize;base=16;
+      }else if(data.rows<limit&&fullRows>data.rows){
+        var partialRows=materializeFirst(data,q,m,Math.min(limit,data.rows));
+        self.postMessage({type:'partial',token:token,result:{rows:partialRows,scanned:fullRows,matched:fullRows,ms:performance.now()-started,info:data.info,sourceType:q.sourceType,partial:true}});
+        var fq=Object.assign({},q,{sourceType:'full',sortStat:''});
+        data=await loadData(fq,token);dv=data.dv;rec=data.recSize;base=16;
+      }else if(q.sourceType==='top'&&rules.length===0){
+        var direct=materializeFirst(data,q,m,Math.min(limit,fullRows||data.rows));return {rows:direct,scanned:fullRows||data.rows,matched:fullRows||data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
+      }
+    }else if(q.sourceType==='top'&&noFilters&&rules.length===0){
+      var directFallback=materializeFirst(data,q,m,limit);return {rows:directFallback,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
+    }
+
     for(var idx=0;idx<data.rows;idx++,base+=rec){
       var ok=true;for(var oi=0;oi<owned.length&&ok;oi++)if(!hasHero(dv,base,owned[oi]))ok=false;for(var ei=0;ei<excluded.length&&ok;ei++)if(hasHero(dv,base,excluded[ei]))ok=false;
       if(ok&&f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>f4max)ok=false;}for(var ti=0;ti<thresholds.length&&ok;ti++)if(statAt(dv,base,thresholds[ti].stat)<thresholds[ti].v)ok=false;if(!ok)continue;matched++;
       if(heap.length<limit)heapPush(heap,base,dv,rules);else if(better(dv,base,heap[0],rules)){heap[0]=base;heapDown(heap,0,dv,rules);}
     }
     heap.sort(function(a,b){return better(dv,a,b,rules)?-1:(better(dv,b,a,rules)?1:0);});
-    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),data.info.file);});return {rows:rows,scanned:data.rows,matched:matched,ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
+    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),data.info.file);});
+    return {rows:rows,scanned:data.rows,matched:matched,ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
   }
   self.onmessage=function(ev){var d=ev.data||{};if(d.type==='clear'){buffers.clear();return;}if(d.type!=='search')return;var token=d.token;search(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});};
 })();
