@@ -15,7 +15,6 @@
   var modalMode = 'all';
   var activeBondNames = [];
   var activeCalculatedResult = null;
-  var lockedActiveCard = null;
 
   // SAFE_ACTIVE_FORMATION_V1
   var ACTIVE_FORMATION_VIEW = {
@@ -84,10 +83,218 @@
       document.body.classList.toggle('jinpoFormationSelected', !!currentFormationName());
     }catch(e){}
   }
+  function clearAppliedDbVisualState(){
+    try{ if(typeof clearAppliedDbRowDisplay === 'function') clearAppliedDbRowDisplay(); }catch(e){}
+    try{ if(typeof window.clearAppliedPreviewUnderFormation === 'function') window.clearAppliedPreviewUnderFormation(); }catch(e){}
+    try{
+      document.querySelectorAll('#dbFormationList tr.jinpoCurrentAppliedMainRow').forEach(function(row){ row.classList.remove('jinpoCurrentAppliedMainRow'); });
+      document.querySelectorAll('#dbFormationList tr.jinpoCurrentAppliedStatRow').forEach(function(row){ row.classList.remove('jinpoCurrentAppliedStatRow'); });
+    }catch(e){}
+  }
+  function clearTransientAppliedDbState(){
+    /* 編成・陣形・マスターの基準が変わった時、以前のDB適用状態を絶対に持ち越さない。
+       表示だけでなく、総合値・鬼神石等が参照する内部行も同時に破棄する。 */
+    try{ selectedDbResultId = ''; }catch(e){}
+    try{ window.selectedDbResultId = ''; }catch(e){}
+    /* 状態変更前に開始した差替後の非同期DB完全照合を必ず失効させる。 */
+    try{ window.__jinpoReachExactLookupSeq = Number(window.__jinpoReachExactLookupSeq || 0) + 1; }catch(e){}
+    /* 旧ホットフィックスが暗黙グローバル currentAppliedDbRow も参照するため、
+       __付き4種だけでなくこちらも必ず破棄する。 */
+    try{ currentAppliedDbRow = null; }catch(e){}
+    try{ window.currentAppliedDbRow = null; }catch(e){}
+    try{
+      window.__currentAppliedDbRow = null;
+      window.__lastReachAppliedDbRow = null;
+      window.__jinpoExactAppliedDbRow = null;
+      window.__jinpoBonusBaseDbRow = null;
+    }catch(e){}
+    clearAppliedDbVisualState();
+  }
+  function placementIdentitySignature(){
+    var p=null;
+    try{ p=(typeof placement!=='undefined'&&placement)?placement:null; }catch(e){}
+    if(!p) try{ p=window.placement||null; }catch(e){}
+    if(!p) return '';
+    var out=[];
+    for(var i=1;i<=6;i++){
+      var h=p[i]||null;
+      out.push(text(h&&(h.internal_id||h.id||h.ID||h['internal_id']||h['英傑名']||h['名前']||h.name)));
+    }
+    return out.join('|');
+  }
+  function clearStaleAppliedRefsAfterReachSwap(){
+    /* 差替えで編成が変わった瞬間、前編成のDB行を補正元として残さない。
+       新しいselectedDbResultId / __lastReachAppliedDbRow と、新しいlookup sequenceは保持する。 */
+    try{ currentAppliedDbRow = null; }catch(e){}
+    try{ window.currentAppliedDbRow = null; }catch(e){}
+    try{ window.__currentAppliedDbRow = null; }catch(e){}
+    try{ window.__jinpoExactAppliedDbRow = null; }catch(e){}
+    try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
+    clearAppliedDbVisualState();
+  }
+  function installReachSwapAppliedStateGuard(){
+    var current=window.applyReachSwapCandidate;
+    if(typeof current!=='function' || current.__jinpoAppliedStateGuardWrapped) return;
+    function guardedApplyReachSwapCandidate(){
+      var before=placementIdentitySignature();
+      var ret=current.apply(this,arguments);
+      var after=placementIdentitySignature();
+      /* 本体は有効な差替えだけplacementを同期的に変更する。
+         無効/重複候補では既存の正しい適用状態を消さない。 */
+      if(after && after!==before) clearStaleAppliedRefsAfterReachSwap();
+      return ret;
+    }
+    guardedApplyReachSwapCandidate.__jinpoAppliedStateGuardWrapped=true;
+    guardedApplyReachSwapCandidate.__jinpoAppliedStateGuardOriginal=current;
+    window.applyReachSwapCandidate=guardedApplyReachSwapCandidate;
+    try{ applyReachSwapCandidate=guardedApplyReachSwapCandidate; }catch(e){}
+  }
+  function sameIdentitySet(a,b){
+    var aa=(Array.isArray(a)?a:[]).map(text).filter(Boolean).sort();
+    var bb=(Array.isArray(b)?b:[]).map(text).filter(Boolean).sort();
+    if(aa.length!==bb.length) return false;
+    for(var i=0;i<aa.length;i++) if(aa[i]!==bb[i]) return false;
+    return true;
+  }
+  function currentPlacementObject(){
+    try{ if(typeof placement!=='undefined' && placement) return placement; }catch(e){}
+    try{ return window.placement||null; }catch(e){ return null; }
+  }
+  function currentPlacementIds(source){
+    var p=source||currentPlacementObject(),out=[];
+    if(!p) return out;
+    for(var i=1;i<=6;i++) out.push(text(p[i]&&(p[i].internal_id||p[i].id||p[i].ID||p[i]['internal_id'])));
+    return out;
+  }
+  function currentPlacementNames(source){
+    var p=source||currentPlacementObject(),out=[];
+    if(!p) return out;
+    for(var i=1;i<=6;i++){
+      var h=p[i]||null,raw=text(h&&(h['英傑名']||h['名前']||h.name));
+      try{ out.push(typeof canonicalHeroName==='function'?text(canonicalHeroName(raw)):normalize(raw)); }
+      catch(e){ out.push(normalize(raw)); }
+    }
+    return out;
+  }
+  function rowFormationMatchesCurrentFallback(row,formation){
+    if(!row||!formation) return false;
+    try{
+      if(typeof dbRowFormations==='function'){
+        var forms=dbRowFormations(row).map(canonicalFormation).filter(Boolean);
+        if(forms.indexOf(formation)>=0) return true;
+      }
+    }catch(e){}
+    var raw=text(row.formation||row.form||row['陣形']);
+    if(!raw) return true;
+    if(formation==='衡軛') return /衡軛|衝軛|kogaku|kougaku/i.test(raw);
+    if(formation==='鶴翼') return /鶴翼|kakuyoku/i.test(raw);
+    if(formation==='魚鱗') return /魚鱗|gyorin/i.test(raw);
+    if(formation==='方円') return /方円|hoen/i.test(raw);
+    return false;
+  }
+  function dbRowMatchesCurrentRuntimeState(row){
+    if(!row) return false;
+    /* ランタイムマスター差替え中は事前生成DB値を一切描画しない。 */
+    if(currentRuntimeOverrideActive()) return false;
+    var p=currentPlacementObject(),formation=currentFormationName();
+    if(!p||!formation) return false;
+    var ids=currentPlacementIds(p);
+    if(ids.length!==6||ids.some(function(v){return !v;})||new Set(ids).size!==6) return false;
+    var result=currentCalculatedResult();
+    if(!result) return false;
+    /* 本体の完全照合関数がある場合は、それを唯一の照合規則として優先する。 */
+    try{
+      if(typeof dbRowMatchesReachState==='function'){
+        var sel=document.getElementById('formationSelect');
+        var rawFormation=text(sel&&sel.value)||formation;
+        return !!dbRowMatchesReachState(row,p,result,rawFormation);
+      }
+    }catch(e){ console.error('DB行の現在状態照合失敗',e); }
+    /* 旧版互換fallback。ID集合＋陣形＋因縁数を最低条件にする。 */
+    var rowIds=[];
+    try{ if(typeof dbRowInternalIds==='function') rowIds=dbRowInternalIds(row).map(text).filter(Boolean); }catch(e){}
+    if(!rowIds.length) rowIds=text(row.eiketsu_internal_ids).split('|').map(text).filter(Boolean);
+    if(rowIds.length===6){
+      if(!sameIdentitySet(rowIds,ids)) return false;
+    }else{
+      var currentNames=currentPlacementNames(p),rowNames=[];
+      try{
+        if(typeof dbRowMembers==='function') rowNames=dbRowMembers(row).map(function(v){
+          try{return typeof canonicalHeroName==='function'?text(canonicalHeroName(v)):normalize(v);}catch(e){return normalize(v);}
+        }).filter(Boolean);
+      }catch(e){}
+      if(!rowNames.length) rowNames=text(row.eiketsu_names||row.eiketsu_ids||row.members).split('|').map(normalize).filter(Boolean);
+      if(rowNames.length!==6||!sameIdentitySet(rowNames,currentNames)) return false;
+    }
+    if(!rowFormationMatchesCurrentFallback(row,formation)) return false;
+    var expected=(result.activated||[]).map(function(a){return text(a&&a.name);}).filter(Boolean);
+    var rowCountRaw=(row.bond_count!=null&&text(row.bond_count)!=='')?row.bond_count:row.ic;
+    if(rowCountRaw!=null&&text(rowCountRaw)!==''&&Number(rowCountRaw)!==expected.length) return false;
+    var rowNamesRaw=text(row.bond_names);
+    if(rowNamesRaw){
+      var rowBonds=rowNamesRaw.split('|').map(text).filter(Boolean);
+      if(!sameIdentitySet(rowBonds,expected)) return false;
+    }
+    return true;
+  }
+  function installDbRowRenderStateGuard(){
+    var current=window.renderRealtimeTotalStatsFromReachDbRow;
+    if(typeof current!=='function'||current.__jinpoCurrentStateGuardWrapped) return;
+    function guardedRenderRealtimeTotalStatsFromReachDbRow(row){
+      /* setTimeoutで残った旧DB行を、状態変更後の総合値へ再描画させない。 */
+      if(!dbRowMatchesCurrentRuntimeState(row)) return false;
+      return current.apply(this,arguments);
+    }
+    guardedRenderRealtimeTotalStatsFromReachDbRow.__jinpoCurrentStateGuardWrapped=true;
+    guardedRenderRealtimeTotalStatsFromReachDbRow.__jinpoCurrentStateGuardOriginal=current;
+    window.renderRealtimeTotalStatsFromReachDbRow=guardedRenderRealtimeTotalStatsFromReachDbRow;
+    try{ renderRealtimeTotalStatsFromReachDbRow=guardedRenderRealtimeTotalStatsFromReachDbRow; }catch(e){}
+  }
+  var reachCandidateCacheInvalidationSeq=0;
+  function invalidateReachCandidateCacheAfterMasterChange(){
+    /* step66のprivate cache keyは因縁マスター内容を含まない。
+       マスター差替え時だけ一時的な存在しない除外IDをkeyへ混ぜ、
+       直後に通常keyへ戻して2回再計算させることでprivate cacheを確実に更新する。 */
+    var seq=++reachCandidateCacheInvalidationSeq;
+    try{
+      var modal=document.getElementById('step66ReachModal');
+      if(modal) modal.classList.remove('step66Open');
+    }catch(e){}
+    var currentGetter=null;
+    try{ currentGetter=window.__jinpoGetExcludedHeroInternalIds; }catch(e){}
+    var baseGetter=currentGetter;
+    while(baseGetter && baseGetter.__jinpoReachCacheTempOriginal!==undefined){
+      baseGetter=baseGetter.__jinpoReachCacheTempOriginal;
+    }
+    var sentinel='__JINPO_MASTER_CACHE_REV_'+seq+'__';
+    function tempGetter(){
+      var list=[];
+      try{ if(typeof baseGetter==='function'){ var raw=baseGetter(); if(Array.isArray(raw)) list=raw.slice(); } }catch(e){}
+      if(list.indexOf(sentinel)<0) list.push(sentinel);
+      return list;
+    }
+    tempGetter.__jinpoReachCacheTempOriginal=baseGetter;
+    try{ window.__jinpoGetExcludedHeroInternalIds=tempGetter; }catch(e){}
+    try{ window.__step66ReachCandidateMap={}; }catch(e){}
+    try{ if(typeof window.renderReachSlotOnlyUi==='function') window.renderReachSlotOnlyUi(); }catch(e){}
+    setTimeout(function(){
+      if(seq!==reachCandidateCacheInvalidationSeq) return;
+      try{
+        if(window.__jinpoGetExcludedHeroInternalIds===tempGetter){
+          if(typeof baseGetter==='function') window.__jinpoGetExcludedHeroInternalIds=baseGetter;
+          else delete window.__jinpoGetExcludedHeroInternalIds;
+        }
+      }catch(e){}
+      try{ window.__step66ReachCandidateMap={}; }catch(e){}
+      try{ if(typeof window.renderReachSlotOnlyUi==='function') window.renderReachSlotOnlyUi(); }catch(e){}
+    },60);
+  }
   function searchModelRowSignature(rows, kind){
     if(!Array.isArray(rows)) return '';
     var fields = kind === 'inen'
-      ? ['No','因縁名','因子1','因子2','因子3']
+      /* 因子だけでなく効果対象/段階もcompactステータスへ影響する。
+         効果欄だけの差替えを「標準と同じ」と誤判定して旧DBを使わない。 */
+      ? ['No','因縁名','因子1','因子2','因子3','特大','大','中','小']
       : ['internal_id','英傑名','コスト','生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性','因子1','因子2','因子3','因子4'];
     var normalized = rows.map(function(row){
       return fields.map(function(k){ return text(row && row[k]); });
@@ -363,7 +570,7 @@
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramSlot.is-hover{opacity:1;filter:none;border-color:#ffd75c;box-shadow:0 0 0 2px rgba(255,215,92,.22),0 0 24px rgba(255,194,61,.82),inset 0 0 14px rgba(255,204,70,.14);}',
       '.jinpoBondActiveCards{display:grid;gap:8px;padding:10px;max-height:470px;overflow:auto;}',
       '.jinpoBondActiveCard{border:1px solid rgba(231,189,92,.26);border-radius:11px;background:rgba(48,31,17,.74);padding:10px;cursor:default;outline:none;transition:border-color .14s ease,box-shadow .14s ease,background .14s ease,transform .14s ease;}',
-      '.jinpoBondActiveCard:hover,.jinpoBondActiveCard:focus-visible,.jinpoBondActiveCard.is-locked{border-color:#ffd75c;background:rgba(91,51,19,.74);box-shadow:0 0 18px rgba(255,203,70,.38);transform:translateY(-1px);}',
+      '.jinpoBondActiveCard:hover{border-color:#ffd75c;background:rgba(91,51,19,.74);box-shadow:0 0 18px rgba(255,203,70,.38);transform:translateY(-1px);}',
       '.jinpoBondActiveCardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}',
       '.jinpoBondActiveCardTitle{display:flex;align-items:center;gap:10px;min-width:0;}',
       '.jinpoBondActiveCardNo{display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;width:34px;height:34px;box-sizing:border-box;border:2px solid #fff0a8;border-radius:50%;background:#ffd75c;color:#211507;font-size:19px;font-weight:1000;line-height:1;box-shadow:0 0 12px rgba(255,215,92,.58);}',
@@ -372,7 +579,6 @@
       '.jinpoBondActiveLine{margin:4px 0 7px;color:#ffd75c;font-size:14px;font-weight:900;letter-spacing:.02em;}',
       '.jinpoBondActiveNoLine{color:#bba985;font-weight:700;}',
       '.jinpoBondActiveCard .jinpoBondFactors{margin-top:4px;}',
-      '.jinpoBondActiveCardHelp{padding:0 10px 10px;color:#bfae89;font-size:11px;line-height:1.45;}',
       '@media(max-width:980px){.jinpoBondActiveLayout{grid-template-columns:1fr}.jinpoBondFormationDiagram{height:410px;min-height:410px}.jinpoBondActiveCards{max-height:none}}',
       '@media(max-width:560px){.jinpoBondModalHeader{padding:11px 10px}.jinpoBondModalHeader h3{font-size:18px}#jinpoBondModalClose{min-width:92px;height:40px;padding:0 10px;gap:6px;font-size:13px}#jinpoBondModalClose .jinpoBondCloseIcon{width:20px;height:20px;font-size:18px}}',
       '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px;padding-top:10px}.jinpoBondFormationDiagram{height:340px;min-height:340px;margin:6px}.jinpoBondDiagramSlot{width:105px;min-height:56px;padding:5px 4px}.jinpoBondDiagramSlot strong{font-size:12px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:10px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;max-height:18px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
@@ -829,26 +1035,11 @@
   }
 
   function bindActiveCardHighlight(){
-    lockedActiveCard = null;
     var body = document.getElementById('jinpoBondModalBody');
     if(!body) return;
     Array.prototype.forEach.call(body.querySelectorAll('.jinpoBondActiveCard'),function(card){
-      card.addEventListener('mouseenter',function(){ if(!lockedActiveCard) applyCardHighlight(card); });
-      card.addEventListener('mouseleave',function(){ if(!lockedActiveCard) clearDiagramHighlight(); });
-      card.addEventListener('focus',function(){ if(!lockedActiveCard) applyCardHighlight(card); });
-      card.addEventListener('blur',function(){ if(!lockedActiveCard) clearDiagramHighlight(); });
-      card.addEventListener('click',function(){
-        if(lockedActiveCard === card){
-          card.classList.remove('is-locked');
-          lockedActiveCard = null;
-          clearDiagramHighlight();
-          return;
-        }
-        if(lockedActiveCard) lockedActiveCard.classList.remove('is-locked');
-        lockedActiveCard = card;
-        card.classList.add('is-locked');
-        applyCardHighlight(card);
-      });
+      card.addEventListener('mouseenter',function(){ applyCardHighlight(card); });
+      card.addEventListener('mouseleave',function(){ clearDiagramHighlight(); });
     });
   }
 
@@ -861,7 +1052,7 @@
       var lineIds = unique(lines.map(lineId));
       var slots = unique([].concat.apply([],lines).map(function(n){return String(Number(n));})).map(Number);
       var lineText = lines.length ? lines.map(lineDisplay).join(' / ') : '成立位置を再計算できませんでした';
-      return '<article class="jinpoBondActiveCard" tabindex="0" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'">'+
+      return '<article class="jinpoBondActiveCard" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'">'+
         '<div class="jinpoBondActiveCardHead"><div class="jinpoBondActiveCardTitle"><span class="jinpoBondActiveCardNo" aria-label="'+(index+1)+'番目">'+(index+1)+'</span><div class="jinpoBondActiveCardName">'+esc(row['因縁名'] || '')+'</div></div><div class="jinpoBondActiveCardKind">'+esc(row['因縁種類'] || '')+'</div></div>'+
         '<div class="jinpoBondActiveLine '+(lines.length?'':'jinpoBondActiveNoLine')+'">成立ライン '+esc(lineText)+'</div>'+
         '<div class="jinpoBondFactors">'+factors.map(function(f){ return '<span class="jinpoBondFactor">'+esc(f)+'</span>'; }).join('')+'</div>'+
@@ -869,13 +1060,12 @@
     }).join('');
     return '<div class="jinpoBondActiveLayout">'+
       '<section class="jinpoBondFormationPanel">'+
-        '<div class="jinpoBondFormationHead"><strong>現在の陣形図'+(formation?'：'+esc(formation):'')+'</strong><span class="jinpoBondFormationHint">右の因縁にカーソルを合わせると対応ラインが光ります</span></div>'+
+        '<div class="jinpoBondFormationHead"><strong>現在の陣形図'+(formation?'：'+esc(formation):'')+'</strong><span class="jinpoBondFormationHint">右の因縁にカーソルを合わせている間、対応ラインが光ります</span></div>'+
         renderFormationDiagram()+
       '</section>'+
       '<section class="jinpoBondActiveListPanel">'+
         '<div class="jinpoBondActiveListHead"><strong>発動中因縁</strong><span class="jinpoBondModalCount">'+rows.length+'件</span></div>'+
         '<div class="jinpoBondActiveCards">'+cards+'</div>'+
-        '<div class="jinpoBondActiveCardHelp">PCはカーソル、タッチ操作では因縁をタップすると対応ラインを固定表示できます。もう一度タップすると解除します。</div>'+
       '</section>'+
     '</div>';
   }
@@ -926,7 +1116,6 @@
     modalMode = requestMode;
     activeCalculatedResult = null;
     activeBondNames = [];
-    lockedActiveCard = null;
     var title = document.getElementById('jinpoBondModalTitle');
     var input = document.getElementById('jinpoBondSearch');
     var body = document.getElementById('jinpoBondModalBody');
@@ -965,7 +1154,6 @@
     ++modalOpenToken;
     var backdrop = document.getElementById('jinpoBondModalBackdrop');
     if(!backdrop) return;
-    lockedActiveCard = null;
     clearDiagramHighlight();
     backdrop.classList.remove('is-open');
     backdrop.setAttribute('aria-hidden','true');
@@ -1078,8 +1266,7 @@
     if(next !== null){
       try{ placement = next; }catch(e){ throw new Error('配置復元に失敗しました'); }
     }
-    try{ selectedDbResultId = ''; }catch(e){}
-    try{ if(typeof clearAppliedDbRowDisplay === 'function') clearAppliedDbRowDisplay(); }catch(e){}
+    clearTransientAppliedDbState();
     try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
     try{ if(typeof renderFormation === 'function') renderFormation(null); }catch(e){}
     try{ if(typeof calculate === 'function') calculate(); }catch(e){ console.error('共有編成の再計算失敗',e); }
@@ -1263,7 +1450,9 @@
         var ok=applyInen.apply(this,arguments);
         if(ok!==false){
           try{ if(typeof inenMaster!=='undefined' && Array.isArray(inenMaster)){ bondMasterCache=inenMaster.slice(); } }catch(e){ bondMasterCache=null; }
-          activeCalculatedResult=null; activeBondNames=[]; lockedActiveCard=null;
+          activeCalculatedResult=null; activeBondNames=[];
+          clearTransientAppliedDbState();
+          invalidateReachCandidateCacheAfterMasterChange();
           syncRuntimeOverrideSearchState();
           try{
             var modal=document.getElementById('jinpoBondModalBackdrop');
@@ -1281,7 +1470,12 @@
     if(typeof applyHero==='function' && !applyHero.__jinpoSearchSafetyWrapped){
       function guardedApplyEiketsuMasterRows(){
         var ok=applyHero.apply(this,arguments);
-        if(ok!==false){ syncRuntimeOverrideSearchState(); scheduleOwnedHeroJobMetaFix(); }
+        if(ok!==false){
+          clearTransientAppliedDbState();
+          invalidateReachCandidateCacheAfterMasterChange();
+          syncRuntimeOverrideSearchState();
+          scheduleOwnedHeroJobMetaFix();
+        }
         return ok;
       }
       guardedApplyEiketsuMasterRows.__jinpoSearchSafetyWrapped=true;
@@ -1293,12 +1487,36 @@
   function installSavedFormationRefreshGuard(){
     if(window.__jinpoSavedFormationRefreshGuardInstalled) return;
     window.__jinpoSavedFormationRefreshGuardInstalled=true;
+    /* 保存読込handlerはその場でcalculate()まで実行するため、
+       旧DB補正がそのcalculateへ混ざらないようcapture段階で先に破棄する。 */
+    document.addEventListener('click',function(ev){
+      var btn=ev.target&&ev.target.closest?ev.target.closest('#savedFormations [data-load]'):null;
+      if(btn) clearTransientAppliedDbState();
+    },true);
     document.addEventListener('click',function(ev){
       var btn=ev.target&&ev.target.closest?ev.target.closest('#savedFormations [data-load]'):null;
       if(!btn) return;
-      /* 既存の読込handlerがplacement/formationを更新した直後に、検索一覧も同じ陣形へ揃える。 */
-      setTimeout(function(){ syncFormationUiState(); refreshFormationDependentSearchUi(); },0);
+      /* 既存handlerがplacement/formationを更新した直後に検索/UIを新状態へ揃える。 */
+      setTimeout(function(){
+        syncFormationUiState();
+        refreshFormationDependentSearchUi();
+      },0);
     },false);
+  }
+
+  function installDirectStateResetGuards(){
+    if(window.__jinpoDirectStateResetGuardsInstalled) return;
+    window.__jinpoDirectStateResetGuardsInstalled=true;
+    function onFormationReset(ev){
+      var t=ev && ev.target;
+      if(t && t.id==='formationSelect') clearTransientAppliedDbState();
+    }
+    document.addEventListener('change',onFormationReset,true);
+    document.addEventListener('input',onFormationReset,true);
+    document.addEventListener('click',function(ev){
+      var t=ev && ev.target && ev.target.closest ? ev.target.closest('#clearBtn') : null;
+      if(t) clearTransientAppliedDbState();
+    },true);
   }
 
   function installDbApplyDuplicateGuard(){
@@ -1330,9 +1548,12 @@
     installActivationDuplicateGuard();
     installFormationRenderGuard();
     installDbApplyDuplicateGuard();
+    installReachSwapAppliedStateGuard();
+    installDbRowRenderStateGuard();
     installRuntimeMasterOverrideGuards();
     installPrecomputedSearchOverrideGuard();
     installSavedFormationRefreshGuard();
+    installDirectStateResetGuards();
     installShareStateGuard();
     installShareRecoveryCancelGuard();
     syncFormationUiState();
