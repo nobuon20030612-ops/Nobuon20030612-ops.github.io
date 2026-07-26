@@ -548,10 +548,11 @@
     }
     return [];
   }
-  function calculationFormationConfig(formation){
-    var source = (window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation]) || {};
+  function calculationFormationConfig(formation, sourceMap){
+    var map = sourceMap && typeof sourceMap === 'object' ? sourceMap : window.JINPO_FORMATION_CONFIG;
+    var source = (map && map[formation]) || (window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation]) || {};
     var canonical = ACTIVE_FORMATION_VIEW[formation];
-    if(!canonical) return window.JINPO_FORMATION_CONFIG;
+    if(!canonical) return map || window.JINPO_FORMATION_CONFIG;
     var one = {};
     Object.keys(source || {}).forEach(function(k){ one[k] = source[k]; });
     /* 表示用の補助線が将来増えても、因縁判定は3人ラインだけに固定する。 */
@@ -559,6 +560,14 @@
     var out = {};
     out[formation] = one;
     return out;
+  }
+  function restoreCanonicalCalculationLines(){
+    var map = window.JINPO_FORMATION_CONFIG;
+    if(!map || typeof map !== 'object') return;
+    Object.keys(ACTIVE_FORMATION_VIEW).forEach(function(formation){
+      if(!map[formation]) return;
+      map[formation].activeLines = ACTIVE_FORMATION_VIEW[formation].lines.map(function(line){ return line.slice(); });
+    });
   }
   function currentCalculatedResult(master){
     try{
@@ -864,6 +873,130 @@
     if(ev.target && (ev.target.id === 'ownedHeroReliableJob' || ev.target.id === 'ownedHeroReliableFactor')) scheduleOwnedHeroJobMetaFix();
   },true);
 
+  function currentMasterRowsSafe(){
+    try{ if(typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)) return eiketsuMaster; }catch(e){}
+    return [];
+  }
+  function currentPlacementSafe(){
+    try{ if(typeof placement !== 'undefined' && placement) return placement; }catch(e){}
+    return {};
+  }
+  function safeCurrentFormationState(){
+    var p = currentPlacementSafe();
+    return {
+      formation: currentFormationName() || '',
+      slots: [1,2,3,4,5,6].map(function(slot){
+        var h = p[slot] || null;
+        return h ? text(h.internal_id || h.id || h['番号'] || '') || null : null;
+      })
+    };
+  }
+  function safeApplyShareState(state){
+    if(!state || typeof state !== 'object') throw new Error('共有編成データが不正です');
+    var requested = text(state.formation);
+    var formation = requested ? canonicalFormation(requested) : currentFormationName();
+    if(requested && !formation) throw new Error('未対応の陣形です: ' + requested);
+    var sel = document.getElementById('formationSelect');
+    if(formation && sel){
+      var has = Array.prototype.some.call(sel.options || [],function(opt){ return text(opt.value) === formation; });
+      if(!has) throw new Error('陣形選択肢が未準備です: ' + formation);
+    }
+
+    var next = null;
+    if(Array.isArray(state.slots)){
+      if(state.slots.length > 6) throw new Error('共有編成の枠数が不正です');
+      var master = currentMasterRowsSafe();
+      if(!master.length) throw new Error('英傑マスタ読込前です');
+      var byId = new Map();
+      master.forEach(function(hero){
+        var id = text(hero && (hero.internal_id || hero.id || hero['番号']));
+        if(id && !byId.has(id)) byId.set(id,hero);
+      });
+      next = {};
+      var seen = new Set();
+      state.slots.forEach(function(rawId,index){
+        if(!rawId) return;
+        var id = text(rawId) === 'EIK_0125' ? 'EIK_0246' : text(rawId);
+        if(!id) return;
+        if(seen.has(id)) throw new Error('共有編成に同一英傑が重複しています: ' + id);
+        var hero = byId.get(id);
+        if(!hero) throw new Error('共有編成の英傑が現在のマスタに存在しません: ' + id);
+        next[index+1] = hero;
+        seen.add(id);
+      });
+    }
+
+    /* 全検証が通ってから画面状態を一括更新し、途中状態を残さない。 */
+    if(formation && sel) sel.value = formation;
+    if(next !== null){
+      try{ placement = next; }catch(e){ throw new Error('配置復元に失敗しました'); }
+    }
+    try{ selectedDbResultId = ''; }catch(e){}
+    try{ if(typeof clearAppliedDbRowDisplay === 'function') clearAppliedDbRowDisplay(); }catch(e){}
+    try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
+    try{ if(typeof renderFormation === 'function') renderFormation(null); }catch(e){}
+    try{ if(typeof calculate === 'function') calculate(); }catch(e){ console.error('共有編成の再計算失敗',e); }
+    return true;
+  }
+  function installShareStateGuard(){
+    window.currentFormationState = safeCurrentFormationState;
+    window.applyShareState = safeApplyShareState;
+  }
+  function decodeShareStateSafe(code){
+    try{
+      if(typeof window.decodeShareState === 'function') return window.decodeShareState(code);
+    }catch(e){}
+    return JSON.parse(decodeURIComponent(escape(atob(code))));
+  }
+  function sharePrerequisitesReady(){
+    var sel = document.getElementById('formationSelect');
+    var master = currentMasterRowsSafe();
+    var bonds = [];
+    try{ if(typeof inenMaster !== 'undefined' && Array.isArray(inenMaster)) bonds = inenMaster; }catch(e){}
+    return !!(sel && sel.options && sel.options.length >= 5 && master.length && bonds.length);
+  }
+  function cancelPendingShareUrlRecovery(){
+    if(window.__jinpoShareUrlRecoveryScheduled && !window.__jinpoShareUrlRecovered){
+      window.__jinpoShareUrlRecoveryCancelled = true;
+    }
+  }
+  function installShareRecoveryCancelGuard(){
+    if(window.__jinpoShareRecoveryCancelGuardInstalled) return;
+    window.__jinpoShareRecoveryCancelGuardInstalled = true;
+    document.addEventListener('pointerdown',cancelPendingShareUrlRecovery,true);
+    document.addEventListener('keydown',cancelPendingShareUrlRecovery,true);
+  }
+  function recoverShareUrlAfterInit(){
+    if(window.__jinpoShareUrlRecoveryScheduled) return;
+    var code = '';
+    try{ code = new URLSearchParams(location.search).get('f') || ''; }catch(e){}
+    if(!code) return;
+    window.__jinpoShareUrlRecoveryScheduled = true;
+    window.__jinpoShareUrlRecoveryCancelled = false;
+    var attempts = 0;
+    function tryRestore(){
+      if(window.__jinpoShareUrlRecoveryCancelled) return;
+      attempts += 1;
+      if(!sharePrerequisitesReady()){
+        if(attempts < 200) setTimeout(tryRestore,50);
+        else console.error('共有URL復元: マスタ読込完了を確認できませんでした');
+        return;
+      }
+      if(window.__jinpoShareUrlRecoveryCancelled) return;
+      try{
+        safeApplyShareState(decodeShareStateSafe(code));
+        window.__jinpoShareUrlRecovered = true;
+        var box = document.getElementById('shareStatus');
+        if(box) box.textContent = '共有URLから編成を復元しました';
+      }catch(e){
+        console.error('共有URL復元失敗',e);
+        var status = document.getElementById('shareStatus');
+        if(status) status.textContent = '共有URLの復元に失敗しました';
+      }
+    }
+    setTimeout(tryRestore,0);
+  }
+
   function placementHeroIdentity(hero){
     if(!hero) return '';
     return text(hero.internal_id || hero.id || hero['番号'] || '');
@@ -891,14 +1024,36 @@
     if(!engine || typeof engine.calculateFormation !== 'function') return;
     var current = engine.calculateFormation;
     if(current.__jinpoDuplicatePlacementGuardWrapped) return;
-    function guardedCalculateFormation(sourcePlacement){
+    function guardedCalculateFormation(sourcePlacement, formationName){
       var args = Array.prototype.slice.call(arguments);
       args[0] = sanitizedUniquePlacement(sourcePlacement);
+      var canonical = canonicalFormation(formationName);
+      if(canonical){
+        args[1] = canonical;
+        /* 全計算経路で表示用補助線を遮断し、因縁判定は必ず3人ラインだけにする。 */
+        args[3] = calculationFormationConfig(canonical, args[3]);
+      }
       return current.apply(this,args);
     }
     guardedCalculateFormation.__jinpoDuplicatePlacementGuardWrapped = true;
     guardedCalculateFormation.__jinpoDuplicatePlacementGuardOriginal = current;
     engine.calculateFormation = guardedCalculateFormation;
+  }
+
+  function installFormationRenderGuard(){
+    var current = window.renderFormation;
+    if(typeof current !== 'function' || current.__jinpoCanonicalLineRestoreWrapped) return;
+    function guardedRenderFormation(){
+      try{
+        return current.apply(this,arguments);
+      }finally{
+        /* renderFormation が鶴翼の見た目用2人線を activeLines に混ぜても計算設定へ残さない。 */
+        restoreCanonicalCalculationLines();
+      }
+    }
+    guardedRenderFormation.__jinpoCanonicalLineRestoreWrapped = true;
+    guardedRenderFormation.__jinpoCanonicalLineRestoreOriginal = current;
+    window.renderFormation = guardedRenderFormation;
   }
 
   function dbRowDuplicateHeroKeys(row){
@@ -946,8 +1101,13 @@
     injectStyle();
     ensureActions();
     ensureModal();
+    restoreCanonicalCalculationLines();
     installActivationDuplicateGuard();
+    installFormationRenderGuard();
     installDbApplyDuplicateGuard();
+    installShareStateGuard();
+    installShareRecoveryCancelGuard();
+    recoverShareUrlAfterInit();
     syncRecommendDecorFromSearch();
   }
 

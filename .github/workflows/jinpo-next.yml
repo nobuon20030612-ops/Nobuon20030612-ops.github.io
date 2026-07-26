@@ -5,7 +5,18 @@ on:
     branches:
       - main
     paths:
-      - '陣法/source-next/英傑一覧.csv'
+      - '.github/workflows/jinpo-next.yml'
+      - '陣法/source-next/**'
+      - '陣法/tools-next/**'
+      - '陣法/jinpo.html'
+      - '陣法/jinpo-bond-list.js'
+      - '陣法/jinpo-internal-save.js'
+      - '陣法/jinpo-fast-search.js'
+      - '陣法/jinpo-fast-search-worker.js'
+      - '陣法/jinpo-activation-engine.js'
+      - '陣法/jinpo-formation-config.js'
+      - '陣法/data/jinpo_inen_master.csv'
+      - '陣法/data/formation_bonus.csv'
   workflow_dispatch:
 
 permissions:
@@ -18,6 +29,8 @@ concurrency:
 
 jobs:
   build:
+    # 自動生成コミット自身では再実行しない。手動実行は常に許可する。
+    if: github.actor != 'github-actions[bot]' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -40,11 +53,22 @@ jobs:
       - name: 追加の回帰監査
         run: python "陣法/tools-next/audit_runtime_regressions.py"
 
+      - name: 一時監査レポートをコミット対象から除外
+        shell: bash
+        run: |
+          tracked_reports="$(git ls-files -- '陣法/_jinpo-next-report/**')"
+          if [ -n "$tracked_reports" ]; then
+            echo "陣法/_jinpo-next-report が追跡対象になっています。生成物の誤コミットを防ぐため停止します。" >&2
+            printf '%s\n' "$tracked_reports" >&2
+            exit 1
+          fi
+          rm -rf -- "陣法/_jinpo-next-report"
+
       - name: 変更確認
         id: diff
         shell: bash
         run: |
-          if git diff --quiet -- "陣法"; then
+          if [ -z "$(git status --porcelain -- "陣法")" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -57,6 +81,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- "陣法"
+          if git diff --cached --quiet; then
+            echo "コミット対象の差分なし"
+            exit 0
+          fi
           git commit -m "chore(陣法): 英傑一覧から検索DBを再生成"
           git push
 

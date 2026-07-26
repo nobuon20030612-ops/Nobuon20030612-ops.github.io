@@ -8,19 +8,49 @@
     const id = String(v || "");
     return id === "EIK_0125" ? "EIK_0246" : id;
   }
+  function canonicalFormationName(v){
+    const s = String(v || "").trim();
+    if(/衡軛|衝軛|kogaku|kougaku/i.test(s)) return "衡軛";
+    if(/鶴翼|kakuyoku/i.test(s)) return "鶴翼";
+    if(/魚鱗|gyorin/i.test(s)) return "魚鱗";
+    if(/方円|hoen/i.test(s)) return "方円";
+    return "";
+  }
   function migrateSavedItem(item){
     if(!item || typeof item !== "object") return item;
     if(Array.isArray(item.members)){
-      item.members = item.members.map(function(member){
-        if(!member || typeof member !== "object") return member;
+      const seenIds = new Set();
+      const seenSlots = new Set();
+      const cleanedMembers = [];
+      item.members.forEach(function(member){
+        if(!member || typeof member !== "object") return;
+        const slot = Number(member.slot);
+        /* 不正枠・重複枠は項目そのものを捨てる。
+           空IDを同じslotへ残すと、読込時に先の正常英傑をnullで上書きするため。 */
+        if(!Number.isInteger(slot) || slot < 1 || slot > 6 || seenSlots.has(slot)) return;
+        seenSlots.add(slot);
+        member.slot = slot;
         const oldId = String(member.internal_id || "");
         const newId = migrateLegacyHeroId(oldId);
         if(newId !== oldId){
           member.internal_id = newId;
           member.name = "竹中半兵衛(知将)";
         }
-        return member;
+        /* 同じ英傑が別枠に重複する旧データは、後ろ側だけ空枠化する。 */
+        if(newId && seenIds.has(newId)){
+          member.internal_id = ""; member.name = "";
+        }else if(newId){
+          seenIds.add(newId);
+        }
+        cleanedMembers.push(member);
       });
+      item.members = cleanedMembers;
+    }
+    /* 旧保存は formation、新UIは formationName を参照するため両方を常に同期する。 */
+    const formation = canonicalFormationName(item.formationName || item.formation);
+    if(formation){
+      item.formation = formation;
+      item.formationName = formation;
     }
     return item;
   }
@@ -29,8 +59,19 @@
       const raw = localStorage.getItem(KEY);
       const data = raw ? JSON.parse(raw) : [];
       if(!Array.isArray(data)) return [];
+      const before = JSON.stringify(data);
       const migrated = data.map(migrateSavedItem);
-      if(JSON.stringify(migrated) !== JSON.stringify(data)) write(migrated);
+      const seenSaveIds = new Set();
+      migrated.forEach(function(item){
+        if(!item || typeof item !== "object") return;
+        let id = String(item.id || "");
+        if(!id || seenSaveIds.has(id)){
+          id = makeSaveId();
+          item.id = id;
+        }
+        seenSaveIds.add(id);
+      });
+      if(JSON.stringify(migrated) !== before) write(migrated);
       return migrated;
     }catch(e){
       return [];
@@ -51,14 +92,24 @@
       };
     });
   }
+  let saveSequence = 0;
+  function makeSaveId(){
+    try{
+      if(typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+    }catch(e){}
+    saveSequence = (saveSequence + 1) % 1000000;
+    return String(Date.now()) + "-" + String(saveSequence) + "-" + Math.random().toString(36).slice(2,10);
+  }
   window.JinpoInternalSave = {
     getSaved: read,
     saveFormation: function(name, placement, formation){
       const list = read();
+      const canonical = canonicalFormationName(formation);
       const item = {
-        id: String(Date.now()),
+        id: makeSaveId(),
         name: String(name || "無題"),
-        formation: String(formation || ""),
+        formation: canonical,
+        formationName: canonical,
         members: membersFromPlacement(placement),
         savedAt: new Date().toISOString()
       };
