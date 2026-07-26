@@ -318,9 +318,28 @@ def validate_bond_js() -> None:
         "function cancelPendingShareUrlRecovery()",
         "window.__jinpoShareUrlRecoveryCancelled",
         "function syncFormationUiState()",
+        "function clearTransientAppliedDbState()",
+        "window.__currentAppliedDbRow = null;",
+        "window.__lastReachAppliedDbRow = null;",
+        "window.__jinpoExactAppliedDbRow = null;",
+        "window.__jinpoBonusBaseDbRow = null;",
+        "window.currentAppliedDbRow = null;",
+        "window.__jinpoReachExactLookupSeq = Number(window.__jinpoReachExactLookupSeq || 0) + 1;",
+        "function installReachSwapAppliedStateGuard()",
+        "function clearStaleAppliedRefsAfterReachSwap()",
+        "function installDbRowRenderStateGuard()",
+        "function dbRowMatchesCurrentRuntimeState(row)",
+        "__jinpoCurrentStateGuardWrapped",
+        "if(btn) clearTransientAppliedDbState();",
+        "function invalidateReachCandidateCacheAfterMasterChange()",
+        "__JINPO_MASTER_CACHE_REV_",
+        "#dbFormationList tr.jinpoCurrentAppliedMainRow",
+        "#dbFormationList tr.jinpoCurrentAppliedStatRow",
+        "function installDirectStateResetGuards()",
         "function refreshFormationDependentSearchUi()",
         "function validateInenOverrideStrict(rows)",
         "function installRuntimeMasterOverrideGuards()",
+        "['No','因縁名','因子1','因子2','因子3','特大','大','中','小']",
         "function installPrecomputedSearchOverrideGuard()",
         "function observePrecomputedSearchOverrideTargets()",
         "observer.observe(target,{childList:true,subtree:true});",
@@ -343,6 +362,13 @@ def validate_bond_js() -> None:
     for frag in ["現在適用中の組み合わせはありません。"]:
         if frag in text:
             fail(f"旧表示文言が復活: {frag}")
+    # 発動中因縁はホバー中だけライン発光。クリック固定や右下の固定案内は再導入しない。
+    for frag in ["lockedActiveCard", ".is-locked", "jinpoBondActiveCardHelp", "固定表示できます", "tabindex=\"0\" data-line-ids"]:
+        if frag in text:
+            fail(f"発動中因縁のクリック固定が復活: {frag}")
+    for frag in ["card.addEventListener('mouseenter'", "card.addEventListener('mouseleave'", "カーソルを合わせている間、対応ラインが光ります"]:
+        if frag not in text:
+            fail(f"発動中因縁のホバー専用動作が欠落: {frag}")
     # 本番jinpo.htmlはbody/html/document全体への広域MutationObserverを抑止する。
     # ここへ回帰するとfast-searchが再生成した検索ボタンの再無効化が動かなくなるため禁止する。
     forbidden_observer_targets = [
@@ -365,7 +391,7 @@ let src=fs.readFileSync(process.argv[1],'utf8');
 const end='\n})();';
 const i=src.lastIndexOf(end);
 if(i<0) throw new Error('outer IIFE end not found');
-const expose=`\nwindow.__BOND_TEST__={canonicalFormation,calculationFormationConfig,sanitizedUniquePlacement,installActivationDuplicateGuard,installFormationRenderGuard,safeApplyShareState,safeCurrentFormationState,restoreCanonicalCalculationLines,recoverShareUrlAfterInit,cancelPendingShareUrlRecovery,sharePrerequisitesReady,loadBondMaster,currentCalculatedResult,validateInenOverrideStrict,syncFormationUiState,refreshFormationDependentSearchUi};`;
+const expose=`\nwindow.__BOND_TEST__={canonicalFormation,calculationFormationConfig,sanitizedUniquePlacement,installActivationDuplicateGuard,installFormationRenderGuard,safeApplyShareState,safeCurrentFormationState,restoreCanonicalCalculationLines,recoverShareUrlAfterInit,cancelPendingShareUrlRecovery,sharePrerequisitesReady,loadBondMaster,currentCalculatedResult,validateInenOverrideStrict,syncFormationUiState,clearTransientAppliedDbState,refreshFormationDependentSearchUi,installReachSwapAppliedStateGuard,installDbRowRenderStateGuard,dbRowMatchesCurrentRuntimeState,invalidateReachCandidateCacheAfterMasterChange,placementIdentitySignature,currentRuntimeOverrideActive};`;
 src=src.slice(0,i)+expose+src.slice(i);
 const select={_value:'',options:[{value:''},{value:'衡軛'},{value:'鶴翼'},{value:'魚鱗'},{value:'方円'}]};
 Object.defineProperty(select,'value',{get(){return this._value},set(v){this._value=String(v)}});
@@ -391,11 +417,11 @@ function renderSlots(){}
 function renderFormation(){}
 function calculate(){calcCalls++}
 const timers=[];
-const ctx={window,document,console,eiketsuMaster,inenMaster,placement,selectedDbResultId,clearAppliedDbRowDisplay,renderSlots,renderFormation,calculate,
+const ctx={window,document,console,eiketsuMaster,inenMaster,standardEiketsuMaster:eiketsuMaster.slice(),standardInenMaster:inenMaster.map(x=>({...x})),placement,selectedDbResultId,clearAppliedDbRowDisplay,renderSlots,renderFormation,calculate,
  setTimeout(fn){timers.push(fn);return timers.length},clearTimeout(){},location:{search:''},URLSearchParams,Map,Set,JSON,Array,Object,String,Number,RegExp,Error,Promise};
 vm.createContext(ctx);
-const pre=`let eiketsuMaster=globalThis.eiketsuMaster; let inenMaster=globalThis.inenMaster; let placement=globalThis.placement; let selectedDbResultId=globalThis.selectedDbResultId; function clearAppliedDbRowDisplay(){return globalThis.clearAppliedDbRowDisplay()} function renderSlots(){return globalThis.renderSlots()} function renderFormation(){return globalThis.renderFormation()} function calculate(){globalThis.calcCalls=(globalThis.calcCalls||0)+1} `;
-vm.runInContext(pre+src+`\nglobalThis.__getPlacement=()=>placement; globalThis.__setPlacement=(v)=>{placement=v}; globalThis.__getSelected=()=>selectedDbResultId;`,ctx);
+const pre=`let eiketsuMaster=globalThis.eiketsuMaster; let inenMaster=globalThis.inenMaster; let standardEiketsuMaster=globalThis.standardEiketsuMaster; let standardInenMaster=globalThis.standardInenMaster; let placement=globalThis.placement; let selectedDbResultId=globalThis.selectedDbResultId; function clearAppliedDbRowDisplay(){return globalThis.clearAppliedDbRowDisplay()} function renderSlots(){return globalThis.renderSlots()} function renderFormation(){return globalThis.renderFormation()} function calculate(){globalThis.calcCalls=(globalThis.calcCalls||0)+1} `;
+vm.runInContext(pre+src+`\nglobalThis.__getPlacement=()=>placement; globalThis.__setPlacement=(v)=>{placement=v}; globalThis.__getSelected=()=>selectedDbResultId; globalThis.__setSelected=(v)=>{selectedDbResultId=v};`,ctx);
 /* source末尾のbootタイマーは単体行動テストでは不要。 */
 timers.length=0;
 const t=window.__BOND_TEST__;
@@ -403,6 +429,11 @@ function eq(a,b,msg){if(JSON.stringify(a)!==JSON.stringify(b)) throw new Error(m
 if(t.canonicalFormation('衝軛')!=='衡軛') throw new Error('alias failed');
 if(t.validateInenOverrideStrict([{'因縁名':'重複','因子1':'a','因子2':'b','因子3':'c'},{'因縁名':'重複','因子1':'x','因子2':'y','因子3':'z'}]).length===0) throw new Error('duplicate bond name accepted');
 if(t.validateInenOverrideStrict([{'因縁名':'空因子','因子1':'a','因子2':'','因子3':'c'}]).length===0) throw new Error('blank factor accepted');
+if(t.currentRuntimeOverrideActive()) throw new Error('standard masters falsely detected as override');
+const oldInen=inenMaster[0]; inenMaster[0]={...oldInen,'特大':'生命力'};
+if(!t.currentRuntimeOverrideActive()) throw new Error('effect-only inen override did not disable precomputed DB');
+inenMaster[0]=oldInen;
+if(t.currentRuntimeOverrideActive()) throw new Error('effect-only inen override did not restore standard state');
 const safe=t.calculationFormationConfig('鶴翼',window.JINPO_FORMATION_CONFIG);
 eq(safe['鶴翼'].activeLines,[[1,2,3],[4,5,6]],'safe lines');
 const dup=t.sanitizedUniquePlacement({1:{internal_id:'X'},2:{internal_id:'X'},3:{internal_id:'Y'}});
@@ -416,7 +447,17 @@ eq(window.__lastArgs[3]['衡軛'].activeLines,[[1,2,3],[4,5,6]],'engine lines');
 window.renderFormation=function(){window.JINPO_FORMATION_CONFIG['鶴翼'].activeLines=[[1,2,3],[4,5,6],[1,4],[2,5],[3,6]]};
 t.installFormationRenderGuard(); window.renderFormation();
 eq(window.JINPO_FORMATION_CONFIG['鶴翼'].activeLines,[[1,2,3],[4,5,6]],'render restore');
+window.currentAppliedDbRow={id:'OLD'}; window.__currentAppliedDbRow={id:'OLD'}; window.__lastReachAppliedDbRow={id:'OLD'}; window.__jinpoExactAppliedDbRow={id:'OLD'}; window.__jinpoBonusBaseDbRow={id:'OLD'};
+window.__jinpoReachExactLookupSeq=41;
+t.clearTransientAppliedDbState();
+if(Number(window.__jinpoReachExactLookupSeq)!==42) throw new Error('pending reach exact lookup was not invalidated');
+if(ctx.__getSelected()!=='') throw new Error('transient selectedDbResultId not cleared');
+if(window.currentAppliedDbRow||window.__currentAppliedDbRow||window.__lastReachAppliedDbRow||window.__jinpoExactAppliedDbRow||window.__jinpoBonusBaseDbRow) throw new Error('transient applied DB refs not cleared');
+ctx.selectedDbResultId='OLD';
+window.currentAppliedDbRow={id:'OLD'}; window.__currentAppliedDbRow={id:'OLD'}; window.__lastReachAppliedDbRow={id:'OLD'}; window.__jinpoExactAppliedDbRow={id:'OLD'}; window.__jinpoBonusBaseDbRow={id:'OLD'};
 t.safeApplyShareState({formation:'衝軛',slots:['EIK_A','EIK_B',null,null,null,null]});
+if(ctx.__getSelected()!=='') throw new Error('share did not clear selectedDbResultId');
+if(window.currentAppliedDbRow||window.__currentAppliedDbRow||window.__lastReachAppliedDbRow||window.__jinpoExactAppliedDbRow||window.__jinpoBonusBaseDbRow) throw new Error('share did not clear transient applied DB refs');
 if(select.value!=='衡軛') throw new Error('share formation canonical failed');
 let p=ctx.__getPlacement(); if(p[1].internal_id!=='EIK_A'||p[2].internal_id!=='EIK_B') throw new Error('share placement failed');
 let threw=false; try{t.safeApplyShareState({formation:'魚鱗',slots:['EIK_A','EIK_A']})}catch(e){threw=true} if(!threw) throw new Error('share duplicate must fail');
@@ -430,6 +471,66 @@ if(safeState.formation!=='魚鱗'||safeState.slots[0]!=='EIK_A'||safeState.slots
 threw=false; try{t.safeApplyShareState([])}catch(e){threw=true} if(!threw) throw new Error('share array state accepted');
 threw=false; try{t.safeApplyShareState({formation:'魚鱗',slots:'EIK_A'})}catch(e){threw=true} if(!threw) throw new Error('share non-array slots accepted');
 ctx.__setPlacement({1:eiketsuMaster[0],2:eiketsuMaster[1]});
+/* 差替え成功時だけ旧DB補正参照を破棄し、新しいlast rowとlookup sequenceは保持する。 */
+ctx.__setSelected('OLD_RESULT');
+window.currentAppliedDbRow={id:'OLD'}; window.__currentAppliedDbRow={id:'OLD'}; window.__jinpoExactAppliedDbRow={id:'OLD'}; window.__jinpoBonusBaseDbRow={id:'OLD'}; window.__lastReachAppliedDbRow={id:'OLD'};
+window.__jinpoReachExactLookupSeq=90;
+window.applyReachSwapCandidate=function(slot,afterId){
+  if(String(afterId)!=='VALID') return Promise.resolve(null);
+  ctx.__setPlacement({1:eiketsuMaster[0],2:eiketsuMaster[2]});
+  ctx.__setSelected('NEW_RESULT');
+  window.__lastReachAppliedDbRow={id:'NEW_RESULT'};
+  window.__jinpoReachExactLookupSeq=91;
+  return Promise.resolve(window.__lastReachAppliedDbRow);
+};
+t.installReachSwapAppliedStateGuard();
+window.applyReachSwapCandidate(2,'VALID');
+if(ctx.__getSelected()!=='NEW_RESULT'||!window.__lastReachAppliedDbRow||window.__lastReachAppliedDbRow.id!=='NEW_RESULT') throw new Error('reach swap new state was cleared');
+if(window.currentAppliedDbRow||window.__currentAppliedDbRow||window.__jinpoExactAppliedDbRow||window.__jinpoBonusBaseDbRow) throw new Error('reach swap stale DB refs survived');
+if(Number(window.__jinpoReachExactLookupSeq)!==91) throw new Error('reach swap new lookup sequence was invalidated');
+/* 無効/no-op差替えでは、現在の正しい適用状態を壊さない。 */
+window.currentAppliedDbRow={id:'KEEP'}; window.__currentAppliedDbRow={id:'KEEP'};
+window.applyReachSwapCandidate(2,'INVALID');
+if(!window.currentAppliedDbRow||window.currentAppliedDbRow.id!=='KEEP'||!window.__currentAppliedDbRow) throw new Error('invalid reach swap cleared current state');
+/* 遅延setTimeoutが保持した旧DB行は、編成/陣形が変わった後の総合値へ再描画させない。 */
+ctx.__setPlacement({
+  1:{internal_id:'R1','英傑名':'R1'},2:{internal_id:'R2','英傑名':'R2'},3:{internal_id:'R3','英傑名':'R3'},
+  4:{internal_id:'R4','英傑名':'R4'},5:{internal_id:'R5','英傑名':'R5'},6:{internal_id:'R6','英傑名':'R6'}
+}); select.value='方円';
+window.JinpoActivationEngine.calculateFormation=function(){return {activated:[]}};
+let dbRenderCalls=[];
+window.renderRealtimeTotalStatsFromReachDbRow=function(row){dbRenderCalls.push(row&&row.result_id);return true};
+t.installDbRowRenderStateGuard();
+const oldRow={result_id:'ROW_OLD',formation:'方円',eiketsu_internal_ids:'R1|R2|R3|R4|R5|R6',bond_count:0,bond_names:''};
+if(window.renderRealtimeTotalStatsFromReachDbRow(oldRow)!==true||dbRenderCalls.length!==1) throw new Error('matching DB row render was incorrectly blocked');
+ctx.__setPlacement({
+  1:{internal_id:'N1','英傑名':'N1'},2:{internal_id:'N2','英傑名':'N2'},3:{internal_id:'N3','英傑名':'N3'},
+  4:{internal_id:'N4','英傑名':'N4'},5:{internal_id:'N5','英傑名':'N5'},6:{internal_id:'N6','英傑名':'N6'}
+});
+if(window.renderRealtimeTotalStatsFromReachDbRow(oldRow)!==false||dbRenderCalls.length!==1) throw new Error('stale delayed DB row render was not blocked');
+const newRow={result_id:'ROW_NEW',formation:'方円',eiketsu_internal_ids:'N1|N2|N3|N4|N5|N6',bond_count:0,bond_names:''};
+if(window.renderRealtimeTotalStatsFromReachDbRow(newRow)!==true||dbRenderCalls.join('|')!=='ROW_OLD|ROW_NEW') throw new Error('current matching DB row render was blocked');
+/* runtime master override中はprecomputed DB数値を描画しない。 */
+const stdRow=inenMaster[0]; inenMaster[0]={...stdRow,'特大':'生命'};
+if(window.renderRealtimeTotalStatsFromReachDbRow(newRow)!==false||dbRenderCalls.length!==2) throw new Error('master override allowed precomputed DB row render');
+inenMaster[0]=stdRow;
+
+/* step66 private cacheはマスター差替え後に旧keyを使えないよう一時sentinel→通常keyの2段階で再計算する。 */
+const baseExcluded=function(){return ['EIK_EXCLUDED']}; window.__jinpoGetExcludedHeroInternalIds=baseExcluded;
+const reachRenders=[]; window.renderReachSlotOnlyUi=function(){reachRenders.push((window.__jinpoGetExcludedHeroInternalIds?window.__jinpoGetExcludedHeroInternalIds():[]).slice())};
+t.invalidateReachCandidateCacheAfterMasterChange();
+if(reachRenders.length!==1||!reachRenders[0].some(v=>String(v).indexOf('__JINPO_MASTER_CACHE_REV_')===0)) throw new Error('reach cache sentinel recompute missing');
+if(!timers.length) throw new Error('reach cache restore timer missing');
+while(timers.length){const fn=timers.shift();fn();}
+if(reachRenders.length<2||reachRenders[reachRenders.length-1].some(v=>String(v).indexOf('__JINPO_MASTER_CACHE_REV_')===0)) throw new Error('reach cache normal-key recompute missing');
+if(window.__jinpoGetExcludedHeroInternalIds!==baseExcluded) throw new Error('excluded hero getter not restored after reach cache invalidation');
+/* マスターを短時間に連続差替えしても、一時getterが入れ子で残らない。 */
+reachRenders.length=0;
+t.invalidateReachCandidateCacheAfterMasterChange();
+t.invalidateReachCandidateCacheAfterMasterChange();
+while(timers.length){const fn=timers.shift();fn();}
+if(window.__jinpoGetExcludedHeroInternalIds!==baseExcluded) throw new Error('rapid master changes leaked temporary excluded getter');
+if(!reachRenders.length||reachRenders[reachRenders.length-1].some(v=>String(v).indexOf('__JINPO_MASTER_CACHE_REV_')===0)) throw new Error('rapid master changes did not finish on normal reach cache key');
 /* 実ブラウザのclassic scriptでは、グローバルfunction宣言をwindowプロパティで差替えると
    既存イベントハンドラからも新実装が参照される。この前提をVMで固定テストする。 */
 const g={}; g.window=g; vm.createContext(g);
@@ -653,7 +754,11 @@ def validate_workflow() -> None:
         "'陣法/data/91因縁_計算式_倍率展開.csv'",
         "'陣法/data/jinpo_job_mapping.json'",
         "github.actor != 'github-actions[bot]'",
+        'python "陣法/tools-next/sync_eiketsu_master.py"',
         'python "陣法/tools-next/ensure_compact_record_freshness.py"',
+        '生成失敗時の診断情報',
+        'generation_report.json',
+        'search_integrity_report.json',
         'python "陣法/tools-next/audit_compact_stats.py"',
         'python "陣法/tools-next/build_jinpo_next.py"',
         'python "陣法/tools-next/audit_runtime_regressions.py"',
@@ -665,6 +770,11 @@ def validate_workflow() -> None:
     for frag in required:
         if frag not in text:
             fail(f"workflow 回帰ガード欠落: {frag}")
+    sync_pos = text.find('python "陣法/tools-next/sync_eiketsu_master.py"')
+    fresh_pos = text.find('python "陣法/tools-next/ensure_compact_record_freshness.py"')
+    build_pos = text.find('python "陣法/tools-next/build_jinpo_next.py"')
+    if min(sync_pos, fresh_pos, build_pos) < 0 or not (sync_pos < fresh_pos < build_pos):
+        fail("workflow順序不正: master同期→compact freshness→build の順でなければ古い52byteを再利用できます")
 
 
 def validate_compact_pipeline_guards() -> None:
@@ -672,6 +782,8 @@ def validate_compact_pipeline_guards() -> None:
     stats = read_text(COMPACT_STATS_AUDIT)
     for frag in [
         "record_model_fingerprint.json",
+        "jinpo_eiketsu_master.csv",
+        "jinpo-compact-record-model-v2",
         "91因縁_計算式_倍率展開.csv",
         "formation_bonus.csv",
         "rebuild_all_compact.py",
@@ -737,12 +849,19 @@ def validate_compact_pipeline_behavior() -> None:
         coef.write_text(coef.read_text(encoding="utf-8-sig").replace("0.1","0.2"), encoding="utf-8-sig")
         third = run_guard()
         calls3 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
+        master_path = base / "data" / "jinpo_eiketsu_master.csv"
+        master_text = master_path.read_text(encoding="utf-8-sig")
+        master_path.write_text(master_text.replace("EIK_0002,B", "EIK_0002,B2"), encoding="utf-8-sig")
+        fourth = run_guard()
+        calls4 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
         if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or len(calls1) != 4:
             fail("compact freshness: fingerprint未作成時の全dirty再計算FAIL")
         if second.get("model_changed") or second.get("forced_dirty_hero_count") != 0 or calls2 != calls1:
             fail("compact freshness: 同一fingerprintで不要な全再計算")
         if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2 or len(calls3) != 8:
             fail("compact freshness: 係数変更を検知できません")
+        if not fourth.get("model_changed") or fourth.get("forced_dirty_hero_count") != 2 or len(calls4) != 12:
+            fail("compact freshness: 英傑マスタ単独変更を検知できません")
 
     with tempfile.TemporaryDirectory(prefix="jinpo-compact-stats-") as td:
         base = Path(td)

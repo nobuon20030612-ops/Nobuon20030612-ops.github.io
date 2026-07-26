@@ -134,7 +134,7 @@
   function recommendHeapDown(heap,i,secondary){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&recommendEntryWorse(heap[l],heap[w],secondary))w=l;if(r<heap.length&&recommendEntryWorse(heap[r],heap[w],secondary))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
   function recommendFilters(q,m){
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m),thresholds=[];
-    (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){if(!r||!r.stat)return;var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
+    (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){if(!r||!r.stat)return;var minN=Number(r.threshold),maxN=Number(r.maxThreshold),hasMin=r.threshold!==null&&r.threshold!==''&&Number.isFinite(minN),hasMax=r.maxThreshold!==null&&r.maxThreshold!==''&&Number.isFinite(maxN);if(hasMin||hasMax)thresholds.push({stat:String(r.stat),min:hasMin?minN:null,max:hasMax?maxN:null});});
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max);
     return {owned:owned,excluded:excluded,thresholds:thresholds,f4max:f4max,noFilters:owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null};
   }
@@ -142,7 +142,7 @@
     var oi,ei,ti;for(oi=0;oi<filters.owned.length;oi++)if(!hasAnyHero(dv,base,filters.owned[oi]))return false;
     for(ei=0;ei<filters.excluded.length;ei++)if(hasHero(dv,base,filters.excluded[ei]))return false;
     if(filters.f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>filters.f4max)return false;}
-    for(ti=0;ti<filters.thresholds.length;ti++)if(statAt(dv,base,filters.thresholds[ti].stat)<filters.thresholds[ti].v)return false;
+    for(ti=0;ti<filters.thresholds.length;ti++){var range=filters.thresholds[ti],value=statAt(dv,base,range.stat);if(range.min!==null&&value<range.min)return false;if(range.max!==null&&value>range.max)return false;}
     return true;
   }
   function canUseRecommendSortTop(m,target){
@@ -214,7 +214,7 @@
     var started=performance.now(),m=await loadManifest(),data=await loadData(q,token,false),dv=data.dv,rec=data.recSize;
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m);
     if(owned.some(function(g){return !g.length;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info};
-    var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var n=Number(r.threshold);if(r.threshold!==null&&r.threshold!==''&&Number.isFinite(n))thresholds.push({stat:String(r.stat),v:n});});
+    var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var minN=Number(r.threshold),maxN=Number(r.maxThreshold),hasMin=r.threshold!==null&&r.threshold!==''&&Number.isFinite(minN),hasMax=r.maxThreshold!==null&&r.maxThreshold!==''&&Number.isFinite(maxN);if(hasMin||hasMax)thresholds.push({stat:String(r.stat),min:hasMin?minN:null,max:hasMax?maxN:null});});
     var sumSort=normalizedSumSort(q.sumSort);
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
     var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
@@ -239,7 +239,7 @@
       for(var oi=0;oi<owned.length&&ok;oi++)if(!hasAnyHero(dv,base,owned[oi]))ok=false;
       for(var ei=0;ei<excluded.length&&ok;ei++)if(hasHero(dv,base,excluded[ei]))ok=false;
       if(ok&&f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>f4max)ok=false;}
-      for(var ti=0;ti<thresholds.length&&ok;ti++)if(statAt(dv,base,thresholds[ti].stat)<thresholds[ti].v)ok=false;
+      for(var ti=0;ti<thresholds.length&&ok;ti++){var range=thresholds[ti],value=statAt(dv,base,range.stat);if(range.min!==null&&value<range.min)ok=false;if(range.max!==null&&value>range.max)ok=false;}
       if(!ok)continue;matched++;
       if(heap.length<limit)heapPush(heap,base,dv,rules,sumSort);else if(better(dv,base,heap[0],rules,sumSort)){heap[0]=base;heapDown(heap,0,dv,rules,sumSort);}
     }

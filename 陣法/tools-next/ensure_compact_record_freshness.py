@@ -15,6 +15,9 @@ SYNC_REPORT = REPORT_DIR / 'master_sync.json'
 FINGERPRINT_FILE = DATA / 'compact_search_v2' / 'record_model_fingerprint.json'
 MASTER = DATA / 'jinpo_eiketsu_master.csv'
 MODEL_INPUTS = [
+    # compactレコードは英傑の因子・コスト・11ステータスを直接持つ。
+    # sourceとmasterを同時上書きした場合sync差分が0件でも必ず変更検知する。
+    MASTER,
     DATA / 'jinpo_inen_master.csv',
     DATA / '91因縁_計算式_倍率展開.csv',
     DATA / 'formation_bonus.csv',
@@ -33,7 +36,7 @@ def model_fingerprint() -> tuple[str, dict[str, str]]:
             raise RuntimeError(f'検索DBモデル入力がありません: {path.relative_to(ROOT)}')
         parts[str(path.relative_to(ROOT)).replace('\\','/')] = sha256(path)
     h = hashlib.sha256()
-    h.update(b'jinpo-compact-record-model-v1\0')
+    h.update(b'jinpo-compact-record-model-v2\0')
     for name, digest in sorted(parts.items()):
         h.update(name.encode('utf-8')); h.update(b'\0'); h.update(digest.encode('ascii')); h.update(b'\0')
     return h.hexdigest(), parts
@@ -102,7 +105,7 @@ def main() -> None:
         run('audit_search_integrity.py')
         FINGERPRINT_FILE.parent.mkdir(parents=True, exist_ok=True)
         FINGERPRINT_FILE.write_text(json.dumps({
-            'schema':'jinpo-compact-record-model-v1',
+            'schema':'jinpo-compact-record-model-v2',
             'fingerprint':current,
             'inputs':parts,
         }, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')

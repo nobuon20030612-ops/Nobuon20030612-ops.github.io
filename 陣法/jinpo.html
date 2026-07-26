@@ -462,6 +462,7 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
       <div id="dbPriorityValueButtons1" class="dbPriorityValueButtons" aria-label="第1優先ソート数値"></div>
       <select id="dbPriorityStat1" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
       <select id="dbPriorityValue1" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
+      <input type="hidden" id="dbPriorityMax1" value="">
     </div>
     <div class="dbPriorityGroup dbPriorityButtonGroup" data-priority-index="2">
       <label>第2優先ソート</label>
@@ -469,6 +470,7 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
       <div id="dbPriorityValueButtons2" class="dbPriorityValueButtons" aria-label="第2優先ソート数値"></div>
       <select id="dbPriorityStat2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
       <select id="dbPriorityValue2" class="dbPriorityHiddenSelect" aria-hidden="true" tabindex="-1"></select>
+      <input type="hidden" id="dbPriorityMax2" value="">
     </div>
     <div id="jinpoSumPrioritySort" class="jinpoSumPrioritySort" data-enabled="0" data-tie-prefer="first">
       <div class="jinpoSumPriorityHeader">
@@ -2450,10 +2452,12 @@ const rules = [];
 for(let i=1;i<=3;i++){
 const stat = document.getElementById(`dbPriorityStat${i}`)?.value || "";
 const thresholdRaw = document.getElementById(`dbPriorityValue${i}`)?.value || "";
+const maxThresholdRaw = (i <= 2 ? document.getElementById(`dbPriorityMax${i}`)?.value : "") || "";
 if(!stat) continue;
 rules.push({
 stat,
-threshold: thresholdRaw ? Number(thresholdRaw) : null
+threshold: thresholdRaw ? Number(thresholdRaw) : null,
+maxThreshold: maxThresholdRaw ? Number(maxThresholdRaw) : null
 });
 }
 return rules;
@@ -2465,6 +2469,7 @@ function bindDbPriorityEvents(){
 for(let i=1;i<=3;i++){
 const statSel = document.getElementById(`dbPriorityStat${i}`);
 const valSel = document.getElementById(`dbPriorityValue${i}`);
+const maxEl = i <= 2 ? document.getElementById(`dbPriorityMax${i}`) : null;
 if(statSel){
 statSel.addEventListener("change", ()=>{
 updateDbPriorityValueOptions(i);
@@ -2474,6 +2479,9 @@ renderDbStatButtons();
 }
 if(valSel){
 valSel.addEventListener("change", renderDbFormationList);
+}
+if(maxEl){
+maxEl.addEventListener("change", renderDbFormationList);
 }
 }
 }
@@ -2663,9 +2671,11 @@ grade3Cost6OnlyEnabled = false;
 for(let i=1;i<=3;i++){
 const statSel = document.getElementById(`dbPriorityStat${i}`);
 const valSel = document.getElementById(`dbPriorityValue${i}`);
+const maxEl = i <= 2 ? document.getElementById(`dbPriorityMax${i}`) : null;
 if(statSel) statSel.value = "";
 updateDbPriorityValueOptions(i);
 if(valSel) valSel.value = "";
+if(maxEl){ maxEl.value = ""; try{ maxEl.dispatchEvent(new Event("change",{bubbles:true})); }catch(e){} }
 }
 renderDbStatButtons();
 renderOwnedHeroFilterUi();
@@ -8205,6 +8215,8 @@ body{padding-top:0 !important;}
   .eiketsuKishinsekiAllMaxIndicatorDetail{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.eiketsuKishinsekiAllMaxIndicator,.eiketsuKishinsekiGlobalMaxArrow{animation:none!important}}
+.jinpoGlobalAllMaxLoading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none;z-index:99990;pointer-events:none;min-width:310px;max-width:calc(100vw - 32px);padding:17px 24px;box-sizing:border-box;border:2px solid rgba(255,230,79,.82);border-radius:13px;background:linear-gradient(180deg,rgba(37,27,11,.97),rgba(9,8,6,.98));box-shadow:0 0 30px rgba(231,189,92,.42),0 12px 34px rgba(0,0,0,.58);color:#fff4d5;text-align:center;font-family:system-ui,"Yu Gothic",sans-serif}.jinpoGlobalAllMaxLoading.show{display:block}.jinpoGlobalAllMaxLoadingTitle{font-size:20px;font-weight:950;white-space:nowrap}.jinpoGlobalAllMaxLoadingSub{margin-top:7px;font-size:13px;font-weight:800;color:#eadba8;white-space:nowrap}.jinpoGlobalAllMaxLoading .eiketsuKishinsekiApplySpinner{width:24px;height:24px;vertical-align:-7px}@media(max-width:760px){.jinpoGlobalAllMaxLoading{min-width:270px;padding:14px 16px}.jinpoGlobalAllMaxLoadingTitle{font-size:17px}.jinpoGlobalAllMaxLoadingSub{font-size:11px}}
+
 .eiketsuKishinsekiModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:1000000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow:auto}.eiketsuKishinsekiModalBackdrop.open{display:flex}
 .eiketsuKishinsekiModal{width:min(1180px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:hidden;background:#10140f;border:2px solid #596045;border-radius:4px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 0 2px rgba(200,180,80,.18),inset 0 0 0 1px rgba(255,255,255,.05);box-sizing:border-box;color:#f7f7f1;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;position:relative}.eiketsuKishinsekiModal:before,.eiketsuKishinsekiModal:after{content:"";position:absolute;left:8px;right:8px;height:1px;background:linear-gradient(90deg,transparent,#d1b95b,transparent);pointer-events:none}.eiketsuKishinsekiModal:before{top:6px}.eiketsuKishinsekiModal:after{bottom:6px}
 .eiketsuKishinsekiHeader{height:56px;display:flex;align-items:center;justify-content:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#121911,#0b100b);position:relative}.eiketsuKishinsekiHeader strong{color:#ffe64f;font-size:28px;letter-spacing:.08em;text-shadow:0 2px 0 #000,0 0 8px rgba(255,220,50,.3)}.eiketsuKishinsekiHeaderActions{position:absolute;right:10px;top:9px;display:flex;gap:8px}.eiketsuKishinsekiApplyBtn,.eiketsuKishinsekiCloseBtn,.eiketsuKishinsekiResetBtn{background:linear-gradient(#3e442e,#171c14)!important;border:1px solid #89915f!important;color:#f4ffe9!important;border-radius:6px!important;padding:7px 10px!important;font-weight:900!important;font-family:system-ui,"Yu Gothic",sans-serif!important}.eiketsuKishinsekiApplyBtn{background:linear-gradient(#5f9224,#2b5315)!important;border-color:#9deb71!important;color:#f4ffe9!important}
@@ -8785,6 +8797,39 @@ body{padding-top:0 !important;}
     if(el) el.classList.toggle('show',!!globalAllMaxIndicatorActive);
     try{document.body.classList.toggle('jinpoGlobalAllMaxActive',!!globalAllMaxIndicatorActive);}catch(e){}
   }
+  var globalAllMaxLoadingSeq=0;
+  function ensureGlobalAllMaxLoading(){
+    var el=document.getElementById('jinpoGlobalAllMaxLoading');
+    if(el) return el;
+    el=document.createElement('div');
+    el.id='jinpoGlobalAllMaxLoading';
+    el.className='jinpoGlobalAllMaxLoading';
+    el.setAttribute('role','status');
+    el.setAttribute('aria-live','polite');
+    el.innerHTML='<div class="jinpoGlobalAllMaxLoadingTitle"><span class="eiketsuKishinsekiApplySpinner"></span><span class="jinpoGlobalAllMaxLoadingText">読込中...</span></div><div class="jinpoGlobalAllMaxLoadingSub">転生・見聞録・鬼神石の数値を再計算しています</div>';
+    document.body.appendChild(el);
+    return el;
+  }
+  function showGlobalAllMaxLoading(text){
+    var el=ensureGlobalAllMaxLoading();
+    var token=++globalAllMaxLoadingSeq;
+    el.dataset.loadingToken=String(token);
+    el.dataset.shownAt=String(Date.now());
+    var t=el.querySelector('.jinpoGlobalAllMaxLoadingText');
+    if(t) t.textContent=text||'読込中...';
+    el.classList.add('show');
+    return token;
+  }
+  function hideGlobalAllMaxLoading(token){
+    var el=document.getElementById('jinpoGlobalAllMaxLoading');
+    if(!el) return;
+    if(token && String(el.dataset.loadingToken||'')!==String(token)) return;
+    var shown=Number(el.dataset.shownAt||0),wait=Math.max(0,160-(Date.now()-shown));
+    setTimeout(function(){
+      if(token && String(el.dataset.loadingToken||'')!==String(token)) return;
+      el.classList.remove('show');
+    },wait);
+  }
   function deactivateGlobalAllMaxIndicator(){
     globalAllMaxIndicatorActive=false;
     renderGlobalAllMaxIndicator();
@@ -8849,6 +8894,7 @@ body{padding-top:0 !important;}
     var btn=document.getElementById('eiketsuKishinsekiGlobalMaxBtn');
     if(btn && btn.disabled) return;
     if(btn){ btn.disabled=true; btn.textContent='全MAX反映中…'; }
+    var loadingToken=showGlobalAllMaxLoading('全MAXを反映中...');
     setGlobalAllMaxChoices();
     globalAllMaxIndicatorActive=true;
     renderGlobalAllMaxIndicator();
@@ -8860,6 +8906,7 @@ body{padding-top:0 !important;}
         deactivateGlobalAllMaxIndicator();
         console.error('全MAX反映失敗',e);
       }).finally(function(){
+        hideGlobalAllMaxLoading(loadingToken);
         if(btn){ btn.disabled=false; btn.textContent='全MAX'; }
       });
     };
@@ -9123,13 +9170,22 @@ body{padding-top:0 !important;}
   }
   function recalcBonusCombinedAfterPlacementChange(){
     try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('編成変更後の全MAX再同期失敗',e); }
-    Promise.resolve(loadBonusMultiplierMap()).then(function(){
+    return Promise.resolve(loadBonusMultiplierMap()).then(function(){
       var stats=null;
       try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
       catch(e){ console.error('編成変更後の込み合計再計算失敗',e); }
       var mode=globalAllMaxIndicatorActive?'転生＆見聞録＆鬼神石込み / 全MAX反映済み':'転生＆見聞録＆鬼神石込み / 未反映';
       drawBonusStats(stats, stats?mode:'転生＆見聞録＆鬼神石込み / 計算条件不足');
-    }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); });
+      return stats;
+    }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); return null; });
+  }
+  function recalcBonusCombinedPair(){
+    function later(ms){
+      return new Promise(function(resolve){
+        setTimeout(function(){ Promise.resolve(recalcBonusCombinedAfterPlacementChange()).then(resolve,resolve); },ms);
+      });
+    }
+    return Promise.all([later(0),later(120)]);
   }
 
   function deferBonusPlacementRefresh(){
@@ -9145,14 +9201,17 @@ body{padding-top:0 !important;}
   var oldApplyDbForBonus=(typeof window.applyDbFormationRow==='function')?window.applyDbFormationRow:null;
   if(oldApplyDbForBonus && !oldApplyDbForBonus.__eiketsuKishinsekiClearModeWrapped){
     window.applyDbFormationRow=function(){
+      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを新しい編成へ反映中...'):0;
       setBonusAppliedMode(false);
       try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = arguments[0] || null; }catch(e){}
-      var ret = oldApplyDbForBonus.apply(this, arguments);
+      var ret;
+      try{ ret = oldApplyDbForBonus.apply(this, arguments); }
+      catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
       try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('適用後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
-      setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
-      setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
+      var refreshPromise=recalcBonusCombinedPair();
+      if(loadingToken) refreshPromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
     window.applyDbFormationRow.__eiketsuKishinsekiClearModeWrapped=true;
@@ -9160,22 +9219,26 @@ body{padding-top:0 !important;}
   var oldApplyReachForBonus=(typeof window.applyReachSwapCandidate==='function')?window.applyReachSwapCandidate:null;
   if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiReachRefreshWrapped){
     window.applyReachSwapCandidate=function(){
-      var ret = oldApplyReachForBonus.apply(this, arguments);
+      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを差替後の編成へ反映中...'):0;
+      var ret;
+      try{ ret = oldApplyReachForBonus.apply(this, arguments); }
+      catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
       setBonusAppliedMode(false);
       try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
       try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
-      setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
-      setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
+      var refreshPromise=recalcBonusCombinedPair();
+      var finalPromise=Promise.resolve();
       /* 全件DB照合が120msを超えても、確定した配置/DB行で込み合計を再計算する。 */
       if(ret && typeof ret.then==='function'){
-        ret.then(function(){
+        finalPromise=Promise.resolve(ret).then(function(){
           try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替確定後の全MAX同期失敗',e); }
           deferBonusPlacementRefresh();
-          recalcBonusCombinedAfterPlacementChange();
-        },function(e){ console.error('差替後の込み合計確定更新失敗',e); });
+          return recalcBonusCombinedAfterPlacementChange();
+        },function(e){ console.error('差替後の込み合計確定更新失敗',e); return null; });
       }
+      if(loadingToken) Promise.all([refreshPromise,finalPromise]).finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
@@ -9216,13 +9279,18 @@ body{padding-top:0 !important;}
   width:100% !important;
 }
 .dbPriorityValueButtons{
+  display:block !important;
+  width:100% !important;
+  margin-top:7px !important;
+  min-height:76px !important;
+}
+.dbPriorityRangeRow{
   display:grid !important;
   grid-template-columns:repeat(8,minmax(0,1fr)) !important;
   gap:4px !important;
   width:100% !important;
-  margin-top:7px !important;
-  min-height:36px !important;
 }
+.dbPriorityRangeRow + .dbPriorityRangeRow{margin-top:5px !important;}
 .dbPriorityStatChoice,
 .dbPriorityValueChoice{
   min-width:0 !important;
@@ -9249,8 +9317,10 @@ body{padding-top:0 !important;}
   outline-offset:1px !important;
   box-shadow:0 0 12px rgba(255,239,170,.72) !important;
 }
-.dbPriorityStatChoice:disabled{cursor:not-allowed !important;transform:none !important;}
-.dbPriorityStatChoice:disabled:not(.active){opacity:.34 !important;filter:grayscale(.35) !important;}
+.dbPriorityStatChoice:disabled,
+.dbPriorityValueChoice:disabled{cursor:not-allowed !important;transform:none !important;}
+.dbPriorityStatChoice:disabled:not(.active),
+.dbPriorityValueChoice:disabled:not(.active){opacity:.30 !important;filter:grayscale(.45) !important;}
 .dbPriorityStatChoice.jinpoRecommendFixed{opacity:1 !important;filter:none !important;outline:3px solid #fff4b8 !important;box-shadow:0 0 15px rgba(255,239,170,.86) !important;}
 .dbPriorityButtonGroup[data-recommend-fixed="1"] > label::after{content:"【おすすめ固定】";margin-left:8px;color:#ffe1a1;font-size:12px;font-weight:950;white-space:nowrap;}
 .dbPriorityValueChoice{
@@ -9317,12 +9387,14 @@ body{padding-top:0 !important;}
   function render(index){
     var statSel=document.getElementById('dbPriorityStat'+index);
     var valueSel=document.getElementById('dbPriorityValue'+index);
+    var maxInput=document.getElementById('dbPriorityMax'+index);
     var statBox=document.getElementById('dbPriorityStatButtons'+index);
     var valueBox=document.getElementById('dbPriorityValueButtons'+index);
-    if(!statSel || !valueSel || !statBox || !valueBox) return;
+    if(!statSel || !valueSel || !maxInput || !statBox || !valueBox) return;
 
     var currentStat=statSel.value || "";
     var currentValue=valueSel.value || "";
+    var currentMax=maxInput.value || "";
     var group=statBox.closest('.dbPriorityButtonGroup');
     var lockedPrimary=!!recommendLock.active && index===1;
     if(group) group.dataset.recommendFixed=lockedPrimary?'1':'0';
@@ -9343,8 +9415,10 @@ body{padding-top:0 !important;}
         var same=statSel.value===item.value;
         statSel.value=same ? "" : item.value;
         valueSel.value="";
+        maxInput.value="";
         dispatchChange(statSel);
         dispatchChange(valueSel);
+        dispatchChange(maxInput);
         render(index);
       });
       statBox.appendChild(b);
@@ -9354,18 +9428,33 @@ body{padding-top:0 !important;}
     if(!currentStat) return;
 
     var allowed=valuesFor(currentStat);
-    allowed.forEach(function(v){
-      var b=document.createElement('button');
-      b.type='button';
-      b.className='dbPriorityValueChoice'+(String(currentValue)===String(v)?' active':'');
-      b.textContent=String(v)+'以上';
-      b.addEventListener('click',function(){
-        valueSel.value=(String(valueSel.value)===String(v)) ? "" : String(v);
-        dispatchChange(valueSel);
-        render(index);
+    function buildRangeRow(kind){
+      var row=document.createElement('div');
+      row.className='dbPriorityRangeRow dbPriorityRange'+(kind==='min'?'Min':'Max');
+      allowed.forEach(function(v){
+        var isMin=kind==='min';
+        var selected=isMin?String(currentValue)===String(v):String(currentMax)===String(v);
+        var otherRaw=isMin?currentMax:currentValue;
+        var other=otherRaw===''?null:Number(otherRaw);
+        var impossible=other!==null && Number.isFinite(other) && (isMin ? Number(v)>other : Number(v)<other);
+        var b=document.createElement('button');
+        b.type='button';
+        b.className='dbPriorityValueChoice'+(selected?' active':'');
+        b.textContent=String(v)+(isMin?'以上':'以下');
+        b.disabled=!!impossible;
+        b.addEventListener('click',function(){
+          if(b.disabled)return;
+          var target=isMin?valueSel:maxInput;
+          target.value=(String(target.value)===String(v)) ? "" : String(v);
+          dispatchChange(target);
+          render(index);
+        });
+        row.appendChild(b);
       });
-      valueBox.appendChild(b);
-    });
+      valueBox.appendChild(row);
+    }
+    buildRangeRow('min');
+    buildRangeRow('max');
   }
 
   function clearThird(){
@@ -9395,8 +9484,10 @@ body{padding-top:0 !important;}
     [1,2].forEach(function(i){
       var s=document.getElementById('dbPriorityStat'+i);
       var v=document.getElementById('dbPriorityValue'+i);
-      if(s) s.addEventListener('change',function(){ setTimeout(function(){render(i);},0); });
+      var mx=document.getElementById('dbPriorityMax'+i);
+      if(s) s.addEventListener('change',function(){ if(!s.value && mx){mx.value='';dispatchChange(mx);} setTimeout(function(){render(i);},0); });
       if(v) v.addEventListener('change',function(){ setTimeout(function(){render(i);},0); });
+      if(mx) mx.addEventListener('change',function(){ setTimeout(function(){render(i);},0); });
       render(i);
     });
   }
@@ -9924,9 +10015,10 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   function resetPriority(){
     try{dbQuickStatOrder=[];}catch(e){}
     for(var i=1;i<=3;i++){
-      var s=document.getElementById('dbPriorityStat'+i),v=document.getElementById('dbPriorityValue'+i);
+      var s=document.getElementById('dbPriorityStat'+i),v=document.getElementById('dbPriorityValue'+i),mx=i<=2?document.getElementById('dbPriorityMax'+i):null;
       if(s){s.value='';try{if(typeof updateDbPriorityValueOptions==='function')updateDbPriorityValueOptions(i);}catch(e){}dispatchChange(s);}
       if(v){v.value='';dispatchChange(v);}
+      if(mx){mx.value='';dispatchChange(mx);}
     }
     try{if(typeof renderDbStatButtons==='function')renderDbStatButtons();}catch(e){}
   }

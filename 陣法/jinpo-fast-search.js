@@ -55,19 +55,23 @@
   function dispatchChange(el){if(!el)return;try{el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){var ev=document.createEvent('Event');ev.initEvent('change',true,true);el.dispatchEvent(ev);}}
   function prepareRecommendPriority(target,clearSecond){
     target=String(target||'').trim();if(!validRecommendStat(target))return;
-    var s1=q('dbPriorityStat1'),v1=q('dbPriorityValue1'),s2=q('dbPriorityStat2'),v2=q('dbPriorityValue2');
-    var changedS1=false,changedV1=false,changedS2=false,changedV2=false;
+    var s1=q('dbPriorityStat1'),v1=q('dbPriorityValue1'),mx1=q('dbPriorityMax1'),s2=q('dbPriorityStat2'),v2=q('dbPriorityValue2'),mx2=q('dbPriorityMax2');
+    var changedS1=false,changedV1=false,changedMx1=false,changedS2=false,changedV2=false,changedMx2=false;
     recommendState.syncingPriority=true;
     try{
       if(s1&&String(s1.value||'')!==target){s1.value=target;changedS1=true;}
       if(clearSecond&&v1&&String(v1.value||'')!==''){v1.value='';changedV1=true;}
+      if(clearSecond&&mx1&&String(mx1.value||'')!==''){mx1.value='';changedMx1=true;}
       if(clearSecond&&s2&&String(s2.value||'')!==''){s2.value='';changedS2=true;}
       if(clearSecond&&v2&&String(v2.value||'')!==''){v2.value='';changedV2=true;}
-      if(s2&&String(s2.value||'')===target){s2.value='';changedS2=true;if(v2&&String(v2.value||'')!==''){v2.value='';changedV2=true;}}
+      if(clearSecond&&mx2&&String(mx2.value||'')!==''){mx2.value='';changedMx2=true;}
+      if(s2&&String(s2.value||'')===target){s2.value='';changedS2=true;if(v2&&String(v2.value||'')!==''){v2.value='';changedV2=true;}if(mx2&&String(mx2.value||'')!==''){mx2.value='';changedMx2=true;}}
       if(changedS1)dispatchChange(s1);
       if(changedV1)dispatchChange(v1);
+      if(changedMx1)dispatchChange(mx1);
       if(changedS2)dispatchChange(s2);
       if(changedV2)dispatchChange(v2);
+      if(changedMx2)dispatchChange(mx2);
     }finally{recommendState.syncingPriority=false;}
     try{window.dispatchEvent(new CustomEvent('jinpo:recommend-priority-sync',{detail:{targetStat:target,clearSecond:!!clearSecond}}));}catch(e){}
   }
@@ -76,7 +80,7 @@
     var active=!!recommendState.active,target=active?String(recommendState.targetStat||''):'',secondary=active?String(recommendState.secondaryStat||''):'';document.querySelectorAll('[data-jinpo-recommend-stat]').forEach(function(btn){var on=active&&String(btn.getAttribute('data-jinpo-recommend-stat')||'')===target;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});var sum=q('jinpoSumPrioritySort');if(sum){sum.dataset.recommendMode=active?'1':'0';sum.dataset.recommendSecondary=secondary?'1':'0';}try{window.dispatchEvent(new CustomEvent('jinpo:recommend-state',{detail:{active:active,targetStat:target,secondaryStat:secondary,formation:String(recommendState.formation||'')}}));}catch(e){}
   }
   function exitRecommendMode(){recommendState.active=false;recommendState.targetStat='';recommendState.secondaryStat='';recommendState.formation='';recommendState.applyingFormation=false;recommendState.syncingPriority=false;syncRecommendUi();}
-  function hasThreshold(rs){return (rs||rules()).some(function(r){var n=Number(r&&r.threshold);return r&&r.threshold!==null&&r.threshold!==''&&Number.isFinite(n);});}
+  function hasThreshold(rs){return (rs||rules()).some(function(r){if(!r)return false;var min=Number(r.threshold),max=Number(r.maxThreshold);return (r.threshold!==null&&r.threshold!==''&&Number.isFinite(min))||(r.maxThreshold!==null&&r.maxThreshold!==''&&Number.isFinite(max));});}
   function factor4Max(){return selectedExclude>0?6-selectedExclude:null;}
 
   function ensureUiStyle(){
@@ -203,13 +207,13 @@
     if(rs.length)return{type:'full',sortStat:''};
     return{type:'top',sortStat:''};
   }
-  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
+  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
   function search(query){
     var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
     return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
   }
   function recommendKeyFor(x){
-    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold];}),x.factor4Max,x.limit]);
+    return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,x.limit]);
   }
   function searchRecommended(query){
     var k=recommendKeyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
@@ -313,7 +317,7 @@
   function syncFactor4(){document.querySelectorAll('.jinpoFactor4FilterBtn').forEach(function(btn){var on=Number(btn.getAttribute('data-factor4-exclude'))===selectedExclude;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});}
   function ensureFactor4Controls(){ensureFactor4Style();var legend=q('factor4BunkyokuLegend');if(!legend)return false;if(q('jinpoFactor4FilterControl')){syncFactor4();return true;}var parent=legend.parentNode;if(!parent)return false;var row=document.createElement('div');row.className='jinpoFactor4FilterRow';row.id='jinpoFactor4FilterRow';parent.insertBefore(row,legend);row.appendChild(legend);var ctl=document.createElement('div');ctl.id='jinpoFactor4FilterControl';ctl.className='jinpoFactor4FilterControl';ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');row.appendChild(ctl);return true;}
 
-  document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation||recommendState.syncingPriority)return;var t=ev.target;if(!t)return;if(t.id==='formationSelect'){exitRecommendMode();return;}if(t.id==='dbPriorityStat1'){if(String(t.value||'')!==String(recommendState.targetStat||''))prepareRecommendPriority(recommendState.targetStat,false);return;}if(t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'){Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:recommendState.targetStat});});}},true);
+  document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation||recommendState.syncingPriority)return;var t=ev.target;if(!t)return;if(t.id==='formationSelect'){exitRecommendMode();return;}if(t.id==='dbPriorityStat1'){if(String(t.value||'')!==String(recommendState.targetStat||''))prepareRecommendPriority(recommendState.targetStat,false);return;}if(t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'||t.id==='dbPriorityMax1'||t.id==='dbPriorityMax2'){Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:recommendState.targetStat});});}},true);
 
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(recommendState.active)return;exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
   document.addEventListener('click',function(ev){
