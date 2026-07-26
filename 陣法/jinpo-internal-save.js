@@ -29,7 +29,7 @@
     return "";
   }
   function migrateSavedItem(item){
-    if(!item || typeof item !== "object") return item;
+    if(!item || typeof item !== "object" || Array.isArray(item)) return null;
     if(Array.isArray(item.members)){
       const seenIds = new Set();
       const seenSlots = new Set();
@@ -42,10 +42,11 @@
         if(!Number.isInteger(slot) || slot < 1 || slot > 6 || seenSlots.has(slot)) return;
         seenSlots.add(slot);
         member.slot = slot;
-        const oldId = String(member.internal_id || "");
+        const oldId = String(member.internal_id || "").trim();
         const newId = migrateLegacyHeroId(oldId);
+        member.internal_id = newId;
+        member.name = String(member.name || "");
         if(newId !== oldId){
-          member.internal_id = newId;
           member.name = "竹中半兵衛(知将)";
         }
         /* 同じ英傑が別枠に重複する旧データは、後ろ側だけ空枠化する。 */
@@ -57,13 +58,17 @@
         cleanedMembers.push(member);
       });
       item.members = cleanedMembers;
+    }else{
+      /* 旧版・破損データでmembersが欠落していても保存一覧全体を壊さない。 */
+      item.members = [];
     }
-    /* 旧保存は formation、新UIは formationName を参照するため両方を常に同期する。 */
+    /* 旧保存は formation、新UIは formationName を参照するため両方を常に同期する。
+       未対応の陣形は読込不能なので、その保存項目だけ安全に破棄する。 */
     const formation = canonicalFormationName(item.formationName || item.formation);
-    if(formation){
-      item.formation = formation;
-      item.formationName = formation;
-    }
+    if(!formation) return null;
+    item.formation = formation;
+    item.formationName = formation;
+    item.name = String(item.name || "無題");
     return item;
   }
   function read(){
@@ -72,15 +77,14 @@
       const data = raw ? JSON.parse(raw) : [];
       if(!Array.isArray(data)) return [];
       const before = JSON.stringify(data);
-      const migrated = data.map(migrateSavedItem);
+      /* null/文字列/配列などトップレベルの破損項目は除外し、
+         renderSavedFormations() が常に安全なオブジェクト配列だけを受け取れるようにする。 */
+      const migrated = data.map(migrateSavedItem).filter(function(item){ return !!item; });
       const seenSaveIds = new Set();
       migrated.forEach(function(item){
-        if(!item || typeof item !== "object") return;
-        let id = String(item.id || "");
-        if(!id || seenSaveIds.has(id)){
-          id = makeSaveId();
-          item.id = id;
-        }
+        let id = String(item.id || "").trim();
+        if(!id || seenSaveIds.has(id)) id = makeSaveId(seenSaveIds);
+        item.id = id;
         seenSaveIds.add(id);
       });
       if(JSON.stringify(migrated) !== before) write(migrated);
@@ -100,22 +104,37 @@
     }
   }
   function membersFromPlacement(placement){
+    const seenIds = new Set();
     return [1,2,3,4,5,6].map(function(slot){
       const h = placement && placement[slot] ? placement[slot] : {};
-      return {
-        slot: slot,
-        internal_id: String(h.internal_id || h["番号"] || h.id || ""),
-        name: String(h["英傑名"] || h.name || h["名前"] || "")
-      };
+      let internalId = migrateLegacyHeroId(String(h.internal_id || h["番号"] || h.id || "").trim());
+      let name = String(h["英傑名"] || h.name || h["名前"] || "");
+      /* 万一配置状態が壊れていても、同一英傑を重複した保存データとして残さない。 */
+      if(internalId && seenIds.has(internalId)){
+        internalId = "";
+        name = "";
+      }else if(internalId){
+        seenIds.add(internalId);
+      }
+      return { slot: slot, internal_id: internalId, name: name };
     });
   }
   let saveSequence = 0;
-  function makeSaveId(){
+  function makeSaveId(usedIds){
+    const used = usedIds instanceof Set ? usedIds : new Set();
     try{
-      if(typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+      if(typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function"){
+        const uuid = String(crypto.randomUUID() || "").trim();
+        if(uuid && !used.has(uuid)) return uuid;
+      }
     }catch(e){}
-    saveSequence = (saveSequence + 1) % 1000000;
-    return String(Date.now()) + "-" + String(saveSequence) + "-" + Math.random().toString(36).slice(2,10);
+    /* randomUUID / Math.random / Date.now のどれかが異常でも、sequence込みで既存IDと必ず照合する。 */
+    for(let attempt=0; attempt<1000005; attempt++){
+      saveSequence = (saveSequence + 1) % 1000000;
+      const id = String(Date.now()) + "-" + String(saveSequence) + "-" + Math.random().toString(36).slice(2,10);
+      if(!used.has(id)) return id;
+    }
+    throw new Error("保存IDを一意に生成できませんでした");
   }
   window.JinpoInternalSave = {
     getSaved: read,
@@ -126,8 +145,9 @@
         try{ console.error("陣形未選択または未対応の陣形のため保存しません", formation); }catch(e){}
         return null;
       }
+      const usedIds = new Set(list.map(function(item){ return String(item && item.id || "").trim(); }).filter(Boolean));
       const item = {
-        id: makeSaveId(),
+        id: makeSaveId(usedIds),
         name: String(name || "無題"),
         formation: canonical,
         formationName: canonical,

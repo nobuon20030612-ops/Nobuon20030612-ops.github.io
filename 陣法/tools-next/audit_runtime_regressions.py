@@ -333,6 +333,9 @@ def validate_bond_js() -> None:
         "window.__jinpoShareUrlRecoveryScheduled = false;",
         "共有編成に同一英傑が重複しています",
         "共有編成の英傑が現在のマスタに存在しません",
+        "共有編成生成時に同一英傑の重複配置を検出したため、重複枠を空欄化しました",
+        "共有編成の枠データが不正です",
+        "Object.prototype.hasOwnProperty.call(state,'slots')",
     ]
     for frag in required:
         if frag not in text:
@@ -392,7 +395,7 @@ const ctx={window,document,console,eiketsuMaster,inenMaster,placement,selectedDb
  setTimeout(fn){timers.push(fn);return timers.length},clearTimeout(){},location:{search:''},URLSearchParams,Map,Set,JSON,Array,Object,String,Number,RegExp,Error,Promise};
 vm.createContext(ctx);
 const pre=`let eiketsuMaster=globalThis.eiketsuMaster; let inenMaster=globalThis.inenMaster; let placement=globalThis.placement; let selectedDbResultId=globalThis.selectedDbResultId; function clearAppliedDbRowDisplay(){return globalThis.clearAppliedDbRowDisplay()} function renderSlots(){return globalThis.renderSlots()} function renderFormation(){return globalThis.renderFormation()} function calculate(){globalThis.calcCalls=(globalThis.calcCalls||0)+1} `;
-vm.runInContext(pre+src+`\nglobalThis.__getPlacement=()=>placement; globalThis.__getSelected=()=>selectedDbResultId;`,ctx);
+vm.runInContext(pre+src+`\nglobalThis.__getPlacement=()=>placement; globalThis.__setPlacement=(v)=>{placement=v}; globalThis.__getSelected=()=>selectedDbResultId;`,ctx);
 /* source末尾のbootタイマーは単体行動テストでは不要。 */
 timers.length=0;
 const t=window.__BOND_TEST__;
@@ -420,6 +423,13 @@ let threw=false; try{t.safeApplyShareState({formation:'魚鱗',slots:['EIK_A','E
 threw=false; try{t.safeApplyShareState({formation:'魚鱗',slots:['EIK_NOT_FOUND']})}catch(e){threw=true} if(!threw) throw new Error('share missing hero must fail');
 t.safeApplyShareState({formation:'鶴翼',slots:['EIK_0125']}); p=ctx.__getPlacement(); if(p[1].internal_id!=='EIK_0246') throw new Error('legacy hero migration failed');
 const state=t.safeCurrentFormationState(); if(state.formation!=='鶴翼'||state.slots[0]!=='EIK_0246') throw new Error('share state failed');
+/* 自分で生成した共有状態が、破損配置の重複英傑を含んで受信側で拒否されないよう送信側でも安全化する。 */
+ctx.__setPlacement({1:eiketsuMaster[0],2:eiketsuMaster[0],3:{internal_id:'EIK_0125','英傑名':'legacy'}}); select.value='魚鱗';
+const safeState=t.safeCurrentFormationState();
+if(safeState.formation!=='魚鱗'||safeState.slots[0]!=='EIK_A'||safeState.slots[1]!==null||safeState.slots[2]!=='EIK_0246') throw new Error('share current-state duplicate/legacy sanitization failed');
+threw=false; try{t.safeApplyShareState([])}catch(e){threw=true} if(!threw) throw new Error('share array state accepted');
+threw=false; try{t.safeApplyShareState({formation:'魚鱗',slots:'EIK_A'})}catch(e){threw=true} if(!threw) throw new Error('share non-array slots accepted');
+ctx.__setPlacement({1:eiketsuMaster[0],2:eiketsuMaster[1]});
 /* 実ブラウザのclassic scriptでは、グローバルfunction宣言をwindowプロパティで差替えると
    既存イベントハンドラからも新実装が参照される。この前提をVMで固定テストする。 */
 const g={}; g.window=g; vm.createContext(g);
@@ -523,11 +533,16 @@ def validate_internal_save() -> None:
         "衝軛",
         "EIK_0125",
         "EIK_0246",
-        "function makeSaveId()",
+        "function makeSaveId(usedIds)",
+        "usedIds instanceof Set",
+        "makeSaveId(seenSaveIds)",
         "saveSequence",
         "seenIds",
         "seenSlots",
         "cleanedMembers",
+        "data.map(migrateSavedItem).filter",
+        "item.members = []",
+        "if(!formation) return null;",
         "seenSaveIds",
         "return true;",
         "return false;",
@@ -574,6 +589,27 @@ if(x.members[1].slot!==2||x.members[1].internal_id!=='') throw new Error('duplic
 /* migration must persist so the next read is stable and does not mint new IDs again. */
 const firstIds=saved.map(v=>v.id); saved=api.getSaved();
 if(JSON.stringify(firstIds)!==JSON.stringify(saved.map(v=>v.id))) throw new Error('legacy id migration not persisted');
+/* Corrupted/older localStorage entries must never leak primitives/null/members-missing rows to renderSavedFormations(). */
+localStorage.setItem('jinpo_internal_saved_formations',JSON.stringify([
+ null,'broken',[],{},
+ {id:'badformation',name:'bad',formation:'unknown',members:[]},
+ {id:'nomembers',name:'legacy',formation:'方円'},
+ {id:'valid',name:'ok',formation:'魚鱗',members:[{slot:1,internal_id:'EIK_A',name:'A'}]}
+]));
+saved=api.getSaved();
+if(saved.length!==2) throw new Error('corrupt saved entries were not filtered safely: '+JSON.stringify(saved));
+if(saved.some(v=>!v||typeof v!=='object'||!Array.isArray(v.members))) throw new Error('unsafe saved item leaked from migration');
+if(saved[0].id!=='nomembers'||saved[0].members.length!==0||saved[0].formationName!=='方円') throw new Error('members-missing legacy row not normalized');
+if(saved[1].id!=='valid'||saved[1].members.length!==1) throw new Error('valid row lost during corrupt-data cleanup');
+/* Even a corrupted duplicate placement must not be persisted as duplicate heroes. */
+const dupSaved=api.saveFormation('dup-placement',{1:{internal_id:'EIK_DUP','英傑名':'D'},2:{internal_id:'EIK_DUP','英傑名':'D'}},'鶴翼');
+if(!dupSaved||dupSaved.members[0].internal_id!=='EIK_DUP'||dupSaved.members[1].internal_id!=='') throw new Error('duplicate placement persisted unsafely');
+/* randomUUIDが衝突しても保存IDは既存集合と照合して必ず一意にする。 */
+ctx.crypto={randomUUID:()=> 'SAME-ID'};
+localStorage.setItem('jinpo_internal_saved_formations','[]');
+api.saveFormation('id1',{},'魚鱗'); api.saveFormation('id2',{},'方円'); api.saveFormation('id3',{},'鶴翼');
+saved=api.getSaved();
+if(saved.length!==3||new Set(saved.map(v=>v.id)).size!==3) throw new Error('forced randomUUID collision was not resolved: '+JSON.stringify(saved.map(v=>v.id)));
 /* localStorage quota/private-mode failure must not report a false save success and must warn once. */
 failWrite=true;const failed=api.saveFormation('quota',{1:{internal_id:'EIK_Z','英傑名':'Z'}},'方円');
 if(failed!==null) throw new Error('storage failure falsely reported save success');

@@ -1019,16 +1019,27 @@
   }
   function safeCurrentFormationState(){
     var p = currentPlacementSafe();
-    return {
-      formation: currentFormationName() || '',
-      slots: [1,2,3,4,5,6].map(function(slot){
-        var h = p[slot] || null;
-        return h ? text(h.internal_id || h.id || h['番号'] || '') || null : null;
-      })
-    };
+    var seen = new Set();
+    var duplicateFound = false;
+    var slots = [1,2,3,4,5,6].map(function(slot){
+      var h = p[slot] || null;
+      if(!h) return null;
+      var id = text(h.internal_id || h.id || h['番号'] || '');
+      if(id === 'EIK_0125') id = 'EIK_0246';
+      if(!id) return null;
+      if(seen.has(id)){
+        duplicateFound = true;
+        return null;
+      }
+      seen.add(id);
+      return id;
+    });
+    if(duplicateFound) console.error('共有編成生成時に同一英傑の重複配置を検出したため、重複枠を空欄化しました');
+    return { formation: currentFormationName() || '', slots: slots };
   }
   function safeApplyShareState(state){
-    if(!state || typeof state !== 'object') throw new Error('共有編成データが不正です');
+    if(!state || typeof state !== 'object' || Array.isArray(state)) throw new Error('共有編成データが不正です');
+    if(Object.prototype.hasOwnProperty.call(state,'slots') && !Array.isArray(state.slots)) throw new Error('共有編成の枠データが不正です');
     var requested = text(state.formation);
     var formation = requested ? canonicalFormation(requested) : currentFormationName();
     if(requested && !formation) throw new Error('未対応の陣形です: ' + requested);
