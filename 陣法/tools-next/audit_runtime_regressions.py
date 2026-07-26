@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import itertools
 import json
+import math
 import re
+import shutil
+import struct
 import subprocess
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -22,6 +27,8 @@ HTML = ROOT / "jinpo.html"
 WORKFLOW = REPO / ".github" / "workflows" / "jinpo-next.yml"
 MANIFEST = ROOT / "data" / "compact_search_v2" / "jinpo_unified_search_manifest.json"
 OVERRIDES = ROOT / "tools-next" / "approved_overrides.json"
+FRESHNESS_GUARD = ROOT / "tools-next" / "ensure_compact_record_freshness.py"
+COMPACT_STATS_AUDIT = ROOT / "tools-next" / "audit_compact_stats.py"
 
 MOJIBAKE_MARKERS = tuple(chr(x) for x in (0xFFFD, 0x7E3A, 0x7E67, 0x8B41, 0x00C3, 0x00C2))
 SOURCE_FACTOR_MAP = {
@@ -162,6 +169,31 @@ def validate_source_master() -> dict:
             fail(f"英傑一覧 名前の前後空白: {idx}行 {raw!r}")
         if not raw:
             fail(f"英傑一覧 名前空: {idx}行")
+        for field, value in row.items():
+            value = str(value or "")
+            if value != value.strip():
+                fail(f"英傑一覧 前後空白: {idx}行 {field}={value!r}")
+
+    inen_names = set()
+    for idx, row in enumerate(inen, 2):
+        name_raw = str(row.get("因縁名", ""))
+        name = name_raw.strip()
+        if not name or name_raw != name:
+            fail(f"因縁マスタ 因縁名不正: {idx}行 {name_raw!r}")
+        key = re.sub(r"[\s　]+", "", name).lower()
+        if key in inen_names:
+            fail(f"因縁マスタ 因縁名重複: {idx}行 {name}")
+        inen_names.add(key)
+        for field in ("因子1","因子2","因子3"):
+            raw_factor = str(row.get(field, ""))
+            if not raw_factor.strip() or raw_factor != raw_factor.strip():
+                fail(f"因縁マスタ 因子不正: {idx}行 {field}={raw_factor!r}")
+
+    for idx, row in enumerate(master, 2):
+        for field in ("internal_id","英傑名","職業","因子1","因子2","因子3","因子4"):
+            raw_value = str(row.get(field, ""))
+            if raw_value != raw_value.strip():
+                fail(f"英傑マスタ 前後空白: {idx}行 {field}={raw_value!r}")
 
     nums = [str(r.get("番号","")).strip() for r in source]
     if any(not x for x in nums): fail("英傑一覧 番号空")
@@ -285,6 +317,20 @@ def validate_bond_js() -> None:
         "function recoverShareUrlAfterInit()",
         "function cancelPendingShareUrlRecovery()",
         "window.__jinpoShareUrlRecoveryCancelled",
+        "function syncFormationUiState()",
+        "function refreshFormationDependentSearchUi()",
+        "function validateInenOverrideStrict(rows)",
+        "function installRuntimeMasterOverrideGuards()",
+        "function installPrecomputedSearchOverrideGuard()",
+        "function observePrecomputedSearchOverrideTargets()",
+        "observer.observe(target,{childList:true,subtree:true});",
+        "jinpo-runtime-master-override",
+        "data-jinpo-master-override-disabled",
+        "window.addEventListener('click'",
+        "MutationObserver",
+        "マスター差替え中は事前生成検索DBと条件が一致しないため",
+        "Date.now() - startedAt < 120000",
+        "window.__jinpoShareUrlRecoveryScheduled = false;",
         "共有編成に同一英傑が重複しています",
         "共有編成の英傑が現在のマスタに存在しません",
     ]
@@ -294,6 +340,19 @@ def validate_bond_js() -> None:
     for frag in ["現在適用中の組み合わせはありません。"]:
         if frag in text:
             fail(f"旧表示文言が復活: {frag}")
+    # 本番jinpo.htmlはbody/html/document全体への広域MutationObserverを抑止する。
+    # ここへ回帰するとfast-searchが再生成した検索ボタンの再無効化が動かなくなるため禁止する。
+    forbidden_observer_targets = [
+        "observer.observe(document.documentElement",
+        "observer.observe(document.body",
+        "observer.observe(document,",
+        "__jinpoPrecomputedSearchOverrideObserver.observe(document.documentElement",
+        "__jinpoPrecomputedSearchOverrideObserver.observe(document.body",
+        "__jinpoPrecomputedSearchOverrideObserver.observe(document,",
+    ]
+    for frag in forbidden_observer_targets:
+        if frag in text:
+            fail(f"検索無効化監視が本番で抑止される広域MutationObserverへ回帰: {frag}")
 
 
 def validate_bond_behavior() -> None:
@@ -303,7 +362,7 @@ let src=fs.readFileSync(process.argv[1],'utf8');
 const end='\n})();';
 const i=src.lastIndexOf(end);
 if(i<0) throw new Error('outer IIFE end not found');
-const expose=`\nwindow.__BOND_TEST__={canonicalFormation,calculationFormationConfig,sanitizedUniquePlacement,installActivationDuplicateGuard,installFormationRenderGuard,safeApplyShareState,safeCurrentFormationState,restoreCanonicalCalculationLines,recoverShareUrlAfterInit,cancelPendingShareUrlRecovery,sharePrerequisitesReady};`;
+const expose=`\nwindow.__BOND_TEST__={canonicalFormation,calculationFormationConfig,sanitizedUniquePlacement,installActivationDuplicateGuard,installFormationRenderGuard,safeApplyShareState,safeCurrentFormationState,restoreCanonicalCalculationLines,recoverShareUrlAfterInit,cancelPendingShareUrlRecovery,sharePrerequisitesReady,loadBondMaster,currentCalculatedResult,validateInenOverrideStrict,syncFormationUiState,refreshFormationDependentSearchUi};`;
 src=src.slice(0,i)+expose+src.slice(i);
 const select={_value:'',options:[{value:''},{value:'衡軛'},{value:'鶴翼'},{value:'魚鱗'},{value:'方円'}]};
 Object.defineProperty(select,'value',{get(){return this._value},set(v){this._value=String(v)}});
@@ -339,6 +398,8 @@ timers.length=0;
 const t=window.__BOND_TEST__;
 function eq(a,b,msg){if(JSON.stringify(a)!==JSON.stringify(b)) throw new Error(msg+': '+JSON.stringify(a)+' != '+JSON.stringify(b))}
 if(t.canonicalFormation('衝軛')!=='衡軛') throw new Error('alias failed');
+if(t.validateInenOverrideStrict([{'因縁名':'重複','因子1':'a','因子2':'b','因子3':'c'},{'因縁名':'重複','因子1':'x','因子2':'y','因子3':'z'}]).length===0) throw new Error('duplicate bond name accepted');
+if(t.validateInenOverrideStrict([{'因縁名':'空因子','因子1':'a','因子2':'','因子3':'c'}]).length===0) throw new Error('blank factor accepted');
 const safe=t.calculationFormationConfig('鶴翼',window.JINPO_FORMATION_CONFIG);
 eq(safe['鶴翼'].activeLines,[[1,2,3],[4,5,6]],'safe lines');
 const dup=t.sanitizedUniquePlacement({1:{internal_id:'X'},2:{internal_id:'X'},3:{internal_id:'Y'}});
@@ -404,6 +465,50 @@ process.stdout.write(JSON.stringify({status:'PASS'}));
     if result.get("status") != "PASS":
         fail("jinpo-bond-list.js 行動テストFAIL")
 
+    # Cache/timeout regressions are tested separately with a fake clock.
+    node2 = r"""
+const fs=require('fs'),vm=require('vm');
+let src=fs.readFileSync(process.argv[1],'utf8');
+const end='\n})();',i=src.lastIndexOf(end);
+if(i<0)throw new Error('IIFE end missing');
+src=src.slice(0,i)+`\nwindow.__T={loadBondMaster,recoverShareUrlAfterInit,resetBondCache:function(){bondMasterCache=null;bondMasterLoadingPromise=null;}};`+src.slice(i);
+let now=0,timers=[];
+const fakeDate={now(){return now}};
+const select={value:'',options:[{value:''},{value:'衡軛'},{value:'鶴翼'},{value:'魚鱗'},{value:'方円'}],selectedOptions:[]};
+const document={readyState:'loading',body:null,addEventListener(){},getElementById(id){return id==='formationSelect'?select:null},querySelector(){return null},querySelectorAll(){return[]}};
+const live=[{'因縁名':'STANDARD','因子1':'a','因子2':'b','因子3':'c'}];
+const ctx={window:{},document,console:{log(){},warn(){},error(){}},inenMaster:live,eiketsuMaster:[],placement:{},Date:fakeDate,location:{search:''},URLSearchParams,Map,Set,JSON,Array,Object,String,Number,RegExp,Error,Promise,
+ setTimeout(fn,delay){timers.push([fn,Number(delay)||0]);return timers.length},clearTimeout(){}};
+vm.createContext(ctx);
+vm.runInContext(`let inenMaster=globalThis.inenMaster;let eiketsuMaster=globalThis.eiketsuMaster;let placement=globalThis.placement;`+src,ctx);
+timers=[];
+(async()=>{
+ const t=ctx.window.__T;
+ let first=await t.loadBondMaster(); if(first[0]['因縁名']!=='STANDARD')throw new Error('initial master failed');
+ live.splice(0,live.length,{'因縁名':'OVERRIDE','因子1':'x','因子2':'y','因子3':'z'});
+ let second=await t.loadBondMaster(); if(second[0]['因縁名']!=='OVERRIDE')throw new Error('live override lost to stale cache');
+ // A standard CSV fetch resolving after a runtime override must never overwrite the newer live master.
+ live.length=0;t.resetBondCache();let resolveFetch;
+ ctx.window.JinpoActivationEngine={loadCSV(){return new Promise(r=>{resolveFetch=r})}};
+ const pending=t.loadBondMaster();
+ live.push({'因縁名':'RACE_OVERRIDE','因子1':'r1','因子2':'r2','因子3':'r3'});
+ resolveFetch([{'因縁名':'LATE_STANDARD','因子1':'s1','因子2':'s2','因子3':'s3'}]);
+ const raced=await pending;if(raced[0]['因縁名']!=='RACE_OVERRIDE')throw new Error('late standard fetch overwrote runtime override');
+ // Slow/failed initialization must become retryable after timeout, not remain permanently scheduled.
+ ctx.eiketsuMaster.length=0;live.length=0;ctx.location.search='?f=x';ctx.window.__jinpoShareUrlRecoveryScheduled=false;ctx.window.__jinpoShareUrlRecovered=false;ctx.window.__jinpoShareUrlRecoveryCancelled=false;
+ t.recoverShareUrlAfterInit();
+ let guard=0;while(timers.length&&guard++<1000){const [fn,d]=timers.shift();now+=d;fn();}
+ if(ctx.window.__jinpoShareUrlRecoveryScheduled!==false)throw new Error('share timeout not retryable');
+ if(!ctx.window.__jinpoShareUrlRecoveryTimedOut)throw new Error('share timeout flag missing');
+ process.stdout.write(JSON.stringify({status:'PASS'}));
+})().catch(e=>{console.error(e);process.exitCode=1});
+"""
+    cp2 = subprocess.run(["node","-e",node2,str(BOND_JS)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp2.returncode != 0:
+        fail("jinpo-bond-list.js cache/timeoutテストFAIL: " + cp2.stderr.strip())
+    if json.loads(cp2.stdout).get("status") != "PASS":
+        fail("jinpo-bond-list.js cache/timeoutテストFAIL")
+
 
 def validate_internal_save() -> None:
     text = read_text(INTERNAL_SAVE_JS)
@@ -424,16 +529,26 @@ def validate_internal_save() -> None:
         "seenSlots",
         "cleanedMembers",
         "seenSaveIds",
+        "return true;",
+        "return false;",
+        "陣形未選択または未対応の陣形のため保存しません",
+        "if(!write(list)) return null;",
+        "function notifyStorageIssue(message, error)",
+        "jinpo:save-storage-error",
+        "ブラウザの保存容量・プライベート設定",
     ]:
         if frag not in text:
             fail(f"jinpo-internal-save.js 回帰ガード欠落: {frag}")
     node = r"""
 const fs=require('fs'),vm=require('vm');
 const src=fs.readFileSync(process.argv[1],'utf8');
-const store={};
-const localStorage={getItem(k){return Object.prototype.hasOwnProperty.call(store,k)?store[k]:null},setItem(k,v){store[k]=String(v)}};
-const ctx={window:{},localStorage,console,Date,JSON,String,Array,Object,RegExp}; vm.createContext(ctx); vm.runInContext(src,ctx);
+const store={};let failWrite=false,alertCount=0;
+const localStorage={getItem(k){return Object.prototype.hasOwnProperty.call(store,k)?store[k]:null},setItem(k,v){if(failWrite)throw new Error('quota');store[k]=String(v)}};
+function CustomEvent(type,opts){this.type=type;this.detail=opts&&opts.detail}
+const win={alert(){alertCount++},dispatchEvent(){}};
+const ctx={window:win,localStorage,console,Date,JSON,String,Array,Object,RegExp,CustomEvent,setTimeout(fn){fn();return 1}}; vm.createContext(ctx); vm.runInContext(src,ctx);
 const api=ctx.window.JinpoInternalSave;
+if(api.saveFormation('invalid',{1:{internal_id:'EIK_X','英傑名':'X'}},'')!==null) throw new Error('invalid formation saved');
 api.saveFormation('x',{1:{internal_id:'EIK_A','英傑名':'A'}},'衝軛');
 api.saveFormation('y',{1:{internal_id:'EIK_B','英傑名':'B'}},'魚鱗');
 let saved=api.getSaved();
@@ -459,6 +574,12 @@ if(x.members[1].slot!==2||x.members[1].internal_id!=='') throw new Error('duplic
 /* migration must persist so the next read is stable and does not mint new IDs again. */
 const firstIds=saved.map(v=>v.id); saved=api.getSaved();
 if(JSON.stringify(firstIds)!==JSON.stringify(saved.map(v=>v.id))) throw new Error('legacy id migration not persisted');
+/* localStorage quota/private-mode failure must not report a false save success and must warn once. */
+failWrite=true;const failed=api.saveFormation('quota',{1:{internal_id:'EIK_Z','英傑名':'Z'}},'方円');
+if(failed!==null) throw new Error('storage failure falsely reported save success');
+if(alertCount!==1) throw new Error('storage failure warning missing');
+const failed2=api.saveFormation('quota2',{1:{internal_id:'EIK_Y','英傑名':'Y'}},'方円');
+if(failed2!==null||alertCount!==1) throw new Error('storage warning should be deduplicated');
 process.stdout.write(JSON.stringify({status:'PASS'}));
 """
     cp = subprocess.run(["node","-e",node,str(INTERNAL_SAVE_JS)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -491,7 +612,13 @@ def validate_workflow() -> None:
         "'陣法/jinpo-internal-save.js'",
         "'陣法/jinpo-activation-engine.js'",
         "'陣法/jinpo-formation-config.js'",
+        "'陣法/data/jinpo_eiketsu_master.csv'",
+        "'陣法/data/compact_search_v2/**'",
+        "'陣法/data/91因縁_計算式_倍率展開.csv'",
+        "'陣法/data/jinpo_job_mapping.json'",
         "github.actor != 'github-actions[bot]'",
+        'python "陣法/tools-next/ensure_compact_record_freshness.py"',
+        'python "陣法/tools-next/audit_compact_stats.py"',
         'python "陣法/tools-next/build_jinpo_next.py"',
         'python "陣法/tools-next/audit_runtime_regressions.py"',
         'git ls-files -- \'陣法/_jinpo-next-report/**\'',
@@ -502,6 +629,118 @@ def validate_workflow() -> None:
     for frag in required:
         if frag not in text:
             fail(f"workflow 回帰ガード欠落: {frag}")
+
+
+def validate_compact_pipeline_guards() -> None:
+    fresh = read_text(FRESHNESS_GUARD)
+    stats = read_text(COMPACT_STATS_AUDIT)
+    for frag in [
+        "record_model_fingerprint.json",
+        "91因縁_計算式_倍率展開.csv",
+        "formation_bonus.csv",
+        "rebuild_all_compact.py",
+        "dirty_internal_ids",
+        "run('rebuild_top500.py')",
+        "run('rebuild_recommend_sum_top.py')",
+        "run('audit_search_integrity.py')",
+    ]:
+        if frag not in fresh:
+            fail(f"compact再計算保証欠落: {frag}")
+    for frag in [
+        "records_checked", "stat_errors", "expected_stats",
+        "91因縁_計算式_倍率展開.csv", "formation_bonus.csv",
+        "stored!=exp or total!=exp_total",
+    ]:
+        if frag not in stats:
+            fail(f"compactステータス全件監査欠落: {frag}")
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT):
+        cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cp.returncode != 0:
+            fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
+
+
+def validate_compact_pipeline_behavior() -> None:
+    """Tiny executable fixtures prove both new pipeline guards actually catch the failures they were added for."""
+    with tempfile.TemporaryDirectory(prefix="jinpo-compact-guard-") as td:
+        base = Path(td)
+        (base / "tools-next").mkdir(parents=True)
+        (base / "data" / "compact_search_v2").mkdir(parents=True)
+        shutil.copy2(FRESHNESS_GUARD, base / "tools-next" / FRESHNESS_GUARD.name)
+        (base / "data" / "jinpo_inen_master.csv").write_text(
+            "No,因縁名,因子1,因子2,因子3\n1,A,a,b,c\n", encoding="utf-8-sig")
+        (base / "data" / "91因縁_計算式_倍率展開.csv").write_text(
+            "因縁名,対象ステータス,実効係数\nA,生命,0.1\n", encoding="utf-8-sig")
+        (base / "data" / "formation_bonus.csv").write_text(
+            "formation,生命\n衡軛,1.00\n", encoding="utf-8-sig")
+        with (base / "data" / "jinpo_eiketsu_master.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.writer(f); w.writerow(["internal_id","英傑名"]); w.writerow(["EIK_0001","A"]); w.writerow(["EIK_0002","B"])
+        # rebuild_all_compact.py is itself part of the fingerprint, so its test stub also doubles as an invocation logger.
+        for script, label in (
+            ("rebuild_all_compact.py","all"), ("rebuild_top500.py","top"),
+            ("rebuild_recommend_sum_top.py","recommend"), ("audit_search_integrity.py","audit"),
+        ):
+            (base / "tools-next" / script).write_text(
+                "from pathlib import Path\n"
+                "p=Path(__file__).resolve().parents[1]/'calls.log'\n"
+                f"p.write_text((p.read_text() if p.exists() else '')+'{label}\\n')\n",
+                encoding="utf-8")
+
+        guard = base / "tools-next" / FRESHNESS_GUARD.name
+        def run_guard() -> dict:
+            cp = subprocess.run([sys.executable, str(guard)], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            if cp.returncode != 0:
+                fail("compact freshness synthetic FAIL: " + cp.stderr.strip())
+            try: return json.loads(cp.stdout.strip())
+            except Exception as e: fail(f"compact freshness synthetic JSON不正: {e}: {cp.stdout!r}")
+
+        first = run_guard()
+        calls1 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
+        second = run_guard()
+        calls2 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
+        coef = base / "data" / "91因縁_計算式_倍率展開.csv"
+        coef.write_text(coef.read_text(encoding="utf-8-sig").replace("0.1","0.2"), encoding="utf-8-sig")
+        third = run_guard()
+        calls3 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
+        if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or len(calls1) != 4:
+            fail("compact freshness: fingerprint未作成時の全dirty再計算FAIL")
+        if second.get("model_changed") or second.get("forced_dirty_hero_count") != 0 or calls2 != calls1:
+            fail("compact freshness: 同一fingerprintで不要な全再計算")
+        if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2 or len(calls3) != 8:
+            fail("compact freshness: 係数変更を検知できません")
+
+    with tempfile.TemporaryDirectory(prefix="jinpo-compact-stats-") as td:
+        base = Path(td)
+        (base / "tools-next").mkdir(parents=True)
+        (base / "data" / "compact_search_v2").mkdir(parents=True)
+        shutil.copy2(COMPACT_STATS_AUDIT, base / "tools-next" / COMPACT_STATS_AUDIT.name)
+        stats = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"]
+        with (base / "data" / "jinpo_eiketsu_master.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            w=csv.writer(f); w.writerow(["internal_id","英傑名"]+stats)
+            for hid in range(1,7): w.writerow([f"EIK_{hid:04d}",f"H{hid}"]+[100+hid]*11)
+        (base / "data" / "jinpo_inen_master.csv").write_text(
+            "No,因縁名,因子1,因子2,因子3\n1,B,a,b,c\n", encoding="utf-8-sig")
+        (base / "data" / "91因縁_計算式_倍率展開.csv").write_text(
+            "因縁名,対象ステータス,実効係数\nB,生命,0.1\nB,腕力,0.2\n", encoding="utf-8-sig")
+        with (base / "data" / "formation_bonus.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            w=csv.writer(f); w.writerow(["formation"]+stats); w.writerow(["衡軛"]+["1.10"]+["1.00"]*10)
+        base_stat=sum(100+h for h in range(1,7))
+        vals=[0]*11; vals[0]=math.floor(base_stat*.1+1e-9)*110//100; vals[2]=math.floor(base_stat*.2+1e-9)
+        rec=bytearray(52); struct.pack_into("<6H",rec,0,*range(1,7)); rec[12]=1
+        for j,v in enumerate(vals): struct.pack_into("<H",rec,21+2*j,v)
+        struct.pack_into("<I",rec,43,sum(vals))
+        header=bytearray(16); header[:4]=b"JCF1"; struct.pack_into("<H",header,6,52); struct.pack_into("<I",header,8,1)
+        dataset=base/"data"/"compact_search_v2"/"test.bin.gz"; dataset.write_bytes(gzip.compress(bytes(header+rec)))
+        manifest={"datasets":{"normal":{"1":{"衡軛":{"file":"data/compact_search_v2/test.bin.gz","rows":1}}}}}
+        (base/"data"/"compact_search_v2"/"jinpo_unified_search_manifest.json").write_text(json.dumps(manifest,ensure_ascii=False),encoding="utf-8")
+        audit=base/"tools-next"/COMPACT_STATS_AUDIT.name
+        good=subprocess.run([sys.executable,str(audit)],cwd=base,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if good.returncode != 0 or json.loads(good.stdout).get("stat_errors") != 0:
+            fail("compact stats synthetic 正常recordをFAILしました")
+        raw=bytearray(gzip.decompress(dataset.read_bytes())); off=16+21
+        struct.pack_into("<H",raw,off,struct.unpack_from("<H",raw,off)[0]+1); dataset.write_bytes(gzip.compress(bytes(raw)))
+        bad=subprocess.run([sys.executable,str(audit)],cwd=base,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if bad.returncode == 0 or json.loads(bad.stdout).get("stat_errors") != 1:
+            fail("compact stats synthetic 改ざんrecordを検知できません")
 
 
 def validate_no_unsupported_10_bonds() -> dict:
@@ -643,6 +882,8 @@ def main() -> None:
     validate_internal_save()
     validate_html_integration_if_present()
     validate_workflow()
+    validate_compact_pipeline_guards()
+    validate_compact_pipeline_behavior()
     max_guard = validate_no_unsupported_10_bonds()
     validate_manifest_if_present()
     print(json.dumps({
@@ -654,6 +895,9 @@ def main() -> None:
         "internal_save_behavior":"PASS",
         "html_script_order":"PASS" if HTML.exists() else "SKIP(local fixture)",
         "workflow_regressions":"PASS",
+        "compact_record_freshness_guard":"PASS",
+        "compact_stats_full_audit_guard":"PASS",
+        "compact_pipeline_synthetic_behavior":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))

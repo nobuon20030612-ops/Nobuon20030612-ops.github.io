@@ -4,6 +4,18 @@
 */
 (function(){
   const KEY = "jinpo_internal_saved_formations";
+  let storageWarningShown = false;
+  function notifyStorageIssue(message, error){
+    try{ console.error(message, error || ""); }catch(_){}
+    try{
+      window.dispatchEvent(new CustomEvent("jinpo:save-storage-error", {detail:{message:String(message || "編成保存に失敗しました")}}));
+    }catch(_){}
+    if(storageWarningShown) return;
+    storageWarningShown = true;
+    try{
+      setTimeout(function(){ try{ if(typeof window.alert === "function") window.alert(String(message || "編成保存に失敗しました")); }catch(_){} }, 0);
+    }catch(_){}
+  }
   function migrateLegacyHeroId(v){
     const id = String(v || "");
     return id === "EIK_0125" ? "EIK_0246" : id;
@@ -74,13 +86,18 @@
       if(JSON.stringify(migrated) !== before) write(migrated);
       return migrated;
     }catch(e){
+      notifyStorageIssue("保存済み編成を読み込めませんでした。ブラウザの保存領域を確認してください。", e);
       return [];
     }
   }
   function write(data){
     try{
       localStorage.setItem(KEY, JSON.stringify(Array.isArray(data) ? data : []));
-    }catch(e){}
+      return true;
+    }catch(e){
+      notifyStorageIssue("編成を保存できませんでした。ブラウザの保存容量・プライベート設定を確認してください。", e);
+      return false;
+    }
   }
   function membersFromPlacement(placement){
     return [1,2,3,4,5,6].map(function(slot){
@@ -105,6 +122,10 @@
     saveFormation: function(name, placement, formation){
       const list = read();
       const canonical = canonicalFormationName(formation);
+      if(!canonical){
+        try{ console.error("陣形未選択または未対応の陣形のため保存しません", formation); }catch(e){}
+        return null;
+      }
       const item = {
         id: makeSaveId(),
         name: String(name || "無題"),
@@ -114,12 +135,12 @@
         savedAt: new Date().toISOString()
       };
       list.unshift(item);
-      write(list);
+      if(!write(list)) return null;
       return item;
     },
     deleteFormation: function(id){
       const target = String(id || "");
-      write(read().filter(function(item){ return String(item.id) !== target; }));
+      return write(read().filter(function(item){ return String(item.id) !== target; }));
     }
   };
 })();

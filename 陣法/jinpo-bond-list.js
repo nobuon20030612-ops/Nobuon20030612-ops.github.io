@@ -78,6 +78,131 @@
     var opt = sel.selectedOptions && sel.selectedOptions[0] ? text(sel.selectedOptions[0].textContent) : '';
     return canonicalFormation(sel.value) || canonicalFormation(opt);
   }
+  function syncFormationUiState(){
+    try{
+      if(!document.body || !document.body.classList) return;
+      document.body.classList.toggle('jinpoFormationSelected', !!currentFormationName());
+    }catch(e){}
+  }
+  function searchModelRowSignature(rows, kind){
+    if(!Array.isArray(rows)) return '';
+    var fields = kind === 'inen'
+      ? ['No','因縁名','因子1','因子2','因子3']
+      : ['internal_id','英傑名','コスト','生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性','因子1','因子2','因子3','因子4'];
+    var normalized = rows.map(function(row){
+      return fields.map(function(k){ return text(row && row[k]); });
+    });
+    normalized.sort(function(a,b){
+      var aa=a.join('\u0001'),bb=b.join('\u0001');
+      return aa<bb?-1:(aa>bb?1:0);
+    });
+    return JSON.stringify(normalized);
+  }
+  function currentRuntimeOverrideActive(){
+    try{
+      var curE = (typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)) ? eiketsuMaster : [];
+      var curI = (typeof inenMaster !== 'undefined' && Array.isArray(inenMaster)) ? inenMaster : [];
+      var stdE = (typeof standardEiketsuMaster !== 'undefined' && Array.isArray(standardEiketsuMaster)) ? standardEiketsuMaster : [];
+      var stdI = (typeof standardInenMaster !== 'undefined' && Array.isArray(standardInenMaster)) ? standardInenMaster : [];
+      if(!stdE.length || !stdI.length) return false;
+      return searchModelRowSignature(curE,'eiketsu') !== searchModelRowSignature(stdE,'eiketsu') ||
+             searchModelRowSignature(curI,'inen') !== searchModelRowSignature(stdI,'inen');
+    }catch(e){ return !!window.__jinpoRuntimeMasterOverrideActive; }
+  }
+  function setPrecomputedSearchDisabled(disabled){
+    window.__jinpoRuntimeMasterOverrideActive = !!disabled;
+    try{ if(document.body && document.body.classList) document.body.classList.toggle('jinpo-runtime-master-override',!!disabled); }catch(e){}
+    try{
+      document.querySelectorAll('#dbCountButtons .dbCountBtn,[data-jinpo-recommend-stat]').forEach(function(btn){
+        btn.disabled = !!disabled;
+        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        if(disabled) btn.setAttribute('data-jinpo-master-override-disabled','1');
+        else btn.removeAttribute('data-jinpo-master-override-disabled');
+      });
+    }catch(e){}
+    if(!disabled) return;
+    try{ selectedDbListBondCount = null; }catch(e){}
+    try{ window.selectedDbListBondCount = null; }catch(e){}
+    try{
+      if(window.JINPO_FAST_SEARCH){
+        if(typeof window.JINPO_FAST_SEARCH.exitRecommendMode === 'function') window.JINPO_FAST_SEARCH.exitRecommendMode();
+        if(typeof window.JINPO_FAST_SEARCH.clear === 'function') window.JINPO_FAST_SEARCH.clear();
+      }
+    }catch(e){}
+    var msg='マスター差替え中は事前生成検索DBと条件が一致しないため、5〜9因縁検索・おすすめ陣法を停止しています。標準マスターへ戻すと再開します。';
+    try{ var st=document.getElementById('dbListStatus'); if(st) st.textContent=msg; }catch(e){}
+    try{ var box=document.getElementById('dbFormationList'); if(box) box.innerHTML='<div class="dbListNote">'+esc(msg)+'</div>'; }catch(e){}
+    try{ var hit=document.getElementById('jinpoResultHitValue'); if(hit) hit.textContent='—'; }catch(e){}
+    try{ var shown=document.getElementById('jinpoResultShownValue'); if(shown) shown.textContent='—'; }catch(e){}
+  }
+  function syncRuntimeOverrideSearchState(){
+    var disabled = currentRuntimeOverrideActive();
+    setPrecomputedSearchDisabled(disabled);
+    if(!disabled){
+      try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    }
+    return disabled;
+  }
+  function observePrecomputedSearchOverrideTargets(){
+    var observer=window.__jinpoPrecomputedSearchOverrideObserver;
+    if(!observer) return;
+    ['dbCountButtons','jinpoRecommendNav'].forEach(function(id){
+      var target=document.getElementById(id);
+      if(!target || target.__jinpoPrecomputedSearchObserved) return;
+      try{
+        observer.observe(target,{childList:true,subtree:true});
+        target.__jinpoPrecomputedSearchObserved=true;
+      }catch(e){}
+    });
+  }
+  function installPrecomputedSearchOverrideGuard(){
+    if(window.__jinpoPrecomputedSearchOverrideGuardInstalled){ observePrecomputedSearchOverrideTargets(); return; }
+    window.__jinpoPrecomputedSearchOverrideGuardInstalled=true;
+    /* window capture は document capture より先に通るため、fast-search 側の既存click handlerより確実に先に停止できる。 */
+    window.addEventListener('click',function(ev){
+      if(!window.__jinpoRuntimeMasterOverrideActive) return;
+      var target=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn,[data-jinpo-recommend-stat]'):null;
+      if(!target) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      setPrecomputedSearchDisabled(true);
+    },true);
+    /* fast-search がボタンをinnerHTMLで再生成しても即座に再無効化する。
+       jinpo.html は body/html 全体のMutationObserverを抑止するため、監視対象は必要な2領域だけに限定する。 */
+    if(typeof MutationObserver==='function'){
+      try{
+        window.__jinpoPrecomputedSearchOverrideObserver=new MutationObserver(function(){
+          if(window.__jinpoRuntimeMasterOverrideActive) setPrecomputedSearchDisabled(true);
+        });
+        observePrecomputedSearchOverrideTargets();
+      }catch(e){}
+    }
+  }
+  function refreshFormationDependentSearchUi(){
+    syncFormationUiState();
+    if(syncRuntimeOverrideSearchState()) return true;
+    try{
+      if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isRecommendMode === 'function' && window.JINPO_FAST_SEARCH.isRecommendMode()){
+        if(typeof window.JINPO_FAST_SEARCH.exitRecommendMode === 'function') window.JINPO_FAST_SEARCH.exitRecommendMode();
+      }
+    }catch(e){}
+    var count = 0;
+    try{ count = Number(typeof selectedDbListBondCount !== 'undefined' ? selectedDbListBondCount : window.selectedDbListBondCount) || 0; }catch(e){}
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    if(count >= 5 && count <= 9){
+      try{
+        if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.renderCurrent === 'function'){
+          var run = window.JINPO_FAST_SEARCH.renderCurrent({count:count,forceNormal:true});
+          Promise.resolve(run).catch(function(err){ console.error('陣形復元後の検索一覧更新失敗',err); });
+          return run;
+        }
+        if(typeof window.handleDbCountButtonClick === 'function') return window.handleDbCountButtonClick(count);
+        if(typeof renderDbFormationList === 'function') return renderDbFormationList();
+      }catch(e){ console.error('陣形復元後の検索一覧更新失敗',e); }
+    }
+    return true;
+  }
   function lineId(slots){
     return (Array.isArray(slots) ? slots : []).map(Number).filter(Boolean).sort(function(a,b){return a-b;}).join('-');
   }
@@ -153,6 +278,7 @@
       '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
       '#jinpoRecommendNav{display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;}',
       'body.jinpo-recommend-active{--jinpo-rec-accent:#ffd463;--jinpo-rec-accent2:#e7bd5c;--jinpo-rec-bg1:#6f2419;--jinpo-rec-bg2:#26100a;--jinpo-rec-text:#fff5d4;--jinpo-rec-soft:rgba(231,189,92,.18);--jinpo-rec-glow:rgba(231,189,92,.46);}',
+      'body.jinpo-runtime-master-override #dbCountButtons .dbCountBtn,body.jinpo-runtime-master-override [data-jinpo-recommend-stat]{pointer-events:none!important;cursor:not-allowed!important;opacity:.42!important;filter:grayscale(.55)!important;}',
       '.jinpoRecommendLabel{flex:0 0 auto;margin-right:3px;color:#ffe1a1;font-size:15px;font-weight:950;white-space:nowrap;}',
       'body.jinpo-recommend-active .jinpoRecommendLabel{color:var(--jinpo-rec-accent);text-shadow:0 0 9px var(--jinpo-rec-glow);}',
       '.jinpoRecommendExitBtn{flex:0 0 auto;min-width:104px;min-height:38px;padding:6px 11px;border-radius:10px;border:2px solid #d6aa50;background:linear-gradient(#3d2a18,#1a1009);color:#a88f68;font-size:13px;font-weight:950;line-height:1;cursor:not-allowed;white-space:nowrap;box-sizing:border-box;opacity:.52;transition:filter .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease;}',
@@ -432,6 +558,7 @@
       recommend.addEventListener('click',function(ev){
         var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-recommend-stat]');if(!btn)return;
         var stat=text(btn.getAttribute('data-jinpo-recommend-stat'));if(!stat)return;
+        if(syncRuntimeOverrideSearchState()) return;
         if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.runRecommended==='function'){
           var run=window.JINPO_FAST_SEARCH.runRecommended(stat);
           requestAnimationFrame(function(){
@@ -500,13 +627,14 @@
     document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape' && backdrop.classList.contains('is-open')) closeModal(); });
   }
   async function loadBondMaster(){
-    if(Array.isArray(bondMasterCache) && bondMasterCache.length) return bondMasterCache;
+    /* 画面上で因縁マスターを差し替えた場合は、過去キャッシュより現在のinenMasterを必ず優先する。 */
     try{
       if(typeof inenMaster !== 'undefined' && Array.isArray(inenMaster) && inenMaster.length){
         bondMasterCache = inenMaster.slice();
         return bondMasterCache;
       }
     }catch(e){}
+    if(Array.isArray(bondMasterCache) && bondMasterCache.length) return bondMasterCache;
     if(bondMasterLoadingPromise) return bondMasterLoadingPromise;
     if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.loadCSV !== 'function'){
       throw new Error('因縁マスター読込機能が見つかりません');
@@ -515,6 +643,13 @@
     bondMasterLoadingPromise = window.JinpoActivationEngine.loadCSV('data/jinpo_inen_master.csv')
       .then(function(rows){
         if(!Array.isArray(rows) || !rows.length) throw new Error('因縁マスターが空です');
+        /* fetch待ちの途中でランタイム差替えが行われた場合も、解決時点のlive masterを優先する。 */
+        try{
+          if(typeof inenMaster !== 'undefined' && Array.isArray(inenMaster) && inenMaster.length){
+            bondMasterCache = inenMaster.slice();
+            return bondMasterCache;
+          }
+        }catch(e){}
         bondMasterCache = rows.slice();
         return bondMasterCache;
       })
@@ -573,10 +708,11 @@
     try{
       if(typeof placement === 'undefined' || !placement) return null;
       var calcMaster = Array.isArray(master) && master.length ? master : null;
-      if(!calcMaster && Array.isArray(bondMasterCache) && bondMasterCache.length) calcMaster = bondMasterCache;
+      /* 明示masterが無い時も、ランタイム差替え後の現在inenMasterをキャッシュより優先する。 */
       if(!calcMaster){
         try{ if(typeof inenMaster !== 'undefined' && Array.isArray(inenMaster) && inenMaster.length) calcMaster = inenMaster; }catch(e){}
       }
+      if(!calcMaster && Array.isArray(bondMasterCache) && bondMasterCache.length) calcMaster = bondMasterCache;
       if(!calcMaster) return null;
       var formation = currentFormationName();
       if(!formation || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== 'function') return null;
@@ -936,6 +1072,8 @@
     try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
     try{ if(typeof renderFormation === 'function') renderFormation(null); }catch(e){}
     try{ if(typeof calculate === 'function') calculate(); }catch(e){ console.error('共有編成の再計算失敗',e); }
+    syncFormationUiState();
+    refreshFormationDependentSearchUi();
     return true;
   }
   function installShareStateGuard(){
@@ -974,12 +1112,19 @@
     window.__jinpoShareUrlRecoveryScheduled = true;
     window.__jinpoShareUrlRecoveryCancelled = false;
     var attempts = 0;
+    var startedAt = Date.now();
     function tryRestore(){
       if(window.__jinpoShareUrlRecoveryCancelled) return;
       attempts += 1;
       if(!sharePrerequisitesReady()){
-        if(attempts < 200) setTimeout(tryRestore,50);
-        else console.error('共有URL復元: マスタ読込完了を確認できませんでした');
+        /* 共有URLを開いた時だけ待機。低速回線でも10秒で永久失敗しないよう最大120秒待つ。 */
+        if(Date.now() - startedAt < 120000){
+          setTimeout(tryRestore, attempts < 100 ? 100 : 500);
+        }else{
+          window.__jinpoShareUrlRecoveryScheduled = false;
+          window.__jinpoShareUrlRecoveryTimedOut = true;
+          console.error('共有URL復元: 120秒以内にマスタ読込完了を確認できませんでした。再試行可能状態へ戻しました');
+        }
         return;
       }
       if(window.__jinpoShareUrlRecoveryCancelled) return;
@@ -1049,6 +1194,7 @@
       }finally{
         /* renderFormation が鶴翼の見た目用2人線を activeLines に混ぜても計算設定へ残さない。 */
         restoreCanonicalCalculationLines();
+        syncFormationUiState();
       }
     }
     guardedRenderFormation.__jinpoCanonicalLineRestoreWrapped = true;
@@ -1076,6 +1222,74 @@
       return [];
     }
   }
+  function validateInenOverrideStrict(rows){
+    var errors=[];
+    if(!Array.isArray(rows) || !rows.length) return ['因縁マスターが空です'];
+    var seenNames=new Set();
+    rows.forEach(function(row,index){
+      var line=index+2,name=text(row && row['因縁名']);
+      if(!name) errors.push(line+'行目 因縁名なし');
+      var key=normalize(name);
+      if(key && seenNames.has(key)) errors.push(line+'行目 因縁名重複: '+name);
+      if(key) seenNames.add(key);
+      ['因子1','因子2','因子3'].forEach(function(field){
+        if(!row || !(field in row)) errors.push(line+'行目 '+field+'列なし');
+        else if(!text(row[field])) errors.push(line+'行目 '+field+'が空です');
+      });
+    });
+    return unique(errors);
+  }
+  function installRuntimeMasterOverrideGuards(){
+    var applyInen=window.applyInenMasterRows;
+    if(typeof applyInen==='function' && !applyInen.__jinpoStrictOverrideWrapped){
+      function guardedApplyInenMasterRows(rows,label){
+        var errors=validateInenOverrideStrict(rows);
+        if(errors.length){
+          var box=document.getElementById('overrideInenStatus');
+          if(box) box.innerHTML='<span style="color:#ff8a8a">適用不可</span><br>'+errors.slice(0,20).map(esc).join('<br>');
+          return false;
+        }
+        var ok=applyInen.apply(this,arguments);
+        if(ok!==false){
+          try{ if(typeof inenMaster!=='undefined' && Array.isArray(inenMaster)){ bondMasterCache=inenMaster.slice(); } }catch(e){ bondMasterCache=null; }
+          activeCalculatedResult=null; activeBondNames=[]; lockedActiveCard=null;
+          syncRuntimeOverrideSearchState();
+          try{
+            var modal=document.getElementById('jinpoBondModalBackdrop');
+            if(modal && modal.classList.contains('is-open') && modalMode==='active') setTimeout(function(){ openModal('active'); },0);
+          }catch(e){}
+        }
+        return ok;
+      }
+      guardedApplyInenMasterRows.__jinpoStrictOverrideWrapped=true;
+      guardedApplyInenMasterRows.__jinpoStrictOverrideOriginal=applyInen;
+      window.applyInenMasterRows=guardedApplyInenMasterRows;
+      try{ applyInenMasterRows=guardedApplyInenMasterRows; }catch(e){}
+    }
+    var applyHero=window.applyEiketsuMasterRows;
+    if(typeof applyHero==='function' && !applyHero.__jinpoSearchSafetyWrapped){
+      function guardedApplyEiketsuMasterRows(){
+        var ok=applyHero.apply(this,arguments);
+        if(ok!==false){ syncRuntimeOverrideSearchState(); scheduleOwnedHeroJobMetaFix(); }
+        return ok;
+      }
+      guardedApplyEiketsuMasterRows.__jinpoSearchSafetyWrapped=true;
+      guardedApplyEiketsuMasterRows.__jinpoSearchSafetyOriginal=applyHero;
+      window.applyEiketsuMasterRows=guardedApplyEiketsuMasterRows;
+      try{ applyEiketsuMasterRows=guardedApplyEiketsuMasterRows; }catch(e){}
+    }
+  }
+  function installSavedFormationRefreshGuard(){
+    if(window.__jinpoSavedFormationRefreshGuardInstalled) return;
+    window.__jinpoSavedFormationRefreshGuardInstalled=true;
+    document.addEventListener('click',function(ev){
+      var btn=ev.target&&ev.target.closest?ev.target.closest('#savedFormations [data-load]'):null;
+      if(!btn) return;
+      /* 既存の読込handlerがplacement/formationを更新した直後に、検索一覧も同じ陣形へ揃える。 */
+      setTimeout(function(){ syncFormationUiState(); refreshFormationDependentSearchUi(); },0);
+    },false);
+  }
+
   function installDbApplyDuplicateGuard(){
     var current = window.applyDbFormationRow;
     if(typeof current !== 'function' || current.__jinpoDuplicateHeroGuardWrapped) return;
@@ -1105,8 +1319,13 @@
     installActivationDuplicateGuard();
     installFormationRenderGuard();
     installDbApplyDuplicateGuard();
+    installRuntimeMasterOverrideGuards();
+    installPrecomputedSearchOverrideGuard();
+    installSavedFormationRefreshGuard();
     installShareStateGuard();
     installShareRecoveryCancelGuard();
+    syncFormationUiState();
+    syncRuntimeOverrideSearchState();
     recoverShareUrlAfterInit();
     syncRecommendDecorFromSearch();
   }

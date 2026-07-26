@@ -15,8 +15,12 @@ on:
       - '陣法/jinpo-fast-search-worker.js'
       - '陣法/jinpo-activation-engine.js'
       - '陣法/jinpo-formation-config.js'
+      - '陣法/data/jinpo_eiketsu_master.csv'
       - '陣法/data/jinpo_inen_master.csv'
+      - '陣法/data/compact_search_v2/**'
+      - '陣法/data/91因縁_計算式_倍率展開.csv'
       - '陣法/data/formation_bonus.csv'
+      - '陣法/data/jinpo_job_mapping.json'
   workflow_dispatch:
 
 permissions:
@@ -49,6 +53,12 @@ jobs:
 
       - name: 英傑一覧から陣法を全再生成・既存監査
         run: python "陣法/tools-next/build_jinpo_next.py"
+
+      - name: compactレコードモデル変更時の全再計算保証
+        run: python "陣法/tools-next/ensure_compact_record_freshness.py"
+
+      - name: compactステータス全件監査
+        run: python "陣法/tools-next/audit_compact_stats.py"
 
       - name: 追加の回帰監査
         run: python "陣法/tools-next/audit_runtime_regressions.py"
