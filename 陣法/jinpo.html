@@ -9328,6 +9328,41 @@ body{padding-top:0 !important;}
   color:#ffe9b4 !important;
   border:1px solid #8d6a2f !important;
 }
+/* 第1・第2優先ソートの数値範囲を視覚的に区別：以上=赤系 / 以下=青系 */
+.dbPriorityRangeMin .dbPriorityValueChoice{
+  background:linear-gradient(180deg,#8a3027,#551b17) !important;
+  color:#fff5f2 !important;
+  border:1px solid #ff8b7f !important;
+}
+.dbPriorityRangeMax .dbPriorityValueChoice{
+  background:linear-gradient(180deg,#245f91,#153653) !important;
+  color:#f1f9ff !important;
+  border:1px solid #75c2ff !important;
+}
+.dbPriorityRangeMin .dbPriorityValueChoice:hover:not(:disabled){
+  filter:brightness(1.16) !important;
+  box-shadow:0 0 12px rgba(255,113,99,.42) !important;
+}
+.dbPriorityRangeMax .dbPriorityValueChoice:hover:not(:disabled){
+  filter:brightness(1.16) !important;
+  box-shadow:0 0 12px rgba(92,181,255,.42) !important;
+}
+.dbPriorityRangeMin .dbPriorityValueChoice.active{
+  background:linear-gradient(180deg,#b33a2e,#711f19) !important;
+  color:#fffaf7 !important;
+  border-color:#ff9b91 !important;
+  outline:3px solid #fff2a3 !important;
+  outline-offset:2px !important;
+  box-shadow:0 0 17px rgba(255,91,75,.90),inset 0 0 8px rgba(255,255,255,.12) !important;
+}
+.dbPriorityRangeMax .dbPriorityValueChoice.active{
+  background:linear-gradient(180deg,#327bb5,#18466d) !important;
+  color:#f8fcff !important;
+  border-color:#8dceff !important;
+  outline:3px solid #fff2a3 !important;
+  outline-offset:2px !important;
+  box-shadow:0 0 17px rgba(74,169,255,.92),inset 0 0 8px rgba(255,255,255,.12) !important;
+}
 /* 指定色 */
 .dbPriorityStatChoice[data-stat="生命"]{background:#fff !important;color:#111 !important;border:1px solid #cfcfcf !important}
 .dbPriorityStatChoice[data-stat="気合"]{background:#cfefff !important;color:#102633 !important;border:1px solid #78b8da !important}
