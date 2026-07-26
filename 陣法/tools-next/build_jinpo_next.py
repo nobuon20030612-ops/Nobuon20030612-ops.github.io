@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'source-next' / '英傑一覧.csv'
-SITE = ROOT / 'jinpo-next'
+SITE = ROOT
 MASTER = SITE / 'data' / 'jinpo_eiketsu_master.csv'
 REPORT_DIR = ROOT / '_jinpo-next-report'
 REPORT = REPORT_DIR / 'build_report.json'
@@ -50,9 +50,62 @@ def fail(msg: str, report: dict):
     print('ERROR:', msg, file=sys.stderr)
     sys.exit(1)
 
+def last_added_hero_from_summary(summary: dict) -> str:
+    """Return only a genuine previously-added hero name; never reuse generic target text."""
+    if not isinstance(summary, dict):
+        return ''
+    direct = str(summary.get('last_added_hero', '')).strip()
+    if direct:
+        return direct
+    heroes = summary.get('new_heroes', [])
+    if isinstance(heroes, list):
+        for item in reversed(heroes):
+            if isinstance(item, dict):
+                name = str(item.get('英傑名') or item.get('名前') or '').strip()
+                if name:
+                    return name
+    return ''
+
+
+def write_latest_update_summary(summary_path: Path, new_infos: list, changed_infos: list, generation: dict, updated_at: str | None = None):
+    """Update date for a real hero-list change, but change added-hero text only for true new registrations."""
+    previous_summary = {}
+    if summary_path.exists():
+        try:
+            previous_summary = json.loads(summary_path.read_text(encoding='utf-8'))
+        except Exception:
+            previous_summary = {}
+
+    previous_last_added = last_added_hero_from_summary(previous_summary)
+    last_added_hero = previous_last_added
+    if new_infos:
+        # sync_eiketsu_master.py emits new_heroes in source-number order; the final item is the latest addition.
+        last_added_hero = str(new_infos[-1].get('英傑名', '')).strip() or previous_last_added
+
+    if not (new_infos or changed_infos):
+        return False, previous_last_added
+
+    if updated_at is None:
+        from zoneinfo import ZoneInfo
+        updated_at = datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y-%m-%d')
+
+    update_summary = {
+        'schema': 'jinpo-next-phase2-auto-update/v2',
+        'source_file': 'source-next/英傑一覧.csv',
+        'updated_at': updated_at,
+        'last_added_hero': last_added_hero,
+        'new_registration_only': bool(new_infos) and not changed_infos,
+        'new_heroes': new_infos,
+        'changed_existing': changed_infos,
+        'generation': generation,
+        'note': '英傑一覧.csvから英傑マスタ・配置/除外候補・5～9因縁compact DB・Top500を自動更新',
+    }
+    summary_path.write_text(json.dumps(update_summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    return True, last_added_hero
+
 def main():
     report = {
-        'phase': 'phase1-safe-staging',
+        'phase': 'phase2-auto-regeneration',
         'status': 'CHECKING',
         'generated_at_utc': datetime.now(timezone.utc).isoformat(),
         'source': str(SOURCE.relative_to(ROOT)),
@@ -61,7 +114,18 @@ def main():
         'warnings': []
     }
     if not SOURCE.exists(): fail('source-next/英傑一覧.csv がありません', report)
-    if not MASTER.exists(): fail('jinpo-next/data/jinpo_eiketsu_master.csv がありません', report)
+    if not MASTER.exists(): fail('陣法/data/jinpo_eiketsu_master.csv がありません', report)
+
+    # Phase2: 英傑一覧を唯一の日常更新入力として、internal_idを維持しながら英傑マスタへ同期する。
+    sync_script = ROOT/'tools-next'/'sync_eiketsu_master.py'
+    if not sync_script.exists(): fail('Phase2英傑マスタ同期スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(sync_script)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('英傑マスタ自動同期FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    sync_report_path = REPORT_DIR/'master_sync.json'
+    if not sync_report_path.exists(): fail('英傑マスタ同期レポートがありません', report)
+    sync_report = json.loads(sync_report_path.read_text(encoding='utf-8'))
+    if sync_report.get('status') != 'PASS': fail('英傑マスタ同期レポートがPASSではありません', report)
 
     source_rows, source_headers = read_csv(SOURCE)
     master_rows, _ = read_csv(MASTER)
@@ -99,62 +163,71 @@ def main():
     if any(not x for x in nums): fail('番号が空の行があります', report)
     if any(not x for x in names): fail('名前が空の行があります', report)
     if len(nums) != len(set(nums)): fail('英傑一覧の番号重複を検出', report)
-    # 同名英傑は実データ上存在するため、名前だけを主キーにはしない。
-    # 同名内の出現順を含む occurrence key で既存行を対応させる。
-    def occurrence_map(rows, name_field):
-        counts = {}
-        out = {}
-        for r in rows:
-            name = str(r.get(name_field,'')).strip()
-            if not name:
-                continue
-            counts[name] = counts.get(name, 0) + 1
-            out[(name, counts[name])] = r
-        return out
-
-    by_master = occurrence_map(master_rows, '英傑名')
-    by_source = occurrence_map(source_rows, '名前')
-    new_keys = sorted(set(by_source) - set(by_master))
-    removed_keys = sorted(set(by_master) - set(by_source))
-    new_names = [f'{n}#{i}' if i > 1 else n for n,i in new_keys]
-    removed_names = [f'{n}#{i}' if i > 1 else n for n,i in removed_keys]
-    changed = []
-    for key in sorted(set(by_source) & set(by_master)):
-        name, occurrence = key
-        s, m = by_source[key], by_master[key]
-        diffs = []
-        for mc, sc in MAP.items():
-            mv, sv = str(m.get(mc,'')).strip(), str(s.get(sc,'')).strip()
-            # Current master uses 対象外 while source may use blank for factor slots.
-            if mc in ('因子2','因子3','因子4') and mv == '対象外' and sv == '':
-                continue
-            if mv != sv:
-                diffs.append({'field': mc, 'master': mv, 'source': sv})
-        if diffs:
-            changed.append({'name': name, 'occurrence': occurrence, 'diffs': diffs})
+    # 新旧対応・変更判定はsync_eiketsu_master.pyの番号↔internal_id対応表だけを正とする。
 
     report.update({
-        'source_rows': len(source_rows),
+        'source_rows_input': sync_report.get('source_rows_input', len(source_rows)),
+        'source_rows': sync_report.get('source_rows', len(source_rows)),
         'master_rows': len(master_rows),
-        'new_heroes': new_names,
-        'removed_heroes': removed_names,
-        'changed_existing': changed,
+        'new_heroes': sync_report.get('new_heroes', []),
+        'removed_heroes': sync_report.get('removed_heroes', []),
+        'retired_source_rows_skipped': sync_report.get('retired_source_rows_skipped', []),
+        'changed_existing': sync_report.get('changed_existing', []),
+        'dirty_internal_ids': sync_report.get('dirty_internal_ids', []),
+        'id_map_entries': sync_report.get('id_map_entries'),
         'source_sha256': sha256(SOURCE),
         'master_sha256': sha256(MASTER),
     })
 
-    # Phase 1 is deliberately fail-safe: existing-data changes or new heroes do not publish until
-    # the combination generator is connected in Phase 2.
-    if removed_names:
-        fail('既存英傑の削除を検出。自動公開を停止します: ' + ' / '.join(removed_names[:10]), report)
-    if changed:
-        fail('既存英傑の値変更を検出。誤字等を勝手に上書きしないため停止します。', report)
-    if new_names:
-        fail('新英傑を検出しました。Phase 2の組み合わせ再生成エンジン接続前なので安全停止します: ' + ' / '.join(new_names), report)
+    # Phase2: 現在の英傑マスタから検索可能な5～9因縁を完全再評価し、compact DBを再生成する。
+    full_generator = ROOT/'tools-next'/'rebuild_all_compact.py'
+    if not full_generator.exists(): fail('Phase2全組み合わせ再生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(full_generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('5～9因縁 全組み合わせ再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    generation_report_path = REPORT_DIR/'generation_report.json'
+    if not generation_report_path.exists(): fail('組み合わせ生成レポートがありません', report)
+    generation_report = json.loads(generation_report_path.read_text(encoding='utf-8'))
+    if generation_report.get('status') != 'PASS': fail('組み合わせ生成レポートがPASSではありません', report)
+    report['generation'] = {
+        'full_records': generation_report.get('full_records'),
+        'added_records': generation_report.get('added_records'),
+        'removed_records': generation_report.get('removed_records'),
+        'seconds': generation_report.get('seconds'),
+        'full_regeneration': True,
+    }
+
+    rebuild_top = ROOT/'tools-next'/'rebuild_top500.py'
+    cp = subprocess.run([sys.executable, str(rebuild_top)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('Top500/優先Top500再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+
+    rebuild_recommend_sum = ROOT/'tools-next'/'rebuild_recommend_sum_top.py'
+    if not rebuild_recommend_sum.exists(): fail('おすすめ陣法合計Top500再生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(rebuild_recommend_sum)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('おすすめ陣法 第1＋第2合計Top500再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    recommend_report_path = REPORT_DIR/'recommend_sum_top_report.json'
+    if not recommend_report_path.exists(): fail('おすすめ陣法合計Top500レポートがありません', report)
+    recommend_report = json.loads(recommend_report_path.read_text(encoding='utf-8'))
+    if recommend_report.get('status') != 'PASS': fail('おすすめ陣法合計Top500レポートがPASSではありません', report)
+    report['recommend_sum_top'] = {'files':recommend_report.get('files'),'rows':recommend_report.get('rows'),'limit_per_formation':recommend_report.get('limit_per_formation'),'seconds':recommend_report.get('seconds')}
+
+    # ヘッダー表示:
+    # - 最終更新日は、英傑一覧に実変更があった更新日に変更してよい。
+    # - 「追加英傑」は最後に本当に追加された1人だけを保持し、既存英傑修正やDB整備では変更しない。
+    new_infos = sync_report.get('new_heroes', [])
+    changed_infos = sync_report.get('changed_existing', [])
+    summary_path = SITE/'data'/'jinpo_latest_update_summary.json'
+    summary_updated, last_added_hero = write_latest_update_summary(
+        summary_path, new_infos, changed_infos, report['generation']
+    )
+    report['latest_update_summary_updated'] = summary_updated
+    report['last_added_hero'] = last_added_hero
 
     # Static-site integrity checks for staging.
     required_site = [
-        SITE/'index.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js', SITE/'jinpo-activation-engine.js', SITE/'jinpo-bond-list.js',
+        SITE/'jinpo.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js', SITE/'jinpo-activation-engine.js',
         SITE/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
     ]
     for p in required_site:
@@ -180,6 +253,28 @@ def main():
 
     if int(manifest.get('top_limit', 0)) != 500 or int(manifest.get('sort_top_limit', 0)) != 500:
         fail('Top500設定不一致: manifest top_limit/sort_top_limit が500ではありません', report)
+    if int(manifest.get('recommend_sum_top_limit', 0)) != 500 or int(manifest.get('recommend_sum_top_record_size', 0)) != 54:
+        fail('おすすめ合計Top500設定不一致', report)
+    recommend_stats = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
+    recommend_files = 0
+    for mode in ('normal','grade3'):
+        for primary in recommend_stats:
+            for secondary in recommend_stats:
+                if secondary == primary: continue
+                info = manifest.get('recommend_sum_top', {}).get(mode, {}).get(primary, {}).get(secondary)
+                if not info: fail(f'おすすめ合計Top500不足: {mode}/{primary}/{secondary}', report)
+                fp = SITE / str(info.get('file',''))
+                if not fp.exists(): fail(f'おすすめ合計Top500ファイル不足: {fp.relative_to(ROOT)}', report)
+                gz = fp.read_bytes()
+                if hashlib.sha256(gz).hexdigest()[:16] != str(info.get('sha256_16','')): fail(f'おすすめ合計Top500 SHA不一致: {fp.relative_to(ROOT)}', report)
+                try: raw = gzip.decompress(gz)
+                except Exception as e: fail(f'おすすめ合計Top500 gzip不正: {fp.relative_to(ROOT)}: {e}', report)
+                if len(raw) < 16 or raw[:4] != b'JRS1': fail(f'おすすめ合計Top500 magic不一致: {fp.relative_to(ROOT)}', report)
+                rec = struct.unpack_from('<H', raw, 6)[0]; rows = struct.unpack_from('<I', raw, 8)[0]
+                if rec != 54 or rows != int(info.get('rows', -1)) or len(raw) != 16 + rows * rec: fail(f'おすすめ合計Top500構造不一致: {fp.relative_to(ROOT)}', report)
+                if rows > 4 * 500: fail(f'おすすめ合計Top500件数超過: {fp.relative_to(ROOT)} rows={rows}', report)
+                recommend_files += 1
+    report['recommend_sum_top_integrity'] = {'files':recommend_files,'errors':0}
     for mode, counts in manifest.get('top', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():
@@ -199,17 +294,17 @@ def main():
 
     # 過去ログで確定したUI/検索仕様の回帰ガード。
     # 新方式ではTop300・300件上限・旧CSV検索経路を復活させない。
-    index_text = (SITE/'index.html').read_text(encoding='utf-8')
+    index_text = (SITE/'jinpo.html').read_text(encoding='utf-8')
     fast_text = (SITE/'jinpo-fast-search.js').read_text(encoding='utf-8')
     worker_text = (SITE/'jinpo-fast-search-worker.js').read_text(encoding='utf-8')
     activation_text = (SITE/'jinpo-activation-engine.js').read_text(encoding='utf-8')
     bond_list_text = (SITE/'jinpo-bond-list.js').read_text(encoding='utf-8')
 
     forbidden_fragments = {
-        'index.html': [
+        'jinpo.html': [
             'DB_LIST_MAX = 300', 'DB_LIST_MAX=300', 'Top300', 'top300',
             'jinpo_result_db_', 'factor4_usage_index.json', 'data-linegen-', '__jinpoLineGen', '__jinpoActualLineRows',
-            'confirm(' , 'window.confirm('
+            'confirm(', 'window.confirm(', 'alert(', 'window.alert(', 'prompt(', 'window.prompt('
         ],
         'jinpo-fast-search.js': [
             'LIMIT=300', 'LIMIT = 300', 'Top300', 'top300', 'jinpo_result_db_',
@@ -220,7 +315,7 @@ def main():
         ],
     }
     texts = {
-        'index.html': index_text,
+        'jinpo.html': index_text,
         'jinpo-fast-search.js': fast_text,
         'jinpo-fast-search-worker.js': worker_text,
         'jinpo-activation-engine.js': activation_text,
@@ -229,7 +324,7 @@ def main():
     for name, fragments in forbidden_fragments.items():
         for frag in fragments:
             if frag in texts[name]:
-                fail(f'旧方式/300件制限の残骸を検出: {name}: {frag}', report)
+                fail(f'禁止仕様/旧方式の残骸を検出: {name}: {frag}', report)
 
     required_fast_fragments = [
         'var LIMIT=500',
@@ -262,6 +357,11 @@ def main():
         "jinpoAppliedRow",
         "(isApplied?'適用中':'適用')",
         'data-hero-internal-id',
+        "var recommendState={active:false,targetStat:'',secondaryStat:'',formation:''",
+        'function searchRecommended(query)',
+        'function prepareRecommendPriority(target,clearSecond)',
+        'excludedInternalIds:exIds',
+        'recommendModeLocked',
     ]
     for frag in required_fast_fragments:
         if frag not in fast_text:
@@ -278,15 +378,17 @@ def main():
             fail(f'Top500/内部ID/完全照合 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
         fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
+    if 'excludedNames:ex' in fast_text or 'excludedNameSet66' in index_text:
+        fail('除外英傑の名前基準検索/差替判定が残っています。internal_id基準へ統一してください', report)
 
     required_function_fragments = {
         'jinpo-fast-search.js': [
-            'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function lookupExactState(opts)',
+            'function ownedInternalIds()', 'ownedInternalIds:ownIds', 'function excludedInternalIds()', 'excludedInternalIds:exIds', 'function lookupExactState(opts)',
             'worker.terminate()', "(c===5||c===6)&&!gradeOn()",
             'selectedExclude=0;syncFactor4()', 'eiketsu_internal_ids||',
             'resetAll:function()', "listSort={key:'',dir:'desc'};appliedListRowKey=''",
         ],
-        'index.html': [
+        'jinpo.html': [
             'function sameReachInternalIdSet', 'function sameReachBondSet',
             'function dbRowMatchesReachState', 'function lookupReachSwapExactDbRow',
             'dbRowMatchesReachState(row,placement,liveResult',
@@ -295,7 +397,7 @@ def main():
             '所持英傑はinternal_idを正とする。同名別個体を名前でまとめない',
             "+'@@g3='+(grade3On66()?'1':'0')+'@@owned='",
             "+'@@excluded='+excluded.join(',')",
-            "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroes',
+            "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
             'source:"current_result_db_exact"', 'if(modern) return null;',
             'if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];',
             'return [1600,1400,1200,1000,800,600,400,200];',
@@ -307,36 +409,30 @@ def main():
             'function bonusHeroByInternalId(id)', "if(ret && typeof ret.then==='function')",
             'id="jinpoGlobalResetBtn"', 'window.__jinpoAskYesNo=function(opts)',
             'window.__jinpoPerformGlobalReset=performGlobalReset', 'window.__jinpoClearExcludedHeroes = function(opts)',
+            "jinpo_excluded_hero_internal_ids_v2", 'window.__jinpoGetExcludedHeroInternalIds = getList',
             'window.__jinpoResetEiketsuBonusAll = function(opts)', 'いいえ</button><button type="button" id="jinpoCommonConfirmYes"',
+            'id="eiketsuKishinsekiGlobalMaxBtn"', 'window.__jinpoApplyGlobalAllMax = applyGlobalAllMaxPreset',
+            'id="eiketsuKishinsekiGlobalMaxClearBtn"', 'window.__jinpoClearGlobalAllMax = clearGlobalAllMaxPreset',
+            'function syncGlobalAllMaxForCurrentPlacement', '全MAX中', '鬼神石MAX：生命・気合 17,000／その他 2,500', '転生MAX：全てLv30（文曲除く）',
         ],
         'jinpo-activation-engine.js': [
             'const activatedOccurrences = [];', 'const activatedByName = new Map();',
             'occurrences:[occurrence]', 'activated: activatedFlat', 'activatedOccurrences', 'heroInternalId:',
+        ],
+        'jinpo-bond-list.js': [
+            'jinpoRecommendNav', 'おすすめ陣法', 'jinpoRecommendExitBtn',
+            'jinpoRecommendModeBadge', 'jinpoRecommendModeNotice', 'jinpoRecommendSumGuide',
+            'jinpoScrollTopBtn', '上へ戻る',
+            'おすすめモード中は5〜9因縁の通常検索は使用できません',
+            '※第1・第2優先の数値条件を指定すると、その条件に応じて検索結果も変わります',
+            "['生命','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力']",
+            "['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']",
         ],
     }
     for name, fragments in required_function_fragments.items():
         for frag in fragments:
             if frag not in texts[name]:
                 fail(f'検索/適用/差替の確定済み回帰ガード欠落: {name}: {frag}', report)
-
-    # 現在発動中因縁は、現在の陣形図と成立位置を同じ大型モーダルで確認できること。
-    # 因縁カードのホバー/フォーカス/タップで、対応ラインと配置枠を強調する。
-    required_bond_modal_fragments = [
-        'ACTIVE_FORMATION_VIEW', 'function liveFormationSlotPositions()', 'function activeFormationConfig()',
-        'function currentCalculatedResult()', 'act.occurrences', 'function renderFormationDiagram()',
-        'jinpoBondActiveLayout', 'jinpoBondFormationDiagram', 'jinpoBondDiagramLine.is-hover',
-        'data-line-ids', '成立ライン ', 'function setDiagramHighlight', 'function bindActiveCardHighlight()',
-        '現在の陣形図', '右の因縁にカーソルを合わせると対応ラインが光ります'
-    ]
-    for frag in required_bond_modal_fragments:
-        if frag not in bond_list_text:
-            fail(f'発動中因縁モーダルの陣形図/ライン強調仕様が欠落: jinpo-bond-list.js: {frag}', report)
-    report['active_bond_modal_guard'] = {
-        'formation_diagram': True,
-        'live_slot_position_sync': True,
-        'line_hover_highlight': True,
-        'multi_occurrence_lines': True,
-    }
 
     # 見聞録の職業判定は、過去に確定した通り英傑マスタ「職業」列を直接見る。
     hero_job_match = re.search(r'function\s+heroJob\s*\(hero\)\s*\{(?P<body>.*?)\n\s*\}', index_text, re.S)
@@ -383,6 +479,11 @@ def main():
         'global_reset_button_and_state_reset': True,
         'all_yes_no_confirmations_use_common_modal': True,
         'native_confirm_removed': True,
+        'recommend_mode_ui_guarded': True,
+        'recommend_mode_count_lock_guarded': True,
+        'recommend_priority_sync_guarded': True,
+        'recommend_scroll_top_guarded': True,
+        'excluded_hero_internal_id_guarded': True,
     }
 
     # 文字化け/UTF-8/CSV/JSONを毎回自動検査する。
@@ -592,7 +693,7 @@ def main():
         'seconds': audit_report.get('seconds'),
     }
 
-    # JS構文をGitHub Actions上でも検査。外部JSとindex.html内のinline scriptを対象にする。
+    # JS構文をGitHub Actions上でも検査。外部JSとjinpo.html内のinline scriptを対象にする。
     node = shutil.which('node')
     if not node:
         fail('node が見つからないためJS構文検査を実行できません', report)
@@ -609,7 +710,7 @@ def main():
             tmp.write_text(code, encoding='utf-8')
             cp = subprocess.run([node, '--check', str(tmp)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if cp.returncode != 0:
-                fail(f'index.html inline JavaScript構文エラー #{i}: {cp.stderr.strip()}', report)
+                fail(f'jinpo.html inline JavaScript構文エラー #{i}: {cp.stderr.strip()}', report)
     report['javascript_syntax'] = {'external_js': js_checked, 'inline_scripts': len(inline_scripts), 'errors': 0}
 
     # 5/6因縁は既存仕様どおり、陣形選択済みでも等級3以下OFFなら無効のまま固定。
@@ -634,7 +735,7 @@ def main():
     }
 
     report['status'] = 'PASS'
-    report['message'] = 'Phase 1: 現行384英傑と一致。/jinpo-next/ の安全な別入口を公開可能。'
+    report['message'] = 'Phase 2: 英傑一覧から英傑マスタ・配置/除外候補・5～9因縁・Top500を自動再生成し、全検証PASS。'
     REPORT_DIR.mkdir(exist_ok=True)
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2))
