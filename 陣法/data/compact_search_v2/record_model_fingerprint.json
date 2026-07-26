@@ -1,0 +1,11 @@
+{
+  "schema": "jinpo-compact-record-model-v2",
+  "fingerprint": "318c47e84f00288b31c19b872b5eab44ca635b3ac94dcd2cbbfe233d1ff8e80c",
+  "inputs": {
+    "data/jinpo_eiketsu_master.csv": "1bc361f913e4109ce2d7561bb1f8458f6c93c85ceb0d96fcb90ed350324c80e4",
+    "data/jinpo_inen_master.csv": "36ecd4fc695dadf28047c20886af1723c03176440774b2b6188f53ed814d5572",
+    "data/91因縁_計算式_倍率展開.csv": "909ceae3cb839e2cd2b4646d147b55d014a20d9052683155eabcb249ff50feb0",
+    "data/formation_bonus.csv": "567a44908c7794f51efee4c2105c78aca3d2d3405044ca593aacc1fbb1a44a99",
+    "tools-next/rebuild_all_compact.py": "857f4b07eed45daca50f51d0629ffc35a75fa0e6d4a69a883fa2ad195ff9a551"
+  }
+}
