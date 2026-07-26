@@ -8174,6 +8174,15 @@ body{padding-top:0 !important;}
 }
 #eiketsuKishinsekiGlobalMaxBtn:hover{filter:brightness(1.18);box-shadow:0 0 26px rgba(255,195,64,.82),inset 0 0 12px rgba(255,255,255,.16)!important;transform:translateY(-1px)}
 #eiketsuKishinsekiGlobalMaxBtn:disabled{opacity:.72!important;cursor:wait!important;transform:none!important}
+#eiketsuKishinsekiGlobalMaxClearBtn{
+  background:linear-gradient(180deg,#5a3341,#2a1720)!important;
+  border:2px solid #ff9dae!important;color:#fff2f5!important;border-radius:10px!important;
+  padding:8px 13px!important;font-weight:1000!important;font-size:15px!important;cursor:pointer!important;white-space:nowrap!important;
+  box-shadow:0 0 12px rgba(255,112,144,.30),inset 0 0 9px rgba(255,255,255,.08)!important;
+  text-shadow:0 1px 0 #220812!important;
+}
+#eiketsuKishinsekiGlobalMaxClearBtn:hover{filter:brightness(1.18);box-shadow:0 0 22px rgba(255,112,144,.62),inset 0 0 11px rgba(255,255,255,.12)!important;transform:translateY(-1px)}
+#eiketsuKishinsekiGlobalMaxClearBtn:disabled{opacity:.72!important;cursor:wait!important;transform:none!important}
 .eiketsuKishinsekiGlobalMaxArrow{display:inline-flex;align-items:center;justify-content:center;color:#ffe36b;font-size:26px;font-weight:1000;line-height:1;text-shadow:0 0 9px rgba(255,206,72,.72);animation:eiketsuAllMaxArrow 1.35s ease-in-out infinite}
 @keyframes eiketsuAllMaxArrow{0%,100%{transform:translateX(0);opacity:.72}50%{transform:translateX(3px);opacity:1}}
 .eiketsuKishinsekiAllMaxIndicator{
@@ -8191,6 +8200,7 @@ body{padding-top:0 !important;}
 @keyframes eiketsuAllMaxFlow{0%{background-position:0% 50%}100%{background-position:220% 50%}}
 @media(max-width:900px){
   #eiketsuKishinsekiGlobalMaxBtn{font-size:15px!important;padding:7px 11px!important}
+  #eiketsuKishinsekiGlobalMaxClearBtn{font-size:13px!important;padding:7px 9px!important}
   .eiketsuKishinsekiAllMaxIndicatorTitle{font-size:20px}
   .eiketsuKishinsekiAllMaxIndicatorDetail{font-size:11px}
 }
@@ -8785,6 +8795,15 @@ body{padding-top:0 !important;}
     SLOT_DEFS.forEach(function(n){ setTenseiOn(n,true); });
     sanitizeTenseiChoices(choices);
   }
+  function syncGlobalAllMaxForCurrentPlacement(){
+    if(!globalAllMaxIndicatorActive) return false;
+    /* 全MAXモード中に編成が変わった場合も、新しい6人を基準にMAX状態を作り直す。
+       特に転生は文曲使用スロットが編成ごとに変わるため、毎回再判定する。 */
+    setGlobalAllMaxChoices();
+    appliedChoices=cloneBonusChoices(choices);
+    renderGlobalAllMaxIndicator();
+    return true;
+  }
   function currentKishinTitle(){ return '鬼神石　'+activeKishinSlot+'　'+heroName(getPlacementHero(activeKishinSlot)); }
 
   function setApplyLoading(show){
@@ -8847,7 +8866,29 @@ body{padding-top:0 !important;}
     if(window.requestAnimationFrame) window.requestAnimationFrame(function(){setTimeout(run,18);});
     else setTimeout(run,25);
   }
+  function clearGlobalAllMaxPreset(){
+    var btn=document.getElementById('eiketsuKishinsekiGlobalMaxClearBtn');
+    if(btn && btn.disabled) return;
+    if(btn){ btn.disabled=true; btn.textContent='解除中…'; }
+    try{
+      if(typeof window.__jinpoResetEiketsuBonusAll==='function') window.__jinpoResetEiketsuBonusAll({close:true});
+      else{
+        deactivateGlobalAllMaxIndicator();
+        choices={kenbun:{},kishin:{},tensei:{}};
+        JOB_DEFS.forEach(function(j){choices.kenbun[j]={};});
+        SLOT_DEFS.forEach(function(n){choices.kishin[String(n)]={};choices.tensei[String(n)]=false;});
+        appliedChoices=cloneBonusChoices(choices);
+        setBonusAppliedMode(false);
+        try{clearBonusCombinedPanel();}catch(e){}
+      }
+    }catch(e){
+      console.error('全MAX解除失敗',e);
+    }finally{
+      if(btn){ btn.disabled=false; btn.textContent='全MAX解除'; }
+    }
+  }
   window.__jinpoApplyGlobalAllMax = applyGlobalAllMaxPreset;
+  window.__jinpoClearGlobalAllMax = clearGlobalAllMaxPreset;
 
   function ensureModal(){
     var modal=document.getElementById('eiketsuKishinsekiModalBackdrop');
@@ -8946,9 +8987,10 @@ body{padding-top:0 !important;}
     if(document.getElementById('eiketsuKishinsekiOpenBtn')) return;
     var host=document.getElementById('ownedHeroControl') || document.querySelector('#dbCountBrowserCard .dbFormationSelectTop>.row'); if(!host) return;
     var wrap=document.createElement('div'); wrap.className='eiketsuKishinsekiBtnWrap';
-    wrap.innerHTML='<button id="eiketsuKishinsekiGlobalMaxBtn" type="button">全MAX</button><span class="eiketsuKishinsekiGlobalMaxArrow" aria-hidden="true">➡</span><button id="eiketsuKishinsekiOpenBtn" type="button">転生＆見聞録＆鬼神石</button>';
+    wrap.innerHTML='<button id="eiketsuKishinsekiGlobalMaxBtn" type="button">全MAX</button><button id="eiketsuKishinsekiGlobalMaxClearBtn" type="button">全MAX解除</button><span class="eiketsuKishinsekiGlobalMaxArrow" aria-hidden="true">➡</span><button id="eiketsuKishinsekiOpenBtn" type="button">転生＆見聞録＆鬼神石</button>';
     host.appendChild(wrap);
     var maxBtn=wrap.querySelector('#eiketsuKishinsekiGlobalMaxBtn'); if(maxBtn) maxBtn.addEventListener('click',applyGlobalAllMaxPreset);
+    var clearMaxBtn=wrap.querySelector('#eiketsuKishinsekiGlobalMaxClearBtn'); if(clearMaxBtn) clearMaxBtn.addEventListener('click',clearGlobalAllMaxPreset);
     var openBtn=wrap.querySelector('#eiketsuKishinsekiOpenBtn'); if(openBtn) openBtn.addEventListener('click',openModal);
   }
 
@@ -9080,11 +9122,13 @@ body{padding-top:0 !important;}
     try{ renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; window.renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; }catch(e){}
   }
   function recalcBonusCombinedAfterPlacementChange(){
+    try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('編成変更後の全MAX再同期失敗',e); }
     Promise.resolve(loadBonusMultiplierMap()).then(function(){
       var stats=null;
       try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
       catch(e){ console.error('編成変更後の込み合計再計算失敗',e); }
-      drawBonusStats(stats, stats?'転生＆見聞録＆鬼神石込み / 未反映':'転生＆見聞録＆鬼神石込み / 計算条件不足');
+      var mode=globalAllMaxIndicatorActive?'転生＆見聞録＆鬼神石込み / 全MAX反映済み':'転生＆見聞録＆鬼神石込み / 未反映';
+      drawBonusStats(stats, stats?mode:'転生＆見聞録＆鬼神石込み / 計算条件不足');
     }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); });
   }
 
@@ -9093,7 +9137,7 @@ body{padding-top:0 !important;}
       setTimeout(function(){
         try{ renderTopBreakdown(); }catch(e){}
         try{ updateNote(); }catch(e){}
-        try{ if(globalAllMaxIndicatorActive && !isGlobalAllMaxChoiceState(choices)) deactivateGlobalAllMaxIndicator(); }catch(e){}
+        try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('全MAX編成追従失敗',e); }
         try{ var m=document.getElementById('eiketsuKishinsekiModalBackdrop'); if(m && activePanel==='kishin') refreshSlotButtonsDelayed(m); }catch(e){}
       }, ms);
     });
@@ -9105,6 +9149,7 @@ body{padding-top:0 !important;}
       try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = arguments[0] || null; }catch(e){}
       var ret = oldApplyDbForBonus.apply(this, arguments);
+      try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('適用後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
       setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
       setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
@@ -9119,12 +9164,14 @@ body{padding-top:0 !important;}
       setBonusAppliedMode(false);
       try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
+      try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
       setTimeout(recalcBonusCombinedAfterPlacementChange, 0);
       setTimeout(recalcBonusCombinedAfterPlacementChange, 120);
       /* 全件DB照合が120msを超えても、確定した配置/DB行で込み合計を再計算する。 */
       if(ret && typeof ret.then==='function'){
         ret.then(function(){
+          try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替確定後の全MAX同期失敗',e); }
           deferBonusPlacementRefresh();
           recalcBonusCombinedAfterPlacementChange();
         },function(e){ console.error('差替後の込み合計確定更新失敗',e); });
