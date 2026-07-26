@@ -8165,6 +8165,36 @@ body{padding-top:0 !important;}
   box-shadow:0 0 12px rgba(113,228,154,.28),inset 0 0 8px rgba(255,255,255,.08)!important;
 }
 #eiketsuKishinsekiOpenBtn:hover{filter:brightness(1.16);box-shadow:0 0 20px rgba(113,228,154,.65),inset 0 0 10px rgba(255,255,255,.10)!important;transform:translateY(-1px)}
+#eiketsuKishinsekiGlobalMaxBtn{
+  background:linear-gradient(180deg,#c66a20,#7d1f12)!important;
+  border:2px solid #ffe06a!important;color:#fff9dc!important;border-radius:10px!important;
+  padding:8px 18px!important;font-weight:1000!important;font-size:18px!important;cursor:pointer!important;white-space:nowrap!important;
+  box-shadow:0 0 16px rgba(255,195,64,.48),inset 0 0 10px rgba(255,255,255,.12)!important;
+  text-shadow:0 1px 0 #351000,0 0 8px rgba(255,238,145,.45)!important;
+}
+#eiketsuKishinsekiGlobalMaxBtn:hover{filter:brightness(1.18);box-shadow:0 0 26px rgba(255,195,64,.82),inset 0 0 12px rgba(255,255,255,.16)!important;transform:translateY(-1px)}
+#eiketsuKishinsekiGlobalMaxBtn:disabled{opacity:.72!important;cursor:wait!important;transform:none!important}
+.eiketsuKishinsekiGlobalMaxArrow{display:inline-flex;align-items:center;justify-content:center;color:#ffe36b;font-size:26px;font-weight:1000;line-height:1;text-shadow:0 0 9px rgba(255,206,72,.72);animation:eiketsuAllMaxArrow 1.35s ease-in-out infinite}
+@keyframes eiketsuAllMaxArrow{0%,100%{transform:translateX(0);opacity:.72}50%{transform:translateX(3px);opacity:1}}
+.eiketsuKishinsekiAllMaxIndicator{
+  display:none;position:relative;z-index:3;margin:3px auto 8px;padding:6px 14px 7px;width:min(1180px,96%);box-sizing:border-box;
+  border:2px solid #ffe36b;border-radius:12px;text-align:center;pointer-events:none;overflow:hidden;
+  background:linear-gradient(90deg,rgba(102,20,8,.96),rgba(144,74,12,.96),rgba(57,94,20,.96),rgba(144,74,12,.96),rgba(102,20,8,.96));
+  background-size:220% 100%;color:#fff8cf;
+  box-shadow:0 0 16px rgba(255,206,72,.58),0 0 28px rgba(113,228,154,.24),inset 0 0 14px rgba(255,255,255,.10);
+  animation:eiketsuAllMaxPulse 1.55s ease-in-out infinite,eiketsuAllMaxFlow 3.2s linear infinite;
+}
+.eiketsuKishinsekiAllMaxIndicator.show{display:block}
+.eiketsuKishinsekiAllMaxIndicatorTitle{font-size:25px;line-height:1.05;font-weight:1000;letter-spacing:.12em;color:#fff36d;text-shadow:0 0 10px #ffae35,0 2px 0 #4b1008}
+.eiketsuKishinsekiAllMaxIndicatorDetail{margin-top:4px;font-size:14px;line-height:1.25;font-weight:900;color:#fffbe7;text-shadow:0 1px 0 #351000}
+@keyframes eiketsuAllMaxPulse{0%,100%{transform:scale(1);opacity:.93}50%{transform:scale(1.012);opacity:1;box-shadow:0 0 25px rgba(255,225,92,.90),0 0 38px rgba(113,228,154,.38),inset 0 0 18px rgba(255,255,255,.14)}}
+@keyframes eiketsuAllMaxFlow{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+@media(max-width:900px){
+  #eiketsuKishinsekiGlobalMaxBtn{font-size:15px!important;padding:7px 11px!important}
+  .eiketsuKishinsekiAllMaxIndicatorTitle{font-size:20px}
+  .eiketsuKishinsekiAllMaxIndicatorDetail{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.eiketsuKishinsekiAllMaxIndicator,.eiketsuKishinsekiGlobalMaxArrow{animation:none!important}}
 .eiketsuKishinsekiModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:1000000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow:auto}.eiketsuKishinsekiModalBackdrop.open{display:flex}
 .eiketsuKishinsekiModal{width:min(1180px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:hidden;background:#10140f;border:2px solid #596045;border-radius:4px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 0 2px rgba(200,180,80,.18),inset 0 0 0 1px rgba(255,255,255,.05);box-sizing:border-box;color:#f7f7f1;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;position:relative}.eiketsuKishinsekiModal:before,.eiketsuKishinsekiModal:after{content:"";position:absolute;left:8px;right:8px;height:1px;background:linear-gradient(90deg,transparent,#d1b95b,transparent);pointer-events:none}.eiketsuKishinsekiModal:before{top:6px}.eiketsuKishinsekiModal:after{bottom:6px}
 .eiketsuKishinsekiHeader{height:56px;display:flex;align-items:center;justify-content:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#121911,#0b100b);position:relative}.eiketsuKishinsekiHeader strong{color:#ffe64f;font-size:28px;letter-spacing:.08em;text-shadow:0 2px 0 #000,0 0 8px rgba(255,220,50,.3)}.eiketsuKishinsekiHeaderActions{position:absolute;right:10px;top:9px;display:flex;gap:8px}.eiketsuKishinsekiApplyBtn,.eiketsuKishinsekiCloseBtn,.eiketsuKishinsekiResetBtn{background:linear-gradient(#3e442e,#171c14)!important;border:1px solid #89915f!important;color:#f4ffe9!important;border-radius:6px!important;padding:7px 10px!important;font-weight:900!important;font-family:system-ui,"Yu Gothic",sans-serif!important}.eiketsuKishinsekiApplyBtn{background:linear-gradient(#5f9224,#2b5315)!important;border-color:#9deb71!important;color:#f4ffe9!important}
@@ -8280,6 +8310,7 @@ body{padding-top:0 !important;}
     return out;
   }
   var appliedChoices = cloneBonusChoices(choices);
+  var globalAllMaxIndicatorActive = false;
   var bonusMultiplierMap = new Map();
   var bonusMultiplierPromise = null;
 
@@ -8569,6 +8600,7 @@ body{padding-top:0 !important;}
   window.__jinpoHasEiketsuKishinsekiBonus = hasBonus;
   window.__jinpoResetEiketsuBonusAll = function(opts){
     opts=opts||{};
+    deactivateGlobalAllMaxIndicator();
     choices={kenbun:{},kishin:{},tensei:{}};
     JOB_DEFS.forEach(function(j){choices.kenbun[j]={};});
     SLOT_DEFS.forEach(function(n){choices.kishin[String(n)]={};choices.tensei[String(n)]=false;});
@@ -8704,6 +8736,55 @@ body{padding-top:0 !important;}
     var keys = key ? [key] : allTargetKeys(type);
     keys.forEach(function(k){ setSelectedValue(type, stat, '', k); });
   }
+  function isGlobalAllMaxChoiceState(src){
+    src=src||choices;
+    for(var ji=0;ji<JOB_DEFS.length;ji++){
+      var job=JOB_DEFS[ji];
+      for(var si=0;si<STAT_DEFS.length;si++){
+        var st=STAT_DEFS[si].key;
+        if(Number(getKenbunChoiceFrom(src,job,st)||0)!==Number(maxValue('kenbun',st))) return false;
+      }
+    }
+    for(var sl=1;sl<=6;sl++){
+      for(var ki=0;ki<STAT_DEFS.length;ki++){
+        var kst=STAT_DEFS[ki].key;
+        if(Number(getKishinChoiceFrom(src,sl,kst)||0)!==Number(maxValue('kishin',kst))) return false;
+      }
+      var shouldTensei=!isTenseiBunkyokuBlocked(sl);
+      if(!!(src.tensei&&src.tensei[String(sl)])!==shouldTensei) return false;
+    }
+    return true;
+  }
+  function ensureGlobalAllMaxIndicator(){
+    var panel=document.getElementById('eiketsuKishinsekiCombinedPanel');
+    if(!panel) return null;
+    var el=document.getElementById('eiketsuKishinsekiAllMaxIndicator');
+    if(el) return el;
+    el=document.createElement('div');
+    el.id='eiketsuKishinsekiAllMaxIndicator';
+    el.className='eiketsuKishinsekiAllMaxIndicator';
+    el.setAttribute('aria-live','polite');
+    el.innerHTML='<div class="eiketsuKishinsekiAllMaxIndicatorTitle">全MAX中</div>'
+      +'<div class="eiketsuKishinsekiAllMaxIndicatorDetail">【見聞録MAX】 【鬼神石MAX：生命・気合 17,000／その他 2,500】 【転生MAX：全てLv30（文曲除く）】</div>';
+    var header=panel.querySelector('.eiketsuKishinsekiCombinedHeader');
+    if(header && header.nextSibling) panel.insertBefore(el,header.nextSibling); else panel.appendChild(el);
+    return el;
+  }
+  function renderGlobalAllMaxIndicator(){
+    var el=ensureGlobalAllMaxIndicator();
+    if(el) el.classList.toggle('show',!!globalAllMaxIndicatorActive);
+    try{document.body.classList.toggle('jinpoGlobalAllMaxActive',!!globalAllMaxIndicatorActive);}catch(e){}
+  }
+  function deactivateGlobalAllMaxIndicator(){
+    globalAllMaxIndicatorActive=false;
+    renderGlobalAllMaxIndicator();
+  }
+  function setGlobalAllMaxChoices(){
+    setAllMax('kenbun');
+    setAllMax('kishin');
+    SLOT_DEFS.forEach(function(n){ setTenseiOn(n,true); });
+    sanitizeTenseiChoices(choices);
+  }
   function currentKishinTitle(){ return '鬼神石　'+activeKishinSlot+'　'+heroName(getPlacementHero(activeKishinSlot)); }
 
   function setApplyLoading(show){
@@ -8745,6 +8826,28 @@ body{padding-top:0 !important;}
       setTimeout(run, 30);
     }
   }
+  function applyGlobalAllMaxPreset(){
+    var btn=document.getElementById('eiketsuKishinsekiGlobalMaxBtn');
+    if(btn && btn.disabled) return;
+    if(btn){ btn.disabled=true; btn.textContent='全MAX反映中…'; }
+    setGlobalAllMaxChoices();
+    globalAllMaxIndicatorActive=true;
+    renderGlobalAllMaxIndicator();
+    var run=function(){
+      Promise.resolve(applyBonusSettingsCore()).then(function(stats){
+        if(!stats) deactivateGlobalAllMaxIndicator();
+        else renderGlobalAllMaxIndicator();
+      }).catch(function(e){
+        deactivateGlobalAllMaxIndicator();
+        console.error('全MAX反映失敗',e);
+      }).finally(function(){
+        if(btn){ btn.disabled=false; btn.textContent='全MAX'; }
+      });
+    };
+    if(window.requestAnimationFrame) window.requestAnimationFrame(function(){setTimeout(run,18);});
+    else setTimeout(run,25);
+  }
+  window.__jinpoApplyGlobalAllMax = applyGlobalAllMaxPreset;
 
   function ensureModal(){
     var modal=document.getElementById('eiketsuKishinsekiModalBackdrop');
@@ -8842,7 +8945,11 @@ body{padding-top:0 !important;}
   function ensureButton(){
     if(document.getElementById('eiketsuKishinsekiOpenBtn')) return;
     var host=document.getElementById('ownedHeroControl') || document.querySelector('#dbCountBrowserCard .dbFormationSelectTop>.row'); if(!host) return;
-    var wrap=document.createElement('div'); wrap.className='eiketsuKishinsekiBtnWrap'; wrap.innerHTML='<button id="eiketsuKishinsekiOpenBtn" type="button">転生＆見聞録＆鬼神石</button>'; host.appendChild(wrap); wrap.querySelector('button').addEventListener('click',openModal);
+    var wrap=document.createElement('div'); wrap.className='eiketsuKishinsekiBtnWrap';
+    wrap.innerHTML='<button id="eiketsuKishinsekiGlobalMaxBtn" type="button">全MAX</button><span class="eiketsuKishinsekiGlobalMaxArrow" aria-hidden="true">➡</span><button id="eiketsuKishinsekiOpenBtn" type="button">転生＆見聞録＆鬼神石</button>';
+    host.appendChild(wrap);
+    var maxBtn=wrap.querySelector('#eiketsuKishinsekiGlobalMaxBtn'); if(maxBtn) maxBtn.addEventListener('click',applyGlobalAllMaxPreset);
+    var openBtn=wrap.querySelector('#eiketsuKishinsekiOpenBtn'); if(openBtn) openBtn.addEventListener('click',openModal);
   }
 
   function makeMultiplierKeyLocal(inenName,stat){ try{ if(typeof makeMultiplierKey==='function') return makeMultiplierKey(inenName,stat); }catch(e){} return String(inenName||'').replace(/\s+/g,'')+'|'+normalizeStatKey(stat); }
@@ -8950,6 +9057,7 @@ body{padding-top:0 !important;}
       return '<div class="totalStatItem jinpoBonusApplied '+(zero?'zero':'')+'"><div class="statName">'+esc(k)+'</div><div class="statVal">'+esc(v)+'</div></div>';
     }).join('');
     if(mode) mode.textContent=modeText||'転生＆見聞録＆鬼神石込み / 反映済み';
+    renderGlobalAllMaxIndicator();
     renderTopBreakdown();
     return true;
   }
@@ -8985,6 +9093,7 @@ body{padding-top:0 !important;}
       setTimeout(function(){
         try{ renderTopBreakdown(); }catch(e){}
         try{ updateNote(); }catch(e){}
+        try{ if(globalAllMaxIndicatorActive && !isGlobalAllMaxChoiceState(choices)) deactivateGlobalAllMaxIndicator(); }catch(e){}
         try{ var m=document.getElementById('eiketsuKishinsekiModalBackdrop'); if(m && activePanel==='kishin') refreshSlotButtonsDelayed(m); }catch(e){}
       }, ms);
     });
@@ -9025,6 +9134,7 @@ body{padding-top:0 !important;}
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
   }
   function onBonusChanged(){
+    if(globalAllMaxIndicatorActive && !isGlobalAllMaxChoiceState(choices)) deactivateGlobalAllMaxIndicator();
     updateNote();
     updateBars();
     /* 反映ボタンを押すまで、上部合計・因縁計算は走らせない。 */

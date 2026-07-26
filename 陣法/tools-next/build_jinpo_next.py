@@ -411,6 +411,8 @@ def main():
             'window.__jinpoPerformGlobalReset=performGlobalReset', 'window.__jinpoClearExcludedHeroes = function(opts)',
             "jinpo_excluded_hero_internal_ids_v2", 'window.__jinpoGetExcludedHeroInternalIds = getList',
             'window.__jinpoResetEiketsuBonusAll = function(opts)', 'いいえ</button><button type="button" id="jinpoCommonConfirmYes"',
+            'id="eiketsuKishinsekiGlobalMaxBtn"', 'window.__jinpoApplyGlobalAllMax = applyGlobalAllMaxPreset',
+            '全MAX中', '鬼神石MAX：生命・気合 17,000／その他 2,500', '転生MAX：全てLv30（文曲除く）',
         ],
         'jinpo-activation-engine.js': [
             'const activatedOccurrences = [];', 'const activatedByName = new Map();',
