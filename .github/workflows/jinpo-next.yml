@@ -13,13 +13,13 @@ permissions:
   pages: write
 
 concurrency:
-  group: jinpo-build
+  group: jinpo-production-build
   cancel-in-progress: false
 
 jobs:
-  build-next:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: リポジトリ取得
         uses: actions/checkout@v6
@@ -31,11 +31,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 生成依存ライブラリ準備
+      - name: 生成依存パッケージ
         run: python -m pip install --disable-pip-version-check numpy
 
-      - name: 新陣法を検証・生成
+      - name: 英傑一覧から陣法を全再生成・既存監査
         run: python "陣法/tools-next/build_jinpo_next.py"
+
+      - name: 追加の回帰監査
+        run: python "陣法/tools-next/audit_runtime_regressions.py"
 
       - name: 変更確認
         id: diff
@@ -47,18 +50,16 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 陣法をコミット
+      - name: 陣法だけコミット
         if: steps.diff.outputs.changed == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- "陣法"
-          git commit -m "chore(jinpo): 英傑一覧から陣法を更新"
+          git commit -m "chore(陣法): 英傑一覧から検索DBを再生成"
           git push
 
-      # GITHUB_TOKENでpushしたコミットはPagesビルドを自動起動しないため、
-      # branch-based Pagesのまま明示的に再ビルドを要求する。
       - name: GitHub Pages 再ビルド要求
         if: steps.diff.outputs.changed == 'true'
         env:

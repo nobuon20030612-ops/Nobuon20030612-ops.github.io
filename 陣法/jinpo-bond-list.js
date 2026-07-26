@@ -5,10 +5,13 @@
  */
 (function(){
   'use strict';
+  // JINPO_REMAINING_BUGFIX_V1: live active-bond source / unregistered swap / legacy formation / duplicate DB guard
   if(window.__jinpoBondListInstalled) return;
   window.__jinpoBondListInstalled = true;
 
   var bondMasterCache = null;
+  var bondMasterLoadingPromise = null;
+  var modalOpenToken = 0;
   var modalMode = 'all';
   var activeBondNames = [];
   var activeCalculatedResult = null;
@@ -63,7 +66,7 @@
   }
   function canonicalFormation(v){
     var s = text(v);
-    if(/衡軛|kogaku|kougaku/i.test(s)) return '衡軛';
+    if(/衡軛|衝軛|kogaku|kougaku/i.test(s)) return '衡軛';
     if(/鶴翼|kakuyoku/i.test(s)) return '鶴翼';
     if(/魚鱗|gyorin/i.test(s)) return '魚鱗';
     if(/方円|hoen/i.test(s)) return '方円';
@@ -504,11 +507,19 @@
         return bondMasterCache;
       }
     }catch(e){}
+    if(bondMasterLoadingPromise) return bondMasterLoadingPromise;
     if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.loadCSV !== 'function'){
       throw new Error('因縁マスター読込機能が見つかりません');
     }
-    bondMasterCache = await window.JinpoActivationEngine.loadCSV('data/jinpo_inen_master.csv');
-    return bondMasterCache;
+    /* 初期読込と同時に開かれても、1本のPromiseだけで読込を完了させる。 */
+    bondMasterLoadingPromise = window.JinpoActivationEngine.loadCSV('data/jinpo_inen_master.csv')
+      .then(function(rows){
+        if(!Array.isArray(rows) || !rows.length) throw new Error('因縁マスターが空です');
+        bondMasterCache = rows.slice();
+        return bondMasterCache;
+      })
+      .finally(function(){ bondMasterLoadingPromise = null; });
+    return bondMasterLoadingPromise;
   }
   function appliedPreviewBondNames(){
     var box = document.getElementById('appliedRowPreviewUnderFormation');
@@ -537,33 +548,52 @@
     }
     return [];
   }
-  function currentCalculatedResult(){
+  function calculationFormationConfig(formation){
+    var source = (window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation]) || {};
+    var canonical = ACTIVE_FORMATION_VIEW[formation];
+    if(!canonical) return window.JINPO_FORMATION_CONFIG;
+    var one = {};
+    Object.keys(source || {}).forEach(function(k){ one[k] = source[k]; });
+    /* 表示用の補助線が将来増えても、因縁判定は3人ラインだけに固定する。 */
+    one.activeLines = canonical.lines.map(function(line){ return line.slice(); });
+    var out = {};
+    out[formation] = one;
+    return out;
+  }
+  function currentCalculatedResult(master){
     try{
-      if(typeof placement === 'undefined' || !placement || typeof inenMaster === 'undefined' || !Array.isArray(inenMaster)) return null;
+      if(typeof placement === 'undefined' || !placement) return null;
+      var calcMaster = Array.isArray(master) && master.length ? master : null;
+      if(!calcMaster && Array.isArray(bondMasterCache) && bondMasterCache.length) calcMaster = bondMasterCache;
+      if(!calcMaster){
+        try{ if(typeof inenMaster !== 'undefined' && Array.isArray(inenMaster) && inenMaster.length) calcMaster = inenMaster; }catch(e){}
+      }
+      if(!calcMaster) return null;
       var formation = currentFormationName();
       if(!formation || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== 'function') return null;
-      return window.JinpoActivationEngine.calculateFormation(placement, formation, inenMaster, window.JINPO_FORMATION_CONFIG);
+      return window.JinpoActivationEngine.calculateFormation(
+        sanitizedUniquePlacement(placement),
+        formation,
+        calcMaster,
+        calculationFormationConfig(formation)
+      );
     }catch(e){
       console.error('現在発動中因縁の陣形再計算失敗',e);
       return null;
     }
   }
 
-  function calculatedCurrentBondNames(){
-    try{
-      var appliedId = '';
-      try{ if(typeof selectedDbResultId !== 'undefined') appliedId = text(selectedDbResultId); }catch(e){}
-      if(!appliedId) return [];
-      var result = currentCalculatedResult();
-      return unique((result && Array.isArray(result.activated) ? result.activated : []).map(function(a){ return text(a && a.name); }));
-    }catch(e){ return []; }
+  function calculatedBondNamesFromResult(result){
+    return unique((result && Array.isArray(result.activated) ? result.activated : []).map(function(a){ return text(a && a.name); }));
   }
-  function currentActiveBondNames(){
-    var names = appliedPreviewBondNames();
-    if(!names.length) names = lowerAppliedBondNames();
-    if(!names.length) names = highlightedRowBondNames();
-    if(!names.length) names = calculatedCurrentBondNames();
-    return unique(names);
+  function calculatedCurrentBondNames(){
+    try{ return calculatedBondNamesFromResult(currentCalculatedResult()); }
+    catch(e){ return []; }
+  }
+  function currentActiveBondNames(result){
+    /* 現在の配置・陣形の再計算結果だけを正とする。
+       差替え直後の古いDOM表示や selectedDbResultId の有無には依存しない。 */
+    return calculatedBondNamesFromResult(result || currentCalculatedResult());
   }
   function rowsForMode(master){
     if(modalMode !== 'active') return master.slice();
@@ -719,7 +749,7 @@
     });
     count.textContent = rows.length + ' / ' + base.length + '件';
     if(modalMode === 'active' && !activeBondNames.length){
-      body.innerHTML = '<div class="jinpoBondEmpty">現在適用中の組み合わせはありません。</div>';
+      body.innerHTML = '<div class="jinpoBondEmpty">現在発動中の因縁はありません。</div>';
       return;
     }
     if(!rows.length){
@@ -746,27 +776,40 @@
   }
   async function openModal(mode){
     ensureModal();
-    modalMode = mode === 'active' ? 'active' : 'all';
-    activeBondNames = modalMode === 'active' ? currentActiveBondNames() : [];
-    activeCalculatedResult = modalMode === 'active' && activeBondNames.length ? currentCalculatedResult() : null;
+    var requestMode = mode === 'active' ? 'active' : 'all';
+    var requestToken = ++modalOpenToken;
+    modalMode = requestMode;
+    activeCalculatedResult = null;
+    activeBondNames = [];
     lockedActiveCard = null;
     var title = document.getElementById('jinpoBondModalTitle');
     var input = document.getElementById('jinpoBondSearch');
     var body = document.getElementById('jinpoBondModalBody');
     var backdrop = document.getElementById('jinpoBondModalBackdrop');
     var modal = document.getElementById('jinpoBondModal');
-    if(modal) modal.classList.toggle('jinpoBondModalActiveMode', modalMode === 'active');
-    title.textContent = modalMode === 'active' ? '現在発動中因縁' : '因縁一覧';
+    if(modal) modal.classList.toggle('jinpoBondModalActiveMode', requestMode === 'active');
+    title.textContent = requestMode === 'active' ? '現在発動中因縁' : '因縁一覧';
     input.value = '';
     body.innerHTML = '<div class="jinpoBondEmpty">読み込み中...</div>';
-    backdrop.setAttribute('data-mode',modalMode);
+    backdrop.setAttribute('data-mode',requestMode);
     backdrop.classList.add('is-open');
     backdrop.setAttribute('aria-hidden','false');
     try{
-      await loadBondMaster();
+      var master = await loadBondMaster();
+      /* 閉じる/別モードを押した後に古い非同期結果を描画しない。 */
+      if(requestToken !== modalOpenToken || !backdrop.classList.contains('is-open') || modalMode !== requestMode) return;
+      if(requestMode === 'active'){
+        /* 必ずマスター読込完了後の「現在の6人＋現在の陣形」から再計算する。 */
+        activeCalculatedResult = currentCalculatedResult(master);
+        activeBondNames = currentActiveBondNames(activeCalculatedResult);
+      }
       renderModal();
-      setTimeout(function(){ try{ input.focus(); }catch(e){} },0);
+      setTimeout(function(){
+        if(requestToken !== modalOpenToken) return;
+        try{ input.focus(); }catch(e){}
+      },0);
     }catch(err){
+      if(requestToken !== modalOpenToken) return;
       console.error('因縁一覧読込エラー',err);
       body.innerHTML = '<div class="jinpoBondEmpty">因縁一覧を読み込めませんでした。</div>';
       var count = document.getElementById('jinpoBondModalCount');
@@ -774,6 +817,7 @@
     }
   }
   function closeModal(){
+    ++modalOpenToken;
     var backdrop = document.getElementById('jinpoBondModalBackdrop');
     if(!backdrop) return;
     lockedActiveCard = null;
@@ -782,10 +826,128 @@
     backdrop.setAttribute('aria-hidden','true');
   }
 
+  /* 職業表示は英傑マスタ「職業」列を正とする。特化(因子1)とは混同しない。
+     既存ロジックを変更せず、配置英傑モーダルの表示文字だけを補正する。 */
+  function correctOwnedHeroJobMeta(){
+    var grid = document.getElementById('ownedHeroReliableGrid');
+    if(!grid) return;
+    var master = [];
+    try{ if(typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)) master = eiketsuMaster; }catch(e){}
+    if(!master.length) return;
+    Array.prototype.forEach.call(grid.querySelectorAll('[data-owned-reliable-key]'),function(card){
+      var key = text(card.getAttribute('data-owned-reliable-key'));
+      if(!key) return;
+      var hero = master.find(function(h){
+        return text(h && h.internal_id) === key || normalize(h && h['英傑名']) === normalize(key);
+      });
+      if(!hero) return;
+      var job = text(hero['職業']);
+      if(!job) return;
+      var meta = card.querySelector('.ownedHeroMeta');
+      if(!meta) return;
+      var cost = text(hero['コスト']) || '未確認';
+      meta.textContent = job + ' / コスト ' + cost;
+    });
+  }
+  function scheduleOwnedHeroJobMetaFix(){
+    setTimeout(correctOwnedHeroJobMeta,0);
+    setTimeout(correctOwnedHeroJobMeta,80);
+  }
+  document.addEventListener('click',function(ev){
+    var t = ev.target && ev.target.closest ? ev.target.closest('#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroReliableGrid,[data-owned-reliable-key]') : null;
+    if(t) scheduleOwnedHeroJobMetaFix();
+  },true);
+  document.addEventListener('input',function(ev){
+    if(ev.target && ev.target.id === 'ownedHeroReliableSearch') scheduleOwnedHeroJobMetaFix();
+  },true);
+  document.addEventListener('change',function(ev){
+    if(ev.target && (ev.target.id === 'ownedHeroReliableJob' || ev.target.id === 'ownedHeroReliableFactor')) scheduleOwnedHeroJobMetaFix();
+  },true);
+
+  function placementHeroIdentity(hero){
+    if(!hero) return '';
+    return text(hero.internal_id || hero.id || hero['番号'] || '');
+  }
+  function sanitizedUniquePlacement(source){
+    if(!source || typeof source !== 'object') return source;
+    var seen = new Set(), changed = false, next = {};
+    for(var slot=1;slot<=6;slot++){
+      var hero = source[slot] || null;
+      var key = placementHeroIdentity(hero);
+      if(key && seen.has(key)){
+        next[slot] = null;
+        changed = true;
+      }else{
+        next[slot] = hero;
+        if(key) seen.add(key);
+      }
+    }
+    if(!changed) return source;
+    console.error('同一英傑の重複配置を検出したため、重複枠を因縁計算から除外しました');
+    return next;
+  }
+  function installActivationDuplicateGuard(){
+    var engine = window.JinpoActivationEngine;
+    if(!engine || typeof engine.calculateFormation !== 'function') return;
+    var current = engine.calculateFormation;
+    if(current.__jinpoDuplicatePlacementGuardWrapped) return;
+    function guardedCalculateFormation(sourcePlacement){
+      var args = Array.prototype.slice.call(arguments);
+      args[0] = sanitizedUniquePlacement(sourcePlacement);
+      return current.apply(this,args);
+    }
+    guardedCalculateFormation.__jinpoDuplicatePlacementGuardWrapped = true;
+    guardedCalculateFormation.__jinpoDuplicatePlacementGuardOriginal = current;
+    engine.calculateFormation = guardedCalculateFormation;
+  }
+
+  function dbRowDuplicateHeroKeys(row){
+    try{
+      var ids = [];
+      if(typeof dbRowInternalIds === 'function') ids = dbRowInternalIds(row).map(text).filter(Boolean);
+      var keys = ids.length === 6 ? ids : [];
+      if(keys.length !== 6 && typeof dbRowMembers === 'function'){
+        keys = dbRowMembers(row).map(function(name){
+          try{ return typeof canonicalHeroName === 'function' ? text(canonicalHeroName(name)) : normalize(name); }
+          catch(e){ return normalize(name); }
+        }).filter(Boolean);
+      }
+      if(keys.length !== 6) return [];
+      var seen = new Set(), dup = [];
+      keys.forEach(function(k){ if(seen.has(k)) dup.push(k); else seen.add(k); });
+      return unique(dup);
+    }catch(e){
+      console.error('DB行の重複英傑確認失敗',e);
+      return [];
+    }
+  }
+  function installDbApplyDuplicateGuard(){
+    var current = window.applyDbFormationRow;
+    if(typeof current !== 'function' || current.__jinpoDuplicateHeroGuardWrapped) return;
+    function guardedApplyDbFormationRow(row){
+      var dup = dbRowDuplicateHeroKeys(row);
+      if(dup.length){
+        console.error('DB行に同一英傑の重複配置があるため適用を中止しました',dup,row);
+        try{
+          if(typeof window.__jinpoAskYesNo === 'function'){
+            /* Yes/No確認にはせず、既存UIを勝手に進めない。コンソールで確実に停止する。 */
+          }
+        }catch(e){}
+        return;
+      }
+      return current.apply(this,arguments);
+    }
+    guardedApplyDbFormationRow.__jinpoDuplicateHeroGuardWrapped = true;
+    guardedApplyDbFormationRow.__jinpoDuplicateHeroGuardOriginal = current;
+    window.applyDbFormationRow = guardedApplyDbFormationRow;
+  }
+
   function boot(){
     injectStyle();
     ensureActions();
     ensureModal();
+    installActivationDuplicateGuard();
+    installDbApplyDuplicateGuard();
     syncRecommendDecorFromSearch();
   }
 
