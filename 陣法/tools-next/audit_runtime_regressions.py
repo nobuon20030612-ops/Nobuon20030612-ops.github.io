@@ -1229,9 +1229,16 @@ def validate_search_inflight_dedup_guard() -> None:
         "same-key sharing": "var running=inFlightSearches.get(k);if(running)return running;",
         "normal search sharing": "return sharedSearchRequest(keyFor(query),'search',query);",
         "recommend search sharing": "return sharedSearchRequest(recommendKeyFor(query),'recommend',query);",
-        "success cleanup": "if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);return r;",
-        "failure cleanup": "if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);throw err;",
+        "in-flight centralized cleanup": "if(inFlightSearches.get(entry.key)===entry.promise)inFlightSearches.delete(entry.key);",
+        "foreground completion helper": "function finishForeground(entry,epoch)",
         "cancel cleanup": "pending.clear();inFlightSearches.clear();activeWorkerToken=0;",
+        "latest-only foreground state": "foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0",
+        "latest-only supersede marker": "err.jinpoSuperseded=true",
+        "latest-only single queued request": "if(foregroundQueued){var old=foregroundQueued;foregroundQueued=null;",
+        "latest-only drop intermediate": "old.reject(supersededSearchError());",
+        "latest-only launch gate": "if(!foregroundRunning)startForeground(entry);",
+        "latest-only handoff": "var next=foregroundQueued;foregroundQueued=null;if(next)startForeground(next);",
+        "latest-only cancel epoch": "err.jinpoCancelled=true;foregroundEpoch++;",
     }
     missing = [name for name, needle in required.items() if needle not in js]
     if missing:
@@ -1311,6 +1318,7 @@ def main() -> None:
         "fullmax_search_regressions":"PASS",
         "search_db_runtime_integrity":"PASS",
         "search_inflight_dedup":"PASS",
+        "search_latest_only_queue":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))
