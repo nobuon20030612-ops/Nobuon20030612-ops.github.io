@@ -33,6 +33,7 @@ FACTOR4_OPTIMIZER = ROOT / "tools-next" / "factor4_optimizer.py"
 FULLMAX_MODEL = ROOT / "tools-next" / "fullmax_model.py"
 FULLMAX_BUILDER = ROOT / "tools-next" / "rebuild_fullmax_search.py"
 FULLMAX_AUDIT = ROOT / "tools-next" / "audit_fullmax_search.py"
+PUBLISH_GUARD = ROOT / "tools-next" / "guard_publish_changes.py"
 FAST_SEARCH_JS = ROOT / "jinpo-fast-search.js"
 FAST_SEARCH_WORKER = ROOT / "jinpo-fast-search-worker.js"
 
@@ -771,7 +772,14 @@ def validate_workflow() -> None:
         'git ls-files -- \'陣法/_jinpo-next-report/**\'',
         'rm -rf -- "陣法/_jinpo-next-report"',
         'git status --porcelain -- "陣法"',
-        'git add -- "陣法"',
+        'PYTHONDONTWRITEBYTECODE:',
+        'python "陣法/tools-next/guard_publish_changes.py"',
+        '公開前の生成物allowlist検査',
+        '監査済み生成物だけコミット',
+        '"陣法/data/jinpo_eiketsu_master.csv"',
+        '"陣法/data/jinpo_latest_update_summary.json"',
+        '"陣法/data/compact_search_v2"',
+        '"陣法/tools-next/hero_internal_id_map.json"',
     ]
     for frag in required:
         if frag not in text:
@@ -781,6 +789,15 @@ def validate_workflow() -> None:
     build_pos = text.find('python "陣法/tools-next/build_jinpo_next.py"')
     if min(sync_pos, fresh_pos, build_pos) < 0 or not (sync_pos < fresh_pos < build_pos):
         fail("workflow順序不正: master同期→compact freshness→build の順でなければ古い52byteを再利用できます")
+    runtime_pos = text.find('python "陣法/tools-next/audit_runtime_regressions.py"')
+    cleanup_pos = text.find('rm -rf -- "陣法/_jinpo-next-report"')
+    guard_pos = text.find('python "陣法/tools-next/guard_publish_changes.py"')
+    add_pos = text.find('git add --')
+    push_pos = text.find('git push')
+    if min(runtime_pos, cleanup_pos, guard_pos, add_pos, push_pos) < 0 or not (runtime_pos < cleanup_pos < guard_pos < add_pos < push_pos):
+        fail("workflow公開順序不正: 全監査→一時レポート除去→allowlist→限定git add→push の順でなければなりません")
+    if 'git add -- "陣法"' in text:
+        fail("workflowに広すぎる git add -- 陣法 が復活しています")
 
 
 def validate_compact_pipeline_guards() -> None:
@@ -813,10 +830,52 @@ def validate_compact_pipeline_guards() -> None:
     ]:
         if frag not in stats:
             fail(f"compactステータス全件監査欠落: {frag}")
-    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT):
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT, PUBLISH_GUARD):
         cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if cp.returncode != 0:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
+
+
+def validate_publish_guard_behavior() -> None:
+    """Publish guard must allow only generated artifacts and reject stray/cache files before git add."""
+    guard_text = read_text(PUBLISH_GUARD)
+    for frag in [
+        "ALLOWED_EXACT", "陣法/data/jinpo_eiketsu_master.csv", "陣法/data/jinpo_latest_update_summary.json",
+        "陣法/tools-next/hero_internal_id_map.json", "陣法/data/compact_search_v2/",
+        "__pycache__", ".pyc", "git_lines", "unexpected_paths", "forbidden_paths",
+    ]:
+        if frag not in guard_text:
+            fail(f"公開前allowlistガード欠落: {frag}")
+    with tempfile.TemporaryDirectory(prefix="jinpo-publish-guard-") as td:
+        repo = Path(td)
+        (repo / "陣法" / "tools-next").mkdir(parents=True)
+        (repo / "陣法" / "data" / "compact_search_v2").mkdir(parents=True)
+        shutil.copy2(PUBLISH_GUARD, repo / "陣法" / "tools-next" / "guard_publish_changes.py")
+        (repo / "陣法" / "data" / "jinpo_eiketsu_master.csv").write_text("base\n", encoding="utf-8")
+        (repo / "陣法" / "jinpo.html").write_text("base\n", encoding="utf-8")
+        subprocess.run(["git","init"],cwd=repo,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        subprocess.run(["git","config","user.email","audit@example.invalid"],cwd=repo,check=True)
+        subprocess.run(["git","config","user.name","audit"],cwd=repo,check=True)
+        subprocess.run(["git","add","."],cwd=repo,check=True)
+        subprocess.run(["git","commit","-m","base"],cwd=repo,check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        guard = repo / "陣法" / "tools-next" / "guard_publish_changes.py"
+        # Allowed generated output must pass.
+        (repo / "陣法" / "data" / "jinpo_eiketsu_master.csv").write_text("changed\n", encoding="utf-8")
+        cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if cp.returncode != 0:
+            fail("公開前allowlistガードが許可済み生成物を拒否しました: " + cp.stderr.strip())
+        # UI/source mutation by generator must fail.
+        (repo / "陣法" / "jinpo.html").write_text("unexpected\n", encoding="utf-8")
+        cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if cp.returncode == 0 or "陣法/jinpo.html" not in (cp.stdout + cp.stderr):
+            fail("公開前allowlistガードが想定外UI変更を検出できません")
+        subprocess.run(["git","checkout","--","陣法/jinpo.html"],cwd=repo,check=True,stdout=subprocess.DEVNULL)
+        # Cache/temp file under an otherwise allowed area must still fail.
+        bad = repo / "陣法" / "data" / "compact_search_v2" / "leftover.tmp"
+        bad.write_text("tmp", encoding="utf-8")
+        cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if cp.returncode == 0 or "leftover.tmp" not in (cp.stdout + cp.stderr):
+            fail("公開前allowlistガードが一時ファイルを検出できません")
 
 
 def validate_compact_pipeline_behavior() -> None:
@@ -1126,6 +1185,7 @@ def main() -> None:
     validate_internal_save()
     validate_html_integration_if_present()
     validate_workflow()
+    validate_publish_guard_behavior()
     validate_compact_pipeline_guards()
     validate_compact_pipeline_behavior()
     validate_fullmax_search_guards()

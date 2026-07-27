@@ -31,6 +31,9 @@ concurrency:
   group: jinpo-production-build
   cancel-in-progress: false
 
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+
 jobs:
   build:
     # 自動生成コミット自身では再実行しない。手動実行は常に許可する。
@@ -96,6 +99,9 @@ jobs:
           fi
           rm -rf -- "陣法/_jinpo-next-report"
 
+      - name: 公開前の生成物allowlist検査
+        run: python "陣法/tools-next/guard_publish_changes.py"
+
       - name: 変更確認
         id: diff
         shell: bash
@@ -106,13 +112,17 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 陣法だけコミット
+      - name: 監査済み生成物だけコミット
         if: steps.diff.outputs.changed == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- "陣法"
+          git add -- \
+            "陣法/data/jinpo_eiketsu_master.csv" \
+            "陣法/data/jinpo_latest_update_summary.json" \
+            "陣法/data/compact_search_v2" \
+            "陣法/tools-next/hero_internal_id_map.json"
           if git diff --cached --quiet; then
             echo "コミット対象の差分なし"
             exit 0
