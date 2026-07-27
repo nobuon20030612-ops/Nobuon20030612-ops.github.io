@@ -9,11 +9,14 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.2.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
+  var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
+  var NPB_ROSTER_READER_URL='https://r.jina.ai/'+NPB_ROSTER_URL;
   var STATIC_SOURCE={title:'NPB.jp：広島東洋カープ',url:NPB_TEAM_URL};
   var snapshotCache={text:'',fetchedAt:0};
+  var rosterCache={text:'',fetchedAt:0};
   var CACHE_MS=2*60*1000;
 
   function S(v){
@@ -138,6 +141,35 @@
     finally{tc.clear();}
   }
 
+  async function fetchRoster(){
+    if(rosterCache.text&&Date.now()-rosterCache.fetchedAt<CACHE_MS)return {ok:true,text:rosterCache.text,cached:true};
+    if(!window.fetch)return {ok:false,unavailable:true};
+    var tc=timeoutController(10000);
+    try{
+      var r=await fetch(NPB_ROSTER_READER_URL,{method:'GET',mode:'cors',credentials:'omit',headers:{'Accept':'text/plain'},signal:tc.signal});
+      if(!r.ok)return {ok:false,status:r.status};
+      var text=await r.text();
+      if(!text||text.length<300||!/(広島東洋カープ|選手一覧|支配下選手)/.test(text))return {ok:false,invalid:true};
+      rosterCache={text:text,fetchedAt:Date.now()};return {ok:true,text:text,cached:false};
+    }catch(e){return {ok:false,error:true};}finally{tc.clear();}
+  }
+  function rosterNames(text,label,nextLabel,limit){
+    text=String(text||'');var start=text.search(new RegExp('(?:^|\\n).*'+label+'.*','m'));if(start<0)return[];
+    var chunk=text.slice(start,start+6500);if(nextLabel){var n=chunk.search(new RegExp('\\n.*'+nextLabel+'.*','m'));if(n>40)chunk=chunk.slice(0,n);}
+    var out=[],seen={};
+    chunk.split(/\n/).forEach(function(line){
+      var x=stripMarkdownLine(line),m=x.match(/^\s*([0-9]{1,3}|00)\s*[|/]\s*([^|/]{2,24})/);
+      if(!m)return;var name=S(m[2]).replace(/\s+/g,' ');if(!name||/投手|捕手|内野手|外野手|監督|生年月日/.test(name)||seen[name])return;
+      seen[name]=1;out.push(name);
+    });
+    return out.slice(0,limit||6);
+  }
+  function rosterSummary(text){
+    var ps=rosterNames(text,'投手','捕手',6),cs=rosterNames(text,'捕手','内野手',4),ins=rosterNames(text,'内野手','外野手',6),ofs=rosterNames(text,'外野手','育成選手',6);
+    var lines=[];if(ps.length)lines.push('投手：'+ps.join('、'));if(cs.length)lines.push('捕手：'+cs.join('、'));if(ins.length)lines.push('内野手：'+ins.join('、'));if(ofs.length)lines.push('外野手：'+ofs.join('、'));
+    return lines;
+  }
+
   function sources(extra){
     var s=[STATIC_SOURCE];
     if(Array.isArray(extra))extra.forEach(function(x){if(x&&x.url&&!s.some(function(y){return y.url===x.url;}))s.push(x);});
@@ -167,8 +199,9 @@
   function intent(text){
     var t=S(text);
     if(/ニュース|速報|最新情報|話題|報道|記事/.test(t))return'news';
-    if(/スタメン|先発|予告先発|登録抹消|一軍登録|一軍|二軍|故障|けが|怪我|復帰|移籍|トレード|新外国人/.test(t))return'news_detail';
+    if(/スタメン|先発|予告先発|登録抹消|一軍登録|故障|けが|怪我|復帰|移籍|トレード|新外国人/.test(t))return'news_detail';
     if(/順位|何位|何勝|何敗|勝敗|勝率|ゲーム差|シーズン成績/.test(t))return'rank';
+    if(/選手一覧|選手|メンバー|誰がいる|だれがいる|投手陣|野手陣|捕手陣|内野手|外野手|監督/.test(t))return'players';
     if(/次の試合|次いつ|次はいつ|日程|予定|いつ試合|今日の試合|明日の試合|対戦相手/.test(t))return'schedule';
     if(/打率|本塁打|ホームラン|打点|出塁率|安打|盗塁/.test(t))return'bat';
     if(/防御率|奪三振|セーブ|ホールド|投手成績/.test(t))return'pitch';
@@ -188,12 +221,22 @@
     return {handled:true,answer:'カープの最新情報をWebで確認したのですよ。\n'+r.title+'：'+r.extract,sources:sources(src),mode:'カープ最新Web'};
   }
 
-  async function liveReply(text,kind){
+  async function liveReply(text,kind,opt){
+    opt=opt||{};var ctx=opt.context||{};
     if(kind==='news'||kind==='news_detail'){
       var detail=kind==='news_detail'?S(text).replace(/広島東洋カープ|広島カープ|カープ|かーぷ/gi,'').trim():'最新ニュース';
       var n=await newsFallback(text,detail||'最新ニュース');
       if(n)return n;
       return {handled:true,answer:'カープの最新情報を確認しようとしたのですが、今は検索先につながらなかったのですよ。推測では答えず、少し時間を置いてもう一度確認するのです。',sources:sources(),mode:'カープ最新Web'};
+    }
+
+    if(kind==='players'){
+      var rr=await fetchRoster();
+      if(rr.ok){
+        var rs=rosterSummary(rr.text);
+        if(rs.length)return {handled:true,answer:'カープの選手ですね。NPB公式の現在の選手一覧を見たのですよ。\n'+rs.join('\n')+'\n\n気になる選手がいたら、次は名前だけでも大丈夫なのです。',sources:sources([{title:'NPB.jp：広島東洋カープ 選手一覧',url:NPB_ROSTER_URL}]),mode:'カープ公式選手情報'};
+      }
+      return {handled:true,answer:'カープの選手の話ですね。今は選手一覧の取得だけ失敗したのですよ。一般的な「プロ野球選手」の説明には飛ばさず、カープの話題のまま待つのです。選手名を言ってくれれば、その選手について調べます。',sources:sources([{title:'NPB.jp：広島東洋カープ 選手一覧',url:NPB_ROSTER_URL}]),mode:'カープ公式選手情報'};
     }
 
     var snap=await fetchSnapshot();
@@ -216,7 +259,17 @@
         if(recent.length)lines.push('最近の試合：\n'+recent.slice(-3).join('\n'));
         if(upcoming.length)lines.push('次の予定：\n'+upcoming.slice(0,3).join('\n'));
       }
-      if(lines.length)return {handled:true,answer:'NPB公式のカープ情報を確認したのですよ。\n'+lines.join('\n\n'),sources:sources(),mode:'カープ公式情報'};
+      if(lines.length){
+        var lead='NPB公式のカープ情報を確認したのですよ。';
+        if(ctx.reason==='carp_topic_carry'){
+          if(kind==='rank')lead='順位ですね。NPB公式の現在情報では、';
+          else if(kind==='result')lead='試合結果ですね。NPB公式では、';
+          else if(kind==='schedule')lead='日程ですね。NPB公式では、';
+          else if(kind==='bat')lead='打撃成績ですね。NPB公式では、';
+          else if(kind==='pitch')lead='投手成績ですね。NPB公式では、';
+        }
+        return {handled:true,answer:lead+'\n'+lines.join('\n\n'),sources:sources(),mode:'カープ公式情報'};
+      }
     }
 
     // NPB公式の取得に失敗した場合は、既存のニュース検索へ落とす。
@@ -225,9 +278,10 @@
     return {handled:true,answer:'カープの最新情報を確認しようとしたのですが、今はNPB公式ページにもニュース検索にもつながらなかったのですよ。古い情報を推測で埋めず、接続が戻ってから確認するのです。',sources:sources(),mode:'カープ最新Web'};
   }
 
-  async function respond(text){
+  async function respond(text,opt){
+    opt=opt||{};
     var t=S(text);if(!isCarp(t))return {handled:false};
-    var k=intent(t);if(k)return await liveReply(t,k);
+    var k=intent(t);if(k)return await liveReply(t,k,opt);
     var local=staticReply(t);
     if(local)return {handled:true,answer:local,sources:sources(),mode:'カープ専用会話'};
 
@@ -243,5 +297,5 @@
     return {handled:true,answer:'カープの話なのですね。試合結果、順位、日程、選手、歴史など、気になるところをそのまま聞いてくださいなのですよ。',sources:sources(),mode:'カープ専用会話'};
   }
 
-  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats}};
+  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary}};
 })();

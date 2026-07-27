@@ -5,7 +5,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='2.4.0';
+  var VERSION='2.5.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -527,8 +527,9 @@
     return isLikelyTopicOnly(t);
   }
 
-  async function respond(text){
-    var t=S(text);
+  async function respond(text,opt){
+    opt=opt||{};
+    var t=S(text),ctx=opt.context||{};
     if(/Firebase|ファイヤベース|共有記憶|サーバー記憶/i.test(t)&&/(状態|つなが|接続|使える|動いて|どう)/.test(t)){
       var sharedStatus=window.JINPO_BOT_SHARED_MEMORY;
       if(sharedStatus&&typeof sharedStatus.init==='function'){
@@ -543,7 +544,7 @@
 
     // カープ専用会話を通常雑談より先に判定する。
     // 「カープ好き？」「カープ最近どう？」などを一般的な「好き」返答へ誤分類しない。
-    var carp=window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'?await window.JINPO_BOT_CARP.respond(text):null;
+    var carp=window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'?await window.JINPO_BOT_CARP.respond(text,opt):null;
     if(carp&&carp.handled)return carp;
 
     // 日常会話を先に判定。誤字の挨拶をWeb検索へ飛ばさないためにもここを優先する。
@@ -580,7 +581,11 @@
       var prefix='';
       if(r.realtime){
         if(r.kind==='news')prefix='最新情報を自動で探してきたのですよ。';
-        else if(r.kind==='weather')prefix='最新の天気データを確認したのですよ。';
+        else if(r.kind==='weather'){
+          if(ctx.reason==='explicit_correction')prefix='あ、'+r.title+'のことですね。';
+          else if(/^weather_/.test(String(ctx.reason||'')))prefix=r.title+'ですね。';
+          else prefix='最新の天気データを確認したのですよ。';
+        }
         else if(r.kind==='fx')prefix='最新の参照レートを確認したのですよ。';
         else prefix='現在の公開情報を確認したのですよ。';
       }else prefix=r.shared?'共有している調査記憶にあったのですよ。':(r.cached?'前に調べた内容を覚えていたのですよ。':'こちらで調べてみたのですよ。');

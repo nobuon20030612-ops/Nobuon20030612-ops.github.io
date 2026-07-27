@@ -11,7 +11,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_WEB)return;
-  var VERSION='1.7.0';
+  var VERSION='1.8.0';
   var WIKIPEDIA_ENDPOINT='https://ja.wikipedia.org/w/api.php';
   var WIKIDATA_ENDPOINT='https://www.wikidata.org/w/api.php';
   var GDELT_ENDPOINT='https://api.gdeltproject.org/api/v2/doc/doc';
@@ -35,6 +35,7 @@
     return S(text)
       .replace(/[？?！!。、]+$/g,'')
       .replace(/^(?:ねえ|ねぇ|ちょっと|ところで|歩き巫女|巫女さん)[、\s]*/,'')
+      .replace(/^(?:(?:そう|そっち|それ)(?:じゃ|では)?(?:ない|なくて|なく|違う)|(?:いや|いえ|違う|ちがう|訂正|ごめん|ごめんね))[、。,:：\s]*/,'')
       .replace(/^(?:(?:web|WEB|Web|ウェブ|ネット)(?:で)?(?:検索|調査)?|検索|調査)[、\s:]*/,'')
       .replace(/(?:お願い(?:します)?|頼む|よろしく)[。\s]*$/,'')
       .trim();

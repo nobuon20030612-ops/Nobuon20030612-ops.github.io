@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.6.2';
+  var VERSION='2.7.0';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -100,7 +100,7 @@
     if(!coreReady){
       if(window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
         try{
-          var siteChat=await window.JINPO_BOT_SMALLTALK.respond(message);
+          var siteChat=await window.JINPO_BOT_SMALLTALK.respond(message,{history:history,context:contextInfo,original:originalMessage});
           if(siteChat&&siteChat.handled)return {answer:String(siteChat.answer||''),sources:Array.isArray(siteChat.sources)?siteChat.sources:[],links:Array.isArray(siteChat.links)?siteChat.links:[],mode:String(siteChat.mode||'日常会話'),data:{smalltalk:true,context:contextInfo}};
         }catch(siteChatErr){}
       }
@@ -146,7 +146,7 @@
     // これにより同じ固定文だけでなく、複数レパートリーと自動Web判定を利用できる。
     if(!plan.recognized&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
       try{
-        var chat=await window.JINPO_BOT_SMALLTALK.respond(message);
+        var chat=await window.JINPO_BOT_SMALLTALK.respond(message,{history:history,context:contextInfo,original:originalMessage});
         if(chat&&chat.handled){
           return {answer:String(chat.answer||''),sources:Array.isArray(chat.sources)?chat.sources:[],links:Array.isArray(chat.links)?chat.links:[],mode:String(chat.mode||'日常会話'),data:{smalltalk:true,context:contextInfo}};
         }

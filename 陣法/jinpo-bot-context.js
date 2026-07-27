@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='1.2.0';
+  var VERSION='2.0.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -75,9 +75,69 @@
     }
     return'';
   }
+  function stripCorrectionPrefix(t){
+    t=S(t);
+    // 「そうじゃなくて東京の天気」「違う、東京」のような言い直しを新しい要求として扱う。
+    return t.replace(/^(?:(?:そう|そっち|それ)(?:じゃ|では)?(?:ない|なくて|なく|違う)|(?:いや|いえ|違う|ちがう|訂正|ごめん|ごめんね))[、。,:：\s]*/,'').trim();
+  }
+  function domainFromText(t){
+    t=S(t);if(!t)return'';
+    if(/広島(?:東洋)?(?:カープ|かーぷ)|カープ|かーぷ|\bcarp\b/i.test(t))return'carp';
+    if(hasExplicitWeather(t))return'weather';
+    if(hasExplicitFx(t))return'fx';
+    if(hasExplicitSiteIntent(t))return'jinpo';
+    if(/たいらの野望|鬼神石|九十九|魔導結晶|七星転生|家臣計算|能力計算|天下統一奇譚|二条城|富士地下洞穴|修羅の間|天下武技大会|カウンター/.test(t))return'tairano';
+    return'';
+  }
+  function recentDomain(h){
+    var score={carp:0,weather:0,fx:0,jinpo:0,tairano:0};
+    for(var i=h.length-1,age=0;i>=0&&age<12;i--,age++){
+      if(!h[i]||!S(h[i].text))continue;
+      var d=domainFromText(h[i].text);if(!d)continue;
+      // 直近ほど強くする。ユーザー発言を少し優先。
+      score[d]+=Math.max(1,12-age)+(h[i].role==='user'?3:0);
+    }
+    var best='',bs=0;Object.keys(score).forEach(function(k){if(score[k]>bs){bs=score[k];best=k;}});
+    return bs>=6?best:'';
+  }
+  function isShortFollowup(t){
+    t=S(t);if(!t||t.length>24)return false;
+    if(/[。！!]/.test(t))return false;
+    return true;
+  }
+  function carryDomain(original,h){
+    var t=S(original),d=recentDomain(h);if(!d||!isShortFollowup(t)||domainFromText(t))return null;
+    if(d==='carp'&&/^(?:順位|何位|選手|選手一覧|メンバー|投手|野手|捕手|内野手|外野手|監督|コーチ|日程|予定|次|次の試合|結果|試合結果|先発|スタメン|ニュース|最近|今|今日|明日|打率|本塁打|ホームラン|打点|防御率|セーブ|ホールド|誰いる|だれいる|誰がいる|だれがいる)[？?]?$/.test(t)){
+      return {message:'カープの'+t.replace(/[？?]$/,'')+( /[？?]$/.test(t)?'？':''),reason:'carp_topic_carry',confidence:0.98};
+    }
+    if(d==='weather'&&/^(?:今日|きょう|明日|あした|雨|気温|最高|最低|降水確率|湿度|風|風速)[？?]?$/.test(t)){
+      var rw=findRecentWeather(h);if(rw&&rw.place){
+        var tail=t.replace(/[？?]$/,'');
+        if(/^(?:今日|きょう|明日|あした)$/.test(tail))return {message:rw.place+'の'+tail+'の天気',reason:'weather_topic_carry_short',confidence:0.97};
+        return {message:rw.place+'の'+tail,reason:'weather_topic_carry_short',confidence:0.92};
+      }
+    }
+    if(d==='tairano'&&/^(?:使い方|どう使う|どこ|開いて|ページ|数値|いくつ|何番|カウンター|かうんた|かうん)[？?]?$/.test(t)){
+      var ant=findAntecedent(h);if(ant)return {message:ant+' '+t,reason:'tairano_topic_carry',confidence:0.90};
+    }
+    return null;
+  }
   function resolve(text,history,opt){
     var original=S(text),resolved=original,reason='',confidence=0;
     var h=historyBeforeCurrent(history,original),ex=lastExchange(h),a=S(ex.assistant&&ex.assistant.text),u=S(ex.user&&ex.user.text);
+
+
+    // 明示的な言い直しは、以前の誤解より新しい内容を優先する。
+    var corrected=stripCorrectionPrefix(original);
+    if(corrected&&corrected!==original&&corrected.length>=2){
+      resolved=corrected;reason='explicit_correction';confidence=0.995;
+    }
+
+    // 「カープ」→「順位」→「選手」のような、人なら分かる短い追質問を前の話題へ結ぶ。
+    if(resolved===original){
+      var carried=carryDomain(original,h);
+      if(carried){resolved=carried.message;reason=carried.reason;confidence=carried.confidence;}
+    }
 
     // 「天気」→「場所を教えて」→「東京」のような不足情報への追答。
     if(looksLikeLocation(original)&&(
@@ -133,5 +193,5 @@
     return {original:original,message:resolved,resolved:resolved!==original,reason:reason,confidence:confidence,history:h};
   }
 
-  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent};
+  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent,domainFromText:domainFromText,recentDomain:recentDomain,stripCorrectionPrefix:stripCorrectionPrefix};
 })();

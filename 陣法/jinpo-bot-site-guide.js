@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function rootUrl(){try{return new URL('/',location.href).href;}catch(e){return'/';}}
