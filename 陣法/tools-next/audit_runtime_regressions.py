@@ -1049,6 +1049,32 @@ def validate_fullmax_search_guards() -> None:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
 
 
+def validate_search_db_runtime_integrity_guards() -> None:
+    """Browser Worker must reject mixed/stale DB generations instead of silently searching them."""
+    worker = read_text(FAST_SEARCH_WORKER)
+    required = [
+        "expectedHash16",
+        "sha256_16",
+        "self.crypto.subtle.digest('SHA-256',ab)",
+        "integrityOk",
+        "cache:'no-store'",
+        "_repair",
+        "検索DB整合性不一致",
+        "cleanupOldCaches",
+        "info.sha256_16,info.gzip_bytes",
+    ]
+    for frag in required:
+        if frag not in worker:
+            fail(f"検索DB世代/整合性ガード欠落: {frag}")
+    if worker.count("cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes)") < 4:
+        fail("検索DB SHA-256検証が全読込経路へ適用されていません")
+    # A stale Cache API hit must not be trusted before hash verification.
+    cache_hit = worker.find("var hit=await cache.match(u.href)")
+    cache_verify = worker.find("integrityOk(hab,expectedHash,expectedBytes)")
+    if cache_hit < 0 or cache_verify < cache_hit:
+        fail("Cache APIヒットのSHA-256検証順序が不正です")
+
+
 def validate_no_unsupported_10_bonds() -> dict:
     """Exact guard: the current compact/search schema only publishes 5-9 bonds.
 
@@ -1178,6 +1204,29 @@ def validate_manifest_if_present() -> None:
         fail("compact manifest version空")
     if not re.search(r"[0-9a-f]{8,}", version.lower()):
         fail(f"compact manifest versionにDB fingerprintがありません: {version}")
+    referenced = 0
+    def walk(node, path="manifest"):
+        nonlocal referenced
+        if isinstance(node, dict):
+            if "file" in node:
+                referenced += 1
+                sha = str(node.get("sha256_16", "")).lower()
+                if not re.fullmatch(r"[0-9a-f]{16}", sha):
+                    fail(f"compact manifest参照ファイルSHA-256欠落/不正: {path} {node.get('file')}")
+                try:
+                    gz = int(node.get("gzip_bytes", 0))
+                except Exception:
+                    gz = 0
+                if gz <= 0:
+                    fail(f"compact manifest gzip_bytes欠落/不正: {path} {node.get('file')}")
+            for k, v in node.items():
+                walk(v, f"{path}/{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}/{i}")
+    walk(m)
+    if referenced == 0:
+        fail("compact manifestに参照DBがありません")
 
 
 def main() -> None:
@@ -1192,6 +1241,7 @@ def main() -> None:
     validate_compact_pipeline_guards()
     validate_compact_pipeline_behavior()
     validate_fullmax_search_guards()
+    validate_search_db_runtime_integrity_guards()
     max_guard = validate_no_unsupported_10_bonds()
     validate_manifest_if_present()
     print(json.dumps({
@@ -1207,6 +1257,7 @@ def main() -> None:
         "compact_stats_full_audit_guard":"PASS",
         "compact_pipeline_synthetic_behavior":"PASS",
         "fullmax_search_regressions":"PASS",
+        "search_db_runtime_integrity":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))

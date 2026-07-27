@@ -16,7 +16,7 @@
   async function loadManifest(){
     if(manifest)return manifest;if(manifestPromise)return manifestPromise;
     manifestPromise=fetch(MANIFEST_PATH,{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(MANIFEST_PATH+' HTTP '+r.status);return r.json();}).then(function(m){
-      manifest=m;
+      manifest=m;cleanupOldCaches(m.version);
       manifest._heroNameToIds=Object.create(null);
       (m.hero_names||[]).forEach(function(n,i){if(!n)return;var k=norm(n);if(!manifest._heroNameToIds[k])manifest._heroNameToIds[k]=[];manifest._heroNameToIds[k].push(i);});
       manifest._bondNameToId=Object.create(null);
@@ -24,17 +24,31 @@
       return manifest;
     });return manifestPromise;
   }
-  async function cachedFetch(url,version){
-    var u=new URL(url,self.location.href);u.searchParams.set('v',version||'1');
+  function expectedHash16(v){var s=String(v||'').trim().toLowerCase();if(!/^[0-9a-f]{16}$/.test(s))throw new Error('検索DB manifest SHA-256不正/欠落: '+s);return s;}
+  async function sha256_16(ab){
+    if(!self.crypto||!self.crypto.subtle||typeof self.crypto.subtle.digest!=='function')throw new Error('検索DB整合性確認に必要なWeb Crypto未対応');
+    var h=new Uint8Array(await self.crypto.subtle.digest('SHA-256',ab)),s='';for(var i=0;i<8;i++)s+=h[i].toString(16).padStart(2,'0');return s;
+  }
+  async function integrityOk(ab,expectedHash,expectedBytes){
+    var expected=expectedHash16(expectedHash),bytes=Number(expectedBytes||0);if(bytes>0&&ab.byteLength!==bytes)return false;return (await sha256_16(ab))===expected;
+  }
+  async function cleanupOldCaches(version){
+    if(typeof caches==='undefined'||!caches.keys)return;try{var keep='jinpo-unified-compact-'+String(version||'1').replace(/[^a-zA-Z0-9_.-]/g,'_'),keys=await caches.keys();for(var i=0;i<keys.length;i++)if(keys[i].indexOf('jinpo-unified-compact-')===0&&keys[i]!==keep)await caches.delete(keys[i]);}catch(e){}
+  }
+  async function fetchVerified(url,canonicalUrl,expectedHash,expectedBytes,retry){
+    var res=await fetch(url,{cache:'no-store'});if(!res.ok)throw new Error(canonicalUrl+' HTTP '+res.status);var ab=await res.arrayBuffer();if(await integrityOk(ab,expectedHash,expectedBytes))return ab;
+    if(!retry)throw new Error('検索DB整合性不一致（更新中またはキャッシュ不整合）: '+canonicalUrl);
+    var repair=new URL(url);repair.searchParams.set('_repair',String(Date.now()));return fetchVerified(repair.href,canonicalUrl,expectedHash,expectedBytes,false);
+  }
+  async function cachedFetch(url,version,expectedHash,expectedBytes){
+    expectedHash16(expectedHash);var u=new URL(url,self.location.href);u.searchParams.set('v',version||'1');
+    var cname='jinpo-unified-compact-'+String(version||'1').replace(/[^a-zA-Z0-9_.-]/g,'_'),cache=null;
     if(typeof caches!=='undefined'){
-      try{
-        var cname='jinpo-unified-compact-'+String(version||'1').replace(/[^a-zA-Z0-9_.-]/g,'_');
-        var cache=await caches.open(cname),hit=await cache.match(u.href);if(hit)return await hit.arrayBuffer();
-        var res=await fetch(u.href,{cache:'force-cache'});if(!res.ok)throw new Error(url+' HTTP '+res.status);
-        try{await cache.put(u.href,res.clone());}catch(e){}return await res.arrayBuffer();
-      }catch(e){}
+      try{cache=await caches.open(cname);var hit=await cache.match(u.href);if(hit){var hab=await hit.arrayBuffer();if(await integrityOk(hab,expectedHash,expectedBytes))return hab;try{await cache.delete(u.href);}catch(e){}}}catch(e){cache=null;}
     }
-    var r=await fetch(u.href,{cache:'force-cache'});if(!r.ok)throw new Error(url+' HTTP '+r.status);return r.arrayBuffer();
+    var ab=await fetchVerified(u.href,url,expectedHash,expectedBytes,true);
+    if(cache){try{await cache.put(u.href,new Response(ab));}catch(e){}}
+    return ab;
   }
   async function gunzip(ab){
     var head=new Uint8Array(ab,0,Math.min(2,ab.byteLength));if(head.length<2||head[0]!==0x1f||head[1]!==0x8b)return ab;
@@ -65,7 +79,7 @@
     var m=await loadManifest(),info=datasetInfo(m,q);if(!info)throw new Error('統一検索DBなし: '+[q.mode,q.count,q.formation,q.sourceType,q.sortStat].join('/'));
     var key=cacheKey(q,info),hit=buffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
     if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:'検索DB '+q.formation+' '+q.count+'因縁 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version);if(!silent)self.postMessage({type:'progress',token:token,phase:'decompress',message:'検索DB 展開中',bytes:zipped.byteLength});
+    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes);if(!silent)self.postMessage({type:'progress',token:token,phase:'decompress',message:'検索DB 展開中',bytes:zipped.byteLength});
     var ab=await gunzip(zipped),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JCF1')throw new Error('compact DB magic不一致');
     var recSize=dv.getUint16(6,true);if(recSize!==Number(m.record_size||52))throw new Error('compact DB record size不一致');
@@ -80,7 +94,7 @@
     var m=await loadManifest(),info=fullmaxInfo(m,q);if(!info)throw new Error('全MAX検索ステータスDBなし: '+[q.mode,q.count,q.formation].join('/'));
     var key=[q.mode||'normal',q.count,q.formation,info.file||''].join('|'),hit=fullmaxBuffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
     if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:'全MAX込み合計DB '+q.formation+' '+q.count+'因縁 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version),ab=await gunzip(zipped),dv=new DataView(ab);
+    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes),ab=await gunzip(zipped),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JMX1')throw new Error('全MAX検索DB magic不一致');
     var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);if(rec!==Number(m.fullmax_stats_record_size||26)||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('全MAX検索DB構造不一致');
     var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info,rawBytes:ab.byteLength,last:++lruSeq};fullmaxBuffers.set(key,obj);evictIfNeeded('fullmax',key);return obj;
@@ -212,7 +226,7 @@
     var info=fullmaxRecommendInfo(m,mode,target,secondary);if(!info)return null;
     var key=[mode,target,secondary||'',info.file||''].join('|'),hit=fullmaxRecommendBuffers.get(key);if(hit)return hit;
     self.postMessage({type:'progress',token:token,phase:'download',message:'全MAXおすすめTop500 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version),ab=await gunzip(zipped),dv=new DataView(ab);
+    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes),ab=await gunzip(zipped),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JMR1')throw new Error('全MAXおすすめDB magic不一致');
     var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);
     if(rec!==Number(m.fullmax_recommend_record_size||80)||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('全MAXおすすめDB構造不一致');
@@ -234,7 +248,7 @@
   async function loadRecommendSumTop(m,mode,target,secondary,token){
     var info=recommendSumInfo(m,mode,target,secondary);if(!info)return null;var key=[mode,target,secondary,info.file||''].join('|'),hit=recommendSumBuffers.get(key);if(hit)return hit;
     self.postMessage({type:'progress',token:token,phase:'download',message:'おすすめ合計Top500 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version),ab=await gunzip(zipped),dv=new DataView(ab);
+    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes),ab=await gunzip(zipped),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JRS1')throw new Error('おすすめ合計DB magic不一致');
     var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);if(rec!==54||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('おすすめ合計DB構造不一致');
     var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info};recommendSumBuffers.set(key,obj);return obj;
