@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -111,7 +111,7 @@
       for(var ri=h.length-1;ri>=0&&ri>=h.length-8;ri--){
         if(h[ri]&&S(h[ri].text))recentAll+=' '+S(h[ri].text);
       }
-      if(/カウンター/.test(recentAll)&&!/カウンター/.test(original)){
+      if(/カウンター|かうんた|かうん|counter/i.test(recentAll)&&!/カウンター|かうんた|かうん|counter/i.test(original)){
         var shortName=original.replace(/^(?:じゃあ|では|なら)\s*/,'').replace(/(?:は|って)?[？?]$/,'').trim();
         if(shortName&&shortName.length<=18){
           resolved=shortName+'のカウンターは？';reason='counter_followup';confidence=0.90;
