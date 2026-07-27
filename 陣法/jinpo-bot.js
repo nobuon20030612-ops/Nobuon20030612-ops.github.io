@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.5.0';
+  var VERSION='2.5.5';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -73,7 +73,8 @@
       }catch(capErr2){}
     }
     if(plan.helpKey)return R(help().get(plan.helpKey));
-    if(plan.smalltalk&&!plan.recognized)return R(smalltalk(plan.smalltalk));
+    // 標準の挨拶も誤字の挨拶も、拡張Smalltalkへ集約する。
+    // これにより同じ固定文だけでなく、複数レパートリーと自動Web判定を利用できる。
     if(!plan.recognized&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
       try{
         var chat=await window.JINPO_BOT_SMALLTALK.respond(originalMessage);
@@ -82,6 +83,8 @@
         }
       }catch(chatErr){}
     }
+    // 拡張Smalltalkが読めない場合だけ、旧来の最低限の定型文へフォールバックする。
+    if(plan.smalltalk&&!plan.recognized)return R(smalltalk(plan.smalltalk));
 
     var before=actions().readSiteState();
     state().setConditions(before);
