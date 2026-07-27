@@ -13,7 +13,8 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-from factor4_optimizer import minimal_factor4_count
+from factor4_optimizer import minimal_factor4_mask
+from fullmax_model import calc_fullmax_stats
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -23,6 +24,8 @@ REPORT_DIR = ROOT / '_jinpo-next-report'
 REPORT = REPORT_DIR / 'generation_report.json'
 SYNC_REPORT = REPORT_DIR / 'master_sync.json'
 REC = 52
+FULLMAX_REC = 26
+FULLMAX_DIR = DATA / 'fullmax_stats'
 STATS = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
 LINES = {
     '衡軛': [(0,1,2),(3,4,5)],
@@ -247,9 +250,9 @@ class Generator:
     def bond_ids(self,mask):
         return tuple(i+1 for i in range(len(self.bonds)) if (mask >> i) & 1)
 
-    def factor4_count(self,p,form,bond_ids):
-        # 各因縁の全ライン・全割当を考慮し、編成全体で因子4を使う英傑人数を最小化する。
-        return minimal_factor4_count(p, form, bond_ids, LINES, self.heroes, self.bonds, self.assign_cache)
+    def factor4_mask(self,p,form,bond_ids):
+        # 各因縁の全ライン・全割当を考慮し、編成全体で因子4を使う英傑集合を最小化する。
+        return minimal_factor4_mask(p, form, bond_ids, LINES, self.heroes, self.bonds, self.assign_cache)
 
     def calc_stats(self,p,bond_ids,form):
         base = [sum(self.heroes[h]['s'][i] for h in p) for i in range(11)]
@@ -264,7 +267,9 @@ class Generator:
             raise RuntimeError(f'ステータスがuint16範囲外: {form} {p} {vals}')
         return vals,sum(vals)
 
-    def record(self,p,bond_ids,form,tie):
+    def record_bundle(self,p,bond_ids,form,tie):
+        # 文曲最小化はcompact本体と全MAX sidecarで共通のmaskを1回だけ計算する。
+        f4mask = self.factor4_mask(p,form,bond_ids)
         vals,total = self.calc_stats(p,bond_ids,form)
         r = bytearray(REC)
         struct.pack_into('<6H',r,0,*p)
@@ -273,9 +278,16 @@ class Generator:
         for i,v in enumerate(vals):
             struct.pack_into('<H',r,21+2*i,v)
         struct.pack_into('<I',r,43,total)
-        r[47] = self.factor4_count(p,form,bond_ids)
+        r[47] = f4mask.bit_count()
         struct.pack_into('<I',r,48,tie)
-        return bytes(r)
+
+        fm_vals,fm_total = calc_fullmax_stats(
+            p, f4mask, bond_ids, form, self.heroes, self.coef, self.formation_bonus_pct
+        )
+        fm = bytearray(FULLMAX_REC)
+        struct.pack_into('<11H',fm,0,*fm_vals)
+        struct.pack_into('<I',fm,22,fm_total)
+        return bytes(r),bytes(fm)
 
 
 def load_model():
@@ -343,6 +355,36 @@ def load_model():
     return heroes,sorted(grade3),bonds,bond_names,coef,formation_bonus_pct
 
 
+def fullmax_path(mode: str, count: int, form: str) -> Path:
+    code={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}[form]
+    return FULLMAX_DIR/mode/f'c{count}_{code}.bin.gz'
+
+
+def read_existing_fullmax(manifest: dict, mode: str, count: int, form: str, old_n: int):
+    info=(((manifest.get('fullmax_stats') or {}).get(mode) or {}).get(str(count)) or {}).get(form)
+    if not info:
+        return None
+    path=SITE/info.get('file','')
+    if not path.exists():
+        return None
+    try:
+        raw=gzread(path)
+        if len(raw)<16 or raw[:4]!=b'JMX1':
+            return None
+        rec=struct.unpack_from('<H',raw,6)[0]; rows=struct.unpack_from('<I',raw,8)[0]
+        if rec!=FULLMAX_REC or rows!=old_n or len(raw)!=16+rows*FULLMAX_REC:
+            return None
+        return raw
+    except Exception:
+        return None
+
+
+def fullmax_meta(path: Path, raw: bytes, rows: int) -> dict:
+    out=meta(path,raw,rows)
+    out['record_size']=FULLMAX_REC
+    return out
+
+
 def write_dataset(manifest, generator: Generator, mode: str, count: int, form: str, generated: dict, dirty_ids: set[int], default_transform=lambda p:p):
     print('WRITE',mode,count,form,len(generated),flush=True)
     entry = manifest['datasets'][mode][str(count)][form]
@@ -351,15 +393,23 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
     if len(old_raw) < 16 or old_raw[:4] != b'JCF1' or struct.unpack_from('<H',old_raw,6)[0] != REC:
         raise RuntimeError(f'既存compact DB不正: {entry["file"]}')
     old_n = (len(old_raw)-16)//REC
+    old_fm = read_existing_fullmax(manifest,mode,count,form,old_n)
+
     remaining = set(generated.keys())
     out = bytearray(16 + len(generated)*REC)
     out[:16] = old_raw[:16]
     struct.pack_into('<I',out,8,len(generated))
     out[12] = count
+
+    fm_out = bytearray(16 + len(generated)*FULLMAX_REC)
+    struct.pack_into('<4sHHII',fm_out,0,b'JMX1',1,FULLMAX_REC,len(generated),0)
+
     write_index = 0
     max_tie = 0
     preserved = 0
     reused_bytes = 0
+    reused_fullmax = 0
+    recalculated_fullmax = 0
     placement_replaced = 0
     removed = 0
 
@@ -382,6 +432,13 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
             rec = old_raw[off:off+REC]
             preserved += 1
             reused_bytes += 1
+            if old_fm is not None:
+                fm_rec=old_fm[16+i*FULLMAX_REC:16+(i+1)*FULLMAX_REC]
+                reused_fullmax += 1
+            else:
+                bids=generator.bond_ids(mask)
+                _,fm_rec=generator.record_bundle(p,bids,form,tie)
+                recalculated_fullmax += 1
         else:
             if generator.placement_mask(old_p,form) == mask:
                 p = old_p
@@ -390,9 +447,12 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
                 p = default_transform(generated[key])
                 placement_replaced += 1
             bids = generator.bond_ids(mask)
-            rec = generator.record(p,bids,form,tie)
+            rec,fm_rec = generator.record_bundle(p,bids,form,tie)
+            recalculated_fullmax += 1
         dest = 16 + write_index*REC
         out[dest:dest+REC] = rec
+        fm_dest=16+write_index*FULLMAX_REC
+        fm_out[fm_dest:fm_dest+FULLMAX_REC]=fm_rec
         write_index += 1
         remaining.discard(key)
 
@@ -404,17 +464,28 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
             raise RuntimeError(f'因縁数不一致: {mode}/{count}/{form}')
         if generator.placement_mask(p,form) != key[1]:
             raise RuntimeError(f'配置と因縁集合不一致: {mode}/{count}/{form} {p}')
-        rec = generator.record(p,bids,form,next_tie)
+        rec,fm_rec = generator.record_bundle(p,bids,form,next_tie)
         dest = 16 + write_index*REC
         out[dest:dest+REC] = rec
+        fm_dest=16+write_index*FULLMAX_REC
+        fm_out[fm_dest:fm_dest+FULLMAX_REC]=fm_rec
         write_index += 1
         next_tie += 1
+        recalculated_fullmax += 1
 
     if write_index != len(generated):
         raise RuntimeError(f'compact DB生成件数不一致: {mode}/{count}/{form} {write_index}!={len(generated)}')
     raw = bytes(out)
     gzwrite(path,raw)
     entry.update(meta(path,raw,len(generated)))
+
+    fm_path=fullmax_path(mode,count,form)
+    fm_raw=bytes(fm_out)
+    gzwrite(fm_path,fm_raw)
+    manifest.setdefault('fullmax_stats',{}).setdefault(mode,{}).setdefault(str(count),{})[form]=fullmax_meta(fm_path,fm_raw,len(generated))
+    manifest['fullmax_stats_record_size']=FULLMAX_REC
+    manifest['fullmax_model']='全MAX: 見聞録MAX+鬼神石MAX+転生MAX(最小文曲使用英傑を除外)'
+
     added_count = len(remaining)
     result = {
         'rows':len(generated),
@@ -422,10 +493,11 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
         'removed':removed,
         'old_placement_preserved':preserved,
         'record_bytes_reused':reused_bytes,
+        'fullmax_records_reused':reused_fullmax,
+        'fullmax_records_recalculated':recalculated_fullmax,
         'old_placement_replaced':placement_replaced,
     }
-    # 大規模set/bytearrayを次の陣形へ持ち越さない。GitHub Actionsのメモリピークを抑える。
-    del remaining, out, old_raw, raw
+    del remaining, out, old_raw, raw, fm_out, fm_raw, old_fm
     gc.collect()
     try:
         import ctypes
@@ -492,7 +564,7 @@ def main():
 
     manifest['generator'] = {
         'name':'tools-next/rebuild_all_compact.py',
-        'source_of_truth':['source-next/英傑一覧.csv','data/jinpo_inen_master.csv','data/91因縁_計算式_倍率展開.csv','data/formation_bonus.csv'],
+        'source_of_truth':['source-next/英傑一覧.csv','data/jinpo_inen_master.csv','data/91因縁_計算式_倍率展開.csv','data/formation_bonus.csv','tools-next/fullmax_model.py'],
         'full_regeneration':True,
     }
     notes = [x for x in manifest.get('notes',[]) if 'full regeneration' not in str(x).lower()]

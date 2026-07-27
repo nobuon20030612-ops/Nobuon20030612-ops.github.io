@@ -213,6 +213,22 @@ def main():
     if recommend_report.get('status') != 'PASS': fail('おすすめ陣法合計Top500レポートがPASSではありません', report)
     report['recommend_sum_top'] = {'files':recommend_report.get('files'),'rows':recommend_report.get('rows'),'limit_per_formation':recommend_report.get('limit_per_formation'),'seconds':recommend_report.get('seconds')}
 
+    rebuild_fullmax = ROOT/'tools-next'/'rebuild_fullmax_search.py'
+    if not rebuild_fullmax.exists(): fail('全MAX検索DB生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(rebuild_fullmax)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('全MAX込み合計検索DB再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    fullmax_report_path = REPORT_DIR/'fullmax_search_report.json'
+    if not fullmax_report_path.exists(): fail('全MAX検索DBレポートがありません', report)
+    fullmax_report = json.loads(fullmax_report_path.read_text(encoding='utf-8'))
+    if fullmax_report.get('status') != 'PASS': fail('全MAX検索DBレポートがPASSではありません', report)
+    report['fullmax_search'] = {
+        'full_records': fullmax_report.get('full_records'),
+        'recommend_files': fullmax_report.get('recommend_files'),
+        'recommend_rows': fullmax_report.get('recommend_rows'),
+        'seconds': fullmax_report.get('seconds'),
+    }
+
     # ヘッダー表示:
     # - 最終更新日は、英傑一覧に実変更があった更新日に変更してよい。
     # - 「追加英傑」は最後に本当に追加された1人だけを保持し、既存英傑修正やDB整備では変更しない。
@@ -689,9 +705,32 @@ def main():
         'accessible_full_records': audit_report.get('accessible_full_records'),
         'bondset_errors': audit_report.get('bondset_errors'),
         'factor4_errors': audit_report.get('factor4_errors'),
+        'fullmax_errors': audit_report.get('fullmax_errors'),
+        'fullmax_records_checked': audit_report.get('fullmax_records_checked'),
         'top_files_exact': audit_report.get('top_files_exact'),
         'sort_top_files_exact': audit_report.get('sort_top_files_exact'),
         'seconds': audit_report.get('seconds'),
+    }
+
+    # 全MAX込み検索sidecarは直前の検索DB全件監査で数値再計算済み。ここではsidecar対応とおすすめTopの構造・順序・参照元payloadを独立照合する。
+    fullmax_audit = ROOT/'tools-next'/'audit_fullmax_search.py'
+    if not fullmax_audit.exists():
+        fail('全MAX検索DB監査スクリプトがありません: tools-next/audit_fullmax_search.py', report)
+    cp = subprocess.run([sys.executable, str(fullmax_audit)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('全MAX検索DB全件監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    fullmax_audit_report_path = REPORT_DIR/'fullmax_search_audit_report.json'
+    if not fullmax_audit_report_path.exists():
+        fail('全MAX検索DB監査レポートが生成されませんでした', report)
+    fullmax_audit_report = json.loads(fullmax_audit_report_path.read_text(encoding='utf-8'))
+    if fullmax_audit_report.get('status') != 'PASS':
+        fail('全MAX検索DB監査レポートがPASSではありません', report)
+    report['fullmax_search_audit'] = {
+        'sidecar_files': fullmax_audit_report.get('sidecar_files'),
+        'sidecar_records_structural_checked': fullmax_audit_report.get('sidecar_records_structural_checked'),
+        'recommend_files_checked': fullmax_audit_report.get('recommend_files_checked'),
+        'recommend_records_checked': fullmax_audit_report.get('recommend_records_checked'),
+        'seconds': fullmax_audit_report.get('seconds'),
     }
 
     # JS構文をGitHub Actions上でも検査。外部JSとjinpo.html内のinline scriptを対象にする。

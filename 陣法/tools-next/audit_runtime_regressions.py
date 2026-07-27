@@ -30,6 +30,11 @@ OVERRIDES = ROOT / "tools-next" / "approved_overrides.json"
 FRESHNESS_GUARD = ROOT / "tools-next" / "ensure_compact_record_freshness.py"
 COMPACT_STATS_AUDIT = ROOT / "tools-next" / "audit_compact_stats.py"
 FACTOR4_OPTIMIZER = ROOT / "tools-next" / "factor4_optimizer.py"
+FULLMAX_MODEL = ROOT / "tools-next" / "fullmax_model.py"
+FULLMAX_BUILDER = ROOT / "tools-next" / "rebuild_fullmax_search.py"
+FULLMAX_AUDIT = ROOT / "tools-next" / "audit_fullmax_search.py"
+FAST_SEARCH_JS = ROOT / "jinpo-fast-search.js"
+FAST_SEARCH_WORKER = ROOT / "jinpo-fast-search-worker.js"
 
 MOJIBAKE_MARKERS = tuple(chr(x) for x in (0xFFFD, 0x7E3A, 0x7E67, 0x8B41, 0x00C3, 0x00C2))
 SOURCE_FACTOR_MAP = {
@@ -789,10 +794,15 @@ def validate_compact_pipeline_guards() -> None:
         "formation_bonus.csv",
         "rebuild_all_compact.py",
         "factor4_optimizer.py",
+        "fullmax_model.py",
+        "rebuild_fullmax_search.py",
+        "audit_fullmax_search.py",
         "dirty_internal_ids",
         "run('rebuild_top500.py')",
         "run('rebuild_recommend_sum_top.py')",
+        "run('rebuild_fullmax_search.py')",
         "run('audit_search_integrity.py')",
+        "run('audit_fullmax_search.py')",
     ]:
         if frag not in fresh:
             fail(f"compact再計算保証欠落: {frag}")
@@ -803,7 +813,7 @@ def validate_compact_pipeline_guards() -> None:
     ]:
         if frag not in stats:
             fail(f"compactステータス全件監査欠落: {frag}")
-    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER):
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT):
         cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if cp.returncode != 0:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
@@ -817,6 +827,7 @@ def validate_compact_pipeline_behavior() -> None:
         (base / "data" / "compact_search_v2").mkdir(parents=True)
         shutil.copy2(FRESHNESS_GUARD, base / "tools-next" / FRESHNESS_GUARD.name)
         (base / "tools-next" / "factor4_optimizer.py").write_text("# synthetic fingerprint input\n", encoding="utf-8")
+        (base / "tools-next" / "fullmax_model.py").write_text("# synthetic fingerprint input\n", encoding="utf-8")
         (base / "data" / "jinpo_inen_master.csv").write_text(
             "No,因縁名,因子1,因子2,因子3\n1,A,a,b,c\n", encoding="utf-8-sig")
         (base / "data" / "91因縁_計算式_倍率展開.csv").write_text(
@@ -828,7 +839,10 @@ def validate_compact_pipeline_behavior() -> None:
         # rebuild_all_compact.py is itself part of the fingerprint, so its test stub also doubles as an invocation logger.
         for script, label in (
             ("rebuild_all_compact.py","all"), ("rebuild_top500.py","top"),
-            ("rebuild_recommend_sum_top.py","recommend"), ("audit_search_integrity.py","audit"),
+            ("rebuild_recommend_sum_top.py","recommend"),
+            ("rebuild_fullmax_search.py","fullmax"),
+            ("audit_search_integrity.py","audit"),
+            ("audit_fullmax_search.py","fullmax_audit"),
         ):
             (base / "tools-next" / script).write_text(
                 "from pathlib import Path\n"
@@ -857,13 +871,13 @@ def validate_compact_pipeline_behavior() -> None:
         master_path.write_text(master_text.replace("EIK_0002,B", "EIK_0002,B2"), encoding="utf-8-sig")
         fourth = run_guard()
         calls4 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
-        if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or len(calls1) != 4:
+        if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or len(calls1) != 6:
             fail("compact freshness: fingerprint未作成時の全dirty再計算FAIL")
         if second.get("model_changed") or second.get("forced_dirty_hero_count") != 0 or calls2 != calls1:
             fail("compact freshness: 同一fingerprintで不要な全再計算")
-        if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2 or len(calls3) != 8:
+        if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2 or len(calls3) != 12:
             fail("compact freshness: 係数変更を検知できません")
-        if not fourth.get("model_changed") or fourth.get("forced_dirty_hero_count") != 2 or len(calls4) != 12:
+        if not fourth.get("model_changed") or fourth.get("forced_dirty_hero_count") != 2 or len(calls4) != 18:
             fail("compact freshness: 英傑マスタ単独変更を検知できません")
 
     # 文曲最小化: 各因縁を個別に最小化するだけでなく、編成全体の因子4使用英傑集合を最小化する。
@@ -923,6 +937,54 @@ def validate_compact_pipeline_behavior() -> None:
         bad=subprocess.run([sys.executable,str(audit)],cwd=base,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         if bad.returncode == 0 or json.loads(bad.stdout).get("stat_errors") != 1:
             fail("compact stats synthetic 改ざんrecordを検知できません")
+
+
+
+def validate_fullmax_search_guards() -> None:
+    """FullMAX search must remain a ranking/filter basis only; base formation payload must stay untouched."""
+    ui = read_text(FAST_SEARCH_JS)
+    worker = read_text(FAST_SEARCH_WORKER)
+    html = read_text(HTML) if HTML.exists() else ""
+    required_ui = [
+        "searchStatMode='base'",
+        "検索基準",
+        "基礎値",
+        "全MAX込み",
+        "転生MAX（文曲使用英傑を除く）＋見聞録MAX＋鬼神石MAX",
+        "statMode:searchStatMode",
+        "getSearchStatMode",
+        "setSearchStatMode",
+        "row.fullmax_stats",
+        "row.fullmax_total",
+    ]
+    for frag in required_ui:
+        if frag not in ui:
+            fail(f"全MAX検索UI回帰ガード欠落: {frag}")
+    required_worker = [
+        "JMX1", "JMR1", "FULLMAX_STAT_OFFSETS",
+        "loadFullmaxStats", "fullmaxStatAt", "fullmaxTotalAt",
+        "attachFullmaxRow", "fullmax_stats", "fullmax_total",
+        "String(q&&q.statMode||'base')==='fullmax'", "recommendFromFullmaxPrecomputed",
+    ]
+    for frag in required_worker:
+        if frag not in worker:
+            fail(f"全MAX検索Worker回帰ガード欠落: {frag}")
+    # Search-mode data must be attached separately. Overwriting base 52-byte stat fields would break apply/swap.
+    bad_assignments = [
+        "row['生命']=row.fullmax", "row.生命=row.fullmax", "r['生命']=r.fullmax",
+    ]
+    for frag in bad_assignments:
+        if frag in worker or frag in ui:
+            fail(f"全MAX検索が基礎値payloadを上書きしています: {frag}")
+    if HTML.exists():
+        fast_pos = html.rfind('<script src="jinpo-fast-search.js"></script>')
+        worker_ref = 'jinpo-fast-search-worker.js'
+        if fast_pos < 0 or worker_ref not in ui:
+            fail("全MAX検索統合: fast-search/worker参照不正")
+    for path in (FAST_SEARCH_JS, FAST_SEARCH_WORKER):
+        cp = subprocess.run(["node", "--check", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cp.returncode != 0:
+            fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
 
 
 def validate_no_unsupported_10_bonds() -> dict:
@@ -1066,6 +1128,7 @@ def main() -> None:
     validate_workflow()
     validate_compact_pipeline_guards()
     validate_compact_pipeline_behavior()
+    validate_fullmax_search_guards()
     max_guard = validate_no_unsupported_10_bonds()
     validate_manifest_if_present()
     print(json.dumps({
@@ -1080,6 +1143,7 @@ def main() -> None:
         "compact_record_freshness_guard":"PASS",
         "compact_stats_full_audit_guard":"PASS",
         "compact_pipeline_synthetic_behavior":"PASS",
+        "fullmax_search_regressions":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))

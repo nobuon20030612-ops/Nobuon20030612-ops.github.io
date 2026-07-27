@@ -23,6 +23,9 @@ MODEL_INPUTS = [
     DATA / 'formation_bonus.csv',
     ROOT / 'tools-next' / 'rebuild_all_compact.py',
     ROOT / 'tools-next' / 'factor4_optimizer.py',
+    ROOT / 'tools-next' / 'fullmax_model.py',
+    ROOT / 'tools-next' / 'rebuild_fullmax_search.py',
+    ROOT / 'tools-next' / 'audit_fullmax_search.py',
 ]
 
 
@@ -103,7 +106,9 @@ def main() -> None:
         run('rebuild_all_compact.py')
         run('rebuild_top500.py')
         run('rebuild_recommend_sum_top.py')
+        run('rebuild_fullmax_search.py')
         run('audit_search_integrity.py')
+        run('audit_fullmax_search.py')
         FINGERPRINT_FILE.parent.mkdir(parents=True, exist_ok=True)
         FINGERPRINT_FILE.write_text(json.dumps({
             'schema':'jinpo-compact-record-model-v2',
