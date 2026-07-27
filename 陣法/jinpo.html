@@ -10104,6 +10104,151 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 })();
 </script>
 
+
+<style id="priority-stat-total-color-user-request">
+/* 第1・第2優先ソートと合計表示の能力色を統一。計算・検索・レイアウト寸法は変更しない。 */
+#totalStatResult .totalStatItem.jinpoStat-life,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-life{--jinpo-total-stat-color:#ffffff;--jinpo-total-stat-glow:rgba(255,255,255,.42);--jinpo-total-stat-bg:rgba(255,255,255,.11)}
+#totalStatResult .totalStatItem.jinpoStat-ki,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-ki{--jinpo-total-stat-color:#cfefff;--jinpo-total-stat-glow:rgba(207,239,255,.55);--jinpo-total-stat-bg:rgba(207,239,255,.12)}
+#totalStatResult .totalStatItem.jinpoStat-str,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-str{--jinpo-total-stat-color:#ff7777;--jinpo-total-stat-glow:rgba(255,119,119,.65);--jinpo-total-stat-bg:rgba(201,51,51,.18)}
+#totalStatResult .totalStatItem.jinpoStat-vit,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-vit{--jinpo-total-stat-color:#70a0ff;--jinpo-total-stat-glow:rgba(112,160,255,.65);--jinpo-total-stat-bg:rgba(36,95,199,.20)}
+#totalStatResult .totalStatItem.jinpoStat-dex,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-dex{--jinpo-total-stat-color:#75d28d;--jinpo-total-stat-glow:rgba(117,210,141,.65);--jinpo-total-stat-bg:rgba(58,155,85,.19)}
+#totalStatResult .totalStatItem.jinpoStat-int,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-int{--jinpo-total-stat-color:#fff083;--jinpo-total-stat-glow:rgba(255,240,131,.65);--jinpo-total-stat-bg:rgba(242,217,59,.18)}
+#totalStatResult .totalStatItem.jinpoStat-cha,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-cha{--jinpo-total-stat-color:#c88fe8;--jinpo-total-stat-glow:rgba(200,143,232,.65);--jinpo-total-stat-bg:rgba(139,75,180,.20)}
+#totalStatResult .totalStatItem.jinpoStat-earth,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-earth{--jinpo-total-stat-color:#fff1a8;--jinpo-total-stat-glow:rgba(255,241,168,.65);--jinpo-total-stat-bg:rgba(255,241,168,.15)}
+#totalStatResult .totalStatItem.jinpoStat-water,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-water{--jinpo-total-stat-color:#73d7f3;--jinpo-total-stat-glow:rgba(115,215,243,.65);--jinpo-total-stat-bg:rgba(115,215,243,.17)}
+#totalStatResult .totalStatItem.jinpoStat-fire,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-fire{--jinpo-total-stat-color:#f3a0a0;--jinpo-total-stat-glow:rgba(243,160,160,.65);--jinpo-total-stat-bg:rgba(243,160,160,.17)}
+#totalStatResult .totalStatItem.jinpoStat-wind,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoStat-wind{--jinpo-total-stat-color:#a8e2a6;--jinpo-total-stat-glow:rgba(168,226,166,.65);--jinpo-total-stat-bg:rgba(168,226,166,.17)}
+
+#totalStatResult .totalStatItem[class*="jinpoStat-"] .statVal,
+#eiketsuKishinsekiCombinedResult .totalStatItem[class*="jinpoStat-"] .statVal{
+  color:var(--jinpo-total-stat-color) !important;
+}
+#totalStatResult .totalStatItem[class*="jinpoStat-"].zero .statVal,
+#eiketsuKishinsekiCombinedResult .totalStatItem[class*="jinpoStat-"].zero .statVal{
+  color:var(--jinpo-total-stat-color) !important;
+  opacity:.72;
+}
+#totalStatResult .totalStatItem.jinpoPriorityActive,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoPriorityActive{
+  border-color:var(--jinpo-total-stat-color) !important;
+  outline:2px solid var(--jinpo-total-stat-glow) !important;
+  outline-offset:1px !important;
+  background:linear-gradient(180deg,var(--jinpo-total-stat-bg),rgba(9,8,6,.94)) !important;
+  box-shadow:0 0 12px var(--jinpo-total-stat-glow),inset 0 0 10px var(--jinpo-total-stat-bg) !important;
+}
+#totalStatResult .totalStatItem.jinpoPriorityActive .statVal,
+#eiketsuKishinsekiCombinedResult .totalStatItem.jinpoPriorityActive .statVal{
+  text-shadow:0 0 8px var(--jinpo-total-stat-glow) !important;
+}
+</style>
+
+<script id="priority-stat-total-color-user-request-script">
+(function(){
+  'use strict';
+  if(window.__jinpoPriorityStatTotalColorInstalled) return;
+  window.__jinpoPriorityStatTotalColorInstalled=true;
+
+  var STAT_CLASS={
+    '生命':'life','生命力':'life',
+    '気合':'ki',
+    '腕力':'str',
+    '耐久力':'vit','耐久':'vit',
+    '器用さ':'dex','器用':'dex',
+    '知力':'int',
+    '魅力':'cha',
+    '土属性':'earth','土':'earth',
+    '水属性':'water','水':'water',
+    '火属性':'fire','火':'fire',
+    '風属性':'wind','風':'wind'
+  };
+  var CLASS_LIST=['life','ki','str','vit','dex','int','cha','earth','water','fire','wind'].map(function(x){return 'jinpoStat-'+x;});
+  var queued=false,observer=null;
+
+  function normalizeLabel(v){
+    return String(v==null?'':v).replace(/[\s　]+/g,'').replace(/[：:]/g,'').trim();
+  }
+  function selectedPriorityStats(){
+    var out=[];
+    [1,2].forEach(function(i){
+      var el=document.getElementById('dbPriorityStat'+i);
+      var stat=String(el&&el.value||'').trim();
+      if(stat&&out.indexOf(stat)<0)out.push(stat);
+    });
+    return out;
+  }
+  function itemStat(item){
+    var name=item&&item.querySelector?item.querySelector('.statName'):null;
+    var label=normalizeLabel(name&&name.textContent||'');
+    if(STAT_CLASS[label]) return label;
+    if(label==='生命力') return '生命';
+    if(label==='耐久') return '耐久力';
+    if(label==='器用') return '器用さ';
+    if(label==='土') return '土属性';
+    if(label==='水') return '水属性';
+    if(label==='火') return '火属性';
+    if(label==='風') return '風属性';
+    return label;
+  }
+  function canonicalStat(stat){
+    stat=normalizeLabel(stat);
+    if(stat==='生命力')return'生命';
+    if(stat==='耐久')return'耐久力';
+    if(stat==='器用')return'器用さ';
+    if(stat==='土')return'土属性';
+    if(stat==='水')return'水属性';
+    if(stat==='火')return'火属性';
+    if(stat==='風')return'風属性';
+    return stat;
+  }
+  function sync(){
+    queued=false;
+    var selected=selectedPriorityStats().map(canonicalStat);
+    document.querySelectorAll('#totalStatResult .totalStatItem,#eiketsuKishinsekiCombinedResult .totalStatItem').forEach(function(item){
+      CLASS_LIST.forEach(function(cls){item.classList.remove(cls);});
+      var stat=canonicalStat(itemStat(item));
+      var key=STAT_CLASS[stat]||STAT_CLASS[itemStat(item)]||'';
+      if(key)item.classList.add('jinpoStat-'+key);
+      item.classList.toggle('jinpoPriorityActive',selected.indexOf(stat)>=0);
+    });
+  }
+  function schedule(){
+    if(queued)return;
+    queued=true;
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(sync);
+    else setTimeout(sync,0);
+  }
+  function bind(){
+    var panel=document.querySelector('.totalStatPanel');
+    if(panel&&typeof MutationObserver!=='undefined'){
+      observer=new MutationObserver(schedule);
+      observer.observe(panel,{childList:true,subtree:true});
+    }
+    document.addEventListener('change',function(ev){
+      var t=ev.target;
+      if(t&&(t.id==='dbPriorityStat1'||t.id==='dbPriorityStat2'))schedule();
+    },true);
+    window.addEventListener('jinpo:recommend-state',schedule);
+    window.addEventListener('jinpo:recommend-priority-sync',schedule);
+    window.addEventListener('jinpo:priority-highlight-sync',schedule);
+    window.__jinpoSyncPriorityStatColors=sync;
+    sync();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});
+  else bind();
+})();
+</script>
+
 <script src="jinpo-fast-search.js"></script>
 <script src="jinpo-bond-list.js"></script>
 </body>
