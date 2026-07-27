@@ -1218,6 +1218,25 @@ def validate_no_unsupported_10_bonds() -> dict:
     }
 
 
+
+def validate_search_inflight_dedup_guard() -> None:
+    if not FAST_SEARCH_JS.exists():
+        fail("jinpo-fast-search.js がありません")
+    js = read_text(FAST_SEARCH_JS)
+    required = {
+        "in-flight Map": "inFlightSearches=new Map()",
+        "shared request helper": "function sharedSearchRequest(k,type,query)",
+        "same-key sharing": "var running=inFlightSearches.get(k);if(running)return running;",
+        "normal search sharing": "return sharedSearchRequest(keyFor(query),'search',query);",
+        "recommend search sharing": "return sharedSearchRequest(recommendKeyFor(query),'recommend',query);",
+        "success cleanup": "if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);return r;",
+        "failure cleanup": "if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);throw err;",
+        "cancel cleanup": "pending.clear();inFlightSearches.clear();activeWorkerToken=0;",
+    }
+    missing = [name for name, needle in required.items() if needle not in js]
+    if missing:
+        fail("同一条件検索のin-flight共有ガード欠落: " + ", ".join(missing))
+
 def validate_manifest_if_present() -> None:
     if not MANIFEST.exists():
         return
@@ -1273,6 +1292,7 @@ def main() -> None:
     validate_compact_pipeline_behavior()
     validate_fullmax_search_guards()
     validate_search_db_runtime_integrity_guards()
+    validate_search_inflight_dedup_guard()
     max_guard = validate_no_unsupported_10_bonds()
     validate_manifest_if_present()
     print(json.dumps({
@@ -1290,6 +1310,7 @@ def main() -> None:
         "compact_pipeline_synthetic_behavior":"PASS",
         "fullmax_search_regressions":"PASS",
         "search_db_runtime_integrity":"PASS",
+        "search_inflight_dedup":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))

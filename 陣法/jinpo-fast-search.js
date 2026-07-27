@@ -2,7 +2,7 @@
   'use strict';
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
-  var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),selectedExclude=0;
+  var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),selectedExclude=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false,searchStatMode='base';
   var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
@@ -219,7 +219,7 @@
   function cancelWorkerRequests(){
     try{if(worker){worker.terminate();worker=null;}}catch(e){}
     var err=new Error('検索を中止しました。');err.jinpoCancelled=true;
-    pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();activeWorkerToken=0;
+    pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();inFlightSearches.clear();activeWorkerToken=0;
   }
   function sourceFor(mode,rs,own,ex,sumCfg){
     if(searchStatMode==='fullmax')return{type:'full',sortStat:''};
@@ -231,16 +231,24 @@
     return{type:'top',sortStat:''};
   }
   function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.statMode||'base',x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
+  function rememberQueryResult(k,r){
+    queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;
+  }
+  function sharedSearchRequest(k,type,query){
+    if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
+    var running=inFlightSearches.get(k);if(running)return running;
+    var promise=requestWorker(type,query,true).then(function(r){return rememberQueryResult(k,r);});
+    inFlightSearches.set(k,promise);
+    return promise.then(function(r){if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);return r;},function(err){if(inFlightSearches.get(k)===promise)inFlightSearches.delete(k);throw err;});
+  }
   function search(query){
-    var k=keyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
-    return requestWorker('search',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+    return sharedSearchRequest(keyFor(query),'search',query);
   }
   function recommendKeyFor(x){
     return 'recommend|'+JSON.stringify([x.mode,x.statMode||'base',x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,x.limit]);
   }
   function searchRecommended(query){
-    var k=recommendKeyFor(query);if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
-    return requestWorker('recommend',query,true).then(function(r){queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;});
+    return sharedSearchRequest(recommendKeyFor(query),'recommend',query);
   }
   function lookupExactState(opts){
     opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||(gradeOn()?'grade3':'normal');
