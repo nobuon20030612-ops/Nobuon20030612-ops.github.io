@@ -2,7 +2,7 @@
   'use strict';
   if(window.JINPO_BOT_NLU) return;
 
-  var VERSION='2.1.0';
+  var VERSION='2.2.0';
   var MEMORY_KEY='jinpo_bot_nlu_memory_v1';
   var MEMORY_TTL=30*60*1000;
 
@@ -118,8 +118,10 @@
     var searchish=any(t,SEARCH_WORDS),applyish=any(t,APPLY_WORDS),includeish=any(t,INCLUDE_WORDS),excludeish=any(t,EXCLUDE_WORDS);
     var hasEntities=!!(e.formation||e.count||e.stats.length||e.basis);
 
-    // 「一番高い」「トップ」系。陣形を質問せず、DB全体で比較する。
-    var bestish=/(?:一番|いちばん|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大|強).*(?:一番|いちばん|最も|最高|トップ|最大)/.test(t)||(e.stats.length>0&&/(?:一番|いちばん|最高|トップ|最大)(?:の|で|が|を)?(?:$|[。！!？?])/.test(t));
+    // 「一番高い」「トップ」系に加え、「耐久と魅力の合計高い」のような
+    // 日常的な2項目合計指定も、陣形を質問せず全陣形DB比較として扱う。
+    var pairHigh=e.stats.length>=2&&((/(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋)/.test(t)&&/(?:高|大き|強|良|いい|上|重視|優先|順)/.test(t))||/(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先)/.test(t))&&!/(?:低い|低く|小さい|少ない|最低)/.test(t);
+    var bestish=pairHigh||/(?:一番|いちばん|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大|強).*(?:一番|いちばん|最も|最高|トップ|最大)/.test(t)||(e.stats.length>0&&/(?:一番|いちばん|最高|トップ|最大)(?:の|で|が|を)?(?:$|[。！!？?])/.test(t));
     if(bestish){
       if(ref.type==='result'&&e.stats[0]&&/(?:この中|結果|候補|今出てる|表示中)/.test(t)){
         add(c,'best_in_results',0.995,'検索結果 '+e.stats[0]+' 高い順','現在の検索結果内で並べ替え');
@@ -141,7 +143,8 @@
     if(e.stats[0]&&!e.formation&&!e.count&&!e.basis&&/^(?:やっぱ|じゃあ|なら)\s*.+?(?:に|で)?(?:変えて|して|いこう|いい)?$/.test(S(original).trim())&&!searchish&&!/とは|なに|何/.test(t)){
       var sc=site.priority1?0.91:0.82;add(c,'change_stat',sc,'第1 '+e.stats[0]+' 検索して','現在の第1優先を変更する文脈');
     }
-    if(e.stats[0]&&/^(?:あと|それと|ついでに)\s*.+/.test(original)&&site.priority1)add(c,'add_second_stat',0.97,'第2 '+e.stats[0]+' 検索して','追加条件なので第2優先と推定');
+    var secondStatFollowup=!!(e.stats[0]&&site.priority1&&(/^(?:あと|それと|ついでに)\s*.+/.test(original)||/(?:も|もね|もさ).*(?:高|高め|強|重視|優先|欲しい|ほしい|見たい|見る|盛り)/.test(t)));
+    if(secondStatFollowup)add(c,'add_second_stat',0.985,'第2 '+e.stats[0]+' 検索して','追加条件なので第2優先と推定');
     if(/^(?:サブ|第2|2番目)(?:は|を)?\s*(?:やっぱ|やっぱり)?\s*(?:いらない|なし|無し|やめ|外して|消して|解除)$/.test(t))add(c,'clear_p2',0.99,'第2優先解除 検索して','第2優先解除');
     if(/^(?:メイン|第1|1番目)(?:は|を)?\s*(?:やっぱ|やっぱり)?\s*(?:いらない|なし|無し|やめ|外して|消して|解除)$/.test(t))add(c,'clear_p1',0.99,'第1優先解除 検索して','第1優先解除');
 
@@ -149,7 +152,7 @@
     var entityCount=(e.formation?1:0)+(e.count?1:0)+e.stats.length+(e.basis?1:0);
     if(!bestish&&((searchish&&hasEntities)||entityCount>=2)){var ss=searchish?0.98:0.96;add(c,'search',ss,searchCanonical(e,site,t),'検索条件を組み立て');}
     if(entityCount===1&&e.count&&/^[5-9](?:因縁|縁|いんえん)?$/.test(kanjiDigits(t)))add(c,'count_only',0.84,e.count+'因縁 検索して','因縁数だけの短縮指定');
-    if(!bestish&&entityCount===1&&e.stats[0]&&/(?:高い|高め|盛り|重視|優先|強め|伸ばした|欲しい|ほしい)/.test(t))add(c,'stat_search',0.93,'第1 '+e.stats[0]+' 検索して','ステータス優先検索');
+    if(!bestish&&!secondStatFollowup&&entityCount===1&&e.stats[0]&&/(?:高い|高め|盛り|重視|優先|強め|伸ばした|欲しい|ほしい)/.test(t))add(c,'stat_search',0.93,'第1 '+e.stats[0]+' 検索して','ステータス優先検索');
     if(e.stats[0]&&(e.range.min!=null||e.range.max!=null)){var rc='第1 '+e.stats[0];if(e.range.min!=null)rc+=' '+e.range.min+'以上';if(e.range.max!=null)rc+=' '+e.range.max+'以下';rc+=' 検索して';add(c,'stat_range',0.96,rc,'ステータス数値条件として補完');}
     if(e.stats[0]&&/(?:もっと|さらに|もう少し)(?:高く|上げ|盛り|強く)?/.test(t)&&e.range.min==null&&e.range.max==null){
       add(c,'vague_more',0.63,'','数値の追加指定が必要',{clarify:true,question:(site.priority1===e.stats[0]?'今の第1優先「'+e.stats[0]+'」をさらに絞る':'「'+e.stats[0]+'」をもっと重視する')+'という意味ですか？ 数値まで絞る場合は「'+e.stats[0]+'1000以上」のようにも指定できるのですよ。'});
@@ -249,5 +252,5 @@
   }
 
   var lexiconCount=STATS.reduce(function(n,x){return n+x.a.length;},0)+FORMS.reduce(function(n,x){return n+x.a.length;},0)+PANELS.reduce(function(n,x){return n+x.a.length;},0)+SEARCH_WORDS.length+APPLY_WORDS.length+INCLUDE_WORDS.length+EXCLUDE_WORDS.length+JOBS.length;
-  window.JINPO_BOT_NLU={version:'2.1.0',infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:38,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t),basis:basis(t)};}};
+  window.JINPO_BOT_NLU={version:'2.2.0',infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:41,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t),basis:basis(t)};}};
 })();

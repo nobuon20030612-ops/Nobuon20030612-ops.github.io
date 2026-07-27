@@ -11,7 +11,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_WEB)return;
-  var VERSION='1.6.0';
+  var VERSION='1.7.0';
   var WIKIPEDIA_ENDPOINT='https://ja.wikipedia.org/w/api.php';
   var WIKIDATA_ENDPOINT='https://www.wikidata.org/w/api.php';
   var GDELT_ENDPOINT='https://api.gdeltproject.org/api/v2/doc/doc';
@@ -20,10 +20,10 @@
   var FX_ENDPOINT='https://api.frankfurter.dev/v2/rate/';
 
   var BLOCK=/(?:銃|拳銃|ライフル|ショットガン|弾薬|サイレンサー|ナイフ|刃物|爆弾|爆薬|火薬|違法薬物|ドラッグ|大麻|覚醒剤|コカイン|マリファナ|THC|CBD|酒|ビール|ワイン|タバコ|煙草|電子タバコ|VAPE|ニコチン|賭博|ギャンブル|賭け|オンラインカジノ|スポーツベット|自傷|自殺|ポルノ|アダルト)/i;
-  var REALTIME=/(?:最新|今日|きょう|明日|あした|現在|今の|いまの|最近|直近|ニュース|速報|天気|気温|予報|降水|湿度|為替|レート|何円|ドル円|円ドル|ユーロ円|円ユーロ|株価|相場|試合結果|順位|スタメン|先発|登録抹消|ライブ|リアルタイム|運行状況|混雑|営業時間|在庫|空席)/i;
+  var REALTIME=/(?:最新|今日|きょう|明日|あした|現在|今の|いまの|最近|直近|ニュース|速報|新機能|アップデート|更新情報|リリース|発表|公開予定|発売予定|日程|スケジュール|結果|スコア|成績|ランキング|天気|気温|予報|降水|湿度|為替|レート|何円|ドル円|円ドル|ユーロ円|円ユーロ|株価|相場|試合結果|順位|スタメン|先発|登録抹消|ライブ|リアルタイム|運行状況|混雑|営業時間|在庫|空席)/i;
   var WEATHER=/(?:天気|気温|予報|降水|雨|雪|湿度|風速|最高気温|最低気温)/i;
   var FX=/(?:為替|為替レート|レート|何円|ドル円|円ドル|ユーロ円|円ユーロ|米ドル|日本円|ユーロ|英ポンド|豪ドル|カナダドル|スイスフラン|人民元|USD|JPY|EUR|GBP|AUD|CAD|CHF|CNY)/i;
-  var NEWS=/(?:ニュース|速報|最新情報|最新ニュース|最近の(?:情報|話題)|直近の(?:情報|話題)|今日の(?:出来事|ニュース)|今の(?:情報|状況)|現在の(?:情報|状況))/i;
+  var NEWS=/(?:ニュース|速報|最新情報|最新ニュース|最近の(?:情報|話題)|直近の(?:情報|話題)|今日の(?:出来事|ニュース)|今の(?:情報|状況)|現在の(?:情報|状況)|新機能|アップデート|更新情報|リリース|発表|公開予定|発売予定)/i;
   var UNSUPPORTED_LIVE=/(?:株価|株式価格|仮想通貨|暗号資産|ビットコイン|運行状況|混雑|営業時間|在庫|空席|試合結果|順位|スタメン|先発|登録抹消|ライブ配信)/i;
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
@@ -71,7 +71,7 @@
 
   function isSafe(q){return !!q&&!BLOCK.test(q);}
   function isRealtime(text){var t=S(text);return REALTIME.test(t)||/\b[A-Z]{3}\s*[\/→>\-]\s*[A-Z]{3}\b/i.test(t);}
-  function liveKind(text){var t=S(text);if(WEATHER.test(t))return'weather';if(FX.test(t))return'fx';if(NEWS.test(t)||/(?:最新|最近|直近).+(?:教えて|調べて|検索|情報|どう|何)/.test(t))return'news';if(UNSUPPORTED_LIVE.test(t))return'unsupported';return isRealtime(t)?'news':'';}
+  function liveKind(text){var t=S(text);if(WEATHER.test(t))return'weather';if(FX.test(t))return'fx';if(NEWS.test(t)||/(?:最新|最近|直近|今日|現在|今).+(?:教えて|調べて|検索|情報|どう|何|変わ|あった)|(?:アップデート|リリース|新機能|発表).*(?:教えて|何|どう|内容|変更)/.test(t))return'news';if(UNSUPPORTED_LIVE.test(t))return'unsupported';return isRealtime(t)?'news':'';}
 
   async function fetchWikipedia(q,signal){
     var p=new URLSearchParams({
@@ -131,7 +131,7 @@
 
   function extractNewsTopic(text){
     var q=stripFiller(text)
-      .replace(/(?:について)?(?:の)?(?:最新ニュース|ニュース|速報|最新情報|最新の情報|最近の情報|直近の情報|今日の情報|現在の情報|今の情報)/g,' ')
+      .replace(/(?:について)?(?:の)?(?:最新ニュース|ニュース|速報|最新情報|最新の情報|最近の情報|直近の情報|今日の情報|現在の情報|今の情報|新機能|アップデート|更新情報|リリース|発表|公開予定|発売予定)/g,' ')
       .replace(/^(?:今日|きょう|現在|今|いま|最近|直近|最新)(?:の)?/,'')
       .replace(/(?:について|のこと)?(?:を)?(?:教えて|知りたい|調べて|検索して|見せて|ある[？?]?)$/,'')
       .replace(/[？?！!。、]+$/g,'')

@@ -143,10 +143,13 @@
     if(/今の(?:条件|検索条件|状態)|現在の(?:条件|検索条件|状態)/.test(t)){plan.actions.push({name:'read_state'});plan.recognized=true;}
     if(/今の(?:6人|編成|配置)|現在の(?:6人|編成|配置)/.test(t)&&!/保存/.test(t)){plan.actions.push({name:'read_placement'});plan.recognized=true;}
 
-    // 「一番高い」「トップ」系は陣形を聞かず、全陣形・因縁数混在のDBから比較する。
+    // 「一番高い」「トップ」系に加え、「耐久と魅力の合計高い」「腕力と知力どっちも高い」
+    // のような自然文も、陣形指定なしで全陣形・因縁数混在DBから比較する。
     var bestStats=findStats(t);
-    if(bestStats.length&&/(?:一番|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大).*(?:一番|最も|最高|トップ|最大)/.test(t)&&!/ページ|一番上へ|トップへ移動/.test(t)){
-      if(bestStats.length>=2&&/(?:合計|合わせ|足し|両方|と)/.test(t))plan.actions.push({name:'run_best',args:{stat1:bestStats[0],stat2:bestStats[1]}});
+    var pairHigh=bestStats.length>=2&&((/(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋)/.test(t)&&/(?:高|大き|強|良|いい|上|重視|優先|順)/.test(t))||/(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先)/.test(t))&&!/(?:低い|低く|小さい|少ない|最低)/.test(t);
+    var singleBest=bestStats.length&&/(?:一番|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大).*(?:一番|最も|最高|トップ|最大)/.test(t);
+    if((pairHigh||singleBest)&&!/ページ|一番上へ|トップへ移動/.test(t)){
+      if(bestStats.length>=2&&(pairHigh||/(?:合計|合わせ|足し|両方|と)/.test(t)))plan.actions.push({name:'run_best',args:{stat1:bestStats[0],stat2:bestStats[1]}});
       else plan.actions.push({name:'run_best',args:{stat1:bestStats[0]}});
       plan.recognized=true;
     }
