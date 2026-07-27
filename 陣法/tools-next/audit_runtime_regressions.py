@@ -36,6 +36,7 @@ FULLMAX_AUDIT = ROOT / "tools-next" / "audit_fullmax_search.py"
 INCREMENTAL_BUILDER = ROOT / "tools-next" / "rebuild_incremental_additions.py"
 INCREMENTAL_AUDIT = ROOT / "tools-next" / "audit_incremental_equivalence.py"
 PUBLISH_GUARD = ROOT / "tools-next" / "guard_publish_changes.py"
+PROVENANCE_AUDIT = ROOT / "tools-next" / "audit_source_provenance.py"
 FAST_SEARCH_JS = ROOT / "jinpo-fast-search.js"
 FAST_SEARCH_WORKER = ROOT / "jinpo-fast-search-worker.js"
 
@@ -165,7 +166,11 @@ def validate_source_master() -> dict:
     source, sheaders = read_csv_strict(SOURCE)
     master, mheaders = read_csv_strict(MASTER)
     inen, _ = read_csv_strict(INEN)
-    required_source = {"番号","名前",*SOURCE_FACTOR_MAP.keys(),*SOURCE_MASTER_FIELD_MAP.keys()}
+    provenance_fields = {
+        "因子確認状態","因子確認日","因子1出典","因子2出典","因子3出典","因子4出典",
+        "能力値確認状態","能力値確認日","能力値出典","確認メモ",
+    }
+    required_source = {"番号","名前",*SOURCE_FACTOR_MAP.keys(),*SOURCE_MASTER_FIELD_MAP.keys(),*provenance_fields}
     required_master = {"internal_id","英傑名","職業","因子1","因子2","因子3","因子4",*SOURCE_MASTER_FIELD_MAP.values()}
     miss = required_source - set(sheaders)
     if miss: fail("英傑一覧の必須列不足: " + ", ".join(sorted(miss)))
@@ -763,6 +768,7 @@ def validate_workflow() -> None:
         "'陣法/data/91因縁_計算式_倍率展開.csv'",
         "'陣法/data/jinpo_job_mapping.json'",
         "github.actor != 'github-actions[bot]'",
+        'python "陣法/tools-next/audit_source_provenance.py"',
         'python "陣法/tools-next/sync_eiketsu_master.py"',
         'python "陣法/tools-next/ensure_compact_record_freshness.py"',
         '生成失敗時の診断情報',
@@ -770,6 +776,7 @@ def validate_workflow() -> None:
         'search_integrity_report.json',
         'python "陣法/tools-next/audit_incremental_equivalence.py"',
         'python "陣法/tools-next/audit_compact_stats.py"',
+        'JINPO_PROVENANCE_AUDIT_READY:',
         'python "陣法/tools-next/build_jinpo_next.py"',
         'python "陣法/tools-next/audit_runtime_regressions.py"',
         'git ls-files -- \'陣法/_jinpo-next-report/**\'',
@@ -787,11 +794,12 @@ def validate_workflow() -> None:
     for frag in required:
         if frag not in text:
             fail(f"workflow 回帰ガード欠落: {frag}")
+    provenance_pos = text.find('python "陣法/tools-next/audit_source_provenance.py"')
     sync_pos = text.find('python "陣法/tools-next/sync_eiketsu_master.py"')
     fresh_pos = text.find('python "陣法/tools-next/ensure_compact_record_freshness.py"')
     build_pos = text.find('python "陣法/tools-next/build_jinpo_next.py"')
-    if min(sync_pos, fresh_pos, build_pos) < 0 or not (sync_pos < fresh_pos < build_pos):
-        fail("workflow順序不正: master同期→compact freshness→build の順でなければ古い52byteを再利用できます")
+    if min(provenance_pos, sync_pos, fresh_pos, build_pos) < 0 or not (provenance_pos < sync_pos < fresh_pos < build_pos):
+        fail("workflow順序不正: 出典監査→master同期→compact freshness→build の順でなければなりません")
     runtime_pos = text.find('python "陣法/tools-next/audit_runtime_regressions.py"')
     cleanup_pos = text.find('rm -rf -- "陣法/_jinpo-next-report"')
     guard_pos = text.find('python "陣法/tools-next/guard_publish_changes.py"')
@@ -801,6 +809,28 @@ def validate_workflow() -> None:
         fail("workflow公開順序不正: 全監査→一時レポート除去→allowlist→限定git add→push の順でなければなりません")
     if 'git add -- "陣法"' in text:
         fail("workflowに広すぎる git add -- 陣法 が復活しています")
+
+
+
+def validate_provenance_audit_guard() -> None:
+    text = read_text(PROVENANCE_AUDIT)
+    build_path = ROOT / "tools-next" / "build_jinpo_next.py"
+    if not build_path.exists():
+        fail("必須ファイル不足: tools-next/build_jinpo_next.py")
+    build = build_path.read_text(encoding="utf-8-sig")
+    for frag in [
+        "因子確認状態", "因子確認日", "因子1出典", "因子2出典", "因子3出典", "因子4出典",
+        "能力値確認状態", "能力値確認日", "能力値出典", "確認メモ",
+        "確認済", "暫定", "YYYY-MM-DD", "source_provenance_report.json",
+    ]:
+        if frag not in text:
+            fail(f"出典管理監査ガード欠落: {frag}")
+    for frag in [
+        "audit_source_provenance.py", "source_provenance_report.json",
+        "JINPO_PROVENANCE_AUDIT_READY", "build-standalone-audit",
+    ]:
+        if frag not in build:
+            fail(f"buildの出典管理監査統合欠落: {frag}")
 
 
 def validate_compact_pipeline_guards() -> None:
@@ -1237,6 +1267,7 @@ def main() -> None:
     validate_internal_save()
     validate_html_integration_if_present()
     validate_workflow()
+    validate_provenance_audit_guard()
     validate_publish_guard_behavior()
     validate_compact_pipeline_guards()
     validate_compact_pipeline_behavior()
@@ -1253,6 +1284,7 @@ def main() -> None:
         "internal_save_behavior":"PASS",
         "html_script_order":"PASS" if HTML.exists() else "SKIP(local fixture)",
         "workflow_regressions":"PASS",
+        "source_provenance_guard":"PASS",
         "compact_record_freshness_guard":"PASS",
         "compact_stats_full_audit_guard":"PASS",
         "compact_pipeline_synthetic_behavior":"PASS",

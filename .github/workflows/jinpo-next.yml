@@ -54,8 +54,10 @@ jobs:
       - name: 生成依存パッケージ
         run: python -m pip install --disable-pip-version-check numpy
 
-      # build_jinpo_next.py 内でも同期するが、compactの既存52byte再利用判定より前に
-      # 最新masterをfingerprintへ反映させるため、ここで先行同期する。
+      - name: 英傑一覧の出典・確認履歴監査
+        run: python "陣法/tools-next/audit_source_provenance.py"
+
+      # Source of Truthを一度だけmasterへ同期し、その差分情報を後続の差分/full生成判定へ引き継ぐ。
       - name: 英傑マスタ事前同期
         run: python "陣法/tools-next/sync_eiketsu_master.py"
 
@@ -64,6 +66,7 @@ jobs:
 
       - name: 英傑一覧から陣法を差分/全再生成・既存監査
         env:
+          JINPO_PROVENANCE_AUDIT_READY: '1'
           JINPO_MASTER_SYNC_READY: '1'
         run: python "陣法/tools-next/build_jinpo_next.py"
 
@@ -73,6 +76,7 @@ jobs:
         run: |
           echo "=== 陣法 build failure diagnostics ==="
           for f in \
+            "陣法/_jinpo-next-report/source_provenance_report.json" \
             "陣法/_jinpo-next-report/master_sync.json" \
             "陣法/_jinpo-next-report/generation_report.json" \
             "陣法/_jinpo-next-report/search_integrity_report.json" \

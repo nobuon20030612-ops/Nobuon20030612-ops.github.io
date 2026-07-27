@@ -11,6 +11,7 @@ MASTER = SITE / 'data' / 'jinpo_eiketsu_master.csv'
 REPORT_DIR = ROOT / '_jinpo-next-report'
 REPORT = REPORT_DIR / 'build_report.json'
 OVERRIDES = ROOT / 'tools-next' / 'approved_overrides.json'
+PROVENANCE_AUDIT = ROOT / 'tools-next' / 'audit_source_provenance.py'
 
 REQUIRED = [
     '番号','コスト','名前','育成技能1:(0凸)','育成技能2:(0凸)','育成技能3:(0凸)',
@@ -115,6 +116,20 @@ def main():
     }
     if not SOURCE.exists(): fail('source-next/英傑一覧.csv がありません', report)
     if not MASTER.exists(): fail('陣法/data/jinpo_eiketsu_master.csv がありません', report)
+
+    # 出典列は検索計算に使わない研究メタデータだが、スロット誤記を将来追跡できるよう
+    # standalone buildでも必ず監査する。Actionsでは直前の専用stepを再利用する。
+    provenance_report_path = REPORT_DIR / 'source_provenance_report.json'
+    provenance_ready = os.environ.get('JINPO_PROVENANCE_AUDIT_READY') == '1'
+    if not provenance_ready:
+        if not PROVENANCE_AUDIT.exists(): fail('英傑一覧の出典監査スクリプトがありません', report)
+        cp = subprocess.run([sys.executable, str(PROVENANCE_AUDIT)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cp.returncode != 0:
+            fail('英傑一覧の出典監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    if not provenance_report_path.exists(): fail('英傑一覧の出典監査レポートがありません', report)
+    provenance_report = json.loads(provenance_report_path.read_text(encoding='utf-8'))
+    if provenance_report.get('status') != 'PASS': fail('英傑一覧の出典監査レポートがPASSではありません', report)
+    report['source_provenance_audit'] = 'workflow-pre-audit' if provenance_ready else 'build-standalone-audit'
 
     # GitHub Actionsでは直前にsync→freshness判定済み。ここで再syncすると
     # new_heroes/dirty_internal_ids/force-full判定を失うため、同じレポートをそのまま使う。
