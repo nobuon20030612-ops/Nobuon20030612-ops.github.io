@@ -1,0 +1,20 @@
+歩き巫女 v2.4 表示復旧・調査記憶 検証結果
+
+【修正】
+・「歩き巫女を表示」復帰ボタンに pointer-events:auto を追加
+・復帰ボタン押下時にチャット本体まで開くよう修正
+・jinpo-bot-memory.js を新規追加
+・無料Web参照成功時の調査内容をlocalStorageへ保存
+・同一の一般知識問い合わせは保存済み内容を再利用
+・「前に調べた○○覚えてる？」で調査記憶を呼び出し
+・最新/今日/最近/順位/スタメン等は古い記憶で確定回答しない
+
+【検証】
+・変更JS node --check: PASS
+・調査記憶 保存/読出: PASS
+・Web参照 2回目キャッシュ利用: PASS（fetch 1回のみ）
+・リアルタイム語句はキャッシュ再利用しない: PASS
+・「前に調べた野球のこと覚えてる？」: PASS
+・復帰ボタン listener: showLauncher()+open() 確認
+・復帰ボタン pointer-events:auto 確認
+・jinpo-bot-memory.js 読込順: Webより前を確認
