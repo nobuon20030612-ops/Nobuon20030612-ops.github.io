@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v2.1.0
+ * 歩き巫女 日常会話・雑談 v2.2.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='2.1.0';
+  var VERSION='2.2.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -288,6 +288,11 @@
     // 歩き巫女自身の由来・歴史説明を優先。
     var history=window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_BOT_ARUKIMIKO.respond==='function'?window.JINPO_BOT_ARUKIMIKO.respond(text):null;
     if(history&&history.handled)return history;
+
+    // カープ専用会話を通常雑談より先に判定する。
+    // 「カープ好き？」「カープ最近どう？」などを一般的な「好き」返答へ誤分類しない。
+    var carp=window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'?await window.JINPO_BOT_CARP.respond(text):null;
+    if(carp&&carp.handled)return carp;
 
     // 日常会話を先に判定。誤字の挨拶をWeb検索へ飛ばさないためにもここを優先する。
     var a=local(text);if(a)return {handled:true,answer:a,sources:[],mode:'日常会話'};
