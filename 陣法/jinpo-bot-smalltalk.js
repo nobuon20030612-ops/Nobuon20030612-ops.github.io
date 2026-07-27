@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v2.0.0
+ * 歩き巫女 日常会話・雑談 v2.1.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -320,10 +320,21 @@
     if(!web||typeof web.lookup!=='function')return {handled:false};
     var r=await web.lookup(text);
     if(r&&r.ok){
-      var prefix=r.shared?'共有している調査記憶にあったのですよ。':(r.cached?'前に調べた内容を覚えていたのですよ。':'こちらで調べてみたのですよ。');
-      return {handled:true,answer:prefix+'\n'+r.title+'：'+r.extract,sources:r.url?[{title:(r.source||'Wikipedia')+'：'+r.title,url:r.url}]:[],mode:r.shared?'Firebase共有記憶':(r.cached?'調査記憶':'無料公開Web自動参照')};
+      var prefix='';
+      if(r.realtime){
+        if(r.kind==='news')prefix='最新情報を自動で探してきたのですよ。';
+        else if(r.kind==='weather')prefix='最新の天気データを確認したのですよ。';
+        else if(r.kind==='fx')prefix='最新の参照レートを確認したのですよ。';
+        else prefix='現在の公開情報を確認したのですよ。';
+      }else prefix=r.shared?'共有している調査記憶にあったのですよ。':(r.cached?'前に調べた内容を覚えていたのですよ。':'こちらで調べてみたのですよ。');
+      var srcs=Array.isArray(r.sources)?r.sources:(r.url?[{title:(r.source||'公開Web')+'：'+r.title,url:r.url}]:[]);
+      return {handled:true,answer:prefix+'\n'+r.title+'：'+r.extract,sources:srcs,mode:r.realtime?'リアルタイムWeb自動参照':(r.shared?'Firebase共有記憶':(r.cached?'調査記憶':'無料公開Web自動参照'))};
     }
-    if(r&&r.realtime)return {handled:true,answer:'これは「最新・今日・現在」の情報が重要な内容なのですよ。今の歩き巫女が自動取得できるWeb情報は、まず公開百科事典の一般知識が中心です。リアルタイム検索は別の検索先を接続する必要があるのです。',sources:[],mode:'Web自動判定'};
+    if(r&&r.realtime&&r.needsLocation)return {handled:true,answer:'天気は地域で変わるので、場所だけ教えてほしいのですよ。「東京の天気」「広島の明日の天気」のように言えば、そのまま自動で調べるのです。',sources:[],mode:'リアルタイムWeb自動参照'};
+    if(r&&r.realtime&&r.needsPair)return {handled:true,answer:'為替は組み合わせが必要なのですよ。「ドル円」「100ドルは何円？」「EUR/JPY」のように言えば自動で最新参照レートを調べるのです。',sources:[],mode:'リアルタイムWeb自動参照'};
+    if(r&&r.realtime&&r.unsupported)return {handled:true,answer:'その情報は鮮度が重要なので、今つないでいる無料の公開データだけでは正確に確定できないのですよ。推測では答えず、対応できる検索先を追加してから扱うのです。',sources:[],mode:'リアルタイムWeb自動参照'};
+    if(r&&r.realtime&&r.notFound)return {handled:true,answer:'最新情報を自動で探したのですが、今の公開検索先では該当する情報を見つけられなかったのですよ。検索語を少し具体的にすると見つかることがあります。',sources:[],mode:'リアルタイムWeb自動参照'};
+    if(r&&r.realtime)return {handled:true,answer:'最新情報を自動取得しようとしたのですが、検索先へ一時的につながらなかったのですよ。推測では答えず、少し時間を置いてもう一度確認するのです。',sources:[],mode:'リアルタイムWeb自動参照'};
     if(r&&r.blocked)return {handled:true,answer:'その内容は、ここでは安全な一般情報の範囲だけにしておくのですよ。',sources:[],mode:'日常会話'};
     if(r&&r.notFound&&/(調べて|検索して|教えて|知りたい|[？?]$)/.test(t))return {handled:true,answer:'自動で公開Webを探してみたのですが、今の検索先ではうまく見つけられなかったのですよ。言葉を少し短くしてもらうと見つかることがあります。',sources:[],mode:'無料公開Web自動参照'};
     return {handled:false};
