@@ -1231,7 +1231,7 @@ def validate_search_inflight_dedup_guard() -> None:
         "recommend search sharing": "return sharedSearchRequest(recommendKeyFor(query),'recommend',query);",
         "in-flight centralized cleanup": "if(inFlightSearches.get(entry.key)===entry.promise)inFlightSearches.delete(entry.key);",
         "foreground completion helper": "function finishForeground(entry,epoch)",
-        "cancel cleanup": "pending.clear();inFlightSearches.clear();activeWorkerToken=0;",
+        "cancel cleanup": "pending.clear();inFlightSearches.clear();manifestProbePromise=null;activeWorkerToken=0;",
         "latest-only foreground state": "foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0",
         "latest-only supersede marker": "err.jinpoSuperseded=true",
         "latest-only single queued request": "if(foregroundQueued){var old=foregroundQueued;foregroundQueued=null;",
@@ -1243,6 +1243,43 @@ def validate_search_inflight_dedup_guard() -> None:
     missing = [name for name, needle in required.items() if needle not in js]
     if missing:
         fail("同一条件検索のin-flight共有ガード欠落: " + ", ".join(missing))
+
+
+def validate_search_generation_refresh_guard() -> None:
+    if not FAST_SEARCH_JS.exists() or not FAST_SEARCH_WORKER.exists():
+        fail("検索世代更新ガード対象ファイルがありません")
+    js = read_text(FAST_SEARCH_JS)
+    worker = read_text(FAST_SEARCH_WORKER)
+    js_required = {
+        "generation recheck interval": "QUERY_CACHE_GENERATION_RECHECK_MS=60000",
+        "known manifest generation": "knownManifestGeneration=''",
+        "manifest probe promise": "manifestProbePromise=null",
+        "generation tagged cache": "var entry={result:r,generation:generation,validatedAt:Date.now()}",
+        "generation mismatch clear": "generation!==knownManifestGeneration)queryCache.clear()",
+        "manifest version worker request": "requestWorker('manifestVersion',{},false)",
+        "running search probe exclusion": "if(foregroundRunning)return Promise.resolve(null);",
+    }
+    # rememberQueryResultの実装はgeneration変数を経由するため、旧直書き表現も新表現も許さず新方式を固定する。
+    if "var generation=String(r&&r.manifestVersion||'');" not in js:
+        fail("検索結果cacheのmanifest世代記録ガード欠落")
+    missing = [name for name, needle in js_required.items() if needle not in js]
+    if missing:
+        fail("検索結果cache世代更新ガード欠落: " + ", ".join(missing))
+
+    worker_required = {
+        "manifest recheck interval": "MANIFEST_RECHECK_MS=60000",
+        "manifest checked timestamp": "manifestCheckedAt=0",
+        "buffer clear helper": "function clearDataBuffers()",
+        "no-store manifest fetch": "fetch(u.href,{cache:'no-store'})",
+        "manifest version required": "検索DB manifest version欠落",
+        "generation switch buffer clear": "if(prevVersion&&prevVersion!==nextVersion)clearDataBuffers();",
+        "manifest version message": "d.type==='manifestVersion'",
+        "forced manifest refresh": "loadManifest(true)",
+        "search result generation": "r.manifestVersion=String(manifest&&manifest.version||'')",
+    }
+    missing = [name for name, needle in worker_required.items() if needle not in worker]
+    if missing:
+        fail("Worker検索DB世代更新ガード欠落: " + ", ".join(missing))
 
 def validate_manifest_if_present() -> None:
     if not MANIFEST.exists():
@@ -1300,6 +1337,7 @@ def main() -> None:
     validate_fullmax_search_guards()
     validate_search_db_runtime_integrity_guards()
     validate_search_inflight_dedup_guard()
+    validate_search_generation_refresh_guard()
     max_guard = validate_no_unsupported_10_bonds()
     validate_manifest_if_present()
     print(json.dumps({
@@ -1319,6 +1357,7 @@ def main() -> None:
         "search_db_runtime_integrity":"PASS",
         "search_inflight_dedup":"PASS",
         "search_latest_only_queue":"PASS",
+        "search_generation_refresh":"PASS",
         **max_guard,
         "manifest_guard":"PASS" if MANIFEST.exists() else "SKIP(local fixture)",
     }, ensure_ascii=False, indent=2))

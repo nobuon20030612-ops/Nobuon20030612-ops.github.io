@@ -1,7 +1,8 @@
 (function(){
   'use strict';
   var MANIFEST_PATH='data/compact_search_v2/jinpo_unified_search_manifest.json';
-  var manifest=null,manifestPromise=null;
+  var MANIFEST_RECHECK_MS=60000;
+  var manifest=null,manifestPromise=null,manifestCheckedAt=0;
   var buffers=new Map(),fullmaxBuffers=new Map(),recommendSumBuffers=new Map(),fullmaxRecommendBuffers=new Map(),lruSeq=0,MAX_RAW_CACHE=128*1024*1024;
   var STAT_OFFSETS={'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41};
   var FULLMAX_STAT_OFFSETS={'生命':0,'気合':2,'腕力':4,'耐久力':6,'器用さ':8,'知力':10,'魅力':12,'土属性':14,'水属性':16,'火属性':18,'風属性':20};
@@ -13,16 +14,29 @@
     var s=String(v==null?'':v).trim(),m=s.match(/^EIK_(\d+)$/i);if(m)return Number(m[1]);
     if(/^\d+$/.test(s))return Number(s);return -1;
   }
-  async function loadManifest(){
-    if(manifest)return manifest;if(manifestPromise)return manifestPromise;
-    manifestPromise=fetch(MANIFEST_PATH,{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(MANIFEST_PATH+' HTTP '+r.status);return r.json();}).then(function(m){
-      manifest=m;cleanupOldCaches(m.version);
-      manifest._heroNameToIds=Object.create(null);
-      (m.hero_names||[]).forEach(function(n,i){if(!n)return;var k=norm(n);if(!manifest._heroNameToIds[k])manifest._heroNameToIds[k]=[];manifest._heroNameToIds[k].push(i);});
-      manifest._bondNameToId=Object.create(null);
-      (m.bond_names||[]).forEach(function(n,i){if(n)manifest._bondNameToId[norm(n)]=i;});
-      return manifest;
-    });return manifestPromise;
+  function clearDataBuffers(){buffers.clear();fullmaxBuffers.clear();recommendSumBuffers.clear();fullmaxRecommendBuffers.clear();}
+  function prepareManifest(m){
+    m._heroNameToIds=Object.create(null);
+    (m.hero_names||[]).forEach(function(n,i){if(!n)return;var k=norm(n);if(!m._heroNameToIds[k])m._heroNameToIds[k]=[];m._heroNameToIds[k].push(i);});
+    m._bondNameToId=Object.create(null);
+    (m.bond_names||[]).forEach(function(n,i){if(n)m._bondNameToId[norm(n)]=i;});
+    return m;
+  }
+  async function loadManifest(forceRefresh){
+    var now=Date.now();
+    if(manifest&&!forceRefresh&&(now-manifestCheckedAt)<MANIFEST_RECHECK_MS)return manifest;
+    if(manifestPromise)return manifestPromise;
+    manifestPromise=(async function(){
+      var u=new URL(MANIFEST_PATH,self.location.href);
+      if(forceRefresh||manifest)u.searchParams.set('_manifest_probe',String(Date.now()));
+      var r=await fetch(u.href,{cache:'no-store'});if(!r.ok)throw new Error(MANIFEST_PATH+' HTTP '+r.status);
+      var next=prepareManifest(await r.json()),prevVersion=manifest?String(manifest.version||''):'';
+      var nextVersion=String(next.version||'');if(!nextVersion)throw new Error('検索DB manifest version欠落');
+      manifestCheckedAt=Date.now();
+      if(prevVersion&&prevVersion!==nextVersion)clearDataBuffers();
+      manifest=next;await cleanupOldCaches(nextVersion);return manifest;
+    })();
+    try{return await manifestPromise;}finally{manifestPromise=null;}
   }
   function expectedHash16(v){var s=String(v||'').trim().toLowerCase();if(!/^[0-9a-f]{16}$/.test(s))throw new Error('検索DB manifest SHA-256不正/欠落: '+s);return s;}
   async function sha256_16(ab){
@@ -357,18 +371,22 @@
   }
 
   self.onmessage=function(ev){
-    var d=ev.data||{};if(d.type==='clear'){buffers.clear();fullmaxBuffers.clear();recommendSumBuffers.clear();fullmaxRecommendBuffers.clear();return;}
+    var d=ev.data||{};if(d.type==='clear'){clearDataBuffers();return;}
     var token=d.token;
+    if(d.type==='manifestVersion'){
+      loadManifest(true).then(function(m){self.postMessage({type:'done',token:token,result:{version:String(m&&m.version||'')}});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
+      return;
+    }
     if(d.type==='search'){
-      search(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
+      search(d.query||{},token).then(function(r){r.manifestVersion=String(manifest&&manifest.version||'');self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
       return;
     }
     if(d.type==='recommend'){
-      recommend(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
+      recommend(d.query||{},token).then(function(r){r.manifestVersion=String(manifest&&manifest.version||'');self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
       return;
     }
     if(d.type==='lookupExact'){
-      lookupExact(d.query||{},token).then(function(r){self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
+      lookupExact(d.query||{},token).then(function(r){r.manifestVersion=String(manifest&&manifest.version||'');self.postMessage({type:'done',token:token,result:r});}).catch(function(e){self.postMessage({type:'error',token:token,message:e&&e.message?e.message:String(e)});});
     }
   };
 })();

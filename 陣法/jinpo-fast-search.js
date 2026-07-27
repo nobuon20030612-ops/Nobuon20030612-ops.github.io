@@ -2,7 +2,7 @@
   'use strict';
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
-  var LIMIT=500,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0;
+  var LIMIT=500,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='';
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false,searchStatMode='base';
   var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
@@ -220,7 +220,7 @@
     try{if(worker){worker.terminate();worker=null;}}catch(e){}
     var err=new Error('検索を中止しました。');err.jinpoCancelled=true;foregroundEpoch++;
     var queued=foregroundQueued;foregroundQueued=null;if(queued){if(inFlightSearches.get(queued.key)===queued.promise)inFlightSearches.delete(queued.key);try{queued.reject(err);}catch(e){}}
-    foregroundRunning=null;pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();inFlightSearches.clear();activeWorkerToken=0;
+    foregroundRunning=null;pending.forEach(function(p){try{p.reject(err);}catch(e){}});pending.clear();inFlightSearches.clear();manifestProbePromise=null;activeWorkerToken=0;
   }
   function sourceFor(mode,rs,own,ex,sumCfg){
     if(searchStatMode==='fullmax')return{type:'full',sortStat:''};
@@ -233,7 +233,34 @@
   }
   function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.statMode||'base',x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'first',x.limit]);}
   function rememberQueryResult(k,r){
-    queryCache.set(k,r);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;
+    var generation=String(r&&r.manifestVersion||'');
+    if(generation&&knownManifestGeneration&&generation!==knownManifestGeneration)queryCache.clear();
+    if(generation)knownManifestGeneration=generation;
+    var entry={result:r,generation:generation,validatedAt:Date.now()};
+    if(queryCache.has(k))queryCache.delete(k);queryCache.set(k,entry);if(queryCache.size>20)queryCache.delete(queryCache.keys().next().value);return r;
+  }
+  function cachedResultCopy(entry){var r=entry&&entry.result?entry.result:{};return Object.assign({queryCached:true},r);}
+  function probeManifestGeneration(){
+    if(manifestProbePromise)return manifestProbePromise;
+    manifestProbePromise=requestWorker('manifestVersion',{},false).then(function(r){
+      var version=String(r&&r.version||'');
+      if(version&&knownManifestGeneration&&version!==knownManifestGeneration)queryCache.clear();
+      if(version)knownManifestGeneration=version;
+      return version;
+    }).finally(function(){manifestProbePromise=null;});
+    return manifestProbePromise;
+  }
+  function getValidatedCachedResult(k){
+    var entry=queryCache.get(k);if(!entry)return Promise.resolve(null);
+    if(knownManifestGeneration&&entry.generation&&entry.generation!==knownManifestGeneration){queryCache.clear();return Promise.resolve(null);}
+    var now=Date.now();if(now-Number(entry.validatedAt||0)<QUERY_CACHE_GENERATION_RECHECK_MS){queryCache.delete(k);queryCache.set(k,entry);return Promise.resolve(cachedResultCopy(entry));}
+    // 実検索とmanifest強制再取得を同時に走らせない。DB世代切替中の結果ラベル競合を避ける。
+    if(foregroundRunning)return Promise.resolve(null);
+    return probeManifestGeneration().then(function(version){
+      var current=queryCache.get(k);if(current!==entry)return null;
+      if(version&&entry.generation&&version===entry.generation){entry.validatedAt=Date.now();queryCache.delete(k);queryCache.set(k,entry);return cachedResultCopy(entry);}
+      queryCache.clear();return null;
+    });
   }
   function supersededSearchError(){var err=new Error('新しい検索条件を優先しました。');err.jinpoSuperseded=true;return err;}
   function finishForeground(entry,epoch){
@@ -244,12 +271,15 @@
     var epoch=foregroundEpoch;foregroundRunning=entry;
     requestWorker(entry.type,entry.query,true).then(function(r){try{entry.resolve(rememberQueryResult(entry.key,r));}catch(err){entry.reject(err);}},function(err){entry.reject(err);}).then(function(){finishForeground(entry,epoch);},function(){finishForeground(entry,epoch);});
   }
-  function sharedSearchRequest(k,type,query){
-    if(queryCache.has(k))return Promise.resolve(Object.assign({queryCached:true},queryCache.get(k)));
+  function enqueueSharedSearch(k,type,query){
     var running=inFlightSearches.get(k);if(running)return running;
     var resolveEntry,rejectEntry,promise=new Promise(function(resolve,reject){resolveEntry=resolve;rejectEntry=reject;}),entry={key:k,type:type,query:query,promise:null,resolve:resolveEntry,reject:rejectEntry};entry.promise=promise;inFlightSearches.set(k,promise);
     if(!foregroundRunning)startForeground(entry);else{if(foregroundQueued){var old=foregroundQueued;foregroundQueued=null;if(inFlightSearches.get(old.key)===old.promise)inFlightSearches.delete(old.key);old.reject(supersededSearchError());}foregroundQueued=entry;}
     return promise;
+  }
+  function sharedSearchRequest(k,type,query){
+    var running=inFlightSearches.get(k);if(running)return running;
+    return getValidatedCachedResult(k).then(function(cached){if(cached)return cached;var current=inFlightSearches.get(k);if(current)return current;return enqueueSharedSearch(k,type,query);});
   }
   function search(query){
     return sharedSearchRequest(keyFor(query),'search',query);
