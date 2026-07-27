@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v1.0.0
+ * 歩き巫女 サイト共通ローダー v1.1.0
  * TOPや他ツールページに <script src="/陣法/jinpo-bot-loader.js"></script> を1行追加すると、
  * サイト案内・日常会話・Web参照が使える共通歩き巫女を読み込む。
  * 陣法固有の検索操作モジュールは読み込まないため、他ページへの副作用を抑える。
@@ -31,6 +31,9 @@
   var scripts=[
     'jinpo-ai-chat.js',
     'jinpo-bot-context.js',
+    'jinpo-bot-learning.js',
+    'jinpo-bot-tairano-data.js',
+    'jinpo-bot-tairano-knowledge.js',
     'jinpo-bot-site-guide.js',
     'jinpo-bot-memory.js',
     'jinpo-bot-firebase-config.js',

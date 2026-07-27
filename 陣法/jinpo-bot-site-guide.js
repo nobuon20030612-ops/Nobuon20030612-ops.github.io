@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 サイト総合案内 v1.0.0
+ * 歩き巫女 サイト総合案内 v1.1.0
  * たいらの野望の現行トップページ構成を基準に、ページ案内と内部リンクを返す。
  * 数値・ゲーム仕様は推測せず、ここでは「どのページへ行けばよいか」を担当する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function rootUrl(){try{return new URL('/',location.href).href;}catch(e){return'/';}}

@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.6.0';
+  var VERSION='2.6.1';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -47,6 +47,34 @@
       }
     }catch(contextErr){}
 
+    // 会話するほど話題傾向を端末内で学習する。生チャット全文の二重保存はしない。
+    try{
+      if(window.JINPO_BOT_LEARNING&&typeof window.JINPO_BOT_LEARNING.observe==='function'){
+        window.JINPO_BOT_LEARNING.observe(originalMessage);
+      }
+    }catch(learningObserveErr){}
+
+    // 「覚えて」「訂正」など、明示的な学習指示。
+    try{
+      if(window.JINPO_BOT_LEARNING&&typeof window.JINPO_BOT_LEARNING.respond==='function'){
+        var learnReply=window.JINPO_BOT_LEARNING.respond(originalMessage,{history:history,context:contextInfo});
+        if(learnReply&&learnReply.handled){
+          return {answer:String(learnReply.answer||''),sources:[],links:[],mode:'端末内会話学習',data:{learning:true,context:contextInfo}};
+        }
+      }
+    }catch(learningReplyErr){}
+
+    // たいらの野望の確定知識は、一般サイト案内やWeb検索より先に参照する。
+    // 例: 「足利のカウンターは？」→ 天下統一奇譚・二条城編の足利義昭と意味寄せして即答。
+    try{
+      if(window.JINPO_TAIRANO_KNOWLEDGE&&typeof window.JINPO_TAIRANO_KNOWLEDGE.respond==='function'){
+        var tk=window.JINPO_TAIRANO_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo});
+        if(tk&&tk.handled){
+          return {answer:String(tk.answer||''),sources:Array.isArray(tk.sources)?tk.sources:[],links:Array.isArray(tk.links)?tk.links:[],mode:String(tk.mode||'たいらの野望専用知識'),data:Object.assign({tairanoKnowledge:true,context:contextInfo},tk.data||{})};
+        }
+      }
+    }catch(tairanoKnowledgeErr){}
+
     // サイト案内は陣法操作やWeb検索より先に判定する。
     // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
     try{
@@ -57,6 +85,16 @@
         }
       }
     }catch(siteGuideErr){}
+
+    // 正本知識・ページ案内に該当しない場合だけ、端末内で教えられた事実を参照する。
+    try{
+      if(window.JINPO_BOT_LEARNING&&typeof window.JINPO_BOT_LEARNING.find==='function'){
+        var learnedHit=window.JINPO_BOT_LEARNING.find(message);
+        if(learnedHit){
+          return {answer:'前に教えてもらった内容では、「'+learnedHit.subject+'」は「'+learnedHit.answer+'」なのですよ。',sources:[],links:[],mode:'端末内会話学習',data:{learning:true,learnedFact:true,context:contextInfo}};
+        }
+      }
+    }catch(learningFindErr){}
 
     var coreReady=!!(actions()&&parser()&&state()&&help()&&interpreter());
     if(!coreReady){

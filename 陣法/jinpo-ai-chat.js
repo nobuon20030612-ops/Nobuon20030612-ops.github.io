@@ -10,7 +10,7 @@
 
   var STORAGE_KEY = 'jinpoAiChatUi.v1';
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
-  var MAX_HISTORY = 60;
+  var MAX_HISTORY = 100;
   var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn;
   var dragging = null;
   var busy = false;
@@ -322,7 +322,7 @@
   function setTransport(fn){ window.JINPO_AI_TRANSPORT = typeof fn==='function'?fn:null; statusEl.textContent=window.JINPO_AI_TRANSPORT?'準備OK':'準備中…'; }
 
   window.JINPO_AI_CHAT = {
-    version:'0.3.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.4.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

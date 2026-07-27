@@ -757,3 +757,31 @@
 #jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLinks{margin-top:12px;gap:8px}
 #jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLink{border-color:#6f3148;background:#2b1720;color:#f5aac2;box-shadow:0 0 0 1px rgba(219,73,126,.08) inset}
 #jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLink:hover{background:#3a1c28;color:#ffd0df}
+
+
+/* ===== v2.6.1: 歩き巫女 全体文字サイズを一段拡大 ===== */
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiTitle{font-size:18px!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiStatus{font-size:12px!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderBtn{font-size:14px!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiLauncherLabel{font-size:12px!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiBubble{font-size:16px!important;line-height:1.68!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiSourceList,
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiSourceLink,
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLink{font-size:13px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide{font-size:15px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideHead strong{font-size:15px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideQuestion{font-size:16px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideSummary{font-size:14px!important;line-height:1.55!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideBtn{font-size:15px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideExecuteHint{font-size:12px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiInput{font-size:16px!important;line-height:1.55!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiSend{font-size:16px!important}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiComposerNote{font-size:11px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiAdvNameplate{font-size:13px!important}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiAdvTagline{font-size:12px!important}
+@media(max-width:760px){
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiBubble{font-size:15px!important;line-height:1.66!important}
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiInput{font-size:16px!important}
+  #jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideBtn{font-size:14px!important}
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderBtn{font-size:13px!important}
+}

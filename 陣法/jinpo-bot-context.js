@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -49,7 +49,7 @@
     return t;
   }
   function findRecentWeather(h){
-    for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
+    for(var i=h.length-1;i>=0&&i>=h.length-20;i--){
       var x=h[i]&&S(h[i].text);if(!x)continue;
       if(hasExplicitWeather(x)){
         var p=extractWeatherPlace(x);return {text:x,place:p,time:extractWeatherTime(x)};
@@ -68,7 +68,7 @@
     return x;
   }
   function findAntecedent(h){
-    for(var i=h.length-1;i>=0&&i>=h.length-12;i--){
+    for(var i=h.length-1;i>=0&&i>=h.length-20;i--){
       if(!h[i]||h[i].role!=='user')continue;
       var t=S(h[i].text);if(!t||isAck(t))continue;
       var tp=topicFromText(t);if(tp&&tp.length>=2)return tp;
@@ -102,6 +102,21 @@
     if(resolved===original&&/^(?:それ|これ|その件|さっきの|今の|前の)(?:の|について|を|で|は)?/.test(original)){
       var ant=findAntecedent(h),suffix=original.replace(/^(?:それ|これ|その件|さっきの|今の|前の)/,'').replace(/^について/,'について');
       if(ant){resolved=ant+suffix;reason='pronoun_reference';confidence=0.88;}
+    }
+
+    // 「じゃあ足利は？」「では義昭は？」のような短い追質問は、
+    // 直前の話題がカウンター等ではっきりしている場合だけ、その話題語を補う。
+    if(resolved===original&&/^(?:じゃあ|では|なら)?\s*[^？?]{1,18}(?:は|って)?[？?]?$/.test(original)){
+      var recentAll='';
+      for(var ri=h.length-1;ri>=0&&ri>=h.length-8;ri--){
+        if(h[ri]&&S(h[ri].text))recentAll+=' '+S(h[ri].text);
+      }
+      if(/カウンター/.test(recentAll)&&!/カウンター/.test(original)){
+        var shortName=original.replace(/^(?:じゃあ|では|なら)\s*/,'').replace(/(?:は|って)?[？?]$/,'').trim();
+        if(shortName&&shortName.length<=18){
+          resolved=shortName+'のカウンターは？';reason='counter_followup';confidence=0.90;
+        }
+      }
     }
 
     // 「東京」単独を一般検索へ飛ばす前に、直近が天気なら天気の追答として扱う。
