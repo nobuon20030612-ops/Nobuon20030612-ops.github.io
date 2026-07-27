@@ -231,7 +231,7 @@
   function renderHistory(){
     messages.textContent=''; var h=currentHistory();
     if(!h.length){
-      addBubble('assistant','こんにちは。歩き巫女なのですよ。\nクリックでも手入力でも、陣法探しを一緒に進められるのですよ。',{ephemeral:true});
+      addBubble('assistant',window.JINPO_BOT_PAGE_MODE==='site'?'こんにちは。歩き巫女なのですよ。\nサイト案内・調べもの・雑談まで、気軽に話しかけてくださいね。':'こんにちは。歩き巫女なのですよ。\nクリックでも手入力でも、陣法探しを一緒に進められるのですよ。',{ephemeral:true});
       addBubble('system',cfg().endpoint ? 'AI接続設定を検出しました' : '現在はチャット画面の基礎機能まで有効です',{ephemeral:true});
       return;
     }
@@ -252,6 +252,20 @@
       });
       if(list.childNodes.length) bubble.appendChild(list);
     }
+    if(meta && Array.isArray(meta.links) && meta.links.length){
+      var nav=el('div','jinpoAiActionLinks');
+      meta.links.slice(0,8).forEach(function(item){
+        if(!item) return; var raw=String(item.url||'').trim(); var label=String(item.label||'ページを開く').trim();
+        if(!raw) return;
+        var href=''; try{ href=new URL(raw,location.href).href; }catch(e){ return; }
+        if(!/^https:\/\//i.test(href)) return;
+        var external=(new URL(href)).origin!==location.origin;
+        var a=el('a','jinpoAiActionLink',{href:href,text:label});
+        if(external){a.target='_blank';a.rel='noopener noreferrer';}
+        nav.appendChild(a);
+      });
+      if(nav.childNodes.length) bubble.appendChild(nav);
+    }
     if(meta&&meta.silentGuide) row.setAttribute('data-jinpo-guide-silent','1');
     row.appendChild(bubble); messages.appendChild(row); scrollBottom();
     if(!(meta&&meta.ephemeral)) pushHistory(role,text,meta);
@@ -270,7 +284,7 @@
     input.value=''; autoGrow(); addBubble('user',text); setBusy(true); var typing=addTyping();
     try{
       var result=await requestAi(text,currentHistory()); if(typing&&typing.parentNode)typing.remove();
-      addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],mode:result.mode||''});
+      addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||''});
       if(result.mode) statusEl.textContent=String(result.mode);
     }catch(err){
       if(typing&&typing.parentNode)typing.remove();
@@ -301,14 +315,14 @@
 
   function normalizeResponse(data){
     if(typeof data==='string') return {answer:data,sources:[],mode:''};
-    data=data||{}; return {answer:String(data.answer||data.message||''),sources:Array.isArray(data.sources)?data.sources:[],mode:String(data.mode||'')};
+    data=data||{}; return {answer:String(data.answer||data.message||''),sources:Array.isArray(data.sources)?data.sources:[],links:Array.isArray(data.links)?data.links:[],mode:String(data.mode||'')};
   }
 
   function clearHistory(){ saveHistory([]); renderHistory(); }
   function setTransport(fn){ window.JINPO_AI_TRANSPORT = typeof fn==='function'?fn:null; statusEl.textContent=window.JINPO_AI_TRANSPORT?'準備OK':'準備中…'; }
 
   window.JINPO_AI_CHAT = {
-    version:'0.2.2', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.3.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

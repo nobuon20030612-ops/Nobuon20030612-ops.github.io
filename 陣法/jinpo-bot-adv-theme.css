@@ -752,3 +752,8 @@
   }
 }
 
+
+/* v2.6.0 サイト案内リンク */
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLinks{margin-top:12px;gap:8px}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLink{border-color:#6f3148;background:#2b1720;color:#f5aac2;box-shadow:0 0 0 1px rgba(219,73,126,.08) inset}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiActionLink:hover{background:#3a1c28;color:#ffd0df}

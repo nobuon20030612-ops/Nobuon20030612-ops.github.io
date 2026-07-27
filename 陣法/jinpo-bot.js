@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.5.8';
+  var VERSION='2.6.0';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -35,9 +35,40 @@
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
 
   async function handle(payload){
-    if(!actions()||!parser()||!state()||!help()||!interpreter())return R('歩き巫女の構成ファイルが不足しています。Bot基盤のJSファイルを読み込み順どおり確認してください。');
-    var message=typeof payload==='string'?payload:String(payload&&payload.message||'');
+    var payloadObj=typeof payload==='string'?{message:payload,history:[]}:((payload&&typeof payload==='object')?payload:{});
+    var message=String(payloadObj.message||'');
     var originalMessage=message;
+    var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
+    var contextInfo={original:originalMessage,message:message,resolved:false,reason:'',confidence:0};
+    try{
+      if(window.JINPO_BOT_CONTEXT&&typeof window.JINPO_BOT_CONTEXT.resolve==='function'){
+        contextInfo=window.JINPO_BOT_CONTEXT.resolve(message,history,{pageMode:window.JINPO_BOT_PAGE_MODE||'',siteState:actions()&&typeof actions().readSiteState==='function'?actions().readSiteState():null})||contextInfo;
+        if(contextInfo&&contextInfo.message)message=String(contextInfo.message);
+      }
+    }catch(contextErr){}
+
+    // サイト案内は陣法操作やWeb検索より先に判定する。
+    // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
+    try{
+      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'){
+        var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:originalMessage,history:history,context:contextInfo});
+        if(guide&&guide.handled){
+          return {answer:String(guide.answer||''),sources:Array.isArray(guide.sources)?guide.sources:[],links:Array.isArray(guide.links)?guide.links:[],mode:String(guide.mode||'サイト総合案内'),data:{siteGuide:true,context:contextInfo}};
+        }
+      }
+    }catch(siteGuideErr){}
+
+    var coreReady=!!(actions()&&parser()&&state()&&help()&&interpreter());
+    if(!coreReady){
+      if(window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
+        try{
+          var siteChat=await window.JINPO_BOT_SMALLTALK.respond(message);
+          if(siteChat&&siteChat.handled)return {answer:String(siteChat.answer||''),sources:Array.isArray(siteChat.sources)?siteChat.sources:[],links:Array.isArray(siteChat.links)?siteChat.links:[],mode:String(siteChat.mode||'日常会話'),data:{smalltalk:true,context:contextInfo}};
+        }catch(siteChatErr){}
+      }
+      return {answer:'サイト内のページ案内、調べもの、雑談ならそのまま聞いてくださいね。陣法の具体的な検索操作は「陣法検索を開きたい」と言えば案内するのですよ。',sources:[],links:[],mode:'サイト総合案内',data:{needsClarification:true,context:contextInfo}};
+    }
+
     var interpretNote='',pending=interpreter().getPending(),capabilityPlan=null;
     if(pending){
       if(interpreter().isYes(message)){
@@ -67,7 +98,7 @@
     var plan=capabilityPlan||parser().parse(message);
     if(!plan.recognized&&capabilities()&&typeof capabilities().resolve==='function'){
       try{
-        var cap=capabilities().resolve(originalMessage)||capabilities().resolve(message);
+        var cap=capabilities().resolve(message)||capabilities().resolve(originalMessage);
         if(cap&&cap.kind==='clarify')return R(cap.question,{needsClarification:true,capability:cap});
         if(cap&&cap.kind==='execute'){plan.actions.push({name:cap.action,args:cap.args||{}});plan.recognized=true;}
       }catch(capErr2){}
@@ -77,9 +108,9 @@
     // これにより同じ固定文だけでなく、複数レパートリーと自動Web判定を利用できる。
     if(!plan.recognized&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
       try{
-        var chat=await window.JINPO_BOT_SMALLTALK.respond(originalMessage);
+        var chat=await window.JINPO_BOT_SMALLTALK.respond(message);
         if(chat&&chat.handled){
-          return {answer:String(chat.answer||''),sources:Array.isArray(chat.sources)?chat.sources:[],mode:String(chat.mode||'日常会話'),data:{smalltalk:true}};
+          return {answer:String(chat.answer||''),sources:Array.isArray(chat.sources)?chat.sources:[],links:Array.isArray(chat.links)?chat.links:[],mode:String(chat.mode||'日常会話'),data:{smalltalk:true,context:contextInfo}};
         }
       }catch(chatErr){}
     }
@@ -146,10 +177,10 @@
     });
     if(!lines.length&&plan.smalltalk)lines.push(smalltalk(plan.smalltalk));
     if(interpretNote)lines.unshift(interpretNote);
-    return R(lines.join('\n'),{state:after});
+    return R(lines.join('\n'),{state:after,context:contextInfo});
   }
 
   function install(){window.JINPO_AI_TRANSPORT=handle;if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function')window.JINPO_AI_CHAT.setTransport(handle);}
-  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},installTransport:install};
+  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});
 })();

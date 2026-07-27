@@ -4,9 +4,24 @@
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.3.1',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large';
+  var VERSION='2.4.0',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
+  function pageMode(){
+    if(window.JINPO_BOT_PAGE_MODE)return String(window.JINPO_BOT_PAGE_MODE);
+    try{return /\/陣法\/jinpo\.html$/i.test(decodeURIComponent(location.pathname||''))?'jinpo':'site';}catch(e){return'jinpo';}
+  }
+  function assetUrl(rel){
+    var base=String(window.JINPO_BOT_BASE_URL||'');
+    if(!base){
+      var scripts=document.getElementsByTagName('script');
+      for(var i=scripts.length-1;i>=0;i--){
+        var src=String(scripts[i].src||'');
+        if(/jinpo-bot-adv-theme\.js(?:[?#]|$)/.test(src)){try{base=new URL('.',src).href;}catch(e){}break;}
+      }
+    }
+    try{return new URL(rel,base||location.href).href;}catch(e){return rel;}
+  }
 
   function migrateLayoutToRight(win){
     if(!win||window.matchMedia('(max-width:760px)').matches)return;
@@ -30,7 +45,7 @@
 
     var img=document.createElement('img');
     img.id='jinpoAiAdvHeroImg';
-    img.src='assets/jinpo-bot-portrait-real.webp';
+    img.src=assetUrl('assets/jinpo-bot-portrait-real.webp');
     img.alt=BOT_NAME+'のキャラクター';
     img.decoding='async';
     img.draggable=false;
@@ -43,7 +58,7 @@
 
     var tag=document.createElement('div');
     tag.id='jinpoAiAdvTagline';
-    tag.textContent='気軽に陣法探しをお手伝いするのですよ。';
+    tag.textContent=pageMode()==='site'?'サイト案内や調べものをお手伝いするのですよ。':'気軽に陣法探しをお手伝いするのですよ。';
 
     hero.appendChild(img);hero.appendChild(name);hero.appendChild(tag);
     return hero;
@@ -86,7 +101,7 @@
     var title=q('.jinpoAiTitle',win),label=q('.jinpoAiLauncherLabel',launcher),status=q('.jinpoAiStatus',win),send=q('#jinpoAiSend',win);
     if(title)title.textContent=BOT_NAME;
     if(label)label.textContent=BOT_NAME;
-    if(status)status.textContent='操作機能を確認中…';
+    if(status)status.textContent=pageMode()==='site'?'案内機能を確認中…':'操作機能を確認中…';
     if(send)send.textContent='送る';
     launcher.setAttribute('aria-label',BOT_NAME+'を開く');
     win.setAttribute('aria-label',BOT_NAME+'チャット');
@@ -102,8 +117,10 @@
     watchHero(win,messages);
 
     var first=q('.jinpoAiMessageRow.assistant .jinpoAiBubble',messages);
-    if(first&&/^こんにちは。(?:陣法AIです|歩き巫女です)/.test(first.textContent||'')){
-      first.textContent='こんにちは。'+BOT_NAME+'なのですよ。\nざっくり選ぶだけでも探せますし、手入力でも大丈夫なのですよ。';
+    if(first&&/^こんにちは。/.test(first.textContent||'')){
+      first.textContent=pageMode()==='site'
+        ?'こんにちは。'+BOT_NAME+'なのですよ。\nサイトの案内、調べもの、雑談までそのまま話しかけてくださいね。'
+        :'こんにちは。'+BOT_NAME+'なのですよ。\nざっくり選ぶだけでも探せますし、手入力でも大丈夫なのですよ。';
     }
     var sys=q('.jinpoAiMessageRow.system .jinpoAiBubble',messages);
     if(sys&&/AI接続|基礎機能/.test(sys.textContent||''))sys.textContent='サイト内だけで動く無料Botなのですよ。';
@@ -114,7 +131,9 @@
     var portrait=q('#jinpoAiAdvHeroImg'),mascot=q('.jinpoAiMascot'),st=q('.jinpoAiStatus');
     var actionCount=window.JINPO_BOT_ACTIONS&&Array.isArray(window.JINPO_BOT_ACTIONS.registry)?window.JINPO_BOT_ACTIONS.registry.length:0;
     var bridge=window.JINPO_BOT_ACTIONS&&typeof window.JINPO_BOT_ACTIONS.verifySearchBridge==='function'?window.JINPO_BOT_ACTIONS.verifySearchBridge():{ok:false,missing:['verifySearchBridge']};
-    var ready=!!(window.JINPO_BOT&&window.JINPO_BOT_ACTIONS&&window.JINPO_BOT_PARSER&&window.JINPO_BOT_INTERPRETER&&window.JINPO_BOT_STATE&&window.JINPO_BOT_HELP&&window.JINPO_BOT_NLU&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function'&&actionCount>=99&&window.JINPO_BOT_CAPABILITIES&&window.JINPO_BOT_CAPABILITIES.count>=99&&bridge.ok);
+    var ready=pageMode()==='site'
+      ?!!(window.JINPO_BOT&&window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_SITE_GUIDE&&window.JINPO_BOT_SMALLTALK&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function')
+      :!!(window.JINPO_BOT&&window.JINPO_BOT_ACTIONS&&window.JINPO_BOT_PARSER&&window.JINPO_BOT_INTERPRETER&&window.JINPO_BOT_STATE&&window.JINPO_BOT_HELP&&window.JINPO_BOT_NLU&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function'&&actionCount>=99&&window.JINPO_BOT_CAPABILITIES&&window.JINPO_BOT_CAPABILITIES.count>=99&&bridge.ok);
     var info={
       ready:ready,actionCount:actionCount,transport:typeof window.JINPO_AI_TRANSPORT==='function',bridge:bridge,
       portraitLoaded:!!(portrait&&portrait.complete&&portrait.naturalWidth>0),
