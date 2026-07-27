@@ -37,6 +37,8 @@ INCREMENTAL_BUILDER = ROOT / "tools-next" / "rebuild_incremental_additions.py"
 INCREMENTAL_AUDIT = ROOT / "tools-next" / "audit_incremental_equivalence.py"
 PUBLISH_GUARD = ROOT / "tools-next" / "guard_publish_changes.py"
 PROVENANCE_AUDIT = ROOT / "tools-next" / "audit_source_provenance.py"
+GENERATION_HISTORY_PERSIST = ROOT / "tools-next" / "persist_generation_history.py"
+GENERATION_HISTORY_AUDIT = ROOT / "tools-next" / "audit_generation_history.py"
 FAST_SEARCH_JS = ROOT / "jinpo-fast-search.js"
 FAST_SEARCH_WORKER = ROOT / "jinpo-fast-search-worker.js"
 
@@ -765,6 +767,7 @@ def validate_workflow() -> None:
         "'陣法/jinpo-formation-config.js'",
         "'陣法/data/jinpo_eiketsu_master.csv'",
         "'陣法/data/compact_search_v2/**'",
+        "'陣法/data/generation_history/**'",
         "'陣法/data/91因縁_計算式_倍率展開.csv'",
         "'陣法/data/jinpo_job_mapping.json'",
         "github.actor != 'github-actions[bot]'",
@@ -779,6 +782,10 @@ def validate_workflow() -> None:
         'JINPO_PROVENANCE_AUDIT_READY:',
         'python "陣法/tools-next/build_jinpo_next.py"',
         'python "陣法/tools-next/audit_runtime_regressions.py"',
+        'python "陣法/tools-next/persist_generation_history.py"',
+        'python "陣法/tools-next/audit_generation_history.py"',
+        '成功世代レポートを永続化',
+        '生成世代履歴の整合性監査',
         'git ls-files -- \'陣法/_jinpo-next-report/**\'',
         'rm -rf -- "陣法/_jinpo-next-report"',
         'git status --porcelain -- "陣法"',
@@ -789,6 +796,7 @@ def validate_workflow() -> None:
         '"陣法/data/jinpo_eiketsu_master.csv"',
         '"陣法/data/jinpo_latest_update_summary.json"',
         '"陣法/data/compact_search_v2"',
+        '"陣法/data/generation_history"',
         '"陣法/tools-next/hero_internal_id_map.json"',
     ]
     for frag in required:
@@ -801,15 +809,39 @@ def validate_workflow() -> None:
     if min(provenance_pos, sync_pos, fresh_pos, build_pos) < 0 or not (provenance_pos < sync_pos < fresh_pos < build_pos):
         fail("workflow順序不正: 出典監査→master同期→compact freshness→build の順でなければなりません")
     runtime_pos = text.find('python "陣法/tools-next/audit_runtime_regressions.py"')
+    history_pos = text.find('python "陣法/tools-next/persist_generation_history.py"')
+    history_audit_pos = text.find('python "陣法/tools-next/audit_generation_history.py"')
     cleanup_pos = text.find('rm -rf -- "陣法/_jinpo-next-report"')
     guard_pos = text.find('python "陣法/tools-next/guard_publish_changes.py"')
     add_pos = text.find('git add --')
     push_pos = text.find('git push')
-    if min(runtime_pos, cleanup_pos, guard_pos, add_pos, push_pos) < 0 or not (runtime_pos < cleanup_pos < guard_pos < add_pos < push_pos):
-        fail("workflow公開順序不正: 全監査→一時レポート除去→allowlist→限定git add→push の順でなければなりません")
+    if min(runtime_pos, history_pos, history_audit_pos, cleanup_pos, guard_pos, add_pos, push_pos) < 0 or not (runtime_pos < history_pos < history_audit_pos < cleanup_pos < guard_pos < add_pos < push_pos):
+        fail("workflow公開順序不正: 全監査→世代永続化→履歴監査→一時レポート除去→allowlist→限定git add→push の順でなければなりません")
     if 'git add -- "陣法"' in text:
         fail("workflowに広すぎる git add -- 陣法 が復活しています")
 
+
+
+def validate_generation_history_guard() -> None:
+    persist = read_text(GENERATION_HISTORY_PERSIST)
+    audit = read_text(GENERATION_HISTORY_AUDIT)
+    for frag in [
+        "jinpo-generation-history/v1", "generation_fingerprint_sha256",
+        "artifact_set_sha256", "integrity_sha256", "history_created",
+        "source_commit_sha", "GITHUB_RUN_ID", "latest.json", "index.json",
+    ]:
+        if frag not in persist:
+            fail(f"生成世代永続化ガード欠落: {frag}")
+    for frag in [
+        "historical_integrity", "latest_matches_current", "payload_integrity",
+        "artifact_set_sha256", "index_ids", "latest_id",
+    ]:
+        if frag not in audit:
+            fail(f"生成世代履歴監査ガード欠落: {frag}")
+    for path in (GENERATION_HISTORY_PERSIST, GENERATION_HISTORY_AUDIT):
+        cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cp.returncode != 0:
+            fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
 
 
 def validate_provenance_audit_guard() -> None:
@@ -861,7 +893,7 @@ def validate_compact_pipeline_guards() -> None:
     ]:
         if frag not in stats:
             fail(f"compactステータス全件監査欠落: {frag}")
-    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT, INCREMENTAL_BUILDER, INCREMENTAL_AUDIT, PUBLISH_GUARD):
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT, INCREMENTAL_BUILDER, INCREMENTAL_AUDIT, PUBLISH_GUARD, GENERATION_HISTORY_PERSIST, GENERATION_HISTORY_AUDIT):
         cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if cp.returncode != 0:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
@@ -873,6 +905,7 @@ def validate_publish_guard_behavior() -> None:
     for frag in [
         "ALLOWED_EXACT", "陣法/data/jinpo_eiketsu_master.csv", "陣法/data/jinpo_latest_update_summary.json",
         "陣法/tools-next/hero_internal_id_map.json", "陣法/data/compact_search_v2/",
+        "陣法/data/generation_history/", "GENERATION_HISTORY_PREFIX", 'path.endswith(".json")',
         "__pycache__", ".pyc", "git_lines", "unexpected_paths", "forbidden_paths",
     ]:
         if frag not in guard_text:
@@ -895,6 +928,17 @@ def validate_publish_guard_behavior() -> None:
         cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         if cp.returncode != 0:
             fail("公開前allowlistガードが許可済み生成物を拒否しました: " + cp.stderr.strip())
+        hist = repo / "陣法" / "data" / "generation_history"
+        hist.mkdir(parents=True)
+        (hist / "latest.json").write_text("{}\n", encoding="utf-8")
+        cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if cp.returncode != 0:
+            fail("公開前allowlistガードが世代履歴JSONを拒否しました: " + cp.stderr.strip())
+        (hist / "unexpected.bin").write_bytes(b"x")
+        cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        if cp.returncode == 0 or "unexpected.bin" not in (cp.stdout + cp.stderr):
+            fail("公開前allowlistガードが世代履歴内の非JSONを拒否できません")
+        (hist / "unexpected.bin").unlink()
         # UI/source mutation by generator must fail.
         (repo / "陣法" / "jinpo.html").write_text("unexpected\n", encoding="utf-8")
         cp = subprocess.run([sys.executable,str(guard)],cwd=repo,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
@@ -1330,6 +1374,7 @@ def main() -> None:
     validate_internal_save()
     validate_html_integration_if_present()
     validate_workflow()
+    validate_generation_history_guard()
     validate_provenance_audit_guard()
     validate_publish_guard_behavior()
     validate_compact_pipeline_guards()
@@ -1350,6 +1395,7 @@ def main() -> None:
         "html_script_order":"PASS" if HTML.exists() else "SKIP(local fixture)",
         "workflow_regressions":"PASS",
         "source_provenance_guard":"PASS",
+        "generation_history_guard":"PASS",
         "compact_record_freshness_guard":"PASS",
         "compact_stats_full_audit_guard":"PASS",
         "compact_pipeline_synthetic_behavior":"PASS",

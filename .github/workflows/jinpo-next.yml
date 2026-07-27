@@ -18,6 +18,7 @@ on:
       - '陣法/data/jinpo_eiketsu_master.csv'
       - '陣法/data/jinpo_inen_master.csv'
       - '陣法/data/compact_search_v2/**'
+      - '陣法/data/generation_history/**'
       - '陣法/data/91因縁_計算式_倍率展開.csv'
       - '陣法/data/formation_bonus.csv'
       - '陣法/data/jinpo_job_mapping.json'
@@ -97,6 +98,13 @@ jobs:
       - name: 追加の回帰監査
         run: python "陣法/tools-next/audit_runtime_regressions.py"
 
+      # 全監査PASS後だけ、現在の生成物一式をimmutableな世代履歴として永続化する。
+      - name: 成功世代レポートを永続化
+        run: python "陣法/tools-next/persist_generation_history.py"
+
+      - name: 生成世代履歴の整合性監査
+        run: python "陣法/tools-next/audit_generation_history.py"
+
       - name: 一時監査レポートをコミット対象から除外
         shell: bash
         run: |
@@ -131,6 +139,7 @@ jobs:
             "陣法/data/jinpo_eiketsu_master.csv" \
             "陣法/data/jinpo_latest_update_summary.json" \
             "陣法/data/compact_search_v2" \
+            "陣法/data/generation_history" \
             "陣法/tools-next/hero_internal_id_map.json"
           if git diff --cached --quiet; then
             echo "コミット対象の差分なし"
