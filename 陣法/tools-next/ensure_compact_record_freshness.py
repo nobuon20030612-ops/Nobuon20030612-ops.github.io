@@ -4,7 +4,6 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -15,9 +14,8 @@ SYNC_REPORT = REPORT_DIR / 'master_sync.json'
 FINGERPRINT_FILE = DATA / 'compact_search_v2' / 'record_model_fingerprint.json'
 MASTER = DATA / 'jinpo_eiketsu_master.csv'
 MODEL_INPUTS = [
-    # compactレコードは英傑の因子・コスト・11ステータスを直接持つ。
-    # sourceとmasterを同時上書きした場合sync差分が0件でも必ず変更検知する。
-    MASTER,
+    # ここは検索レコードの計算ルールそのものだけをfingerprint化する。
+    # 英傑masterのデータ変更は別のmaster_sha256＋sync差分で追跡する。
     DATA / 'jinpo_inen_master.csv',
     DATA / '91因縁_計算式_倍率展開.csv',
     DATA / 'formation_bonus.csv',
@@ -26,6 +24,8 @@ MODEL_INPUTS = [
     ROOT / 'tools-next' / 'fullmax_model.py',
     ROOT / 'tools-next' / 'rebuild_fullmax_search.py',
     ROOT / 'tools-next' / 'audit_fullmax_search.py',
+    ROOT / 'tools-next' / 'rebuild_incremental_additions.py',
+    ROOT / 'tools-next' / 'audit_incremental_equivalence.py',
 ]
 
 
@@ -40,7 +40,7 @@ def model_fingerprint() -> tuple[str, dict[str, str]]:
             raise RuntimeError(f'検索DBモデル入力がありません: {path.relative_to(ROOT)}')
         parts[str(path.relative_to(ROOT)).replace('\\','/')] = sha256(path)
     h = hashlib.sha256()
-    h.update(b'jinpo-compact-record-model-v2\0')
+    h.update(b'jinpo-compact-record-model-v3\0')
     for name, digest in sorted(parts.items()):
         h.update(name.encode('utf-8')); h.update(b'\0'); h.update(digest.encode('ascii')); h.update(b'\0')
     return h.hexdigest(), parts
@@ -85,43 +85,64 @@ def force_all_dirty() -> int:
     return len(ids)
 
 
-def run(script: str) -> None:
-    path = ROOT / 'tools-next' / script
-    if not path.exists():
-        raise RuntimeError(f'必須生成スクリプトがありません: tools-next/{script}')
-    cp = subprocess.run([sys.executable, str(path)], cwd=str(ROOT), text=True)
-    if cp.returncode != 0:
-        raise RuntimeError(f'{script} がFAILしました')
-
-
 def main() -> None:
     current, parts = model_fingerprint()
     previous = load_previous()
     old = str(previous.get('fingerprint','')).strip()
-    changed = old != current
+    model_changed = old != current
+
+    current_master_sha = sha256(MASTER)
+    previous_master_sha = str(previous.get('master_sha256','')).strip()
+    master_changed = bool(previous_master_sha) and previous_master_sha != current_master_sha
+
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    if SYNC_REPORT.exists():
+        try:
+            sync = json.loads(SYNC_REPORT.read_text(encoding='utf-8'))
+        except Exception:
+            sync = {}
+    else:
+        sync = {}
+
+    dirty = list(sync.get('dirty_internal_ids') or [])
+    has_declared_master_change = bool(dirty or sync.get('new_heroes') or sync.get('changed_existing') or sync.get('removed_heroes'))
+    suspicious_master_change = master_changed and not has_declared_master_change
+
     forced = 0
-    if changed:
+    if model_changed or suspicious_master_change or not previous_master_sha:
         forced = force_all_dirty()
-        # 元buildが既存レコードのbyte再利用をしていても、ここで全英傑をdirtyにして全recordを再計算する。
-        run('rebuild_all_compact.py')
-        run('rebuild_top500.py')
-        run('rebuild_recommend_sum_top.py')
-        run('rebuild_fullmax_search.py')
-        run('audit_search_integrity.py')
-        run('audit_fullmax_search.py')
-        FINGERPRINT_FILE.parent.mkdir(parents=True, exist_ok=True)
-        FINGERPRINT_FILE.write_text(json.dumps({
-            'schema':'jinpo-compact-record-model-v2',
-            'fingerprint':current,
-            'inputs':parts,
-        }, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+        sync = json.loads(SYNC_REPORT.read_text(encoding='utf-8'))
+        sync['compact_record_model_force_all_dirty'] = True
+        sync['compact_record_model_reason'] = (
+            'record_model_changed' if model_changed else
+            'master_changed_without_sync_delta' if suspicious_master_change else
+            'fingerprint_v3_initialization'
+        )
+    else:
+        sync['compact_record_model_force_all_dirty'] = False
+        sync.pop('compact_record_model_reason', None)
+    SYNC_REPORT.write_text(json.dumps(sync, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+
+    # Generation is intentionally NOT executed here. build_jinpo_next.py chooses exactly one path:
+    # pure new-hero additions -> incremental; model/complex changes -> full.
+    # This prevents the old double full-regeneration (freshness prebuild + normal build).
+    FINGERPRINT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    FINGERPRINT_FILE.write_text(json.dumps({
+        'schema':'jinpo-compact-record-model-v3',
+        'fingerprint':current,
+        'inputs':parts,
+        'master_sha256':current_master_sha,
+    }, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+
     print(json.dumps({
         'status':'PASS',
-        'model_changed':changed,
+        'model_changed':model_changed,
+        'master_changed':master_changed,
+        'suspicious_master_change':suspicious_master_change,
         'forced_dirty_hero_count':forced,
+        'generation_deferred_to_build':True,
         'fingerprint':current,
     }, ensure_ascii=False))
-
 
 if __name__ == '__main__':
     try:

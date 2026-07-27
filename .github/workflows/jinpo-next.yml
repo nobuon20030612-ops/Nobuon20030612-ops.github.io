@@ -62,7 +62,9 @@ jobs:
       - name: compactレコードモデル変更時の事前全再計算保証
         run: python "陣法/tools-next/ensure_compact_record_freshness.py"
 
-      - name: 英傑一覧から陣法を全再生成・既存監査
+      - name: 英傑一覧から陣法を差分/全再生成・既存監査
+        env:
+          JINPO_MASTER_SYNC_READY: '1'
         run: python "陣法/tools-next/build_jinpo_next.py"
 
       - name: 生成失敗時の診断情報
@@ -81,6 +83,9 @@ jobs:
               echo
             fi
           done
+
+      - name: 差分生成とfull生成の一致監査
+        run: python "陣法/tools-next/audit_incremental_equivalence.py"
 
       - name: compactステータス全件監査
         run: python "陣法/tools-next/audit_compact_stats.py"

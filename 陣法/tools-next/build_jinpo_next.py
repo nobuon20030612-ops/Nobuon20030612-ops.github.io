@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import csv, json, sys, hashlib, gzip, struct, subprocess, shutil, tempfile, re
+import csv, json, sys, hashlib, gzip, struct, subprocess, shutil, tempfile, re, os
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -116,16 +116,24 @@ def main():
     if not SOURCE.exists(): fail('source-next/英傑一覧.csv がありません', report)
     if not MASTER.exists(): fail('陣法/data/jinpo_eiketsu_master.csv がありません', report)
 
-    # Phase2: 英傑一覧を唯一の日常更新入力として、internal_idを維持しながら英傑マスタへ同期する。
-    sync_script = ROOT/'tools-next'/'sync_eiketsu_master.py'
-    if not sync_script.exists(): fail('Phase2英傑マスタ同期スクリプトがありません', report)
-    cp = subprocess.run([sys.executable, str(sync_script)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if cp.returncode != 0:
-        fail('英傑マスタ自動同期FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    # GitHub Actionsでは直前にsync→freshness判定済み。ここで再syncすると
+    # new_heroes/dirty_internal_ids/force-full判定を失うため、同じレポートをそのまま使う。
+    # 単体実行時だけ従来どおり自前でsyncする。
     sync_report_path = REPORT_DIR/'master_sync.json'
+    sync_ready = os.environ.get('JINPO_MASTER_SYNC_READY') == '1'
+    if not sync_ready:
+        sync_script = ROOT/'tools-next'/'sync_eiketsu_master.py'
+        if not sync_script.exists(): fail('Phase2英傑マスタ同期スクリプトがありません', report)
+        cp = subprocess.run([sys.executable, str(sync_script)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if cp.returncode != 0:
+            fail('英傑マスタ自動同期FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
     if not sync_report_path.exists(): fail('英傑マスタ同期レポートがありません', report)
     sync_report = json.loads(sync_report_path.read_text(encoding='utf-8'))
     if sync_report.get('status') != 'PASS': fail('英傑マスタ同期レポートがPASSではありません', report)
+    if sync_ready:
+        report['master_sync_source'] = 'workflow-pre-sync'
+    else:
+        report['master_sync_source'] = 'build-standalone-sync'
 
     source_rows, source_headers = read_csv(SOURCE)
     master_rows, _ = read_csv(MASTER)
@@ -179,12 +187,24 @@ def main():
         'master_sha256': sha256(MASTER),
     })
 
-    # Phase2: 現在の英傑マスタから検索可能な5～9因縁を完全再評価し、compact DBを再生成する。
-    full_generator = ROOT/'tools-next'/'rebuild_all_compact.py'
-    if not full_generator.exists(): fail('Phase2全組み合わせ再生成スクリプトがありません', report)
-    cp = subprocess.run([sys.executable, str(full_generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    # Phase2 generation path:
+    # - pure new-hero additions: exact incremental generation (old records are byte-preserved)
+    # - existing-hero edits / removals / record-model changes: full regeneration
+    new_infos = sync_report.get('new_heroes', [])
+    changed_infos = sync_report.get('changed_existing', [])
+    removed_infos = sync_report.get('removed_heroes', [])
+    force_full = bool(sync_report.get('compact_record_model_force_all_dirty'))
+    pure_addition = bool(new_infos) and not changed_infos and not removed_infos and not force_full
+    if pure_addition:
+        generator = ROOT/'tools-next'/'rebuild_incremental_additions.py'
+        generation_label = '新英傑差分生成'
+    else:
+        generator = ROOT/'tools-next'/'rebuild_all_compact.py'
+        generation_label = '5～9因縁 全組み合わせ再生成'
+    if not generator.exists(): fail(f'Phase2生成スクリプトがありません: {generator.name}', report)
+    cp = subprocess.run([sys.executable, str(generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if cp.returncode != 0:
-        fail('5～9因縁 全組み合わせ再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+        fail(generation_label + 'FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
     generation_report_path = REPORT_DIR/'generation_report.json'
     if not generation_report_path.exists(): fail('組み合わせ生成レポートがありません', report)
     generation_report = json.loads(generation_report_path.read_text(encoding='utf-8'))
@@ -194,7 +214,8 @@ def main():
         'added_records': generation_report.get('added_records'),
         'removed_records': generation_report.get('removed_records'),
         'seconds': generation_report.get('seconds'),
-        'full_regeneration': True,
+        'full_regeneration': bool(generation_report.get('full_regeneration', generation_report.get('generation_mode') != 'incremental_additions')),
+        'generation_mode': generation_report.get('generation_mode', 'full'),
     }
 
     rebuild_top = ROOT/'tools-next'/'rebuild_top500.py'

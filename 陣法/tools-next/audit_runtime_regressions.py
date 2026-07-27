@@ -33,6 +33,8 @@ FACTOR4_OPTIMIZER = ROOT / "tools-next" / "factor4_optimizer.py"
 FULLMAX_MODEL = ROOT / "tools-next" / "fullmax_model.py"
 FULLMAX_BUILDER = ROOT / "tools-next" / "rebuild_fullmax_search.py"
 FULLMAX_AUDIT = ROOT / "tools-next" / "audit_fullmax_search.py"
+INCREMENTAL_BUILDER = ROOT / "tools-next" / "rebuild_incremental_additions.py"
+INCREMENTAL_AUDIT = ROOT / "tools-next" / "audit_incremental_equivalence.py"
 PUBLISH_GUARD = ROOT / "tools-next" / "guard_publish_changes.py"
 FAST_SEARCH_JS = ROOT / "jinpo-fast-search.js"
 FAST_SEARCH_WORKER = ROOT / "jinpo-fast-search-worker.js"
@@ -766,6 +768,7 @@ def validate_workflow() -> None:
         '生成失敗時の診断情報',
         'generation_report.json',
         'search_integrity_report.json',
+        'python "陣法/tools-next/audit_incremental_equivalence.py"',
         'python "陣法/tools-next/audit_compact_stats.py"',
         'python "陣法/tools-next/build_jinpo_next.py"',
         'python "陣法/tools-next/audit_runtime_regressions.py"',
@@ -805,21 +808,19 @@ def validate_compact_pipeline_guards() -> None:
     stats = read_text(COMPACT_STATS_AUDIT)
     for frag in [
         "record_model_fingerprint.json",
-        "jinpo_eiketsu_master.csv",
-        "jinpo-compact-record-model-v2",
+        "jinpo-compact-record-model-v3",
         "91因縁_計算式_倍率展開.csv",
         "formation_bonus.csv",
         "rebuild_all_compact.py",
+        "rebuild_incremental_additions.py",
+        "audit_incremental_equivalence.py",
         "factor4_optimizer.py",
         "fullmax_model.py",
         "rebuild_fullmax_search.py",
         "audit_fullmax_search.py",
         "dirty_internal_ids",
-        "run('rebuild_top500.py')",
-        "run('rebuild_recommend_sum_top.py')",
-        "run('rebuild_fullmax_search.py')",
-        "run('audit_search_integrity.py')",
-        "run('audit_fullmax_search.py')",
+        "generation_deferred_to_build",
+        "master_sha256",
     ]:
         if frag not in fresh:
             fail(f"compact再計算保証欠落: {frag}")
@@ -830,7 +831,7 @@ def validate_compact_pipeline_guards() -> None:
     ]:
         if frag not in stats:
             fail(f"compactステータス全件監査欠落: {frag}")
-    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT, PUBLISH_GUARD):
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER, FULLMAX_MODEL, FULLMAX_BUILDER, FULLMAX_AUDIT, INCREMENTAL_BUILDER, INCREMENTAL_AUDIT, PUBLISH_GUARD):
         cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if cp.returncode != 0:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
@@ -895,21 +896,23 @@ def validate_compact_pipeline_behavior() -> None:
             "formation,生命\n衡軛,1.00\n", encoding="utf-8-sig")
         with (base / "data" / "jinpo_eiketsu_master.csv").open("w", encoding="utf-8-sig", newline="") as f:
             w = csv.writer(f); w.writerow(["internal_id","英傑名"]); w.writerow(["EIK_0001","A"]); w.writerow(["EIK_0002","B"])
-        # rebuild_all_compact.py is itself part of the fingerprint, so its test stub also doubles as an invocation logger.
-        for script, label in (
-            ("rebuild_all_compact.py","all"), ("rebuild_top500.py","top"),
-            ("rebuild_recommend_sum_top.py","recommend"),
-            ("rebuild_fullmax_search.py","fullmax"),
-            ("audit_search_integrity.py","audit"),
-            ("audit_fullmax_search.py","fullmax_audit"),
+        # Model-input stubs. Freshness v3 only marks the build path; it no longer runs generators itself.
+        for script in (
+            "rebuild_all_compact.py", "factor4_optimizer.py", "fullmax_model.py",
+            "rebuild_fullmax_search.py", "audit_fullmax_search.py",
+            "rebuild_incremental_additions.py", "audit_incremental_equivalence.py",
         ):
-            (base / "tools-next" / script).write_text(
-                "from pathlib import Path\n"
-                "p=Path(__file__).resolve().parents[1]/'calls.log'\n"
-                f"p.write_text((p.read_text() if p.exists() else '')+'{label}\\n')\n",
-                encoding="utf-8")
+            path = base / "tools-next" / script
+            if not path.exists():
+                path.write_text("# synthetic fingerprint input\n", encoding="utf-8")
 
         guard = base / "tools-next" / FRESHNESS_GUARD.name
+        def write_sync(dirty=None, new=None, changed=None):
+            report_dir = base / "_jinpo-next-report"; report_dir.mkdir(exist_ok=True)
+            (report_dir / "master_sync.json").write_text(json.dumps({
+                "status":"PASS", "dirty_internal_ids": dirty or [],
+                "new_heroes": new or [], "changed_existing": changed or [], "removed_heroes": [],
+            }), encoding="utf-8")
         def run_guard() -> dict:
             cp = subprocess.run([sys.executable, str(guard)], cwd=base, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if cp.returncode != 0:
@@ -917,27 +920,27 @@ def validate_compact_pipeline_behavior() -> None:
             try: return json.loads(cp.stdout.strip())
             except Exception as e: fail(f"compact freshness synthetic JSON不正: {e}: {cp.stdout!r}")
 
+        write_sync()
         first = run_guard()
-        calls1 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
         second = run_guard()
-        calls2 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
         coef = base / "data" / "91因縁_計算式_倍率展開.csv"
         coef.write_text(coef.read_text(encoding="utf-8-sig").replace("0.1","0.2"), encoding="utf-8-sig")
+        write_sync()
         third = run_guard()
-        calls3 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
+        # Pure new hero master change must be declared by sync and must NOT be mistaken for a model change.
         master_path = base / "data" / "jinpo_eiketsu_master.csv"
         master_text = master_path.read_text(encoding="utf-8-sig")
-        master_path.write_text(master_text.replace("EIK_0002,B", "EIK_0002,B2"), encoding="utf-8-sig")
+        master_path.write_text(master_text + "EIK_0003,C\n", encoding="utf-8-sig")
+        write_sync(["EIK_0003"], [{"internal_id":"EIK_0003","英傑名":"C"}])
         fourth = run_guard()
-        calls4 = (base / "calls.log").read_text(encoding="utf-8").splitlines()
-        if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or len(calls1) != 6:
-            fail("compact freshness: fingerprint未作成時の全dirty再計算FAIL")
-        if second.get("model_changed") or second.get("forced_dirty_hero_count") != 0 or calls2 != calls1:
-            fail("compact freshness: 同一fingerprintで不要な全再計算")
-        if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2 or len(calls3) != 12:
-            fail("compact freshness: 係数変更を検知できません")
-        if not fourth.get("model_changed") or fourth.get("forced_dirty_hero_count") != 2 or len(calls4) != 18:
-            fail("compact freshness: 英傑マスタ単独変更を検知できません")
+        if not first.get("model_changed") or first.get("forced_dirty_hero_count") != 2 or not first.get("generation_deferred_to_build"):
+            fail("compact freshness v3: 初期化時の全dirty指定FAIL")
+        if second.get("model_changed") or second.get("forced_dirty_hero_count") != 0:
+            fail("compact freshness v3: 同一fingerprintで不要な全dirty")
+        if not third.get("model_changed") or third.get("forced_dirty_hero_count") != 2:
+            fail("compact freshness v3: 係数変更を検知できません")
+        if fourth.get("model_changed") or fourth.get("suspicious_master_change"):
+            fail("compact freshness v3: 正規の新英傑追加をモデル変更扱いしました")
 
     # 文曲最小化: 各因縁を個別に最小化するだけでなく、編成全体の因子4使用英傑集合を最小化する。
     sys.path.insert(0, str(ROOT / "tools-next"))
