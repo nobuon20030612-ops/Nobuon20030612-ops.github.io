@@ -417,7 +417,7 @@ def main():
         ],
         'jinpo-activation-engine.js': [
             'const activatedOccurrences = [];', 'const activatedByName = new Map();',
-            'occurrences:[occurrence]', 'activated: activatedFlat', 'activatedOccurrences', 'heroInternalId:',
+            'occurrences:[occurrence]', 'activated: activatedFlat', 'activatedOccurrences', 'factor4Slots: factor4Plan.slots.slice()', 'chooseMinimalFactor4Plan', 'heroInternalId:',
         ],
         'jinpo-bond-list.js': [
             'jinpoRecommendNav', 'おすすめ陣法', 'jinpoRecommendExitBtn',
@@ -471,6 +471,7 @@ def main():
         'normal_5_6_worker_access_blocked': True,
         'legacy_normal_5_6_manifest_and_files_removed': True,
         'factor4_assignment_uses_line_hero_index': True,
+        'factor4_global_minimum_plan': True,
         'swap_loading_waits_for_exact_lookup': True,
         'swap_loading_stale_completion_guard': True,
         'bonus_fallback_internal_id_first': True,

@@ -29,6 +29,7 @@ MANIFEST = ROOT / "data" / "compact_search_v2" / "jinpo_unified_search_manifest.
 OVERRIDES = ROOT / "tools-next" / "approved_overrides.json"
 FRESHNESS_GUARD = ROOT / "tools-next" / "ensure_compact_record_freshness.py"
 COMPACT_STATS_AUDIT = ROOT / "tools-next" / "audit_compact_stats.py"
+FACTOR4_OPTIMIZER = ROOT / "tools-next" / "factor4_optimizer.py"
 
 MOJIBAKE_MARKERS = tuple(chr(x) for x in (0xFFFD, 0x7E3A, 0x7E67, 0x8B41, 0x00C3, 0x00C2))
 SOURCE_FACTOR_MAP = {
@@ -787,6 +788,7 @@ def validate_compact_pipeline_guards() -> None:
         "91因縁_計算式_倍率展開.csv",
         "formation_bonus.csv",
         "rebuild_all_compact.py",
+        "factor4_optimizer.py",
         "dirty_internal_ids",
         "run('rebuild_top500.py')",
         "run('rebuild_recommend_sum_top.py')",
@@ -801,7 +803,7 @@ def validate_compact_pipeline_guards() -> None:
     ]:
         if frag not in stats:
             fail(f"compactステータス全件監査欠落: {frag}")
-    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT):
+    for path in (FRESHNESS_GUARD, COMPACT_STATS_AUDIT, FACTOR4_OPTIMIZER):
         cp = subprocess.run([sys.executable, "-m", "py_compile", str(path)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if cp.returncode != 0:
             fail(f"{path.name} 構文FAIL: {cp.stderr.strip()}")
@@ -814,6 +816,7 @@ def validate_compact_pipeline_behavior() -> None:
         (base / "tools-next").mkdir(parents=True)
         (base / "data" / "compact_search_v2").mkdir(parents=True)
         shutil.copy2(FRESHNESS_GUARD, base / "tools-next" / FRESHNESS_GUARD.name)
+        (base / "tools-next" / "factor4_optimizer.py").write_text("# synthetic fingerprint input\n", encoding="utf-8")
         (base / "data" / "jinpo_inen_master.csv").write_text(
             "No,因縁名,因子1,因子2,因子3\n1,A,a,b,c\n", encoding="utf-8-sig")
         (base / "data" / "91因縁_計算式_倍率展開.csv").write_text(
@@ -862,6 +865,30 @@ def validate_compact_pipeline_behavior() -> None:
             fail("compact freshness: 係数変更を検知できません")
         if not fourth.get("model_changed") or fourth.get("forced_dirty_hero_count") != 2 or len(calls4) != 12:
             fail("compact freshness: 英傑マスタ単独変更を検知できません")
+
+    # 文曲最小化: 各因縁を個別に最小化するだけでなく、編成全体の因子4使用英傑集合を最小化する。
+    sys.path.insert(0, str(ROOT / "tools-next"))
+    try:
+        from factor4_optimizer import assignment_factor4_masks, minimal_factor4_mask
+        heroes = {
+            1:{"f":["C","","","A"]},
+            2:{"f":["A","B","",""]},
+            3:{"f":["B","C","",""]},
+            4:{"f":["X","","","D"]},
+            5:{"f":["D","E","",""]},
+            6:{"f":["E","X","",""]},
+        }
+        bonds = {1:("A","B","C"), 2:("D","E","X")}
+        masks = assignment_factor4_masks((1,2,3),1,heroes,bonds,{})
+        if 0 not in masks:
+            fail("文曲最小化: 因子4を使わない成立割当を列挙できません")
+        lines = {"衡軛":((0,1,2),(3,4,5))}
+        mask = minimal_factor4_mask((1,2,3,4,5,6),"衡軛",(1,2),lines,heroes,bonds,{})
+        if mask != 0:
+            fail(f"文曲最小化: 全体最小mask不正 {mask}")
+    finally:
+        try: sys.path.remove(str(ROOT / "tools-next"))
+        except ValueError: pass
 
     with tempfile.TemporaryDirectory(prefix="jinpo-compact-stats-") as td:
         base = Path(td)

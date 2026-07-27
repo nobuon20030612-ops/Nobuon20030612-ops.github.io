@@ -3488,6 +3488,10 @@ return normalizeName(a.heroName) === name;
 function currentFactor4Slots(result){
 var slots = new Set();
 try{
+if(result && Array.isArray(result.factor4Slots)){
+result.factor4Slots.forEach(function(slot){slot=Number(slot);if(slot>=1&&slot<=6)slots.add(slot);});
+return slots;
+}
 (result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
 (act.lineSlots || []).forEach(function(slot){
 if(assignmentUsesHeroFactor4(act, Number(slot))) slots.add(Number(slot));
@@ -3584,6 +3588,9 @@ if(hero){ localPlacement[idx+1] = hero; heroCount++; }
 });
 if(heroCount !== 6) return slots;
 var result = window.JinpoActivationEngine.calculateFormation(localPlacement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+if(result && Array.isArray(result.factor4Slots)){
+result.factor4Slots.forEach(function(slot){slot=Number(slot);if(slot>=1&&slot<=6)slots.add(slot);});
+}else{
 (result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
 var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
 (Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
@@ -3595,6 +3602,7 @@ var f4 = factor4Of(hero);
 if(f4 && safeText(a.requiredFactor) === f4) slots.add(slot);
 });
 });
+}
 }catch(e){}
 return slots;
 }
@@ -6618,6 +6626,7 @@ document.addEventListener("click", function(ev){
     try{
       var hero=p&&p[Number(slot)],f4=hFactor4(hero);
       if(!hero||!f4||!result)return false;
+      if(Array.isArray(result.factor4Slots)) return result.factor4Slots.map(Number).indexOf(Number(slot))>=0;
       var acts=Array.isArray(result.activatedOccurrences)?result.activatedOccurrences:(Array.isArray(result.activated)?result.activated:[]);
       for(var ai=0;ai<acts.length;ai++){
         var act=acts[ai]||{},line=Array.isArray(act.lineSlots)?act.lineSlots.map(Number):[],rel=line.indexOf(Number(slot));
@@ -6964,6 +6973,10 @@ document.addEventListener("click", function(ev){
       var form = currentFormationName();
       if(!form) return slots;
       var result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
+      if(result && Array.isArray(result.factor4Slots)){
+        result.factor4Slots.forEach(function(slot){slot=Number(slot);if(slot>=1&&slot<=6)slots.add(slot);});
+        return slots;
+      }
       (result && (result.activatedOccurrences || result.activated) || []).forEach(function(act){
         var line = Array.isArray(act.lineSlots) ? act.lineSlots : [];
         (Array.isArray(act.assignments) ? act.assignments : []).forEach(function(a){
@@ -8528,6 +8541,7 @@ body{padding-top:0 !important;}
     }catch(e){}
     try{
       var result=currentActivationResultForBonus();
+      if(result && Array.isArray(result.factor4Slots)) return result.factor4Slots.map(Number).indexOf(slot)>=0;
       var acts=Array.isArray(result && result.activatedOccurrences) ? result.activatedOccurrences : (Array.isArray(result && result.activated) ? result.activated : []);
       for(var i=0;i<acts.length;i++){ if(activationUsesHeroFactor4ForTensei(acts[i], slot)) return true; }
     }catch(e){}

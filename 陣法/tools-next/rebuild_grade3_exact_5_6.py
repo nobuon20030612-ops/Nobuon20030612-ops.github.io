@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv,gzip,hashlib,itertools,json,math,os,struct,tempfile
 from collections import defaultdict
 from pathlib import Path
+from factor4_optimizer import minimal_factor4_count
 ROOT=Path(__file__).resolve().parents[1];SITE = ROOT;DATA=SITE/'data'/'compact_search_v2';MP=DATA/'jinpo_unified_search_manifest.json';REC=52
 STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
 LINES={'衡軛':[(0,1,2),(3,4,5)],'鶴翼':[(0,1,2),(3,4,5)],'魚鱗':[(0,1,2),(2,3,4),(4,5,0)],'方円':[(1,2,3),(3,4,5),(1,0,5)]}
@@ -106,37 +107,10 @@ def disjoint(target):
      if k not in out or p<out[k]:out[k]=p
  return out
 def bondids(mask):return tuple(i+1 for i in range(len(B)) if (mask>>i)&1)
-# deterministic assignment cache: ordered 3 heroes + bond -> relative factor4 slot bit (0 if activates without factor4, -1 if no activation)
+# factor4 assignment cache is shared by the exact global minimizer.
 AC={}
-def assign_f4(line,bid):
- key=(tuple(line),bid)
- if key in AC:return AC[key]
- req=B[bid];used=set();ans=[]
- def dfs(i):
-  if i==3:return True
-  for hi,hid in enumerate(line):
-   if hi in used:continue
-   if req[i] in H[hid]['f']:
-    used.add(hi);ans.append((hi,req[i]))
-    if dfs(i+1):return True
-    ans.pop();used.remove(hi)
-  return False
- if not dfs(0):AC[key]=-1;return -1
- bits=0
- for hi,f in ans:
-  f4=H[line[hi]]['f'][3]
-  if f4 and f4 not in {'-','対象外'} and f==f4:bits|=1<<hi
- AC[key]=bits;return bits
 def f4count(p,form,bids):
- slots=set()
- for ln in LINES[form]:
-  line=tuple(p[i] for i in ln)
-  for bid in bids:
-   bits=assign_f4(line,bid)
-   if bits<0:continue
-   for hi in range(3):
-    if bits&(1<<hi):slots.add(ln[hi])
- return len(slots)
+ return minimal_factor4_count(p,form,bids,LINES,H,B,AC)
 def calc(p,bids,form):
  base=[sum(H[h]['s'][i] for h in p) for i in range(11)];raw=[0]*11
  for bid in bids:

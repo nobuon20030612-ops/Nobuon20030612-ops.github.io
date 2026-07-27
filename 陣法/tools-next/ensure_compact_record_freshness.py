@@ -22,6 +22,7 @@ MODEL_INPUTS = [
     DATA / '91因縁_計算式_倍率展開.csv',
     DATA / 'formation_bonus.csv',
     ROOT / 'tools-next' / 'rebuild_all_compact.py',
+    ROOT / 'tools-next' / 'factor4_optimizer.py',
 ]
 
 

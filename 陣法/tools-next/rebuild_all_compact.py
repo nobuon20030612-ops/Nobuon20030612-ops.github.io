@@ -13,6 +13,8 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+from factor4_optimizer import minimal_factor4_count
+
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT
 DATA = SITE / 'data' / 'compact_search_v2'
@@ -245,49 +247,9 @@ class Generator:
     def bond_ids(self,mask):
         return tuple(i+1 for i in range(len(self.bonds)) if (mask >> i) & 1)
 
-    def assign_factor4_bits(self,line,bid):
-        key = (tuple(line),bid)
-        if key in self.assign_cache:
-            return self.assign_cache[key]
-        req = self.bonds[bid]
-        used = set()
-        assigned = []
-        def dfs(i):
-            if i == 3:
-                return True
-            factor = req[i]
-            for hi,hid in enumerate(line):
-                if hi in used:
-                    continue
-                if factor in self.heroes[hid]['f']:
-                    used.add(hi); assigned.append((hi,factor))
-                    if dfs(i+1):
-                        return True
-                    assigned.pop(); used.remove(hi)
-            return False
-        if not dfs(0):
-            self.assign_cache[key] = -1
-            return -1
-        bits = 0
-        for hi,factor in assigned:
-            f4 = self.heroes[line[hi]]['f'][3]
-            if f4 and f4 not in {'-','対象外'} and factor == f4:
-                bits |= 1 << hi
-        self.assign_cache[key] = bits
-        return bits
-
     def factor4_count(self,p,form,bond_ids):
-        slots = set()
-        for ln in LINES[form]:
-            line = tuple(p[i] for i in ln)
-            for bid in bond_ids:
-                bits = self.assign_factor4_bits(line,bid)
-                if bits < 0:
-                    continue
-                for hi in range(3):
-                    if bits & (1 << hi):
-                        slots.add(ln[hi])
-        return len(slots)
+        # 各因縁の全ライン・全割当を考慮し、編成全体で因子4を使う英傑人数を最小化する。
+        return minimal_factor4_count(p, form, bond_ids, LINES, self.heroes, self.bonds, self.assign_cache)
 
     def calc_stats(self,p,bond_ids,form):
         base = [sum(self.heroes[h]['s'][i] for h in p) for i in range(11)]

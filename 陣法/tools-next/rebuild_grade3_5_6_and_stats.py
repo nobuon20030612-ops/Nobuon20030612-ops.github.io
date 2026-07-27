@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv, gzip, hashlib, itertools, json, math, struct
 from collections import defaultdict
 from pathlib import Path
+from factor4_optimizer import minimal_factor4_count
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -153,31 +154,9 @@ def generate_disjoint(target):
                     if old is None or p<old:out[key]=p
     return out
 
-def assignment(line_ids,bid):
-    req=bonds[bid];used=set();ans=[]
-    def dfs(i):
-        if i==3:return True
-        factor=req[i]
-        for hi,hid in enumerate(line_ids):
-            if hi in used:continue
-            if factor in heroes[hid]['factors']:
-                used.add(hi);ans.append((hi,factor))
-                if dfs(i+1):return True
-                ans.pop();used.remove(hi)
-        return False
-    return tuple(ans) if dfs(0) else None
-
+_F4_ASSIGN_CACHE={}
 def factor4_count(placement,form,bond_ids):
-    used_slots=set()
-    for ln in LINES[form]:
-        lids=[placement[i] for i in ln]
-        for bid in bond_ids:
-            a=assignment(lids,bid)
-            if a is None:continue
-            for hi,factor in a:
-                hid=lids[hi];f4=heroes[hid]['factors'][3]
-                if f4 and f4 not in {'-','対象外'} and factor==f4:used_slots.add(ln[hi])
-    return len(used_slots)
+    return minimal_factor4_count(placement,form,bond_ids,LINES,heroes,bonds,_F4_ASSIGN_CACHE)
 
 def calc_stats(placement,bond_ids,form):
     base=[sum(heroes[h]['stats'][si] for h in placement) for si in range(len(STATS))]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv,gzip,heapq,itertools,json,struct,sys,time
 from collections import defaultdict
 from pathlib import Path
+from factor4_optimizer import minimal_factor4_count
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -79,30 +80,12 @@ def main():
                     key=tuple(sorted((a,b,c)))
                     if key not in seen:triple_bonds[key].append(bid);seen.add(key)
 
-    # Deterministic assignment must match the JS engine: required factor order, then line hero order.
+    # 発動因縁集合はライン単位で確認し、文曲人数は全ライン・全割当を横断して最小化する。
     line_cache={}
+    f4_assign_cache={}
     def line_info(line):
         if line in line_cache:return line_cache[line]
-        active=triple_bonds.get(tuple(sorted(line)),())
-        result={}
-        for bid in active:
-            req=bonds[bid];used=[False,False,False];assigned=[]
-            def dfs(i):
-                if i==3:return True
-                factor=req[i]
-                for hi,hid in enumerate(line):
-                    if used[hi]:continue
-                    if factor in heroes[hid]:
-                        used[hi]=True;assigned.append((hi,factor))
-                        if dfs(i+1):return True
-                        assigned.pop();used[hi]=False
-                return False
-            if not dfs(0):raise RuntimeError('因縁割当内部不整合')
-            bits=0
-            for hi,factor in assigned:
-                f4=heroes[line[hi]][3]
-                if f4 and f4 not in ('-','対象外') and factor==f4:bits|=1<<hi
-            result[bid]=bits
+        result={bid:True for bid in triple_bonds.get(tuple(sorted(line)),())}
         line_cache[line]=result;return result
 
     accessible_rows=0;bond_errors=0;f4_errors=0;datasets={}
@@ -125,20 +108,19 @@ def main():
         raw,rows=read_raw(info);be=fe=0
         for i in range(rows):
             off=16+i*REC;ids=struct.unpack_from('<6H',raw,off)
-            stored=set(raw[off+12:off+12+count]);actual=set();f4slots=set()
+            stored=set(raw[off+12:off+12+count]);actual=set()
             for line_idx in LINES[formation]:
                 line=tuple(ids[j] for j in line_idx);linfo=line_info(line);actual.update(linfo.keys())
-                for bid in stored:
-                    bits=linfo.get(bid)
-                    if bits is None:continue
-                    for hi in range(3):
-                        if bits&(1<<hi):f4slots.add(line_idx[hi])
             if actual!=stored:
                 be+=1
                 if be<=3:print(f'ERROR bondset {mode}/{count}/{formation} row={i}',file=sys.stderr)
-            if len(f4slots)!=raw[off+47]:
+                # 古いDB/マスタ不一致時は無効なstored bondを文曲最小化へ渡さず、
+                # まず因縁集合不一致として安全に監査を継続する。
+                continue
+            expected_f4=minimal_factor4_count(ids,formation,tuple(sorted(stored)),LINES,heroes,bonds,f4_assign_cache)
+            if expected_f4!=raw[off+47]:
                 fe+=1
-                if fe<=3:print(f'ERROR factor4 {mode}/{count}/{formation} row={i}',file=sys.stderr)
+                if fe<=3:print(f'ERROR factor4 {mode}/{count}/{formation} row={i} stored={raw[off+47]} expected={expected_f4}',file=sys.stderr)
         if be or fe:raise RuntimeError(f'因縁/文曲不一致 {mode}/{count}/{formation}: bond={be} factor4={fe}')
         accessible_rows+=rows;bond_errors+=be;f4_errors+=fe
         datasets[f'{mode}/{count}/{formation}']={'rows':rows,'bondset_errors':be,'factor4_errors':fe}
