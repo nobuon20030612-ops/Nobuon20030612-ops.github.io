@@ -1,4 +1,4 @@
-/* 陣法サイト機能を人の言葉へ対応付けるBot機能カタログ v2.1 */
+/* 陣法サイト機能を人の言葉へ対応付けるBot機能カタログ v2.2 */
 (function(){
   'use strict';
   if(window.JINPO_BOT_CAPABILITIES)return;
@@ -122,7 +122,7 @@
     clear_search_filters:1,clear_owned_filters:1,clear_excluded_filters:1,read_filters:1
   };
   var ARG_QUESTION={
-    apply_search:'指定検索ですね。陣形・因縁数・重視するステータスなど、分かる条件だけ教えてください。',
+    apply_search:'検索ですね。まず何を重視して探したいですか？ 腕力・耐久・知力など、分かることだけで大丈夫です。陣形は指定したい時だけ教えてください。',
     set_formation:'どの陣形にしますか？ 鶴翼・方円・魚鱗・衡軛から選べるのですよ。',
     set_bond_count:'何因縁にしますか？ 5〜9因縁から指定できます。',
     set_grade3:'等級3以下をONにしますか、OFFにしますか？',
@@ -132,7 +132,7 @@
     set_sum_sort:'第1・第2の合計ソートを使いますか？ ON/OFFを教えてください。',
     set_search_basis:'検索基準は「基礎値」と「全MAX込み」のどちらにしますか？',
     run_recommended:'おすすめですね。何を重視しますか？ ステータスを1つ選んでください。',
-    run_specified_simple:'指定して探すのですね。まず陣形を教えてください。',
+    run_specified_simple:'「指定して探す」を選んだのですね。この検索だけは陣形指定から始めます。鶴翼・方円・魚鱗・衡軛のどれにしますか？',
     run_best:'一番高いものを探すのですね。どのステータスを一番高くしたいですか？',
     update_recommended:'おすすめ条件のどこを変えたいですか？ ステータスや条件をそのまま話してください。',
     get_results:'何件くらい見たいですか？ 「上位5件」のように指定できます。',
@@ -167,5 +167,5 @@
   };
   function exactMatch(text){var q=compact(text),hit=null;if(!q)return null;CATALOG.some(function(x){var all=[x.label].concat(x.examples||[]);for(var i=0;i<all.length;i++){if(compact(all[i])===q){hit=x;return true;}}return false;});return hit;}
   function resolve(text,opts){opts=opts||{};var exact=exactMatch(text),s=exact?{ambiguous:false,action:exact.action,label:exact.label,category:exact.category,confidence:1}:suggest(text);if(!s)return null;if(opts.exactOnly&&!exact)return null;if(s.ambiguous)return {kind:'clarify',question:'「'+s.candidates.map(function(x){return x.label;}).join('」「')+'」のどれに近いですか？',candidates:s.candidates,confidence:0.6};var action=s.action,label=s.label||action,confidence=Number(s.confidence)||0;if(!exact&&confidence<0.72)return null;if(SAFE_NOARG[action])return {kind:'execute',action:action,args:{},label:label,confidence:confidence,exact:!!exact};return {kind:'clarify',action:action,label:label,confidence:confidence,exact:!!exact,question:ARG_QUESTION[action]||('「'+label+'」ですね。対象や条件をもう少しだけ教えてください。かなりラフな言い方で大丈夫なのですよ。')};}
-  window.JINPO_BOT_CAPABILITIES={version:'2.1.0',catalog:CATALOG,coverage:coverage,byCategory:byCategory,suggest:suggest,friendlyQuestion:friendlyQuestion,resolve:resolve,exactMatch:exactMatch,count:CATALOG.length};
+  window.JINPO_BOT_CAPABILITIES={version:'2.2.0',catalog:CATALOG,coverage:coverage,byCategory:byCategory,suggest:suggest,friendlyQuestion:friendlyQuestion,resolve:resolve,exactMatch:exactMatch,count:CATALOG.length};
 })();

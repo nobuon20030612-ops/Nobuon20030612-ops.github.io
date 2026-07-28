@@ -178,9 +178,44 @@
     if(/優先.*(?:全部|全て|すべて).*(?:解除|クリア)/.test(t)){patch.priority1={clear:true};patch.priority2={clear:true};hasPatch=true;}
     if(/合計ソート|2項目合計/.test(t)&&!/とは|意味/.test(t)){patch.sumSort=!/(OFF|オフ|解除|使わない)/i.test(t);if(/第2.*優先|第二.*優先/.test(t)&&/同点/.test(t))patch.sumTie='second';else if(/第1.*優先|第一.*優先/.test(t)&&/同点/.test(t))patch.sumTie='first';hasPatch=true;}
     var hasRunBest=plan.actions.some(function(a){return a.name==='run_best';});
-    if(!hasRunBest&&!plan.recommendStat&&(hasPatch||/検索して|検索お願い|探して/.test(t))){plan.searchPatch=patch;plan.recognized=true;}
+    var genericSearch=/(?:検索して|検索お願い|探して|探したい|検索したい)/.test(t);
+
+    // 「腕力高いの探して」のような陣形未指定の単純な1項目検索は、
+    // 指定検索へ送らず、おすすめ検索＝全陣形比較へ回す。
+    if(!hasRunBest&&!plan.recommendStat&&genericSearch&&!form&&!cm){
+      var simpleStats=findStats(t);
+      var patchKeys=Object.keys(patch);
+      var simplePriorityOnly=
+        simpleStats.length===1 &&
+        patch.priority1 &&
+        patch.priority1.stat===simpleStats[0] &&
+        patch.priority1.min==null &&
+        patch.priority1.max==null &&
+        patchKeys.every(function(k){return k==='priority1';});
+
+      if(simplePriorityOnly){
+        plan.recommendStat=simpleStats[0];
+        plan.searchPatch=null;
+        plan.recognized=true;
+        return plan;
+      }
+    }
+
+    // 条件が1つも無い「検索して」だけでは実行しない。
+    // 旧来は空patchをapply_searchへ渡して、陣形未選択エラーになっていた。
+    if(!hasRunBest&&!plan.recommendStat&&genericSearch&&!hasPatch){
+      plan.recognized=false;
+      plan.searchPatch=null;
+      plan.needsSearchPreference=true;
+      return plan;
+    }
+
+    if(!hasRunBest&&!plan.recommendStat&&hasPatch){
+      plan.searchPatch=patch;
+      plan.recognized=true;
+    }
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.1.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.2.0',parse:parse,normalize:normalize};
 })();

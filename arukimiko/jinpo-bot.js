@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.6';
+  var VERSION='3.0.8';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -29,7 +29,7 @@
   function formatSaved(list){
     if(!list||!list.length)return'保存編成はありません。';return list.map(function(x){return x.rank+'番「'+x.name+'」 '+x.formation+'｜'+(x.members||[]).join(' / ');}).join('\n');
   }
-  function smalltalk(kind){if(kind==='greeting')return'こんにちは。歩き巫女なのですよ。おすすめ探しから細かな陣法相談までお手伝いできます。';if(kind==='thanks')return'どういたしましてなのですよ。続けてそのまま話しかけてくださいね。';if(kind==='weather')return'そうですね。無理せず快適に過ごしてくださいね。陣法の相談もそのまま続けられるのですよ。';if(kind==='identity')return'歩き巫女なのですよ。陣法探しや編成、差替、強化まわりを気軽な言葉からお手伝いする役なのです。';return'';}
+  function smalltalk(kind){if(kind==='greeting')return'こんにちは。歩き巫女なのですよ。今日は何を話しましょう？';if(kind==='thanks')return'どういたしましてなのですよ。続けてそのまま話しかけてくださいね。';if(kind==='weather')return'そうですね。無理せず快適に過ごしてくださいね。';if(kind==='identity')return'歩き巫女なのですよ。雑談や調べものから、必要な時には陣法のお手伝いもするのです。';return'';}
 
   function isRestorableAction(name){return ['apply_result','apply_swap','clear_placement','set_owned_hero','set_owned_hero_auto','clear_owned_hero','clear_owned_heroes','set_excluded_hero','clear_excluded_heroes','load_saved','import_json'].indexOf(name)>=0;}
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
@@ -39,11 +39,67 @@
     var message=String(payloadObj.message||'');
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
+    try{
+      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.filterRawHistory==='function'){
+        history=window.JINPO_BOT_AI_BRAIN.filterRawHistory(history);
+      }
+    }catch(historyEpochErr){}
+
     var pageContext={mode:window.JINPO_BOT_PAGE_MODE||'',path:'',title:''};
     try{
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
 
+
+    function resetTransientConversationState(){
+      try{
+        if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
+          window.JINPO_BOT_DIALOG.clearPending();
+        }
+      }catch(e){}
+      try{
+        if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.pause==='function'){
+          window.JINPO_BOT_KASHIN_NAME.pause();
+        }
+      }catch(e){}
+    }
+
+    // 「話題リセット」は画面の過去ログを消さず、AIが参照する会話文脈だけをここから新しくする。
+    if(/^(?:話題|文脈|今の話)(?:を)?(?:リセット|クリア)(?:して)?[。！!？?]*$|^(?:新しい話(?:にしよう|をしよう)?|ここから別の話(?:にしよう)?|最初から話そう)[。！!？?]*$/.test(originalMessage.trim())){
+      resetTransientConversationState();
+      var epoch=0;
+      try{
+        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
+          epoch=window.JINPO_BOT_AI_BRAIN.resetConversationContext();
+        }
+      }catch(e){}
+      return {
+        answer:'ここまでの途中状態を切って、ここから新しい話として受け取るのですよ。画面に見えている過去ログは消していません。',
+        sources:[],links:[],mode:'会話制御',
+        data:{topicReset:true,contextEpoch:epoch}
+      };
+    }
+
+    // AIへ渡す前にも古い質問待ちを整理する。
+    // AIが正常でも、後で予備モードへ落ちた瞬間に昔の天気/名付けが復活するのを防ぐ。
+    try{
+      var currentDomain=window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.domainFromText==='function'
+        ?window.JINPO_BOT_CONVERSATION.domainFromText(originalMessage):'';
+
+      if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.state==='function'){
+        var ks=window.JINPO_BOT_KASHIN_NAME.state();
+        if(ks&&ks.active&&currentDomain&&currentDomain!=='kashin_name'){
+          window.JINPO_BOT_KASHIN_NAME.pause();
+        }
+      }
+
+      if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.state==='function'){
+        var ds=window.JINPO_BOT_DIALOG.state();
+        if(ds&&ds.pending&&currentDomain&&currentDomain!=='weather'){
+          window.JINPO_BOT_DIALOG.clearPending();
+        }
+      }
+    }catch(transientSanitizeErr){}
 
     // 本番でFirebase AI Logic / App Checkの状態を簡単に確認する専用コマンド。
     if(/^(?:AI|ai|ＡＩ)\s*(?:接続)?(?:確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
@@ -359,6 +415,17 @@
       }catch(capErr2){}
     }
     if(plan.helpKey)return R(help().get(plan.helpKey));
+
+    // 「検索して」だけで陣形選択へ追い込まない。
+    // まず目的を聞き、おすすめ検索なら全陣形から探せることを案内する。
+    if(plan.needsSearchPreference){
+      return R(
+        'もちろん探せるのですよ。まず何を重視したいですか？\n' +
+        '「腕力高いの」「耐久と魅力が高いの」みたいに言ってくれれば、陣形を決めなくても全陣形から探します。\n' +
+        '陣形を固定したい時だけ「鶴翼で」のように指定してください。',
+        {needsSearchPreference:true}
+      );
+    }
     // 標準の挨拶も誤字の挨拶も、拡張Smalltalkへ集約する。
     // これにより同じ固定文だけでなく、複数レパートリーと自動Web判定を利用できる。
     if(!plan.recognized&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){

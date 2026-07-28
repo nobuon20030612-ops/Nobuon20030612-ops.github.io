@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.4.0
+ * 歩き巫女 AI会話脳 v1.6.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,9 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.4.0';
+  var VERSION='1.6.0';
+  var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
+
   var ctx={
     app:null,
     api:null,
@@ -147,6 +149,112 @@
     return ctx.initializing;
   }
 
+  function contextEpoch(){
+    try{
+      var n=Number(localStorage.getItem(CONTEXT_EPOCH_KEY)||0);
+      return isFinite(n)&&n>0?n:0;
+    }catch(e){return 0;}
+  }
+
+  function resetConversationContext(){
+    var t=Date.now();
+    try{localStorage.setItem(CONTEXT_EPOCH_KEY,String(t));}catch(e){}
+    return t;
+  }
+
+  function clearConversationContext(){
+    try{localStorage.removeItem(CONTEXT_EPOCH_KEY);}catch(e){}
+    return true;
+  }
+
+  function filterRawHistory(history){
+    var h=Array.isArray(history)?history.slice():[];
+    var epoch=contextEpoch();
+    if(!epoch)return h;
+    return h.filter(function(x){
+      if(!x)return false;
+      var at=Number(x.at||0);
+      // Legacy entries without timestamp are considered old after an explicit reset.
+      return at>=epoch;
+    });
+  }
+
+  function recentUserContext(history,currentMessage){
+    var h=filterRawHistory(history);
+    var limit=Math.max(3,Number(cfg().recentUserContextMessages)||8);
+    var current=S(currentMessage);
+    var out=[];
+
+    for(var i=h.length-1;i>=0&&out.length<limit;i--){
+      var x=h[i];
+      if(!x||x.role!=='user')continue;
+      var text=S(x.text);
+      if(!text)continue;
+
+      // UI already adds the current user bubble before transport.
+      if(!out.length&&text===current)continue;
+
+      out.push(text.slice(0,1000));
+    }
+
+    return out.reverse();
+  }
+
+  function shortFollowup(text){
+    var t=S(text);
+    return t.length>0&&t.length<=22;
+  }
+
+  function joinedRecentUsers(history,currentMessage){
+    return recentUserContext(history,currentMessage).join(' / ');
+  }
+
+  function requiresVerifiedTool(message,opt){
+    if(cfg().enforceVerifiedTools===false)return null;
+
+    var t=S(message),history=(opt&&opt.history)||[];
+    var recent=joinedRecentUsers(history,message);
+    var all=(recent+' / '+t);
+
+    // Page navigation only when explicitly requested.
+    if(/(?:ページ|サイト|リンク).*(?:開|見|行|案内|どこ)|(?:開いて|ひらいて|見せて|移動して|案内して|リンク教えて)/.test(t)){
+      return {reason:'navigation',allowed:['open_site_page']};
+    }
+
+    // Jinpo real operations must be executed, not merely described.
+    if(/(?:陣法|陣形|因縁|英傑|全MAX|差替|配置|除外|検索).*(?:して|やって|探して|適用|解除|設定|変更|選んで)|(?:全MAX|差替|配置|除外).*(?:して|お願い)/.test(t)){
+      return {reason:'jinpo-action',allowed:['jinpo_local_command']};
+    }
+
+    // Tairano numeric canonical knowledge.
+    if(/カウンター|カウンタ|かうんた|かうん|天下統一奇譚|修羅の間|天下武技大会/.test(all)){
+      if(/カウンター|カウンタ|かうんた|かうん|数値|何番|いくつ/.test(t) || shortFollowup(t)){
+        return {reason:'tairano-number',allowed:['lookup_tairano_knowledge']};
+      }
+    }
+
+    // Structured game CSV canonical values.
+    if(/九十九|つくも|鬼神石|きしん|魔導結晶|魔導|まどう/.test(all)){
+      if(/何番|番は|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|一番|トップ|最大|高い|いくつ/.test(t) || shortFollowup(t)){
+        return {reason:'game-tool-data',allowed:['lookup_game_tool_data']};
+      }
+    }
+
+    // Current Carp info. Follow-ups like "順位は？" inherit from recent user topic.
+    if(/カープ|かーぷ|広島東洋|広島カープ/.test(all)){
+      if(/順位|何位|試合|日程|予定|結果|成績|選手|先発|スタメン|打率|本塁打|防御率|登録|抹消|今日|明日|今季|今年|現在/.test(t) || shortFollowup(t)){
+        return {reason:'carp-current',allowed:['lookup_carp_current']};
+      }
+    }
+
+    // Fresh/current information must use retrieval.
+    if(/天気|気温|予報|降水|雨|雪|湿度|風速|今日|明日|現在|最新|ニュース|速報|今の/.test(t)){
+      return {reason:'realtime',allowed:['lookup_web_or_weather']};
+    }
+
+    return null;
+  }
+
   function trustedAssistantMessage(x){
     if(!x||x.role!=='assistant')return false;
     if(cfg().trustLocalAssistantHistory)return true;
@@ -155,7 +263,7 @@
   }
 
   function trimHistory(history,currentMessage){
-    var h=Array.isArray(history)?history.slice():[];
+    var h=filterRawHistory(history);
     var max=Math.max(4,Number(cfg().maxHistoryMessages)||18);
 
     // UIは送信前に現在のuser bubbleをhistoryへ追加するため、最後の同一文は除外。
@@ -213,7 +321,13 @@
   }
 
   function systemInstruction(opt){
+    opt=opt||{};
     var p=pageInfo(opt);
+    var recentUsers=recentUserContext(opt.history||[],opt.currentMessage||'');
+    var recentBlock=recentUsers.length
+      ?recentUsers.map(function(x,i){return (i+1)+'. '+x;}).join('\n')
+      :'（この話題リセット以降の過去発言なし）';
+
     return [
       'あなたは「たいらの野望」サイト常駐AIの歩き巫女です。',
       'ユーザーとは自然な日本語で会話してください。機械的なメニュー会話を避け、前後の文脈・省略・ひらがな・軽い誤字を意味から理解します。',
@@ -230,8 +344,16 @@
       '8. TOPや通常ページでは陣法の「おすすめ/指定して探す」メニューを会話で押し付けません。陣法操作が必要なら必要に応じてページ案内します。',
       '9. 「話を戻そう」「前の話に戻って」は、直前より前にユーザーが明示していた話題へ戻る指示です。天気の地名や家臣名付けの回答として解釈してはいけません。',
       '10. 途中の質問フローが残っていても、ユーザーが明確に別の話題を出したら古いフローを優先しません。',
+      '11. 下記の「直近のユーザー発言」はユーザー本人が実際に送った内容です。短い追質問や「話を戻そう」の解釈では、古い定型フローよりこちらを優先してください。',
+      '12. 正本・現在情報・実操作に該当する時は、知識だけで答えず必ず指定されたFunction Callingを実行します。',
+      '13. 陣形をユーザーへ質問するのは、「指定して探す」「陣形を指定したい」「鶴翼で」など、ユーザー自身が陣形指定を望んだ場合だけです。',
+      '14. 「腕力高いの」「耐久と魅力が高いの」「おすすめ」「強いの探して」のような依頼では、陣形を質問せず全陣形から検索できる方法を優先します。',
+      '15. 単に「検索したい」と言われただけなら、陣形ではなく「何を重視したいか」を自然に確認します。陣形指定は任意です。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
+      '',
+      '直近のユーザー発言（古い→新しい）:',
+      recentBlock,
       '',
       '返答方針:',
       '- 最初にユーザーが知りたい答えを言う。',
@@ -571,14 +693,26 @@
     try{
       var aiM=c.api;
       var tools=buildTools(aiM,opt,meta);
+      var toolRequirement=requiresVerifiedTool(message,opt);
+
+      var modelParams={
+        model:S(cfg().model)||'gemini-3.6-flash',
+        systemInstruction:systemInstruction(Object.assign({},opt,{currentMessage:message})),
+        tools:tools
+      };
+
+      if(toolRequirement&&toolRequirement.allowed&&toolRequirement.allowed.length){
+        modelParams.toolConfig={
+          functionCallingConfig:{
+            mode:aiM.FunctionCallingMode.ANY,
+            allowedFunctionNames:toolRequirement.allowed
+          }
+        };
+      }
 
       var model=aiM.getGenerativeModel(
         c.ai,
-        {
-          model:S(cfg().model)||'gemini-3.6-flash',
-          systemInstruction:systemInstruction(opt),
-          tools:tools
-        },
+        modelParams,
         {
           timeout:Number(cfg().timeoutMs)||18000,
           maxSequentialFunctionCalls:Number(cfg().maxSequentialFunctionCalls)||6
@@ -621,7 +755,9 @@
         data:{
           aiBrain:true,
           model:S(cfg().model)||'gemini-3.6-flash',
-          toolModes:meta.modes.slice(0,8)
+          toolModes:meta.modes.slice(0,8),
+          verifiedToolRequired:toolRequirement?toolRequirement.reason:'',
+          contextEpoch:contextEpoch()
         }
       };
     }catch(e){
@@ -647,6 +783,7 @@
       preflightAt:ctx.preflightAt,
       preflightOk:ctx.preflightOk,
       toolPreflightOk:ctx.toolPreflightOk,
+      contextEpoch:contextEpoch(),
       lastOkAt:ctx.lastOkAt,
       lastError:ctx.lastError,
       lastErrorAt:ctx.lastErrorAt
@@ -667,7 +804,13 @@
     reset:reset,
     configured:configured,
     appCheckReady:appCheckReady,
+    contextEpoch:contextEpoch,
+    resetConversationContext:resetConversationContext,
+    clearConversationContext:clearConversationContext,
+    filterRawHistory:filterRawHistory,
     _trimHistory:trimHistory,
+    _recentUserContext:recentUserContext,
+    _requiresVerifiedTool:requiresVerifiedTool,
     _systemInstruction:systemInstruction
   };
 })();

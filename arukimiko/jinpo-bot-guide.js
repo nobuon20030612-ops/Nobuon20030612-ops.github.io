@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 陣法Bot クリック案内 UI v2.1.0
+ * たいらの野望 / 陣法Bot クリック案内 UI v2.4.0
  * 既存チャットを変更せず、会話欄の下に「かんたん操作」パネルを後付けする。
  * 手入力は常時そのまま利用できる。
  */
@@ -7,7 +7,7 @@
   'use strict';
   if(window.JINPO_BOT_GUIDE) return;
 
-  var VERSION='2.3.1';
+  var VERSION='2.4.0';
   var panel=null, body=null, title=null, summary=null, observer=null;
   var flow={mode:'main',step:'',draft:{}};
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -31,7 +31,7 @@
     var exact={
       '何をしますか？ 文字入力でもそのまま操作できます。':'気軽に選んでくださいね。細かい指定は手入力でもできるのですよ。',
       '何因縁で探しますか？':'何因縁で探してみますか？',
-      '陣形はどれにしますか？':'陣形はどれにしますか？ 選んでほしいのですよ。',
+      '陣形はどれにしますか？':'条件指定検索なので、ここでは陣形を選びます。',
       '第1優先はどれにしますか？':'第1優先はどれにしますか？',
       '第2優先も指定しますか？':'第2優先も指定しますか？ なしでも大丈夫なのですよ。',
       'この条件で検索しますか？':'この条件で検索してみますか？',
@@ -148,7 +148,7 @@
     if(!body)return;clear();flow={mode:'main',step:'',draft:{}};
     row([
       {label:'おすすめ',kind:'primary',onClick:renderRecommendQuick},
-      {label:'指定して探す',kind:'primary',onClick:startSearch}
+      {label:'条件指定検索',kind:'primary',onClick:startSearch}
     ]);
   }
 
@@ -157,7 +157,7 @@
     renderSearchFormationFirst();
   }
   function renderSearchFormationFirst(){
-    clear();flow.mode='specified';flow.step='formation';line('陣形を選んでくださいね。');
+    clear();flow.mode='specified';flow.step='formation';line('条件指定検索なので、まず陣形を選びます。');
     var items=FORMS.map(function(f){return {label:f,onClick:function(){flow.draft.formation=f;renderSearchPrioritySimple();}};});
     items.push(backItem(renderMain));row(items);
   }
@@ -308,7 +308,7 @@
     clear();flow.mode='refine-simple';line('どちらで探し直しますか？');
     row([
       {label:'おすすめ',kind:'primary',onClick:renderRecommendQuick},
-      {label:'指定して探す',kind:'primary',onClick:startSearch},
+      {label:'条件指定検索',kind:'primary',onClick:startSearch},
       backItem(renderResultsMenu)
     ]);
   }
@@ -387,7 +387,7 @@
     var win=document.getElementById('jinpoAiWindow'),composer=win&&win.querySelector('.jinpoAiComposer');if(!win||!composer)return false;
     panel=document.createElement('section');panel.id='jinpoBotGuide';panel.setAttribute('aria-label','歩き巫女 かんたん操作');
     var head=document.createElement('div');head.className='jinpoBotGuideHead';
-    title=document.createElement('strong');title.textContent='どちらで探しますか？';
+    title=document.createElement('strong');title.textContent='陣法検索メニュー';
     head.appendChild(title);
     summary=document.createElement('div');summary.className='jinpoBotGuideSummary';summary.hidden=true;
     body=document.createElement('div');body.className='jinpoBotGuideBody';
