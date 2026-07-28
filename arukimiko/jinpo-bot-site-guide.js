@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 サイト総合案内 v1.6.0
+ * 歩き巫女 サイト総合案内 v1.7.0
  * たいらの野望の現行トップページ構成を基準に、ページ案内と内部リンクを返す。
  * 数値・ゲーム仕様は推測せず、ここでは「どのページへ行けばよいか」を担当する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='1.6.0';
+  var VERSION='1.7.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function rootUrl(){try{return new URL('/',location.href).href;}catch(e){return'/';}}
@@ -14,11 +14,11 @@
   function link(label,path,external){return {label:label,url:external?path:abs(path)};}
 
   var ITEMS=[
-    {id:'jinpo',name:'陣法検索',path:'陣法/jinpo.html',aliases:['陣法','陣法検索','因縁検索','英傑組み合わせ','組み合わせ検索','じんぽう','じんぽ','じんぽうけんさく'],desc:'6人の英傑編成を、陣形・因縁数・ステータス条件などから探すページです。'},
-    {id:'heroes',name:'英傑一覧',path:'英傑一覧.html',aliases:['英傑一覧','英傑リスト','英傑を見る','英傑確認','えいけつ','えいけついちらん'],desc:'英傑を一覧で確認したい時はこちらです。'},
+    {id:'jinpo',name:'陣法検索',path:'陣法/jinpo.html',aliases:['陣法','陣法検索','因縁検索','英傑組み合わせ','組み合わせ検索','6人編成','六人編成','編成検索','じんぽう','じんぽ','じんぽうけんさく'],desc:'6人の英傑編成を、陣形・因縁数・ステータス条件などから探すページです。'},
+    {id:'heroes',name:'英傑一覧',path:'英傑一覧.html',aliases:['英傑一覧','英傑リスト','英傑を見る','英傑確認','英傑の能力','英傑ステータス','英傑の因子','えいけつ','えいけついちらん'],desc:'英傑を一覧で確認したい時はこちらです。'},
     {id:'party',name:'徒党登録',path:'shuugou.html',aliases:['徒党登録','徒党','集合','徒党募集'],desc:'徒党登録・集合に使うページです。'},
-    {id:'stats',name:'能力計算',path:'能力計算機.html',aliases:['能力計算','能力計算機','ステータス計算','能力値計算','のうりょく','のうりょくけいさん'],desc:'能力値を計算・確認したい時に使うページです。'},
-    {id:'retainer',name:'家臣計算機',path:'家臣計算機.html',aliases:['家臣計算','家臣計算機','家臣の計算','かしん','かしんけいさん'],desc:'家臣の能力計算に使うページです。'},
+    {id:'stats',name:'能力計算',path:'能力計算機.html',aliases:['能力計算','能力計算機','ステータス計算','能力値計算','ステ計算','能力を計算','のうりょく','のうりょくけいさん'],desc:'能力値を計算・確認したい時に使うページです。'},
+    {id:'retainer',name:'家臣計算機',path:'家臣計算機.html',aliases:['家臣計算','家臣計算機','家臣の能力計算','家臣ステータス','かしんけいさん'],desc:'家臣の能力計算に使うページです。'},
     {id:'shichisei',name:'七星転生',path:'shichiseitensei.html',aliases:['七星転生','七星','転生計算','しちせい','しちせいてんせい'],desc:'七星転生に関する計算・確認用ページです。'},
     {id:'food',name:'食料',path:'shokuryou.html',aliases:['食料','食料計算','食料計算機','しょくりょう'],desc:'食料に関する計算・確認用ページです。'},
     {id:'seikai',name:'星海の荒石',path:'seikai.html',aliases:['星海の荒石','荒石','星海','せいかい','あらいし'],desc:'星海の荒石に関するページです。'},
@@ -59,7 +59,42 @@
   function findItem(text){
     var best=null,bs=0;ITEMS.forEach(function(item){var s=itemScore(text,item);if(s>bs){best=item;bs=s;}});return best;
   }
-  function hasNavigationCue(t){return /どこ|ページ|開い|見たい|行きたい|案内|リンク|場所|使いたい|使う|計算したい|調べたい|確認したい|やりたい|戻りたい|移動/.test(S(t));}
+  function purposeItem(text){
+    var t=S(text);
+
+    if(/家臣.*(?:名前|名付け|命名)/.test(t))return null;
+
+    if(/(?:6人|六人|編成|組み合わせ|因縁).*(?:探|検索|組)|(?:腕力|耐久|器用|知力|魅力|生命|気合).*(?:高い|高め|探|検索)/.test(t))
+      return ITEMS.filter(function(x){return x.id==='jinpo';})[0];
+
+    if(/英傑.*(?:一覧|能力|ステータス|因子|見る|確認)/.test(t))
+      return ITEMS.filter(function(x){return x.id==='heroes';})[0];
+
+    if(/家臣.*(?:能力|ステータス|計算)/.test(t))
+      return ITEMS.filter(function(x){return x.id==='retainer';})[0];
+
+    if(/(?:能力|ステータス|ステ).*(?:計算|シミュ)/.test(t)&&!/家臣/.test(t))
+      return ITEMS.filter(function(x){return x.id==='stats';})[0];
+
+    if(/九十九|つくも/.test(t))
+      return ITEMS.filter(function(x){return x.id==='tsukumo';})[0];
+    if(/鬼神石|きしんせき/.test(t))
+      return ITEMS.filter(function(x){return x.id==='kishin';})[0];
+    if(/魔導結晶|まどうけっしょう|魔導/.test(t))
+      return ITEMS.filter(function(x){return x.id==='mado';})[0];
+    if(/七星転生|七星/.test(t))
+      return ITEMS.filter(function(x){return x.id==='shichisei';})[0];
+    if(/星海の荒石|荒石/.test(t))
+      return ITEMS.filter(function(x){return x.id==='seikai';})[0];
+    if(/御蔵番|蔵拡張/.test(t))
+      return ITEMS.filter(function(x){return x.id==='okuraban';})[0];
+    if(/鎮魂符/.test(t))
+      return ITEMS.filter(function(x){return x.id==='chinkon';})[0];
+
+    return null;
+  }
+
+  function hasNavigationCue(t){return /どこ|ページ|開い|見たい|行きたい|案内|リンク|場所|使いたい|使う|計算したい|調べたい|確認したい|やりたい|戻りたい|探したい|探す|移動/.test(S(t));}
   function hasFactCue(t){
     t=S(t);
     return /カウンター|かうんた|かうん|counter|何番|なんばん|いくつ|数値|何位|順位|成績|勝敗|勝率|効果|倍率|上限|下限|必要数|何個|なんこ|何人|誰|だれ|いつ|どれ|どの|いくら|どのくらい|どれくらい/.test(t);
@@ -86,7 +121,7 @@
     var pageCtx=null;try{pageCtx=window.JINPO_BOT_PAGE_CONTEXT&&window.JINPO_BOT_PAGE_CONTEXT.snapshot?window.JINPO_BOT_PAGE_CONTEXT.snapshot():null;}catch(e){}
 
     if(/(?:このサイト|サイト).*(?:何ができる|何できる|何がある|機能|ツール|案内)|^(?:サイト案内|ツール一覧|何ができる[？?]?)$/.test(t)){
-      return {handled:true,mode:'サイト総合案内',answer:'たいらの野望には、陣法検索・英傑一覧・能力計算・家臣計算機・七星転生・食料・星海の荒石・鬼神石・九十九・魔導結晶などのツールがあるのですよ。\n「鬼神石を使いたい」「英傑一覧どこ？」のように目的をそのまま言ってくれれば、合うページへ案内するのです。',links:[
+      return {handled:true,mode:'サイト総合案内',answer:'たいらの野望には、陣法検索・英傑一覧・能力計算・家臣計算・七星転生・鬼神石・九十九・魔導結晶・食料・星海の荒石などがあります。\n「英傑の能力を見たい」「鬼神石見たい」「6人編成を探したい」みたいに、やりたいことをそのまま言ってくれれば案内できます。',links:[
         link('陣法検索','陣法/jinpo.html'),link('英傑一覧','英傑一覧.html'),link('能力計算','能力計算機.html'),link('鬼神石','鬼神石.html'),link('九十九','九十九.html'),link('家臣計算機','家臣計算機.html')
       ]};
     }
@@ -106,7 +141,7 @@
       return {handled:true,mode:'サイト総合案内',answer:'その条件は「陣法検索」で扱えるのですよ。陣法ページを開けば、歩き巫女が陣形・因縁・ステータス条件までそのまま操作できるのです。',links:[link('陣法検索を開く','陣法/jinpo.html')]};
     }
 
-    var item=findItem(t);
+    var item=findItem(t)||purposeItem(t);
     if(item){
       var routedIntent=opt&&opt.intentInfo?String(opt.intentInfo.intent||''):'';
       var nav=hasNavigationCue(t)||(routedIntent==='navigation');
@@ -129,5 +164,5 @@
     return {handled:false};
   }
 
-  window.JINPO_BOT_SITE_GUIDE={version:VERSION,items:ITEMS.slice(),respond:respond,findItem:findItem,currentItem:currentItem,pageMode:pageMode,absoluteUrl:abs};
+  window.JINPO_BOT_SITE_GUIDE={version:VERSION,items:ITEMS.slice(),respond:respond,findItem:findItem,purposeItem:purposeItem,currentItem:currentItem,pageMode:pageMode,absoluteUrl:abs};
 })();

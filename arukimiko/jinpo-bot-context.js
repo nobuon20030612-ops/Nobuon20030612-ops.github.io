@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 会話コンテキスト v1.0.0
+ * 歩き巫女 会話コンテキスト v2.3.0
  * 直前の会話を参照し、短い追答・指示語・不足スロットを保守的に補完する。
  * 推測し過ぎないことを優先し、確信できる場合だけ入力を補完する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.1.0';
+  var VERSION='2.3.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -34,12 +34,13 @@
   function looksLikeLocation(t){
     t=S(t);var c=C(t);
     if(!t||c.length<1||c.length>24||isAck(t))return false;
-    if(/[？?！!]/.test(t)||/(教えて|調べて|検索|知りたい|どう|なに|何|誰|いつ|なぜ|おすすめ|好き|嫌い|疲れ|眠い)/.test(t))return false;
+    if(/[？?！!]/.test(t)||/(教えて|調べて|検索|知りたい|どう|なに|何|誰|いつ|なぜ|おすすめ|好き|嫌い|疲れ|眠い|逸話|歴史|腕力|知力|耐久|器用|魅力|因縁|陣形)/.test(t))return false;
     if(/^(?:今日|きょう|明日|あした|現在|今|いま|昨日|きのう)$/.test(t))return false;
-    if(/(?:都|道|府|県|市|区|町|村|島|駅)$/.test(t))return true;
+    if(/(?:都|道|府|県|市|区|町|村|郡|島|駅)$/.test(t))return true;
     if(/^(?:東京|広島|大阪|京都|名古屋|横浜|札幌|仙台|福岡|神戸|千葉|埼玉|奈良|沖縄|長崎|熊本|鹿児島|金沢|新潟|静岡|浜松|岡山|高松|松山|高知|大分|宮崎|青森|盛岡|秋田|山形|福島|宇都宮|前橋|水戸|長野|甲府|富山|福井|岐阜|津|大津|和歌山|鳥取|松江|山口|徳島|佐賀)$/.test(t))return true;
-    return /^[一-龠々ヶヵぁ-んァ-ヶA-Za-z]{2,12}$/.test(t);
+    return false;
   }
+
   function extractWeatherTime(t){return /明日|あした/.test(S(t))?'明日の':(/今日|きょう/.test(S(t))?'今日の':'');}
   function extractWeatherPlace(t){
     t=S(t).replace(/^(?:今日|きょう|明日|あした)(?:の)?/,'')
@@ -105,23 +106,68 @@
     if(/[。！!]/.test(t))return false;
     return true;
   }
-  function carryDomain(original,h){
-    var t=S(original),d=recentDomain(h);if(!d||!isShortFollowup(t)||domainFromText(t))return null;
-    if(d==='carp'&&/^(?:順位|何位|選手|選手一覧|メンバー|投手|野手|捕手|内野手|外野手|監督|コーチ|日程|予定|次|次の試合|結果|試合結果|先発|スタメン|ニュース|最近|今|今日|明日|打率|本塁打|ホームラン|打点|防御率|セーブ|ホールド|誰いる|だれいる|誰がいる|だれがいる)[？?]?$/.test(t)){
-      return {message:'カープの'+t.replace(/[？?]$/,'')+( /[？?]$/.test(t)?'？':''),reason:'carp_topic_carry',confidence:0.98};
+
+  function isMoreCue(t){
+    return /^(?:もっと|他にも|ほかにも|他には|ほかには|別のも|別の|もう一つ|もう1つ|続き|つづき|まだある|ほかは)[？?！!。]*$/.test(S(t));
+  }
+
+  function recentContains(h,re,limit){
+    limit=Number(limit)||20;
+    for(var i=h.length-1;i>=0&&i>=h.length-limit;i--){
+      var t=S(h[i]&&h[i].text);
+      if(t&&re.test(t))return true;
     }
-    if(d==='weather'&&/^(?:今日|きょう|明日|あした|雨|気温|最高|最低|降水確率|湿度|風|風速)[？?]?$/.test(t)){
+    return false;
+  }
+  function carryDomain(original,h){
+    var t=S(original),d=recentDomain(h);
+    if(!d||!isShortFollowup(t)||domainFromText(t))return null;
+
+    var clean=t
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら|次は)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .replace(/(?:は|って)$/,'')
+      .trim();
+
+    if(d==='carp'){
+      if(/^(?:順位|何位|選手|選手一覧|メンバー|投手|野手|捕手|内野手|外野手|監督|コーチ|日程|予定|次|次の試合|結果|試合結果|先発|スタメン|ニュース|最近|今|今日|明日|打率|本塁打|ホームラン|打点|防御率|セーブ|ホールド|誰いる|だれいる|誰がいる|だれがいる|逸話|歴史|昔話|名場面|伝説)[？?]?$/.test(t.replace(/^(?:じゃあ|では|なら)[、,\s]*/,''))){
+        return {message:'カープの'+t.replace(/^(?:じゃあ|では|なら)[、,\s]*/,'').replace(/[？?]$/,'')+( /[？?]$/.test(t)?'？':''),reason:'carp_topic_carry',confidence:0.98};
+      }
+      if(isMoreCue(t)&&recentContains(h,/逸話|昔話|名場面|伝説/,24)){
+        return {message:'カープの他の逸話',reason:'carp_anecdote_more',confidence:0.99};
+      }
+    }
+
+    if(d==='weather'&&/^(?:今日|きょう|明日|あした)(?:は)?[？?]?$|^(?:雨|気温|最高|最低|降水確率|湿度|風|風速)[？?]?$/.test(t)){
       var rw=findRecentWeather(h);if(rw&&rw.place){
         var tail=t.replace(/[？?]$/,'');
-        if(/^(?:今日|きょう|明日|あした)$/.test(tail))return {message:rw.place+'の'+tail+'の天気',reason:'weather_topic_carry_short',confidence:0.97};
+        if(/^(?:今日|きょう|明日|あした)(?:は)?$/.test(tail))return {message:rw.place+'の'+tail+'の天気',reason:'weather_topic_carry_short',confidence:0.97};
         return {message:rw.place+'の'+tail,reason:'weather_topic_carry_short',confidence:0.92};
       }
     }
-    if(d==='tairano'&&/^(?:使い方|どう使う|どこ|開いて|ページ|数値|いくつ|何番|カウンター|かうんた|かうん)[？?]?$/.test(t)){
-      var ant=findAntecedent(h);if(ant)return {message:ant+' '+t,reason:'tairano_topic_carry',confidence:0.90};
+
+    if(d==='jinpo'&&clean){
+      var st=(clean.match(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/)||[])[0]||'';
+      if(st&&recentContains(h,/(?:生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風).*(?:高い|高め|おすすめ|一番|最も|トップ|最大|重視)/,20)){
+        if(!/高い|高め|おすすめ|一番|最も|トップ|最大|重視/.test(clean)){
+          return {message:st+'高いの',reason:'jinpo_stat_followup',confidence:0.96};
+        }
+      }
+    }
+
+    if(d==='tairano'){
+      if(/カウンター|かうんた|counter/i.test(h.map(function(x){return S(x&&x.text);}).join(' '))){
+        if(clean&&clean.length<=18&&!/使い方|どこ|ページ|数値|いくつ|何番/.test(clean)){
+          return {message:clean+'のカウンターは？',reason:'counter_topic_carry',confidence:0.96};
+        }
+      }
+      if(/^(?:使い方|どう使う|どこ|開いて|ページ|数値|いくつ|何番|カウンター|かうんた|かうん)[？?]?$/.test(t)){
+        var ant=findAntecedent(h);if(ant)return {message:ant+' '+t,reason:'tairano_topic_carry',confidence:0.90};
+      }
     }
     return null;
   }
+
   function resolve(text,history,opt){
     var original=S(text),resolved=original,reason='',confidence=0;
     var h=historyBeforeCurrent(history,original),ex=lastExchange(h),a=S(ex.assistant&&ex.assistant.text),u=S(ex.user&&ex.user.text);
@@ -148,7 +194,7 @@
     }
 
     // 天気の話題が継続中に「明日」「今日」だけ返した時は直前の地域を引き継ぐ。
-    if(resolved===original&&/^(?:今日|きょう|明日|あした)$/.test(original)){
+    if(resolved===original&&/^(?:今日|きょう|明日|あした)(?:は)?[？?]?$/.test(original)){
       var rw=findRecentWeather(h);
       if(rw&&rw.place){resolved=rw.place+'の'+(/明日|あした/.test(original)?'明日の':'今日の')+'天気';reason='weather_time_followup';confidence=0.96;}
     }
@@ -160,16 +206,18 @@
 
     // 人が会話でよく使う短い追質問。「詳しく」「なんで？」「どこ？」など。
     // 直前のユーザー話題がはっきりしている時だけ補完し、無関係な新話題へは広げない。
-    if(resolved===original&&/^(?:もっと|詳しく|くわしく|なんで|なぜ|どうして|どこ|いつ|誰|だれ|何|なに|どういうこと|それで|で[？?]?|続き|つづき)[？?]?$/.test(original)){
+    if(resolved===original&&/^(?:もっと|もう少し|もうちょい|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|詳しく|くわしく|なんで|なぜ|どうして|どこ|いつ|誰|だれ|何|なに|どういうこと|どういう意味|意味は|それで|で[？?]?|続き|つづき|もう一回説明|もう1回説明)[？?]?$/.test(original)){
       var gant=findAntecedent(h);
       if(gant){
         var gc=C(original),gs='';
-        if(/もっと|詳しく|くわしく/.test(original))gs='についてもっと詳しく教えて';
+        if(/他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ/.test(original))gs='について別のものも教えて';
+        else if(/もう一回説明|もう1回説明/.test(original))gs='についてもう一度説明して';
+        else if(/もっと|もう少し|もうちょい|詳しく|くわしく/.test(original))gs='についてもう少し詳しく教えて';
         else if(/なんで|なぜ|どうして/.test(original))gs='はなぜ？';
         else if(/どこ/.test(original))gs='はどこ？';
         else if(/いつ/.test(original))gs='はいつ？';
         else if(/誰|だれ/.test(original))gs='は誰？';
-        else if(/何|なに|どういうこと/.test(original))gs='って何？';
+        else if(/何|なに|どういうこと|どういう意味|意味は/.test(original))gs='ってどういう意味？';
         else gs='について続きを教えて';
         resolved=gant+gs;reason='generic_followup';confidence=0.86;
       }

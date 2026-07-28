@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 ページ文脈 v1.0.0
+ * 歩き巫女 ページ文脈 v1.1.0
  * TOP/各ツールページで「ここ何？」「これどう使う？」の意味解釈を補助する。
  * 陣法操作そのものは扱わない。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_PAGE_CONTEXT)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function path(){var p='';try{p=decodeURIComponent(location.pathname||'');}catch(e){p=String(location.pathname||'');}return p;}
   function mode(){

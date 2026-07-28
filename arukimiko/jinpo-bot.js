@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.2.4';
+  var VERSION='3.2.6';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -186,6 +186,21 @@
       }
     }
 
+    // 明確な日常会話は、陣法の意図推定より先に返す。
+    // 「暑い」「疲れた」「何できる？」などを検索コマンドに誤分類しない。
+    try{
+      if(window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
+        var quickTalk=window.JINPO_BOT_SMALLTALK.local(originalMessage);
+        if(quickTalk){
+          return {
+            answer:String(quickTalk),
+            sources:[],links:[],mode:'日常会話',
+            data:{smalltalk:true,early:true}
+          };
+        }
+      }
+    }catch(quickTalkErr){}
+
     // 古いpendingより先に短い追質問の文脈を判定する。
     try{
       if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resolve==='function'){
@@ -343,6 +358,21 @@
       }
     }catch(tairanoKnowledgeErr){}
 
+    // 機能の意味・使い方は、その場で説明する。
+    // 「全MAXって何？」などを勝手にページ移動へ変えない。
+    try{
+      if(window.JINPO_BOT_HELP&&typeof window.JINPO_BOT_HELP.respond==='function'){
+        var featureHelp=window.JINPO_BOT_HELP.respond(message);
+        if(featureHelp&&featureHelp.handled){
+          return {
+            answer:String(featureHelp.answer||''),
+            sources:[],links:[],mode:'機能説明',
+            data:{featureHelp:true,key:String(featureHelp.key||''),context:contextInfo}
+          };
+        }
+      }
+    }catch(featureHelpErr){}
+
     // サイト案内は陣法操作やWeb検索より先に判定する。
     // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
     try{
@@ -475,9 +505,9 @@
       var fallbackText=cap;
       if(!fallbackText){
         if(pageContext.mode==='jinpo'){
-          fallbackText='うまく意図をつかめなかったのです。陣法なら「腕力高いの」「耐久と知力高いの」「この1位を適用」のようなラフな言い方で大丈夫です。';
+          fallbackText='ちょっと分からなかったです。陣法の話なら「腕力高いの」「耐久と知力高いの」「1位を適用」みたいに言ってみてください。';
         }else{
-          fallbackText='その言い方だとうまく意図をつかめなかったのです。話題を一言足してもらえれば続けられます。たとえば「カープの逸話」「東京の天気」「歩き巫女って何？」のように言ってください。';
+          fallbackText='ちょっと意味を取りきれなかったです。何の話か一言だけ足してもらえれば続けられます。';
         }
       }
       return R(fallbackText,{needsClarification:true});
