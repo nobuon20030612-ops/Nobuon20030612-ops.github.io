@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.1
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.2
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -85,14 +85,14 @@
     statusEl = el('div','jinpoAiStatus',{text:brainStatus});
     htext.appendChild(statusEl); header.appendChild(htext);
 
-    var actions = el('div','jinpoAiHeaderActions');
-
     var trainingBadge = el('div','jinpoAiTrainingBadge',{
       title:'歩き巫女はただいま育成中です'
     });
     trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
     trainingBadge.appendChild(el('span','jinpoAiTrainingText',{text:'育成中につき\nまだおばかです'}));
     trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
+
+    var actions = el('div','jinpoAiHeaderActions');
 
     resetBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderResetBtn',{
       type:'button',
@@ -102,10 +102,11 @@
     });
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
-    actions.appendChild(trainingBadge);
     actions.appendChild(resetBtn);
     actions.appendChild(minBtn);
     actions.appendChild(hideBtn);
+
+    header.appendChild(trainingBadge);
     header.appendChild(actions);
 
     messages = el('div','jinpoAiMessages',{role:'log','aria-label':'会話履歴'});
@@ -591,7 +592,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.1', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.2', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

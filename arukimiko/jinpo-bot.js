@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.2.1';
+  var VERSION='3.2.3';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -314,7 +314,7 @@
     // 「家臣計算」と混同しないよう、サイト案内より先に判定する。
     try{
       if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.respond==='function'){
-        var naming=window.JINPO_BOT_KASHIN_NAME.respond(originalMessage,{history:history,context:contextInfo,pageContext:pageContext});
+        var naming=window.JINPO_BOT_KASHIN_NAME.respond(message,{history:history,context:contextInfo,pageContext:pageContext});
         if(naming&&naming.handled){
           return {answer:String(naming.answer||''),sources:[],links:[],mode:String(naming.mode||'家臣名付け'),data:{kashinNaming:true,context:contextInfo}};
         }
