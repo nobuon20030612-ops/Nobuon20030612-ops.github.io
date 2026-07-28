@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.9.0';
+  var VERSION='3.0.0';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -43,6 +43,27 @@
     try{
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
+
+
+    // v3.0: Geminiを会話の頭脳として最優先。
+    // 数値・最新情報・サイト操作はFunction Callingで既存の正本/機能を使う。
+    // API未設定、無料枠到達、通信失敗時は、この下の従来エンジンへ自動フォールバックする。
+    if(!payloadObj.__skipAi){
+      try{
+        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.respond==='function'){
+          var aiReply=await window.JINPO_BOT_AI_BRAIN.respond(originalMessage,{
+            history:history,
+            pageContext:pageContext,
+            localHandle:function(q){
+              return handle({message:String(q||''),history:history,__skipAi:true});
+            }
+          });
+          if(aiReply&&aiReply.handled){
+            return aiReply;
+          }
+        }
+      }catch(aiBrainErr){}
+    }
 
     // まず「今、何を聞いている途中か」を解決する。
     // 例: 天気 → (場所を質問) → 東京 を確実に「東京の天気」へつなぐ。
@@ -306,7 +327,15 @@
     return R(lines.join('\n'),{state:after,context:contextInfo});
   }
 
-  function install(){window.JINPO_AI_TRANSPORT=handle;if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function')window.JINPO_AI_CHAT.setTransport(handle);}
+  function install(){
+    window.JINPO_AI_TRANSPORT=handle;
+    window.JINPO_BOT_LOCAL_HANDLE=function(payload){
+      var p=typeof payload==='string'?{message:payload}:Object.assign({},payload||{});
+      p.__skipAi=true;
+      return handle(p);
+    };
+    if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function')window.JINPO_AI_CHAT.setTransport(handle);
+  }
   window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});
 })();
