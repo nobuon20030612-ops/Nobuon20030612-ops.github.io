@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.0.0
+ * 歩き巫女 AI会話脳 v1.1.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,11 +9,12 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var ctx={
     app:null,
     api:null,
     ai:null,
+    appCheck:null,
     initializing:null,
     lastError:'',
     lastErrorAt:0,
@@ -27,9 +28,25 @@
     var c=window.JINPO_BOT_FIREBASE_CONFIG||{};
     return c.firebaseConfig||{};
   }
+  function appCheckCfg(){
+    var root=window.JINPO_BOT_FIREBASE_CONFIG||{};
+    var ac=root.appCheck||{};
+    var f=root.firebaseConfig||{};
+    return {
+      enabled:ac.enabled!==false,
+      provider:S(ac.provider||'recaptcha-enterprise'),
+      siteKey:S(ac.siteKey||f.recaptchaSiteKey||''),
+      autoRefresh:ac.autoRefresh!==false
+    };
+  }
   function configured(){
     var c=cfg(),f=firebaseCfg();
     return !!(c.enabled&&S(f.apiKey)&&S(f.projectId)&&S(f.appId));
+  }
+  function appCheckReady(){
+    var c=cfg(),ac=appCheckCfg();
+    if(!c.requireAppCheck)return true;
+    return !!(ac.enabled&&ac.siteKey);
   }
   function errorText(e){
     return S(e&&((e.code?e.code+' ':'')+(e.message||e))).slice(0,300);
@@ -78,13 +95,28 @@
         var base='https://www.gstatic.com/firebasejs/'+v+'/';
         var mods=await Promise.all([
           import(base+'firebase-app.js'),
+          import(base+'firebase-app-check.js'),
           import(base+'firebase-ai.js')
         ]);
-        var appM=mods[0],aiM=mods[1],apps=appM.getApps?appM.getApps():[],app=null;
+        var appM=mods[0],appCheckM=mods[1],aiM=mods[2],apps=appM.getApps?appM.getApps():[],app=null;
         for(var i=0;i<apps.length;i++){
           if(apps[i]&&apps[i].name==='arukimiko-ai-brain'){app=apps[i];break;}
         }
         ctx.app=app||appM.initializeApp(firebaseCfg(),'arukimiko-ai-brain');
+
+        var ac=appCheckCfg();
+        if(cfg().requireAppCheck){
+          if(!ac.enabled)throw new Error('app-check-disabled');
+          if(!ac.siteKey)throw new Error('app-check-site-key-missing');
+        }
+
+        if(ac.enabled&&ac.siteKey&&!ctx.appCheck){
+          ctx.appCheck=appCheckM.initializeAppCheck(ctx.app,{
+            provider:new appCheckM.ReCaptchaEnterpriseProvider(ac.siteKey),
+            isTokenAutoRefreshEnabled:ac.autoRefresh
+          });
+        }
+
         ctx.api=aiM;
         ctx.ai=aiM.getAI(ctx.app,{backend:new aiM.GoogleAIBackend()});
         ctx.lastError='';ctx.lastErrorAt=0;
@@ -324,10 +356,81 @@
     }];
   }
 
+  function setupIssue(){
+    if(!configured())return {
+      ok:false,
+      stage:'firebase-config',
+      message:'Firebase設定が不足しています。'
+    };
+    var ac=appCheckCfg();
+    if(cfg().requireAppCheck&&(!ac.enabled||!ac.siteKey))return {
+      ok:false,
+      stage:'app-check',
+      message:'App CheckのreCAPTCHA Enterpriseサイトキーがまだ設定されていません。'
+    };
+    return null;
+  }
+
+  function humanError(err){
+    var x=S(err||ctx.lastError);
+    if(/app-check-site-key-missing/.test(x))return 'App Checkのサイトキーが未設定です。';
+    if(/app-check-disabled/.test(x))return 'App Checkが無効です。';
+    if(/api-not-enabled/.test(x))return 'Firebase AI Logic APIがまだ有効になっていません。';
+    if(/quota|429|resource.exhausted/i.test(x))return 'AIの無料枠またはレート上限に達している可能性があります。';
+    if(/403|permission|app.check|appcheck/i.test(x))return 'App CheckまたはFirebase側の許可設定を確認してください。';
+    if(/fetch|network|timeout/i.test(x))return 'AIへの通信に失敗しました。';
+    return x||'AI接続に失敗しました。';
+  }
+
+  async function preflight(){
+    var issue=setupIssue();
+    if(issue)return issue;
+
+    // 接続確認はクールダウンを無視して明示的に再試行する。
+    ctx.lastError='';ctx.lastErrorAt=0;
+
+    var c=await init();
+    if(!c||!c.api||!c.ai)return {
+      ok:false,
+      stage:'initialize',
+      message:humanError(ctx.lastError),
+      raw:ctx.lastError
+    };
+
+    try{
+      var model=c.api.getGenerativeModel(
+        c.ai,
+        {model:S(cfg().model)||'gemini-3.5-flash'},
+        {timeout:Number(cfg().timeoutMs)||18000}
+      );
+      var result=await model.generateContent('接続確認です。「接続OK」とだけ返してください。');
+      var text=result&&result.response&&typeof result.response.text==='function'
+        ?S(result.response.text()):'';
+      if(!text)throw new Error('AI response was empty');
+
+      ctx.lastOkAt=Date.now();
+      ctx.lastError='';ctx.lastErrorAt=0;
+      return {
+        ok:true,
+        stage:'complete',
+        model:S(cfg().model)||'gemini-3.5-flash',
+        message:text
+      };
+    }catch(e){
+      ctx.lastError=errorText(e);ctx.lastErrorAt=Date.now();
+      return {
+        ok:false,
+        stage:'request',
+        message:humanError(ctx.lastError),
+        raw:ctx.lastError
+      };
+    }
+  }
+
   async function respond(message,opt){
     opt=opt||{};
     message=S(message);
-    if(!message||!configured()||inCooldown())return {handled:false};
+    if(!message||!configured()||!appCheckReady()||inCooldown())return {handled:false};
 
     var c=await init();
     if(!c||!c.api||!c.ai)return {handled:false};
@@ -341,7 +444,7 @@
       var model=aiM.getGenerativeModel(
         c.ai,
         {
-          model:S(cfg().model)||'gemini-3.6-flash',
+          model:S(cfg().model)||'gemini-3.5-flash',
           systemInstruction:systemInstruction(opt),
           tools:tools
         },
@@ -386,7 +489,7 @@
         mode:'AI歩き巫女',
         data:{
           aiBrain:true,
-          model:S(cfg().model)||'gemini-3.6-flash',
+          model:S(cfg().model)||'gemini-3.5-flash',
           toolModes:meta.modes.slice(0,8)
         }
       };
@@ -402,6 +505,8 @@
       version:VERSION,
       enabled:!!cfg().enabled,
       configured:configured(),
+      appCheckReady:appCheckReady(),
+      appCheck:appCheckCfg(),
       cooldown:inCooldown(),
       model:S(cfg().model),
       calls:ctx.calls,
@@ -418,9 +523,11 @@
   window.JINPO_BOT_AI_BRAIN={
     version:VERSION,
     respond:respond,
+    preflight:preflight,
     status:status,
     reset:reset,
     configured:configured,
+    appCheckReady:appCheckReady,
     _trimHistory:trimHistory,
     _systemInstruction:systemInstruction
   };

@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.0';
+  var VERSION='3.0.1';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -44,6 +44,25 @@
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
 
+
+    // 本番でFirebase AI Logic / App Checkの状態を簡単に確認する専用コマンド。
+    if(/^(?:AI|ai|ＡＩ)\s*(?:接続)?(?:確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
+      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.preflight==='function'){
+        var pf=await window.JINPO_BOT_AI_BRAIN.preflight();
+        if(pf&&pf.ok){
+          return {
+            answer:'AI会話脳の接続は正常なのですよ。\nモデル：'+String(pf.model||'')+'\nFirebase AI Logic / App Check：OK',
+            sources:[],links:[],mode:'AI接続確認',
+            data:{aiPreflight:true,ok:true,preflight:pf}
+          };
+        }
+        return {
+          answer:'AI会話脳はまだ本番接続できていません。\n'+String((pf&&pf.message)||'Firebase側の設定を確認してください。')+'\n\nAIが使えない間も、従来の歩き巫女へ自動で切り替わるのでサイト機能は止まりません。',
+          sources:[],links:[],mode:'AI接続確認',
+          data:{aiPreflight:true,ok:false,preflight:pf||{}}
+        };
+      }
+    }
 
     // v3.0: Geminiを会話の頭脳として最優先。
     // 数値・最新情報・サイト操作はFunction Callingで既存の正本/機能を使う。
