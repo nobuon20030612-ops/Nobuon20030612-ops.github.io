@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.1.2
+ * 歩き巫女 サイト共通ローダー v3.1.3
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.0.2';
+  var ASSET_VERSION='3.0.3';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,14 +27,46 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.1.2',baseUrl:base,pageMode:mode};
+  window.ARUKIMIKO_SHARED={version:'3.1.3',baseUrl:base,pageMode:mode};
 
   function addCss(name){
-    var href=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION);
-    if(document.querySelector('link[data-arukimiko-css="'+name+'"]'))return;
-    var l=document.createElement('link');
-    l.rel='stylesheet';l.href=href;l.setAttribute('data-arukimiko-css',name);
-    document.head.appendChild(l);
+    return new Promise(function(resolve){
+      var existing=document.querySelector('link[data-arukimiko-css="'+name+'"]');
+      if(existing){
+        if(existing.sheet){resolve({ok:true,name:name,existing:true});return;}
+        existing.addEventListener('load',function(){resolve({ok:true,name:name,existing:true});},{once:true});
+        existing.addEventListener('error',function(){resolve({ok:false,name:name,existing:true});},{once:true});
+        setTimeout(function(){resolve({ok:!!existing.sheet,name:name,existing:true,timeout:true});},3500);
+        return;
+      }
+
+      function append(url,retry){
+        var l=document.createElement('link');
+        l.rel='stylesheet';
+        l.href=url;
+        l.setAttribute('data-arukimiko-css',name);
+        l.setAttribute('data-arukimiko-css-retry',String(retry||0));
+
+        l.onload=function(){
+          resolve({ok:true,name:name,retry:retry||0,url:url});
+        };
+        l.onerror=function(){
+          try{l.remove();}catch(e){}
+          if(!retry){
+            // GitHub Pages / browser cache race recovery.
+            var retryUrl=new URL(name,location.origin+'/arukimiko/').href+
+              '?v='+encodeURIComponent(ASSET_VERSION)+'&retry='+Date.now();
+            append(retryUrl,1);
+          }else{
+            console.error('歩き巫女 CSS load failed:',name,url);
+            resolve({ok:false,name:name,retry:1,url:url});
+          }
+        };
+        document.head.appendChild(l);
+      }
+
+      append(new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION),0);
+    });
   }
   function load(name){
     return new Promise(function(resolve,reject){
@@ -47,9 +79,11 @@
     });
   }
 
-  addCss('jinpo-ai-chat.css');
-  addCss('jinpo-bot-adv-theme.css');
-  if(mode==='jinpo')addCss('jinpo-bot-guide.css');
+  var cssReady=[
+    addCss('jinpo-ai-chat.css'),
+    addCss('jinpo-bot-adv-theme.css')
+  ];
+  if(mode==='jinpo')cssReady.push(addCss('jinpo-bot-guide.css'));
 
   var common=[
     'jinpo-ai-chat.js',
@@ -104,6 +138,12 @@
     .concat(mode==='jinpo'?jinpoTail:[])
     .concat(tail);
 
-  scripts.reduce(function(p,name){return p.then(function(){return load(name);});},Promise.resolve())
+  Promise.all(cssReady)
+    .then(function(cssResults){
+      window.ARUKIMIKO_SHARED.css=cssResults;
+      var adv=cssResults.filter(function(x){return x&&x.name==='jinpo-bot-adv-theme.css';})[0];
+      if(!adv||!adv.ok)console.error('歩き巫女 ADVテーマCSSを読み込めませんでした。',adv||{});
+      return scripts.reduce(function(p,name){return p.then(function(){return load(name);});},Promise.resolve());
+    })
     .catch(function(e){console.error('歩き巫女 共通ローダー:',e);});
 })();

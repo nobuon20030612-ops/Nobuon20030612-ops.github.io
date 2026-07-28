@@ -789,3 +789,6 @@
 /* ===== v2.7.1: TOP版では陣法専用メニューを表示しない（フェイルセーフ） ===== */
 #jinpoAiRoot[data-jinpo-page-mode="top"] #jinpoBotGuide{display:none!important}
 #jinpoAiRoot[data-jinpo-page-mode="top"] #jinpoAiWindow.hasJinpoBotGuide{grid-template-rows:auto 1fr auto!important}
+
+/* v3.0.3 UI load sentinel: visual rules are unchanged. */
+#jinpoAiRoot.jinpoAdvTheme{--arukimiko-adv-theme-loaded:"3.0.3";}

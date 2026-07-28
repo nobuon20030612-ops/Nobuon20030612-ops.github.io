@@ -4,7 +4,7 @@
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.2',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v281SharedLarge';
+  var VERSION='2.4.3',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v281SharedLarge';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){
@@ -169,7 +169,8 @@
       portraitSize:portrait?[portrait.naturalWidth||0,portrait.naturalHeight||0]:[0,0],
       portraitInMessages:!!(portrait&&portrait.closest&&portrait.closest('.jinpoAiMessages')),
       mascotBackground:mascot?getComputedStyle(mascot).backgroundImage:'',
-      mascotSize:mascot?[Math.round(mascot.getBoundingClientRect().width),Math.round(mascot.getBoundingClientRect().height)]:[0,0]
+      mascotSize:mascot?[Math.round(mascot.getBoundingClientRect().width),Math.round(mascot.getBoundingClientRect().height)]:[0,0],
+      advCssLoaded:root?String(getComputedStyle(root).getPropertyValue('--arukimiko-adv-theme-loaded')||'').trim().replace(/["']/g,''):''
     };
     if(st)st.textContent=ready?'準備OK':'準備を確認中…';
     return info;
