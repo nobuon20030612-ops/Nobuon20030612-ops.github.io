@@ -497,6 +497,69 @@
   function deleteSaved(ref){var item=resolveSaved(ref);if(!item)return fail('指定した保存編成が見つかりません。');var b=document.querySelector('#savedFormations [data-del="'+cssEscape(item.id)+'"]');if(!b)return fail('保存編成の削除ボタンが見つかりません。');click(b);return ok('保存編成「'+item.name+'」を削除しました。',{saved:item});}
   function createShareUrl(){var b=q('shareUrlBtn'),out=q('shareOutput');if(!b||!out)return fail('共有URL機能が見つかりません。');click(b);var url=text(out.value||out.textContent||'');return url?ok('共有URLを生成しました。',{url:url}):fail('共有URLを生成できませんでした。');}
 
+  async function restoreConditionsOnly(snap){
+    if(!snap)return fail('前回の検索条件がありません。');
+
+    var r=setSearchBasis(snap.searchBasis||'base');
+    if(!r.ok)return r;
+
+    if(snap.formation){
+      r=setFormation(snap.formation);
+      if(!r.ok)return r;
+    }
+
+    setGrade3(!!snap.grade3);
+
+    r=setPriority(1,snap.priority1?{
+      stat:snap.priority1,min:snap.priority1Min,max:snap.priority1Max
+    }:{clear:true});
+    if(!r.ok)return r;
+
+    r=setPriority(2,snap.priority2?{
+      stat:snap.priority2,min:snap.priority2Min,max:snap.priority2Max
+    }:{clear:true});
+    if(!r.ok)return r;
+
+    if(snap.count){
+      r=setCountNoSearch(snap.count);
+      if(!r.ok)return r;
+    }
+
+    var f4=Number(snap.factor4Exclude)||0;
+    if(getFactor4Exclude()!==f4){
+      r=await setFactor4Exclude(f4,true);
+      if(!r.ok)return r;
+    }
+
+    var ss=getSumSort(),tie=snap.sumTie==='second'?'second':'first';
+    if(!!ss.enabled!==!!snap.sumSort||(snap.sumSort&&ss.tiePrefer!==tie)){
+      r=await setSumSort(!!snap.sumSort,tie,true);
+      if(!r.ok)return r;
+    }
+
+    // 配置英傑の検索条件・除外英傑は復元する。
+    // 実際の6人配置や強化値は「検索条件」ではないので変更しない。
+    if(Array.isArray(snap.owned)){
+      r=await clearOwnedHeroes();if(!r.ok)return r;
+      for(var oi=0;oi<Math.min(3,snap.owned.length);oi++){
+        if(snap.owned[oi]){
+          r=await setOwnedHero(oi+1,snap.owned[oi]);
+          if(!r.ok)return r;
+        }
+      }
+    }
+
+    if(Array.isArray(snap.excluded)){
+      r=await clearExcludedHeroes();if(!r.ok)return r;
+      for(var ei=0;ei<snap.excluded.length;ei++){
+        r=await setExcludedHero(snap.excluded[ei],true);
+        if(!r.ok)return r;
+      }
+    }
+
+    return ok('前回の検索条件へ戻しました。',{state:readSiteState(),restoredOnly:true});
+  }
+
   async function restoreSnapshot(snap){
     if(!snap)return fail('戻せる状態がありません。');
     if(Array.isArray(snap.placementSlots)&&snap.placementSlots.some(Boolean)&&typeof window.applyShareState==='function'){
@@ -559,13 +622,15 @@
     max_kenbun:function(){return setEnhancementPanelMax('kenbun');},max_kishin:function(){return setEnhancementPanelMax('kishin');},max_tensei:function(){return setEnhancementPanelMax('tensei');},clear_kenbun:function(){return clearEnhancementPanel('kenbun');},clear_kishin:function(){return clearEnhancementPanel('kishin');},clear_tensei:function(){return clearEnhancementPanel('tensei');},
     set_fullmax_search:function(){return setSearchBasis('fullmax');},set_base_search:function(){return setSearchBasis('base');},enable_grade3:function(){return setGrade3(true);},disable_grade3:function(){return setGrade3(false);},clear_factor4_exclude:function(){return setFactor4Exclude(0,false);},enable_sum_sort:function(a){return setSumSort(true,a&&a.tie||'first',false);},disable_sum_sort:function(){return setSumSort(false,'first',false);},clear_search_filters:clearSearchFilters,
     clear_owned_filters:clearOwnedHeroes,clear_excluded_filters:clearExcludedHeroes,read_filters:function(){return ok('検索フィルターを取得しました。',{state:readSiteState()});},
-    restore_snapshot:function(a){return restoreSnapshot(a&&a.snapshot);},reset_all:resetAll
+    restore_snapshot:function(a){return restoreSnapshot(a&&a.snapshot);},
+    restore_conditions_only:function(a){return restoreConditionsOnly(a&&a.snapshot);},
+    reset_all:resetAll
   };
 
   async function execute(name,args){var fn=registry[name];if(!fn)return fail('未登録のBot操作です: '+name);try{return await fn(args||{});}catch(e){console.error('JINPO_BOT_ACTION error',name,e);return fail('操作中にエラーが発生しました。',{error:String(e&&e.message||e)});}}
 
   window.JINPO_BOT_ACTIONS={
-    version:'2.1.0',STATS:STATS.slice(),canonicalStat:canonicalStat,canonicalFormation:canonicalFormation,
+    version:'2.2.0',STATS:STATS.slice(),canonicalStat:canonicalStat,canonicalFormation:canonicalFormation,
     readSiteState:readSiteState,verifySearchBridge:verifySearchBridge,captureSnapshot:captureSnapshot,getResults:getResults,getSwapCandidates:getSwapCandidates,
     execute:execute,registry:Object.keys(registry)
   };

@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.3.3';
+  var VERSION='3.3.5';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -53,6 +53,95 @@
       'set_sum_sort','set_search_basis','set_fullmax_search','set_base_search','clear_search_filters'
     ].indexOf(name)>=0;
   }
+  function isSearchExecutionName(name){
+    return [
+      'apply_search','run_recommended','update_recommended',
+      'run_best','run_specified_simple','run_current_search','rerun_search'
+    ].indexOf(name)>=0;
+  }
+
+  function lastSearchRecipe(plan,outputs){
+    plan=plan||{};outputs=Array.isArray(outputs)?outputs:[];
+    for(var i=outputs.length-1;i>=0;i--){
+      var o=outputs[i]||{},r=o.res||{},d=r.data||{};
+      if(!r.ok||d.skipped||!isSearchExecutionName(o.name))continue;
+
+      if(o.name==='run_best'){
+        var a=(plan.actions||[]).find(function(x){return x&&x.name==='run_best';});
+        return {action:'run_best',args:a&&a.args||{}};
+      }
+      if(o.name==='run_recommended'){
+        return {action:'run_recommended',args:{stat:plan.recommendStat||''}};
+      }
+      if(o.name==='update_recommended'){
+        var ur=(plan.actions||[]).find(function(x){return x&&x.name==='update_recommended';});
+        return {action:'update_recommended',args:ur&&ur.args||plan.searchPatch||{}};
+      }
+      if(o.name==='run_specified_simple'){
+        var sr=(plan.actions||[]).find(function(x){return x&&x.name==='run_specified_simple';});
+        return {action:'run_specified_simple',args:sr&&sr.args||{}};
+      }
+      return {action:'run_current_search',args:{}};
+    }
+    return null;
+  }
+
+  function historyIndexLabel(index){
+    var n=Math.max(1,Number(index)||1);
+    if(n===1)return'前回';
+    return n+'つ前';
+  }
+
+  function searchHistorySummary(items){
+    items=Array.isArray(items)?items:[];
+    if(!items.length)return'検索履歴はまだありません。';
+
+    var lines=['最近の検索履歴です。'];
+    items.slice(0,5).forEach(function(item,i){
+      var recipe=item&&item.recipe&&item.recipe.action||'';
+      var kind=recipe==='run_best'?'全陣形おすすめ':
+        recipe==='run_recommended'?'おすすめ陣法':
+        recipe==='update_recommended'?'おすすめ条件更新':
+        recipe==='run_specified_simple'?'指定検索':
+        '条件検索';
+
+      var state=item&&item.snapshot||{};
+      var compact=[];
+      if(state.formation)compact.push(state.formation);
+      if(state.count)compact.push(state.count+'因縁');
+      if(state.searchBasis==='fullmax')compact.push('全MAX込み');
+      if(state.priority1)compact.push('第1 '+state.priority1);
+      if(state.priority2)compact.push('第2 '+state.priority2);
+
+      lines.push(
+        (i+1)+'. '+kind+
+        (compact.length?' / '+compact.join(' / '):'')+
+        (item&&item.label?' / 「'+String(item.label).slice(0,30)+'」':'')
+      );
+    });
+    return lines.join('\n');
+  }
+
+  function historyItemSummary(item,index){
+    if(!item||!item.snapshot)return historyIndexLabel(index)+'の検索記録はありません。';
+    return historyIndexLabel(index)+'の検索：\n'+lastSearchSummary(item);
+  }
+
+  function lastSearchSummary(item){
+    if(!item||!item.snapshot)return'前回の検索記録はまだありません。';
+    var when='';
+    if(item.at){try{when=new Date(item.at).toLocaleString('ja-JP');}catch(e){}}
+    var recipe=item.recipe&&item.recipe.action?item.recipe.action:'';
+    var kind=recipe==='run_best'?'全陣形おすすめ検索':
+      recipe==='run_recommended'?'おすすめ陣法検索':
+      recipe==='update_recommended'?'おすすめ条件更新':
+      recipe==='run_specified_simple'?'指定検索':
+      '指定条件検索';
+
+    return (when?'前回：'+when+'\n':'')+
+      conditionLabel(item.snapshot)+'\n検索方式：'+kind;
+  }
+
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
 
   function resetConversationState(opt){
@@ -530,10 +619,16 @@
     var recommendPatch=!!(before.recommendActive&&plan.searchPatch&&plan.searchPatch.formation===undefined&&plan.searchPatch.count===undefined&&plan.searchPatch.sumSort===undefined&&plan.searchPatch.sumTie===undefined);
     var allPlanActions=(plan.preActions||[]).concat(plan.actions||[]);
     var hasUndo=allPlanActions.some(function(a){return a.name==='undo';});
+    var hasRestoreLast=allPlanActions.some(function(a){
+      return [
+        'restore_last_search','rerun_last_search',
+        'restore_search_history_item','rerun_search_history_item'
+      ].indexOf(a.name)>=0;
+    });
     var nonRestorable=recommendPatch||allPlanActions.some(function(a){return isNonRestorableMutation(a.name);});
     var restorable=(!recommendPatch&&!!plan.searchPatch)||!!plan.recommendStat||allPlanActions.some(function(a){return isRestorableAction(a.name);});
     if(!hasUndo&&nonRestorable)state().clearUndo();
-    else if(!hasUndo&&restorable)state().pushUndo(actions().captureSnapshot(),message);
+    else if(!hasUndo&&(restorable||hasRestoreLast))state().pushUndo(actions().captureSnapshot(),message);
 
     var outputs=[];
 
@@ -558,6 +653,74 @@
       if(item.name==='undo'){
         var u=state().popUndo();if(!u){outputs.push({name:'undo',res:{ok:false,message:'戻せる一つ前の状態がありません。',data:{}}});continue;}
         res=await actions().execute('restore_snapshot',{snapshot:u.snapshot});
+      }else if(item.name==='read_last_search'){
+        var lastRead=state().getLastSearch&&state().getLastSearch();
+        res=lastRead
+          ?{ok:true,message:lastSearchSummary(lastRead),data:{lastSearch:lastRead}}
+          :{ok:false,message:'前回の検索記録はまだありません。',data:{noLastSearch:true}};
+      }else if(item.name==='read_search_history'){
+        var histRead=state().getSearchHistory&&state().getSearchHistory();
+        res=histRead&&histRead.length
+          ?{ok:true,message:searchHistorySummary(histRead),data:{searchHistory:histRead}}
+          :{ok:false,message:'検索履歴はまだありません。',data:{noSearchHistory:true}};
+      }else if(item.name==='read_search_history_item'){
+        var idxRead=Math.max(1,Number(args.index)||1);
+        var histItem=state().getSearchHistoryItem&&state().getSearchHistoryItem(idxRead);
+        res=histItem
+          ?{ok:true,message:historyItemSummary(histItem,idxRead),data:{searchHistoryItem:histItem,index:idxRead}}
+          :{ok:false,message:historyIndexLabel(idxRead)+'の検索記録はありません。',data:{noSearchHistoryItem:true,index:idxRead}};
+      }else if(item.name==='restore_search_history_item'){
+        var idxRestore=Math.max(1,Number(args.index)||1);
+        var histRestore=state().getSearchHistoryItem&&state().getSearchHistoryItem(idxRestore);
+        if(!histRestore){
+          res={ok:false,message:historyIndexLabel(idxRestore)+'の検索記録はありません。',data:{noSearchHistoryItem:true,index:idxRestore}};
+        }else{
+          res=await actions().execute('restore_conditions_only',{snapshot:histRestore.snapshot});
+          if(res.ok)res.message=historyIndexLabel(idxRestore)+'の検索条件へ戻しました。まだ検索は実行していません。';
+        }
+      }else if(item.name==='rerun_search_history_item'){
+        var idxRun=Math.max(1,Number(args.index)||1);
+        var histRun=state().getSearchHistoryItem&&state().getSearchHistoryItem(idxRun);
+        if(!histRun){
+          res={ok:false,message:historyIndexLabel(idxRun)+'の検索記録はありません。',data:{noSearchHistoryItem:true,index:idxRun}};
+        }else{
+          var histRestored=await actions().execute('restore_conditions_only',{snapshot:histRun.snapshot});
+          if(!histRestored.ok){
+            res=histRestored;
+          }else{
+            var histRecipe=histRun.recipe||{action:'run_current_search',args:{}};
+            var histAllowed=['run_best','run_recommended','update_recommended','run_specified_simple','run_current_search'];
+            var histAction=histAllowed.indexOf(histRecipe.action)>=0?histRecipe.action:'run_current_search';
+            res=await actions().execute(histAction,histRecipe.args||{});
+            executedName=histAction;
+            if(res.ok)res.message=historyIndexLabel(idxRun)+'と同じ条件・検索方式でもう一度検索しました。';
+          }
+        }
+      }else if(item.name==='restore_last_search'){
+        var lastRestore=state().getLastSearch&&state().getLastSearch();
+        if(!lastRestore){
+          res={ok:false,message:'前回の検索記録はまだありません。',data:{noLastSearch:true}};
+        }else{
+          res=await actions().execute('restore_conditions_only',{snapshot:lastRestore.snapshot});
+          if(res.ok)res.message='前回の検索条件へ戻しました。まだ検索は実行していません。';
+        }
+      }else if(item.name==='rerun_last_search'){
+        var lastRun=state().getLastSearch&&state().getLastSearch();
+        if(!lastRun){
+          res={ok:false,message:'前回の検索記録はまだありません。',data:{noLastSearch:true}};
+        }else{
+          var restored=await actions().execute('restore_conditions_only',{snapshot:lastRun.snapshot});
+          if(!restored.ok){
+            res=restored;
+          }else{
+            var recipe=lastRun.recipe||{action:'run_current_search',args:{}};
+            var allowed=['run_best','run_recommended','update_recommended','run_specified_simple','run_current_search'];
+            var recipeAction=allowed.indexOf(recipe.action)>=0?recipe.action:'run_current_search';
+            res=await actions().execute(recipeAction,recipe.args||{});
+            executedName=recipeAction;
+            if(res.ok)res.message='前回と同じ条件・検索方式でもう一度検索しました。';
+          }
+        }
       }else res=await actions().execute(executedName,args);
       outputs.push({name:executedName,res:res});
       if(!res.ok)return R(res.message,res.data);
@@ -568,6 +731,14 @@
     }
 
     var after=actions().readSiteState();state().setConditions(after);
+
+    try{
+      var recipeToSave=lastSearchRecipe(plan,outputs);
+      if(recipeToSave&&state().saveLastSearch){
+        state().saveLastSearch(actions().captureSnapshot(),originalMessage,recipeToSave);
+      }
+    }catch(lastSearchErr){}
+
     try{if(window.JINPO_BOT_NLU&&typeof window.JINPO_BOT_NLU.remember==='function')window.JINPO_BOT_NLU.remember({original:originalMessage,corrected:message,plan:plan,state:after,lastReference:lastReference});}catch(e){}
     if(!plan.recognized){
       var cap=null;try{cap=window.JINPO_BOT_CAPABILITIES&&window.JINPO_BOT_CAPABILITIES.friendlyQuestion?window.JINPO_BOT_CAPABILITIES.friendlyQuestion(originalMessage):null;}catch(e){}
@@ -592,6 +763,13 @@
       else if(o.name==='read_totals'){var normal=formatMap(d.totals),combined=formatMap(d.combined);lines.push('合計：'+(normal||'表示なし')+(combined?'\n込み合計：'+combined:''));}
       else if(o.name==='read_activated')lines.push((d.bonds&&d.bonds.length)?'発動因縁：'+d.bonds.join(' / '):'現在、発動因縁は表示されていません。');
       else if(o.name==='read_state')lines.push('現在の検索条件：\n'+conditionLabel(d.state));
+      else if(
+        o.name==='read_last_search'||
+        o.name==='restore_last_search'||
+        o.name==='read_search_history'||
+        o.name==='read_search_history_item'||
+        o.name==='restore_search_history_item'
+      )lines.push(r.message);
       else if(o.name==='read_placement')lines.push((d.placement&&d.placement.length)?d.placement.map(function(x){return x.slot+'. '+x.name+(x.internal_id?' ('+x.internal_id+')':'');}).join('\n'):'まだ配置英傑が確認できないのですよ。配置がある状態なら、もう一度見てみましょう。');
       else if(o.name==='set_owned_hero_auto')lines.push((d.hero||'指定した英傑')+'を使う条件に入れたのですよ。');
       else if(o.name==='set_excluded_hero')lines.push((d.hero||'指定した英傑')+(d.excluded===false?'を除外から戻したのですよ。':'は候補から外したのですよ。'));
@@ -620,6 +798,6 @@
     }
   }
 
-  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},isRestorableAction:isRestorableAction,conditionLabel:conditionLabel,getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
+  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},isRestorableAction:isRestorableAction,conditionLabel:conditionLabel,lastSearchRecipe:lastSearchRecipe,lastSearchSummary:lastSearchSummary,searchHistorySummary:searchHistorySummary,historyItemSummary:historyItemSummary,getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});
 })();

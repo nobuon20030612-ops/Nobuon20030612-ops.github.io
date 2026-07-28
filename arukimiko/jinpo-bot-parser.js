@@ -111,6 +111,54 @@
     var plan={raw:t,preActions:[],actions:[],searchPatch:null,recommendStat:'',helpKey:helpKey(t),smalltalk:'',recognized:false,specifiedSearch:false};
     if(!t)return plan;
 
+    // 検索履歴。
+    if(/^(?:検索)?履歴(?:を)?(?:見せて|教えて|確認して|一覧|ある[？?]?)[。！!？?\s]*$|^(?:最近|直近)(?:の)?検索(?:を)?(?:見せて|教えて|一覧)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'read_search_history'});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var nth=t.match(/^(?:([2-5])\s*(?:つ|回)?前|([二三四五])つ前)(?:の)?(?:検索)?条件(?:を|は)?(?:見せて|教えて|確認して|どうなってる|どうなっている)[。！!？?\s]*$/);
+    if(nth){
+      var mapNth={'二':2,'三':3,'四':4,'五':5};
+      var n=Number(nth[1]||mapNth[nth[2]]||2);
+      plan.actions.push({name:'read_search_history_item',args:{index:n}});
+      plan.recognized=true;
+      return plan;
+    }
+
+    nth=t.match(/^(?:([2-5])\s*(?:つ|回)?前|([二三四五])つ前)(?:の)?(?:検索)?条件(?:に|へ)?(?:戻して|戻す|復元して|復元)[。！!？?\s]*$/);
+    if(nth){
+      var mapNth2={'二':2,'三':3,'四':4,'五':5};
+      var n2=Number(nth[1]||mapNth2[nth[2]]||2);
+      plan.actions.push({name:'restore_search_history_item',args:{index:n2}});
+      plan.recognized=true;
+      return plan;
+    }
+
+    nth=t.match(/^(?:([2-5])\s*(?:つ|回)?前|([二三四五])つ前)(?:と)?同じ(?:検索)?条件(?:で)?(?:検索して|検索|もう一回|もう一度|探して)[。！!？?\s]*$|^(?:([2-5])\s*(?:つ|回)?前|([二三四五])つ前)(?:の)?検索(?:を)?(?:もう一回|もう一度|再実行して|やり直して)[。！!？?\s]*$/);
+    if(nth){
+      var mapNth3={'二':2,'三':3,'四':4,'五':5};
+      var n3=Number(nth[1]||mapNth3[nth[2]]||nth[3]||mapNth3[nth[4]]||2);
+      plan.actions.push({name:'rerun_search_history_item',args:{index:n3}});
+      plan.recognized=true;
+      return plan;
+    }
+
+    // 前回検索の確認・復元・再実行。
+    // 「一つ前の条件」はUndo、「前回の検索条件」は最後に成功した検索。
+    if(/^(?:前回|前|さっき|直前)(?:の)?(?:検索)?条件(?:を|は)?(?:見せて|教えて|確認して|どうなってる|どうなっている)[。！!？?\s]*$|^(?:前回|さっき)(?:の)?検索(?:は)?(?:どんな条件|何の条件)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'read_last_search'});plan.recognized=true;return plan;
+    }
+
+    if(/^(?:前回|前|さっき|直前)(?:の)?(?:検索)?条件(?:に|へ)?(?:戻して|戻す|復元して|復元)[。！!？?\s]*$|^(?:前回|さっき)(?:の)?検索(?:条件)?(?:に|へ)?戻して[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'restore_last_search'});plan.recognized=true;return plan;
+    }
+
+    if(/^(?:(?:前回|前|さっき|直前)(?:と)?同じ条件(?:で)?|(?:前回|前|さっき|直前)(?:の)?(?:検索)?条件で)\s*(?:検索して|検索|探して|探す|もう一回|もう一度)[。！!？?\s]*$|^(?:前回|前|さっき|直前)(?:の)?検索(?:を)?(?:もう一回|もう一度|再実行して|やり直して|同じので)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'rerun_last_search'});plan.recognized=true;return plan;
+    }
+
     // 現在条件の確認。
     if(/^(?:今|現在)(?:の)?(?:検索)?条件(?:は|って|どうなってる|どうなっている|見せて|教えて|確認)?[。！!？?\s]*$|^(?:検索)?条件(?:を)?(?:見せて|教えて|確認して)[。！!？?\s]*$/.test(t)){
       plan.actions.push({name:'read_state'});plan.recognized=true;return plan;
@@ -485,5 +533,5 @@
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.7.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.9.0',parse:parse,normalize:normalize};
 })();
