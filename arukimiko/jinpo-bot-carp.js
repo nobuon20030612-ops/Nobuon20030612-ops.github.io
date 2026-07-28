@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 広島東洋カープ専用会話 v1.7.0
+ * 歩き巫女 広島東洋カープ専用会話 v1.9.0
  * - カープの基本知識・歴史を専用返答
  * - 試合結果/順位/日程/主要成績は NPB公式ページを Reader 経由で自動確認
  * - 最新ニュース/先発/スタメン/登録関連は既存の無料Webニュース検索へフォールバック
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.7.0';
+  var VERSION='1.9.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
@@ -28,6 +28,7 @@
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function compact(v){return S(v).toLowerCase().replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…]/g,'');}
+  function knowledge(){return window.JINPO_BOT_CARP_KNOWLEDGE||null;}
   function pick(a){return a[Math.floor(Math.random()*a.length)];}
 
   var ANECDOTE_KEY='arukimikoCarpAnecdote.v1';
@@ -39,6 +40,11 @@
   ];
 
   function nextAnecdote(){
+    var kb=knowledge();
+    if(kb&&typeof kb.nextAnecdote==='function'){
+      var rich=kb.nextAnecdote();
+      if(rich&&rich.answer)return rich.answer;
+    }
     var n=0;
     try{n=Number(sessionStorage.getItem(ANECDOTE_KEY)||0)||0;}catch(e){}
     var text=ANECDOTES[n%ANECDOTES.length];
@@ -67,6 +73,8 @@
       var aliases=['カープ','かーぷ','広島カープ','広島東洋カープ'];
       for(var i=0;i<aliases.length;i++)if(Math.abs(c.length-compact(aliases[i]).length)<=1&&distance(c,aliases[i])<=1)return true;
     }
+    var kb=knowledge();
+    if(kb&&typeof kb.hasKnownEntity==='function'&&kb.hasKnownEntity(t))return true;
     return false;
   }
 
@@ -394,6 +402,34 @@
     return {handled:true,answer:'カープの最新情報をWebで確認したのですよ。\n'+r.title+'：'+r.extract,sources:sources(src),mode:'カープ最新Web'};
   }
 
+  function shouldLiveFirst(text,kind){
+    var t=S(text),kb=knowledge();
+
+    if(kind==='news_detail'){
+      // 現在を明示した故障・復帰・移籍はlive。
+      if(/今日|現在|今の|いまの|最新|速報|今季|今シーズン|復帰|登録|抹消|トレード|新外国人/.test(t))return true;
+
+      // 現在のカープ在籍選手なら故障情報はlive。
+      if(kb&&typeof kb.foundNames==='function'&&typeof kb.currentPlayerByName==='function'){
+        var names=kb.foundNames(t);
+        if(names.length&&kb.currentPlayerByName(names[0]))return true;
+
+        // OB・過去人物の怪我/故障/移籍史は正本を優先。
+        if(names.length)return false;
+      }
+
+      if(/逸話|昔話|伝説|名場面|当時|過去|アキレス腱/.test(t))return false;
+      return true;
+    }
+
+    if(['news','rank','schedule','result','bat','pitch','overview'].indexOf(kind)>=0)return true;
+    if(kind==='players'){
+      if(/歴代|昔|OB|元カープ|人物|について|どんな選手|家族|親族|逸話|伝説|名場面/.test(t))return false;
+      if(/選手一覧|メンバー|誰がいる|だれがいる|投手陣|野手陣|捕手陣|内野手|外野手|現在の選手|今の選手/.test(t))return true;
+    }
+    return false;
+  }
+
   async function liveReply(text,kind,opt){
     opt=opt||{};var ctx=opt.context||{};
     if(kind==='news'||kind==='news_detail'){
@@ -519,12 +555,52 @@
       t='カープの他の逸話';
     }
 
-    if(!isCarp(t))return {handled:false};
-    var k=intent(t);if(k)return await liveReply(t,k,opt);
+    var kb=knowledge();
+
+    // 人物名・年度を省略した追質問を正本履歴から補完。
+    if(!isCarp(t)&&kb&&typeof kb.resolveFollowup==='function'){
+      var follow=kb.resolveFollowup(t,{history:opt.history||[]});
+      if(follow&&follow.resolved)t=follow.text;
+    }
+
+    if(!isCarp(t)){
+      if(!(kb&&typeof kb.isContextualFollowup==='function'&&kb.isContextualFollowup(text,opt.history||[]))){
+        return {handled:false};
+      }
+    }
+
+    var k=intent(t);
+    if(k&&shouldLiveFirst(t,k))return await liveReply(t,k,opt);
+
+    kb=kb||knowledge();
+    if(kb&&typeof kb.answer==='function'){
+      var moreKind=recentAnecdoteContext(opt.history||[])?'anecdote':'';
+      var kr=kb.answer(t,{history:opt.history||[],moreKind:moreKind});
+      if(kr&&kr.handled){
+        return {
+          handled:true,
+          answer:String(kr.answer||''),
+          sources:[],
+          mode:'カープ専用正本知識',
+          data:{
+            carpKnowledge:true,
+            sourceDate:kb.sourceDate||'2026-07-28',
+            kind:kr.kind||'knowledge',
+            player:kr.player||'',
+            year:kr.year||'',
+            resolvedQuery:kr.resolvedQuery||t,
+            knowledgeContext:kr.context||null
+          }
+        };
+      }
+    }
+
+    if(k)return await liveReply(t,k,opt);
+
     var local=staticReply(t);
     if(local)return {handled:true,answer:local,sources:sources(),mode:'カープ専用会話'};
 
-    // カープ名を含む選手・歴史などの具体質問は、一般Web検索へ自然に引き渡す。
+    // 正本にもない具体質問は、一般Web検索へ自然に引き渡す。
     var web=window.JINPO_BOT_WEB;
     if(web&&typeof web.lookup==='function'&&/(誰|選手|監督|コーチ|歴史|由来|記録|成績|教えて|知りたい|について|[？?]$)/.test(t)){
       var r=await web.lookup(t);
@@ -536,5 +612,5 @@
     return {handled:true,answer:'カープの話なのですね。試合結果、順位、日程、選手、歴史など、気になるところをそのまま聞いてくださいなのですよ。',sources:sources(),mode:'カープ専用会話'};
   }
 
-  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,fetchStandings:fetchStandings,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary,carpStanding:carpStanding,relativeGameDay:relativeGameDay,tokyoYmd:tokyoYmd,focusedGameAnswer:focusedGameAnswer,gameOutcome:gameOutcome}};
+  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,shouldLiveFirst:shouldLiveFirst,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,fetchStandings:fetchStandings,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary,carpStanding:carpStanding,relativeGameDay:relativeGameDay,tokyoYmd:tokyoYmd,focusedGameAnswer:focusedGameAnswer,gameOutcome:gameOutcome}};
 })();

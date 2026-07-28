@@ -12,7 +12,7 @@
 
   var current=document.currentScript;
   var base='/arukimiko/';
-  var VERSION='3.3.9';
+  var VERSION='3.4.1';
   try{
     if(current&&current.src)base=new URL('./',current.src).href;
   }catch(e){}
