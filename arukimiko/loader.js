@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v2.2.0
+ * 歩き巫女 サイト共通ローダー v2.3.0
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -26,7 +26,7 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'2.2.0',baseUrl:base,pageMode:mode};
+  window.ARUKIMIKO_SHARED={version:'2.3.0',baseUrl:base,pageMode:mode};
 
   function addCss(name){
     var href=new URL(name,base).href;

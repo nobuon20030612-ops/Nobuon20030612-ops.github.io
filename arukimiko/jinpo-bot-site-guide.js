@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 サイト総合案内 v1.4.0
+ * 歩き巫女 サイト総合案内 v1.5.0
  * たいらの野望の現行トップページ構成を基準に、ページ案内と内部リンクを返す。
  * 数値・ゲーム仕様は推測せず、ここでは「どのページへ行けばよいか」を担当する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='1.4.0';
+  var VERSION='1.5.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function rootUrl(){try{return new URL('/',location.href).href;}catch(e){return'/';}}
@@ -60,6 +60,23 @@
     var best=null,bs=0;ITEMS.forEach(function(item){var s=itemScore(text,item);if(s>bs){best=item;bs=s;}});return best;
   }
   function hasNavigationCue(t){return /どこ|ページ|開い|見たい|行きたい|案内|リンク|場所|使いたい|使う|計算したい|調べたい|確認したい|やりたい|戻りたい|移動/.test(S(t));}
+  function hasFactCue(t){
+    t=S(t);
+    return /カウンター|かうんた|かうん|counter|何番|なんばん|いくつ|数値|何位|順位|成績|勝敗|勝率|効果|倍率|上限|下限|必要数|何個|なんこ|何人|誰|だれ|いつ|どれ|どの|いくら|どのくらい|どれくらい/.test(t);
+  }
+  function exactAliasOnly(t,item){
+    var x=S(t).toLowerCase();
+    return item.aliases.some(function(a){return x===String(a).toLowerCase();});
+  }
+  function looksLikeSpecificCounterQuestion(t,item){
+    t=S(t);
+    if(item.id!=='counter')return false;
+    if(!/(?:カウンター|かうんた|かうん|counter)/i.test(t))return false;
+    var rest=t
+      .replace(/カウンター|かうんたー|かうんた|かうん|counter/ig,'')
+      .replace(/[のはって？?！!。、・「」『』【】（）()\s]/g,'');
+    return rest.length>0;
+  }
   function hasJinpoOperation(t){t=S(t);return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|英傑.*(?:差替|固定|除外|配置)|差替|込み合計|全MAX|検索結果|鶴翼|方円|魚鱗|衡軛|こうやく/.test(t)||/(?:鬼神石|見聞録|転生).*(?:MAX|マックス|設定|解除|数値)/.test(t)||/(?:MAX|マックス).*(?:鬼神石|見聞録|転生)/.test(t);}
   function homeLink(){return link('トップページを開く','');}
 
@@ -91,9 +108,18 @@
 
     var item=findItem(t);
     if(item){
-      // 陣法ページの中で「鬼神石MAX」等を操作している時は、単語一致だけでページ案内に奪わない。
-      if(mode==='jinpo'&&!hasNavigationCue(t)&&hasJinpoOperation(t))return {handled:false};
-      if(item.id==='jinpo'&&mode==='jinpo'&&!hasNavigationCue(t))return {handled:false};
+      var nav=hasNavigationCue(t);
+
+      // 明示的なページ移動ではない限り、値・順位・効果などの質問を横取りしない。
+      if(!nav&&looksLikeSpecificCounterQuestion(t,item))return {handled:false};
+      if(!nav&&hasFactCue(t)&&!exactAliasOnly(t,item))return {handled:false};
+
+      if(mode==='jinpo'&&!nav&&hasJinpoOperation(t))return {handled:false};
+      if(item.id==='jinpo'&&mode==='jinpo'&&!nav)return {handled:false};
+
+      // ページ名だけ、または明示的な「開いて/どこ」の時だけ案内。
+      if(!nav&&!exactAliasOnly(t,item))return {handled:false};
+
       var suffix=item.external?'別タブで開けるのですよ。':'こちらから開けるのですよ。';
       return {handled:true,mode:'サイト総合案内',answer:item.name+'ですね。'+item.desc+' '+suffix,links:[link(item.name+'を開く',item.path,item.external)]};
     }

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.1.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.2.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -38,6 +38,10 @@
     try{return {label:label,url:new URL(path,rootUrl()).href};}
     catch(e){return {label:label,url:path};}
   }
+  function wantsNavigation(text){
+    return /どこ|ページ|開い|見たい|行きたい|案内|リンク|表を開|表見せ|確認ページ|移動/.test(S(text));
+  }
+
   function recentText(history,role,limit){
     var h=Array.isArray(history)?history:[],out=[];
     for(var i=h.length-1;i>=0&&out.length<(limit||8);i--){
@@ -104,6 +108,7 @@
   function stripCounterCue(text,cue){
     var t=N(text);
     if(cue&&cue.form)t=t.replace(cue.form,'');
+    t=t.replace(/(?:ひょう|表|ぺえじ|ページ)?(?:を)?(?:ひらいて|開いて|みせて|見せて|みたい|見たい|かくにん|確認)+$/g,'');
     t=t.replace(/(?:の|は|って|を|おしえて|教えて|いくつ|なんばん|何番|なに|何)+$/g,'');
     t=t.replace(/^(?:じゃあ|では|なら|えっと|ねえ|ねぇ)+/g,'');
     return t;
@@ -214,7 +219,7 @@
       answer:interpreted+body,
       mode:'たいらの野望専用知識',
       sources:[],
-      links:f.page?[pageLink(S(f.canonical)+'の表を確認',f.page)]:[],
+      links:(f.page&&wantsNavigation(original))?[pageLink(S(f.canonical)+'の表を確認',f.page)]:[],
       data:{
         knowledgeId:f.id,kind:f.kind,canonical:f.canonical,value:f.value,
         location:f.location,authoritative:true,matchKind:meta&&meta.nameKind||''
@@ -267,6 +272,22 @@
       return counterAnswer(top.f,top.m,original);
     }
 
+    // 人物名 + カウンター意図があるのに正本に一致しない場合、
+    // genericなカウンターメニュー説明へ落とさない。
+    var missingCue=detectCue(original);
+    if(missingCue.found){
+      var missingTarget=stripCounterCue(original,missingCue);
+      if(missingTarget){
+        return {
+          handled:true,
+          answer:'「'+S(missingTarget)+'」のカウンター値を聞いているのですね。今の歩き巫女の正本には、その名前のカウンター値がまだ登録されていないのですよ。\nページ案内でごまかさず、確認できた値だけ数字で答えるようにします。',
+          mode:'たいらの野望専用知識',
+          sources:[],links:[],
+          data:{counterQuestion:true,missingKnowledge:true,target:S(missingTarget),authoritative:false}
+        };
+      }
+    }
+
     var bt=null,ts=0;
     (d.topics||[]).forEach(function(x){
       var s=topicScore(original,x);if(s>ts){ts=s;bt=x;}
@@ -274,7 +295,7 @@
     if(bt&&ts>=70){
       return {
         handled:true,answer:S(bt.answer),mode:'たいらの野望専用知識',sources:[],
-        links:bt.page?[pageLink('該当ページを開く',bt.page)]:[],
+        links:(bt.page&&wantsNavigation(original))?[pageLink('該当ページを開く',bt.page)]:[],
         data:{knowledgeId:bt.id,authoritative:true}
       };
     }
