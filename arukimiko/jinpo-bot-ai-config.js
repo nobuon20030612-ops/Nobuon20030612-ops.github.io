@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 設定 v1.2.0
+ * 歩き巫女 AI会話脳 設定 v1.3.0
  *
  * Firebase AI Logic + Gemini Developer API を利用。
  * AI Logicが未設定・無料枠到達・通信障害の場合は、
@@ -10,7 +10,7 @@
   if(window.JINPO_BOT_AI_CONFIG)return;
 
   window.JINPO_BOT_AI_CONFIG={
-    version:'1.2.0',
+    version:'1.3.0',
 
     // Firebase AI Logicを有効化したら、そのままAI会話脳を使用する。
     // 未設定時も既存Botへ自動フォールバックするため、サイト自体は止まらない。
@@ -27,6 +27,14 @@
     cooldownMs:5*60*1000,
     maxHistoryMessages:18,
     maxSequentialFunctionCalls:6,
+
+    // Geminiへ過去の誤ったローカル回答を持ち込まない。
+    // ユーザー発言は保持し、assistant側はAI回答だけを基本的に信頼する。
+    trustLocalAssistantHistory:false,
+
+    // 起動時にAI本文通信だけでなくFunction Callingも実動確認する。
+    startupPreflight:true,
+    preflightToolTest:true,
 
     // 公開サイトではApp Checkが整うまでAIを有効扱いにしない。
     requireAppCheck:true,

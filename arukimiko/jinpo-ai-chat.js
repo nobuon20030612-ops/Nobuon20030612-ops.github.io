@@ -12,6 +12,7 @@
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
   var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn;
+  var brainStatus='AI確認中…';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
   var dragging = null;
@@ -81,7 +82,7 @@
     header.appendChild(el('span','jinpoAiHeaderMark',{text:'AI'}));
     var htext = el('div','jinpoAiHeaderText');
     htext.appendChild(el('div','jinpoAiTitle',{text:cfg().title}));
-    statusEl = el('div','jinpoAiStatus',{text:(window.JINPO_AI_TRANSPORT&&typeof window.JINPO_AI_TRANSPORT==='function')?'準備OK':'準備中…'});
+    statusEl = el('div','jinpoAiStatus',{text:brainStatus});
     htext.appendChild(statusEl); header.appendChild(htext);
 
     var actions = el('div','jinpoAiHeaderActions');
@@ -306,7 +307,7 @@
     messages.textContent=''; var h=currentHistory();
     if(!h.length){
       addBubble('assistant',window.JINPO_BOT_PAGE_MODE==='top'?'こんにちは。歩き巫女なのですよ。\nここではサイト案内、たいらの野望の情報、カープ、天気、調べもの、雑談などをそのまま話しかけてくださいね。':(window.JINPO_BOT_PAGE_MODE==='site'?'こんにちは。歩き巫女なのですよ。\nこのページの案内・調べもの・雑談まで、気軽に話しかけてくださいね。':'こんにちは。歩き巫女なのですよ。\nクリックでも手入力でも、陣法探しを一緒に進められるのですよ。'),{ephemeral:true});
-      addBubble('system',cfg().endpoint ? 'AI接続設定を検出しました' : '現在はチャット画面の基礎機能まで有効です',{ephemeral:true});
+      addBubble('system','AI会話脳の接続状態を確認しています。接続できない場合も予備エンジンで会話を続けます。',{ephemeral:true});
       return;
     }
     h.forEach(function(m){ addBubble(m.role,m.text,Object.assign({},m.meta||{},{ephemeral:true})); });
@@ -351,7 +352,21 @@
     var b=el('div','jinpoAiBubble'); var t=el('span','jinpoAiTyping'); t.innerHTML='<i></i><i></i><i></i>'; b.appendChild(t); row.appendChild(b); messages.appendChild(row); scrollBottom(); return row;
   }
   function scrollBottom(){ requestAnimationFrame(function(){ messages.scrollTop=messages.scrollHeight; }); }
-  function setBusy(v){ busy=!!v; sendBtn.disabled=busy; input.disabled=busy; statusEl.textContent=busy?'考えています…':((window.JINPO_AI_TRANSPORT&&typeof window.JINPO_AI_TRANSPORT==='function')?'準備OK':'準備中…'); }
+  function setBusy(v){
+    busy=!!v;
+    sendBtn.disabled=busy;
+    input.disabled=busy;
+    statusEl.textContent=busy?'考えています…':brainStatus;
+  }
+
+  function setBrainStatus(status,detail){
+    brainStatus=String(status||'予備モード');
+    if(statusEl&&!busy)statusEl.textContent=brainStatus;
+    try{
+      root.setAttribute('data-ai-brain-status',brainStatus);
+      if(detail)root.setAttribute('data-ai-brain-detail',String(detail).slice(0,180));
+    }catch(e){}
+  }
 
   function isHistoryClearRequest(text){
     return /^(?:会話|チャット|ちゃっと)?(?:履歴|ログ)(?:を)?(?:削除|消して|消す|クリア|リセット)(?:して)?[。！!？?]*$|^(?:会話|チャット|ちゃっと)(?:を)?リセット(?:して)?[。！!？?]*$/i.test(String(text||'').trim());
@@ -394,7 +409,15 @@
     try{
       var result=await requestAi(text,currentHistory()); if(typing&&typing.parentNode)typing.remove();
       addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||''});
-      if(result.mode) statusEl.textContent=String(result.mode);
+      if(result.mode==='AI歩き巫女'){
+        setBrainStatus('AI準備OK','Gemini / Function Calling');
+      }else if(result.mode==='AI接続確認'){
+        // preflight command itself updates the status from bot runtime.
+      }else if(result.mode){
+        var st=(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.status==='function')
+          ?window.JINPO_BOT_AI_BRAIN.status():null;
+        if(!st||st.phase!=='online')setBrainStatus('予備モード',String(result.mode));
+      }
     }catch(err){
       if(typing&&typing.parentNode)typing.remove();
       addBubble('assistant',humanError(err));
@@ -428,14 +451,19 @@
   }
 
   function clearHistory(){ pendingHistoryClear=false; clearHistoryStorage(); renderHistory(); }
-  function setTransport(fn){ window.JINPO_AI_TRANSPORT = typeof fn==='function'?fn:null; statusEl.textContent=window.JINPO_AI_TRANSPORT?'準備OK':'準備中…'; }
+  function setTransport(fn){
+    window.JINPO_AI_TRANSPORT = typeof fn==='function'?fn:null;
+    if(statusEl&&!busy)statusEl.textContent=brainStatus;
+  }
 
   window.JINPO_AI_CHAT = {
-    version:'0.7.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.8.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
-    getHistory:currentHistory
+    getHistory:currentHistory,
+    setBrainStatus:setBrainStatus,
+    getBrainStatus:function(){return brainStatus;}
   };
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',build,{once:true}); else build();

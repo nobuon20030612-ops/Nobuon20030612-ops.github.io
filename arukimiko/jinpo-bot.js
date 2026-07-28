@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.5';
+  var VERSION='3.0.6';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -50,12 +50,25 @@
       if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.preflight==='function'){
         var pf=await window.JINPO_BOT_AI_BRAIN.preflight();
         if(pf&&pf.ok){
+          try{
+            if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+              window.JINPO_AI_CHAT.setBrainStatus(
+                pf.functionCalling?'AI準備OK':'AI一部確認',
+                pf.functionCalling?'Gemini + Function Calling OK':'Gemini text only'
+              );
+            }
+          }catch(e){}
           return {
-            answer:'AI会話脳の接続は正常なのですよ。\nモデル：'+String(pf.model||'')+'\nFirebase AI Logic / App Check：OK',
+            answer:'AI会話脳の接続は正常なのですよ。\nモデル：'+String(pf.model||'')+'\nFirebase AI Logic / App Check：OK\nFunction Calling：'+(pf.functionCalling?'OK':'未確認'),
             sources:[],links:[],mode:'AI接続確認',
             data:{aiPreflight:true,ok:true,preflight:pf}
           };
         }
+        try{
+          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+            window.JINPO_AI_CHAT.setBrainStatus('予備モード',String((pf&&pf.message)||'AI接続失敗'));
+          }
+        }catch(e){}
         return {
           answer:'AI会話脳はまだ本番接続できていません。\n'+String((pf&&pf.message)||'Firebase側の設定を確認してください。')+'\n\nAIが使えない間も、従来の歩き巫女へ自動で切り替わるのでサイト機能は止まりません。',
           sources:[],links:[],mode:'AI接続確認',
@@ -78,7 +91,24 @@
             }
           });
           if(aiReply&&aiReply.handled){
+            try{
+              if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+                window.JINPO_AI_CHAT.setBrainStatus('AI準備OK','Gemini response');
+              }
+            }catch(e){}
             return aiReply;
+          }
+          if(aiReply&&aiReply.error){
+            window.ARUKIMIKO_AI_LAST_FALLBACK={
+              at:Date.now(),
+              error:String(aiReply.error||''),
+              message:originalMessage
+            };
+            try{
+              if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+                window.JINPO_AI_CHAT.setBrainStatus('予備モード',String(aiReply.error||'AI fallback'));
+              }
+            }catch(e){}
           }
         }
       }catch(aiBrainErr){}
@@ -412,7 +442,36 @@
       p.__skipAi=true;
       return handle(p);
     };
-    if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function')window.JINPO_AI_CHAT.setTransport(handle);
+
+    if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function'){
+      window.JINPO_AI_CHAT.setTransport(handle);
+    }
+
+    // 起動後に1回、Gemini本文 + Function Callingまで実動確認。
+    setTimeout(async function(){
+      try{
+        if(!window.JINPO_BOT_AI_BRAIN||
+           typeof window.JINPO_BOT_AI_BRAIN.startupPreflight!=='function')return;
+
+        var pf=await window.JINPO_BOT_AI_BRAIN.startupPreflight();
+        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+          if(pf&&pf.ok&&pf.functionCalling){
+            window.JINPO_AI_CHAT.setBrainStatus('AI準備OK','Gemini + Function Calling OK');
+          }else{
+            window.JINPO_AI_CHAT.setBrainStatus(
+              '予備モード',
+              String((pf&&pf.message)||'AI preflight failed')
+            );
+          }
+        }
+      }catch(e){
+        try{
+          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+            window.JINPO_AI_CHAT.setBrainStatus('予備モード',String(e&&e.message||e));
+          }
+        }catch(ignore){}
+      }
+    },600);
   }
   window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});

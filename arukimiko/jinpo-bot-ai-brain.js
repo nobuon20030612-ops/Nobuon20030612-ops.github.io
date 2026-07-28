@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.3.0
+ * 歩き巫女 AI会話脳 v1.4.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
   var ctx={
     app:null,
     api:null,
@@ -19,7 +19,12 @@
     lastError:'',
     lastErrorAt:0,
     lastOkAt:0,
-    calls:0
+    calls:0,
+    toolCalls:0,
+    phase:'idle',
+    preflightAt:0,
+    preflightOk:false,
+    toolPreflightOk:false
   };
 
   function S(v){return String(v==null?'':v).trim();}
@@ -89,6 +94,7 @@
     if(!configured())return null;
     if(ctx.initializing)return ctx.initializing;
 
+    ctx.phase='initializing';
     ctx.initializing=(async function(){
       try{
         var v=S(cfg().sdkVersion)||'12.16.0';
@@ -128,10 +134,10 @@
 
         ctx.api=aiM;
         ctx.ai=aiM.getAI(ctx.app,{backend:new aiM.GoogleAIBackend()});
-        ctx.lastError='';ctx.lastErrorAt=0;
+        ctx.lastError='';ctx.lastErrorAt=0;ctx.phase='ready';
         return ctx;
       }catch(e){
-        ctx.lastError=errorText(e);ctx.lastErrorAt=Date.now();
+        ctx.lastError=errorText(e);ctx.lastErrorAt=Date.now();ctx.phase='fallback';
         return null;
       }finally{
         ctx.initializing=null;
@@ -139,6 +145,13 @@
     })();
 
     return ctx.initializing;
+  }
+
+  function trustedAssistantMessage(x){
+    if(!x||x.role!=='assistant')return false;
+    if(cfg().trustLocalAssistantHistory)return true;
+    var meta=x.meta||{},mode=S(meta.mode);
+    return mode==='AI歩き巫女'||mode==='AI接続確認';
   }
 
   function trimHistory(history,currentMessage){
@@ -151,24 +164,40 @@
       if(last&&last.role==='user'&&S(last.text)===S(currentMessage))h.pop();
     }
 
-    h=h.slice(-max);
+    h=h.slice(-Math.max(max*2,24));
     var out=[];
+
     h.forEach(function(x){
       if(!x)return;
       var text=S(x.text);if(!text)return;
-      var role=x.role==='assistant'?'model':x.role==='user'?'user':'';
-      if(!role)return;
-      out.push({role:role,parts:[{text:text.slice(0,5000)}]});
+
+      if(x.role==='assistant'){
+        // 以前のルールBotの誤返答がGeminiの文脈を汚染しないようにする。
+        if(!trustedAssistantMessage(x))return;
+        out.push({role:'model',parts:[{text:text.slice(0,5000)}]});
+        return;
+      }
+
+      if(x.role==='user'){
+        out.push({role:'user',parts:[{text:text.slice(0,5000)}]});
+      }
     });
 
-    // Gemini chat history must alternate reasonably; collapse duplicate roles.
+    out=out.slice(-max);
+
+    // Gemini chat historyのrole連続を整理する。
+    // userが連続した場合は「過去のユーザー発言」として明確に分離して結合。
     var clean=[];
     out.forEach(function(x){
       var prev=clean[clean.length-1];
       if(prev&&prev.role===x.role){
-        prev.parts[0].text+='\n'+x.parts[0].text;
-      }else clean.push(x);
+        var sep=x.role==='user'?'\n\n[次のユーザー発言]\n':'\n\n';
+        prev.parts[0].text+=sep+x.parts[0].text;
+      }else{
+        clean.push(x);
+      }
     });
+
     if(clean.length&&clean[0].role==='model')clean.shift();
     return clean;
   }
@@ -225,6 +254,7 @@
     var schema=makeSchema(aiM);
 
     function record(r){
+      ctx.toolCalls++;
       r=r||{};
       if(Array.isArray(r.sources))meta.sources=meta.sources.concat(r.sources);
       if(Array.isArray(r.links))meta.links=meta.links.concat(r.links);
@@ -394,49 +424,137 @@
     return x||'AI接続に失敗しました。';
   }
 
-  async function preflight(){
+  async function preflight(options){
+    options=options||{};
     var issue=setupIssue();
-    if(issue)return issue;
+    if(issue){
+      ctx.phase='fallback';
+      return issue;
+    }
 
-    // 接続確認はクールダウンを無視して明示的に再試行する。
-    ctx.lastError='';ctx.lastErrorAt=0;
+    ctx.lastError='';
+    ctx.lastErrorAt=0;
+    ctx.phase='checking';
 
     var c=await init();
-    if(!c||!c.api||!c.ai)return {
-      ok:false,
-      stage:'initialize',
-      message:humanError(ctx.lastError),
-      raw:ctx.lastError
-    };
-
-    try{
-      var model=c.api.getGenerativeModel(
-        c.ai,
-        {model:S(cfg().model)||'gemini-3.6-flash'},
-        {timeout:Number(cfg().timeoutMs)||18000}
-      );
-      var result=await model.generateContent('接続確認です。「接続OK」とだけ返してください。');
-      var text=result&&result.response&&typeof result.response.text==='function'
-        ?S(result.response.text()):'';
-      if(!text)throw new Error('AI response was empty');
-
-      ctx.lastOkAt=Date.now();
-      ctx.lastError='';ctx.lastErrorAt=0;
-      return {
-        ok:true,
-        stage:'complete',
-        model:S(cfg().model)||'gemini-3.6-flash',
-        message:text
-      };
-    }catch(e){
-      ctx.lastError=errorText(e);ctx.lastErrorAt=Date.now();
+    if(!c||!c.api||!c.ai){
+      ctx.phase='fallback';
       return {
         ok:false,
-        stage:'request',
+        stage:'initialize',
         message:humanError(ctx.lastError),
         raw:ctx.lastError
       };
     }
+
+    try{
+      // Stage 1: 普通のGemini本文通信。
+      var textModel=c.api.getGenerativeModel(
+        c.ai,
+        {model:S(cfg().model)||'gemini-3.6-flash'},
+        {timeout:Number(cfg().timeoutMs)||18000}
+      );
+      var textResult=await textModel.generateContent(
+        '接続確認です。「接続OK」とだけ返してください。'
+      );
+      var text=textResult&&textResult.response&&typeof textResult.response.text==='function'
+        ?S(textResult.response.text()):'';
+      if(!text)throw new Error('AI response was empty');
+
+      var toolTest=options.toolTest;
+      if(toolTest==null)toolTest=cfg().preflightToolTest!==false;
+      var toolOk=true,toolInvoked=false;
+
+      // Stage 2: Function Calling自体を本当に実行できるか。
+      if(toolTest){
+        var nonce='ARUKIMIKO_TOOL_OK_306';
+        var healthTool={
+          functionDeclarations:[{
+            name:'arukimiko_health_check',
+            description:'AI Function Callingの接続確認専用。接続確認では必ずこの関数を呼ぶ。',
+            parameters:c.api.Schema.object({
+              properties:{
+                check:c.api.Schema.string({
+                  description:'必ず health と指定する。'
+                })
+              }
+            }),
+            functionReference:async function(args){
+              toolInvoked=true;
+              ctx.toolCalls++;
+              return {
+                ok:true,
+                token:nonce,
+                received:S(args&&args.check)
+              };
+            }
+          }]
+        };
+
+        var toolModel=c.api.getGenerativeModel(
+          c.ai,
+          {
+            model:S(cfg().model)||'gemini-3.6-flash',
+            systemInstruction:
+              'これはFunction Callingの動作確認です。必ずarukimiko_health_checkを1回呼んでください。',
+            tools:[healthTool],
+            toolConfig:{
+              functionCallingConfig:{
+                mode:c.api.FunctionCallingMode.ANY,
+                allowedFunctionNames:['arukimiko_health_check']
+              }
+            }
+          },
+          {
+            timeout:Number(cfg().timeoutMs)||18000,
+            // 1回実行された事実だけを検証する。無限ループを許可しない。
+            maxSequentialFunctionCalls:1
+          }
+        );
+
+        await toolModel.generateContent(
+          'arukimiko_health_checkを使ってFunction Callingを確認してください。'
+        );
+        toolOk=toolInvoked;
+        if(!toolOk)throw new Error('function-calling-not-invoked');
+      }
+
+      ctx.lastOkAt=Date.now();
+      ctx.lastError='';
+      ctx.lastErrorAt=0;
+      ctx.phase='online';
+      ctx.preflightAt=Date.now();
+      ctx.preflightOk=true;
+      ctx.toolPreflightOk=toolOk;
+
+      return {
+        ok:true,
+        stage:'complete',
+        model:S(cfg().model)||'gemini-3.6-flash',
+        message:text,
+        functionCalling:toolOk,
+        functionInvoked:toolInvoked
+      };
+    }catch(e){
+      ctx.lastError=errorText(e);
+      ctx.lastErrorAt=Date.now();
+      ctx.phase='fallback';
+      ctx.preflightAt=Date.now();
+      ctx.preflightOk=false;
+      ctx.toolPreflightOk=false;
+      return {
+        ok:false,
+        stage:/function-calling/i.test(ctx.lastError)?'function-calling':'request',
+        message:humanError(ctx.lastError),
+        raw:ctx.lastError
+      };
+    }
+  }
+
+  async function startupPreflight(){
+    if(cfg().startupPreflight===false)return status();
+    if(ctx.preflightAt&&Date.now()-ctx.preflightAt<5*60*1000)return status();
+    return preflight({toolTest:cfg().preflightToolTest!==false});
   }
 
   async function respond(message,opt){
@@ -444,6 +562,7 @@
     message=S(message);
     if(!message||!configured()||!appCheckReady()||inCooldown())return {handled:false};
 
+    ctx.phase='thinking';
     var c=await init();
     if(!c||!c.api||!c.ai)return {handled:false};
 
@@ -479,7 +598,7 @@
         throw new Error('AI response was empty');
       }
 
-      ctx.lastOkAt=Date.now();ctx.lastError='';ctx.lastErrorAt=0;
+      ctx.lastOkAt=Date.now();ctx.lastError='';ctx.lastErrorAt=0;ctx.phase='online';
 
       // 重複メタデータ除去
       var seenS={},sources=[];
@@ -508,6 +627,7 @@
     }catch(e){
       ctx.lastError=errorText(e);
       ctx.lastErrorAt=Date.now();
+      ctx.phase='fallback';
       return {handled:false,error:ctx.lastError};
     }
   }
@@ -521,7 +641,12 @@
       appCheck:appCheckCfg(),
       cooldown:inCooldown(),
       model:S(cfg().model),
+      phase:ctx.phase,
       calls:ctx.calls,
+      toolCalls:ctx.toolCalls,
+      preflightAt:ctx.preflightAt,
+      preflightOk:ctx.preflightOk,
+      toolPreflightOk:ctx.toolPreflightOk,
       lastOkAt:ctx.lastOkAt,
       lastError:ctx.lastError,
       lastErrorAt:ctx.lastErrorAt
@@ -529,13 +654,15 @@
   }
 
   function reset(){
-    ctx.lastError='';ctx.lastErrorAt=0;ctx.lastOkAt=0;ctx.calls=0;
+    ctx.lastError='';ctx.lastErrorAt=0;ctx.lastOkAt=0;ctx.calls=0;ctx.toolCalls=0;
+    ctx.phase='idle';ctx.preflightAt=0;ctx.preflightOk=false;ctx.toolPreflightOk=false;
   }
 
   window.JINPO_BOT_AI_BRAIN={
     version:VERSION,
     respond:respond,
     preflight:preflight,
+    startupPreflight:startupPreflight,
     status:status,
     reset:reset,
     configured:configured,
