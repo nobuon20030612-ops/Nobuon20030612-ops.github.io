@@ -836,3 +836,40 @@
       0 0 28px rgba(255,70,137,.30);
   }
 }
+
+
+/* v3.1.2 高性能AI無料枠 / 通常Bot切替案内 */
+#jinpoAiRoot .jinpoAiLimitNotice{
+  margin-top:7px!important;
+  padding:7px 10px!important;
+  border:1px solid rgba(238,161,194,.22)!important;
+  border-radius:9px!important;
+  background:rgba(34,16,26,.72)!important;
+  color:rgba(255,214,232,.78)!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+}
+#jinpoAiRoot .jinpoAiLimitNotice strong{
+  display:block!important;
+  margin-bottom:2px!important;
+  color:#ffc5dd!important;
+  font-size:11.5px!important;
+}
+#jinpoAiRoot .jinpoAiLimitNotice span{
+  display:block!important;
+}
+#jinpoAiRoot .jinpoAiFallbackNotice{
+  margin-top:6px!important;
+  padding:7px 10px!important;
+  border:1px solid rgba(255,178,94,.52)!important;
+  border-radius:9px!important;
+  background:rgba(72,42,17,.88)!important;
+  color:#ffe4b5!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  text-align:center!important;
+  box-shadow:0 0 10px rgba(255,168,69,.16)!important;
+}
+#jinpoAiRoot .jinpoAiFallbackNotice[hidden]{
+  display:none!important;
+}

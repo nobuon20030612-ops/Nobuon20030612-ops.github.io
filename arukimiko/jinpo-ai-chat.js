@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9.2
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -11,7 +11,7 @@
   var STORAGE_KEY = 'jinpoAiChatUi.v1';
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
-  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn;
+  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn, aiLimitNotice, aiFallbackNotice;
   var brainStatus='AI確認中…';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
@@ -105,6 +105,17 @@
     var note = el('div','jinpoAiComposerNote');
     note.appendChild(el('span','',{text:'Enterで送信 / Shift+Enterで改行'}));
     composer.appendChild(note);
+
+    aiLimitNotice = el('div','jinpoAiLimitNotice');
+    aiLimitNotice.appendChild(el('strong','',{text:'※高性能AI会話について'}));
+    aiLimitNotice.appendChild(el('span','',{
+      text:'高性能AI会話は無料枠の範囲で提供しています。サイト全体の利用状況や一時的なAI接続状況により利用できない場合は、通常Botへ自動で切り替わります。'
+    }));
+    composer.appendChild(aiLimitNotice);
+
+    aiFallbackNotice = el('div','jinpoAiFallbackNotice',{text:'現在は通常Botで動作中です（高性能AIの接続状態を確認中）。'});
+    aiFallbackNotice.hidden=true;
+    composer.appendChild(aiFallbackNotice);
 
     win.appendChild(header); win.appendChild(messages); win.appendChild(composer);
     restoreBtn = el('button','',{id:'jinpoAiRestoreTab',type:'button',text:'巫女',title:'歩き巫女を表示（Alt+M）','aria-label':'歩き巫女を表示'});
@@ -369,6 +380,15 @@
   function setBrainStatus(status,detail){
     brainStatus=String(status||'予備モード');
     if(statusEl&&!busy)statusEl.textContent=brainStatus;
+
+    var fallback=/予備モード|通常Bot|接続失敗|AI未接続/.test(brainStatus);
+    if(aiFallbackNotice){
+      aiFallbackNotice.hidden=!fallback;
+      if(fallback){
+        aiFallbackNotice.textContent='現在は通常Botで動作中です（高性能AIの接続状態を確認中）。';
+      }
+    }
+
     try{
       root.setAttribute('data-ai-brain-status',brainStatus);
       if(detail)root.setAttribute('data-ai-brain-detail',String(detail).slice(0,180));
@@ -507,7 +527,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'0.9.1', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.9.2', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
