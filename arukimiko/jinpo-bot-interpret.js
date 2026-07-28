@@ -2,7 +2,7 @@
   'use strict';
   if(window.JINPO_BOT_INTERPRETER) return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.2.0';
   var PENDING_KEY='jinpo_local_bot_pending_interpret_v1';
   var PENDING_TTL=5*60*1000;
 
@@ -155,6 +155,47 @@
     return bits.join('、');
   }
   function riskyPlan(plan){return !!(plan&&plan.actions&&plan.actions.some(function(a){return ['delete_saved','reset_all','clear_formation_master','import_json','apply_override_bond_master'].indexOf(a.name)>=0;}));}
+  function hasTwoStatBest(plan){
+    return !!(
+      plan &&
+      Array.isArray(plan.actions) &&
+      plan.actions.some(function(a){
+        var x=a&&a.args||{};
+        return a&&a.name==='run_best'&&x.stat1&&x.stat2&&x.stat1!==x.stat2;
+      })
+    );
+  }
+
+  function planConstraintCount(plan){
+    if(!plan)return 0;
+    var n=0,p=plan.searchPatch||{};
+
+    ['formation','count','searchBasis','grade3','factor4Exclude','sumSort','sumTie'].forEach(function(k){
+      if(p[k]!==undefined)n++;
+    });
+
+    [p.priority1,p.priority2].forEach(function(x){
+      if(!x)return;
+      if(x.stat)n++;
+      if(x.min!=null)n++;
+      if(x.max!=null)n++;
+    });
+
+    (plan.preActions||[]).forEach(function(a){
+      if(/set_owned_hero_auto|set_excluded_hero|set_fullmax_search|set_base_search|set_grade3|set_factor4_exclude/.test(a&&a.name||''))n++;
+    });
+
+    (plan.actions||[]).forEach(function(a){
+      if(a&&a.name==='run_best'){
+        if(a.args&&a.args.stat1)n++;
+        if(a.args&&a.args.stat2)n++;
+      }
+    });
+
+    if(plan.recommendStat)n++;
+    return n;
+  }
+
   function planCoverage(plan){
     if(!plan)return 0;var n=plan.recognized?0.25:0,p=plan.searchPatch||{};
     if(p.formation)n+=1;if(p.count)n+=1;if(p.searchBasis)n+=1;if(p.priority1)n+=1;if(p.priority2)n+=1;
@@ -188,7 +229,21 @@
       if(semantic&&semantic.canonical){
         var semResolved=normalizeAndParse(semantic.canonical,false);
         if(semResolved.ambiguous)return {decision:'clarify',original:original,correctedText:semResolved.corrected,corrections:semResolved.corrections,question:'「'+semResolved.ambiguous.query+'」に近い英傑が複数あります。'+semResolved.ambiguous.candidates.join(' / ')+' のどれですか？',semantic:semantic};
+        var directTwoStatBest=hasTwoStatBest(resolved.plan);
+        var semanticTwoStatBest=hasTwoStatBest(semResolved.plan);
         var useSemantic=(!resolved.plan||!resolved.plan.recognized)||planCoverage(semResolved.plan)>planCoverage(resolved.plan)+0.20;
+
+        // Parserが元の自然文を正しく2項目検索として理解できている時は、
+        // 後段の意味補完が第2条件を失うなら上書き禁止。
+        if(directTwoStatBest&&!semanticTwoStatBest)useSemantic=false;
+
+        // 元文Parserが持っている陣形・因縁数・第1/第2・上下限・全MAX・英傑条件などを、
+        // NLU言い換えが1つでも落とす場合は上書き禁止。
+        if(
+          resolved.plan&&resolved.plan.recognized &&
+          planConstraintCount(resolved.plan)>planConstraintCount(semResolved.plan)
+        )useSemantic=false;
+
         if(useSemantic){
           semResolved.corrections.unshift({from:original,to:semantic.canonical,kind:'semantic',confidence:Number(semantic.confidence)||0.8});
           resolved=semResolved;semanticNote=semantic.note||'';
@@ -224,5 +279,5 @@
   function isYes(v){return /^(?:はい|うん|そう|そうです|それで|それでお願い|お願い|お願いします|ok|okay|ＯＫ|その通り|あってる|合ってる)[!！。\s]*$/i.test(nfkc(v).trim());}
   function isNo(v){return /^(?:いいえ|いや|違う|ちがう|違います|ちがいます|やめ|やめて|キャンセル|取消|取り消し)[!！。\s]*$/i.test(nfkc(v).trim());}
 
-  window.JINPO_BOT_INTERPRETER={version:VERSION,analyze:analyze,savePending:savePending,getPending:getPending,clearPending:clearPending,isYes:isYes,isNo:isNo,levenshtein:levenshtein,compact:compact};
+  window.JINPO_BOT_INTERPRETER={version:VERSION,analyze:analyze,hasTwoStatBest:hasTwoStatBest,planConstraintCount:planConstraintCount,savePending:savePending,getPending:getPending,clearPending:clearPending,isYes:isYes,isNo:isNo,levenshtein:levenshtein,compact:compact};
 })();

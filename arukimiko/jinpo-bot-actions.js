@@ -541,7 +541,7 @@
 
   var registry={
     apply_search:applySearch,rerun_search:rerunSearchAction,run_current_search:rerunSearchAction,
-    set_formation:setFormationAction,set_bond_count:setBondCountAction,set_grade3:setGrade3Action,set_factor4_exclude:function(a){return setFactor4Exclude(a&&a.count,false);},
+    set_formation:setFormationAction,set_bond_count:setBondCountAction,set_grade3:function(a){a=a||{};return setGrade3(a.enabled!==undefined?!!a.enabled:(a.on!==undefined?!!a.on:!!a.value));},set_factor4_exclude:function(a){return setFactor4Exclude(a&&a.count,false);},
     set_priority1:function(a){return setPriorityAction(1,a);},set_priority2:function(a){return setPriorityAction(2,a);},clear_priority1:function(){return setPriority(1,{clear:true});},clear_priority2:function(){return setPriority(2,{clear:true});},clear_priorities:clearPriorities,
     set_sum_sort:function(a){return setSumSort(!!(a&&a.enabled),a&&a.tie||'first',false);},set_search_basis:function(a){return setSearchBasis(a&&a.mode);},get_search_basis:function(){return ok('検索基準を取得しました。',{searchBasis:getSearchBasis()});},
     reset_search:resetSearchOnly,read_search_status:readSearchStatus,auto_fill:autoFill,

@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v2.5.0
+ * 歩き巫女 日常会話・雑談 v2.6.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='2.8.0';
+  var VERSION='2.9.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -658,14 +658,15 @@
       }
     }
 
-    if(!looksLikeKnowledge(text))return {handled:false};
     var web=window.JINPO_BOT_WEB;
+    var realtimeIntent=!!(web&&typeof web.isRealtime==='function'&&!hasSiteIntent(text)&&web.isRealtime(text));
+    if(!realtimeIntent&&!looksLikeKnowledge(text))return {handled:false};
     if(!web||typeof web.lookup!=='function')return {handled:false};
-    var r=await web.lookup(text);
+    var r=(realtimeIntent&&typeof web.lookupRealtime==='function')?await web.lookupRealtime(text):await web.lookup(text);
     if(r&&r.ok){
       var prefix='';
       if(r.realtime){
-        if(r.kind==='news')prefix='最新情報を自動で探してきたのですよ。';
+        if(r.kind==='news')prefix=r.changeRequested?'直近の動きを確認したのですよ。':'最新情報を自動で探してきたのですよ。';
         else if(r.kind==='weather'){
           if(ctx.reason==='explicit_correction')prefix='あ、'+r.title+'のことですね。';
           else if(/^weather_/.test(String(ctx.reason||'')))prefix=r.title+'ですね。';

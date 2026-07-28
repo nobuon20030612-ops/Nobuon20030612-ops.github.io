@@ -8,16 +8,48 @@
   function findFormation(t){var aliases=['衡軛','衝軛','鴻鵠','こうやく','鶴翼','かくよく','方円','ほうえん','魚鱗','ぎょりん'];for(var i=0;i<aliases.length;i++)if(t.indexOf(aliases[i])>=0)return A().canonicalFormation?A().canonicalFormation(aliases[i]):aliases[i];return'';}
   function findStats(t){var words=['生命力','耐久力','器用さ','土属性','水属性','火属性','風属性','生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];var hits=[];words.forEach(function(w){var pos=t.indexOf(w);if(pos>=0){var s=A().canonicalStat?A().canonicalStat(w):w;if(s)hits.push({stat:s,pos:pos,len:w.length});}});hits.sort(function(a,b){return a.pos-b.pos||b.len-a.len;});var out=[];hits.forEach(function(h){if(out.indexOf(h.stat)<0)out.push(h.stat);});return out;}
   function statAfter(t,re){var m=re.exec(t);if(!m)return'';var rest=t.slice(m.index+m[0].length);var s=findStats(rest);return s[0]||'';}
-  function rangeNear(t,stat){
+  function rangeNear(t,stat,allowGlobalFallback){
     var labels=[stat,stat.replace('属性','')];if(stat==='耐久力')labels.push('耐久');if(stat==='器用さ')labels.push('器用');if(stat==='生命')labels.push('生命力');var min=null,max=null;
     for(var i=0;i<labels.length;i++){
       var e=labels[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');var m=t.match(new RegExp(e+'[^0-9]{0,8}([0-9]{2,5})\\s*(以上|以下)'));
       if(m){if(m[2]==='以上')min=Number(m[1]);else max=Number(m[1]);break;}
     }
-    if(min==null){var m1=t.match(/([0-9]{2,5})\s*以上/);if(m1)min=Number(m1[1]);}
-    if(max==null){var m2=t.match(/([0-9]{2,5})\s*以下/);if(m2)max=Number(m2[1]);}
+    if(allowGlobalFallback!==false){
+      if(min==null){var m1=t.match(/([0-9]{2,5})\s*以上/);if(m1)min=Number(m1[1]);}
+      if(max==null){var m2=t.match(/([0-9]{2,5})\s*以下/);if(m2)max=Number(m2[1]);}
+    }
     return {min:min,max:max};
   }
+  function looksHeroCandidate(v){
+    var x=cleanHeroText(v);
+    if(!x||x.length>36)return false;
+    if(/全MAX|MAX|マックス|基礎値|検索基準|因縁|陣形|鶴翼|方円|魚鱗|衡軛|鴻鵠|衝軛|生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|等級|文曲|見聞録|鬼神石|転生|おすすめ|検索|探して/.test(x))return false;
+    return true;
+  }
+
+  function compoundHeroFilters(t){
+    var out={include:'',exclude:''},m;
+
+    m=t.match(/^(.{1,36}?)(?:を|は)?\s*(?:入れて|使って|含めて|固定して|必須で|必ず入れて)[、,\s]*(.+)$/);
+    if(m&&looksHeroCandidate(m[1])&&/(?:生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|検索|探|因縁|高い|高め|強い|重視|優先|おすすめ)/.test(m[2])){
+      out.include=cleanHeroText(m[1]);
+    }
+
+    m=t.match(/^(.{1,36}?)(?:を|は)?\s*(?:除外して|外して|抜いて|抜きで|なしで|無しで|使わず|使わないで)[、,\s]*(.+)$/);
+    if(m&&looksHeroCandidate(m[1])&&/(?:生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|検索|探|因縁|高い|高め|強い|重視|優先|おすすめ)/.test(m[2])){
+      out.exclude=cleanHeroText(m[1]);
+    }
+
+    return out;
+  }
+
+  function addPreAction(plan,name,args){
+    plan.preActions=Array.isArray(plan.preActions)?plan.preActions:[];
+    if(!plan.preActions.some(function(a){
+      return a&&a.name===name&&JSON.stringify(a.args||{})===JSON.stringify(args||{});
+    }))plan.preActions.push({name:name,args:args||{}});
+  }
+
   function helpKey(t){
     if(/何ができる|できること|機能一覧/.test(t))return'capabilities';
     if(/第\s*1|第一/.test(t)&&/とは|意味|なに/.test(t))return'priority1';
@@ -42,7 +74,7 @@
       .replace(/たかめ/g,'高め')
       .replace(/つよい/g,'強い')
       .replace(/つよめ/g,'強め');
-    var plan={raw:t,actions:[],searchPatch:null,recommendStat:'',helpKey:helpKey(t),smalltalk:'',recognized:false};
+    var plan={raw:t,preActions:[],actions:[],searchPatch:null,recommendStat:'',helpKey:helpKey(t),smalltalk:'',recognized:false,specifiedSearch:false};
     if(!t)return plan;
     if(/^(こんにちは|こんちは|こんばんは|おはよう|おはようございます)[!！。\s]*$/.test(t))plan.smalltalk='greeting';
     else if(/ありがとう|助かった|サンキュー|thanks/i.test(t))plan.smalltalk='thanks';
@@ -74,7 +106,7 @@
     if(/結果(?:位置|欄)?へ(?:移動|スクロール)|結果まで(?:移動|スクロール)/.test(t)){plan.actions.push({name:'scroll_result'});plan.recognized=true;}
 
     if(/全MAX解除|全マックス解除/i.test(t)){plan.actions.push({name:'clear_all_max'});plan.recognized=true;}
-    else if(/全MAX|全マックス/i.test(t)&&!/とは|意味/.test(t)){plan.actions.push({name:'all_max'});plan.recognized=true;}
+    else if(/全MAX|全マックス/i.test(t)&&!/全MAX込み|全マックス込み|MAX込み|マックス込み|強化込み/i.test(t)&&!/とは|意味/.test(t)){plan.actions.push({name:'all_max'});plan.recognized=true;}
     var enhStat=findStats(t)[0]||'';
     var km=t.match(/見聞録[^0-9]*(侍|僧|神主\/巫女|神主|巫女|陰陽師|忍者|鍛冶屋|薬師|傾奇者)|(?:^|\s)(侍|僧|神主\/巫女|神主|巫女|陰陽師|忍者|鍛冶屋|薬師|傾奇者)(?:の)?見聞録/);if(km&&km[2]&&!km[1])km[1]=km[2];
     var ks=t.match(/鬼神石[^0-9]*([1-6])(?:番|枠)?/);
@@ -116,6 +148,16 @@
     if(notOwned){var nh=cleanHeroText(notOwned[1]);if(nh){plan.actions.push({name:'set_excluded_hero',args:{hero:nh,excluded:true}});plan.actions.push({name:'rerun_search'});plan.recognized=true;}}
     var wantHero=t.match(/^(.+?)(?:を|は)?\s*(?:使いたい|使ったのがいい|使うのがいい|使ってほしい|入れたい|入ったのがいい|入りがいい|含めたい|込みがいい|入れて探して|使って探して|必ず入れて|固定したい|固定して|残したい|残して|必須|ありで|込みで探して|入れて|使って)(?:な|ね|です|ですよ|よ|。|！|!)*$/);
     if(wantHero){var wh=cleanHeroText(wantHero[1]);if(wh){plan.actions.push({name:'set_owned_hero_auto',args:{hero:wh}});plan.actions.push({name:'rerun_search'});plan.recognized=true;}}
+
+    var compoundHero=compoundHeroFilters(t);
+    if(compoundHero.include){
+      addPreAction(plan,'set_owned_hero_auto',{hero:compoundHero.include});
+      plan.recognized=true;
+    }
+    if(compoundHero.exclude){
+      addPreAction(plan,'set_excluded_hero',{hero:compoundHero.exclude,excluded:true});
+      plan.recognized=true;
+    }
 
     if(/配置英傑.*(?:全部|全て|すべて|全解除)|配置英傑(?:指定)?\s*(?:を)?\s*(?:解除|クリア)$/.test(t)){plan.actions.push({name:'clear_owned_heroes'});plan.recognized=true;}
     var ownedClear=t.match(/配置英傑\s*([1-3])(?:番|枠)?[^0-9]*(?:解除|クリア|未選択)/);if(ownedClear){plan.actions.push({name:'clear_owned_hero',args:{slot:Number(ownedClear[1])}});plan.recognized=true;}
@@ -203,10 +245,93 @@
     if(!s2&&!p2Clear){var po2=t.match(/(?:第\s*2|第二)(?:優先)?[^0-9]*([0-9]{2,5})\s*(以上|以下)/);if(po2){patch.priority2={inheritStat:true};if(po2[2]==='以上')patch.priority2.min=Number(po2[1]);else patch.priority2.max=Number(po2[1]);hasPatch=true;}}
     if(!s1&&!s2&&!p1Clear&&!p2Clear){var pob=t.match(/^([0-9]{2,5})\s*(以上|以下)(?:にして|で)?[。！!]*$/);if(pob){patch.priority1={inheritStat:true};if(pob[2]==='以上')patch.priority1.min=Number(pob[1]);else patch.priority1.max=Number(pob[1]);hasPatch=true;}}
     if(!s1&&!s2&&!plan.helpKey&&!plan.recommendStat&&!resultSort&&!/見聞録|鬼神石|転生/.test(t)){
-      var gs=findStats(t);if(gs.length&&(/優先|重視|高い|高め|盛り|特化|メイン|検索|探して|因縁|おすすめ|強め|伸ば/.test(t)||cm||form)){var rg=rangeNear(t,gs[0]);patch.priority1={stat:gs[0],min:rg.min,max:rg.max};hasPatch=true;}
+      var gs=findStats(t);
+      if(gs.length&&(/優先|重視|高い|高め|盛り|特化|メイン|検索|探して|因縁|おすすめ|強め|伸ば/.test(t)||cm||form)){
+        var rg1=rangeNear(t,gs[0],gs.length<2);
+        patch.priority1={stat:gs[0],min:rg1.min,max:rg1.max};hasPatch=true;
+
+        // 「耐久1200以上、魅力1000以上」のような自然な2条件。
+        if(gs.length>=2){
+          var rg2=rangeNear(t,gs[1],false);
+          if(rg1.min!=null||rg1.max!=null||rg2.min!=null||rg2.max!=null){
+            patch.priority2={stat:gs[1],min:rg2.min,max:rg2.max};
+            hasPatch=true;
+          }
+        }
+      }
     }
     if(/優先.*(?:全部|全て|すべて).*(?:解除|クリア)/.test(t)){patch.priority1={clear:true};patch.priority2={clear:true};hasPatch=true;}
     if(/合計ソート|2項目合計/.test(t)&&!/とは|意味/.test(t)){patch.sumSort=!/(OFF|オフ|解除|使わない)/i.test(t);if(/第2.*優先|第二.*優先/.test(t)&&/同点/.test(t))patch.sumTie='second';else if(/第1.*優先|第一.*優先/.test(t)&&/同点/.test(t))patch.sumTie='first';hasPatch=true;}
+    // ------------------------------------------------------------
+    // 複合条件の整合:
+    // 1) 陣形/因縁数/上下限があるなら「全陣形おすすめ」ではなく指定検索。
+    // 2) 全MAX込み等だけなら、おすすめ検索の前処理として保持。
+    // 3) 2項目条件はpriority1/2 + 合計ソートへ落とす。
+    // ------------------------------------------------------------
+    var runBestAction=plan.actions.find(function(a){return a&&a.name==='run_best';});
+    var hasRangeConstraint=!!(
+      (patch.priority1&&(patch.priority1.min!=null||patch.priority1.max!=null))||
+      (patch.priority2&&(patch.priority2.min!=null||patch.priority2.max!=null))
+    );
+    var explicitPriority=!!(s1||s2);
+    var structuralSpecified=!!(form||cm||hasRangeConstraint||explicitPriority);
+
+    if(runBestAction&&structuralSpecified){
+      var ba=runBestAction.args||{};
+      plan.actions=plan.actions.filter(function(a){return a!==runBestAction;});
+
+      if(ba.stat1){
+        patch.priority1=Object.assign({},patch.priority1||{},{
+          stat:ba.stat1
+        });
+      }
+      if(ba.stat2){
+        patch.priority2=Object.assign({},patch.priority2||{},{
+          stat:ba.stat2
+        });
+        patch.sumSort=true;
+        if(patch.sumTie===undefined)patch.sumTie='first';
+      }
+      hasPatch=true;
+      plan.specifiedSearch=true;
+    }else if(runBestAction){
+      // おすすめ検索にそのまま使える横断条件は、検索前アクションへ。
+      if(patch.searchBasis!==undefined){
+        addPreAction(plan,patch.searchBasis==='fullmax'?'set_fullmax_search':'set_base_search',{});
+        delete patch.searchBasis;
+      }
+      if(patch.grade3!==undefined){
+        addPreAction(plan,'set_grade3',{enabled:!!patch.grade3});
+        delete patch.grade3;
+      }
+      if(patch.factor4Exclude!==undefined){
+        addPreAction(plan,'set_factor4_exclude',{count:Number(patch.factor4Exclude)||0});
+        delete patch.factor4Exclude;
+      }
+
+      // run_best自身が第1/第2を設定するので重複patchは捨てる。
+      delete patch.priority1;delete patch.priority2;delete patch.sumSort;delete patch.sumTie;
+      hasPatch=Object.keys(patch).length>0;
+    }
+
+    // 1項目おすすめでも、全MAX込み等は検索前に反映する。
+    if(plan.recommendStat&&!structuralSpecified){
+      if(patch.searchBasis!==undefined){
+        addPreAction(plan,patch.searchBasis==='fullmax'?'set_fullmax_search':'set_base_search',{});
+        delete patch.searchBasis;
+      }
+      if(patch.grade3!==undefined){
+        addPreAction(plan,'set_grade3',{enabled:!!patch.grade3});
+        delete patch.grade3;
+      }
+      if(patch.factor4Exclude!==undefined){
+        addPreAction(plan,'set_factor4_exclude',{count:Number(patch.factor4Exclude)||0});
+        delete patch.factor4Exclude;
+      }
+      delete patch.priority1;
+      hasPatch=Object.keys(patch).length>0;
+    }
+
     var hasRunBest=plan.actions.some(function(a){return a.name==='run_best';});
     var genericSearch=/(?:検索して|検索お願い|探して|探したい|検索したい)/.test(t);
 
@@ -243,9 +368,10 @@
     if(!hasRunBest&&!plan.recommendStat&&hasPatch){
       plan.searchPatch=patch;
       plan.recognized=true;
+      if(form||cm||hasRangeConstraint||explicitPriority)plan.specifiedSearch=true;
     }
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.4.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.5.0',parse:parse,normalize:normalize};
 })();

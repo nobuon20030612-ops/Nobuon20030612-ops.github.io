@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 会話コンテキスト v2.3.0
+ * 歩き巫女 会話コンテキスト v2.5.0
  * 直前の会話を参照し、短い追答・指示語・不足スロットを保守的に補完する。
  * 推測し過ぎないことを優先し、確信できる場合だけ入力を補完する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.4.0';
+  var VERSION='2.5.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -76,6 +76,34 @@
     }
     return'';
   }
+  function liveSubjectFromText(text){
+    var t=S(text)
+      .replace(/^(?:それ|これ|その件|さっきの|今の|前の)(?:について|のこと)?[、\s]*/,'')
+      .replace(/(?:について)?(?:の)?(?:最新ニュース|ニュース|速報|最新情報|最新の情報|最近の情報|最近の話題|最近の動き|直近の情報|直近の話題|直近の動き|今日のニュース|今日の情報|今の情報|今の状況|現在の情報|現在の状況|今週の情報|今週の話題).*/,'')
+      .replace(/(?:って|とは|は)(?:誰|だれ|何|なに|どんな|どういう).*/,'')
+      .replace(/(?:について|のこと)?(?:を)?(?:教えて|調べて|検索して|知りたい|詳しく).*$/,'')
+      .replace(/[？?！!。、]+$/g,'').replace(/の$/,'').trim();
+    if(!t||t.length>60)return'';
+    if(/^(?:今日|昨日|明日|最近|直近|最新|ニュース|情報|それ|これ|さっきの)$/.test(t))return'';
+    if(!/[一-龠々〆ヵヶァ-ヶA-Za-z0-9]/.test(t))return'';
+    return t;
+  }
+
+  function isGeneralLiveFollowup(text){
+    return /^(?:(?:それ|これ|その件|さっきの|今の|前の)(?:は|って|について)?[、\s]*)?(?:最近どう(?:なの|ですか)?|今どうなって(?:る|いる)|今どう|最新は|最新情報は|何か変わった|なにか変わった|変化あった|動きあった)[？?！!。]*$/.test(S(text)) || /^(?:昨日から|きのうから)(?:何か|なにか)?(?:変わった|変化あった|動きあった)[？?！!。]*$/.test(S(text));
+  }
+
+  function findGeneralLiveAntecedent(h){
+    for(var i=h.length-1;i>=0&&i>=h.length-20;i--){
+      if(!h[i]||h[i].role!=='user')continue;
+      var raw=S(h[i].text);if(!raw||isGeneralLiveFollowup(raw)||isAck(raw))continue;
+      var d=domainFromText(raw);
+      if(d==='carp'||d==='weather'||d==='fx'||d==='jinpo'||d==='tairano')continue;
+      var subject=liveSubjectFromText(raw);if(subject)return subject;
+    }
+    return'';
+  }
+
   function stripCorrectionPrefix(t){
     t=S(t);
     // 「そうじゃなくて東京の天気」「違う、東京」のような言い直しを新しい要求として扱う。
@@ -204,6 +232,27 @@
       resolved=u+' '+original;reason='formation_followup';confidence=0.98;
     }
 
+    // 一般の最新話題を短い追質問で継続。
+    if(resolved===original&&isGeneralLiveFollowup(original)){
+      var liveSubject=findGeneralLiveAntecedent(h);
+      if(liveSubject){
+        if(/昨日から|きのうから/.test(original)){resolved=liveSubject+'の昨日からの最新情報';reason='general_live_since_yesterday';}
+        else{resolved=liveSubject+'の最新情報';reason='general_live_followup';}
+        confidence=0.94;
+      }else{
+        // カープは一般Webに流さず、直前の専用質問へ戻す。
+        for(var li=h.length-1;li>=0&&li>=h.length-12;li--){
+          if(!h[li]||h[li].role!=='user')continue;
+          var prior=S(h[li].text),pd=domainFromText(prior);
+          if(pd==='carp'){
+            var pant=findAntecedent(h);
+            if(pant){resolved=pant+'は今どう？';reason='carp_live_followup';confidence=0.96;}
+            break;
+          }
+        }
+      }
+    }
+
     // 人が会話でよく使う短い追質問。「詳しく」「なんで？」「どこ？」など。
     // 直前のユーザー話題がはっきりしている時だけ補完し、無関係な新話題へは広げない。
     if(resolved===original&&/^(?:もっと|もう少し|もうちょい|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|詳しく|くわしく|なんで|なぜ|どうして|どこ|いつ|誰|だれ|何|なに|どういうこと|どういう意味|意味は|それで|で[？?]?|続き|つづき|もう一回説明|もう1回説明)[？?]?$/.test(original)){
@@ -258,5 +307,5 @@
     return {original:original,message:resolved,resolved:resolved!==original,reason:reason,confidence:confidence,history:h};
   }
 
-  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent,domainFromText:domainFromText,recentDomain:recentDomain,stripCorrectionPrefix:stripCorrectionPrefix};
+  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent,domainFromText:domainFromText,recentDomain:recentDomain,stripCorrectionPrefix:stripCorrectionPrefix,liveSubjectFromText:liveSubjectFromText,isGeneralLiveFollowup:isGeneralLiveFollowup,findGeneralLiveAntecedent:findGeneralLiveAntecedent};
 })();

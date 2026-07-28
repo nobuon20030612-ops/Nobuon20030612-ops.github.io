@@ -2,7 +2,7 @@
   'use strict';
   if(window.JINPO_BOT_CASUAL) return;
 
-  var VERSION='2.1.0';
+  var VERSION='2.2.0';
   var STATS=[
     {to:'生命',a:['生命','生命力','せいめい','体力','HP','hp','命','生存力']},
     {to:'気合',a:['気合','気合い','きあい','MP','mp','気合力']},
@@ -115,6 +115,14 @@
   ];
 
   function contextRewrite(t,context){
+    // 第1・第2が明示済みの文を、単項目の短文補正で壊さない。
+    // 旧処理では「第1 耐久力 第2 魅力 検索して」が
+    // 「第1優先 耐久力 検索して」へ縮み、第2条件が消えていた。
+    if(
+      /(?:第\s*1|第一|メイン)/.test(t) &&
+      /(?:第\s*2|第二|サブ)/.test(t)
+    )return t;
+
     var ref=context&&context.lastReference||{};
     var site=context&&context.siteState||{};
     var m;

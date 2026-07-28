@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.2.8';
+  var VERSION='3.3.1';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -467,14 +467,58 @@
 
     var before=actions().readSiteState();
     state().setConditions(before);
+
+    // 指定検索は、既に分かっている条件を捨てず「足りないものだけ」を聞く。
+    if(plan.specifiedSearch&&plan.searchPatch){
+      var desiredFormation=plan.searchPatch.formation!==undefined?String(plan.searchPatch.formation||''):String(before.formation||'');
+      var desiredCount=plan.searchPatch.count!==undefined?Number(plan.searchPatch.count)||0:Number(before.count)||0;
+      var missingFormation=!desiredFormation;
+      var missingCount=!desiredCount;
+
+      if(missingFormation||missingCount){
+        var need=missingFormation&&missingCount?'formation_count':missingFormation?'formation':'count';
+        try{
+          if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.setSpecifiedSearchPending==='function'){
+            window.JINPO_BOT_DIALOG.setSpecifiedSearchPending(originalMessage,need);
+          }
+        }catch(pendingErr){}
+
+        if(need==='count'){
+          return R(
+            (desiredFormation?desiredFormation+'は分かっています。':'')+
+            '因縁数だけ教えてください。5〜9因縁から選べます。\n例：「7因縁」',
+            {needsSpecifiedSearchCondition:true,need:'count',kept:{formation:desiredFormation}}
+          );
+        }
+        if(need==='formation'){
+          return R(
+            '因縁数は'+desiredCount+'因縁で分かっています。陣形だけ教えてください。\n衡軛・鶴翼・魚鱗・方円から選べます。',
+            {needsSpecifiedSearchCondition:true,need:'formation',kept:{count:desiredCount}}
+          );
+        }
+        return R(
+          '指定検索として条件は受け取っています。陣形と因縁数だけ追加してください。\n例：「方円 7因縁」',
+          {needsSpecifiedSearchCondition:true,need:'formation_count'}
+        );
+      }
+    }
     var recommendPatch=!!(before.recommendActive&&plan.searchPatch&&plan.searchPatch.formation===undefined&&plan.searchPatch.count===undefined&&plan.searchPatch.sumSort===undefined&&plan.searchPatch.sumTie===undefined);
-    var hasUndo=plan.actions.some(function(a){return a.name==='undo';});
-    var nonRestorable=recommendPatch||plan.actions.some(function(a){return isNonRestorableMutation(a.name);});
-    var restorable=(!recommendPatch&&!!plan.searchPatch)||!!plan.recommendStat||plan.actions.some(function(a){return isRestorableAction(a.name);});
+    var allPlanActions=(plan.preActions||[]).concat(plan.actions||[]);
+    var hasUndo=allPlanActions.some(function(a){return a.name==='undo';});
+    var nonRestorable=recommendPatch||allPlanActions.some(function(a){return isNonRestorableMutation(a.name);});
+    var restorable=(!recommendPatch&&!!plan.searchPatch)||!!plan.recommendStat||allPlanActions.some(function(a){return isRestorableAction(a.name);});
     if(!hasUndo&&nonRestorable)state().clearUndo();
     else if(!hasUndo&&restorable)state().pushUndo(actions().captureSnapshot(),message);
 
     var outputs=[];
+
+    // 英傑固定・除外・全MAX込み等は、本検索より前に反映する。
+    for(var pi=0;pi<(plan.preActions||[]).length;pi++){
+      var pre=plan.preActions[pi],preRes=await actions().execute(pre.name,pre.args||{});
+      outputs.push({name:pre.name,res:preRes});
+      if(!preRes.ok)return R(preRes.message,preRes.data);
+    }
+
     if(plan.searchPatch){
       var actionName=recommendPatch?'update_recommended':'apply_search';
       var sr=await actions().execute(actionName,plan.searchPatch);outputs.push({name:actionName,res:sr});if(!sr.ok)return R(sr.message,sr.data);lastReference={type:'result',items:[]};

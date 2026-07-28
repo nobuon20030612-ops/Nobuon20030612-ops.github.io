@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_DIALOG)return;
 
-  var VERSION='2.2.0';
+  var VERSION='2.3.0';
   var KEY='arukimikoDialog.v1';
 
   function S(v){
@@ -32,6 +32,27 @@
   function clearPending(){
     var x=load();x.pending=null;save(x);return x;
   }
+  function formationWord(t){
+    t=S(t);
+    if(/鶴翼|かくよく/.test(t))return'鶴翼';
+    if(/方円|ほうえん/.test(t))return'方円';
+    if(/魚鱗|ぎょりん/.test(t))return'魚鱗';
+    if(/衡軛|衝軛|鴻鵠|こうやく/.test(t))return'衡軛';
+    return'';
+  }
+
+  function setSpecifiedSearchPending(baseText,need){
+    var st=load();
+    st.pending={
+      intent:'specified_search',
+      need:String(need||''),
+      baseText:S(baseText),
+      startedAt:Date.now()
+    };
+    save(st);
+    return st.pending;
+  }
+
   function isWeatherWord(t){
     return /天気|てんき|気温|きおん|天候|予報|よほう|降水|こうすい|雨|あめ|雪|ゆき|晴れ|はれ|曇り|くもり|湿度|しつど|風速|ふうそく|最高気温|最低気温|傘|かさ/.test(S(t));
   }
@@ -102,6 +123,64 @@
 
     if(pendingExpired(pending)){
       st.pending=null;save(st);pending=null;
+    }
+
+    // 指定検索で不足していた「陣形 / 因縁数」だけを次の一言で補う。
+    // 例:
+    //   方円で耐久と魅力高いの
+    //   → 因縁数だけ教えて
+    //   → 7因縁
+    //   → 元の全文 + 7因縁 として復元
+    if(pending&&pending.intent==='specified_search'){
+      var need=S(pending.need),base=S(pending.baseText),fm=formationWord(t);
+      var cm=t.match(/(?:^|[^0-9])([5-9])\s*(?:因縁)?(?:で|にして|お願い)?[。！!？?\s]*$/);
+
+      if(need==='count'&&cm){
+        st.pending=null;save(st);
+        return {
+          handled:true,
+          message:base+' '+Number(cm[1])+'因縁',
+          reason:'specified_search_pending_count'
+        };
+      }
+
+      if(need==='formation'&&fm){
+        st.pending=null;save(st);
+        return {
+          handled:true,
+          message:base+' '+fm,
+          reason:'specified_search_pending_formation'
+        };
+      }
+
+      if(need==='formation_count'){
+        if(fm&&cm){
+          st.pending=null;save(st);
+          return {
+            handled:true,
+            message:base+' '+fm+' '+Number(cm[1])+'因縁',
+            reason:'specified_search_pending_both'
+          };
+        }
+        var both=t.match(/(鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん|衡軛|衝軛|鴻鵠|こうやく).*?([5-9])\s*因縁|([5-9])\s*因縁.*?(鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん|衡軛|衝軛|鴻鵠|こうやく)/);
+        if(both){
+          var form=formationWord(both[1]||both[4]||'');
+          var count=Number(both[2]||both[3]);
+          if(form&&count){
+            st.pending=null;save(st);
+            return {
+              handled:true,
+              message:base+' '+form+' '+count+'因縁',
+              reason:'specified_search_pending_both'
+            };
+          }
+        }
+      }
+
+      // 明確に別話題なら pending を引きずらない。
+      if(explicitOtherDomain(t)&&!/陣法|因縁|陣形|鶴翼|方円|魚鱗|衡軛|腕力|耐久|器用|知力|魅力/.test(t)){
+        st.pending=null;save(st);pending=null;
+      }
     }
 
     // 「話を戻そう」「別の話にしよう」は地名として扱わない。
@@ -188,6 +267,7 @@
 
   window.JINPO_BOT_DIALOG={
     version:VERSION,preprocess:preprocess,rememberResult:rememberResult,
-    clearPending:clearPending,clear:clear,state:load,extractWeatherPlace:extractWeatherPlace
+    clearPending:clearPending,clear:clear,state:load,extractWeatherPlace:extractWeatherPlace,
+    setSpecifiedSearchPending:setSpecifiedSearchPending
   };
 })();
