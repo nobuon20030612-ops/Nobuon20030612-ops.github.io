@@ -1,7 +1,9 @@
 /*
- * 歩き巫女 bootstrap v1.0.0
- * This file is intentionally stable.
- * Every page loads this file; it fetches the current loader.js without reusing an old cached URL.
+ * 歩き巫女 bootstrap v1.1.0-fast
+ * 軽量起動:
+ * - CSSとloader.jsを同時開始
+ * - リリースversion付きURLでブラウザキャッシュを利用
+ * - 時刻付きURLによる毎回の強制再取得を廃止
  */
 (function(){
   'use strict';
@@ -10,13 +12,39 @@
 
   var current=document.currentScript;
   var base='/arukimiko/';
+  var VERSION='3.3.8';
   try{
     if(current&&current.src)base=new URL('./',current.src).href;
   }catch(e){}
 
-  var s=document.createElement('script');
-  s.src=new URL('loader.js?fresh='+Date.now(),base).href;
-  s.async=false;
-  s.setAttribute('data-arukimiko-loader','1');
-  (document.head||document.documentElement).appendChild(s);
+  function abs(name){return new URL(name,base).href;}
+
+  function startCss(name){
+    if(document.querySelector(
+      'link[data-arukimiko-css="'+name+'"],link[href*="/arukimiko/'+name+'"]'
+    ))return;
+
+    var l=document.createElement('link');
+    l.rel='stylesheet';
+    l.href=abs(name)+'?v='+encodeURIComponent(VERSION);
+    l.setAttribute('data-arukimiko-css',name);
+    (document.head||document.documentElement).appendChild(l);
+  }
+
+  startCss('jinpo-ai-chat.css');
+  startCss('jinpo-bot-adv-theme.css');
+  try{
+    var p=decodeURIComponent(location.pathname||'');
+    if(/\/(?:陣法\/)?jinpo\.html$/i.test(p))startCss('jinpo-bot-guide.css');
+  }catch(e){}
+
+  if(document.querySelector(
+    'script[data-arukimiko-loader],script[src*="/arukimiko/loader.js"]'
+  ))return;
+
+  var sc=document.createElement('script');
+  sc.async=false;
+  sc.src=abs('loader.js')+'?v='+encodeURIComponent(VERSION);
+  sc.setAttribute('data-arukimiko-loader','fast-v110');
+  (document.head||document.documentElement).appendChild(sc);
 })();

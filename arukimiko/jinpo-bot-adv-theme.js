@@ -1,10 +1,10 @@
-/* 歩き巫女 ADVテーマ DOM追加 v2.4.5 */
+/* 歩き巫女 ADVテーマ DOM追加 v2.4.7 */
 (function(){
   'use strict';
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.5',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v317HardStandard';
+  var VERSION='2.4.7',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v317HardStandard';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){
@@ -101,9 +101,10 @@
 
     var img=document.createElement('img');
     img.id='jinpoAiAdvHeroImg';
-    img.src=assetUrl('assets/jinpo-bot-portrait-real.webp');
+    img.src=assetUrl('assets/jinpo-bot-portrait-real-fast-v337.webp');
     img.alt=BOT_NAME+'のキャラクター';
     img.decoding='async';
+    try{img.fetchPriority='high';}catch(e){}
     img.draggable=false;
     img.addEventListener('load',function(){hero.classList.add('isImageReady');hero.classList.remove('isImageError');},{once:true});
     img.addEventListener('error',function(){hero.classList.add('isImageError');hero.classList.remove('isImageReady');},{once:true});
@@ -188,9 +189,14 @@
     var portrait=q('#jinpoAiAdvHeroImg'),mascot=q('.jinpoAiMascot'),st=q('.jinpoAiStatus');
     var actionCount=window.JINPO_BOT_ACTIONS&&Array.isArray(window.JINPO_BOT_ACTIONS.registry)?window.JINPO_BOT_ACTIONS.registry.length:0;
     var bridge=window.JINPO_BOT_ACTIONS&&typeof window.JINPO_BOT_ACTIONS.verifySearchBridge==='function'?window.JINPO_BOT_ACTIONS.verifySearchBridge():{ok:false,missing:['verifySearchBridge']};
+    // v3.3.8:
+    // smalltalk/help/tool/Web等の任意モジュールは遅延読込。
+    // それらを「起動完了条件」にすると高速化しても表示上ずっと待つため、
+    // 基本コア + transport だけで準備OKとする。
+    var sharedCore=!!(window.ARUKIMIKO_SHARED&&window.ARUKIMIKO_SHARED.coreReady);
     var ready=pageMode()==='site'
-      ?!!(window.JINPO_BOT&&window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_SITE_GUIDE&&window.JINPO_BOT_SMALLTALK&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function')
-      :!!(window.JINPO_BOT&&window.JINPO_BOT_ACTIONS&&window.JINPO_BOT_PARSER&&window.JINPO_BOT_INTERPRETER&&window.JINPO_BOT_STATE&&window.JINPO_BOT_HELP&&window.JINPO_BOT_NLU&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function'&&actionCount>=99&&window.JINPO_BOT_CAPABILITIES&&window.JINPO_BOT_CAPABILITIES.count>=99&&bridge.ok);
+      ?!!(sharedCore&&window.JINPO_BOT&&window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_SITE_GUIDE&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function')
+      :!!(sharedCore&&window.JINPO_BOT&&window.JINPO_BOT_ACTIONS&&window.JINPO_BOT_PARSER&&window.JINPO_BOT_INTERPRETER&&window.JINPO_BOT_STATE&&window.JINPO_BOT_NLU&&window.JINPO_BOT_ARUKIMIKO&&typeof window.JINPO_AI_TRANSPORT==='function'&&actionCount>=99&&bridge.ok);
     var info={
       ready:ready,actionCount:actionCount,transport:typeof window.JINPO_AI_TRANSPORT==='function',bridge:bridge,
       portraitLoaded:!!(portrait&&portrait.complete&&portrait.naturalWidth>0),

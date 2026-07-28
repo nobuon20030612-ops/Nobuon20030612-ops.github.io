@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.3
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.4
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -12,7 +12,7 @@
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
   var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn, aiInfoBtn, aiInfoPanel, aiInfoState;
-  var brainStatus='案内・検索OK';
+  var brainStatus=(window.ARUKIMIKO_SHARED&&window.ARUKIMIKO_SHARED.loading)?'読込中…':'案内・検索OK';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
   var dragging = null;
@@ -566,7 +566,32 @@
     return '今の言葉をうまく受け取れなかったのですよ。少し言い方を変えて、もう一度話しかけてみてくださいね。';
   }
 
+  function waitForTransport(ms){
+    ms=Math.max(0,Number(ms)||0);
+    if(window.JINPO_AI_TRANSPORT&&typeof window.JINPO_AI_TRANSPORT==='function')return Promise.resolve(true);
+    if(!window.ARUKIMIKO_SHARED||!window.ARUKIMIKO_SHARED.loading)return Promise.resolve(false);
+
+    return new Promise(function(resolve){
+      var started=Date.now();
+      var timer=setInterval(function(){
+        if(window.JINPO_AI_TRANSPORT&&typeof window.JINPO_AI_TRANSPORT==='function'){
+          clearInterval(timer);resolve(true);return;
+        }
+        if(!window.ARUKIMIKO_SHARED||!window.ARUKIMIKO_SHARED.loading||Date.now()-started>=ms){
+          clearInterval(timer);resolve(false);
+        }
+      },40);
+    });
+  }
+
   async function requestAi(text,history){
+    if(
+      (!window.JINPO_AI_TRANSPORT||typeof window.JINPO_AI_TRANSPORT!=='function') &&
+      window.ARUKIMIKO_SHARED&&window.ARUKIMIKO_SHARED.loading
+    ){
+      await waitForTransport(2500);
+    }
+
     if(window.JINPO_AI_TRANSPORT && typeof window.JINPO_AI_TRANSPORT === 'function'){
       return normalizeResponse(await window.JINPO_AI_TRANSPORT({message:text,history:history}));
     }
@@ -592,7 +617,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.3', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.4', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
