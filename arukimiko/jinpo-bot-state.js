@@ -20,6 +20,7 @@
     return {
       formation:String(v.formation||''),
       count:Number(v.count)||0,
+      searchBasis:String(v.searchBasis||'base')==='fullmax'?'fullmax':'base',
       priority1:String(v.priority1||''),
       priority1Min:v.priority1Min==null||v.priority1Min===''?null:Number(v.priority1Min),
       priority1Max:v.priority1Max==null||v.priority1Max===''?null:Number(v.priority1Max),
@@ -61,7 +62,7 @@
   function clearUndo(){write(UNDO_KEY,[]);}
 
   window.JINPO_BOT_STATE={
-    version:'0.9.0',
+    version:'1.0.0',
     getConditions:getConditions,
     setConditions:setConditions,
     mergeConditions:mergeConditions,

@@ -50,6 +50,40 @@
     }))plan.preActions.push({name:name,args:args||{}});
   }
 
+  function hasSearchExecutionCue(t){
+    return /検索して|検索お願い|検索したい|再検索|検索し直|検索やり直|探して|探す|探したい/.test(t);
+  }
+
+  function editOnlyFormation(t){
+    if(hasSearchExecutionCue(t)||/おすすめ|高い|高め|重視|優先/.test(t))return'';
+    var m=t.match(/^(?:陣形(?:は|を|だけ)?\s*)?(衡軛|衝軛|鴻鵠|こうやく|鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん)(?:にして|へ変更|に変更|に変えて|へ変えて|でお願い)[。！!？?\s]*$/);
+    return m?(A().canonicalFormation?A().canonicalFormation(m[1]):m[1]):'';
+  }
+
+  function editOnlyCount(t){
+    if(hasSearchExecutionCue(t)||/おすすめ|高い|高め|重視|優先/.test(t))return 0;
+    var m=t.match(/^(?:因縁(?:数)?(?:は|を|だけ)?\s*)?([5-9])\s*(?:因縁)?(?:にして|へ変更|に変更|に変えて|へ変えて|でお願い)[。！!？?\s]*$/);
+    return m?Number(m[1]):0;
+  }
+
+  function editOnlyPriority(t,index){
+    var head=index===1?/(?:第\s*1|第一)/:/(?:第\s*2|第二)/;
+    if(!head.test(t)||hasSearchExecutionCue(t))return null;
+    if(!/(?:にして|へ変更|に変更|に変えて|へ変えて|でお願い)[。！!？?\s]*$/.test(t))return null;
+
+    var stat=statAfter(t,head);
+    if(!stat)return null;
+    var r=rangeNear(t,stat,true);
+    return {stat:stat,min:r.min,max:r.max};
+  }
+
+  function editOnlyBasis(t){
+    if(hasSearchExecutionCue(t))return'';
+    if(/^(?:検索基準(?:は|を)?\s*)?(?:全MAX込み|全マックス込み|MAX込み|マックス込み|フルMAX込み|強化込み)(?:にして|へ変更|に変更|に変えて|へ変えて|でお願い)[。！!？?\s]*$/i.test(t))return'fullmax';
+    if(/^(?:検索基準(?:は|を)?\s*)?(?:基礎値|基礎|素ステ|元ステ)(?:にして|へ変更|に変更|に変えて|へ変えて|へ戻して|に戻して|でお願い)[。！!？?\s]*$/.test(t))return'base';
+    return'';
+  }
+
   function helpKey(t){
     if(/何ができる|できること|機能一覧/.test(t))return'capabilities';
     if(/第\s*1|第一/.test(t)&&/とは|意味|なに/.test(t))return'priority1';
@@ -76,6 +110,84 @@
       .replace(/つよめ/g,'強め');
     var plan={raw:t,preActions:[],actions:[],searchPatch:null,recommendStat:'',helpKey:helpKey(t),smalltalk:'',recognized:false,specifiedSearch:false};
     if(!t)return plan;
+
+    // 現在条件の確認。
+    if(/^(?:今|現在)(?:の)?(?:検索)?条件(?:は|って|どうなってる|どうなっている|見せて|教えて|確認)?[。！!？?\s]*$|^(?:検索)?条件(?:を)?(?:見せて|教えて|確認して)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'read_state'});plan.recognized=true;return plan;
+    }
+
+    // 一手戻し。
+    if(/^(?:やっぱ|やはり)?(?:今の|さっきの|直前の)?(?:変更|操作|条件)?(?:を)?(?:戻して|取り消して|取消して|キャンセルして)[。！!？?\s]*$|^(?:一つ前|ひとつ前|1つ前)(?:の条件|の状態|に)?(?:へ|に)?戻して[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'undo'});plan.recognized=true;return plan;
+    }
+
+    // 第1・第2を両方解除。Casual補正後の「優先を全部解除」も受ける。
+    if(/^(?:第1・第2|第1と第2|第一と第二|第\s*1と第\s*2|第\s*1・第\s*2)(?:優先|条件)?\s*(?:を|だけ)?\s*(?:両方|全部|全て|すべて)?\s*(?:解除|外して|消して|クリア)[。！!？?\s]*$|^(?:優先|優先条件)\s*(?:を)?\s*(?:両方|全部|全て|すべて)\s*(?:解除|外して|消して|クリア)[。！!？?\s]*$|^(?:第1第2)\s*(?:を)?\s*(?:両方|全部|全て|すべて)?\s*(?:解除|外して|消して|クリア)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'clear_priorities'});plan.recognized=true;return plan;
+    }
+
+    if(/^(?:第\s*1|第一|メイン)(?:優先|条件)?\s*(?:を|だけ)?\s*(?:解除|外して|消して|なし|無し|クリア)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'clear_priority1'});plan.recognized=true;return plan;
+    }
+    if(/^(?:第\s*2|第二|サブ)(?:優先|条件)?\s*(?:を|だけ)?\s*(?:解除|外して|消して|なし|無し|クリア)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'clear_priority2'});plan.recognized=true;return plan;
+    }
+
+    if(/^(?:合計ソート|2項目合計(?:ソート)?|第1・第2合計(?:ソート)?)\s*(?:を)?\s*(?:解除|OFF|オフ|外して|やめて|切って|なし|無し)[。！!？?\s]*$/i.test(t)){
+      plan.actions.push({name:'set_sum_sort',args:{enabled:false,tie:'first'}});plan.recognized=true;return plan;
+    }
+
+    // Casualは「等級3以下解除」→「等級3以下 OFF」に正規化する。
+    if(/^等級\s*3以下\s*(?:を|だけ)?\s*(?:解除|OFF|オフ|外して|やめて|なし|無し)[。！!？?\s]*$/i.test(t)){
+      plan.actions.push({name:'set_grade3',args:{enabled:false}});plan.recognized=true;return plan;
+    }
+
+    // Casualは「文曲除外解除」→「文曲除外0人」に正規化する。
+    if(/^(?:文曲(?:除外)?|因子4(?:除外)?)\s*(?:人数)?\s*(?:を)?\s*(?:解除|OFF|オフ|外して|やめて|0人|ゼロ|なし|無し)[。！!？?\s]*$/i.test(t)){
+      plan.actions.push({name:'set_factor4_exclude',args:{count:0}});plan.recognized=true;return plan;
+    }
+
+    // 条件変更だけの会話。検索は最後の「それで検索」で実行。
+    if(/^(?:それで|この条件で|今の条件で|その条件で|これで)\s*(?:検索して|検索|探して|探す)[。！!？?\s]*$|^(?:再検索|もう一度検索|もう一回検索|検索し直して|検索やり直して)[。！!？?\s]*$/.test(t)){
+      plan.actions.push({name:'run_current_search'});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var onlyForm=editOnlyFormation(t);
+    if(onlyForm){
+      plan.actions.push({name:'set_formation',args:{formation:onlyForm}});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var onlyCount=editOnlyCount(t);
+    if(onlyCount){
+      plan.actions.push({name:'set_bond_count',args:{count:onlyCount}});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var onlyBasis=editOnlyBasis(t);
+    if(onlyBasis){
+      plan.actions.push({name:onlyBasis==='fullmax'?'set_fullmax_search':'set_base_search'});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var onlyP1=editOnlyPriority(t,1);
+    if(onlyP1){
+      plan.actions.push({name:'set_priority1',args:onlyP1});
+      plan.recognized=true;
+      return plan;
+    }
+
+    var onlyP2=editOnlyPriority(t,2);
+    if(onlyP2){
+      plan.actions.push({name:'set_priority2',args:onlyP2});
+      plan.recognized=true;
+      return plan;
+    }
     if(/^(こんにちは|こんちは|こんばんは|おはよう|おはようございます)[!！。\s]*$/.test(t))plan.smalltalk='greeting';
     else if(/ありがとう|助かった|サンキュー|thanks/i.test(t))plan.smalltalk='thanks';
     else if(/暑いね|暑いな|寒いね|寒いな/.test(t))plan.smalltalk='weather';
@@ -85,7 +197,7 @@
     if(/先頭6人.*(?:仮配置|配置)|最初の6人.*(?:仮配置|配置)/.test(t)){plan.actions.push({name:'auto_fill'});plan.recognized=true;}
     if(/検索条件.*(?:リセット|初期化|クリア|解除)|条件だけ.*(?:リセット|初期化|クリア)/.test(t)){plan.actions.push({name:'reset_search'});plan.recognized=true;}
     if(/おすすめ(?:陣法|モード)?(?:を)?(?:解除|終了|やめ)/.test(t)){plan.actions.push({name:'exit_recommended'});plan.recognized=true;}
-    if(/一つ前|ひとつ前|さっきの構成|元に戻して/.test(t)&&!/標準.*戻/.test(t)){plan.actions.push({name:'undo'});plan.recognized=true;}
+    if(/一つ前|ひとつ前|さっきの構成|さっきの条件|直前の条件|元に戻して|変更を戻して|操作を戻して|取り消して/.test(t)&&!/標準.*戻/.test(t)){plan.actions.push({name:'undo'});plan.recognized=true;}
     if(/^(全解除|全部解除|全部リセット|すべてリセット|全リセット)$/.test(t)){plan.actions.push({name:'reset_all'});plan.recognized=true;return plan;}
     if(/^(?:配置|6人配置|現在の配置)(?:を)?(?:クリア|解除)$/.test(t)){plan.actions.push({name:'clear_placement'});plan.recognized=true;}
     var bondSearch=t.match(/因縁一覧(?:で|から)?\s*(.+?)\s*(?:を)?検索/);if(bondSearch){plan.actions.push({name:'show_bonds',args:{mode:'all',query:bondSearch[1]}});plan.recognized=true;}
@@ -189,7 +301,7 @@
     if(/除外英傑条件.*(?:教えて|見せて|確認)|外してる英傑.*(?:教えて|見せて)/.test(t)){plan.actions.push({name:'get_excluded_filters'});plan.recognized=true;}
     if(/おすすめ陣法状態.*(?:教えて|見せて|確認)|おすすめ条件.*(?:教えて|見せて)/.test(t)){plan.actions.push({name:'get_recommend_state'});plan.recognized=true;}
     if(/検索の絞り込み条件.*(?:解除|クリア|消して)|フィルター.*(?:解除|クリア|消して)/.test(t)){plan.actions.push({name:'clear_search_filters'});plan.recognized=true;}
-    if(/今の(?:条件|検索条件|状態)|現在の(?:条件|検索条件|状態)/.test(t)){plan.actions.push({name:'read_state'});plan.recognized=true;}
+    if(/今の(?:条件|検索条件|状態)|現在の(?:条件|検索条件|状態)|条件(?:を)?(?:見せて|教えて|確認して)|検索条件(?:は|って|どう)/.test(t)){plan.actions.push({name:'read_state'});plan.recognized=true;}
     if(/今の(?:6人|編成|配置)|現在の(?:6人|編成|配置)/.test(t)&&!/保存/.test(t)){plan.actions.push({name:'read_placement'});plan.recognized=true;}
 
     // 「一番高い」「トップ」系に加え、「耐久と魅力の合計高い」「腕力と知力どっちも高い」
@@ -373,5 +485,5 @@
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.5.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.7.0',parse:parse,normalize:normalize};
 })();

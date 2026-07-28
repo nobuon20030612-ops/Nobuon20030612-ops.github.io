@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_DIALOG)return;
 
-  var VERSION='2.3.0';
+  var VERSION='2.5.0';
   var KEY='arukimikoDialog.v1';
 
   function S(v){
@@ -39,6 +39,205 @@
     if(/魚鱗|ぎょりん/.test(t))return'魚鱗';
     if(/衡軛|衝軛|鴻鵠|こうやく/.test(t))return'衡軛';
     return'';
+  }
+
+  function statWords(t){
+    var words=['生命力','耐久力','器用さ','土属性','水属性','火属性','風属性','生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];
+    var hits=[];
+    words.forEach(function(w){
+      var pos=S(t).indexOf(w);
+      if(pos>=0){
+        var c=canonicalStat(w);
+        if(c&&!hits.some(function(x){return x.stat===c;}))hits.push({stat:c,raw:w,pos:pos});
+      }
+    });
+    hits.sort(function(a,b){return a.pos-b.pos;});
+    return hits;
+  }
+
+  function canonicalStat(v){
+    try{
+      if(window.JINPO_BOT_ACTIONS&&typeof window.JINPO_BOT_ACTIONS.canonicalStat==='function'){
+        return window.JINPO_BOT_ACTIONS.canonicalStat(v)||String(v||'');
+      }
+    }catch(e){}
+    var m={'耐久':'耐久力','器用':'器用さ','土':'土属性','水':'水属性','火':'火属性','風':'風属性'};
+    return m[String(v||'')]||String(v||'');
+  }
+
+  function canonicalFormation(v){
+    try{
+      if(window.JINPO_BOT_ACTIONS&&typeof window.JINPO_BOT_ACTIONS.canonicalFormation==='function'){
+        return window.JINPO_BOT_ACTIONS.canonicalFormation(v)||String(v||'');
+      }
+    }catch(e){}
+    if(/衡軛|衝軛|鴻鵠|こうやく/.test(v))return'衡軛';
+    if(/鶴翼|かくよく/.test(v))return'鶴翼';
+    if(/方円|ほうえん/.test(v))return'方円';
+    if(/魚鱗|ぎょりん/.test(v))return'魚鱗';
+    return String(v||'');
+  }
+
+  function priorityIndexForStat(siteState,stat){
+    siteState=siteState||{};
+    var c=canonicalStat(stat);
+    if(canonicalStat(siteState.priority1||'')===c)return 1;
+    if(canonicalStat(siteState.priority2||'')===c)return 2;
+    return 0;
+  }
+
+  function specifiedPendingPrompt(pending){
+    var need=S(pending&&pending.need);
+    if(need==='count')return'因縁数だけ教えてください。5〜9因縁から選べます。';
+    if(need==='formation')return'陣形だけ教えてください。衡軛・鶴翼・魚鱗・方円から選べます。';
+    return'陣形と因縁数を追加してください。例：「方円 7因縁」';
+  }
+
+  function updatePendingCorrection(st,pending,text){
+    if(!pending||pending.intent!=='specified_search')return null;
+    var base=S(pending.baseText),t=S(text),changed='',oldV='',newV='';
+
+    var fm=t.match(/(衡軛|衝軛|鴻鵠|こうやく|鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん)\s*(?:じゃなく|ではなく|じゃなくて|ではなくて|やめて|から)\s*(衡軛|衝軛|鴻鵠|こうやく|鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん)/);
+    if(fm){
+      oldV=canonicalFormation(fm[1]);newV=canonicalFormation(fm[2]);
+      var aliases={'衡軛':/(衡軛|衝軛|鴻鵠|こうやく)/,'鶴翼':/(鶴翼|かくよく)/,'方円':/(方円|ほうえん)/,'魚鱗':/(魚鱗|ぎょりん)/};
+      if(aliases[oldV]&&aliases[oldV].test(base)){
+        base=base.replace(aliases[oldV],newV);
+        changed='陣形を'+newV+'へ';
+      }
+    }
+
+    if(!changed){
+      var stats=statWords(t);
+      if(stats.length>=2&&/(?:じゃなく|ではなく|じゃなくて|ではなくて|やめて|から)/.test(t)){
+        oldV=stats[0].stat;newV=stats[1].stat;
+        var oldRaw=stats[0].raw;
+        if(base.indexOf(oldRaw)>=0){
+          base=base.replace(oldRaw,newV);
+          changed=oldV+'を'+newV+'へ';
+        }else{
+          var oldSimple=oldV.replace('耐久力','耐久').replace('器用さ','器用').replace('属性','');
+          if(base.indexOf(oldSimple)>=0){
+            base=base.replace(oldSimple,newV);
+            changed=oldV+'を'+newV+'へ';
+          }
+        }
+      }
+    }
+
+    if(!changed&&/(?:全MAX込み|全マックス込み|MAX込み|マックス込み)(?:にして|で|へ)/i.test(t)){
+      if(!/全MAX込み|全マックス込み|MAX込み|マックス込み/i.test(base))base+=' 全MAX込み';
+      changed='検索基準を全MAX込みへ';
+    }
+
+    if(!changed&&/(?:基礎値|素ステ|元ステ)(?:に戻して|にして|へ)/.test(t)){
+      base=base.replace(/\s*(?:全MAX込み|全マックス込み|MAX込み|マックス込み)/ig,'');
+      base+=' 基礎値基準';
+      changed='検索基準を基礎値へ';
+    }
+
+    if(!changed)return null;
+
+    pending.baseText=S(base);
+    pending.startedAt=Date.now();
+    st.pending=pending;
+    save(st);
+
+    return {
+      direct:true,
+      answer:changed+'直しました。\n'+specifiedPendingPrompt(pending),
+      mode:'陣法条件修正',
+      data:{conditionCorrection:true,pending:true,baseText:pending.baseText,need:pending.need}
+    };
+  }
+
+  function naturalConditionClear(text,siteState){
+    var t=S(text),site=siteState||{},stats=statWords(t);
+
+    if(stats.length===1&&/(?:だけ)?(?:外して|解除|消して|なしにして|無しにして|クリア)/.test(t)){
+      var stat=stats[0].stat,idx=priorityIndexForStat(site,stat);
+      var isRangeWord=/上限|下限|以上|以下|範囲|上下限/.test(t);
+      if(idx&&!isRangeWord)return {handled:true,message:'第'+idx+'解除',reason:'condition_clear_priority_by_stat'};
+    }
+
+    if(stats.length===1&&/(?:上下限|範囲|数値条件)(?:だけ)?(?:を)?(?:解除|外して|消して|クリア)/.test(t)){
+      var statAll=stats[0].stat,piAll=priorityIndexForStat(site,statAll);
+      if(piAll)return {handled:true,message:'第'+piAll+' '+statAll+' にして',reason:'condition_clear_range_all'};
+    }
+
+    if(stats.length===1&&/上限(?:だけ)?(?:を)?(?:解除|外して|消して|クリア)/.test(t)){
+      var statMax=stats[0].stat,piMax=priorityIndexForStat(site,statMax);
+      if(piMax){
+        var min=piMax===1?site.priority1Min:site.priority2Min,msgMax='第'+piMax+' '+statMax;
+        if(min!=null&&min!=='')msgMax+=' '+Number(min)+'以上';
+        msgMax+=' にして';
+        return {handled:true,message:msgMax,reason:'condition_clear_range_max'};
+      }
+    }
+
+    if(stats.length===1&&/下限(?:だけ)?(?:を)?(?:解除|外して|消して|クリア)/.test(t)){
+      var statMin=stats[0].stat,piMin=priorityIndexForStat(site,statMin);
+      if(piMin){
+        var max=piMin===1?site.priority1Max:site.priority2Max,msgMin='第'+piMin+' '+statMin;
+        if(max!=null&&max!=='')msgMin+=' '+Number(max)+'以下';
+        msgMin+=' にして';
+        return {handled:true,message:msgMin,reason:'condition_clear_range_min'};
+      }
+    }
+
+    if(/^(?:その|今の)?条件(?:だけ)?(?:を)?(?:外して|解除|消して)[。！!？?\s]*$/.test(t)){
+      return {
+        direct:true,
+        answer:'どの条件を外すか教えてください。\n例：「第2を外して」「魅力を外して」「耐久の上限だけ解除」',
+        mode:'陣法条件修正',
+        data:{conditionCorrection:true,needsConditionTarget:true}
+      };
+    }
+    return null;
+  }
+
+  function rewriteConditionEdit(text,siteState){
+    var t=S(text),site=siteState||{};
+
+    var fm=t.match(/(衡軛|衝軛|鴻鵠|こうやく|鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん)\s*(?:じゃなく|ではなく|じゃなくて|ではなくて|やめて|から)\s*(衡軛|衝軛|鴻鵠|こうやく|鶴翼|かくよく|方円|ほうえん|魚鱗|ぎょりん)/);
+    if(fm){
+      return {handled:true,message:'陣形を'+canonicalFormation(fm[2])+'にして',reason:'condition_edit_formation'};
+    }
+
+    var stats=statWords(t);
+    if(stats.length>=2&&/(?:じゃなく|ではなく|じゃなくて|ではなくて|やめて|から)/.test(t)){
+      var oldStat=stats[0].stat,newStat=stats[1].stat;
+      var idx=priorityIndexForStat(site,oldStat);
+
+      if(idx){
+        return {handled:true,message:'第'+idx+' '+newStat+' にして',reason:'condition_edit_stat'};
+      }
+
+      return {
+        direct:true,
+        answer:'今の第1・第2条件に「'+oldStat+'」が見つからないので、どちらを「'+newStat+'」へ変えるか教えてください。\n例：「第2を'+newStat+'にして」',
+        mode:'陣法条件修正',
+        data:{conditionCorrection:true,needsPriorityIndex:true,oldStat:oldStat,newStat:newStat}
+      };
+    }
+
+    if(stats.length===1){
+      var rm=t.match(/([0-9]{2,5})\s*(以上|以下)(?:にして|へ変更|に変更|に変えて|へ変えて|でお願い)/);
+      if(rm){
+        var stat=stats[0].stat,pi=priorityIndexForStat(site,stat);
+        if(pi){
+          var min=rm[2]==='以上'?Number(rm[1]):(pi===1?site.priority1Min:site.priority2Min);
+          var max=rm[2]==='以下'?Number(rm[1]):(pi===1?site.priority1Max:site.priority2Max);
+          var msg='第'+pi+' '+stat;
+          if(min!=null&&min!=='')msg+=' '+Number(min)+'以上';
+          if(max!=null&&max!=='')msg+=' '+Number(max)+'以下';
+          msg+=' にして';
+          return {handled:true,message:msg,reason:'condition_edit_range'};
+        }
+      }
+    }
+
+    return null;
   }
 
   function setSpecifiedSearchPending(baseText,need){
@@ -132,6 +331,9 @@
     //   → 7因縁
     //   → 元の全文 + 7因縁 として復元
     if(pending&&pending.intent==='specified_search'){
+      var pendingCorrection=updatePendingCorrection(st,pending,t);
+      if(pendingCorrection)return pendingCorrection;
+
       var need=S(pending.need),base=S(pending.baseText),fm=formationWord(t);
       var cm=t.match(/(?:^|[^0-9])([5-9])\s*(?:因縁)?(?:で|にして|お願い)?[。！!？?\s]*$/);
 
@@ -182,6 +384,13 @@
         st.pending=null;save(st);pending=null;
       }
     }
+
+    // 現在の陣法条件を自然に部分解除・言い直し。
+    var clearEdit=naturalConditionClear(t,opt&&opt.siteState||{});
+    if(clearEdit)return clearEdit;
+
+    var edit=rewriteConditionEdit(t,opt&&opt.siteState||{});
+    if(edit)return edit;
 
     // 「話を戻そう」「別の話にしよう」は地名として扱わない。
     if(isMetaConversationControl(t)){
@@ -268,6 +477,9 @@
   window.JINPO_BOT_DIALOG={
     version:VERSION,preprocess:preprocess,rememberResult:rememberResult,
     clearPending:clearPending,clear:clear,state:load,extractWeatherPlace:extractWeatherPlace,
-    setSpecifiedSearchPending:setSpecifiedSearchPending
+    setSpecifiedSearchPending:setSpecifiedSearchPending,
+    rewriteConditionEdit:rewriteConditionEdit,
+    updatePendingCorrection:updatePendingCorrection,
+    naturalConditionClear:naturalConditionClear
   };
 })();

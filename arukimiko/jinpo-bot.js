@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.3.1';
+  var VERSION='3.3.3';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -15,7 +15,19 @@
   function capabilities(){return window.JINPO_BOT_CAPABILITIES;}
   function fmtNum(v){return String(v==null?'':v);}
   function conditionLabel(s){
-    s=s||{};var p=[];if(s.formation)p.push(s.formation);if(s.count)p.push(s.count+'因縁');if(s.searchBasis==='fullmax')p.push('全MAX込み基準');if(s.priority1){var x='第1 '+s.priority1;if(s.priority1Min!=null)x+=' '+s.priority1Min+'以上';if(s.priority1Max!=null)x+=' '+s.priority1Max+'以下';p.push(x);}if(s.priority2){var y='第2 '+s.priority2;if(s.priority2Min!=null)y+=' '+s.priority2Min+'以上';if(s.priority2Max!=null)y+=' '+s.priority2Max+'以下';p.push(y);}if(s.grade3)p.push('等級3以下');if(Number(s.factor4Exclude)>0)p.push('文曲除外'+s.factor4Exclude+'人');if(s.sumSort)p.push('第1・第2合計ソート');return p.join(' / ');
+    s=s||{};var p=[];
+    if(s.formation)p.push('陣形 '+s.formation);
+    if(s.count)p.push(s.count+'因縁');
+    p.push(s.searchBasis==='fullmax'?'全MAX込み基準':'基礎値基準');
+    if(s.priority1){var x='第1 '+s.priority1;if(s.priority1Min!=null)x+=' '+s.priority1Min+'以上';if(s.priority1Max!=null)x+=' '+s.priority1Max+'以下';p.push(x);}
+    if(s.priority2){var y='第2 '+s.priority2;if(s.priority2Min!=null)y+=' '+s.priority2Min+'以上';if(s.priority2Max!=null)y+=' '+s.priority2Max+'以下';p.push(y);}
+    if(s.grade3)p.push('等級3以下 ON');
+    if(Number(s.factor4Exclude)>0)p.push('文曲除外 '+s.factor4Exclude+'人');
+    if(s.sumSort)p.push('第1・第2合計ソート ON');
+    if(Array.isArray(s.owned)){var ownedCount=s.owned.filter(function(x){return !!x;}).length;if(ownedCount)p.push('配置英傑指定 '+ownedCount+'枠');}
+    if(Array.isArray(s.excluded)&&s.excluded.length)p.push('除外英傑 '+s.excluded.length+'人');
+    if(s.recommendActive)p.push('おすすめモード中');
+    return p.join(' / ');
   }
   function formatMap(map){
     var order=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];var p=[];order.forEach(function(k){if(map&&map[k]!==undefined&&map[k]!=='')p.push(k+' '+map[k]);});return p.join(' / ');
@@ -31,7 +43,16 @@
   }
   function smalltalk(kind){if(kind==='greeting')return'こんにちは。歩き巫女なのですよ。今日は何を話しましょう？';if(kind==='thanks')return'どういたしましてなのですよ。続けてそのまま話しかけてくださいね。';if(kind==='weather')return'そうですね。無理せず快適に過ごしてくださいね。';if(kind==='identity')return'歩き巫女なのですよ。雑談や調べものから、必要な時には陣法のお手伝いもするのです。';return'';}
 
-  function isRestorableAction(name){return ['apply_result','apply_swap','clear_placement','set_owned_hero','set_owned_hero_auto','clear_owned_hero','clear_owned_heroes','set_excluded_hero','clear_excluded_heroes','load_saved','import_json'].indexOf(name)>=0;}
+  function isRestorableAction(name){
+    return [
+      'apply_result','apply_swap','clear_placement',
+      'set_owned_hero','set_owned_hero_auto','clear_owned_hero','clear_owned_heroes',
+      'set_excluded_hero','clear_excluded_heroes','load_saved','import_json',
+      'set_formation','set_bond_count','set_grade3','set_factor4_exclude',
+      'set_priority1','set_priority2','clear_priority1','clear_priority2','clear_priorities',
+      'set_sum_sort','set_search_basis','set_fullmax_search','set_base_search','clear_search_filters'
+    ].indexOf(name)>=0;
+  }
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
 
   function resetConversationState(opt){
@@ -228,7 +249,11 @@
     var dialogInfo={handled:false,message:message};
     try{
       if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.preprocess==='function'){
-        dialogInfo=window.JINPO_BOT_DIALOG.preprocess(message,{history:history,pageContext:pageContext})||dialogInfo;
+        dialogInfo=window.JINPO_BOT_DIALOG.preprocess(message,{
+          history:history,
+          pageContext:pageContext,
+          siteState:actions()&&typeof actions().readSiteState==='function'?actions().readSiteState():null
+        })||dialogInfo;
         if(dialogInfo.direct){
           return {answer:String(dialogInfo.answer||''),sources:[],links:[],mode:String(dialogInfo.mode||'会話文脈'),data:dialogInfo.data||{}};
         }
@@ -566,7 +591,7 @@
       else if(o.name==='get_swap_candidates')lines.push(formatSwap(d.candidates));
       else if(o.name==='read_totals'){var normal=formatMap(d.totals),combined=formatMap(d.combined);lines.push('合計：'+(normal||'表示なし')+(combined?'\n込み合計：'+combined:''));}
       else if(o.name==='read_activated')lines.push((d.bonds&&d.bonds.length)?'発動因縁：'+d.bonds.join(' / '):'現在、発動因縁は表示されていません。');
-      else if(o.name==='read_state')lines.push('現在：'+(conditionLabel(d.state)||'検索条件なし'));
+      else if(o.name==='read_state')lines.push('現在の検索条件：\n'+conditionLabel(d.state));
       else if(o.name==='read_placement')lines.push((d.placement&&d.placement.length)?d.placement.map(function(x){return x.slot+'. '+x.name+(x.internal_id?' ('+x.internal_id+')':'');}).join('\n'):'まだ配置英傑が確認できないのですよ。配置がある状態なら、もう一度見てみましょう。');
       else if(o.name==='set_owned_hero_auto')lines.push((d.hero||'指定した英傑')+'を使う条件に入れたのですよ。');
       else if(o.name==='set_excluded_hero')lines.push((d.hero||'指定した英傑')+(d.excluded===false?'を除外から戻したのですよ。':'は候補から外したのですよ。'));
@@ -595,6 +620,6 @@
     }
   }
 
-  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
+  window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},isRestorableAction:isRestorableAction,conditionLabel:conditionLabel,getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});
 })();
