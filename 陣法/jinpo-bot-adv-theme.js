@@ -4,7 +4,7 @@
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.0',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large';
+  var VERSION='2.4.1',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v272Large';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){
@@ -36,6 +36,34 @@
       localStorage.setItem(LAYOUT_MIGRATION_KEY,'1');
     }catch(e){}
     win.style.left='auto';win.style.right='24px';win.style.top='8px';win.style.bottom='auto';win.style.width='';win.style.height='';
+  }
+
+
+  /*
+   * v2.7.2:
+   * 過去にlocalStorageへ保存された小さいwidth/heightがCSSの大型サイズを上書きする問題だけを修正。
+   * left/top/right/bottom、グリッド、画像位置、会話欄構造などレイアウトには触れない。
+   * PCで一度だけ保存済みwidth/heightを破棄し、既存CSSの
+   * width:700px / height:calc(100vh - 24px)
+   * を再び有効にする。
+   */
+  function restoreLargeSizeOnce(win){
+    if(!win||window.matchMedia('(max-width:760px)').matches)return;
+    var done=false;
+    try{done=localStorage.getItem(SIZE_RESTORE_KEY)==='1';}catch(e){}
+    if(done)return;
+    try{
+      var raw=localStorage.getItem('jinpoAiChatUi.v1'),st=raw?JSON.parse(raw):{};
+      if(st&&typeof st==='object'){
+        delete st.width;
+        delete st.height;
+        localStorage.setItem('jinpoAiChatUi.v1',JSON.stringify(st));
+      }
+      localStorage.setItem(SIZE_RESTORE_KEY,'1');
+    }catch(e){}
+    // 位置情報はそのまま。サイズ指定だけCSSへ戻す。
+    win.style.width='';
+    win.style.height='';
   }
 
   function makeHero(){
@@ -97,6 +125,7 @@
     if(!root||!win||!messages||!launcher)return false;
     root.classList.add('jinpoAdvTheme');
     migrateLayoutToRight(win);
+    restoreLargeSizeOnce(win);
 
     var title=q('.jinpoAiTitle',win),label=q('.jinpoAiLauncherLabel',launcher),status=q('.jinpoAiStatus',win),send=q('#jinpoAiSend',win);
     if(title)title.textContent=BOT_NAME;
