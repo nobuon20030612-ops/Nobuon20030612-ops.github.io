@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.7.0
+ * 歩き巫女 AI会話脳 v1.9.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.7.0';
+  var VERSION='1.9.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -17,6 +17,7 @@
     api:null,
     ai:null,
     appCheck:null,
+    appCheckApi:null,
     initializing:null,
     lastError:'',
     lastErrorAt:0,
@@ -26,7 +27,9 @@
     phase:'idle',
     preflightAt:0,
     preflightOk:false,
-    toolPreflightOk:false
+    toolPreflightOk:false,
+    activeModel:'',
+    modelErrors:[]
   };
 
   function S(v){return String(v==null?'':v).trim();}
@@ -107,6 +110,7 @@
           import(base+'firebase-ai.js')
         ]);
         var appM=mods[0],appCheckM=mods[1],aiM=mods[2],apps=appM.getApps?appM.getApps():[],app=null;
+        ctx.appCheckApi=appCheckM;
         for(var i=0;i<apps.length;i++){
           if(apps[i]&&apps[i].name==='arukimiko-ai-brain'){app=apps[i];break;}
         }
@@ -527,6 +531,349 @@
     }];
   }
 
+  function modelCandidates(){
+    var out=[],primary=S(cfg().model)||'gemini-3.6-flash';
+    if(primary)out.push(primary);
+    var f=Array.isArray(cfg().fallbackModels)?cfg().fallbackModels:[];
+    f.forEach(function(x){
+      x=S(x);
+      if(x&&out.indexOf(x)<0)out.push(x);
+    });
+    return out;
+  }
+
+  function compactError(e){
+    var code=S(e&&e.code);
+    var status=S(e&&e.status);
+    var msg=S(e&&e.message||e);
+    return {
+      code:code,
+      status:status,
+      message:msg.slice(0,500)
+    };
+  }
+
+  function errorLine(e){
+    e=e||{};
+    var p=[];
+    if(e.code)p.push(e.code);
+    if(e.status)p.push(e.status);
+    if(e.message)p.push(e.message);
+    return p.join(' / ').slice(0,600);
+  }
+
+  function retryableModelError(e){
+    var x=errorLine(compactError(e));
+    return /429|quota|resource.?exhausted|overload|capacity|503|unavailable|temporar|server error/i.test(x);
+  }
+
+  async function tryModels(makeAttempt){
+    var models=modelCandidates(),errors=[];
+    for(var i=0;i<models.length;i++){
+      var name=models[i];
+      try{
+        var value=await makeAttempt(name);
+        ctx.activeModel=name;
+        ctx.modelErrors=errors.slice();
+        return {ok:true,model:name,value:value,errors:errors};
+      }catch(e){
+        var ce=compactError(e);
+        errors.push({model:name,error:ce});
+        ctx.modelErrors=errors.slice();
+
+        // App Check / permission / malformed request等はモデルを変えても直らない。
+        if(!retryableModelError(e))throw Object.assign(e||new Error('model request failed'),{
+          __arukimikoModelErrors:errors
+        });
+      }
+    }
+
+    var last=errors[errors.length-1];
+    var err=new Error(last?errorLine(last.error):'all-models-failed');
+    err.__arukimikoModelErrors=errors;
+    throw err;
+  }
+
+  function elapsed(start){
+    return Math.max(0,Date.now()-start);
+  }
+
+  function diagnosticError(e){
+    var ce=compactError(e);
+    return {
+      ok:false,
+      code:ce.code||'',
+      status:ce.status||'',
+      message:ce.message||'unknown error'
+    };
+  }
+
+  async function diagnose(options){
+    options=options||{};
+    var started=Date.now();
+    var report={
+      ok:false,
+      version:VERSION,
+      hostname:(typeof location!=='undefined'&&location.hostname)?String(location.hostname):'',
+      sdkVersion:S(cfg().sdkVersion)||'12.16.0',
+      provider:appCheckCfg().provider,
+      stages:[],
+      models:[],
+      functionCalling:{tested:false,ok:false},
+      totalMs:0
+    };
+
+    function pass(name,extra,t0){
+      var x=Object.assign({name:name,ok:true,ms:elapsed(t0)},extra||{});
+      report.stages.push(x);
+      return x;
+    }
+    function fail(name,e,t0,extra){
+      var x=Object.assign(
+        {name:name,ms:elapsed(t0)},
+        diagnosticError(e),
+        extra||{}
+      );
+      report.stages.push(x);
+      return x;
+    }
+
+    // 1. Static configuration.
+    var t=Date.now();
+    var issue=setupIssue();
+    if(issue){
+      fail('Firebase設定',new Error(issue.message),t,{stage:issue.stage||''});
+      report.totalMs=elapsed(started);
+      return report;
+    }
+    pass('Firebase設定',{
+      projectId:S(firebaseCfg().projectId),
+      appIdPresent:!!S(firebaseCfg().appId),
+      apiKeyPresent:!!S(firebaseCfg().apiKey),
+      appCheckRequired:!!cfg().requireAppCheck
+    },t);
+
+    // 2. Dynamic SDK imports + Firebase/AppCheck/AI initialization.
+    t=Date.now();
+    var c=await init();
+    if(!c||!c.api||!c.ai||!c.app){
+      fail('Firebase SDK初期化',new Error(ctx.lastError||'Firebase SDK initialize failed'),t);
+      report.totalMs=elapsed(started);
+      return report;
+    }
+    pass('Firebase SDK初期化',{
+      appName:S(c.app&&c.app.name),
+      aiReady:!!c.ai,
+      appCheckReady:!!c.appCheck
+    },t);
+
+    // 3. App Check token. Never return the token itself.
+    t=Date.now();
+    if(cfg().requireAppCheck){
+      if(!c.appCheck||!c.appCheckApi||typeof c.appCheckApi.getToken!=='function'){
+        fail('App Checkトークン',new Error('App Check getToken unavailable'),t);
+        report.totalMs=elapsed(started);
+        return report;
+      }
+      try{
+        var tokenResult=await c.appCheckApi.getToken(c.appCheck,true);
+        if(!tokenResult||!S(tokenResult.token)){
+          throw new Error('App Check token was empty');
+        }
+        pass('App Checkトークン',{
+          tokenObtained:true,
+          // Do not expose token value.
+          tokenLength:S(tokenResult.token).length
+        },t);
+      }catch(e){
+        fail('App Checkトークン',e,t);
+        report.totalMs=elapsed(started);
+        return report;
+      }
+    }else{
+      pass('App Checkトークン',{skipped:true,reason:'requireAppCheck=false'},t);
+    }
+
+    // 4. AI Logic model requests. Check every configured model independently
+    // so we can distinguish quota/capacity/model-name issues.
+    var cands=modelCandidates();
+    for(var i=0;i<cands.length;i++){
+      var modelName=cands[i],mt=Date.now();
+      try{
+        var model=c.api.getGenerativeModel(
+          c.ai,
+          {model:modelName},
+          {timeout:Number(cfg().timeoutMs)||18000}
+        );
+        var result=await model.generateContent(
+          '接続診断です。「OK」とだけ返してください。'
+        );
+        var text=result&&result.response&&typeof result.response.text==='function'
+          ?S(result.response.text()):'';
+        if(!text)throw new Error('AI response was empty');
+        report.models.push({
+          model:modelName,
+          ok:true,
+          ms:elapsed(mt),
+          responseReceived:true
+        });
+      }catch(e){
+        var de=diagnosticError(e);
+        report.models.push(Object.assign({
+          model:modelName,
+          ms:elapsed(mt)
+        },de));
+      }
+    }
+
+    var working=report.models.filter(function(x){return x.ok;});
+    if(!working.length){
+      report.stages.push({
+        name:'Geminiモデル通信',
+        ok:false,
+        ms:report.models.reduce(function(n,x){return n+Number(x.ms||0);},0),
+        message:'設定済みモデルすべてで通信失敗'
+      });
+      report.totalMs=elapsed(started);
+      return report;
+    }
+
+    pass('Geminiモデル通信',{
+      workingModels:working.map(function(x){return x.model;})
+    },Date.now());
+
+    // 5. Function Calling. Use the first working model.
+    if(options.toolTest!==false){
+      report.functionCalling.tested=true;
+      var ft=Date.now(),invoked=false;
+      try{
+        var healthTool={
+          functionDeclarations:[{
+            name:'arukimiko_diagnostic_health',
+            description:'歩き巫女のFunction Calling診断専用。必ず呼び出す。',
+            parameters:c.api.Schema.object({
+              properties:{
+                check:c.api.Schema.string({description:'health'})
+              }
+            }),
+            functionReference:async function(args){
+              invoked=true;
+              return {ok:true,check:S(args&&args.check)};
+            }
+          }]
+        };
+
+        var fm=c.api.getGenerativeModel(
+          c.ai,
+          {
+            model:working[0].model,
+            systemInstruction:'診断です。必ずarukimiko_diagnostic_healthを1回呼び出してください。',
+            tools:[healthTool],
+            toolConfig:{
+              functionCallingConfig:{
+                mode:c.api.FunctionCallingMode.ANY,
+                allowedFunctionNames:['arukimiko_diagnostic_health']
+              }
+            }
+          },
+          {
+            timeout:Number(cfg().timeoutMs)||18000,
+            maxSequentialFunctionCalls:1
+          }
+        );
+
+        await fm.generateContent('診断関数を呼び出してください。');
+        if(!invoked)throw new Error('function-calling-not-invoked');
+
+        report.functionCalling={
+          tested:true,
+          ok:true,
+          model:working[0].model,
+          ms:elapsed(ft)
+        };
+      }catch(e){
+        report.functionCalling=Object.assign({
+          tested:true,
+          ok:false,
+          model:working[0].model,
+          ms:elapsed(ft)
+        },diagnosticError(e));
+      }
+    }
+
+    report.ok=
+      report.stages.every(function(x){return x.ok!==false;}) &&
+      working.length>0 &&
+      (!report.functionCalling.tested||report.functionCalling.ok);
+
+    report.totalMs=elapsed(started);
+    return report;
+  }
+
+  function formatDiagnosis(report){
+    report=report||{};
+    var lines=[];
+    lines.push('【AI精密診断】');
+    lines.push('ホスト：'+S(report.hostname||'不明'));
+    lines.push('Firebase SDK：'+S(report.sdkVersion||'不明'));
+    lines.push('');
+
+    (report.stages||[]).forEach(function(x){
+      var mark=x.ok?'OK':'NG';
+      lines.push('['+mark+'] '+S(x.name)+(x.ms!=null?' ('+x.ms+'ms)':''));
+      if(!x.ok){
+        if(x.code)lines.push('  code: '+S(x.code));
+        if(x.status)lines.push('  status: '+S(x.status));
+        if(x.message)lines.push('  '+S(x.message));
+      }
+    });
+
+    if(report.models&&report.models.length){
+      lines.push('');
+      lines.push('【モデル別】');
+      report.models.forEach(function(x){
+        lines.push('['+(x.ok?'OK':'NG')+'] '+S(x.model)+(x.ms!=null?' ('+x.ms+'ms)':''));
+        if(!x.ok){
+          if(x.code)lines.push('  code: '+S(x.code));
+          if(x.status)lines.push('  status: '+S(x.status));
+          if(x.message)lines.push('  '+S(x.message));
+        }
+      });
+    }
+
+    if(report.functionCalling&&report.functionCalling.tested){
+      var f=report.functionCalling;
+      lines.push('');
+      lines.push('【Function Calling】');
+      lines.push('['+(f.ok?'OK':'NG')+'] '+S(f.model||'')+(f.ms!=null?' ('+f.ms+'ms)':''));
+      if(!f.ok){
+        if(f.code)lines.push('  code: '+S(f.code));
+        if(f.status)lines.push('  status: '+S(f.status));
+        if(f.message)lines.push('  '+S(f.message));
+      }
+    }
+
+    lines.push('');
+    if(report.ok){
+      lines.push('判定：高性能AIの接続経路は正常です。');
+    }else{
+      var firstNg=(report.stages||[]).filter(function(x){return x.ok===false;})[0];
+      var anyModelOk=(report.models||[]).some(function(x){return x.ok;});
+      if(firstNg&&firstNg.name==='App Checkトークン'){
+        lines.push('判定：App Checkトークン取得段階で停止しています。');
+      }else if(!anyModelOk&&report.models&&report.models.length){
+        lines.push('判定：App Checkまでは通過し、Geminiモデル通信段階で停止しています。');
+      }else if(report.functionCalling&&report.functionCalling.tested&&!report.functionCalling.ok){
+        lines.push('判定：Gemini本文通信は正常ですが、Function Calling段階で停止しています。');
+      }else{
+        lines.push('判定：上の最初のNG段階が原因候補です。');
+      }
+    }
+
+    lines.push('診断時間：'+Number(report.totalMs||0)+'ms');
+    return lines.join('\n').slice(0,7000);
+  }
+
   function setupIssue(){
     if(!configured())return {
       ok:false,
@@ -548,10 +895,19 @@
     if(/app-check-disabled/.test(x))return 'App Checkが無効です。';
     if(/app-check-provider-unsupported/.test(x))return 'App Checkのプロバイダ設定が正しくありません。';
     if(/api-not-enabled/.test(x))return 'Firebase AI Logic APIがまだ有効になっていません。';
-    if(/quota|429|resource.exhausted/i.test(x))return 'AIの無料枠またはレート上限に達している可能性があります。';
-    if(/403|permission|app.check|appcheck/i.test(x))return 'App CheckまたはFirebase側の許可設定を確認してください。';
+    if(/403|permission|app.check|appcheck/i.test(x))return 'App CheckまたはFirebase側の許可で拒否されています。';
+    if(/429|quota|resource.exhausted/i.test(x))return 'Gemini側から429が返りました。クォータ上限またはモデル容量不足です。';
+    if(/503|unavailable|overload|capacity/i.test(x))return 'Gemini側が一時的に混雑または利用不可です。';
     if(/fetch|network|timeout/i.test(x))return 'AIへの通信に失敗しました。';
     return x||'AI接続に失敗しました。';
+  }
+
+  function diagnosticSummary(errors){
+    errors=Array.isArray(errors)?errors:[];
+    if(!errors.length)return '';
+    return errors.map(function(x){
+      return (x.model||'?')+': '+errorLine(x.error||{});
+    }).join('\n').slice(0,1800);
   }
 
   async function preflight(options){
@@ -564,6 +920,7 @@
 
     ctx.lastError='';
     ctx.lastErrorAt=0;
+    ctx.modelErrors=[];
     ctx.phase='checking';
 
     var c=await init();
@@ -573,50 +930,48 @@
         ok:false,
         stage:'initialize',
         message:humanError(ctx.lastError),
-        raw:ctx.lastError
+        raw:ctx.lastError,
+        modelErrors:ctx.modelErrors.slice()
       };
     }
 
     try{
-      // Stage 1: 普通のGemini本文通信。
-      var textModel=c.api.getGenerativeModel(
-        c.ai,
-        {model:S(cfg().model)||'gemini-3.6-flash'},
-        {timeout:Number(cfg().timeoutMs)||18000}
-      );
-      var textResult=await textModel.generateContent(
-        '接続確認です。「接続OK」とだけ返してください。'
-      );
-      var text=textResult&&textResult.response&&typeof textResult.response.text==='function'
-        ?S(textResult.response.text()):'';
-      if(!text)throw new Error('AI response was empty');
+      // Stage 1: 軽い本文通信。429/503なら別モデルへ自動退避。
+      var textAttempt=await tryModels(async function(modelName){
+        var model=c.api.getGenerativeModel(
+          c.ai,
+          {model:modelName},
+          {timeout:Number(cfg().timeoutMs)||18000}
+        );
+        var result=await model.generateContent(
+          '接続確認です。「接続OK」とだけ返してください。'
+        );
+        var text=result&&result.response&&typeof result.response.text==='function'
+          ?S(result.response.text()):'';
+        if(!text)throw new Error('AI response was empty');
+        return text;
+      });
 
+      var chosen=textAttempt.model;
       var toolTest=options.toolTest;
       if(toolTest==null)toolTest=cfg().preflightToolTest!==false;
-      var toolOk=true,toolInvoked=false;
+      var toolOk=!toolTest,toolInvoked=false;
 
-      // Stage 2: Function Calling自体を本当に実行できるか。
+      // Stage 2: 明示確認時だけFunction Callingを検査。
       if(toolTest){
-        var nonce='ARUKIMIKO_TOOL_OK_306';
         var healthTool={
           functionDeclarations:[{
             name:'arukimiko_health_check',
-            description:'AI Function Callingの接続確認専用。接続確認では必ずこの関数を呼ぶ。',
+            description:'AI Function Callingの接続確認専用。必ずこの関数を呼ぶ。',
             parameters:c.api.Schema.object({
               properties:{
-                check:c.api.Schema.string({
-                  description:'必ず health と指定する。'
-                })
+                check:c.api.Schema.string({description:'health と指定する。'})
               }
             }),
             functionReference:async function(args){
               toolInvoked=true;
               ctx.toolCalls++;
-              return {
-                ok:true,
-                token:nonce,
-                received:S(args&&args.check)
-              };
+              return {ok:true,received:S(args&&args.check)};
             }
           }]
         };
@@ -624,9 +979,8 @@
         var toolModel=c.api.getGenerativeModel(
           c.ai,
           {
-            model:S(cfg().model)||'gemini-3.6-flash',
-            systemInstruction:
-              'これはFunction Callingの動作確認です。必ずarukimiko_health_checkを1回呼んでください。',
+            model:chosen,
+            systemInstruction:'Function Calling確認です。必ずarukimiko_health_checkを1回呼んでください。',
             tools:[healthTool],
             toolConfig:{
               functionCallingConfig:{
@@ -637,13 +991,12 @@
           },
           {
             timeout:Number(cfg().timeoutMs)||18000,
-            // 1回実行された事実だけを検証する。無限ループを許可しない。
             maxSequentialFunctionCalls:1
           }
         );
 
         await toolModel.generateContent(
-          'arukimiko_health_checkを使ってFunction Callingを確認してください。'
+          'arukimiko_health_checkを呼び出して接続確認してください。'
         );
         toolOk=toolInvoked;
         if(!toolOk)throw new Error('function-calling-not-invoked');
@@ -656,27 +1009,36 @@
       ctx.preflightAt=Date.now();
       ctx.preflightOk=true;
       ctx.toolPreflightOk=toolOk;
+      ctx.activeModel=chosen;
 
       return {
         ok:true,
         stage:'complete',
-        model:S(cfg().model)||'gemini-3.6-flash',
-        message:text,
+        model:chosen,
+        message:S(textAttempt.value),
         functionCalling:toolOk,
-        functionInvoked:toolInvoked
+        functionInvoked:toolInvoked,
+        modelErrors:textAttempt.errors||[]
       };
     }catch(e){
+      var errs=e&&e.__arukimikoModelErrors
+        ?e.__arukimikoModelErrors
+        :ctx.modelErrors.slice();
+
       ctx.lastError=errorText(e);
       ctx.lastErrorAt=Date.now();
       ctx.phase='fallback';
       ctx.preflightAt=Date.now();
       ctx.preflightOk=false;
       ctx.toolPreflightOk=false;
+
       return {
         ok:false,
         stage:/function-calling/i.test(ctx.lastError)?'function-calling':'request',
         message:humanError(ctx.lastError),
-        raw:ctx.lastError
+        raw:ctx.lastError,
+        modelErrors:errs,
+        diagnostic:diagnosticSummary(errs)
       };
     }
   }
@@ -684,7 +1046,7 @@
   async function startupPreflight(){
     if(cfg().startupPreflight===false)return status();
     if(ctx.preflightAt&&Date.now()-ctx.preflightAt<5*60*1000)return status();
-    return preflight({toolTest:cfg().preflightToolTest!==false});
+    return preflight({toolTest:cfg().startupToolTest===true});
   }
 
   async function respond(message,opt){
@@ -718,27 +1080,32 @@
         };
       }
 
-      var model=aiM.getGenerativeModel(
-        c.ai,
-        modelParams,
-        {
-          timeout:Number(cfg().timeoutMs)||18000,
-          maxSequentialFunctionCalls:Number(cfg().maxSequentialFunctionCalls)||6
-        }
-      );
+      var attempt=await tryModels(async function(modelName){
+        var mp=Object.assign({},modelParams,{model:modelName});
+        var model=aiM.getGenerativeModel(
+          c.ai,
+          mp,
+          {
+            timeout:Number(cfg().timeoutMs)||18000,
+            maxSequentialFunctionCalls:Number(cfg().maxSequentialFunctionCalls)||6
+          }
+        );
 
-      var chat=model.startChat({
-        history:trimHistory(opt.history||[],message)
+        var chat=model.startChat({
+          history:trimHistory(opt.history||[],message)
+        });
+
+        ctx.calls++;
+        var result=await chat.sendMessage(message);
+        var text=result&&result.response&&typeof result.response.text==='function'
+          ?S(result.response.text()):'';
+
+        if(!text)throw new Error('AI response was empty');
+        return {text:text,result:result};
       });
 
-      ctx.calls++;
-      var result=await chat.sendMessage(message);
-      var text=result&&result.response&&typeof result.response.text==='function'
-        ?S(result.response.text()):'';
-
-      if(!text){
-        throw new Error('AI response was empty');
-      }
+      var text=S(attempt.value&&attempt.value.text);
+      ctx.activeModel=attempt.model;
 
       ctx.lastOkAt=Date.now();ctx.lastError='';ctx.lastErrorAt=0;ctx.phase='online';
 
@@ -762,7 +1129,7 @@
         mode:'AI歩き巫女',
         data:{
           aiBrain:true,
-          model:S(cfg().model)||'gemini-3.6-flash',
+          model:ctx.activeModel||S(cfg().model)||'gemini-3.6-flash',
           toolModes:meta.modes.slice(0,8),
           verifiedToolRequired:toolRequirement?toolRequirement.reason:'',
           contextEpoch:contextEpoch()
@@ -785,6 +1152,9 @@
       appCheck:appCheckCfg(),
       cooldown:inCooldown(),
       model:S(cfg().model),
+      activeModel:ctx.activeModel,
+      modelCandidates:modelCandidates(),
+      modelErrors:ctx.modelErrors.slice(),
       phase:ctx.phase,
       calls:ctx.calls,
       toolCalls:ctx.toolCalls,
@@ -801,6 +1171,7 @@
   function reset(){
     ctx.lastError='';ctx.lastErrorAt=0;ctx.lastOkAt=0;ctx.calls=0;ctx.toolCalls=0;
     ctx.phase='idle';ctx.preflightAt=0;ctx.preflightOk=false;ctx.toolPreflightOk=false;
+    ctx.activeModel='';ctx.modelErrors=[];
   }
 
   window.JINPO_BOT_AI_BRAIN={
@@ -808,6 +1179,8 @@
     respond:respond,
     preflight:preflight,
     startupPreflight:startupPreflight,
+    diagnose:diagnose,
+    formatDiagnosis:formatDiagnosis,
     status:status,
     reset:reset,
     configured:configured,
@@ -819,6 +1192,9 @@
     _trimHistory:trimHistory,
     _recentUserContext:recentUserContext,
     _requiresVerifiedTool:requiresVerifiedTool,
+    _modelCandidates:modelCandidates,
+    _retryableModelError:retryableModelError,
+    _diagnosticSummary:diagnosticSummary,
     _systemInstruction:systemInstruction
   };
 })();

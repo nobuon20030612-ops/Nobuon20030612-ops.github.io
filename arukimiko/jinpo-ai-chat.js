@@ -113,8 +113,21 @@
     }));
     composer.appendChild(aiLimitNotice);
 
-    aiFallbackNotice = el('div','jinpoAiFallbackNotice',{text:'現在は通常Botで動作中です（高性能AIの接続状態を確認中）。'});
+    aiFallbackNotice = el('div','jinpoAiFallbackNotice');
     aiFallbackNotice.hidden=true;
+    var fallbackText=el('span','jinpoAiFallbackText',{text:'現在は通常Botで動作中です（高性能AIの接続状態を確認中）。'});
+    var diagnosticBtn=el('button','jinpoAiDiagnosticBtn',{
+      type:'button',
+      text:'AI診断',
+      title:'App CheckからGeminiまで精密診断'
+    });
+    diagnosticBtn.addEventListener('click',function(){
+      if(busy)return;
+      input.value='AI診断';
+      submit();
+    });
+    aiFallbackNotice.appendChild(fallbackText);
+    aiFallbackNotice.appendChild(diagnosticBtn);
     composer.appendChild(aiFallbackNotice);
 
     win.appendChild(header); win.appendChild(messages); win.appendChild(composer);
@@ -385,7 +398,8 @@
     if(aiFallbackNotice){
       aiFallbackNotice.hidden=!fallback;
       if(fallback){
-        aiFallbackNotice.textContent='現在は通常Botで動作中です（高性能AIの接続状態を確認中）。';
+        var ft=aiFallbackNotice.querySelector('.jinpoAiFallbackText');
+        if(ft)ft.textContent='現在は通常Botで動作中です（高性能AIの接続状態を確認中）。';
       }
     }
 
@@ -527,7 +541,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'0.9.2', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.9.3', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

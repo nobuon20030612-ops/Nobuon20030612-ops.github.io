@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.1.2';
+  var VERSION='3.1.3';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -134,6 +134,50 @@
         }
       }
     }catch(transientSanitizeErr){}
+
+    // App CheckからFunction Callingまで段階別に確認する精密診断。
+    if(/^(?:AI|ＡＩ)(?:詳細)?診断[！!？?。]*$|^(?:AI|ＡＩ)接続(?:詳細)?診断[！!？?。]*$/.test(originalMessage.trim())){
+      try{
+        if(!window.JINPO_BOT_AI_BRAIN||typeof window.JINPO_BOT_AI_BRAIN.diagnose!=='function'){
+          return {
+            answer:'AI精密診断モジュールがまだ読み込まれていません。',
+            sources:[],links:[],mode:'AI精密診断',
+            data:{aiDiagnosis:true,ok:false,stage:'module'}
+          };
+        }
+
+        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+          window.JINPO_AI_CHAT.setBrainStatus('AI診断中','App Check / Gemini / Function Calling');
+        }
+
+        var diagnosis=await window.JINPO_BOT_AI_BRAIN.diagnose({toolTest:true});
+        var diagnosisText=window.JINPO_BOT_AI_BRAIN.formatDiagnosis(diagnosis);
+
+        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+          window.JINPO_AI_CHAT.setBrainStatus(
+            diagnosis&&diagnosis.ok?'AI準備OK':'予備モード',
+            diagnosis&&diagnosis.ok?'AI diagnostics OK':'AI diagnostics failed'
+          );
+        }
+
+        return {
+          answer:diagnosisText,
+          sources:[],links:[],mode:'AI精密診断',
+          data:{aiDiagnosis:true,ok:!!(diagnosis&&diagnosis.ok),diagnosis:diagnosis||{}}
+        };
+      }catch(diagErr){
+        try{
+          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+            window.JINPO_AI_CHAT.setBrainStatus('予備モード','AI diagnosis exception');
+          }
+        }catch(ignore){}
+        return {
+          answer:'AI精密診断そのものが停止しました。\n'+String(diagErr&&diagErr.message||diagErr),
+          sources:[],links:[],mode:'AI精密診断',
+          data:{aiDiagnosis:true,ok:false,error:String(diagErr&&diagErr.message||diagErr)}
+        };
+      }
+    }
 
     // 本番でFirebase AI Logic / App Checkの状態を簡単に確認する専用コマンド。
     if(/^(?:AI|ai|ＡＩ)\s*(?:接続)?(?:確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
