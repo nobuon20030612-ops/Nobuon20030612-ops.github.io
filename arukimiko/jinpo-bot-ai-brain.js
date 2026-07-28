@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.1.0
+ * 歩き巫女 AI会話脳 v1.2.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var ctx={
     app:null,
     api:null,
@@ -34,7 +34,7 @@
     var f=root.firebaseConfig||{};
     return {
       enabled:ac.enabled!==false,
-      provider:S(ac.provider||'recaptcha-enterprise'),
+      provider:S(ac.provider||'recaptcha-v3'),
       siteKey:S(ac.siteKey||f.recaptchaSiteKey||''),
       autoRefresh:ac.autoRefresh!==false
     };
@@ -111,8 +111,17 @@
         }
 
         if(ac.enabled&&ac.siteKey&&!ctx.appCheck){
+          var provider;
+          if(ac.provider==='recaptcha-v3'){
+            provider=new appCheckM.ReCaptchaV3Provider(ac.siteKey);
+          }else if(ac.provider==='recaptcha-enterprise'){
+            provider=new appCheckM.ReCaptchaEnterpriseProvider(ac.siteKey);
+          }else{
+            throw new Error('app-check-provider-unsupported');
+          }
+
           ctx.appCheck=appCheckM.initializeAppCheck(ctx.app,{
-            provider:new appCheckM.ReCaptchaEnterpriseProvider(ac.siteKey),
+            provider:provider,
             isTokenAutoRefreshEnabled:ac.autoRefresh
           });
         }
@@ -366,7 +375,7 @@
     if(cfg().requireAppCheck&&(!ac.enabled||!ac.siteKey))return {
       ok:false,
       stage:'app-check',
-      message:'App CheckのreCAPTCHA Enterpriseサイトキーがまだ設定されていません。'
+      message:'App CheckのreCAPTCHAサイトキーがまだ設定されていません。'
     };
     return null;
   }
@@ -375,6 +384,7 @@
     var x=S(err||ctx.lastError);
     if(/app-check-site-key-missing/.test(x))return 'App Checkのサイトキーが未設定です。';
     if(/app-check-disabled/.test(x))return 'App Checkが無効です。';
+    if(/app-check-provider-unsupported/.test(x))return 'App Checkのプロバイダ設定が正しくありません。';
     if(/api-not-enabled/.test(x))return 'Firebase AI Logic APIがまだ有効になっていません。';
     if(/quota|429|resource.exhausted/i.test(x))return 'AIの無料枠またはレート上限に達している可能性があります。';
     if(/403|permission|app.check|appcheck/i.test(x))return 'App CheckまたはFirebase側の許可設定を確認してください。';
@@ -400,7 +410,7 @@
     try{
       var model=c.api.getGenerativeModel(
         c.ai,
-        {model:S(cfg().model)||'gemini-3.5-flash'},
+        {model:S(cfg().model)||'gemini-3.6-flash'},
         {timeout:Number(cfg().timeoutMs)||18000}
       );
       var result=await model.generateContent('接続確認です。「接続OK」とだけ返してください。');
@@ -413,7 +423,7 @@
       return {
         ok:true,
         stage:'complete',
-        model:S(cfg().model)||'gemini-3.5-flash',
+        model:S(cfg().model)||'gemini-3.6-flash',
         message:text
       };
     }catch(e){
@@ -444,7 +454,7 @@
       var model=aiM.getGenerativeModel(
         c.ai,
         {
-          model:S(cfg().model)||'gemini-3.5-flash',
+          model:S(cfg().model)||'gemini-3.6-flash',
           systemInstruction:systemInstruction(opt),
           tools:tools
         },
@@ -489,7 +499,7 @@
         mode:'AI歩き巫女',
         data:{
           aiBrain:true,
-          model:S(cfg().model)||'gemini-3.5-flash',
+          model:S(cfg().model)||'gemini-3.6-flash',
           toolModes:meta.modes.slice(0,8)
         }
       };

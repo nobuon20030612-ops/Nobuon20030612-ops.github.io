@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.1';
+  var VERSION='3.0.2';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 

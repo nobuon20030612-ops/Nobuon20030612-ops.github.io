@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 Firebase共有記憶 設定 v1.2.0
+ * 歩き巫女 Firebase共有記憶 設定 v1.3.0
  *
  * Firebaseコンソールで「歩き巫女」専用Webアプリを登録した後、
  * firebaseConfig の値を貼り付けて enabled:true にする。
@@ -10,7 +10,7 @@
   'use strict';
   if(window.JINPO_BOT_FIREBASE_CONFIG)return;
   window.JINPO_BOT_FIREBASE_CONFIG={
-    version:'1.2.0',
+    version:'1.3.0',
     enabled:true,
     sdkVersion:'12.16.0',
     firebaseConfig:{
@@ -26,12 +26,11 @@
     volatileTtlMs:10*60*1000,
     timeoutMs:4500,
     appCheck:{
-      // Firebase AI Logicを公開サイトで使うためのApp Check。
-      // AI Logic設定後、Firebase / Google Cloud側で作成した
-      // reCAPTCHA Enterpriseの「サイトキー（公開キー）」をsiteKeyへ入れる。
+      // Firebase App Check: reCAPTCHA v3
+      // siteKeyはWeb公開用のサイトキー。秘密鍵はFirebase Console側だけで管理する。
       enabled:true,
-      provider:'recaptcha-enterprise',
-      siteKey:'',
+      provider:'recaptcha-v3',
+      siteKey:'6LccWGktAAAAALLL_tKFAFHWuRK4Gs_lqaN1AN0n',
       autoRefresh:true
     }
   };
