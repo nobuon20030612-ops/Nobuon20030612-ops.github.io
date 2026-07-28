@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.2
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.3
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -227,7 +227,7 @@
   function syncMinimizeButton(){
     if(!minBtn || !win) return;
     var minimized = win.classList.contains('isMinimized');
-    var label = minimized ? '元の画面に戻す' : '画面最小化';
+    var label = minimized ? '元に戻す' : '画面最小化';
     minBtn.textContent = label;
     minBtn.setAttribute('aria-label', label);
     minBtn.title = label;
@@ -592,7 +592,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.2', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.3', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

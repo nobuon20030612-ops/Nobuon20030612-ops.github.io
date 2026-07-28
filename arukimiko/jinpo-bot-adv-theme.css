@@ -29,7 +29,7 @@
 }
 #jinpoAiRoot.jinpoAdvTheme .jinpoAiMascot{
   display:block!important;width:104px;height:116px;margin:0 auto;border:0;border-radius:0;
-  background:url("assets/jinpo-bot-mascot-chibi.webp") center bottom/contain no-repeat;
+  background:url("assets/jinpo-bot-mascot-chibi-v324.webp") center bottom/contain no-repeat;
   box-shadow:none;transform-origin:50% 100%;
 }
 #jinpoAiRoot.jinpoAdvTheme .jinpoAiMascot:before,
@@ -1402,5 +1402,141 @@
     height:36px!important;
     padding:5px 10px!important;
     font-size:13.5px!important;
+  }
+}
+
+
+/* ===== v3.2.4 最小化表示の再設計 =====
+   最小化時は大型の育成札・会話リセットを残さず、
+   「歩き巫女 / 元に戻す / 非表示」だけのコンパクトバーにする。
+*/
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.isMinimized,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.hasJinpoBotGuide.isMinimized{
+  left:auto!important;
+  right:92px!important;
+  top:auto!important;
+  bottom:16px!important;
+
+  width:330px!important;
+  height:58px!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:calc(100vw - 112px)!important;
+  max-height:58px!important;
+
+  display:grid!important;
+  grid-template-rows:58px!important;
+  resize:none!important;
+  overflow:hidden!important;
+
+  border-radius:16px!important;
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.42),
+    0 0 15px rgba(230,76,137,.20)!important;
+}
+
+/* 最小化では会話・画像・検索メニューだけでなく、強調札も完全に隠す */
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiMessages,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiComposer,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized #jinpoAiAdvHero,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized #jinpoBotGuide,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiTrainingBadge,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderResetBtn{
+  display:none!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeader{
+  height:58px!important;
+  min-height:58px!important;
+  padding:7px 9px 7px 12px!important;
+  gap:7px!important;
+  border-bottom:0!important;
+  cursor:default!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderMark{
+  display:none!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderText{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-width:74px!important;
+  margin:0!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiTitle{
+  display:block!important;
+  color:#ffacc9!important;
+  font-size:16px!important;
+  font-weight:950!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiStatus{
+  display:none!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderActions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  flex:0 0 auto!important;
+  margin-left:auto!important;
+}
+
+/* 最小化中は2つの操作だけをコンパクトに */
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderMinBtn{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  min-width:92px!important;
+  height:38px!important;
+  padding:6px 10px!important;
+  border:2px solid #f07ca7!important;
+  border-radius:11px!important;
+  background:linear-gradient(180deg,#8d274f,#641b3d)!important;
+  color:#ffe5ef!important;
+  font-size:13.5px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  box-shadow:0 0 10px rgba(239,79,139,.30)!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderHideBtn{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  min-width:66px!important;
+  height:38px!important;
+  padding:6px 10px!important;
+  border-radius:11px!important;
+  font-size:13.5px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderMinBtn:hover,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiHeaderMinBtn:focus-visible{
+  background:linear-gradient(180deg,#b53468,#79214b)!important;
+  box-shadow:0 0 15px rgba(244,84,147,.52)!important;
+}
+
+/* 狭い画面でもはみ出さない */
+@media(max-width:760px){
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized,
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.isMinimized,
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.hasJinpoBotGuide.isMinimized{
+    right:10px!important;
+    bottom:92px!important;
+    width:min(310px,calc(100vw - 20px))!important;
+    max-width:calc(100vw - 20px)!important;
   }
 }

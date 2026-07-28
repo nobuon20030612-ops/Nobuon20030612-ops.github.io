@@ -35,6 +35,13 @@
 
   function parse(input){
     var t=normalize(input);try{if(window.JINPO_BOT_CASUAL&&typeof window.JINPO_BOT_CASUAL.rewrite==='function')t=window.JINPO_BOT_CASUAL.rewrite(t,{}).text||t;}catch(e){}
+    // 自然文のひらがな表記を検索判定用に正規化。
+    // 「腕力と知力たかいの」を腕力だけに落とさない。
+    t=t
+      .replace(/たかい/g,'高い')
+      .replace(/たかめ/g,'高め')
+      .replace(/つよい/g,'強い')
+      .replace(/つよめ/g,'強め');
     var plan={raw:t,actions:[],searchPatch:null,recommendStat:'',helpKey:helpKey(t),smalltalk:'',recognized:false};
     if(!t)return plan;
     if(/^(こんにちは|こんちは|こんばんは|おはよう|おはようございます)[!！。\s]*$/.test(t))plan.smalltalk='greeting';
@@ -148,21 +155,28 @@
     var bestStats=findStats(t);
     var pairHigh=bestStats.length>=2&&(
       (
-        /(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋|＆|&|と)/.test(t)&&
-        /(?:高|大き|強|良|いい|上|重視|優先|順)/.test(t)
+        /(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋|＆|&|と|および|及び)/.test(t)&&
+        /(?:高|大き|強|良|いい|上|重視|優先|順|伸ば)/.test(t)
       )||
-      /(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先)/.test(t)
+      /(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先|伸ば)/.test(t)
     )&&!/(?:低い|低く|小さい|少ない|最低)/.test(t);
     var singleBest=bestStats.length&&/(?:一番|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大).*(?:一番|最も|最高|トップ|最大)/.test(t);
+    var explicitTwoStatHigh=
+      bestStats.length>=2 &&
+      /(?:高い|高め|強い|強め|重視|優先|伸ばしたい|伸ばす|合計)/.test(t) &&
+      !/(?:低い|低く|小さい|少ない|最低)/.test(t);
     var casualSingleHigh=
       bestStats.length===1&&
       /(?:高いの|高め|強いの|強め|盛り|伸ばしたい|重視したい)/.test(t)&&
       !findFormation(t)&&
       !/[5-9]\s*因縁/.test(t)&&
       !/[0-9]{2,5}\s*(?:以上|以下)/.test(t);
-    if((pairHigh||singleBest)&&!/ページ|一番上へ|トップへ移動/.test(t)){
-      if(bestStats.length>=2&&(pairHigh||/(?:合計|合わせ|足し|両方|と)/.test(t)))plan.actions.push({name:'run_best',args:{stat1:bestStats[0],stat2:bestStats[1]}});
-      else plan.actions.push({name:'run_best',args:{stat1:bestStats[0]}});
+    if((pairHigh||explicitTwoStatHigh||singleBest)&&!/ページ|一番上へ|トップへ移動/.test(t)){
+      if(bestStats.length>=2&&(pairHigh||explicitTwoStatHigh||/(?:合計|合わせ|足し|両方|と)/.test(t))){
+        plan.actions.push({name:'run_best',args:{stat1:bestStats[0],stat2:bestStats[1]}});
+      }else{
+        plan.actions.push({name:'run_best',args:{stat1:bestStats[0]}});
+      }
       plan.recognized=true;
     }
     if(casualSingleHigh&&!plan.actions.some(function(a){return a.name==='run_best';})){
@@ -233,5 +247,5 @@
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.3.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.4.0',parse:parse,normalize:normalize};
 })();
