@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.9';
+  var VERSION='3.1.1';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -149,7 +149,12 @@
             }
           }catch(e){}
           return {
-            answer:'AI会話脳の接続は正常なのですよ。\nモデル：'+String(pf.model||'')+'\nFirebase AI Logic / App Check：OK\nFunction Calling：'+(pf.functionCalling?'OK':'未確認'),
+            answer:
+              'AI会話脳の接続は正常なのですよ。\n' +
+              '使用モデル：'+String(pf.model||'')+'\n' +
+              'Firebase AI Logic / App Check：OK\n' +
+              'Function Calling：'+(pf.functionCalling?'OK':'未確認') +
+              ((pf.modelErrors&&pf.modelErrors.length)?'\n※上位モデルから自動退避して接続しました。':''),
             sources:[],links:[],mode:'AI接続確認',
             data:{aiPreflight:true,ok:true,preflight:pf}
           };
@@ -159,8 +164,16 @@
             window.JINPO_AI_CHAT.setBrainStatus('予備モード',String((pf&&pf.message)||'AI接続失敗'));
           }
         }catch(e){}
+        var diag=String((pf&&pf.diagnostic)||'').trim();
+        var raw=String((pf&&pf.raw)||'').trim();
+        var detail=diag||raw||'詳細コードなし';
         return {
-          answer:'AI会話脳はまだ本番接続できていません。\n'+String((pf&&pf.message)||'Firebase側の設定を確認してください。')+'\n\nAIが使えない間も、従来の歩き巫女へ自動で切り替わるのでサイト機能は止まりません。',
+          answer:
+            'AI会話脳はまだ本番接続できていません。\n' +
+            String((pf&&pf.message)||'Firebase側の設定を確認してください。') +
+            '\n\n【実エラー】\n' + detail +
+            '\n\n3.6 Flashで一時的な429/503が出た場合は、3.5 Flash → 3.5 Flash-Liteまで自動で試しています。' +
+            '\nAIが使えない間もサイト機能自体は止まりません。',
           sources:[],links:[],mode:'AI接続確認',
           data:{aiPreflight:true,ok:false,preflight:pf||{}}
         };

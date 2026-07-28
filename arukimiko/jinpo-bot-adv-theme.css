@@ -792,3 +792,47 @@
 
 /* v3.0.3 UI load sentinel: visual rules are unchanged. */
 #jinpoAiRoot.jinpoAdvTheme{--arukimiko-adv-theme-loaded:"3.0.3";}
+
+
+/* v3.1.1 会話リセット：重要操作として少し大きく発光 */
+#jinpoAiRoot .jinpoAiHeaderResetBtn{
+  min-width:118px!important;
+  padding:9px 16px!important;
+  font-size:16px!important;
+  font-weight:800!important;
+  letter-spacing:.02em!important;
+  border-color:rgba(255,120,176,.78)!important;
+  background:linear-gradient(180deg,rgba(116,31,67,.94),rgba(76,22,47,.96))!important;
+  color:#ffd5e6!important;
+  box-shadow:
+    0 0 0 1px rgba(255,117,170,.18) inset,
+    0 0 10px rgba(255,80,145,.44),
+    0 0 20px rgba(255,70,137,.20)!important;
+  animation:arukimikoResetGlow 2.1s ease-in-out infinite!important;
+}
+#jinpoAiRoot .jinpoAiHeaderResetBtn:hover,
+#jinpoAiRoot .jinpoAiHeaderResetBtn:focus-visible{
+  transform:translateY(-1px) scale(1.025)!important;
+  border-color:rgba(255,170,205,.96)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,170,205,.28) inset,
+    0 0 14px rgba(255,90,153,.70),
+    0 0 28px rgba(255,70,137,.34)!important;
+}
+#jinpoAiRoot .jinpoAiHeaderResetBtn:active{
+  transform:translateY(0) scale(.985)!important;
+}
+@keyframes arukimikoResetGlow{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(255,117,170,.18) inset,
+      0 0 8px rgba(255,80,145,.34),
+      0 0 16px rgba(255,70,137,.16);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,155,194,.26) inset,
+      0 0 14px rgba(255,84,149,.64),
+      0 0 28px rgba(255,70,137,.30);
+  }
+}
