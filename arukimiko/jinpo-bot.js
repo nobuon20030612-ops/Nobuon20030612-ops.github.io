@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.8.3';
+  var VERSION='2.9.0';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -56,6 +56,16 @@
         if(dialogInfo.message)message=String(dialogInfo.message);
       }
     }catch(dialogErr){}
+
+    // 全モジュール共通の会話意図を先に決める。
+    // サイト案内や個別機能が同じ文を別々に解釈するのを防ぐ。
+    var intentInfo={original:originalMessage,message:message,intent:'conversation',domain:'',navigation:false,fact:false};
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resolve==='function'){
+        intentInfo=window.JINPO_BOT_CONVERSATION.resolve(message,history,{pageContext:pageContext})||intentInfo;
+        if(intentInfo.message)message=String(intentInfo.message);
+      }
+    }catch(conversationErr){}
 
     var contextInfo={original:originalMessage,message:message,resolved:message!==originalMessage,reason:dialogInfo.reason||'',confidence:dialogInfo.handled?0.99:0};
     try{
@@ -130,6 +140,17 @@
       }
     }catch(kashinNameErr){}
 
+    // 九十九・鬼神石・魔導結晶のCSV正本を、一般的なツール案内より先に参照。
+    // 例: 「九十九1番は？」「不壊金剛の耐久は？」「魔導で知力トップ3」
+    try{
+      if(window.JINPO_BOT_TOOL_KNOWLEDGE&&typeof window.JINPO_BOT_TOOL_KNOWLEDGE.respond==='function'){
+        var toolFact=window.JINPO_BOT_TOOL_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo,pageContext:pageContext});
+        if(toolFact&&toolFact.handled){
+          return {answer:String(toolFact.answer||''),sources:Array.isArray(toolFact.sources)?toolFact.sources:[],links:Array.isArray(toolFact.links)?toolFact.links:[],mode:String(toolFact.mode||'たいらの野望ツール実データ'),data:Object.assign({toolKnowledge:true,context:contextInfo},toolFact.data||{})};
+        }
+      }
+    }catch(toolKnowledgeErr){}
+
     // たいらの野望の確定知識は、一般サイト案内やWeb検索より先に参照する。
     // 例: 「足利のカウンターは？」→ 天下統一奇譚・二条城編の足利義昭と意味寄せして即答。
     try{
@@ -145,7 +166,7 @@
     // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
     try{
       if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'){
-        var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:originalMessage,history:history,context:contextInfo});
+        var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:originalMessage,history:history,context:contextInfo,intentInfo:intentInfo});
         if(guide&&guide.handled){
           return {answer:String(guide.answer||''),sources:Array.isArray(guide.sources)?guide.sources:[],links:Array.isArray(guide.links)?guide.links:[],mode:String(guide.mode||'サイト総合案内'),data:{siteGuide:true,context:contextInfo}};
         }
@@ -170,7 +191,8 @@
           if(siteChat&&siteChat.handled)return {answer:String(siteChat.answer||''),sources:Array.isArray(siteChat.sources)?siteChat.sources:[],links:Array.isArray(siteChat.links)?siteChat.links:[],mode:String(siteChat.mode||'日常会話'),data:{smalltalk:true,context:contextInfo}};
         }catch(siteChatErr){}
       }
-      return {answer:'サイト内のページ案内、調べもの、雑談ならそのまま聞いてくださいね。陣法の具体的な検索操作は「陣法検索を開きたい」と言えば案内するのですよ。',sources:[],links:[],mode:'サイト総合案内',data:{needsClarification:true,context:contextInfo,pageContext:pageContext}};
+      var heard=String(originalMessage||message||'').trim();
+      return {answer:'今の「'+heard+'」について、こちらの解釈をうまく絞り切れなかったのですよ。\nページ案内へ勝手に逃げず、前の話の続きならその続きとして扱います。もう一言だけ足してもらえれば、その内容に合わせて答えるのです。',sources:[],links:[],mode:'会話確認',data:{needsClarification:true,context:contextInfo,pageContext:pageContext,intentInfo:intentInfo}};
     }
 
     var interpretNote='',pending=interpreter().getPending(),capabilityPlan=null;

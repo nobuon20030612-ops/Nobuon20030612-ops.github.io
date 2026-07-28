@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 サイト総合案内 v1.5.0
+ * 歩き巫女 サイト総合案内 v1.6.0
  * たいらの野望の現行トップページ構成を基準に、ページ案内と内部リンクを返す。
  * 数値・ゲーム仕様は推測せず、ここでは「どのページへ行けばよいか」を担当する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='1.5.0';
+  var VERSION='1.6.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function rootUrl(){try{return new URL('/',location.href).href;}catch(e){return'/';}}
@@ -108,17 +108,15 @@
 
     var item=findItem(t);
     if(item){
-      var nav=hasNavigationCue(t);
+      var routedIntent=opt&&opt.intentInfo?String(opt.intentInfo.intent||''):'';
+      var nav=hasNavigationCue(t)||(routedIntent==='navigation');
 
-      // 明示的なページ移動ではない限り、値・順位・効果などの質問を横取りしない。
-      if(!nav&&looksLikeSpecificCounterQuestion(t,item))return {handled:false};
-      if(!nav&&hasFactCue(t)&&!exactAliasOnly(t,item))return {handled:false};
+      // サイト案内は「移動したい」という明示要求だけを担当する。
+      // 単語だけ、事実質問、会話の続きは他の回答モジュールへ渡す。
+      if(!nav)return {handled:false};
 
       if(mode==='jinpo'&&!nav&&hasJinpoOperation(t))return {handled:false};
       if(item.id==='jinpo'&&mode==='jinpo'&&!nav)return {handled:false};
-
-      // ページ名だけ、または明示的な「開いて/どこ」の時だけ案内。
-      if(!nav&&!exactAliasOnly(t,item))return {handled:false};
 
       var suffix=item.external?'別タブで開けるのですよ。':'こちらから開けるのですよ。';
       return {handled:true,mode:'サイト総合案内',answer:item.name+'ですね。'+item.desc+' '+suffix,links:[link(item.name+'を開く',item.path,item.external)]};

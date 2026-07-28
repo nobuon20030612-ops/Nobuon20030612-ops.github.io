@@ -183,6 +183,6 @@ window.addEventListener('beforeunload',e=>{if(window.__rouletteAllowTopBackNavig
 window.history.pushState(null,'',location.href);window.addEventListener('popstate',()=>{alert('戻る操作を止めました。終了する時は保存確認後に閉じてください。');window.history.pushState(null,'',location.href)});
 load();renderAll();drawWheel();setTimeout(()=>rows.querySelector('.blankRow input')?.focus(),0);
 </script>
-<script src="/arukimiko/loader.js"></script>
+<script src="/arukimiko/bootstrap.js?v=1"></script>
 </body>
 </html>

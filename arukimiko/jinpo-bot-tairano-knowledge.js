@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.3.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.4.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -280,7 +280,7 @@
       if(missingTarget){
         return {
           handled:true,
-          answer:'「'+S(missingTarget)+'」のカウンター値を聞いているのですね。今の歩き巫女の正本には、その名前のカウンター値がまだ登録されていないのですよ。\nページ案内でごまかさず、確認できた値だけ数字で答えるようにします。',
+          answer:'「'+S(missingTarget)+'」のカウンター値を聞いているのですね。今の歩き巫女の正本には、その名前のカウンター値がまだ登録されていないのですよ。\nカウンターページの案内ではなく、値そのものを答える質問として扱っています。確認できた値だけ数字で答えるのです。',
           mode:'たいらの野望専用知識',
           sources:[],links:[],
           data:{counterQuestion:true,missingKnowledge:true,target:S(missingTarget),authoritative:false}

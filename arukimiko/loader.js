@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v2.4.0
+ * 歩き巫女 サイト共通ローダー v3.0.0
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='2.8.3';
+  var ASSET_VERSION='2.9.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,7 +27,7 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'2.4.0',baseUrl:base,pageMode:mode};
+  window.ARUKIMIKO_SHARED={version:'3.0.0',baseUrl:base,pageMode:mode};
 
   function addCss(name){
     var href=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION);
@@ -53,10 +53,13 @@
 
   var common=[
     'jinpo-ai-chat.js',
+    'jinpo-bot-conversation.js',
     'jinpo-bot-context.js',
     'jinpo-bot-dialog.js',
     'jinpo-bot-page-context.js',
     'jinpo-bot-learning.js',
+    'jinpo-bot-tool-data.js',
+    'jinpo-bot-tool-knowledge.js',
     'jinpo-bot-tairano-data.js',
     'jinpo-bot-tairano-knowledge.js',
     'jinpo-bot-site-guide.js'
