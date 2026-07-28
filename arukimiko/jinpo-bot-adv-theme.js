@@ -1,10 +1,10 @@
-/* 歩き巫女 ADVテーマ DOM追加 v2.3.1 */
+/* 歩き巫女 ADVテーマ DOM追加 v2.4.5 */
 (function(){
   'use strict';
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.3',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v281SharedLarge';
+  var VERSION='2.4.5',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v317HardStandard';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){
@@ -49,21 +49,49 @@
    */
   function restoreLargeSizeOnce(win){
     if(!win||window.matchMedia('(max-width:760px)').matches)return;
+
     var done=false;
     try{done=localStorage.getItem(SIZE_RESTORE_KEY)==='1';}catch(e){}
     if(done)return;
-    try{
-      var raw=localStorage.getItem('jinpoAiChatUi.v1'),st=raw?JSON.parse(raw):{};
-      if(st&&typeof st==='object'){
-        delete st.width;
-        delete st.height;
+
+    function targetSize(){
+      var vw=Math.max(0,Number(window.innerWidth)||0);
+      var vh=Math.max(0,Number(window.innerHeight)||0);
+      return {
+        width:Math.max(360,Math.min(700,Math.max(360,vw-32))),
+        height:Math.max(300,vh-24)
+      };
+    }
+
+    function apply(){
+      var size=targetSize();
+
+      // CSS任せではなく、今回だけ標準値そのものを保存し直す。
+      // これにより過去の小さいinline width/heightやResizeObserver保存値に勝つ。
+      try{
+        var raw=localStorage.getItem('jinpoAiChatUi.v1');
+        var st=raw?JSON.parse(raw):{};
+        if(!st||typeof st!=='object')st={};
+
+        st.width=Math.round(size.width);
+        st.height=Math.round(size.height);
+        st.top=8;
+
         localStorage.setItem('jinpoAiChatUi.v1',JSON.stringify(st));
-      }
-      localStorage.setItem(SIZE_RESTORE_KEY,'1');
-    }catch(e){}
-    // 位置情報はそのまま。サイズ指定だけCSSへ戻す。
-    win.style.width='';
-    win.style.height='';
+      }catch(e){}
+
+      win.style.width=Math.round(size.width)+'px';
+      win.style.height=Math.round(size.height)+'px';
+      win.style.top='8px';
+      win.style.bottom='auto';
+    }
+
+    // ADV theme is loaded after the base chat UI, but apply twice to defeat
+    // any late ResizeObserver/restore race from older saved UI state.
+    apply();
+    setTimeout(apply,120);
+
+    try{localStorage.setItem(SIZE_RESTORE_KEY,'1');}catch(e){}
   }
 
   function makeHero(){

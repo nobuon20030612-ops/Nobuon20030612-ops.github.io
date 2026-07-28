@@ -1042,3 +1042,15 @@
     padding-right:9px!important;
   }
 }
+
+
+/* v3.1.7 PC標準サイズ最終保証 */
+@media(min-width:981px){
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized){
+    width:700px;
+    height:calc(100vh - 24px);
+    max-height:calc(100vh - 24px);
+    top:8px;
+    bottom:auto;
+  }
+}
