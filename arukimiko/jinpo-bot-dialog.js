@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_DIALOG)return;
 
-  var VERSION='2.1.1';
+  var VERSION='2.2.0';
   var KEY='arukimikoDialog.v1';
 
   function S(v){
@@ -79,9 +79,11 @@
     t=S(t);
     if(!t||t.length>40||explicitOtherDomain(t)||isMetaConversationControl(t))return false;
     if(/[？?！!]/.test(t))return false;
-    if(/教えて|おしえて|調べて|検索|どう|何|なに|誰|だれ|なぜ|好き|疲れ|眠い/.test(t))return false;
+    if(/教えて|おしえて|調べて|検索|どう|何|なに|誰|だれ|なぜ|好き|疲れ|眠い|逸話|歴史|腕力|知力|耐久|器用|魅力|因縁|陣形/.test(t))return false;
     if(/^(?:今日|きょう|明日|あした)$/.test(t))return false;
-    return /^[一-龠々ヶヵぁ-んァ-ヶA-Za-z0-9・ー\-]{1,30}$/.test(t);
+    if(/(?:都|道|府|県|市|区|町|村|郡|島|駅)$/.test(t))return true;
+    if(/^(?:東京|広島|大阪|京都|名古屋|横浜|札幌|仙台|福岡|神戸|千葉|埼玉|奈良|沖縄|長崎|熊本|鹿児島|金沢|新潟|静岡|浜松|岡山|高松|松山|高知|大分|宮崎|青森|盛岡|秋田|山形|福島|宇都宮|前橋|水戸|長野|甲府|富山|福井|岐阜|津|大津|和歌山|鳥取|松江|山口|徳島|佐賀)$/.test(t))return true;
+    return false;
   }
   function weatherRequest(text){
     var t=stripCorrection(text),tw=timeWord(t);

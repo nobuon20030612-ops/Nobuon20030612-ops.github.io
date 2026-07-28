@@ -146,11 +146,27 @@
     // 「一番高い」「トップ」系に加え、「耐久と魅力の合計高い」「腕力と知力どっちも高い」
     // のような自然文も、陣形指定なしで全陣形・因縁数混在DBから比較する。
     var bestStats=findStats(t);
-    var pairHigh=bestStats.length>=2&&((/(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋)/.test(t)&&/(?:高|大き|強|良|いい|上|重視|優先|順)/.test(t))||/(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先)/.test(t))&&!/(?:低い|低く|小さい|少ない|最低)/.test(t);
+    var pairHigh=bestStats.length>=2&&(
+      (
+        /(?:合計|合わせ|足し|足した|足す|両方|どっちも|二つ|2つ|セット|\+|＋|＆|&|と)/.test(t)&&
+        /(?:高|大き|強|良|いい|上|重視|優先|順)/.test(t)
+      )||
+      /(?:両方|どっちも|二つ|2つ).*(?:高|強|重視|優先)/.test(t)
+    )&&!/(?:低い|低く|小さい|少ない|最低)/.test(t);
     var singleBest=bestStats.length&&/(?:一番|最も|最高|トップ|最大).*(?:高|大|強)|(?:高|大).*(?:一番|最も|最高|トップ|最大)/.test(t);
+    var casualSingleHigh=
+      bestStats.length===1&&
+      /(?:高いの|高め|強いの|強め|盛り|伸ばしたい|重視したい)/.test(t)&&
+      !findFormation(t)&&
+      !/[5-9]\s*因縁/.test(t)&&
+      !/[0-9]{2,5}\s*(?:以上|以下)/.test(t);
     if((pairHigh||singleBest)&&!/ページ|一番上へ|トップへ移動/.test(t)){
       if(bestStats.length>=2&&(pairHigh||/(?:合計|合わせ|足し|両方|と)/.test(t)))plan.actions.push({name:'run_best',args:{stat1:bestStats[0],stat2:bestStats[1]}});
       else plan.actions.push({name:'run_best',args:{stat1:bestStats[0]}});
+      plan.recognized=true;
+    }
+    if(casualSingleHigh&&!plan.actions.some(function(a){return a.name==='run_best';})){
+      plan.recommendStat=bestStats[0];
       plan.recognized=true;
     }
     if(/おすすめ/.test(t)&&!/とは|意味/.test(t)&&!plan.actions.some(function(a){return a.name==='run_best';})){var rs=findStats(t);if(rs.length){plan.recommendStat=rs[0];plan.recognized=true;}}
@@ -217,5 +233,5 @@
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.2.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'2.3.0',parse:parse,normalize:normalize};
 })();

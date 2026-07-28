@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9.5
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.1
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -12,7 +12,7 @@
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
   var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn, aiInfoBtn, aiInfoPanel, aiInfoState;
-  var brainStatus='AI確認中…';
+  var brainStatus='案内・検索OK';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
   var dragging = null;
@@ -86,22 +86,24 @@
     htext.appendChild(statusEl); header.appendChild(htext);
 
     var actions = el('div','jinpoAiHeaderActions');
+
+    var trainingBadge = el('div','jinpoAiTrainingBadge',{
+      title:'歩き巫女はただいま育成中です'
+    });
+    trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
+    trainingBadge.appendChild(el('span','jinpoAiTrainingText',{text:'育成中につき\nまだおばかです'}));
+    trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
+
     resetBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderResetBtn',{
       type:'button',
       'aria-label':'会話をリセット',
       title:'会話の流れだけをリセット',
       text:'会話リセット'
     });
-    aiInfoBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderInfoBtn',{
-      type:'button',
-      'aria-label':'AI制限について',
-      title:'AI制限について',
-      text:'AI制限について'
-    });
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
+    actions.appendChild(trainingBadge);
     actions.appendChild(resetBtn);
-    actions.appendChild(aiInfoBtn);
     actions.appendChild(minBtn);
     actions.appendChild(hideBtn);
     header.appendChild(actions);
@@ -184,11 +186,6 @@
 
     launcher.addEventListener('click', function(){ if(win.classList.contains('isOpen')) close(); else open(); });
     resetBtn.addEventListener('click', function(ev){ ev.stopPropagation(); resetConversationFromButton(); });
-    aiInfoBtn.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      if(aiInfoPanel&&aiInfoPanel.hidden)showAiInfo();
-      else hideAiInfo();
-    });
     minBtn.addEventListener('click', function(ev){ ev.stopPropagation(); toggleMinimize(); });
     hideBtn.addEventListener('click', function(ev){ ev.stopPropagation(); hideAll(); });
     restoreBtn.addEventListener('click', function(ev){ ev.stopPropagation(); showLauncher(); open(); });
@@ -462,28 +459,11 @@
   }
 
   function setBrainStatus(status,detail){
-    brainStatus=String(status||'予備モード');
+    brainStatus=String(status||'案内・検索OK');
     if(statusEl&&!busy)statusEl.textContent=brainStatus;
-
-    var fallback=/予備モード|通常Bot|接続失敗|AI未接続/.test(brainStatus);
-
-    if(aiInfoBtn){
-      aiInfoBtn.classList.toggle('isFallback',fallback);
-      aiInfoBtn.title=fallback
-        ?'高性能AIについて（現在は通常Bot）'
-        :'高性能AIについて';
-    }
-
-    if(aiInfoState){
-      aiInfoState.textContent=fallback
-        ?'現在の状態：通常Bot（高性能AIの接続原因を診断中）'
-        :'現在の状態：'+brainStatus;
-      aiInfoState.classList.toggle('isFallback',fallback);
-    }
-
     try{
-      root.setAttribute('data-ai-brain-status',brainStatus);
-      if(detail)root.setAttribute('data-ai-brain-detail',String(detail).slice(0,180));
+      root.setAttribute('data-bot-status',brainStatus);
+      if(detail)root.setAttribute('data-bot-detail',String(detail).slice(0,180));
     }catch(e){}
   }
 
@@ -498,8 +478,8 @@
     memoryHistory=[];
     try{localStorage.removeItem(HISTORY_KEY);}catch(e){}
     try{
-      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.clearConversationContext==='function'){
-        window.JINPO_BOT_AI_BRAIN.clearConversationContext();
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resetContext==='function'){
+        window.JINPO_BOT_CONVERSATION.resetContext();
       }
     }catch(e){}
   }
@@ -514,8 +494,8 @@
       if(window.JINPO_BOT_RESET_CONVERSATION&&typeof window.JINPO_BOT_RESET_CONVERSATION==='function'){
         result=window.JINPO_BOT_RESET_CONVERSATION({source:'button'})||result;
       }else{
-        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
-          window.JINPO_BOT_AI_BRAIN.resetConversationContext();
+        if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resetContext==='function'){
+          window.JINPO_BOT_CONVERSATION.resetContext();
         }
         if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
           window.JINPO_BOT_DIALOG.clearPending();
@@ -571,15 +551,7 @@
     try{
       var result=await requestAi(text,currentHistory()); if(typing&&typing.parentNode)typing.remove();
       addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||''});
-      if(result.mode==='AI歩き巫女'){
-        setBrainStatus('AI準備OK','Gemini / Function Calling');
-      }else if(result.mode==='AI接続確認'){
-        // preflight command itself updates the status from bot runtime.
-      }else if(result.mode){
-        var st=(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.status==='function')
-          ?window.JINPO_BOT_AI_BRAIN.status():null;
-        if(!st||st.phase!=='online')setBrainStatus('予備モード',String(result.mode));
-      }
+      setBrainStatus('案内・検索OK',String(result.mode||'歩き巫女'));
     }catch(err){
       if(typing&&typing.parentNode)typing.remove();
       addBubble('assistant',humanError(err));
@@ -619,7 +591,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'0.9.5', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.1', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

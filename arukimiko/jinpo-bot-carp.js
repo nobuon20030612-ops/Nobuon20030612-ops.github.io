@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 広島東洋カープ専用会話 v1.4.0
+ * 歩き巫女 広島東洋カープ専用会話 v1.5.0
  * - カープの基本知識・歴史を専用返答
  * - 試合結果/順位/日程/主要成績は NPB公式ページを Reader 経由で自動確認
  * - 最新ニュース/先発/スタメン/登録関連は既存の無料Webニュース検索へフォールバック
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.4.0';
+  var VERSION='1.5.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
@@ -29,6 +29,22 @@
   }
   function compact(v){return S(v).toLowerCase().replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…]/g,'');}
   function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+  var ANECDOTE_KEY='arukimikoCarpAnecdote.v1';
+  var ANECDOTES=[
+    '1975年はカープが球団創設以来初めてセ・リーグ優勝を果たした年なのです。長く優勝に届かなかった球団が頂点へ立ったので、球団史を語る時には外せない年ですよ。',
+    '2016年のリーグ優勝は25年ぶりでした。長い低迷期を越えた優勝として、近年のカープ史でも特に印象の強いシーズンなのです。',
+    '球団名は1950年から1967年までは「広島カープ」、1968年から「広島東洋カープ」なのですよ。今の名前にも長い歴史があるのです。',
+    'カープは広島を本拠地に長く地域と一緒に歩んできた球団なのです。優勝年、昔の名選手、球団名の変遷など、話題を絞ればそこから続けられますよ。'
+  ];
+
+  function nextAnecdote(){
+    var n=0;
+    try{n=Number(sessionStorage.getItem(ANECDOTE_KEY)||0)||0;}catch(e){}
+    var text=ANECDOTES[n%ANECDOTES.length];
+    try{sessionStorage.setItem(ANECDOTE_KEY,String((n+1)%ANECDOTES.length));}catch(e){}
+    return text;
+  }
 
   function distance(a,b){
     a=compact(a);b=compact(b);var al=a.length,bl=b.length;
@@ -248,6 +264,7 @@
 
   function staticReply(text){
     var t=S(text);
+    if(/逸話|昔話|名場面|伝説|他の逸話|別の逸話/.test(t))return nextAnecdote();
     if(/(?:意味|何のこと|なにのこと|わかってる|分かってる|理解してる).*(?:カープ|かーぷ)|(?:カープ|かーぷ).*(?:意味|何のこと|なにのこと|わかってる|分かってる|理解してる)/.test(t)){
       return 'はい。ここでいう「カープ」は広島東洋カープのこととして理解しているのですよ。試合・順位・選手・成績の続きも、カープの話として受け取ります。';
     }

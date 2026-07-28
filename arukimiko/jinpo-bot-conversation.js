@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.1.0
+ * 歩き巫女 共通会話ルーター v1.2.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,29 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
+  var RESET_KEY='arukimikoConversationResetAt.v1';
+
+  function resetContext(){
+    var at=Date.now();
+    try{sessionStorage.setItem(RESET_KEY,String(at));}catch(e){}
+    return at;
+  }
+
+  function resetAt(){
+    try{
+      var n=Number(sessionStorage.getItem(RESET_KEY)||0);
+      return isFinite(n)&&n>0?n:0;
+    }catch(e){return 0;}
+  }
+
+  function filterHistory(history){
+    var h=Array.isArray(history)?history:[];
+    var cut=resetAt();
+    if(!cut)return h.slice();
+    return h.filter(function(x){return x&&Number(x.at||0)>=cut;});
+  }
+
 
   function S(v){
     var s=String(v==null?'':v);
@@ -70,7 +92,7 @@
   }
 
   function recentDomain(history){
-    var h=Array.isArray(history)?history:[];
+    var h=filterHistory(history);
     for(var i=h.length-1;i>=0&&i>=h.length-14;i--){
       if(!h[i])continue;
       var d=domainFromText(h[i].text||'');
@@ -80,7 +102,7 @@
   }
 
   function lastSubstantiveUser(history){
-    var h=Array.isArray(history)?history:[];
+    var h=filterHistory(history);
     for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
       if(!h[i]||h[i].role!=='user')continue;
       var t=S(h[i].text);
@@ -101,7 +123,7 @@
     if(!domain)return'';
 
     if(domain==='carp'){
-      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる)[？?]?$/.test(t))
+      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる|逸話|他の逸話|別の逸話|昔話|歴史|名場面|伝説|スター|名選手)[？?]?$/.test(t))
         return'カープの'+t;
     }
 
@@ -146,7 +168,7 @@
   }
 
   function userTopicCandidates(history){
-    var h=Array.isArray(history)?history:[],out=[];
+    var h=filterHistory(history),out=[];
     for(var i=h.length-1;i>=0&&i>=h.length-30;i--){
       var x=h[i];
       if(!x||x.role!=='user')continue;
@@ -165,11 +187,16 @@
     var list=userTopicCandidates(history);
     if(!list.length)return null;
 
-    // The most recent explicit user-domain is the safest thing to restore.
-    var x=list[0],message=x.text;
+    var x=list.length>=2?list[1]:list[0];
+    var message=x.text;
+
     if(x.domain==='carp'&&!/カープ|かーぷ|広島東洋|carp/i.test(message)){
       message='カープの'+message;
     }
+    if(x.domain==='weather'&&!/天気|気温|予報|雨|雪/.test(message)){
+      message=message+'の天気';
+    }
+
     return {
       control:'back',
       restoreMessage:message,
@@ -179,8 +206,36 @@
     };
   }
 
+  function latestByDomain(history,domain){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];
+      if(!x||x.role!=='user')continue;
+      var t=S(x.text);
+      if(domainFromText(t)===domain)return t;
+    }
+    return'';
+  }
+
+
   function control(text,history){
     var t=S(text);
+
+    var named='';
+    if(/カープ.*(?:戻|もど)/.test(t))named='carp';
+    else if(/天気.*(?:戻|もど)/.test(t))named='weather';
+    else if(/(?:陣法|陣形).*(?:戻|もど)/.test(t))named='jinpo';
+    else if(/カウンター.*(?:戻|もど)/.test(t))named='counter';
+    else if(/家臣.*(?:戻|もど)/.test(t))named='kashin_name';
+
+    if(named){
+      var prev=latestByDomain(history,named);
+      if(prev){
+        if(named==='carp'&&!/カープ|かーぷ|広島東洋/i.test(prev))prev='カープの'+prev;
+        return {control:'back',restoreMessage:prev,domain:named,sourceText:prev};
+      }
+    }
+
     if(isBackCue(t)){
       var r=restorePreviousTopic(history);
       return r||{control:'back',restoreMessage:'',domain:'',sourceText:''};
@@ -250,6 +305,9 @@
     control:control,
     isBackCue:isBackCue,
     isTopicChangeCue:isTopicChangeCue,
-    restorePreviousTopic:restorePreviousTopic
+    restorePreviousTopic:restorePreviousTopic,
+    resetContext:resetContext,
+    filterHistory:filterHistory,
+    resetAt:resetAt
   };
 })();

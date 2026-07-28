@@ -2,8 +2,8 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.1.7';
-  var MODE='ローカル歩き巫女';
+  var VERSION='3.2.1';
+  var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
   function R(answer,data){return {answer:String(answer||''),sources:[],mode:MODE,data:data||{}};}
@@ -39,10 +39,10 @@
     var epoch=0,errors=[];
 
     try{
-      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
-        epoch=window.JINPO_BOT_AI_BRAIN.resetConversationContext();
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resetContext==='function'){
+        epoch=window.JINPO_BOT_CONVERSATION.resetContext();
       }
-    }catch(e){errors.push('ai');}
+    }catch(e){errors.push('conversation');}
 
     try{
       if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
@@ -80,8 +80,8 @@
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
     try{
-      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.filterRawHistory==='function'){
-        history=window.JINPO_BOT_AI_BRAIN.filterRawHistory(history);
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.filterHistory==='function'){
+        history=window.JINPO_BOT_CONVERSATION.filterHistory(history);
       }
     }catch(historyEpochErr){}
 
@@ -135,130 +135,13 @@
       }
     }catch(transientSanitizeErr){}
 
-    // App CheckからFunction Callingまで段階別に確認する精密診断。
-    if(/^(?:AI|ＡＩ)(?:詳細)?診断[！!？?。]*$|^(?:AI|ＡＩ)接続(?:詳細)?診断[！!？?。]*$/.test(originalMessage.trim())){
-      try{
-        if(!window.JINPO_BOT_AI_BRAIN||typeof window.JINPO_BOT_AI_BRAIN.diagnose!=='function'){
-          return {
-            answer:'AI精密診断モジュールがまだ読み込まれていません。',
-            sources:[],links:[],mode:'AI精密診断',
-            data:{aiDiagnosis:true,ok:false,stage:'module'}
-          };
-        }
-
-        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-          window.JINPO_AI_CHAT.setBrainStatus('AI診断中','App Check / Gemini / Function Calling');
-        }
-
-        var diagnosis=await window.JINPO_BOT_AI_BRAIN.diagnose({toolTest:true});
-        var diagnosisText=window.JINPO_BOT_AI_BRAIN.formatDiagnosis(diagnosis);
-
-        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-          window.JINPO_AI_CHAT.setBrainStatus(
-            diagnosis&&diagnosis.ok?'AI準備OK':'予備モード',
-            diagnosis&&diagnosis.ok?'AI diagnostics OK':'AI diagnostics failed'
-          );
-        }
-
-        return {
-          answer:diagnosisText,
-          sources:[],links:[],mode:'AI精密診断',
-          data:{aiDiagnosis:true,ok:!!(diagnosis&&diagnosis.ok),diagnosis:diagnosis||{}}
-        };
-      }catch(diagErr){
-        try{
-          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-            window.JINPO_AI_CHAT.setBrainStatus('予備モード','AI diagnosis exception');
-          }
-        }catch(ignore){}
-        return {
-          answer:'AI精密診断そのものが停止しました。\n'+String(diagErr&&diagErr.message||diagErr),
-          sources:[],links:[],mode:'AI精密診断',
-          data:{aiDiagnosis:true,ok:false,error:String(diagErr&&diagErr.message||diagErr)}
-        };
-      }
-    }
-
-    // 本番でFirebase AI Logic / App Checkの状態を簡単に確認する専用コマンド。
-    if(/^(?:AI|ai|ＡＩ)\s*(?:接続)?(?:確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
-      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.preflight==='function'){
-        var pf=await window.JINPO_BOT_AI_BRAIN.preflight();
-        if(pf&&pf.ok){
-          try{
-            if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-              window.JINPO_AI_CHAT.setBrainStatus(
-                pf.functionCalling?'AI準備OK':'AI一部確認',
-                pf.functionCalling?'Gemini + Function Calling OK':'Gemini text only'
-              );
-            }
-          }catch(e){}
-          return {
-            answer:
-              'AI会話脳の接続は正常なのですよ。\n' +
-              '使用モデル：'+String(pf.model||'')+'\n' +
-              'Firebase AI Logic / App Check：OK\n' +
-              'Function Calling：'+(pf.functionCalling?'OK':'未確認') +
-              ((pf.modelErrors&&pf.modelErrors.length)?'\n※上位モデルから自動退避して接続しました。':''),
-            sources:[],links:[],mode:'AI接続確認',
-            data:{aiPreflight:true,ok:true,preflight:pf}
-          };
-        }
-        try{
-          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-            window.JINPO_AI_CHAT.setBrainStatus('予備モード',String((pf&&pf.message)||'AI接続失敗'));
-          }
-        }catch(e){}
-        var diag=String((pf&&pf.diagnostic)||'').trim();
-        var raw=String((pf&&pf.raw)||'').trim();
-        var detail=diag||raw||'詳細コードなし';
-        return {
-          answer:
-            'AI会話脳はまだ本番接続できていません。\n' +
-            String((pf&&pf.message)||'Firebase側の設定を確認してください。') +
-            '\n\n【実エラー】\n' + detail +
-            '\n\n3.6 Flashで一時的な429/503が出た場合は、3.5 Flash → 3.5 Flash-Liteまで自動で試しています。' +
-            '\nAIが使えない間もサイト機能自体は止まりません。',
-          sources:[],links:[],mode:'AI接続確認',
-          data:{aiPreflight:true,ok:false,preflight:pf||{}}
-        };
-      }
-    }
-
-    // v3.0: Geminiを会話の頭脳として最優先。
-    // 数値・最新情報・サイト操作はFunction Callingで既存の正本/機能を使う。
-    // API未設定、無料枠到達、通信失敗時は、この下の従来エンジンへ自動フォールバックする。
-    if(!payloadObj.__skipAi){
-      try{
-        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.respond==='function'){
-          var aiReply=await window.JINPO_BOT_AI_BRAIN.respond(originalMessage,{
-            history:history,
-            pageContext:pageContext,
-            localHandle:function(q){
-              return handle({message:String(q||''),history:history,__skipAi:true});
-            }
-          });
-          if(aiReply&&aiReply.handled){
-            try{
-              if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-                window.JINPO_AI_CHAT.setBrainStatus('AI準備OK','Gemini response');
-              }
-            }catch(e){}
-            return aiReply;
-          }
-          if(aiReply&&aiReply.error){
-            window.ARUKIMIKO_AI_LAST_FALLBACK={
-              at:Date.now(),
-              error:String(aiReply.error||''),
-              message:originalMessage
-            };
-            try{
-              if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-                window.JINPO_AI_CHAT.setBrainStatus('予備モード',String(aiReply.error||'AI fallback'));
-              }
-            }catch(e){}
-          }
-        }
-      }catch(aiBrainErr){}
+    // Geminiは使用しない構成。旧AIコマンドも外部通信しない。
+    if(/^(?:AI|ai|ＡＩ).*(?:診断|接続|確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
+      return {
+        answer:'現在の歩き巫女は、利用回数で性能が変わらない通常Bot一本で動いています。Geminiへの接続やAI診断は行いません。',
+        sources:[],links:[],mode:'歩き巫女',
+        data:{geminiDisabled:true}
+      };
     }
 
     // AIが利用できなかった時のローカル会話制御。
@@ -302,6 +185,28 @@
         }
       }
     }
+
+    // 古いpendingより先に短い追質問の文脈を判定する。
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resolve==='function'){
+        var earlyIntent=window.JINPO_BOT_CONVERSATION.resolve(message,history,{pageContext:pageContext});
+        if(earlyIntent&&earlyIntent.message)message=String(earlyIntent.message);
+
+        var earlyDomain=earlyIntent&&earlyIntent.domain?String(earlyIntent.domain):'';
+        var jinpoStatOnly=
+          pageContext.mode==='jinpo' &&
+          /腕力|耐久|器用|知力|魅力|生命|気合|土|水|火|風/.test(originalMessage) &&
+          !/天気|気温|予報|雨|雪/.test(originalMessage);
+
+        if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.state==='function'){
+          var eds=window.JINPO_BOT_DIALOG.state();
+          if(eds&&eds.pending&&eds.pending.intent==='weather'&&
+             ((earlyDomain&&earlyDomain!=='weather')||jinpoStatOnly)){
+            window.JINPO_BOT_DIALOG.clearPending();
+          }
+        }
+      }
+    }catch(earlyContextErr){}
 
     // まず「今、何を聞いている途中か」を解決する。
     // 例: 天気 → (場所を質問) → 東京 を確実に「東京の天気」へつなぐ。
@@ -567,7 +472,15 @@
     try{if(window.JINPO_BOT_NLU&&typeof window.JINPO_BOT_NLU.remember==='function')window.JINPO_BOT_NLU.remember({original:originalMessage,corrected:message,plan:plan,state:after,lastReference:lastReference});}catch(e){}
     if(!plan.recognized){
       var cap=null;try{cap=window.JINPO_BOT_CAPABILITIES&&window.JINPO_BOT_CAPABILITIES.friendlyQuestion?window.JINPO_BOT_CAPABILITIES.friendlyQuestion(originalMessage):null;}catch(e){}
-      return R(cap||'陣法の検索・英傑・差替・強化など、したいことをもう少しだけ教えてください。かなりラフな言い方で大丈夫なのですよ。',{needsClarification:true});
+      var fallbackText=cap;
+      if(!fallbackText){
+        if(pageContext.mode==='jinpo'){
+          fallbackText='うまく意図をつかめなかったのです。陣法なら「腕力高いの」「耐久と知力高いの」「この1位を適用」のようなラフな言い方で大丈夫です。';
+        }else{
+          fallbackText='その言い方だとうまく意図をつかめなかったのです。話題を一言足してもらえれば続けられます。たとえば「カープの逸話」「東京の天気」「歩き巫女って何？」のように言ってください。';
+        }
+      }
+      return R(fallbackText,{needsClarification:true});
     }
 
     var lines=[];
@@ -597,40 +510,17 @@
     window.JINPO_AI_TRANSPORT=handle;
     window.JINPO_BOT_LOCAL_HANDLE=function(payload){
       var p=typeof payload==='string'?{message:payload}:Object.assign({},payload||{});
-      p.__skipAi=true;
       return handle(p);
     };
 
     if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setTransport==='function'){
       window.JINPO_AI_CHAT.setTransport(handle);
     }
-
-    // 起動後に1回、Gemini本文 + Function Callingまで実動確認。
-    setTimeout(async function(){
-      try{
-        if(!window.JINPO_BOT_AI_BRAIN||
-           typeof window.JINPO_BOT_AI_BRAIN.startupPreflight!=='function')return;
-
-        var pf=await window.JINPO_BOT_AI_BRAIN.startupPreflight();
-        if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-          if(pf&&pf.ok&&pf.functionCalling){
-            window.JINPO_AI_CHAT.setBrainStatus('AI準備OK','Gemini + Function Calling OK');
-          }else{
-            window.JINPO_AI_CHAT.setBrainStatus(
-              '予備モード',
-              String((pf&&pf.message)||'AI preflight failed')
-            );
-          }
-        }
-      }catch(e){
-        try{
-          if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
-            window.JINPO_AI_CHAT.setBrainStatus('予備モード',String(e&&e.message||e));
-          }
-        }catch(ignore){}
-      }
-    },600);
+    if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
+      window.JINPO_AI_CHAT.setBrainStatus('案内・検索OK','通常Bot正式版');
+    }
   }
+
   window.JINPO_BOT={version:VERSION,handle:handle,parse:function(t){return parser()&&parser().parse(t);},getState:function(){return state()&&state().getConditions();},readSiteState:function(){return actions()&&actions().readSiteState();},listActions:function(){return actions()?actions().registry.slice():[];},resolveContext:function(t,h){return window.JINPO_BOT_CONTEXT&&window.JINPO_BOT_CONTEXT.resolve?window.JINPO_BOT_CONTEXT.resolve(t,h||[]):{original:t,message:t,resolved:false};},installTransport:install};
   install();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});window.addEventListener('load',install,{once:true});
 })();

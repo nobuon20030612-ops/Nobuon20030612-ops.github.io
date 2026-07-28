@@ -1054,3 +1054,151 @@
     bottom:auto;
   }
 }
+
+
+/* ===== v3.2.0 通常Bot正式版 ===== */
+#jinpoAiRoot .jinpoAiHeaderInfoBtn,
+#jinpoAiRoot .jinpoAiInfoPanel,
+#jinpoAiRoot .jinpoAiLimitNotice,
+#jinpoAiRoot .jinpoAiFallbackNotice{
+  display:none!important;
+}
+
+
+/* ===== v3.2.1 育成中バッジ + 会話リセット再強調 ===== */
+
+/* 会話リセットの左側に置く、軽い自虐系の育成中表示 */
+#jinpoAiRoot .jinpoAiTrainingBadge{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  min-width:118px!important;
+  min-height:38px!important;
+  padding:5px 9px!important;
+  border:2px solid rgba(255,207,96,.92)!important;
+  border-radius:13px!important;
+  background:
+    linear-gradient(135deg,rgba(255,91,151,.98),rgba(223,63,129,.96) 58%,rgba(175,44,113,.96))!important;
+  color:#fff8dc!important;
+  box-shadow:
+    0 0 0 2px rgba(255,147,187,.14) inset,
+    0 3px 0 rgba(105,27,70,.46),
+    0 0 11px rgba(255,94,153,.46),
+    0 0 19px rgba(255,204,83,.18)!important;
+  font-weight:950!important;
+  cursor:default!important;
+  user-select:none!important;
+  animation:arukimikoTrainingFloat 2.25s ease-in-out infinite!important;
+  transform-origin:center bottom!important;
+}
+
+#jinpoAiRoot .jinpoAiTrainingText{
+  display:block!important;
+  white-space:pre-line!important;
+  text-align:center!important;
+  font-size:10.5px!important;
+  line-height:1.08!important;
+  letter-spacing:.02em!important;
+  text-shadow:0 1px 1px rgba(72,12,46,.48)!important;
+}
+
+#jinpoAiRoot .jinpoAiTrainingSpark{
+  display:inline-block!important;
+  color:#ffe879!important;
+  font-size:10px!important;
+  line-height:1!important;
+  filter:drop-shadow(0 0 4px rgba(255,229,99,.72))!important;
+  animation:arukimikoTrainingSpark 1.45s ease-in-out infinite alternate!important;
+}
+
+#jinpoAiRoot .jinpoAiTrainingSpark:last-child{
+  animation-delay:.45s!important;
+}
+
+@keyframes arukimikoTrainingFloat{
+  0%,100%{transform:translateY(0) rotate(-.8deg)}
+  50%{transform:translateY(-2px) rotate(.8deg)}
+}
+
+@keyframes arukimikoTrainingSpark{
+  0%{transform:scale(.82) rotate(-8deg);opacity:.72}
+  100%{transform:scale(1.18) rotate(8deg);opacity:1}
+}
+
+/* 会話リセットは育成中でも迷わず見つけられる重要操作 */
+#jinpoAiRoot .jinpoAiHeaderResetBtn{
+  min-width:128px!important;
+  height:40px!important;
+  padding:7px 15px!important;
+  border:2px solid rgba(255,135,182,.96)!important;
+  border-radius:12px!important;
+  background:
+    linear-gradient(180deg,rgba(151,38,83,.98),rgba(99,24,60,.98))!important;
+  color:#fff0f6!important;
+  font-size:16.5px!important;
+  font-weight:950!important;
+  letter-spacing:.025em!important;
+  text-shadow:0 1px 1px rgba(52,8,29,.58)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,195,220,.17) inset,
+    0 3px 0 rgba(61,13,39,.50),
+    0 0 12px rgba(255,78,143,.58),
+    0 0 23px rgba(255,69,133,.28)!important;
+  animation:arukimikoResetGlowStrong 1.75s ease-in-out infinite!important;
+}
+
+#jinpoAiRoot .jinpoAiHeaderResetBtn:hover,
+#jinpoAiRoot .jinpoAiHeaderResetBtn:focus-visible{
+  transform:translateY(-1px) scale(1.035)!important;
+  border-color:#ffc0d8!important;
+  background:
+    linear-gradient(180deg,rgba(185,48,103,.99),rgba(121,28,72,.99))!important;
+  box-shadow:
+    0 0 0 1px rgba(255,220,233,.28) inset,
+    0 3px 0 rgba(61,13,39,.42),
+    0 0 17px rgba(255,91,153,.82),
+    0 0 31px rgba(255,72,138,.42)!important;
+}
+
+#jinpoAiRoot .jinpoAiHeaderResetBtn:active{
+  transform:translateY(1px) scale(.985)!important;
+}
+
+@keyframes arukimikoResetGlowStrong{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(255,195,220,.16) inset,
+      0 3px 0 rgba(61,13,39,.50),
+      0 0 10px rgba(255,78,143,.46),
+      0 0 19px rgba(255,69,133,.20);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,218,231,.26) inset,
+      0 3px 0 rgba(61,13,39,.44),
+      0 0 17px rgba(255,91,153,.78),
+      0 0 31px rgba(255,72,138,.38);
+  }
+}
+
+/* 700px幅で収まりやすいよう、ヘッダー操作の間隔だけ微調整 */
+@media(min-width:761px){
+  #jinpoAiRoot .jinpoAiHeaderActions{
+    gap:6px!important;
+  }
+}
+
+/* スマホではヘッダーを圧迫しないよう育成札のみ省略 */
+@media(max-width:760px){
+  #jinpoAiRoot .jinpoAiTrainingBadge{
+    display:none!important;
+  }
+  #jinpoAiRoot .jinpoAiHeaderResetBtn{
+    min-width:104px!important;
+    height:34px!important;
+    padding:5px 9px!important;
+    font-size:13px!important;
+  }
+}
