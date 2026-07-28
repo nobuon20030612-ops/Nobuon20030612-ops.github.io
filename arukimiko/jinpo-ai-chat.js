@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9.2
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9.5
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -11,7 +11,7 @@
   var STORAGE_KEY = 'jinpoAiChatUi.v1';
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
-  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn, aiLimitNotice, aiFallbackNotice;
+  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn, aiInfoBtn, aiInfoPanel, aiInfoState;
   var brainStatus='AI確認中…';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
@@ -92,9 +92,19 @@
       title:'会話の流れだけをリセット',
       text:'会話リセット'
     });
+    aiInfoBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderInfoBtn',{
+      type:'button',
+      'aria-label':'AI制限について',
+      title:'AI制限について',
+      text:'AI制限について'
+    });
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
-    actions.appendChild(resetBtn); actions.appendChild(minBtn); actions.appendChild(hideBtn); header.appendChild(actions);
+    actions.appendChild(resetBtn);
+    actions.appendChild(aiInfoBtn);
+    actions.appendChild(minBtn);
+    actions.appendChild(hideBtn);
+    header.appendChild(actions);
 
     messages = el('div','jinpoAiMessages',{role:'log','aria-label':'会話履歴'});
     var composer = el('div','jinpoAiComposer');
@@ -106,16 +116,38 @@
     note.appendChild(el('span','',{text:'Enterで送信 / Shift+Enterで改行'}));
     composer.appendChild(note);
 
-    aiLimitNotice = el('div','jinpoAiLimitNotice');
-    aiLimitNotice.appendChild(el('strong','',{text:'※高性能AI会話について'}));
-    aiLimitNotice.appendChild(el('span','',{
-      text:'高性能AI会話は無料枠の範囲で提供しています。サイト全体の利用状況や一時的なAI接続状況により利用できない場合は、通常Botへ自動で切り替わります。'
-    }));
-    composer.appendChild(aiLimitNotice);
+    aiInfoPanel = el('section','jinpoAiInfoPanel',{
+      role:'dialog',
+      'aria-modal':'true',
+      'aria-label':'AI制限について'
+    });
+    aiInfoPanel.hidden=true;
 
-    aiFallbackNotice = el('div','jinpoAiFallbackNotice');
-    aiFallbackNotice.hidden=true;
-    var fallbackText=el('span','jinpoAiFallbackText',{text:'現在は通常Botで動作中です（高性能AIの接続状態を確認中）。'});
+    var infoCard=el('div','jinpoAiInfoCard');
+    var infoHead=el('div','jinpoAiInfoHead');
+    infoHead.appendChild(el('strong','',{text:'AI制限について'}));
+    var infoClose=el('button','jinpoAiInfoClose',{
+      type:'button',
+      text:'閉じる',
+      'aria-label':'AI制限についてを閉じる'
+    });
+    infoHead.appendChild(infoClose);
+
+    var infoBody=el('div','jinpoAiInfoBody');
+    infoBody.appendChild(el('p','',{
+      text:'歩き巫女の高性能AI会話は無料枠の範囲で提供しています。'
+    }));
+    infoBody.appendChild(el('p','',{
+      text:'サイト全体で数百回程度の会話をひとつの目安として、高性能AIが一時的に利用できなくなる場合があります。実際の上限は利用量やAI側の状況によって変動します。'
+    }));
+    infoBody.appendChild(el('p','',{
+      text:'高性能AIが利用できない時は通常Botへ自動で切り替わり、サイト案内や陣法の基本機能は引き続き利用できます。'
+    }));
+
+    aiInfoState=el('div','jinpoAiInfoState',{text:'現在の状態：確認中'});
+    infoBody.appendChild(aiInfoState);
+
+    var infoActions=el('div','jinpoAiInfoActions');
     var diagnosticBtn=el('button','jinpoAiDiagnosticBtn',{
       type:'button',
       text:'AI診断',
@@ -123,20 +155,40 @@
     });
     diagnosticBtn.addEventListener('click',function(){
       if(busy)return;
+      hideAiInfo();
       input.value='AI診断';
       submit();
     });
-    aiFallbackNotice.appendChild(fallbackText);
-    aiFallbackNotice.appendChild(diagnosticBtn);
-    composer.appendChild(aiFallbackNotice);
+    infoActions.appendChild(diagnosticBtn);
+    infoBody.appendChild(infoActions);
 
-    win.appendChild(header); win.appendChild(messages); win.appendChild(composer);
+    infoCard.appendChild(infoHead);
+    infoCard.appendChild(infoBody);
+    aiInfoPanel.appendChild(infoCard);
+
+    infoClose.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      hideAiInfo();
+    });
+    aiInfoPanel.addEventListener('click',function(ev){
+      if(ev.target===aiInfoPanel)hideAiInfo();
+    });
+
+    win.appendChild(header);
+    win.appendChild(messages);
+    win.appendChild(composer);
+    win.appendChild(aiInfoPanel);
     restoreBtn = el('button','',{id:'jinpoAiRestoreTab',type:'button',text:'巫女',title:'歩き巫女を表示（Alt+M）','aria-label':'歩き巫女を表示'});
     restoreBtn.hidden = true;
     root.appendChild(launcher); root.appendChild(win); root.appendChild(restoreBtn); document.body.appendChild(root);
 
     launcher.addEventListener('click', function(){ if(win.classList.contains('isOpen')) close(); else open(); });
     resetBtn.addEventListener('click', function(ev){ ev.stopPropagation(); resetConversationFromButton(); });
+    aiInfoBtn.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      if(aiInfoPanel&&aiInfoPanel.hidden)showAiInfo();
+      else hideAiInfo();
+    });
     minBtn.addEventListener('click', function(ev){ ev.stopPropagation(); toggleMinimize(); });
     hideBtn.addEventListener('click', function(ev){ ev.stopPropagation(); hideAll(); });
     restoreBtn.addEventListener('click', function(ev){ ev.stopPropagation(); showLauncher(); open(); });
@@ -155,6 +207,24 @@
     bindDrag(); bindResizeSave(); restore(); renderHistory();
   }
 
+
+  function showAiInfo(){
+    if(!aiInfoPanel)return;
+    aiInfoPanel.hidden=false;
+    if(aiInfoBtn){
+      aiInfoBtn.classList.add('isOpen');
+      aiInfoBtn.setAttribute('aria-expanded','true');
+    }
+  }
+
+  function hideAiInfo(){
+    if(!aiInfoPanel)return;
+    aiInfoPanel.hidden=true;
+    if(aiInfoBtn){
+      aiInfoBtn.classList.remove('isOpen');
+      aiInfoBtn.setAttribute('aria-expanded','false');
+    }
+  }
 
   function syncMinimizeButton(){
     if(!minBtn || !win) return;
@@ -198,6 +268,7 @@
   }
   function close(){ win.classList.remove('isOpen'); launcher.setAttribute('aria-expanded','false'); saveUi({open:false}); }
   function hideAll(){
+    hideAiInfo();
     win.classList.remove('isOpen');
     launcher.setAttribute('aria-expanded','false');
     win.classList.remove('isMinimized');
@@ -395,12 +466,19 @@
     if(statusEl&&!busy)statusEl.textContent=brainStatus;
 
     var fallback=/予備モード|通常Bot|接続失敗|AI未接続/.test(brainStatus);
-    if(aiFallbackNotice){
-      aiFallbackNotice.hidden=!fallback;
-      if(fallback){
-        var ft=aiFallbackNotice.querySelector('.jinpoAiFallbackText');
-        if(ft)ft.textContent='現在は通常Botで動作中です（高性能AIの接続状態を確認中）。';
-      }
+
+    if(aiInfoBtn){
+      aiInfoBtn.classList.toggle('isFallback',fallback);
+      aiInfoBtn.title=fallback
+        ?'高性能AIについて（現在は通常Bot）'
+        :'高性能AIについて';
+    }
+
+    if(aiInfoState){
+      aiInfoState.textContent=fallback
+        ?'現在の状態：通常Bot（高性能AIの接続原因を診断中）'
+        :'現在の状態：'+brainStatus;
+      aiInfoState.classList.toggle('isFallback',fallback);
     }
 
     try{
@@ -541,7 +619,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'0.9.3', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.9.5', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
