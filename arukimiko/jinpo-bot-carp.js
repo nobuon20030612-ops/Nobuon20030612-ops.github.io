@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 広島東洋カープ専用会話 v1.5.0
+ * 歩き巫女 広島東洋カープ専用会話 v1.7.0
  * - カープの基本知識・歴史を専用返答
  * - 試合結果/順位/日程/主要成績は NPB公式ページを Reader 経由で自動確認
  * - 最新ニュース/先発/スタメン/登録関連は既存の無料Webニュース検索へフォールバック
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.5.0';
+  var VERSION='1.7.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
@@ -123,6 +123,89 @@
     if(lines.length)return lines.slice(0,5);
     var hits=raw.match(/\d{1,2}\s*\/\s*\d{1,2}[^\n]{0,120}?\d{1,2}:\d{2}/g)||[];
     return hits.map(stripMarkdownLine).filter(Boolean).slice(0,5);
+  }
+
+
+  function tokyoYmd(offsetDays,base){
+    var d=base instanceof Date?new Date(base.getTime()):new Date();
+    if(offsetDays)d=new Date(d.getTime()+Number(offsetDays)*86400000);
+    try{
+      var parts=new Intl.DateTimeFormat('ja-JP',{
+        timeZone:'Asia/Tokyo',year:'numeric',month:'numeric',day:'numeric'
+      }).formatToParts(d),o={};
+      parts.forEach(function(p){if(p.type!=='literal')o[p.type]=p.value;});
+      return {year:Number(o.year),month:Number(o.month),day:Number(o.day)};
+    }catch(e){
+      return {year:d.getFullYear(),month:d.getMonth()+1,day:d.getDate()};
+    }
+  }
+
+  function relativeGameDay(text){
+    var t=S(text);
+    if(/一昨日|おととい/.test(t))return -2;
+    if(/昨日|きのう/.test(t))return -1;
+    if(/明後日|あさって/.test(t))return 2;
+    if(/明日|あした/.test(t))return 1;
+    if(/今日|きょう|本日/.test(t))return 0;
+    return null;
+  }
+
+  function lineHasDate(line,dateObj){
+    var m=String(line||'').match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+    return !!(m&&Number(m[1])===Number(dateObj.month)&&Number(m[2])===Number(dateObj.day));
+  }
+
+  function findGameLine(lines,dateObj){
+    lines=Array.isArray(lines)?lines:[];
+    for(var i=0;i<lines.length;i++)if(lineHasDate(lines[i],dateObj))return lines[i];
+    return'';
+  }
+
+  function gameOutcome(line){
+    line=String(line||'');
+    if(/[○〇]/.test(line))return'win';
+    if(/●/.test(line))return'loss';
+    if(/△/.test(line))return'draw';
+    return'';
+  }
+
+  function dayLabel(offset){
+    if(offset===-2)return'一昨日';
+    if(offset===-1)return'昨日';
+    if(offset===0)return'今日';
+    if(offset===1)return'明日';
+    if(offset===2)return'明後日';
+    return'その日';
+  }
+
+  function focusedGameAnswer(text,snapshotText,baseDate){
+    var off=relativeGameDay(text);
+    if(off===null)return null;
+
+    var target=tokyoYmd(off,baseDate),label=dayLabel(off);
+    var recent=recentGames(snapshotText),upcoming=upcomingGames(snapshotText);
+    var recentLine=findGameLine(recent,target);
+    var upcomingLine=findGameLine(upcoming,target);
+
+    if(off<=0&&recentLine){
+      var outcome=gameOutcome(recentLine),prefix='';
+      if(outcome==='win')prefix=label+'は勝っています。';
+      else if(outcome==='loss')prefix=label+'は負けています。';
+      else if(outcome==='draw')prefix=label+'は引き分けです。';
+      else prefix=label+'の試合結果はこちらです。';
+      return {found:true,kind:'result',answer:prefix+'\n'+recentLine,line:recentLine,outcome:outcome,date:target};
+    }
+
+    if(upcomingLine){
+      return {found:true,kind:'schedule',answer:label+'の試合予定があります。\n'+upcomingLine,line:upcomingLine,date:target};
+    }
+
+    return {
+      found:false,
+      kind:off<0?'result':'schedule',
+      answer:'NPB公式ページの取得範囲では、'+label+'（'+target.month+'月'+target.day+'日）の試合情報を確認できませんでした。試合がないとは推測で断定しません。',
+      date:target
+    };
   }
 
   function leaderStats(text,kind){
@@ -276,7 +359,7 @@
     if(/本拠地|ホーム球場|球場|マツダスタジアム|mazda/i.test(t))return 'カープの本拠地は「MAZDA Zoom-Zoom スタジアム広島」なのですよ。NPB公式の球団ページでも本拠地として案内されているのです。';
     if(/何リーグ|どのリーグ|リーグは|セリーグ|セ・リーグ/.test(t))return '広島東洋カープはNPBのセントラル・リーグ所属なのですよ。';
     if(/球団名|名前|昔の名前|改名|いつから東洋/.test(t))return 'NPB公式では、球団名は1950～1967年が「広島カープ」、1968年から「広島東洋カープ」と記録されているのですよ。';
-    if(/優勝|日本一|日本シリーズ|リーグ制覇/.test(t))return 'NPB公式の記録では、2026年シーズン途中時点までにセ・リーグ優勝9回、日本シリーズ優勝3回なのですよ。今後増える可能性がある数字なので、最新状況が必要な時はWebでも確認するのです。';
+    if(/優勝|日本一|日本シリーズ|リーグ制覇/.test(t))return 'カープにはリーグ優勝や日本一の歴史があります。優勝回数のように今後変わる数字は固定文で断定せず、最新回数が必要な時はその場で確認して答えるのです。';
     if(/歴史|創設|いつできた|いつから|球団について|どんな球団|カープとは|カープって何/.test(t))return '広島東洋カープは1950年から続く広島のプロ野球球団なのですよ。1950～1967年は「広島カープ」、1968年から現在の「広島東洋カープ」。本拠地はMAZDA Zoom-Zoom スタジアム広島で、セ・リーグに所属しているのです。';
     if(/^(?:広島東洋)?カープ[？?]?$|^かーぷ[？?]?$|^carp[？?]?$/i.test(t))return pick([
       'カープですね。基本情報でも歴史でも、今日の試合・順位・次の予定でも、そのまま聞いてくださいなのですよ。',
@@ -292,10 +375,10 @@
     if(/スタメン|先発|予告先発|登録抹消|一軍登録|故障|けが|怪我|復帰|移籍|トレード|新外国人/.test(t))return'news_detail';
     if(/順位|何位|何勝|何敗|勝敗|勝率|ゲーム差|シーズン成績|(?:カープ|広島).*(?:成績)|^成績[？?]?$/.test(t))return'rank';
     if(/選手一覧|選手|メンバー|誰がいる|だれがいる|投手陣|野手陣|捕手陣|内野手|外野手|監督/.test(t))return'players';
-    if(/次の試合|次いつ|次はいつ|日程|予定|いつ試合|今日の試合|明日の試合|対戦相手/.test(t))return'schedule';
+    if(/次の試合|次いつ|次はいつ|日程|予定|いつ試合|今日(?:の)?試合|明日(?:の)?試合|明後日(?:の)?試合|試合ある|試合はある|対戦相手/.test(t))return'schedule';
     if(/打率|本塁打|ホームラン|打点|出塁率|安打|盗塁/.test(t))return'bat';
     if(/防御率|奪三振|セーブ|ホールド|投手成績/.test(t))return'pitch';
-    if(/試合結果|結果|スコア|勝った|負けた|昨日の試合|最近の試合/.test(t))return'result';
+    if(/試合結果|結果|スコア|勝った|勝って|負けた|負けて|引き分け|昨日(?:の)?試合|一昨日(?:の)?試合|最近の試合/.test(t))return'result';
     if(/最近どう|今どう|いまどう|調子どう|現在どう|どうなって|今日どう|今のカープ/.test(t))return'overview';
     if(/今日|きょう|昨日|きのう|明日|あした|現在|今の|いまの|最近|最新|直近/.test(t))return'overview';
     return'';
@@ -370,6 +453,17 @@
 
     var snap=await fetchSnapshot();
     if(snap.ok){
+      var focused=focusedGameAnswer(text,snap.text);
+      if(focused&&(kind==='schedule'||kind==='result'||/今日|きょう|昨日|きのう|明日|あした|明後日|あさって|一昨日|おととい/.test(S(text)))){
+        return {
+          handled:true,
+          answer:focused.answer,
+          sources:sources(),
+          mode:'カープ公式日付情報',
+          data:{focusedDay:true,found:focused.found,kind:focused.kind,date:focused.date,outcome:focused.outcome||''}
+        };
+      }
+
       var lines=[],season=seasonSummary(snap.text),recent=recentGames(snap.text),upcoming=upcomingGames(snap.text),stat;
       if(kind==='rank'){
         if(season)lines.push('シーズン成績：'+season);
@@ -407,9 +501,25 @@
     return {handled:true,answer:'カープの最新情報を確認しようとしたのですが、今はNPB公式ページにもニュース検索にもつながらなかったのですよ。古い情報を推測で埋めず、接続が戻ってから確認するのです。',sources:sources(),mode:'カープ最新Web'};
   }
 
+  function recentAnecdoteContext(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      var t=S(h[i]&&h[i].text);
+      if(/逸話|昔話|名場面|伝説/.test(t))return true;
+    }
+    return false;
+  }
+
   async function respond(text,opt){
     opt=opt||{};
-    var t=S(text);if(!isCarp(t))return {handled:false};
+    var t=S(text);
+
+    // 会話ルーターで補完できなかった場合の安全網。
+    if(!isCarp(t)&&/^(?:もっと|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|続き)[？?！!。]*$/.test(t)&&recentAnecdoteContext(opt.history||[])){
+      t='カープの他の逸話';
+    }
+
+    if(!isCarp(t))return {handled:false};
     var k=intent(t);if(k)return await liveReply(t,k,opt);
     var local=staticReply(t);
     if(local)return {handled:true,answer:local,sources:sources(),mode:'カープ専用会話'};
@@ -426,5 +536,5 @@
     return {handled:true,answer:'カープの話なのですね。試合結果、順位、日程、選手、歴史など、気になるところをそのまま聞いてくださいなのですよ。',sources:sources(),mode:'カープ専用会話'};
   }
 
-  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,fetchStandings:fetchStandings,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary,carpStanding:carpStanding}};
+  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,fetchStandings:fetchStandings,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary,carpStanding:carpStanding,relativeGameDay:relativeGameDay,tokyoYmd:tokyoYmd,focusedGameAnswer:focusedGameAnswer,gameOutcome:gameOutcome}};
 })();

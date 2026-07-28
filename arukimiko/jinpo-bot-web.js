@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 無料公開Web参照 v1.6.0
+ * 歩き巫女 無料公開Web参照 v1.7.0
  * APIキー不要の公開APIだけを使用し、一般知識と鮮度が必要な情報を自動で振り分ける。
  * - 一般知識: 日本語Wikipedia -> Wikidata
  * - 最新ニュース: GDELT DOC 2.0（直近記事、CORS対応）
@@ -11,7 +11,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_WEB)return;
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var WIKIPEDIA_ENDPOINT='https://ja.wikipedia.org/w/api.php';
   var WIKIDATA_ENDPOINT='https://www.wikidata.org/w/api.php';
   var GDELT_ENDPOINT='https://api.gdeltproject.org/api/v2/doc/doc';
@@ -199,8 +199,8 @@
 
   function extractWeatherLocation(text){
     var q=stripFiller(text)
-      .replace(/^(?:今日|きょう|明日|あした|現在|今|いま)(?:の)?/,'')
-      .replace(/(?:の)?(?:今日|きょう|明日|あした)(?:の)?(?=(?:天気|てんき|気温|きおん|予報|よほう|降水|こうすい|雨|あめ|雪|ゆき|湿度|しつど|風速|ふうそく|最高気温|最低気温))/g,'')
+      .replace(/^(?:今日|きょう|明日|あした|明後日|あさって|現在|今|いま)(?:の)?/,'')
+      .replace(/(?:の)?(?:今日|きょう|明日|あした|明後日|あさって)(?:の)?(?=(?:天気|てんき|気温|きおん|予報|よほう|降水|こうすい|雨|あめ|雪|ゆき|湿度|しつど|風速|ふうそく|最高気温|最低気温))/g,'')
       .replace(/(?:の|で)?(?:天気予報|天気|てんき|気温|きおん|予報|よほう|降水確率|こうすいかくりつ|降水|こうすい|雨|あめ|雪|ゆき|湿度|しつど|風速|ふうそく|最高気温|最低気温).*/,'')
       .replace(/(?:は|を)?(?:教えて|おしえて|知りたい|しりたい|調べて|しらべて|検索して)$/,'')
       .replace(/[？?！!。、\s]+$/g,'').trim();
@@ -209,6 +209,7 @@
   }
   function requestedWeatherTime(text){
     var t=S(text);
+    if(/明後日|あさって/.test(t))return'day_after_tomorrow';
     if(/明日|あした/.test(t))return'tomorrow';
     if(/今日|きょう/.test(t))return'today';
     return'current';
@@ -254,6 +255,10 @@
     var d=await r.json(),c=d.current||{},daily=d.daily||{},name=S(loc.name)||place,admin=S(loc.admin1),country=S(loc.country);
     var where=name+(admin&&admin!==name?'（'+admin+'）':'');
     var lines=[];
+    function jpDate(iso){
+      var m=S(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m?(Number(m[2])+'月'+Number(m[3])+'日'):'';
+    }
     function dailyLine(i,label){
       if(!Array.isArray(daily.time)||!daily.time[i])return'';
       var wx=Array.isArray(daily.weather_code)?daily.weather_code[i]:null;
@@ -261,21 +266,29 @@
       var min=Array.isArray(daily.temperature_2m_min)?daily.temperature_2m_min[i]:null;
       var pop=Array.isArray(daily.precipitation_probability_max)?daily.precipitation_probability_max[i]:null;
       var sum=Array.isArray(daily.precipitation_sum)?daily.precipitation_sum[i]:null;
-      return label+'は'+weatherLabel(wx)+(max!=null&&min!=null?'、最高'+round(max,1)+'℃・最低'+round(min,1)+'℃':'')+(pop!=null?'、降水確率'+round(pop,0)+'%':'')+(sum!=null&&Number(sum)>0?'（予想降水量'+round(sum,1)+'mm）':'');
+      var date=jpDate(daily.time[i]);
+      return label+(date?'（'+date+'）':'')+'は'+weatherLabel(wx)+(max!=null&&min!=null?'、最高'+round(max,1)+'℃・最低'+round(min,1)+'℃':'')+(pop!=null?'、降水確率'+round(pop,0)+'%':'')+(sum!=null&&Number(sum)>0?'（予想降水量'+round(sum,1)+'mm）':'');
     }
 
-    if(requestTime==='tomorrow'){
+    if(requestTime==='day_after_tomorrow'){
+      var dat=dailyLine(2,'明後日');if(dat)lines.push(dat);
+    }else if(requestTime==='tomorrow'){
       var tom=dailyLine(1,'明日');if(tom)lines.push(tom);
     }else{
-      if(c.temperature_2m!=null)lines.push('今は'+weatherLabel(c.weather_code)+'で'+round(c.temperature_2m,1)+'℃'+(c.apparent_temperature!=null?'、体感'+round(c.apparent_temperature,1)+'℃':''));
+      if(c.temperature_2m!=null){
+        var currentTime=S(c.time);
+        lines.push('今'+(currentTime?'（'+currentTime.replace('T',' ')+'）':'')+'は'+weatherLabel(c.weather_code)+'で'+round(c.temperature_2m,1)+'℃'+(c.apparent_temperature!=null?'、体感'+round(c.apparent_temperature,1)+'℃':''));
+      }
       if(c.relative_humidity_2m!=null)lines.push('湿度'+round(c.relative_humidity_2m,0)+'%'+(c.wind_speed_10m!=null?'、風'+round(c.wind_speed_10m,1)+'km/h':''));
       var today=dailyLine(0,'今日');if(today)lines.push(today);
     }
     if(!lines.length)return {ok:false,realtime:true,kind:'weather',error:true,query:place,requestTime:requestTime};
+    var titleLabel=requestTime==='day_after_tomorrow'?'明後日の':requestTime==='tomorrow'?'明日の':'';
     return {
-      ok:true,realtime:true,volatile:true,kind:'weather',query:place,title:where+'の'+(requestTime==='tomorrow'?'明日の':'')+'天気',
+      ok:true,realtime:true,volatile:true,freshness:'live',kind:'weather',query:place,title:where+'の'+titleLabel+'天気',
       extract:lines.join('\n'),url:'https://open-meteo.com/',source:'Open-Meteo',
       sources:[{title:'Open-Meteo 天気データ',url:'https://open-meteo.com/'}],fetchedAt:Date.now(),requestTime:requestTime,
+      sourceTime:S(c.time),
       location:{name:name,admin1:admin,country:country,latitude:loc.latitude,longitude:loc.longitude}
     };
   }

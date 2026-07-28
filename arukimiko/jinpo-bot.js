@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.2.6';
+  var VERSION='3.2.8';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -273,7 +273,7 @@
             try{if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.rememberResult==='function')window.JINPO_BOT_DIALOG.rememberResult('weather',wr);}catch(e){}
             var wp='';
             if(dialogInfo.reason==='weather_pending_location')wp=(wr.location&&wr.location.name?wr.location.name:'その地域')+'ですね。';
-            else if(dialogInfo.reason==='weather_follow_time')wp='明日の天気ですね。';
+            else if(dialogInfo.reason==='weather_follow_time')wp=(wr.requestTime==='day_after_tomorrow'?'明後日の天気ですね。':wr.requestTime==='tomorrow'?'明日の天気ですね。':'今日の天気ですね。');
             else if(dialogInfo.reason==='weather_follow_location')wp=(wr.location&&wr.location.name?wr.location.name:'その地域')+'ですね。';
             else wp=wr.title+'ですね。';
             return {answer:wp+'\n'+wr.extract,sources:Array.isArray(wr.sources)?wr.sources:[],links:[],mode:'天気',data:{weather:true,context:contextInfo,location:wr.location||null}};

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.4.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.5.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.4.0';
+  var VERSION='1.5.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -205,11 +205,38 @@
     return name?(s+(cue?15:0)):0;
   }
 
+  var PREFERRED_COUNTER_SHORTHAND={
+    '足利':'counter_nijo_ashikaga_yoshiaki',
+    'あしかが':'counter_nijo_ashikaga_yoshiaki'
+  };
+
+  function explicitCounterContext(text){
+    var t=N(text);
+    return /京都|本能寺|義輝|義昭|二条|二条城|きょうと|ほんのうじ|よしてる|よしあき|にじょう/.test(t);
+  }
+
+  function preferredCounterFact(text,history,facts){
+    var cue=detectCue(text);
+    if(!cue.found||explicitCounterContext(text))return null;
+
+    var rem=stripCounterCue(text,cue);
+    var id=PREFERRED_COUNTER_SHORTHAND[N(rem)];
+    if(!id)return null;
+
+    var recent=recentText(history,'assistant',6).concat(recentText(history,'user',6)).map(N).join(' ');
+    if(/京都|本能寺|義輝|きょうと|ほんのうじ|よしてる/.test(recent))return null;
+
+    for(var i=0;i<(facts||[]).length;i++){
+      if(facts[i]&&facts[i].id===id)return facts[i];
+    }
+    return null;
+  }
+
   function counterAnswer(f,meta,original){
     var v=S(f.value),none=(v==='なし'||v==='無'||v==='0'||v==='none');
     var interpreted='';
-    if(meta&&(meta.nameKind==='abbrev'||meta.nameKind==='typo')){
-      interpreted='「'+S(original)+'」は、'+S(f.canonical)+'のカウンターのことですね。\n';
+    if(meta&&(meta.nameKind==='abbrev'||meta.nameKind==='typo'||meta.nameKind==='preferred_shorthand')){
+      interpreted='「'+S(original)+'」は、'+S(f.canonical)+'のカウンターとして受け取ります。\n';
     }
     var body=none
       ? S(f.location)+'の'+S(f.canonical)+'は、カウンター持ちは無しなのですよ。'
@@ -244,6 +271,11 @@
     var d=window.JINPO_TAIRANO_KNOWLEDGE_DATA;if(!d)return {handled:false};
     var original=S(text),history=opt&&opt.history||[];
     if(!original)return {handled:false};
+
+    var preferred=preferredCounterFact(original,history,d.facts||[]);
+    if(preferred){
+      return counterAnswer(preferred,{nameKind:'preferred_shorthand'},original);
+    }
 
     var ranked=[];
     (d.facts||[]).forEach(function(f){
@@ -308,6 +340,7 @@
 
   window.JINPO_TAIRANO_KNOWLEDGE={
     version:VERSION,respond:respond,search:search,normalize:N,
-    _test:{detectCue:detectCue,nameForms:nameForms,editDistance:editDistance,factScore:factScore,nameMatchScore:nameMatchScore}
+    _test:{detectCue:detectCue,nameForms:nameForms,editDistance:editDistance,
+    preferredCounterFact:preferredCounterFact,factScore:factScore,nameMatchScore:nameMatchScore}
   };
 })();

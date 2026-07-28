@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 たいらの野望 ツール実データ回答 v1.0.0
+ * 歩き巫女 たいらの野望 ツール実データ回答 v1.1.0
  * 九十九・鬼神石・魔導結晶について、番号/名称/能力値/入手/上位を直接回答する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_TOOL_KNOWLEDGE)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var STATS=['生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];
 
   function S(v){
@@ -113,6 +113,78 @@
     return hits;
   }
 
+  function recentConcreteItem(history){
+    var h=Array.isArray(history)?history:[],data=D();
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      var text=S(h[i]&&h[i].text);
+      if(!text)continue;
+      var nt=N(text),hits=[];
+      Object.keys(data).forEach(function(key){
+        var d=data[key];
+        (d.rows||[]).forEach(function(row){
+          var name=itemName(row,d),x=N(name);
+          if(x&&nt.indexOf(x)>=0){
+            hits.push({key:key,data:d,row:row,len:x.length,index:i});
+          }
+        });
+      });
+      if(hits.length){
+        hits.sort(function(a,b){return b.len-a.len;});
+        return hits[0];
+      }
+    }
+    return null;
+  }
+
+  function recentDataset(history){
+    var h=Array.isArray(history)?history:[],data=D();
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      var text=S(h[i]&&h[i].text);
+      if(!text)continue;
+      var t=N(text),best=null;
+      Object.keys(data).forEach(function(key){
+        var d=data[key];
+        (d.aliases||[]).forEach(function(a){
+          var x=N(a);
+          if(x&&t.indexOf(x)>=0&&(!best||x.length>best.len)){
+            best={key:key,data:d,len:x.length};
+          }
+        });
+      });
+      if(best)return best;
+    }
+    return null;
+  }
+
+  function escRe(v){return S(v).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+  function stripDatasetPrefix(text){
+    var raw=S(text),data=D(),best='';
+    Object.keys(data).forEach(function(key){
+      var d=data[key];
+      (d.aliases||[]).forEach(function(a){
+        a=S(a);
+        if(!a)return;
+        var re=new RegExp('^'+escRe(a)+'(?:の|について|で|は)?');
+        if(re.test(raw)&&a.length>best.length)best=a;
+      });
+    });
+    if(!best)return raw;
+    return raw.replace(new RegExp('^'+escRe(best)+'(?:の|について|で|は)?'),'').trim();
+  }
+
+  function isReferenceFollowup(text){
+    var t=stripDatasetPrefix(text);
+    return /^(?:(?:じゃあ|では|なら|それじゃ|それなら|次は)[、,\s]*)?(?:それ|これ|さっきの|その(?:力|石|結晶|やつ|もの))?(?:の)?(?:生命|気合|腕力|耐久|耐久力|器用|器用さ|知力|魅力|土|水|火|風|入手|どこで取れる|どこでとれる|どこで|取り方|詳細|全部|他の能力|ほかの能力)?(?:は|って|を|の)?[？?！!。\s]*$/i.test(t) ||
+      /^(?:じゃあ|では|なら|それじゃ|それなら|次は)[、,\s]*(?:生命|気合|腕力|耐久|耐久力|器用|器用さ|知力|魅力|土|水|火|風)(?:は|って)?[？?]?$/i.test(t) ||
+      /^(?:それ|これ|さっきの|その(?:力|石|結晶|やつ|もの)).*(?:どこで|入手|取れる|とれる|取り方|詳細|全部|能力)/i.test(t);
+  }
+
+  function asksAllStats(text){
+    var t=stripDatasetPrefix(text);
+    return /他の能力|ほかの能力|全部|全能力|ステータス|詳細|詳しく/.test(t);
+  }
+
   function needsDatasetForNumber(text){
     return numberFromText(text)>0&&!detectDataset(text);
   }
@@ -123,16 +195,26 @@
       !!detectStat(t) ||
       isAcquisition(t) ||
       isRanking(t) ||
-      /何|なに|どんな|詳細|詳しく|教えて|おしえて/.test(t);
+      /何|なに|どんな|詳細|詳しく|教えて|おしえて|他の能力|ほかの能力|全部|全能力|ステータス/.test(t);
   }
 
   function respond(text,opt){
+    opt=opt||{};
     var original=S(text);if(!original)return{handled:false};
+    var history=Array.isArray(opt.history)?opt.history:[];
     var ds=detectDataset(original);
     var stat=detectStat(original);
     var num=numberFromText(original);
     var acquisition=isAcquisition(original);
     var ranking=isRanking(original);
+    var recentItem=recentConcreteItem(history);
+    var recentDs=recentDataset(history);
+    var referenceFollowup=isReferenceFollowup(original);
+
+    if(!ds&&referenceFollowup){
+      if(recentItem)ds={key:recentItem.key,data:recentItem.data,score:96,fromHistory:true};
+      else if(recentDs)ds={key:recentDs.key,data:recentDs.data,score:72,fromHistory:true};
+    }
 
     // First allow a uniquely named item to identify its dataset even without "九十九" etc.
     var itemHits=itemMatchesAcrossDatasets(original);
@@ -198,6 +280,10 @@
     if(num)row=findByNumber(num,d);
     if(!row)row=findItem(original,d);
 
+    if(!row&&recentItem&&recentItem.key===ds.key&&referenceFollowup){
+      row=recentItem.row;
+    }
+
     if(row){
       if(stat){
         return {
@@ -215,6 +301,15 @@
           mode:'たいらの野望ツール実データ',
           sources:[],links:[],
           data:{dataset:ds.key,number:row['番号'],name:itemName(row,d),acquisition:true}
+        };
+      }
+      if(asksAllStats(original)){
+        return {
+          handled:true,
+          answer:summarize(row,d),
+          mode:'たいらの野望ツール実データ',
+          sources:[],links:[],
+          data:{dataset:ds.key,number:row['番号'],name:itemName(row,d),allStats:true}
         };
       }
       return {
@@ -259,6 +354,9 @@
     version:VERSION,
     respond:respond,
     detectDataset:detectDataset,
-    detectStat:detectStat
+    detectStat:detectStat,
+    recentConcreteItem:recentConcreteItem,
+    stripDatasetPrefix:stripDatasetPrefix,
+    isReferenceFollowup:isReferenceFollowup
   };
 })();

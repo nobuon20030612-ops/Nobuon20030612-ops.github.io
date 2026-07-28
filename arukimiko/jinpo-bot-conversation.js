@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.2.0
+ * 歩き巫女 共通会話ルーター v1.5.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.2.0';
+  var VERSION='1.5.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -83,6 +83,8 @@
     if(/家臣.*(?:名前|名付|命名)|(?:名前|名付|命名).*家臣/.test(t))return'kashin_name';
     if(/天気|気温|予報|降水|雨|雪|湿度|風速/.test(t))return'weather';
     if(/陣法|因縁|陣形|鶴翼|方円|魚鱗|衡軛|英傑|全MAX/.test(t))return'jinpo';
+    if(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/.test(t)&&
+       /高い|高め|強い|おすすめ|一番|最も|トップ|最大|重視|検索|探して|比較/.test(t))return'jinpo';
     return'';
   }
 
@@ -118,31 +120,108 @@
     return t.length>0&&t.length<=18;
   }
 
-  function carryByDomain(text,domain){
+  function cleanFollowupTarget(text){
+    var t=S(text)
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら|次は|つぎは)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+    t=t.replace(/(?:は|って|の方|のほう)$/,'').trim();
+    return t;
+  }
+
+  function recentText(history,pattern,limit){
+    var h=filterHistory(history),n=Number(limit)||20;
+    for(var i=h.length-1;i>=0&&i>=h.length-n;i--){
+      var t=S(h[i]&&h[i].text);
+      if(t&&pattern.test(t))return t;
+    }
+    return'';
+  }
+
+  function recentCarpSubtopic(history){
+    if(recentText(history,/逸話|昔話|名場面|伝説|他の逸話|別の逸話/,24))return'anecdote';
+    if(recentText(history,/順位|何位|ゲーム差|勝率|何勝|何敗/,18))return'rank';
+    if(recentText(history,/選手|メンバー|投手|野手|捕手|内野手|外野手|監督|コーチ/,18))return'players';
+    if(recentText(history,/日程|予定|次の試合|今日(?:の)?試合|明日(?:の)?試合|明後日(?:の)?試合|試合ある|対戦相手/,18))return'schedule';
+    if(recentText(history,/結果|スコア|勝った|勝って|負けた|負けて|引き分け|昨日(?:の)?試合|一昨日(?:の)?試合/,18))return'result';
+    if(recentText(history,/歴史|創設|球団名|昔の名前/,18))return'history';
+    return'';
+  }
+
+  function recentJinpoStatStyle(history){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      if(!h[i]||h[i].role!=='user')continue;
+      var t=S(h[i].text);
+      if(!t)continue;
+      var stat=(t.match(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/)||[])[0]||'';
+      if(!stat)continue;
+      if(/高い|高め|強い|おすすめ|一番|最も|トップ|最大|重視/.test(t)){
+        return {stat:stat,kind:'high'};
+      }
+    }
+    return null;
+  }
+
+  function isMoreCue(text){
+    return /^(?:もっと|他にも|ほかにも|他には|ほかには|別のも|別の|もう一つ|もう1つ|続き|つづき|まだある|ほかは)[？?！!。]*$/.test(S(text));
+  }
+
+  function carryByDomain(text,domain,history){
     var t=S(text);
     if(!domain)return'';
 
     if(domain==='carp'){
-      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる|逸話|他の逸話|別の逸話|昔話|歴史|名場面|伝説|スター|名選手)[？?]?$/.test(t))
-        return'カープの'+t;
+      var ct=t.replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'');
+      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる|逸話|他の逸話|別の逸話|昔話|歴史|名場面|伝説|スター|名選手)[？?]?$/.test(ct)){
+        return'カープの'+ct;
+      }
+      var dayOnly=t.replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'');
+      if(/^(?:今日|きょう|昨日|きのう|明日|あした|明後日|あさって|一昨日|おととい)(?:は)?[？?]?$/.test(dayOnly)){
+        var subDay=recentCarpSubtopic(history);
+        var dword=dayOnly.replace(/(?:は)?[？?]$/,'');
+        if(subDay==='result')return'カープの'+dword+'の試合結果';
+        return'カープの'+dword+'の試合';
+      }
+
+      if(isMoreCue(t)){
+        var sub=recentCarpSubtopic(history);
+        if(sub==='anecdote')return'カープの他の逸話';
+        if(sub==='players')return'カープの選手をもう少し';
+        if(sub==='history')return'カープの歴史をもう少し詳しく';
+      }
     }
 
     if(domain==='counter'){
       if(!counterCue(t)&&shortFollowup(t)&&
          !/ページ|サイト|リンク|開いて|どこにある/.test(t)&&
          !/^(?:もっと|詳しく|なんで|なぜ|どうして)$/.test(t)){
-        return t.replace(/[？?]$/,'')+'のカウンターは？';
+        var target=cleanFollowupTarget(t);
+        if(target&&target.length<=18){
+          return target+'のカウンターは？';
+        }
+      }
+    }
+
+    if(domain==='jinpo'){
+      var jt=cleanFollowupTarget(t);
+      var stat=(jt.match(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/)||[])[0]||'';
+      if(stat&&shortFollowup(t)&&!/陣形|因縁|英傑|全MAX/.test(t)){
+        var prev=recentJinpoStatStyle(history);
+        if(prev&&prev.kind==='high'&&!/高い|高め|一番|最も|トップ|最大|おすすめ|重視/.test(jt)){
+          return stat+'高いの';
+        }
       }
     }
 
     if(domain==='tsukumo'&&shortFollowup(t)&&!/九十九|つくも/.test(t))
-      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|トップ|一番/.test(t))return'九十九の'+t;
+      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|取れる|とれる|取り方|トップ|一番|詳細|全部|他の能力|ほかの能力/.test(t))return'九十九の'+t;
 
     if(domain==='kishin'&&shortFollowup(t)&&!/鬼神石|きしん/.test(t))
-      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|トップ|一番/.test(t))return'鬼神石の'+t;
+      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|取れる|とれる|取り方|トップ|一番|詳細|全部|他の能力|ほかの能力/.test(t))return'鬼神石の'+t;
 
     if(domain==='madou'&&shortFollowup(t)&&!/魔導|まどう/.test(t))
-      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|トップ|一番/.test(t))return'魔導結晶の'+t;
+      if(/番|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手|どこで|取れる|とれる|取り方|トップ|一番|詳細|全部|他の能力|ほかの能力/.test(t))return'魔導結晶の'+t;
 
     return'';
   }
@@ -150,6 +229,13 @@
   function genericFollowup(text,history){
     var t=S(text),ant=lastSubstantiveUser(history);
     if(!ant)return'';
+
+    var d=recentDomain(history);
+    if(isMoreCue(t)){
+      if(d==='carp'&&recentCarpSubtopic(history)==='anecdote')return'カープの他の逸話';
+      return ant.replace(/[？?]$/,'')+'について、もう少し続けて';
+    }
+
     if(/^(?:もっと|もう少し|詳しく|くわしく)[？?]?$/.test(t))
       return ant.replace(/[？?]$/,'')+'について、もう少し詳しく教えて';
     if(/^(?:なんで|なぜ|どうして)[？?]?$/.test(t))
@@ -255,7 +341,7 @@
     var carried='';
 
     if(!domain){
-      carried=carryByDomain(message,prevDomain);
+      carried=carryByDomain(message,prevDomain,history);
       if(carried){
         message=carried;
         domain=domainFromText(message)||prevDomain;
@@ -308,6 +394,9 @@
     restorePreviousTopic:restorePreviousTopic,
     resetContext:resetContext,
     filterHistory:filterHistory,
-    resetAt:resetAt
+    resetAt:resetAt,
+    cleanFollowupTarget:cleanFollowupTarget,
+    recentCarpSubtopic:recentCarpSubtopic,
+    recentJinpoStatStyle:recentJinpoStatStyle
   };
 })();

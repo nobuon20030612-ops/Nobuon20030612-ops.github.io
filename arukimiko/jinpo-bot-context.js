@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.3.0';
+  var VERSION='2.4.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -138,10 +138,10 @@
       }
     }
 
-    if(d==='weather'&&/^(?:今日|きょう|明日|あした)(?:は)?[？?]?$|^(?:雨|気温|最高|最低|降水確率|湿度|風|風速)[？?]?$/.test(t)){
+    if(d==='weather'&&/^(?:今日|きょう|明日|あした|明後日|あさって)(?:は)?[？?]?$|^(?:雨|気温|最高|最低|降水確率|湿度|風|風速)[？?]?$/.test(t)){
       var rw=findRecentWeather(h);if(rw&&rw.place){
         var tail=t.replace(/[？?]$/,'');
-        if(/^(?:今日|きょう|明日|あした)(?:は)?$/.test(tail))return {message:rw.place+'の'+tail+'の天気',reason:'weather_topic_carry_short',confidence:0.97};
+        if(/^(?:今日|きょう|明日|あした|明後日|あさって)(?:は)?$/.test(tail))return {message:rw.place+'の'+tail.replace(/は$/,'')+'の天気',reason:'weather_topic_carry_short',confidence:0.97};
         return {message:rw.place+'の'+tail,reason:'weather_topic_carry_short',confidence:0.92};
       }
     }
