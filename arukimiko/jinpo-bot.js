@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.4.2';
+  var VERSION='3.4.5';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -275,21 +275,21 @@
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
 
-    // v3.3.8:
-    // 起動時に読み込まなかった話題別モジュールを、
-    // 実際の発言内容に応じてここで初めて準備する。
-    try{
-      if(window.ARUKIMIKO_LAZY&&typeof window.ARUKIMIKO_LAZY.ensureForMessage==='function'){
-        await window.ARUKIMIKO_LAZY.ensureForMessage(originalMessage);
-      }
-    }catch(lazyErr){
-      console.error('歩き巫女 message lazy load:',lazyErr);
-    }
+    // 先に会話リセット以前の履歴を除外。
+    // その有効履歴を使って、候補追質問でも必要な正本をlazy選択する。
     try{
       if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.filterHistory==='function'){
         history=window.JINPO_BOT_CONVERSATION.filterHistory(history);
       }
     }catch(historyEpochErr){}
+
+    try{
+      if(window.ARUKIMIKO_LAZY&&typeof window.ARUKIMIKO_LAZY.ensureForMessage==='function'){
+        await window.ARUKIMIKO_LAZY.ensureForMessage(originalMessage,history);
+      }
+    }catch(lazyErr){
+      console.error('歩き巫女 message lazy load:',lazyErr);
+    }
 
     var pageContext={mode:window.JINPO_BOT_PAGE_MODE||'',path:'',title:''};
     try{

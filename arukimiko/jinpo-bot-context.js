@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.5.0';
+  var VERSION='2.5.1';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -196,9 +196,36 @@
     return null;
   }
 
+  function recentCounterAmbiguity(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
+      if(!h[i]||h[i].role!=='assistant')continue;
+      var raw=String(h[i].text||'');
+      if(/候補が複数/.test(raw)&&/場所か名前/.test(raw))return true;
+    }
+    return false;
+  }
+
+  function counterCandidateSelector(text){
+    var t=S(text)
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    if(!t||t.length>28)return false;
+
+    if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
+
+    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間/.test(t))return true;
+    if(/今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t))return true;
+
+    return false;
+  }
+
   function resolve(text,history,opt){
     var original=S(text),resolved=original,reason='',confidence=0;
     var h=historyBeforeCurrent(history,original),ex=lastExchange(h),a=S(ex.assistant&&ex.assistant.text),u=S(ex.user&&ex.user.text);
+    var counterCandidateFollowup=recentCounterAmbiguity(h)&&counterCandidateSelector(original);
 
 
     // 明示的な言い直しは、以前の誤解より新しい内容を優先する。
@@ -208,7 +235,7 @@
     }
 
     // 「カープ」→「順位」→「選手」のような、人なら分かる短い追質問を前の話題へ結ぶ。
-    if(resolved===original){
+    if(resolved===original&&!counterCandidateFollowup){
       var carried=carryDomain(original,h);
       if(carried){resolved=carried.message;reason=carried.reason;confidence=carried.confidence;}
     }
@@ -280,7 +307,7 @@
 
     // 「じゃあ足利は？」「では義昭は？」のような短い追質問は、
     // 直前の話題がカウンター等ではっきりしている場合だけ、その話題語を補う。
-    if(resolved===original&&/^(?:じゃあ|では|なら)?\s*[^？?]{1,18}(?:は|って)?[？?]?$/.test(original)){
+    if(resolved===original&&!counterCandidateFollowup&&/^(?:じゃあ|では|なら)?\s*[^？?]{1,18}(?:は|って)?[？?]?$/.test(original)){
       var recentAll='';
       for(var ri=h.length-1;ri>=0&&ri>=h.length-8;ri--){
         if(h[ri]&&S(h[ri].text))recentAll+=' '+S(h[ri].text);
@@ -304,8 +331,13 @@
       }
     }
 
+    if(counterCandidateFollowup&&resolved===original){
+      reason='counter_candidate_followup';
+      confidence=0.995;
+    }
+
     return {original:original,message:resolved,resolved:resolved!==original,reason:reason,confidence:confidence,history:h};
   }
 
-  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent,domainFromText:domainFromText,recentDomain:recentDomain,stripCorrectionPrefix:stripCorrectionPrefix,liveSubjectFromText:liveSubjectFromText,isGeneralLiveFollowup:isGeneralLiveFollowup,findGeneralLiveAntecedent:findGeneralLiveAntecedent};
+  window.JINPO_BOT_CONTEXT={version:VERSION,resolve:resolve,looksLikeLocation:looksLikeLocation,findRecentWeather:findRecentWeather,findAntecedent:findAntecedent,domainFromText:domainFromText,recentDomain:recentDomain,stripCorrectionPrefix:stripCorrectionPrefix,liveSubjectFromText:liveSubjectFromText,isGeneralLiveFollowup:isGeneralLiveFollowup,findGeneralLiveAntecedent:findGeneralLiveAntecedent,recentCounterAmbiguity:recentCounterAmbiguity,counterCandidateSelector:counterCandidateSelector};
 })();

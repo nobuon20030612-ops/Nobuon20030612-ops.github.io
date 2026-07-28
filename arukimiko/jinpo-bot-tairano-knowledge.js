@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.5.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.7.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.5.0';
+  var VERSION='1.7.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -159,19 +159,77 @@
     return {score:best,kind:kind};
   }
 
+  function textHasAnyKnownContext(text){
+    var t=N(text),d=window.JINPO_TAIRANO_KNOWLEDGE_DATA;
+    if(!t||!d||!Array.isArray(d.facts))return false;
+
+    for(var i=0;i<d.facts.length;i++){
+      var f=d.facts[i]||{},ctx=f.contexts||[];
+      for(var j=0;j<ctx.length;j++){
+        var x=N(ctx[j]);
+        // 「天」「地」のような極端に短い断片は場所指定判定に使わない。
+        if(x&&x.length>=2&&t.indexOf(x)>=0)return true;
+      }
+    }
+    return false;
+  }
+
   function contextScore(text,f,history){
-    var t=N(text),s=0,hit=false;
+    var t=N(text),s=0,currentHit=false,historyHit=false;
+
+    // まず「今この発言」に書かれた場所だけを見る。
     (f.contexts||[]).forEach(function(c){
       var x=N(c);
-      if(x&&t.indexOf(x)>=0){s+=32;hit=true;}
+      if(x&&x.length>=2&&t.indexOf(x)>=0){
+        s+=36;
+        currentHit=true;
+      }
     });
-    if(!hit){
-      var recent=recentText(history,'assistant',6).concat(recentText(history,'user',6)).map(N).join(' ');
-      (f.contexts||[]).forEach(function(c){
-        var x=N(c);if(x&&recent.indexOf(x)>=0){s+=12;hit=true;}
-      });
+
+    if(currentHit){
+      // 現在発言の場所指定は最優先。
+      return {
+        score:Math.min(s,56),
+        hit:true,
+        currentHit:true,
+        historyHit:false,
+        explicitContext:true
+      };
     }
-    return {score:Math.min(s,48),hit:hit};
+
+    // 今の発言に「どこかの場所」が明示されている場合、
+    // 別の場所のfactへ過去履歴の点数を足してはいけない。
+    // これが「桶狭間の義元」→武技大会347へ逆転していた根本原因。
+    if(textHasAnyKnownContext(t)){
+      return {
+        score:0,
+        hit:false,
+        currentHit:false,
+        historyHit:false,
+        explicitContext:true
+      };
+    }
+
+    // 今の発言に場所指定が無い時だけ、過去の会話文脈を弱く利用する。
+    var recent=recentText(history,'assistant',6)
+      .concat(recentText(history,'user',6))
+      .map(N).join(' ');
+
+    (f.contexts||[]).forEach(function(c){
+      var x=N(c);
+      if(x&&x.length>=2&&recent.indexOf(x)>=0){
+        s+=8;
+        historyHit=true;
+      }
+    });
+
+    return {
+      score:Math.min(s,24),
+      hit:historyHit,
+      currentHit:false,
+      historyHit:historyHit,
+      explicitContext:false
+    };
   }
 
   function factScore(text,f,history){
@@ -194,7 +252,10 @@
       nameKind:nm.kind,
       cue:cue,
       remainder:rem,
-      contextHit:cx.hit
+      contextHit:cx.hit,
+      currentContextHit:!!cx.currentHit,
+      historyContextHit:!!cx.historyHit,
+      explicitContext:!!cx.explicitContext
     };
   }
 
@@ -213,6 +274,121 @@
   function explicitCounterContext(text){
     var t=N(text);
     return /京都|本能寺|義輝|義昭|二条|二条城|きょうと|ほんのうじ|よしてる|よしあき|にじょう/.test(t);
+  }
+
+  function recentAmbiguityCandidates(history,facts){
+    var h=Array.isArray(history)?history:[],answer='';
+    for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
+      var x=h[i]||{};
+      if(x.role!=='assistant')continue;
+      var raw=String(x.text||'').trim();
+      if(/候補が複数/.test(raw)&&/場所か名前/.test(raw)){answer=raw;break;}
+    }
+    if(!answer)return[];
+
+    var rows=[];
+    answer.split(/\r?\n/).forEach(function(line){
+      var m=line.match(/^\s*(?:(\d+)[.．、]\s*|・\s*)([^：:]+)[：:]\s*(.+?)\s*$/);
+      if(!m)return;
+
+      var location=S(m[2]),canonical=S(m[3]),found=null;
+      (facts||[]).some(function(f){
+        if(f&&S(f.location)===location&&S(f.canonical)===canonical){
+          found=f;return true;
+        }
+        return false;
+      });
+      if(found)rows.push(found);
+    });
+    return rows.slice(0,6);
+  }
+
+  function ordinalCandidateIndex(text,count){
+    var raw=S(text);
+    if(!raw||!count)return -1;
+    var kan={'一':1,'二':2,'三':3,'四':4,'五':5,'六':6};
+
+    var m=raw.match(/上から\s*([1-6一二三四五六])\s*(?:番|番目|つ目)?/);
+    if(m){
+      var n=Number(m[1])||kan[m[1]]||0;
+      if(n>=1&&n<=count)return n-1;
+    }
+
+    m=raw.match(/^\s*([1-6一二三四五六])\s*(?:番|番目|つ目)?\s*(?:の)?\s*(?:やつ|方|ほう)?\s*$/);
+    if(m){
+      var n2=Number(m[1])||kan[m[1]]||0;
+      if(n2>=1&&n2<=count)return n2-1;
+    }
+
+    if(/^(?:最初|一番上|上)(?:の)?(?:やつ|方|ほう)?$/.test(raw))return 0;
+    if(count>=2&&/^(?:最後|一番下|下)(?:の)?(?:やつ|方|ほう)?$/.test(raw))return count-1;
+    if(count===3&&/^(?:真ん中|中)(?:の)?(?:やつ|方|ほう)?$/.test(raw))return 1;
+    return -1;
+  }
+
+  function candidateTextScore(text,f){
+    var raw=S(text),score=0;
+    if(!raw||!f)return 0;
+
+    var cleanRaw=raw
+      .replace(/^(?:じゃあ|では|なら|それなら|それじゃ)[、,\s]*/,'')
+      .replace(/(?:の)?(?:方|ほう|やつ)\s*$/,'')
+      .trim();
+    var clean=N(cleanRaw);
+    if(!clean)return 0;
+
+    // 現在の入力に場所があるなら、その場所に合わない候補を除外。
+    var cx=contextScore(raw,f,[]);
+    if(cx.currentHit)score+=90;
+    else if(textHasAnyKnownContext(raw))return 0;
+
+    var forms=unique(
+      [f.canonical,f.location]
+      .concat(f.aliases||[])
+      .concat(f.readings||[])
+      .concat(f.contexts||[])
+    );
+
+    forms.forEach(function(v){
+      var x=N(v);
+      if(!x)return;
+      if(clean===x){
+        score=Math.max(score,140+(cx.currentHit?90:0));
+      }else if(clean.length>=2&&(x.indexOf(clean)>=0||clean.indexOf(x)>=0)){
+        score=Math.max(score,95+Math.min(clean.length,12)+(cx.currentHit?90:0));
+      }
+    });
+
+    var nm=nameMatchScore(cleanRaw,f,false);
+    if(nm.score)score=Math.max(score,nm.score+(cx.currentHit?90:0));
+
+    return score;
+  }
+
+  function resolveCandidateFollowup(text,history,facts){
+    var candidates=recentAmbiguityCandidates(history,facts);
+    if(!candidates.length)return null;
+
+    var idx=ordinalCandidateIndex(text,candidates.length);
+    if(idx>=0){
+      return counterAnswer(candidates[idx],{nameKind:'candidate_ordinal'},text);
+    }
+
+    var ranked=candidates.map(function(f){
+      return {f:f,score:candidateTextScore(text,f)};
+    }).filter(function(x){return x.score>0;})
+      .sort(function(a,b){return b.score-a.score;});
+
+    if(!ranked.length)return null;
+
+    var top=ranked[0].score;
+    var same=ranked.filter(function(x){return x.score>=top-5;});
+
+    if(same.length===1){
+      return counterAnswer(same[0].f,{nameKind:'candidate_followup'},text);
+    }
+
+    return ambiguityAnswer(same,text);
   }
 
   function preferredCounterFact(text,history,facts){
@@ -237,6 +413,8 @@
     var interpreted='';
     if(meta&&(meta.nameKind==='abbrev'||meta.nameKind==='typo'||meta.nameKind==='preferred_shorthand')){
       interpreted='「'+S(original)+'」は、'+S(f.canonical)+'のカウンターとして受け取ります。\n';
+    }else if(meta&&(meta.nameKind==='candidate_ordinal'||meta.nameKind==='candidate_followup')){
+      interpreted='候補の中では、'+S(f.location)+'の'+S(f.canonical)+'ですね。\n';
     }
     var body=none
       ? S(f.location)+'の'+S(f.canonical)+'は、カウンター持ちは無しなのですよ。'
@@ -255,8 +433,8 @@
   }
 
   function ambiguityAnswer(list,original){
-    var labels=list.slice(0,4).map(function(x){
-      return '・'+S(x.f.location)+'：'+S(x.f.canonical);
+    var labels=list.slice(0,4).map(function(x,i){
+      return (i+1)+'. '+S(x.f.location)+'：'+S(x.f.canonical);
     });
     return {
       handled:true,
@@ -271,6 +449,9 @@
     var d=window.JINPO_TAIRANO_KNOWLEDGE_DATA;if(!d)return {handled:false};
     var original=S(text),history=opt&&opt.history||[];
     if(!original)return {handled:false};
+
+    var candidateFollow=resolveCandidateFollowup(original,history,d.facts||[]);
+    if(candidateFollow)return candidateFollow;
 
     var preferred=preferredCounterFact(original,history,d.facts||[]);
     if(preferred){
@@ -296,9 +477,14 @@
         if(!distinct[key]){distinct[key]=1;distinctList.push(x);}
       });
       if(distinctList.length>1){
-        // 明確な場所文脈がトップだけに当たっているなら即答してよい。
-        var ctxTop=distinctList.filter(function(x){return x.m.contextHit;});
-        if(ctxTop.length===1)return counterAnswer(ctxTop[0].f,ctxTop[0].m,original);
+        // 「今の発言」に明示された場所が1候補だけに一致するなら即答。
+        // 過去の候補一覧に出ていただけの場所は、この判定には使わない。
+        var currentCtxTop=distinctList.filter(function(x){return x.m.currentContextHit;});
+        if(currentCtxTop.length===1){
+          return counterAnswer(currentCtxTop[0].f,currentCtxTop[0].m,original);
+        }
+
+        // 場所指定が無い質問だけ、従来どおり曖昧候補を提示する。
         return ambiguityAnswer(distinctList,original);
       }
       return counterAnswer(top.f,top.m,original);
@@ -341,6 +527,7 @@
   window.JINPO_TAIRANO_KNOWLEDGE={
     version:VERSION,respond:respond,search:search,normalize:N,
     _test:{detectCue:detectCue,nameForms:nameForms,editDistance:editDistance,
-    preferredCounterFact:preferredCounterFact,factScore:factScore,nameMatchScore:nameMatchScore}
+    preferredCounterFact:preferredCounterFact,factScore:factScore,nameMatchScore:nameMatchScore,
+    contextScore:contextScore,textHasAnyKnownContext:textHasAnyKnownContext,recentAmbiguityCandidates:recentAmbiguityCandidates,ordinalCandidateIndex:ordinalCandidateIndex,candidateTextScore:candidateTextScore,resolveCandidateFollowup:resolveCandidateFollowup}
   };
 })();

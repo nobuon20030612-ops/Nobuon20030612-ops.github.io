@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.5.2-contextfix
+ * 歩き巫女 サイト共通ローダー v3.5.5-countere2e
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.4.2';
+  var ASSET_VERSION='3.4.5';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -31,7 +31,7 @@
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.4.2',
+    version:'3.4.5',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -249,7 +249,30 @@
     return false;
   }
 
-  function groupsForMessage(text){
+  function recentTairanoAmbiguity(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
+      if(!h[i]||h[i].role!=='assistant')continue;
+      var raw=String(h[i].text||'');
+      if(/候補が複数/.test(raw)&&/場所か名前/.test(raw))return true;
+    }
+    return false;
+  }
+
+  function counterCandidateSelector(text){
+    var t=String(text||'')
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    if(!t||t.length>28)return false;
+
+    if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
+
+    return /桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t);
+  }
+
+  function groupsForMessage(text,history){
     var t=String(text||'');
     var groups=[];
 
@@ -260,7 +283,10 @@
       groups.push('tool');
     }
 
-    if(/カウンター|かうんた|修羅の間|天下武技大会|天下統一奇譚|二条城|桶狭間|足利義昭|禅魔|雪斎/.test(t)){
+    if(
+      /カウンター|かうんた|修羅の間|天下武技大会|天下統一奇譚|二条城|桶狭間|足利義昭|禅魔|雪斎/.test(t) ||
+      (recentTairanoAmbiguity(history)&&counterCandidateSelector(t))
+    ){
       groups.push('tairano');
     }
 
@@ -295,8 +321,8 @@
     return uniqueNames(groups);
   }
 
-  function ensureForMessage(text){
-    var groups=groupsForMessage(text);
+  function ensureForMessage(text,history){
+    var groups=groupsForMessage(text,history);
     return Promise.all(groups.map(ensureGroup)).then(function(){
       return {ok:true,groups:groups};
     }).catch(function(e){
@@ -332,6 +358,8 @@
     ensureGroup:ensureGroup,
     ensureForMessage:ensureForMessage,
     groupsForMessage:groupsForMessage,
+    recentTairanoAmbiguity:recentTairanoAmbiguity,
+    counterCandidateSelector:counterCandidateSelector,
     hasCarpNameHint:hasCarpNameHint,
     loadLightIdleOptional:loadLightIdleOptional,
     loadFirebaseIdle:loadFirebaseIdle

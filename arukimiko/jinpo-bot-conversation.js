@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.5.0';
+  var VERSION='1.5.1';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -167,6 +167,36 @@
     return /^(?:もっと|他にも|ほかにも|他には|ほかには|別のも|別の|もう一つ|もう1つ|続き|つづき|まだある|ほかは)[？?！!。]*$/.test(S(text));
   }
 
+  function recentCounterAmbiguity(history){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
+      if(!h[i]||h[i].role!=='assistant')continue;
+      var raw=String(h[i].text||'');
+      if(/候補が複数/.test(raw)&&/場所か名前/.test(raw))return true;
+    }
+    return false;
+  }
+
+  function counterCandidateSelector(text){
+    var t=S(text)
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    if(!t||t.length>28)return false;
+
+    if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
+
+    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間/.test(t))return true;
+    if(/今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t))return true;
+
+    return false;
+  }
+
+  function isCounterCandidateFollowup(text,history){
+    return recentCounterAmbiguity(history)&&counterCandidateSelector(text);
+  }
+
   function carryByDomain(text,domain,history){
     var t=S(text);
     if(!domain)return'';
@@ -193,6 +223,9 @@
     }
 
     if(domain==='counter'){
+      // 候補一覧の続きは、候補選択エンジンへ生のまま渡す。
+      if(isCounterCandidateFollowup(t,history))return t;
+
       if(!counterCue(t)&&shortFollowup(t)&&
          !/ページ|サイト|リンク|開いて|どこにある/.test(t)&&
          !/^(?:もっと|詳しく|なんで|なぜ|どうして)$/.test(t)){
@@ -341,10 +374,15 @@
     var carried='';
 
     if(!domain){
-      carried=carryByDomain(message,prevDomain,history);
-      if(carried){
-        message=carried;
-        domain=domainFromText(message)||prevDomain;
+      if(prevDomain==='counter'&&isCounterCandidateFollowup(message,history)){
+        carried=message;
+        domain='counter';
+      }else{
+        carried=carryByDomain(message,prevDomain,history);
+        if(carried){
+          message=carried;
+          domain=domainFromText(message)||prevDomain;
+        }
       }
     }
 
@@ -397,6 +435,9 @@
     resetAt:resetAt,
     cleanFollowupTarget:cleanFollowupTarget,
     recentCarpSubtopic:recentCarpSubtopic,
-    recentJinpoStatStyle:recentJinpoStatStyle
+    recentJinpoStatStyle:recentJinpoStatStyle,
+    recentCounterAmbiguity:recentCounterAmbiguity,
+    counterCandidateSelector:counterCandidateSelector,
+    isCounterCandidateFollowup:isCounterCandidateFollowup
   };
 })();
