@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.2';
+  var VERSION='3.0.5';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -82,6 +82,48 @@
           }
         }
       }catch(aiBrainErr){}
+    }
+
+    // AIが利用できなかった時のローカル会話制御。
+    // 「話を戻そう」は、天気の場所待ちや家臣名付けより先に処理する。
+    var conversationControl=null;
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.control==='function'){
+        conversationControl=window.JINPO_BOT_CONVERSATION.control(originalMessage,history);
+      }
+    }catch(controlErr){}
+
+    if(conversationControl){
+      try{
+        if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
+          window.JINPO_BOT_DIALOG.clearPending();
+        }
+      }catch(e){}
+      try{
+        if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.pause==='function'){
+          window.JINPO_BOT_KASHIN_NAME.pause();
+        }
+      }catch(e){}
+
+      if(conversationControl.control==='change'){
+        return {
+          answer:'もちろんです。ここまでの途中入力はいったん止めました。別の話をそのままどうぞ。',
+          sources:[],links:[],mode:'会話制御',
+          data:{conversationControl:'change'}
+        };
+      }
+
+      if(conversationControl.control==='back'){
+        if(conversationControl.restoreMessage){
+          message=String(conversationControl.restoreMessage);
+        }else{
+          return {
+            answer:'戻したい話題をこちらで特定できなかったのですよ。「カープの話に戻ろう」みたいに一言だけ足してもらえれば、そこへ戻します。',
+            sources:[],links:[],mode:'会話制御',
+            data:{conversationControl:'back',needsTopic:true}
+          };
+        }
+      }
     }
 
     // まず「今、何を聞いている途中か」を解決する。
@@ -168,6 +210,23 @@
         }
       }
     }catch(learningReplyErr){}
+
+    // AIフォールバック時でも、カープ専用会話を直接使う。
+    // これが無いと「カープ」を一般Webや別の途中タスクへ流してしまう。
+    try{
+      if(window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'){
+        var carpReply=await window.JINPO_BOT_CARP.respond(message,{history:history,context:contextInfo,pageContext:pageContext});
+        if(carpReply&&carpReply.handled){
+          return {
+            answer:String(carpReply.answer||''),
+            sources:Array.isArray(carpReply.sources)?carpReply.sources:[],
+            links:Array.isArray(carpReply.links)?carpReply.links:[],
+            mode:String(carpReply.mode||'カープ専用会話'),
+            data:{carp:true,context:contextInfo,restored:!!(conversationControl&&conversationControl.control==='back')}
+          };
+        }
+      }
+    }catch(carpErr){}
 
     // 家臣の名付けは全ページ共通の会話機能。
     // 「家臣計算」と混同しないよう、サイト案内より先に判定する。

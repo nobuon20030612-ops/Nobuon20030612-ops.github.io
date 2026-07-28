@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 家臣名付け v1.0.0
+ * 歩き巫女 家臣名付け v1.1.0
  * 信長の野望Onlineの家臣向け。苗字6文字・名前6文字以内。
  * 好みを会話で聞き出し、希望なしなら完全おまかせで候補を作る。
  */
@@ -7,7 +7,7 @@
   'use strict';
   if(window.JINPO_BOT_KASHIN_NAME)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var KEY='arukimikoKashinNaming.v1';
 
   function S(v){
@@ -32,6 +32,42 @@
   }
   function isCancel(text){return /やめ|中止|キャンセル|名付けやめ/.test(S(text));}
   function wantsMore(text){return /もっと|別の|べつの|もう.*個|他の|ほかの|やり直|再生成/.test(S(text));}
+
+  function isMetaControl(text){
+    return /話.*戻|前の話|さっきの話|元の話|話.*変|別の話/.test(S(text));
+  }
+
+  function isClearlyOtherTopic(text){
+    var t=S(text);
+    return /カープ|かーぷ|広島東洋|野球|順位|試合結果|選手|天気|気温|予報|ニュース|為替|ドル円|カウンター|かうんた|九十九|鬼神石|魔導結晶|陣法|因縁|陣形|英傑|全MAX/.test(t);
+  }
+
+  function isRelevantContinuation(text,st){
+    var t=S(text);
+    if(!t)return false;
+    if(isCancel(t)||isMetaControl(t)||isClearlyOtherTopic(t))return false;
+    if(isTrigger(t)||isRandom(t)||wantsMore(t))return true;
+    if(/もう出して|候補出して|名前出して|作って|考えて/.test(t))return true;
+    if(/男|男性|女|女性|中性|どっちでも|性別/.test(t))return true;
+    if(/強|武骨|猛将|豪傑|勇猛|かわい|可愛|雅|上品|綺麗|優雅|神秘|妖|闇|夜|珍し|変わった|個性的|レア|戦国|武将|古風|王道|普通|実在|創作|ファンタジ/.test(t))return true;
+    if(/桜|月|雪|龍|風|花|星|水/.test(t))return true;
+    if(/^(?:なし|ない|特にない|おまかせ|任せる|どれでも|なんでも)$/.test(t))return true;
+    if(/^[1-5１-５](?:番|ばん|個目|こめ)/.test(t))return true;
+
+    // Do not consume ordinary free conversation just because a naming flow is active.
+    return false;
+  }
+
+  function pause(){
+    var st=load();
+    if(st&&st.active){
+      st.active=false;
+      st.paused=true;
+      st.pausedAt=Date.now();
+      save(st);
+    }
+    return st;
+  }
 
   var surnames={
     classic:['黒田','白石','真壁','榊原','小笠原','結城','相馬','久世','風間','水城','月岡','花房','榎本','早川','一条','九条','神谷','橘','藤堂','桐生'],
@@ -221,6 +257,10 @@
     opt=opt||{};
     var st=load();
     if(st.active){
+      if(!isRelevantContinuation(text,st)){
+        pause();
+        return {handled:false};
+      }
       var r=continueFlow(text,opt.history||[]);
       if(r)return r;
     }
@@ -234,6 +274,9 @@
     isTrigger:isTrigger,
     generate:generate,
     validPart:validPart,
-    clear:clear
+    clear:clear,
+    pause:pause,
+    state:load,
+    isRelevantContinuation:isRelevantContinuation
   };
 })();

@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_DIALOG)return;
 
-  var VERSION='1.0.0';
+  var VERSION='2.1.1';
   var KEY='arukimikoDialog.v1';
 
   function S(v){
@@ -67,9 +67,17 @@
     if(/^(?:ここ|現在地|この辺|このへん|近く)$/.test(t))return'';
     return t.slice(0,60);
   }
+  function isMetaConversationControl(t){
+    return /話.*戻|前の話|さっきの話|元の話|一個前|戻ろう|もどろう|話.*変|別の話/.test(S(t));
+  }
+
+  function pendingExpired(pending){
+    return !!(pending&&pending.startedAt&&Date.now()-Number(pending.startedAt)>5*60*1000);
+  }
+
   function looksLikeLocationReply(t){
     t=S(t);
-    if(!t||t.length>40||explicitOtherDomain(t))return false;
+    if(!t||t.length>40||explicitOtherDomain(t)||isMetaConversationControl(t))return false;
     if(/[？?！!]/.test(t))return false;
     if(/教えて|おしえて|調べて|検索|どう|何|なに|誰|だれ|なぜ|好き|疲れ|眠い/.test(t))return false;
     if(/^(?:今日|きょう|明日|あした)$/.test(t))return false;
@@ -89,6 +97,17 @@
   function preprocess(text,opt){
     var original=S(text),t=stripCorrection(original),st=load(),pending=st.pending;
     if(!original)return {handled:false,message:original};
+
+    if(pendingExpired(pending)){
+      st.pending=null;save(st);pending=null;
+    }
+
+    // 「話を戻そう」「別の話にしよう」は地名として扱わない。
+    if(isMetaConversationControl(t)){
+      st.pending=null;
+      save(st);
+      return {handled:false,message:t,reason:'conversation_control'};
+    }
 
     // はっきり別の話題へ移ったら、未完了の天気質問を引きずらない。
     if(pending&&pending.intent==='weather'&&explicitOtherDomain(t)&&!isWeatherWord(t)){

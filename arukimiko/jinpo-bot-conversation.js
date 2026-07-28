@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.0.0
+ * 歩き巫女 共通会話ルーター v1.1.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -137,6 +137,60 @@
     return'';
   }
 
+  function isBackCue(text){
+    return /^(?:話(?:を|に)?戻(?:そう|して|す|る)|前の話(?:に|へ)?戻(?:そう|して|る)?|さっきの話(?:に|へ)?戻(?:そう|して|る)?|一個前(?:に)?戻(?:そう|して|る)?|元の話(?:に)?戻(?:そう|して|る)?|戻ろう|もどろう)[？?！!。]*$/.test(S(text));
+  }
+
+  function isTopicChangeCue(text){
+    return /^(?:話(?:を)?変え(?:よう|たい|る)|話題(?:を)?変え(?:よう|たい|る)|別の話(?:にしよう|したい)?)[？?！!。]*$/.test(S(text));
+  }
+
+  function userTopicCandidates(history){
+    var h=Array.isArray(history)?history:[],out=[];
+    for(var i=h.length-1;i>=0&&i>=h.length-30;i--){
+      var x=h[i];
+      if(!x||x.role!=='user')continue;
+      var t=S(x.text);
+      if(!t||isBackCue(t)||isTopicChangeCue(t))continue;
+      var d=domainFromText(t);
+      if(!d)continue;
+      if(out.some(function(y){return y.domain===d;}))continue;
+      out.push({text:t,domain:d,index:i});
+      if(out.length>=6)break;
+    }
+    return out;
+  }
+
+  function restorePreviousTopic(history){
+    var list=userTopicCandidates(history);
+    if(!list.length)return null;
+
+    // The most recent explicit user-domain is the safest thing to restore.
+    var x=list[0],message=x.text;
+    if(x.domain==='carp'&&!/カープ|かーぷ|広島東洋|carp/i.test(message)){
+      message='カープの'+message;
+    }
+    return {
+      control:'back',
+      restoreMessage:message,
+      domain:x.domain,
+      sourceText:x.text,
+      sourceIndex:x.index
+    };
+  }
+
+  function control(text,history){
+    var t=S(text);
+    if(isBackCue(t)){
+      var r=restorePreviousTopic(history);
+      return r||{control:'back',restoreMessage:'',domain:'',sourceText:''};
+    }
+    if(isTopicChangeCue(t)){
+      return {control:'change',restoreMessage:'',domain:'',sourceText:''};
+    }
+    return null;
+  }
+
   function resolve(text,history,opt){
     var original=S(text);
     var correction=stripCorrection(original);
@@ -192,6 +246,10 @@
     domainFromText:domainFromText,
     recentDomain:recentDomain,
     stripCorrection:stripCorrection,
-    isWeakAssistantText:isWeakAssistantText
+    isWeakAssistantText:isWeakAssistantText,
+    control:control,
+    isBackCue:isBackCue,
+    isTopicChangeCue:isTopicChangeCue,
+    restorePreviousTopic:restorePreviousTopic
   };
 })();
