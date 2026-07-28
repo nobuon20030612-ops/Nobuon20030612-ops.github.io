@@ -9,14 +9,17 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
   var NPB_ROSTER_READER_URL='https://r.jina.ai/'+NPB_ROSTER_URL;
+  var NPB_STANDINGS_URL='https://npb.jp/bis/'+(new Date().getFullYear())+'/stats/std_c.html';
+  var NPB_STANDINGS_READER_URL='https://r.jina.ai/'+NPB_STANDINGS_URL;
   var STATIC_SOURCE={title:'NPB.jp：広島東洋カープ',url:NPB_TEAM_URL};
   var snapshotCache={text:'',fetchedAt:0};
   var rosterCache={text:'',fetchedAt:0};
+  var standingsCache={text:'',fetchedAt:0};
   var CACHE_MS=2*60*1000;
 
   function S(v){
@@ -141,6 +144,73 @@
     finally{tc.clear();}
   }
 
+
+  async function fetchStandings(){
+    if(standingsCache.text&&Date.now()-standingsCache.fetchedAt<CACHE_MS)return {ok:true,text:standingsCache.text,cached:true};
+    if(!window.fetch)return {ok:false,unavailable:true};
+    var tc=timeoutController(10000);
+    try{
+      var r=await fetch(NPB_STANDINGS_READER_URL,{method:'GET',mode:'cors',credentials:'omit',headers:{'Accept':'text/plain'},signal:tc.signal});
+      if(!r.ok)return {ok:false,status:r.status};
+      var text=await r.text();
+      if(!text||text.length<300||!/(セントラル・リーグ|Central League)/.test(text)||!/(広島東洋カープ|Hiroshima)/i.test(text))return {ok:false,invalid:true};
+      standingsCache={text:text,fetchedAt:Date.now()};
+      return {ok:true,text:text,cached:false};
+    }catch(e){return {ok:false,error:true};}finally{tc.clear();}
+  }
+
+  function carpStanding(text){
+    text=String(text||'');
+    var sectionText=text;
+    var cut=sectionText.search(/交流戦チーム勝敗表|Interleague/i);
+    if(cut>0)sectionText=sectionText.slice(0,cut);
+
+    var date='';
+    var dm=sectionText.match(/(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日\s*現在/);
+    if(dm)date=dm[1]+'年'+dm[2]+'月'+dm[3]+'日現在';
+
+    var teams=['阪神タイガース','読売ジャイアンツ','東京ヤクルトスワローズ','横浜DeNAベイスターズ','広島東洋カープ','中日ドラゴンズ'];
+    var rows=[];
+    sectionText.split(/\r?\n/).forEach(function(line){
+      line=stripMarkdownLine(line);
+      if(!line||line.indexOf('/')<0)return;
+      for(var i=0;i<teams.length;i++){
+        if(line.indexOf(teams[i])===0){
+          var parts=line.split('/').map(function(x){return S(x);});
+          if(parts.length>=7){
+            rows.push({
+              team:teams[i],
+              g:Number(parts[1])||0,
+              w:Number(parts[2])||0,
+              l:Number(parts[3])||0,
+              t:Number(parts[4])||0,
+              pct:parts[5],
+              gb:parts[6]
+            });
+          }
+          break;
+        }
+      }
+    });
+
+    var carpIndex=-1,carpRow=null;
+    for(var j=0;j<rows.length;j++){
+      if(rows[j].team==='広島東洋カープ'){carpIndex=j;carpRow=rows[j];break;}
+    }
+    if(carpIndex<0||!carpRow)return null;
+
+    return {
+      rank:carpIndex+1,
+      date:date,
+      games:carpRow.g,
+      wins:carpRow.w,
+      losses:carpRow.l,
+      ties:carpRow.t,
+      pct:carpRow.pct,
+      gb:carpRow.gb
+    };
+  }
+
   async function fetchRoster(){
     if(rosterCache.text&&Date.now()-rosterCache.fetchedAt<CACHE_MS)return {ok:true,text:rosterCache.text,cached:true};
     if(!window.fetch)return {ok:false,unavailable:true};
@@ -239,6 +309,45 @@
       return {handled:true,answer:'カープの選手の話ですね。今は選手一覧の取得だけ失敗したのですよ。一般的な「プロ野球選手」の説明には飛ばさず、カープの話題のまま待つのです。選手名を言ってくれれば、その選手について調べます。',sources:sources([{title:'NPB.jp：広島東洋カープ 選手一覧',url:NPB_ROSTER_URL}]),mode:'カープ公式選手情報'};
     }
 
+    if(kind==='rank'){
+      var standings=await fetchStandings();
+      if(standings.ok){
+        var sd=carpStanding(standings.text);
+        if(sd){
+          var rankAnswer='カープは現在、セ・リーグ'+sd.rank+'位なのですよ。';
+          rankAnswer+='\n'+sd.games+'試合 '+sd.wins+'勝'+sd.losses+'敗'+sd.ties+'分、勝率'+sd.pct;
+          if(sd.gb&&sd.gb!=='--'&&sd.gb!=='-')rankAnswer+='、首位と'+sd.gb+'ゲーム差';
+          if(sd.date)rankAnswer+='（'+sd.date+'）';
+          rankAnswer+='。';
+          return {
+            handled:true,
+            answer:rankAnswer,
+            sources:sources([{title:'NPB.jp：セントラル・リーグ チーム勝敗表',url:NPB_STANDINGS_URL}]),
+            mode:'カープ公式順位'
+          };
+        }
+      }
+      // 順位表だけ取得できなかった場合は、球団ページの成績を補助的に表示する。
+      var rankSnap=await fetchSnapshot();
+      if(rankSnap.ok){
+        var rankSeason=seasonSummary(rankSnap.text);
+        if(rankSeason){
+          return {
+            handled:true,
+            answer:'カープの正確な順位だけ今は順位表から取得できなかったのですが、NPB公式のシーズン成績は '+rankSeason+' なのですよ。順位は推測せず、順位表が取れた時だけ「何位」と断定します。',
+            sources:sources([{title:'NPB.jp：セントラル・リーグ チーム勝敗表',url:NPB_STANDINGS_URL}]),
+            mode:'カープ公式順位'
+          };
+        }
+      }
+      return {
+        handled:true,
+        answer:'カープの順位を確認しようとしたのですが、今はNPB公式の順位表を取得できなかったのですよ。リンクを出すだけではなく、取得できた時は必ず「何位」と数字で答えるようにしてあります。',
+        sources:sources([{title:'NPB.jp：セントラル・リーグ チーム勝敗表',url:NPB_STANDINGS_URL}]),
+        mode:'カープ公式順位'
+      };
+    }
+
     var snap=await fetchSnapshot();
     if(snap.ok){
       var lines=[],season=seasonSummary(snap.text),recent=recentGames(snap.text),upcoming=upcomingGames(snap.text),stat;
@@ -297,5 +406,5 @@
     return {handled:true,answer:'カープの話なのですね。試合結果、順位、日程、選手、歴史など、気になるところをそのまま聞いてくださいなのですよ。',sources:sources(),mode:'カープ専用会話'};
   }
 
-  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary}};
+  window.JINPO_BOT_CARP={version:VERSION,respond:respond,isCarp:isCarp,intent:intent,fetchSnapshot:fetchSnapshot,fetchRoster:fetchRoster,fetchStandings:fetchStandings,parse:{seasonSummary:seasonSummary,recentGames:recentGames,upcomingGames:upcomingGames,leaderStats:leaderStats,rosterSummary:rosterSummary,carpStanding:carpStanding}};
 })();

@@ -4,7 +4,7 @@
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.1',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v272Large';
+  var VERSION='2.4.2',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v281SharedLarge';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){

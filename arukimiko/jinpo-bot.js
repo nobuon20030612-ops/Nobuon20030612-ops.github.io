@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='2.8.0';
+  var VERSION='2.8.1';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -118,6 +118,17 @@
         }
       }
     }catch(learningReplyErr){}
+
+    // 家臣の名付けは全ページ共通の会話機能。
+    // 「家臣計算」と混同しないよう、サイト案内より先に判定する。
+    try{
+      if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.respond==='function'){
+        var naming=window.JINPO_BOT_KASHIN_NAME.respond(originalMessage,{history:history,context:contextInfo,pageContext:pageContext});
+        if(naming&&naming.handled){
+          return {answer:String(naming.answer||''),sources:[],links:[],mode:String(naming.mode||'家臣名付け'),data:{kashinNaming:true,context:contextInfo}};
+        }
+      }
+    }catch(kashinNameErr){}
 
     // たいらの野望の確定知識は、一般サイト案内やWeb検索より先に参照する。
     // 例: 「足利のカウンターは？」→ 天下統一奇譚・二条城編の足利義昭と意味寄せして即答。
