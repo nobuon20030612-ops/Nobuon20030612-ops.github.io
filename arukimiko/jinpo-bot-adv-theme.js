@@ -1,10 +1,10 @@
-/* 歩き巫女 ADVテーマ DOM追加 v2.4.7 */
+/* 歩き巫女 ADVテーマ DOM追加 v2.4.8 */
 (function(){
   'use strict';
   if(window.__JINPO_BOT_ADV_THEME_INSTALLED__) return;
   window.__JINPO_BOT_ADV_THEME_INSTALLED__=true;
 
-  var VERSION='2.4.7',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v317HardStandard';
+  var VERSION='2.4.8',BOT_NAME='歩き巫女',LAYOUT_MIGRATION_KEY='jinpoBotAdvLayout.v231Large',SIZE_RESTORE_KEY='jinpoBotAdvSize.v317HardStandard';
   var heroObserver=null;
   function q(s,r){return (r||document).querySelector(s);}
   function pageMode(){

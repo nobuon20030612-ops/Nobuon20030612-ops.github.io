@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.4.8-stagedfast
+ * 歩き巫女 サイト共通ローダー v3.4.9-visualfirst
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.3.8';
+  var ASSET_VERSION='3.3.9';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.4.7-fast',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.4.9-visualfirst',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.3.8',
+    version:'3.3.9',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -257,7 +257,7 @@
       groups.push('kashin');
     }
 
-    if(/何ができ|なにができ|できること|使い方|どう使|とは|意味|教えて|説明/.test(t)){
+    if(/何ができ|なにができ|できること|使い方|どう使|とは|意味|教えて|説明|って何|ってなに|何\?|何？|なに\?|なに？|どういう/.test(t)){
       groups.push('help');
     }
 
@@ -283,13 +283,22 @@
     });
   }
 
-  function loadIdleOptional(){
-    // 巨大な正本2群(tool / tairano)は必要時だけ。
-    // それ以外は初期処理が終わった後、回線が空いてから先読み。
-    var idleGroups=['learning','help','smalltalk','web','carp','kashin','firebase'];
+  function loadLightIdleOptional(){
+    // 起動直後に先読みするのは、小さく使用頻度の高い会話補助だけ。
+    // Web / カープ / 家臣命名 / 正本データは実際に使うまで取得しない。
+    var idleGroups=['learning','help','smalltalk'];
     return Promise.all(idleGroups.map(ensureGroup)).then(function(){
-      window.ARUKIMIKO_LOAD_METRICS.optionalReadyMs=elapsed();
-      window.ARUKIMIKO_SHARED.optionalReady=true;
+      window.ARUKIMIKO_LOAD_METRICS.lightOptionalReadyMs=elapsed();
+      window.ARUKIMIKO_SHARED.lightOptionalReady=true;
+      return true;
+    });
+  }
+
+  function loadFirebaseIdle(){
+    // 共有記憶は初期表示と競合させず、さらに後から準備。
+    return ensureGroup('firebase').then(function(){
+      window.ARUKIMIKO_LOAD_METRICS.firebaseReadyMs=elapsed();
+      window.ARUKIMIKO_SHARED.firebaseReady=true;
       return true;
     });
   }
@@ -301,7 +310,8 @@
     ensureGroup:ensureGroup,
     ensureForMessage:ensureForMessage,
     groupsForMessage:groupsForMessage,
-    loadIdleOptional:loadIdleOptional
+    loadLightIdleOptional:loadLightIdleOptional,
+    loadFirebaseIdle:loadFirebaseIdle
   };
 
   var coreScripts=coreCommon
@@ -317,8 +327,27 @@
     window.ARUKIMIKO_LOAD_METRICS.visualScriptCount+
     window.ARUKIMIKO_LOAD_METRICS.coreScriptCount;
   window.ARUKIMIKO_LOAD_METRICS.uiReadyMs=null;
+  window.ARUKIMIKO_LOAD_METRICS.firstPaintMs=null;
+  window.ARUKIMIKO_LOAD_METRICS.coreStartMs=null;
   window.ARUKIMIKO_LOAD_METRICS.coreReadyMs=null;
-  window.ARUKIMIKO_LOAD_METRICS.optionalReadyMs=null;
+  window.ARUKIMIKO_LOAD_METRICS.lightOptionalReadyMs=null;
+  window.ARUKIMIKO_LOAD_METRICS.firebaseReadyMs=null;
+
+  function waitOnePaint(){
+    return new Promise(function(resolve){
+      if(typeof requestAnimationFrame==='function'){
+        requestAnimationFrame(function(){
+          window.ARUKIMIKO_LOAD_METRICS.firstPaintMs=elapsed();
+          resolve(true);
+        });
+      }else{
+        setTimeout(function(){
+          window.ARUKIMIKO_LOAD_METRICS.firstPaintMs=elapsed();
+          resolve(true);
+        },16);
+      }
+    });
+  }
 
   // CSSは従来どおり同時開始。
   var cssPromise=Promise.all(cssReady).then(function(cssResults){
@@ -329,20 +358,34 @@
     return cssResults;
   });
 
-  // visualを最初にappend。
-  // coreも直後にappendするが、async=falseなのでvisualはcore待ちにならない。
+  // ------------------------------------------------------------
+  // 真のvisual-first起動
+  //
+  // v3.3.8ではvisualPromiseとcorePromiseを同じタイミングで作っていたため、
+  // coreの通信も直後に始まり、初期UIと帯域を取り合う可能性があった。
+  //
+  // v3.3.9:
+  // visual読込完了
+  //   → ブラウザに1回描画機会を渡す
+  //   → その後core取得開始
+  // ------------------------------------------------------------
   var visualPromise=loadOrdered(visualScripts).then(function(){
     window.ARUKIMIKO_SHARED.uiReady=true;
     window.ARUKIMIKO_LOAD_METRICS.uiReadyMs=elapsed();
+
     try{
       if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.setBrainStatus==='function'){
         window.JINPO_AI_CHAT.setBrainStatus('読込中…','基本機能を準備中');
       }
     }catch(e){}
-    return true;
+
+    return waitOnePaint();
   });
 
-  var corePromise=loadOrdered(coreScripts).then(function(){
+  var corePromise=visualPromise.then(function(){
+    window.ARUKIMIKO_LOAD_METRICS.coreStartMs=elapsed();
+    return loadOrdered(coreScripts);
+  }).then(function(){
     window.ARUKIMIKO_LOAD_METRICS.scriptsReadyMs=elapsed();
     window.ARUKIMIKO_LOAD_METRICS.coreReadyMs=elapsed();
     window.ARUKIMIKO_SHARED.loading=false;
@@ -362,21 +405,38 @@
       }));
     }catch(e){}
 
-    // 初期表示を邪魔しないよう6秒後、さらにidle時に軽い追加機能だけ先読み。
+    // 軽い会話補助だけ3秒後のidleで先読み。
     setTimeout(function(){
-      var run=function(){loadIdleOptional().catch(function(e){console.error('歩き巫女 idle preload:',e);});};
+      var run=function(){
+        loadLightIdleOptional().catch(function(e){
+          console.error('歩き巫女 light idle preload:',e);
+        });
+      };
       if(typeof requestIdleCallback==='function'){
-        requestIdleCallback(run,{timeout:5000});
+        requestIdleCallback(run,{timeout:4000});
+      }else{
+        setTimeout(run,500);
+      }
+    },3000);
+
+    // Firebase共有記憶はさらに後ろへ。
+    // Web/カープ/家臣命名/tool/tairanoは完全オンデマンド。
+    setTimeout(function(){
+      var run=function(){
+        loadFirebaseIdle().catch(function(e){
+          console.error('歩き巫女 firebase idle preload:',e);
+        });
+      };
+      if(typeof requestIdleCallback==='function'){
+        requestIdleCallback(run,{timeout:6000});
       }else{
         setTimeout(run,1000);
       }
-    },6000);
+    },12000);
 
     return true;
   });
 
-  // 両方は同じタイミングで開始する。
-  // loadOrderedはscript挿入順を保持する。
   visualPromise.catch(function(e){
     console.error('歩き巫女 visual loader:',e);
   });
@@ -384,6 +444,5 @@
     window.ARUKIMIKO_SHARED.loading=false;
     console.error('歩き巫女 core loader:',e);
   });
-
   cssPromise.catch(function(e){console.error('歩き巫女 CSS:',e);});
-})();;
+})();

@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.3.8';
+  var VERSION='3.3.9';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -604,7 +604,10 @@
       }
     }catch(learningFindErr){}
 
-    var coreReady=!!(actions()&&parser()&&state()&&help()&&interpreter());
+    // HELPはv3.3.8から遅延読込。
+    // 陣法検索の実行条件にHELPまで要求すると、起動直後の検索が一時的に
+    // 「未準備」扱いになるため、検索コアだけで判定する。
+    var coreReady=!!(actions()&&parser()&&state()&&interpreter());
     if(!coreReady){
       if(window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.respond==='function'){
         try{
