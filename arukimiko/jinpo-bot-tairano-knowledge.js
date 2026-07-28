@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.2.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.3.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
 
   function S(v){
     var s=String(v==null?'':v);

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v2.3.0
+ * 歩き巫女 サイト共通ローダー v2.4.0
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,6 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
+  var ASSET_VERSION='2.8.3';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -26,10 +27,10 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'2.3.0',baseUrl:base,pageMode:mode};
+  window.ARUKIMIKO_SHARED={version:'2.4.0',baseUrl:base,pageMode:mode};
 
   function addCss(name){
-    var href=new URL(name,base).href;
+    var href=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION);
     if(document.querySelector('link[data-arukimiko-css="'+name+'"]'))return;
     var l=document.createElement('link');
     l.rel='stylesheet';l.href=href;l.setAttribute('data-arukimiko-css',name);
@@ -39,7 +40,7 @@
     return new Promise(function(resolve,reject){
       if(document.querySelector('script[data-arukimiko-script="'+name+'"]')){resolve();return;}
       var s=document.createElement('script');
-      s.src=new URL(name,base).href;s.async=false;s.setAttribute('data-arukimiko-script',name);
+      s.src=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION);s.async=false;s.setAttribute('data-arukimiko-script',name);
       s.onload=function(){resolve();};
       s.onerror=function(){reject(new Error('load failed: '+name));};
       document.head.appendChild(s);

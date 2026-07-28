@@ -1,19 +1,20 @@
 /*
- * たいらの野望 正本知識データ v1.1.0
+ * たいらの野望 正本知識データ v1.2.0
  * 2026-07-28:
  * - 天下統一奇譚6ページの公開中カウンター表を第1期取り込み。
  * - 漢字、ひらがな読み、省略入力を意味寄せするため readings / aliases / contexts を保持。
  * - 正本は公開ユーザーの会話では書き換えない。
+ * 2026-07-28 第2期: 修羅の間・天下武技大会（天/地）のカウンター33件を追加。
  */
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE_DATA)return;
   window.JINPO_TAIRANO_KNOWLEDGE_DATA={
-    version:'1.2.0',
+    version:'1.3.0',
     siteName:'たいらの野望',
     importedAt:'2026-07-28',
     facts:[
-  {
+{
     "id": "counter_oke_matsudaira_motoyasu",
     "kind": "counter",
     "canonical": "松平元康",
@@ -3085,6 +3086,1220 @@
     "location": "天下統一奇譚・二条城",
     "page": "nijoujou.html",
     "sourceLabel": "たいらの野望・天下統一奇譚・二条城"
+  },
+  {
+    "id": "counter_shura_maei_ashura",
+    "kind": "counter",
+    "canonical": "魔影阿修羅",
+    "aliases": [
+      "魔影阿修羅",
+      "魔影",
+      "阿修羅"
+    ],
+    "readings": [],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "6",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_shura_shiryu",
+    "kind": "counter",
+    "canonical": "修羅死龍",
+    "aliases": [
+      "修羅死龍",
+      "死龍"
+    ],
+    "readings": [],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "36",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_musume_mari",
+    "kind": "counter",
+    "canonical": "修羅娘まり",
+    "aliases": [
+      "修羅娘まり",
+      "娘まり",
+      "まり"
+    ],
+    "readings": [],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "56",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_hanakage_megami",
+    "kind": "counter",
+    "canonical": "花影の女神",
+    "aliases": [
+      "花影の女神",
+      "花影",
+      "女神"
+    ],
+    "readings": [
+      "はなかげのめがみ"
+    ],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "67",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_raijin",
+    "kind": "counter",
+    "canonical": "修羅雷神",
+    "aliases": [
+      "修羅雷神",
+      "雷神"
+    ],
+    "readings": [
+      "しゅららいじん"
+    ],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "2",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_dairokuten",
+    "kind": "counter",
+    "canonical": "第六天修羅王",
+    "aliases": [
+      "第六天修羅王",
+      "第六天",
+      "修羅王"
+    ],
+    "readings": [
+      "だいろくてんしゅらおう"
+    ],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "2",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_fujin",
+    "kind": "counter",
+    "canonical": "修羅風神",
+    "aliases": [
+      "修羅風神",
+      "風神"
+    ],
+    "readings": [
+      "しゅらふうじん"
+    ],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "24",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_gokkan",
+    "kind": "counter",
+    "canonical": "極寒氷牢修羅",
+    "aliases": [
+      "極寒氷牢修羅",
+      "極寒修羅",
+      "氷牢修羅"
+    ],
+    "readings": [],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "7",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_shura_jashin",
+    "kind": "counter",
+    "canonical": "修羅蛇神",
+    "aliases": [
+      "修羅蛇神",
+      "蛇神"
+    ],
+    "readings": [],
+    "contexts": [
+      "修羅の間",
+      "修羅",
+      "しゅらのま",
+      "しゅら"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "6",
+    "location": "修羅の間",
+    "page": "shura.html",
+    "sourceLabel": "たいらの野望・修羅の間"
+  },
+  {
+    "id": "counter_ten_uesugi_kenshin",
+    "kind": "counter",
+    "canonical": "上杉謙信",
+    "aliases": [
+      "上杉謙信",
+      "謙信"
+    ],
+    "readings": [
+      "うえすぎけんしん"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "125",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_takeda_shingen",
+    "kind": "counter",
+    "canonical": "武田信玄",
+    "aliases": [
+      "武田信玄",
+      "信玄"
+    ],
+    "readings": [
+      "たけだしんげん"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "124",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_hojo_ujiyasu",
+    "kind": "counter",
+    "canonical": "北条氏康",
+    "aliases": [
+      "北条氏康",
+      "氏康"
+    ],
+    "readings": [
+      "ほうじょううじやす"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "136",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_imagawa_yoshimoto",
+    "kind": "counter",
+    "canonical": "今川義元",
+    "aliases": [
+      "今川義元",
+      "義元"
+    ],
+    "readings": [
+      "いまがわよしもと"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "347",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_tokugawa_ieyasu",
+    "kind": "counter",
+    "canonical": "徳川家康",
+    "aliases": [
+      "徳川家康",
+      "家康"
+    ],
+    "readings": [
+      "とくがわいえやす"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "123",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_hashiba_hideyoshi",
+    "kind": "counter",
+    "canonical": "羽柴秀吉",
+    "aliases": [
+      "羽柴秀吉",
+      "秀吉"
+    ],
+    "readings": [
+      "はしばひでよし"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "156",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_saito_dosan",
+    "kind": "counter",
+    "canonical": "斎藤道三",
+    "aliases": [
+      "斎藤道三",
+      "道三"
+    ],
+    "readings": [
+      "さいとうどうさん"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "125",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_honganji_kennyo",
+    "kind": "counter",
+    "canonical": "本願寺顕如",
+    "aliases": [
+      "本願寺顕如",
+      "顕如"
+    ],
+    "readings": [
+      "ほんがんじけんにょ"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "137",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_asakura_yoshikage",
+    "kind": "counter",
+    "canonical": "朝倉義景",
+    "aliases": [
+      "朝倉義景",
+      "義景"
+    ],
+    "readings": [
+      "あさくらよしかげ"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "127",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_azai_nagamasa",
+    "kind": "counter",
+    "canonical": "浅井長政",
+    "aliases": [
+      "浅井長政",
+      "長政"
+    ],
+    "readings": [
+      "あざいながまさ"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "124",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_momochi_sandayu",
+    "kind": "counter",
+    "canonical": "百地三太夫",
+    "aliases": [
+      "百地三太夫",
+      "百地",
+      "三太夫"
+    ],
+    "readings": [
+      "ももちさんだゆう"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "1256",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_ashikaga_yoshiteru",
+    "kind": "counter",
+    "canonical": "足利義輝",
+    "aliases": [
+      "足利義輝",
+      "義輝"
+    ],
+    "readings": [
+      "あしかがよしてる"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "124",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_miyoshi_nagayoshi",
+    "kind": "counter",
+    "canonical": "三好長慶",
+    "aliases": [
+      "三好長慶",
+      "長慶"
+    ],
+    "readings": [
+      "みよしながよし"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "127",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_saika_magoichi",
+    "kind": "counter",
+    "canonical": "雑賀孫市",
+    "aliases": [
+      "雑賀孫市",
+      "孫市"
+    ],
+    "readings": [
+      "さいかまごいち"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "125",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_date_masamune",
+    "kind": "counter",
+    "canonical": "伊達政宗",
+    "aliases": [
+      "伊達政宗",
+      "政宗"
+    ],
+    "readings": [
+      "だてまさむね"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "236",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_ten_sanada_masayuki",
+    "kind": "counter",
+    "canonical": "真田昌幸",
+    "aliases": [
+      "真田昌幸",
+      "昌幸"
+    ],
+    "readings": [
+      "さなだまさゆき"
+    ],
+    "contexts": [
+      "天下武技大会天",
+      "天下武技大会・天",
+      "武技大会天",
+      "武技大会・天",
+      "天モード",
+      "大会天",
+      "武技天",
+      "ぶぎてん"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "123",
+    "location": "天下武技大会・天",
+    "page": "ten_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・天"
+  },
+  {
+    "id": "counter_chi_kamiizumi_nobutsuna",
+    "kind": "counter",
+    "canonical": "上泉信綱",
+    "aliases": [
+      "上泉信綱",
+      "上泉",
+      "信綱"
+    ],
+    "readings": [
+      "かみいずみのぶつな"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "12",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_tachibana_muneshige",
+    "kind": "counter",
+    "canonical": "立花宗茂",
+    "aliases": [
+      "立花宗茂",
+      "宗茂"
+    ],
+    "readings": [
+      "たちばなむねしげ"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "16",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_hosokawa_fujitaka",
+    "kind": "counter",
+    "canonical": "細川藤孝",
+    "aliases": [
+      "細川藤孝",
+      "藤孝"
+    ],
+    "readings": [
+      "ほそかわふじたか"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "125",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_kuroda_kanbei",
+    "kind": "counter",
+    "canonical": "黒田官兵衛",
+    "aliases": [
+      "黒田官兵衛",
+      "官兵衛"
+    ],
+    "readings": [
+      "くろだかんべえ"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "346",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_fuma_kotaro",
+    "kind": "counter",
+    "canonical": "風魔小太郎",
+    "aliases": [
+      "風魔小太郎",
+      "小太郎",
+      "風魔"
+    ],
+    "readings": [
+      "ふうまこたろう"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "157",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_kobayakawa_takakage",
+    "kind": "counter",
+    "canonical": "小早川隆景",
+    "aliases": [
+      "小早川隆景",
+      "隆景"
+    ],
+    "readings": [
+      "こばやかわたかかげ"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "167",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_tachibana_yamichiyo",
+    "kind": "counter",
+    "canonical": "立花闇千代",
+    "aliases": [
+      "立花闇千代",
+      "闇千代"
+    ],
+    "readings": [],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "167",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
+  },
+  {
+    "id": "counter_chi_shimazu_yoshihiro",
+    "kind": "counter",
+    "canonical": "島津義弘",
+    "aliases": [
+      "島津義弘",
+      "義弘"
+    ],
+    "readings": [
+      "しまづよしひろ"
+    ],
+    "contexts": [
+      "天下武技大会地",
+      "天下武技大会・地",
+      "武技大会地",
+      "武技大会・地",
+      "地モード",
+      "大会地",
+      "武技地",
+      "ぶぎち"
+    ],
+    "cues": [
+      "カウンター",
+      "counter",
+      "カウンタ",
+      "かうんたー",
+      "かうんた",
+      "かうん",
+      "カウン",
+      "数値",
+      "何番",
+      "いくつ"
+    ],
+    "value": "13",
+    "location": "天下武技大会・地",
+    "page": "chi_mode.html",
+    "sourceLabel": "たいらの野望・天下武技大会・地"
   }
 ],
     topics:[
