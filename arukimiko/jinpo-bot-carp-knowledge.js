@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 広島東洋カープ正本知識検索 v1.1.0
+ * 歩き巫女 広島東洋カープ正本知識検索 v1.2.0
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_CARP_KNOWLEDGE)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var D=window.JINPO_BOT_CARP_KNOWLEDGE_DATA||{};
   var RECORDS=Array.isArray(D.records)?D.records:[];
   var CURRENT=Array.isArray(D.currentPlayers)?D.currentPlayers:[];
@@ -13,6 +13,17 @@
   var ALL_NAMES=CURRENT.map(function(x){return x.name;}).concat(HIST);
   var NAME_SET={};
   ALL_NAMES.forEach(function(n){NAME_SET[n]=1;});
+
+  var ALIASES=D.aliases||{};
+  var AMBIGUOUS=D.ambiguousAliases||{};
+
+  function aliasKeys(){
+    return Object.keys(ALIASES).sort(function(a,b){return b.length-a.length;});
+  }
+
+  function ambiguousKeys(){
+    return Object.keys(AMBIGUOUS).sort(function(a,b){return b.length-a.length;});
+  }
 
   function S(v){
     var s=String(v==null?'':v);
@@ -52,15 +63,84 @@
   }
 
   function foundNames(text){
-    var t=S(text),out=[];
+    var t=S(text),out=[],seen={};
     var sorted=ALL_NAMES.slice().sort(function(a,b){return b.length-a.length;});
+
     for(var i=0;i<sorted.length;i++){
-      if(t.indexOf(sorted[i])>=0){
+      if(t.indexOf(sorted[i])>=0&&!seen[sorted[i]]){
+        seen[sorted[i]]=1;
         out.push(sorted[i]);
         if(out.length>=4)break;
       }
     }
+
+    var keys=aliasKeys();
+    for(var j=0;j<keys.length&&out.length<4;j++){
+      var alias=keys[j],full=ALIASES[alias];
+      if(t.indexOf(alias)>=0&&!seen[full]){
+        seen[full]=1;
+        out.push(full);
+      }
+    }
     return out;
+  }
+
+  function detectCurrentSubject(text){
+    var t=S(text),names=foundNames(t);
+    var ym=t.match(/((?:19|20)\d{2})年?/);
+
+    if(names.length){
+      return {
+        explicit:true,
+        kind:'player',
+        player:names[0],
+        players:names,
+        year:ym?Number(ym[1]):0
+      };
+    }
+
+    if(ym){
+      return {
+        explicit:true,
+        kind:'year',
+        player:'',
+        players:[],
+        year:Number(ym[1])
+      };
+    }
+
+    var keys=ambiguousKeys();
+    for(var i=0;i<keys.length;i++){
+      var a=keys[i];
+      if(t.indexOf(a)>=0){
+        return {
+          explicit:true,
+          kind:'ambiguous_player',
+          player:'',
+          players:[],
+          year:0,
+          alias:a,
+          candidates:(AMBIGUOUS[a]||[]).slice(0,6)
+        };
+      }
+    }
+
+    return {explicit:false,kind:'',player:'',players:[],year:0};
+  }
+
+  function ambiguityAnswer(text){
+    var sub=detectCurrentSubject(text);
+    if(sub.kind!=='ambiguous_player')return null;
+
+    return {
+      handled:true,
+      answer:'「'+sub.alias+'」だけだとカープ在籍選手の候補が複数いるのですよ。'
+        +(sub.candidates.length?' 候補：'+sub.candidates.join('、')+'。':'')
+        +' フルネームか、もう少し手がかりをください。',
+      kind:'ambiguous_player',
+      alias:sub.alias,
+      candidates:sub.candidates
+    };
   }
 
   function hasKnownEntity(text){
@@ -78,98 +158,146 @@
     return null;
   }
 
+  function contextBarrier(text){
+    var t=S(text);
+    return /天気|気温|雨|雪|台風|陣法|陣形|因縁|英傑|全MAX|九十九|鬼神石|魔導|家臣|名前考え|為替|ニュース|時刻|時間|こんにちは|こんばんは|おはよう/.test(t);
+  }
+
   function recentContext(history){
     var h=Array.isArray(history)?history:[];
     var ctx={player:'',year:0,topic:'',sourceText:''};
 
-    for(var pass=0;pass<2;pass++){
-      for(var i=h.length-1;i>=0&&i>=h.length-24;i--){
-        var x=h[i]||{};
-        if(pass===0&&x.role!=='user')continue;
-        if(pass===1&&x.role!=='assistant')continue;
+    // 古い話題を復活させない。
+    // 最大8メッセージだけ見て、別分野のユーザー発言が出たらそこで打ち切る。
+    for(var i=h.length-1,count=0;i>=0&&count<8;i--,count++){
+      var x=h[i]||{};
+      var t=S(x.text);
+      if(!t)continue;
 
-        var t=S(x.text);
-        if(!t)continue;
+      if(x.role==='user'&&contextBarrier(t))break;
 
-        if(!ctx.player){
-          var names=foundNames(t);
-          if(names.length)ctx.player=names[0];
-        }
-        if(!ctx.year){
-          var ym=t.match(/((?:19|20)\d{2})年?/);
-          if(ym)ctx.year=Number(ym[1]);
-        }
-        if(!ctx.topic){
-          if(/家族|親族|妻|嫁|奥さん|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t))ctx.topic='family';
-          else if(/怪我|けが|ケガ|故障|アキレス腱|負傷/.test(t))ctx.topic='injury';
-          else if(/逸話|伝説|名場面|エピソード|昔話/.test(t))ctx.topic='anecdote';
-          else if(/優勝|日本一|黄金期|三連覇|3連覇/.test(t))ctx.topic='championship';
-          else if(/監督|コーチ|首脳陣/.test(t))ctx.topic='manager';
-          else if(/スタメン|打順|主力|メンバー/.test(t))ctx.topic='lineup';
-          else if(/選手|どんな選手|プロフィール|経歴/.test(t))ctx.topic='player';
-        }
-        if((ctx.player||ctx.year)&&!ctx.sourceText)ctx.sourceText=t;
-        if(ctx.player&&ctx.year&&ctx.topic)break;
+      var sub=detectCurrentSubject(t);
+      if(sub.kind==='player'&&!ctx.player){
+        ctx.player=sub.player;
+        ctx.sourceText=t;
       }
+      if(sub.year&&!ctx.year){
+        ctx.year=sub.year;
+        if(!ctx.sourceText)ctx.sourceText=t;
+      }
+
+      if(!ctx.topic){
+        if(/家族|親族|妻|嫁|奥さん|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t))ctx.topic='family';
+        else if(/怪我|けが|ケガ|故障|アキレス腱|負傷/.test(t))ctx.topic='injury';
+        else if(/逸話|伝説|名場面|エピソード|昔話/.test(t))ctx.topic='anecdote';
+        else if(/優勝|日本一|黄金期|三連覇|3連覇/.test(t))ctx.topic='championship';
+        else if(/監督|コーチ|首脳陣/.test(t))ctx.topic='manager';
+        else if(/スタメン|打順|主力|メンバー/.test(t))ctx.topic='lineup';
+        else if(/選手|どんな選手|プロフィール|経歴/.test(t))ctx.topic='player';
+      }
+
+      if(ctx.player&&ctx.year&&ctx.topic)break;
     }
     return ctx;
   }
 
-  function isContextualFollowup(text,history){
-    var t=S(text),ctx=recentContext(history);
-    if(!ctx.player&&!ctx.year)return false;
-    if(t.length>36)return false;
-    if(foundNames(t).length||/(?:19|20)\d{2}/.test(t))return false;
+  function followupAttribute(text){
+    var t=S(text);
+    if(/怪我|けが|ケガ|故障|アキレス腱|負傷/.test(t))return'injury';
+    if(/家族|親族|奥さん|妻|嫁|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t))return'family';
+    if(/逸話|エピソード|昔話|伝説|名場面|他にも|もっと|別の/.test(t))return'anecdote';
+    if(/出身|生まれ|出生|どこ出身/.test(t))return'birthplace';
+    if(/背番号|何番/.test(t))return'number';
+    if(/ポジション|守備位置|何の選手/.test(t))return'position';
+    if(/在籍|何年いた|いつから|いつまで|経歴|移籍/.test(t))return'career';
+    if(/成績|打率|本塁打|ホームラン|打点|防御率|勝利|セーブ|記録|タイトル/.test(t))return'record';
+    if(/引退|辞めた|やめた/.test(t))return'retirement';
+    if(/監督|コーチ|首脳陣/.test(t))return'manager';
+    if(/主力|メンバー|選手|打線/.test(t))return'players';
+    if(/スタメン|打順/.test(t))return'lineup';
+    if(/順位/.test(t))return'rank';
+    if(/優勝|日本一/.test(t))return'championship';
+    if(/前年|翌年|次の年|その年/.test(t))return'relative_year';
+    if(/どんな選手|どんな人|プロフィール|人物|詳しく/.test(t))return'profile';
+    return'';
+  }
 
-    return /怪我|けが|ケガ|故障|アキレス腱|家族|親族|奥さん|妻|嫁|夫|父|母|兄|弟|姉|妹|娘|息子|逸話|エピソード|昔話|伝説|他の逸話|もっと|他にも|監督|コーチ|主力|メンバー|スタメン|打順|順位|成績|優勝|日本一|前年|翌年|次の年|その年|どんな選手|経歴|プロフィール/.test(t);
+  function isContextualFollowup(text,history){
+    var t=S(text);
+    var current=detectCurrentSubject(t);
+
+    // 今の発言に新しい人物/年度があるなら、過去文脈を使わない。
+    if(current.explicit)return false;
+
+    var ctx=recentContext(history);
+    if(!ctx.player&&!ctx.year)return false;
+    if(t.length>42)return false;
+    return !!followupAttribute(t);
   }
 
   function resolveFollowup(text,opt){
     opt=opt||{};
-    var t=S(text),ctx=recentContext(opt.history||[]);
+    var t=S(text),current=detectCurrentSubject(t);
 
-    if(!isContextualFollowup(t,opt.history||[])){
+    // 最重要:
+    // 現在の発言に人物名・姓・年度がある場合は必ず現在発言を優先。
+    if(current.explicit){
+      return {
+        text:t,
+        resolved:false,
+        currentSubject:true,
+        context:{
+          player:current.player||'',
+          year:current.year||0,
+          topic:'',
+          sourceText:t,
+          ambiguous:current.kind==='ambiguous_player'
+        }
+      };
+    }
+
+    var ctx=recentContext(opt.history||[]);
+    var attr=followupAttribute(t);
+    if(!attr||(!ctx.player&&!ctx.year)){
       return {text:t,resolved:false,context:ctx};
     }
 
     if(ctx.year){
-      if(/(?:その)?前年|一年前|1年前/.test(t)){
-        var py=ctx.year-1;
-        return {text:py+'年のカープの順位と監督は？',resolved:true,context:{player:ctx.player,year:py,topic:'season'}};
+      if(attr==='relative_year'){
+        if(/前年/.test(t)){
+          var py=ctx.year-1;
+          return {text:py+'年のカープの順位と監督は？',resolved:true,context:{player:'',year:py,topic:'season'}};
+        }
+        if(/翌年|次の年/.test(t)){
+          var ny=ctx.year+1;
+          return {text:ny+'年のカープの順位と監督は？',resolved:true,context:{player:'',year:ny,topic:'season'}};
+        }
       }
-      if(/翌年|次の年|その次の年/.test(t)){
-        var ny=ctx.year+1;
-        return {text:ny+'年のカープの順位と監督は？',resolved:true,context:{player:ctx.player,year:ny,topic:'season'}};
-      }
-      if(/監督|コーチ|首脳陣/.test(t))
-        return {text:ctx.year+'年のカープの監督は？',resolved:true,context:ctx};
-      if(/主力|メンバー|選手|打線/.test(t))
-        return {text:ctx.year+'年のカープの主力選手は？',resolved:true,context:ctx};
-      if(/スタメン|打順/.test(t))
-        return {text:ctx.year+'年のカープのスタメンは？',resolved:true,context:ctx};
-      if(/順位|成績/.test(t))
-        return {text:ctx.year+'年のカープの順位と成績は？',resolved:true,context:ctx};
-      if(/優勝|日本一/.test(t))
-        return {text:ctx.year+'年のカープの優勝は？',resolved:true,context:ctx};
+      if(attr==='manager')return {text:ctx.year+'年のカープの監督は？',resolved:true,context:ctx};
+      if(attr==='players')return {text:ctx.year+'年のカープの主力選手は？',resolved:true,context:ctx};
+      if(attr==='lineup')return {text:ctx.year+'年のカープのスタメンは？',resolved:true,context:ctx};
+      if(attr==='rank'||attr==='record')return {text:ctx.year+'年のカープの順位と成績は？',resolved:true,context:ctx};
+      if(attr==='championship')return {text:ctx.year+'年のカープの優勝は？',resolved:true,context:ctx};
     }
 
     if(ctx.player){
-      if(/怪我|けが|ケガ|故障|アキレス腱|負傷/.test(t))
-        return {text:ctx.player+'の怪我・故障の逸話',resolved:true,context:ctx};
-
-      if(/家族|親族|奥さん|妻|嫁|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t)){
+      if(attr==='injury')return {text:ctx.player+'の怪我・故障の逸話',resolved:true,context:ctx};
+      if(attr==='family'){
         var tail=t.replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'').replace(/[？?！!。]+$/,'');
         return {text:ctx.player+'の'+tail,resolved:true,context:ctx};
       }
-
-      if(/他の逸話|別の逸話|もっと.*逸話|他にも|もっと/.test(t))
-        return {text:ctx.player+'の他の逸話',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'player_more'}};
-
-      if(/逸話|エピソード|昔話|伝説|名場面/.test(t))
+      if(attr==='anecdote'){
+        if(/他にも|もっと|別の|他の逸話/.test(t))
+          return {text:ctx.player+'の他の逸話',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'player_more'}};
         return {text:ctx.player+'の逸話',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'anecdote'}};
-
-      if(/どんな選手|経歴|プロフィール|どんな人/.test(t))
-        return {text:ctx.player+'について',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'player'}};
+      }
+      if(attr==='birthplace')return {text:ctx.player+'の出身・出生地',resolved:true,context:ctx};
+      if(attr==='number')return {text:ctx.player+'の背番号',resolved:true,context:ctx};
+      if(attr==='position')return {text:ctx.player+'のポジション・守備位置',resolved:true,context:ctx};
+      if(attr==='career')return {text:ctx.player+'の在籍年・経歴・移籍',resolved:true,context:ctx};
+      if(attr==='record')return {text:ctx.player+'の成績・記録・タイトル',resolved:true,context:ctx};
+      if(attr==='retirement')return {text:ctx.player+'の引退・退団',resolved:true,context:ctx};
+      if(attr==='profile')return {text:ctx.player+'について',resolved:true,context:ctx};
     }
 
     return {text:t,resolved:false,context:ctx};
@@ -497,6 +625,9 @@
 
     if(isRealtimeQuery(t))return null;
 
+    var amb=ambiguityAnswer(t);
+    if(amb)return amb;
+
     if(resolved.context&&resolved.context.player&&resolved.context.topic==='player_more'){
       var pm=nextPlayerStory(resolved.context.player);
       pm.resolvedQuery=t;pm.context=resolved.context;
@@ -530,7 +661,10 @@
     answer:answer,
     search:search,
     queryTerms:queryTerms,
+    detectCurrentSubject:detectCurrentSubject,
+    ambiguityAnswer:ambiguityAnswer,
     recentContext:recentContext,
+    followupAttribute:followupAttribute,
     isContextualFollowup:isContextualFollowup,
     resolveFollowup:resolveFollowup,
     playerRelatedRecords:playerRelatedRecords,

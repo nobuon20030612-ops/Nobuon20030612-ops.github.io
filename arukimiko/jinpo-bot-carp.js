@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 広島東洋カープ専用会話 v1.9.0
+ * 歩き巫女 広島東洋カープ専用会話 v2.0.0
  * - カープの基本知識・歴史を専用返答
  * - 試合結果/順位/日程/主要成績は NPB公式ページを Reader 経由で自動確認
  * - 最新ニュース/先発/スタメン/登録関連は既存の無料Webニュース検索へフォールバック
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='1.9.0';
+  var VERSION='2.0.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
@@ -75,6 +75,10 @@
     }
     var kb=knowledge();
     if(kb&&typeof kb.hasKnownEntity==='function'&&kb.hasKnownEntity(t))return true;
+    if(kb&&typeof kb.detectCurrentSubject==='function'){
+      var sub=kb.detectCurrentSubject(t);
+      if(sub&&sub.explicit)return true;
+    }
     return false;
   }
 
