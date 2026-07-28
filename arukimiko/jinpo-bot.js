@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.0.8';
+  var VERSION='3.0.9';
   var MODE='ローカル歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -33,6 +33,46 @@
 
   function isRestorableAction(name){return ['apply_result','apply_swap','clear_placement','set_owned_hero','set_owned_hero_auto','clear_owned_hero','clear_owned_heroes','set_excluded_hero','clear_excluded_heroes','load_saved','import_json'].indexOf(name)>=0;}
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
+
+  function resetConversationState(opt){
+    opt=opt||{};
+    var epoch=0,errors=[];
+
+    try{
+      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
+        epoch=window.JINPO_BOT_AI_BRAIN.resetConversationContext();
+      }
+    }catch(e){errors.push('ai');}
+
+    try{
+      if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
+        window.JINPO_BOT_DIALOG.clearPending();
+      }
+    }catch(e){errors.push('dialog');}
+
+    try{
+      if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.clear==='function'){
+        window.JINPO_BOT_KASHIN_NAME.clear();
+      }else if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.pause==='function'){
+        window.JINPO_BOT_KASHIN_NAME.pause();
+      }
+    }catch(e){errors.push('kashin');}
+
+    try{
+      if(window.JINPO_BOT_GUIDE&&typeof window.JINPO_BOT_GUIDE.resetFlow==='function'){
+        window.JINPO_BOT_GUIDE.resetFlow();
+      }
+    }catch(e){errors.push('guide');}
+
+    return {
+      ok:errors.length===0,
+      contextEpoch:epoch,
+      errors:errors,
+      source:String(opt.source||'')
+    };
+  }
+
+  window.JINPO_BOT_RESET_CONVERSATION=resetConversationState;
 
   async function handle(payload){
     var payloadObj=typeof payload==='string'?{message:payload,history:[]}:((payload&&typeof payload==='object')?payload:{});
@@ -66,17 +106,11 @@
 
     // 「話題リセット」は画面の過去ログを消さず、AIが参照する会話文脈だけをここから新しくする。
     if(/^(?:話題|文脈|今の話)(?:を)?(?:リセット|クリア)(?:して)?[。！!？?]*$|^(?:新しい話(?:にしよう|をしよう)?|ここから別の話(?:にしよう)?|最初から話そう)[。！!？?]*$/.test(originalMessage.trim())){
-      resetTransientConversationState();
-      var epoch=0;
-      try{
-        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
-          epoch=window.JINPO_BOT_AI_BRAIN.resetConversationContext();
-        }
-      }catch(e){}
+      var resetResult=resetConversationState({source:'text'});
       return {
-        answer:'ここまでの途中状態を切って、ここから新しい話として受け取るのですよ。画面に見えている過去ログは消していません。',
+        answer:'ここまでの会話状態をリセットしました。画面の過去ログは残したまま、ここから新しい話として受け取ります。',
         sources:[],links:[],mode:'会話制御',
-        data:{topicReset:true,contextEpoch:epoch}
+        data:{topicReset:true,contextEpoch:resetResult.contextEpoch||0,resetResult:resetResult}
       };
     }
 

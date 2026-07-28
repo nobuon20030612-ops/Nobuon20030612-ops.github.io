@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.7
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v0.9
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -11,7 +11,7 @@
   var STORAGE_KEY = 'jinpoAiChatUi.v1';
   var HISTORY_KEY = 'jinpoAiChatHistory.v1';
   var MAX_HISTORY = 100;
-  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn;
+  var root, launcher, restoreBtn, win, header, messages, input, sendBtn, statusEl, minBtn, resetBtn;
   var brainStatus='AI確認中…';
   var pendingHistoryClear = false;
   var restorePositionTimer = 0;
@@ -86,9 +86,15 @@
     htext.appendChild(statusEl); header.appendChild(htext);
 
     var actions = el('div','jinpoAiHeaderActions');
+    resetBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderResetBtn',{
+      type:'button',
+      'aria-label':'会話をリセット',
+      title:'会話の流れだけをリセット',
+      text:'リセット'
+    });
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
-    actions.appendChild(minBtn); actions.appendChild(hideBtn); header.appendChild(actions);
+    actions.appendChild(resetBtn); actions.appendChild(minBtn); actions.appendChild(hideBtn); header.appendChild(actions);
 
     messages = el('div','jinpoAiMessages',{role:'log','aria-label':'会話履歴'});
     var composer = el('div','jinpoAiComposer');
@@ -106,6 +112,7 @@
     root.appendChild(launcher); root.appendChild(win); root.appendChild(restoreBtn); document.body.appendChild(root);
 
     launcher.addEventListener('click', function(){ if(win.classList.contains('isOpen')) close(); else open(); });
+    resetBtn.addEventListener('click', function(ev){ ev.stopPropagation(); resetConversationFromButton(); });
     minBtn.addEventListener('click', function(ev){ ev.stopPropagation(); toggleMinimize(); });
     hideBtn.addEventListener('click', function(ev){ ev.stopPropagation(); hideAll(); });
     restoreBtn.addEventListener('click', function(ev){ ev.stopPropagation(); showLauncher(); open(); });
@@ -378,6 +385,49 @@
   function clearHistoryStorage(){
     memoryHistory=[];
     try{localStorage.removeItem(HISTORY_KEY);}catch(e){}
+    try{
+      if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.clearConversationContext==='function'){
+        window.JINPO_BOT_AI_BRAIN.clearConversationContext();
+      }
+    }catch(e){}
+  }
+
+  function resetConversationFromButton(){
+    if(busy)return;
+
+    pendingHistoryClear=false;
+
+    var result={ok:true};
+    try{
+      if(window.JINPO_BOT_RESET_CONVERSATION&&typeof window.JINPO_BOT_RESET_CONVERSATION==='function'){
+        result=window.JINPO_BOT_RESET_CONVERSATION({source:'button'})||result;
+      }else{
+        if(window.JINPO_BOT_AI_BRAIN&&typeof window.JINPO_BOT_AI_BRAIN.resetConversationContext==='function'){
+          window.JINPO_BOT_AI_BRAIN.resetConversationContext();
+        }
+        if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
+          window.JINPO_BOT_DIALOG.clearPending();
+        }
+        if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.clear==='function'){
+          window.JINPO_BOT_KASHIN_NAME.clear();
+        }
+        if(window.JINPO_BOT_GUIDE&&typeof window.JINPO_BOT_GUIDE.resetFlow==='function'){
+          window.JINPO_BOT_GUIDE.resetFlow();
+        }
+      }
+    }catch(e){
+      result={ok:false,error:String(e&&e.message||e)};
+    }
+
+    // Visible log is intentionally preserved. Only the context from here onward is fresh.
+    addBubble(
+      'system',
+      result&&result.ok===false
+        ? '会話のリセット中に一部エラーがありました。もう一度押すか「話題リセット」と送ってください。'
+        : '── 会話をリセットしました。ここから新しい話です。 ──'
+    );
+
+    try{input.focus();}catch(e){}
   }
 
   async function submit(){
@@ -457,11 +507,12 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'0.8.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'0.9.0', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
     getHistory:currentHistory,
+    resetConversation:resetConversationFromButton,
     setBrainStatus:setBrainStatus,
     getBrainStatus:function(){return brainStatus;}
   };

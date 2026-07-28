@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 陣法Bot クリック案内 UI v2.4.0
+ * たいらの野望 / 陣法Bot クリック案内 UI v2.4.1
  * 既存チャットを変更せず、会話欄の下に「かんたん操作」パネルを後付けする。
  * 手入力は常時そのまま利用できる。
  */
@@ -7,7 +7,7 @@
   'use strict';
   if(window.JINPO_BOT_GUIDE) return;
 
-  var VERSION='2.4.0';
+  var VERSION='2.4.1';
   var panel=null, body=null, title=null, summary=null, observer=null;
   var flow={mode:'main',step:'',draft:{}};
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
@@ -406,6 +406,6 @@
   function install(){
     if(!guideAllowed())return false;if(attach())return;var tries=0,t=setInterval(function(){tries++;if(attach()||tries>80)clearInterval(t);},100);}
 
-  window.JINPO_BOT_GUIDE={version:VERSION,install:install,openMenu:renderMain,startSearch:startSearch,renderRecommendMenu:renderRecommendMenu,renderResultsMenu:renderResultsMenu,renderHeroMenu:renderHeroMenu,renderSwapMenu:renderSwapMenu,renderEnhanceMenu:renderEnhanceMenu,renderOtherMenu:renderOtherMenu,renderAdvancedMenu:renderAdvancedMenu,renderHelpMenu:renderHelpMenu,renderSuggestSettings:renderSuggestSettings,send:send,getDraft:function(){return JSON.parse(JSON.stringify(flow));},buildSearchText:buildSearchText};
+  window.JINPO_BOT_GUIDE={version:VERSION,install:install,openMenu:renderMain,resetFlow:resetFlow,startSearch:startSearch,renderRecommendMenu:renderRecommendMenu,renderResultsMenu:renderResultsMenu,renderHeroMenu:renderHeroMenu,renderSwapMenu:renderSwapMenu,renderEnhanceMenu:renderEnhanceMenu,renderOtherMenu:renderOtherMenu,renderAdvancedMenu:renderAdvancedMenu,renderHelpMenu:renderHelpMenu,renderSuggestSettings:renderSuggestSettings,send:send,getDraft:function(){return JSON.parse(JSON.stringify(flow));},buildSearchText:buildSearchText};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
