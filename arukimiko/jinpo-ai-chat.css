@@ -50,7 +50,8 @@
 
 .jinpoAiMessages{overflow:auto;padding:12px;overscroll-behavior:contain;background:radial-gradient(circle at top right,rgba(122,33,24,.16),transparent 38%)}
 .jinpoAiMessageRow{display:flex;margin:0 0 10px 0}
-.jinpoAiMessageRow.user{justify-content:flex-end}.jinpoAiMessageRow.assistant{justify-content:flex-start}.jinpoAiMessageRow.system{justify-content:center}
+.jinpoAiMessageRow.user{justify-content:flex-end}.jinpoAiMessageRow.assistant{justify-content:flex-start;flex-direction:column;align-items:flex-start}.jinpoAiMessageRow.system{justify-content:center}
+.jinpoAiMessageCharacter{display:block;width:72px;height:auto;max-height:108px;object-fit:contain;object-position:left bottom;margin:0 0 4px 2px;pointer-events:none;user-select:none}
 .jinpoAiBubble{max-width:86%;padding:9px 11px;border-radius:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;font-size:13px;border:1px solid rgba(231,189,92,.24)}
 .jinpoAiMessageRow.assistant .jinpoAiBubble{background:#16100a;color:var(--jinpo-ai-text);border-top-left-radius:4px}
 .jinpoAiMessageRow.user .jinpoAiBubble{background:linear-gradient(145deg,#6f2419,#42150f);color:#fff7e8;border-color:rgba(231,189,92,.58);border-top-right-radius:4px}
@@ -78,7 +79,7 @@
   .jinpoAiLauncherLabel{font-size:10px}
   #jinpoAiWindow{left:8px!important;right:8px!important;top:8px!important;bottom:88px!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;resize:none;border-radius:12px}
   #jinpoAiWindow.isMinimized{left:auto!important;right:10px!important;top:auto!important;bottom:92px!important;width:min(300px,calc(100vw - 20px))!important;height:auto!important}
-  .jinpoAiHeader{cursor:default;touch-action:auto}.jinpoAiBubble{max-width:91%;font-size:13px}
+  .jinpoAiHeader{cursor:default;touch-action:auto}.jinpoAiBubble{max-width:91%;font-size:13px}.jinpoAiMessageCharacter{width:60px;max-height:90px}
 }
 
 @media(prefers-reduced-motion:reduce){#jinpoAiRoot *{animation:none!important;transition:none!important}}

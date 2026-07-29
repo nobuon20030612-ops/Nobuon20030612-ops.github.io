@@ -363,6 +363,10 @@
     if(/(?:意味|何のこと|なにのこと|わかってる|分かってる|理解してる).*(?:カープ|かーぷ)|(?:カープ|かーぷ).*(?:意味|何のこと|なにのこと|わかってる|分かってる|理解してる)/.test(t)){
       return 'はい。ここでいう「カープ」は広島東洋カープのこととして理解しているのですよ。試合・順位・選手・成績の続きも、カープの話として受け取ります。';
     }
+    if(/(?:カープ|広島東洋カープ|かーぷ).*(?:どう思う|どう感じる|どんな印象|印象は)|(?:どう思う|どう感じる|どんな印象).*(?:カープ|広島東洋カープ|かーぷ)/.test(t))return pick([
+      '私は、カープは成績だけでなく、広島という地域と長く一緒に歩んできた歴史まで含めて語れる球団だと思います。強い時代だけでなく、そこへ至るまでの話が多いのも魅力なのですよ。',
+      '私の印象では、カープは「地域とのつながり」と「時代ごとの物語」がかなり濃い球団です。優勝年や名選手だけでなく、その前後まで話が続くところが面白いと思います。'
+    ]);
     if(/好き|ファン|応援して|応援する|どこ推し|推して/.test(t))return pick([
       'カープの話は大歓迎なのですよ。試合結果や順位みたいな今の情報なら、その場で確認してから話すのです。',
       'カープですね。赤い話題が来ると少し元気になるのですよ。最新の試合や順位は、覚え込みではなくWebで確認して答えるのです。',
@@ -557,6 +561,56 @@
     return false;
   }
 
+  function isGroundedOpinionQuery(text){
+    var t=S(text);if(!t||/今日|現在|今の|いまの|最近|最新|今季|今シーズン/.test(t))return false;
+    return /(?:どう思う|どう感じる|率直にどう|どんな印象|印象は)/.test(t);
+  }
+
+  function cleanOpinionSubject(text){
+    return S(text)
+      .replace(/[、,\s]*(?:について)?[、,\s]*(?:どう思う|どう感じる|率直にどう|どんな印象|印象は)(?:の|かな|ですか)?[？?。！!\s]*$/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+  }
+
+  function opinionHeadings(answer,player){
+    var out=[],seen={};
+    String(answer||'').replace(/【([^】]+)】/g,function(_,h){
+      h=S(h).replace(/^\d{4}年[:：]?/,'').replace(/^表\d+[:：]?/,'').trim();
+      // 見出しは人名を無理に削らない。「黒田博樹の広島復帰」の方が自然で、正本表記も保てる。
+      if(!h||/^(?:人物|関係|概要|人物 関係 概要)$/.test(h)||seen[h])return'';
+      seen[h]=1;out.push(h);return'';
+    });
+    return out.slice(0,3);
+  }
+
+  // 人物への「どう思う？」は、通常Botが雰囲気で人物評を作らず、
+  // カープ正本に実際に残っている出来事だけを根拠に短い印象へ変換する。
+  function groundedOpinionReply(text,kb,opt){
+    if(!kb||typeof kb.answer!=='function'||!isGroundedOpinionQuery(text))return null;
+    var subject=cleanOpinionSubject(text);
+    if(!subject||/家族|親族|父|母|兄|弟|姉|妹|妻|夫|息子|娘|成績|記録|順位|日程|結果/.test(subject))return null;
+    var names=typeof kb.foundNames==='function'?(kb.foundNames(subject)||[]):[];
+    if(names.length!==1)return null;
+    var player=names[0],kr=kb.answer(player+'について教えて',{history:(opt&&opt.history)||[]});
+    if(!kr||!kr.handled)return null;
+    var headings=opinionHeadings(kr.answer,player);
+    if(!headings.length)return null;
+    var notable=headings.filter(function(h){return /復帰|優勝|日本一|記録|受賞|名場面|抱擁|活躍|移籍|入団|引退|連覇|タイトル/.test(h);});
+    var chosen=(notable.length?notable:headings).slice(0,2);
+    var reason=chosen.map(function(h){return '「'+h+'」';}).join('や');
+    var tone=notable.length
+      ?'成績だけでなく、カープ史の節目と結びついて語られる存在感の大きい人物'
+      :'正本の中でも複数の角度から話が残っている、印象の強い人物';
+    return {
+      handled:true,
+      answer:'正本で確認できる内容を踏まえると、私は'+player+'は'+tone+'だと思います。'+reason+'のような記録が残っているからです。\n好き嫌いを事実みたいに決めるのではなく、こういう確認できる出来事を土台にした印象です。',
+      sources:[],
+      mode:'カープ正本ベース会話',
+      data:{carpKnowledge:true,groundedOpinion:true,player:player,hits:kr.hits||[]}
+    };
+  }
+
   async function respond(text,opt){
     opt=opt||{};
     var t=S(text);
@@ -567,6 +621,9 @@
     }
 
     var kb=knowledge();
+
+    var groundedOpinion=groundedOpinionReply(t,kb,opt);
+    if(groundedOpinion)return groundedOpinion;
 
     // 人物名・年度を省略した追質問を正本履歴から補完。
     if(!isCarp(t)&&kb&&typeof kb.resolveFollowup==='function'){

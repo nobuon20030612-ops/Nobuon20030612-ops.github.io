@@ -1,0 +1,68 @@
+歩き巫女 開発チェックポイント引継ぎ
+作成日: 2026-07-29
+用途: チャット上限・セッション切替に備えた退避専用。サイトへそのまま反映する前提ではない。
+
+【最重要方針】
+- Gemini等の外部生成AIは完全禁止・再導入しない。
+- 完全ローカルBot＋正本＋陣法実データ＋Firebase無料機能の方針。
+- ユーザー指示にない機能追加・画像生成・画像編集を勝手にしない。
+- ZIP化・サイト反映は細かく行わず、複数修正をまとめた安定版のみ。
+- このZIPはサイト反映回数を増やさないための「退避用チェックポイント」。
+
+【現在のUI画像仕様】
+1. 通常表示のBot枠上: assets/arukimiko-chat-top.png（もたれ掛かる歩き巫女）
+2. 最小化時: assets/arukimiko-minimized.png（全身歩き巫女）
+3. Bot各発言の文章上・左寄せ: assets/arukimiko-message.png（指定されたメッセージ用画像）
+- ユーザー発言・システム表示にはメッセージ画像を出さない。
+- 指定画像そのものは加工しない。
+
+【v3.21.1以降、現開発版へ積み上げ済みの主な会話強化】
+- 口語・短文・崩れた日本語への対応拡大。
+- 長期会話、話題枝、保留、伏線、並行話題、話題復帰。
+- 人物文脈と一般トピック文脈の分離。
+- 人物名省略追質問（何歳、家族、現役、引退、出身、身長等）の主語補完。
+- 一般テーマ省略追質問（料金、無料、安全、使い方、注意点、初心者向け、将来性等）の主題継続。
+- 「前のやつ」「その前」「もう片方」「前者/後者」等の参照解決。
+- 一般名詞・UI名・ゲーム機能名を人物と誤認しない対策。
+- 分割発話（例: 黒田の → 家族の → 逸話）の連結。
+- 言い直し・訂正・補足の区別。
+- 否定、二重否定、否定疑問、混合感情、不確実表現の扱い。
+- 単なる近況や愚痴に勝手な助言を始めない。
+- 過去発言照合で、質問文を断定記憶とみなさない／意味逆転を一致させない。
+- 好み・選択の現在/過去、否定付き好みの区別。
+- 複数質問・別主語複合質問の安全な分解。
+- Gemini削除後の旧AI接続文言・経路の残骸除去。
+
+【直近で確認していた次の強化点】
+- 「前に○○って言ってたよね？」の一般履歴照合と、好み・選択記憶の優先順位をさらに精密化。
+- 複数一般テーマの長期並行会話の精度向上。
+- 長文中の主語切替・複数観点質問の追加境界テスト。
+
+【現在の自動テスト結果】
+- test_character_states.js: 8/8 PASS
+- test_colloquial_round3.js: 88/88 PASS
+- test_compound_aspects_vnext.js: 8/8 PASS
+- test_compound_subject_switch_vnext.js: 7/7 PASS
+- test_context_semantics_vnext.js: 78/78 PASS
+- test_deictic_longchat_vnext.js: 13/13 PASS
+- test_entity_type_safety_vnext.js: 21/21 PASS
+- test_everyday_natural_vnext.js: 52/52 PASS
+- test_general_topic_followup_vnext.js: 65/65 PASS
+- test_incremental_repair_vnext.js: 28/28 PASS
+- test_language_nuance_vnext.js: 33/33 PASS
+- test_longchat_round2.js: 36/36 PASS
+- test_message_character.js: 11/11 PASS
+- test_named_history_resume_vnext.js: 6/6 PASS
+- test_natural_batch.js: 37/37 PASS
+- test_parallel_general_topics_vnext.js: 14/14 PASS
+- test_statement_memory_priority_vnext.js: 18/18 PASS
+- tools/test_local_conversation.js: 195/195 PASS
+- tools/test_local_specialist_conversation.js: 9/9 PASS
+合計: 727/727 PASS
+- tools/verify_local_only.py: PASS
+- JavaScript構文: 40/40 PASS
+
+【再開時】
+このチェックポイントZIPを展開し、arukimiko/ を開発元として使用する。
+まず tools/verify_local_only.py と既存test_*.jsを実行し、PASSを基準点として次の修正を行う。
+サイトへは、ユーザーが反映を指示するか、十分まとまった安定版になるまでアップロードしない。

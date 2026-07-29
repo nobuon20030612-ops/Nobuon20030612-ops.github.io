@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.3.0';
+  var VERSION='3.4.0-dev';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -43,9 +43,120 @@
     return S(v).toLowerCase().replace(/[？?！!。、・「」『』【】（）()\[\]［］\s]/g,'');
   }
 
+  // ラフな日本語のうち、意味がほぼ一意な短い崩れだけを会話判定用に正規化する。
+  // 固有名詞・ゲーム用語・数値は触らない。広い自動訂正は誤認の原因になるため行わない。
+  function normalizeCasualInput(v){
+    var original=S(v),t=original;
+    if(!t)return {text:'',changed:false,original:original};
+    var rules=[
+      [/ど[ー~〜～]?ゆ[ー]?こと/g,'どういうこと'],
+      [/どいうこと/g,'どういうこと'],
+      [/そ[ー~〜～]?ゆ[ー]?こと/g,'そういうこと'],
+      [/そいうこと/g,'そういうこと'],
+      [/ど[ー~〜～]?した(?:の|ん)?(?=[？?！!。\s]*$)/g,'どうした'],
+      [/ど[ー~〜～]?しよ(?:う)?(?=[かな？?！!。\s]*$)/g,'どうしよう'],
+      [/^(?:もっかい|もっぺん)(?=[お願いして教説明？?！!。\s]*$)/g,'もう一回'],
+      [/わかた(?=[よね？?！!。\s]*$)/g,'わかった'],
+      [/りょ[ー~〜～]?かい(?=[よね？?！!。\s]*$)/g,'了解'],
+      [/りょー(?=[！!。\s]*$)/g,'了解'],
+      [/^りょ(?=[！!。？?\s]*$)/g,'了解'],
+      [/おけ(?=[！!。\s]*$)/g,'OK'],
+      [/おっけ(?=[！!。\s]*$)/g,'OK'],
+      [/そ[ー~〜～]+なんだ(?=[ねよな？?！!。\s]*$)/g,'そうなんだ'],
+      [/そ[ー~〜～]+なの(?=[かね？?！!。\s]*$)/g,'そうなの'],
+      [/そなんだ(?=[ねよな？?！!。\s]*$)/g,'そうなんだ'],
+      [/そ[ー~〜～]+か(?=[なね？?！!。\s]*$)/g,'そうか'],
+      [/どうなん(?=[？?！!。\s]*$)/g,'どうなの'],
+      [/^(?:んで|そんで|ほんで)(?=[？?！!。…\s]*$)/g,'それで'],
+      [/^(?:だる|だりぃ|だりい)(?=[ねなよわ？?！!。…\s]*$)/g,'だるい'],
+      [/^(?:ねむ|ねみぃ|ねみい)(?=[ねなよわ？?！!。…\s]*$)/g,'眠い'],
+      [/^しんど(?=[ねなよわ？?！!。…\s]*$)/g,'しんどい'],
+      [/^つら(?=[ねなよわ？?！!。…\s]*$)/g,'つらい'],
+      [/^(?:まじそれ|マジそれ)(?=[ねなよわ？?！!。…\s]*$)/g,'それな'],
+      [/^(?:ま[ー〜～]?ね|まぁね)(?=[？?！!。…\s]*$)/g,'まあね'],
+      [/^(?:まぁ|まー)[、,\s]*いっか(?=[？?！!。…\s]*$)/g,'まあいっか'],
+      [/^そなん(?=[ねなよわ？?！!。…\s]*$)/g,'そうなん'],
+      [/^あ[ー~〜～]*そういう(?=[？?！!。\s]*$)/g,'そういうことね'],
+      [/^そっか[ー~〜～]+(?=[？?！!。\s]*$)/g,'そっか'],
+      [/まぢ(?=(?:で)?[？?！!。\s]*$)/g,'マジ']
+    ];
+    for(var i=0;i<rules.length;i++)t=t.replace(rules[i][0],rules[i][1]);
+    return {text:t,changed:t!==original,original:original};
+  }
+
+
+  // 入力途中で送信された短い断片を保守的に検出する。
+  // 「黒田の」「明日は」「全MAXで」のように助詞で終わり、述語がまだ無い形だけを対象にする。
+  // 「それで」「ところで」など、それ自体が会話接続として成立する語は断片扱いしない。
+  function isOpenUserFragment(text){
+    var t=S(text);
+    if(!t||t.length>34||/[？?！!。]/.test(t))return false;
+    if(/^(?:それで|で|そんで|ほんで|それから|あと|ちなみに|そういえば|ところで|でも|ただ|けど|とはいえ|まあ|今日はここまで|きょうはここまで|ここまで|一旦ここまで|いったんここまで)$/.test(t))return false;
+    if(/^(?:うん|はい|いや|了解|わかった|分かった|なるほど|そっか|そうなんだ|マジ|まじ|こんにちは|こんにちわ|こんばんは|こんばんわ|おはよう|おはよ|やあ|やっほ|やっほー)$/.test(t))return false;
+    // 「について」は単独でも話題指定として成立しやすいので、断片にはしない。
+    if(/について$/.test(t))return false;
+    return /(?:の|は|が|を|に|へ|で|と|から|まで|より)$/.test(t);
+  }
+
+  function previousOpenUserFragment(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),parts=[],lastIndex=-1,userSeen=0;
+    for(var i=h.length-1;i>=0&&userSeen<4;i--){
+      var x=h[i];if(!x||x.role!=='user')continue;
+      userSeen++;
+      var t=S(x.text);if(!t)continue;
+      if(!isOpenUserFragment(t))break;
+      parts.unshift(t);lastIndex=i;
+    }
+    if(!parts.length)return null;
+    return {text:parts.join(''),parts:parts,index:lastIndex};
+  }
+
+  // 2回に分かれて送られた一つの発話をつなぐ。
+  // 例: 「黒田の」→「家族について」 / 「全MAXで」→「腕力高いの」
+  function stitchUserFragment(text,history){
+    var t=S(text);
+    if(!t||t.length>96||isExplicitTopicShift(t))return null;
+    if(isFollowupOnlyUtterance(t))return null;
+    if(/^(?:いや|違う|ちがう|訂正|ごめん|やっぱ|やっぱり)/.test(t))return null;
+    if(/^(?:もういい|いいや|やめ(?:る|とく|ておく)?|なし|ナシ|今のなし|忘れて|気にしない|気にしなくていい)[。！!？?\s]*$/.test(t))return null;
+    var prev=previousOpenUserFragment(history,t);if(!prev)return null;
+    var joined=S(prev.text+t);
+    if(!joined||joined===t||joined.length>128)return null;
+    return {message:joined,fragment:prev.text,current:t,kind:'stitched_user_fragment'};
+  }
+
+  // 同じ発話の途中での自己訂正を処理する。
+  // 「黒田の家族、いや成績を教えて」のように観点だけ直した場合は主語を保持し、
+  // 「黒田じゃなくて新井」のように訂正後が十分な文なら後半を優先する。
+  function inlineSelfCorrection(text){
+    var t=S(text),m,left,right;
+    if(!t)return {text:t,changed:false,type:'none'};
+
+    m=t.match(/^(.{1,80}?)(?:じゃなくて|ではなくて|じゃなく|ではなく)[、,\s]*(.{1,100})$/);
+    if(m){left=S(m[1]);right=S(m[2]);}
+    if(!m){
+      m=t.match(/^(.{1,80}?)[、,\s]+(?:いや|違う|ちがう|訂正(?:すると)?|ごめん(?:ね)?)[、,\s]*(.{1,100})$/);
+      if(m){left=S(m[1]);right=S(m[2]);}
+    }
+    if(!m||!right)return {text:t,changed:false,type:'none'};
+
+    var aspect=/^(家族|親族|逸話|昔話|歴史|成績|経歴|現在|順位|日程|結果|カウンター)(.*)$/;
+    var am=right.match(aspect);
+    if(am){
+      var subject=left
+        .replace(/(?:の)?(?:家族|親族|逸話|昔話|歴史|成績|経歴|現在|順位|日程|結果|カウンター).*$/,'')
+        .replace(/[、,\s]+$/,'').trim();
+      if(subject&&subject.length<=36&&!/(?:教えて|知りたい|調べて|検索して|どう|何|なに|誰|だれ|いつ|どこ|なぜ|なんで)$/.test(subject)){
+        var tail=S(am[2]||'');
+        return {text:subject+'の'+am[1]+tail,changed:true,type:'inline_aspect_correction',subject:subject,aspect:am[1]};
+      }
+    }
+    return {text:right,changed:true,type:'inline_correction'};
+  }
+
   function isExplicitTopicShift(text){
     var t=S(text);
-    return /^(?:そういえば|ところで|それはそうと|話(?:は|を)?変(?:わる|える)(?:けど|が|と)?|話題(?:は|を)?変(?:わる|える)(?:けど|が|と)?|別件(?:だけど|ですが|なんだけど|で)?|全然(?:関係ない|別の)(?:話)?(?:だけど|ですが|なんだけど)?)[、,\s]*/.test(t);
+    return /^(?:そういえば|ところで|それはそうと|それはそれとして|話(?:は|を)?変(?:わる|える)(?:けど|が|と)?|話題(?:は|を)?変(?:わる|える)(?:けど|が|と)?|別件(?:だけど|ですが|なんだけど|で)?|全然(?:関係ない|別の)(?:話)?(?:だけど|ですが|なんだけど)?)[、,\s]*/.test(t);
   }
 
   // ユーザーが実際に使っている会話テンポだけを、セッション内の軽い信号として読む。
@@ -82,7 +193,7 @@
 
   function carriedListenIntent(history,currentMessage){
     var cur=S(currentMessage);
-    if(!cur||isExplicitTopicShift(cur)||/(?:まあいいや|もういい|この話は終わり|話変えよう|別の話)/.test(cur))return false;
+    if(!cur||isExplicitTopicShift(cur)||/(?:まあいいや|まあいっか|ま[、,\s]*いっか|もういい|この話は終わり|話変えよう|別の話|ちょっと待って)/.test(cur))return false;
     // 明確な新しい質問・調べものは、話題転換語がなくても「聞き役継続」より現在の依頼を優先する。
     if(/[？?]/.test(cur)||/(?:教えて|知りたい|調べて|検索して|って何|ってなに|とは|誰|だれ|どこ|いつ|なぜ|なんで|どうして)/.test(cur))return false;
     var h=historyBeforeCurrent(history,cur),seen=0;
@@ -107,26 +218,43 @@
     // 「アドバイスはいらない」のような明示的な拒否は、語中の「アドバイス」に先に反応させない。
     if(/(?:ただ|とりあえず)?(?:聞いて|聞いてほしい|話を聞いて|愚痴(?:を)?聞いて|吐き出したい|話したいだけ)|(?:アドバイス|助言|解決策|改善策|対処法|意見)(?:は|なんて|とか)?(?:いらない|要らない|不要|求めてない|いらん)/.test(t)){
       need='listen';mode='listen_only';explicit=true;
-    }else if(/(?:アドバイス(?:して|ください|ほしい|欲しい|ある|お願い)|助言(?:して|ください|ほしい|欲しい|お願い)|どうしたら|どうすれば|どうするのがいい|相談(?:したい|乗って|に乗って)|解決(?:策|方法)(?:を)?(?:教えて|ほしい|欲しい|考えて)|改善(?:策|方法)(?:を)?(?:教えて|ほしい|欲しい|考えて)|対処(?:法|方法)(?:を)?(?:教えて|ほしい|欲しい)|手伝って|一緒に考えて|直して|修正して|原因(?:を)?(?:見て|調べて))/.test(t)){
+    }else if(/(?:アドバイス(?:して|ください|ほしい|欲しい|ある|お願い)|助言(?:して|ください|ほしい|欲しい|お願い)|どうしたら|どうすれば|どうするのがいい|どうしよ(?:う)?(?:かな)?|相談(?:したい|乗って|に乗って)|解決(?:策|方法)(?:を)?(?:教えて|ほしい|欲しい|考えて)|改善(?:策|方法)(?:を)?(?:教えて|ほしい|欲しい|考えて)|対処(?:法|方法)(?:を)?(?:教えて|ほしい|欲しい)|手伝って|一緒に考えて|直して|修正して|原因(?:を)?(?:見て|調べて))/.test(t)){
       need='advice';mode='advice';explicit=true;
-    }else if(/(?:どう思う|どう感じる|意見(?:を)?(?:聞きたい|教えて)|率直にどう|感想(?:を)?(?:聞きたい|教えて))/.test(t)){
+    }else if(/(?:どう思う|どう感じる|どうかな|意見(?:を)?(?:聞きたい|教えて)|率直にどう|感想(?:を)?(?:聞きたい|教えて)|(?:どっち|どちら)(?:が|の方が|のほうが)?(?:いい|良い|よさそう|良さそう|無難|見やすい|自然|おすすめ)(?:と思う)?|おすすめ(?:は|って)?|(?:それ|これ)(?:って|は)?(?:あり|アリ|なし|ナシ)(?:だと思う)?)/.test(t)||/^(?:あり|アリ|なし|ナシ)(?:かな|ですか)?[？?。！!\s]*$/.test(t)){
       need='opinion';mode='opinion_request';explicit=true;
     }
 
     var carriedListen=need==='respond'&&carriedListenIntent(history,t);
     if(carriedListen){need='listen';mode='listen_only';}
 
-    var positive=/^(?:やった|やったー|やったぞ)[！!。\s]*$/.test(t)||/(?:うれしい|嬉しい|できた|成功(?:した)?|うまくいった|最高|楽しかった|助かった|勝った|当たった|完成した|通った|合格した|受かった|採用された|達成した|公開できた|リリースできた|直った)(?:んだ|んだよ|よ|ね|ぞ)?[！!。\s]*$/.test(t)||/(?:めっちゃ|すごく|かなり).*(?:うれしい|嬉しい|楽しい|よかった|良かった)/.test(t);
-    var negative=/(?:つらい|つらかった|辛い|辛かった|きつい|きつかった|しんどい|疲れた|最悪|落ち込|へこん|困った|嫌だった|いやだった|悲しい|かなしい|うまくいかない|失敗した|怒られた|ミスした|腹立つ|むかつく|悔しい|不安|心配|迷ってる|迷っている|忙しい|バタバタ|時間ない|手が回らない|めんどくさい|面倒くさい|バグ(?:った|出た|が出た)|エラー(?:が)?出た|動かない|壊れた)/.test(t);
-    var uncertain=/(?:迷ってる|迷っている|決めきれない|どうしようかな|悩んでる|悩んでいる|自信ない|よく分からない|よくわからない)/.test(t);
+    var achievementPositive=/^(?:やった|やったー|やったぞ)[！!。\s]*$/.test(t)||/(?:できた|成功(?:した)?|うまくいった|勝った|当たった|完成した|通った|合格した|受かった|採用された|達成した|公開できた|リリースできた|直った)(?:んだ|んだよ|よ|ね|ぞ)?[！!。\s]*$/.test(t);
+    var taskFinished=/(?:仕事|作業).*(?:終わった|終えた|片づいた|片付いた)/.test(t);
+    var experiencePositive=/(?:楽しかった|面白かった|おもしろかった|いい日だった|良い日だった|うれしかった|嬉しかった)(?:んだ|んだよ|よ|ね)?[！!。\s]*$/.test(t)||/(?:面白い|おもしろい|楽しい)(?:んだ|んだよ|んだよな|んだな|よ|ね|な)?[！!。\s]*$/.test(t);
+    var positive=achievementPositive||experiencePositive||/(?:うれしい|嬉しい|最高|元気)(?:なんだ|なんだよ|だよ|だ|よ|ね|ぞ)?[！!。\s]*$/.test(t)||/(?:めっちゃ|すごく|かなり).*(?:うれしい|嬉しい|楽しい|よかった|良かった)/.test(t);
+    var negative=/(?:つらい|つらかった|辛い|辛かった|きつい|きつかった|しんどい|だるい|だりい|疲れた|大変だった|最悪|落ち込|へこん|困った|嫌だった|いやだった|悲しい|かなしい|うまくいかない|失敗した|怒られた|ミスした|腹立つ|むかつく|悔しい|不安|心配|迷ってる|迷っている|忙しい|バタバタ|時間ない|手が回らない|めんどくさい|面倒くさい|バグ(?:った|出た|が出た)|エラー(?:が)?出た|動かない|壊れた)/.test(t);
+    var uncertain=/(?:迷ってる|迷っている|決めきれない|どうしようかな|どうしよかな|何しようかな|なにしようかな|どっちにしよう|どちらにしよう|悩んでる|悩んでいる|自信ない|よく分からない|よくわからない)/.test(t);
 
-    var valence=positive&&!negative?'positive':negative&&!positive?'negative':positive&&negative?'mixed':'neutral';
+    var recentNegative=false;
+    if(taskFinished&&/^(?:まあ[、,\s]*)?(?:でも|けど|とはいえ)/.test(t)){
+      var ph=historyBeforeCurrent(history,t),pc=0;
+      for(var pi=ph.length-1;pi>=0&&pc<4;pi--){
+        var px=ph[pi];if(!px||px.role!=='user')continue;pc++;
+        var pt=S(px.text);if(!pt)continue;
+        if(isExplicitTopicShift(pt))break;
+        if(/(?:つらい|辛い|きつい|しんどい|疲れた|大変|最悪|忙しい|昼飯も食べられ|食べられなく|困った|バグ|エラー|動かない)/.test(pt)){recentNegative=true;break;}
+      }
+    }
+    var valence=positive&&!negative?'positive':negative&&!positive?'negative':positive&&negative?'mixed':recentNegative&&taskFinished?'mixed':'neutral';
     var infoQuestion=need==='respond'&&/[？?]/.test(t);
     if(need==='respond'&&!infoQuestion){
-      if(positive&&negative)mode='mixed_sharing';
-      else if(positive)mode='celebration';
-      else if(negative)mode=uncertain?'uncertain':'venting';
-      else if(/(?:今日|昨日|きのう|さっき|この前|最近).*(?:した|してた|だった|あった|起きた|言われた|なった)|(?:したんだ|だったんだ|あったんだ|してたんだ)(?:よ|けど|けどさ)?[。！!]*$/.test(t))mode='sharing';
+      if(positive&&negative||(taskFinished&&recentNegative))mode='mixed_sharing';
+      else if(achievementPositive)mode='celebration';
+      else if(experiencePositive||positive)mode='positive_sharing';
+      else if(uncertain)mode='uncertain';
+      else if(negative)mode='venting';
+      else if(taskFinished)mode='sharing';
+      else if(/(?:今日|昨日|きのう|さっき|この前|最近|帰ってから).*(?:した(?!い)|してた|やった|やってた|遊んでた|見てた|読んでた|行ってた|帰った|だった|あった|起きた|言われた|なった)|(?:ゲーム|動画|映画|本|漫画|アニメ|買い物|散歩|仕事|作業).*(?:した(?!い)|してた|やった|やってた|遊んでた|見た|見てた|読んでた|行ってた)|(?:したんだ|だったんだ|あったんだ|してたんだ|やったんだ|やってたんだ)(?:よ|けど|けどさ)?[。！!]*$/.test(t))mode='sharing';
+      else if(/^(?:でさ|でね|それでさ|それでね|そしたら|そのあとさ|そのあとね|あとさ|それからさ|ていうかさ|というかさ)[、,\s].{2,100}$/.test(t))mode='sharing';
     }
 
     var intensity='normal';
@@ -135,7 +263,7 @@
 
     var openness='neutral';
     if(/(?:聞いて|話したい|ちょっといい|まだある|続きが|それでね|それでさ)/.test(t))openness='open';
-    else if(/(?:まあいいや|もういい|この話は終わり|それだけ|以上|話変えよう|別の話)/.test(t))openness='closed';
+    else if(/(?:まあいいや|まあいっか|ま[、,\s]*いっか|もういい|この話は終わり|それだけ|以上|話変えよう|別の話)/.test(t))openness='closed';
 
     return {
       mode:mode,
@@ -160,13 +288,13 @@
 
     if(/^(?:いや[、,\s]*)?(?:違う|そうじゃない|そこじゃない|そういう意味じゃない|そういうことじゃない|言いたいのは違う|話が違う)(?:[。！!…\s]|$)/.test(t)||/^(?:いや|違う)[、,\s]+.{2,}/.test(t))
       return {type:'correction',confidence:'high',explicit:true};
-    if(/^(?:いや|でも|ただ)[、,\s]*(?:それは違う|違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする)|^(?:それは|そこは)?(?:違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする)/.test(t))
+    if(/^(?:いや|でも|ただ)[、,\s]*(?:それは違う|違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする|それはない|それ無い)|^(?:それは|そこは)?(?:違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする|ないと思う)|^(?:いや[、,\s]*)?それ(?:は)?(?:ない|無い)(?:[。！!…\s]|$)/.test(t))
       return {type:'disagreement',confidence:'high',explicit:true};
-    if(/^(?:そうかな|そうなのかな|本当かな|ほんとかな|本当にそう|ほんとにそう|どうだろう|どうなんだろう|うーん|んー|微妙(?:だな|かも)?|そうとも限らない)(?:[。！!？?…\s]|$)/.test(t))
+    if(/^(?:え[、,\s]*)?(?:(?:それは|そこは)[、,\s]*)?(?:そうかな|そうなのかな|そうなん|そうなの|本当かな|ほんとかな|本当にそう|ほんとにそう|ほんと(?:に)?|本当(?:に)?|マジ(?:で)?|まじ(?:で)?|うそでしょ|嘘でしょ|違くない|ちがくない|どうだろう|どうなんだろう|うーん|んー|微妙(?:だな|かも)?|そうとも限らない)(?:[。！!？?…\s]|$)/.test(t))
       return {type:'skepticism',confidence:/[？?]/.test(t)?'high':'medium',explicit:true};
-    if(/^(?:まあ|確かに|たしかに|そうだね|そうなんだけど|分かる|わかる|それはそう)(?:[^。！？!?]{0,30})?(?:けど|けれど|ただ|でも)(?:[、,\s]|$)/.test(t))
+    if(/^(?:わからんでもない|分からんでもない|わからないでもない|分からないでもない)(?:[。！!？?\s]|$)/.test(t)||/^(?:まあ|確かに|たしかに|そうだね|そうなんだけど|分かる|わかる|それはそう)(?:[^。！？!?]{0,30})?(?:けど|けれど|ただ|でも)(?:[、,\s…\.]|$)/.test(t))
       return {type:'partial_agreement',confidence:'high',explicit:true};
-    if(/^(?:うん|うんうん|そうだね|そうそう|確かに|たしかに|その通り|分かる|わかる|そう思う|同感|なるほどね|たしかにね|確かにね)(?:[。！!\s]|$)/.test(t) && t.length<=36)
+    if(/^(?:うん|うんうん|そうだね|そうそう|だよね|それな|ほんとそれ|本当それ|確かに|たしかに|その通り|分かる|わかる|分かるわ|わかるわ|そう思う|同感|なるほどね|たしかにね|確かにね)(?:[。！!\s]|$)/.test(t) && t.length<=36)
       return {type:'agreement',confidence:'high',explicit:true};
     return {type:'neutral',confidence:'low',explicit:false,compact:c};
   }
@@ -175,9 +303,20 @@
   // こちらで続きを補完せず、相手に発話権を残すための信号としてのみ使う。
   function unfinishedThoughtCue(text){
     var t=S(text);if(!t||/[？?]/.test(t))return false;
-    if(/(?:けど|けれど|けれども|けどさ|でも|でもさ|ただ|たださ|というか|ていうか|なんというか|なんていうか|なんか|まあ)[、,…\.\s]*$/.test(t))return true;
+    // 「知らんけど」「別にいいけど」は、それ自体で成立する口語なので単純な言いかけ扱いにしない。
+    if(/^(?:知らんけど|知らないけど|別にいいけど)[。！!\s]*$/.test(t))return false;
+    if(/(?:けど|けれど|けれども|けどさ|でも|でもさ|ただ|たださ|というか|ていうか|てか|てかさ|つーか|つーかさ|なんというか|なんていうか|まあ|いやでも|いやまあ)[、,…\.\s]*$/.test(t))return true;
+    if(/^なんか[、,…\.\s]*$/.test(t))return true;
     if(/(?:けどね|でもね|ただね|まあね)[…\.]+$/.test(t))return true;
     if(/(?:うーん|んー|えっと|あの)[…\.\s]*$/.test(t))return true;
+    // 「それで昼飯も食べられなくて」「これがまた難しくて」のような、
+    // 文法的にまだ後ろへ続く口語。単なる過去報告や命令まで広げないよう、
+    // 接続語/指示語を伴う -て/-で 終止だけを保守的に拾う。
+    if(/^(?:それで|で|そしたら|そのあと(?:さ|ね)?|あと(?:さ|ね)?)[、,\s]*.{2,80}(?:なくて|くて|て|で)[、,…\.\s]*$/.test(t))return true;
+    if(/^(?:これ|それ)(?:が|は)[、,\s]*.{2,60}(?:なくて|くて)[、,…\.\s]*$/.test(t))return true;
+    // 主語だけ置いて「会議も長くて」「仕事が忙しくて」のように接続形で止める話し方。
+    // 「〜くて／〜で」は文法的に続きを要求するため、短い日常文に限って拾う。
+    if(t.length<=80&&/(?:長くて|短くて|忙しくて|難しくて|むずくて|大変で|つらくて|辛くて|しんどくて|眠くて|暑くて|寒くて|楽しくて|嬉しくて|うれしくて|悔しくて|怖くて|こわくて|嫌で|いやで|面倒で|めんどくて)[、,…\.\s]*$/.test(t))return true;
     return false;
   }
 
@@ -249,8 +388,12 @@
     return /(?:前に|さっき|この前)?(?:言ってた|話してた|決めた)?(?:予定|つもり|約束)(?:は|って)?(?:何|なんだっけ|何だっけ|どうだった|どうなった|覚えてる)|(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた|予定だった)(?:っけ|かな)?|(?:明日|今夜|週末|来週)(?:は)?(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)?|(?:あの|その|前の)?予定(?:って|は)?(?:どうなった|終わった|済んだ|完了した|まだある|残ってる)(?:っけ|かな|の)?/.test(t);
   }
   function isPlanCancellation(text){
-    var t=S(text);if(!t)return false;
-    return /(?:やっぱり|予定(?:を)?変更|予定変え|予定が変わ|予定なくな|キャンセル|延期).*(?:やめ|しない|延期|変更|別の日|なくな|キャンセル)|(?:明日|今夜|週末|来週).*(?:やめる|やらない|しない|延期する|変更する)/.test(t);
+    var t=S(text);if(!t||/[？?]/.test(t))return false;
+    return /(?:やっぱり|予定(?:を)?変更|予定変え|予定が変わ|予定なくな|キャンセル|延期).*(?:やめ|しない|延期|変更|別の日|なくな|キャンセル)|(?:明日|今夜|週末|来週).*(?:やめる|やらない|しない|延期する|変更する)|(?:^|[、,\s])[^。！？]{1,60}?(?:は|を)?(?:延期(?:する|した|にする)|キャンセル(?:する|した)|中止(?:する|した)|取りやめ(?:る|た)|やめ(?:る|た))(?:[。！!\s]|$)/.test(t);
+  }
+  function isGenericPlanCancellationCue(text){
+    var t=S(text);
+    return /^(?:(?:やっぱり|やっぱ)[、,\s]*)?(?:(?:その|あの|前の)?予定(?:は|を)?[、,\s]*)?(?:延期(?:する|した|にする)|キャンセル(?:する|した)|中止(?:する|した)|やめ(?:る|た)|取りやめ(?:る|た)|別の日にする|予定を変える)[。！!\s]*$/.test(t);
   }
   function explicitUserPlan(text){
     var t=S(text);if(!t||/[？?]/.test(t))return null;
@@ -293,8 +436,14 @@
           var sc=planEventScore(list[r],t)+(tm&&list[r].time===tm?1:0);
           if(sc>bestScore){bestScore=sc;best=r;}
         }
-        if(best<0){for(var r2=list.length-1;r2>=0;r2--)if(list[r2].status==='active'){best=r2;break;}}
-        if(best>=0){list[best].status=/延期/.test(t)?'postponed':'cancelled';list[best].closedBy=t;list[best].closedIndex=i;}
+        // 対象語・時刻が十分一致した予定だけを閉じる。
+        // 「ゲームはやめる」のような無関係な発言で、直近のサイト更新予定を勝手に消さない。
+        if(best>=0&&bestScore>=0.34){
+          list[best].status=/延期/.test(t)?'postponed':'cancelled';list[best].closedBy=t;list[best].closedIndex=i;
+        }else if(isGenericPlanCancellationCue(t)){
+          var active=[];for(var r2=list.length-1;r2>=0;r2--)if(list[r2].status==='active')active.push(r2);
+          if(active.length===1){best=active[0];list[best].status=/延期/.test(t)?'postponed':'cancelled';list[best].closedBy=t;list[best].closedIndex=i;}
+        }
         continue;
       }
       if(isPlanCompletion(t)){
@@ -349,6 +498,12 @@
     if(/(?:どっち|どれ|何|なに).*(?:好き|好み|選ぶ|選ん|にする|決め)/.test(t))return null;
     if(/(?:らしい|みたい|と言ってた|って言ってた|そうだ)/.test(t)&&!/(?:私は|わたしは|俺は|僕は|自分は)/.test(t))return null;
 
+    // 否定付きの好みは「反対側」と同一視しない。
+    // 例: 「好きじゃない」≠「嫌い」、「嫌いじゃない」≠「好き」。
+    m=t.match(/(.{1,58}?)(?:の方|のほう)?(?:が|は)(?:あまり|そんなに|そこまで)?(?:好き|好み)(?:じゃない|ではない|じゃなく|ではなく)(?:んだ|のだ|です|かな|かも)?(?:[。！!]|$)/);
+    if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'not_positive',value:value,text:t,revision:positionRevisionCue(t)};}
+    m=t.match(/(.{1,58}?)(?:が|は)(?:嫌い|苦手)(?:じゃない|ではない|じゃなく|ではなく)(?:んだ|のだ|です|かな|かも)?(?:[。！!]|$)/);
+    if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'not_negative',value:value,text:t,revision:positionRevisionCue(t)};}
     m=t.match(/(.{1,58}?)(?:の方|のほう)?(?:が|は)(?:一番|いちばん)?(?:好き|好み)(?:だ|です|かな|かも|なんだ|なの)?(?:[。！!]|$)/);
     if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'positive',value:value,text:t,revision:positionRevisionCue(t)};}
     m=t.match(/(.{1,58}?)(?:が|は)(?:嫌い|苦手)(?:だ|です|かな|かも|なんだ|なの)?(?:[。！!]|$)/);
@@ -363,6 +518,11 @@
   }
   function isPositionRecallCue(text){
     var t=S(text);if(!t)return false;
+    // 「前に○○って言ってたよね？」は好み/選択の検索ではなく、実際の発言履歴の照合を優先する。
+    if(/(?:前に|さっき|この前|以前)(?:[^。！？]{0,90})?(?:って|と)(?:言ってた|言っていた|言った|話してた|話していた|言ってたよね|言ったよね|言ってなかった)/.test(t)&&
+       !/(?:好き|好み|嫌い|苦手|どっちがいい|どれがいい|にする|選ぶ|選ん|決め)/.test(t))return false;
+    // 「さっき何話してたっけ？」は好み/選択の記憶ではなく、会話の話題復帰。
+    if(/^(?:(?:さっき|前|この前|前回)(?:は)?[、,\s]*)?(?:何|なに)(?:を)?話してた(?:っけ|かな)|^(?:どこまで|何の話まで)話した(?:っけ|かな)/.test(t))return false;
     var recall=/(?:前に|さっき|この前|以前|前は|結局).*(?:言ってた|言った|話してた|決めてた|選んでた|好きって|好みって)|(?:どっち|どれ|何|なに).*(?:好き|好み|にする|選ぶ|選んだ|決めた).*(?:言ってた|話してた|決めてた|っけ|かな)|(?:何|なに)(?:に|を)(?:する|選ぶ|決める)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)/.test(t);
     return recall;
   }
@@ -386,14 +546,35 @@
     }
     return records;
   }
+  function positionRecallPolarity(text){
+    var t=S(text);if(!t)return '';
+    if(/(?:好き|好み)(?:じゃない|ではない|じゃなく|ではなく)/.test(t))return 'not_positive';
+    if(/(?:嫌い|苦手)(?:じゃない|ではない|じゃなく|ではなく)/.test(t))return 'not_negative';
+    if(/(?:嫌い|苦手)/.test(t))return 'negative';
+    if(/(?:好き|好み)/.test(t))return 'positive';
+    return '';
+  }
+
   function recallPosition(history,currentMessage){
     var t=S(currentMessage);if(!isPositionRecallCue(t))return null;
     var all=positionMemory(history,t);if(!all.length)return {found:false,candidates:[]};
     var kind=/好き|好み|嫌い|苦手|どっちがいい|どれがいい/.test(t)?'preference':(/にする|選ぶ|選ん|決め/.test(t)?'decision':'');
+    var queryPolarity=kind==='preference'?positionRecallPolarity(t):'';
     var wantsPast=/(?:前は|以前は|元々|もともと)/.test(t);
-    var pool=all.filter(function(x){return (!kind||x.kind===kind)&&(wantsPast?x.status==='replaced':x.status==='active');});
-    if(!pool.length&&wantsPast)pool=all.filter(function(x){return !kind||x.kind===kind;}).slice(0,-1);
-    if(!pool.length)pool=all.filter(function(x){return !kind||x.kind===kind;});
+    // 「前に黒田が好きって言ってた？」のように値そのものを明示している時は、
+    // 現在有効な好みだけに絞らず、置き換え前の記録も含めて実際の一致を探す。
+    var explicitValueMention=all.some(function(x){var v=C(x&&x.value);return v&&C(t).indexOf(v)>=0;});
+    var pool=all.filter(function(x){
+      if(kind&&x.kind!==kind)return false;
+      if(queryPolarity&&x.kind==='preference'&&x.polarity!==queryPolarity)return false;
+      return explicitValueMention?true:(wantsPast?x.status==='replaced':x.status==='active');
+    });
+    if(!pool.length&&wantsPast)pool=all.filter(function(x){
+      return (!kind||x.kind===kind)&&(!queryPolarity||x.kind!=='preference'||x.polarity===queryPolarity);
+    }).slice(0,-1);
+    if(!pool.length)pool=all.filter(function(x){
+      return (!kind||x.kind===kind)&&(!queryPolarity||x.kind!=='preference'||x.polarity===queryPolarity);
+    });
     if(!pool.length)return {found:false,candidates:[]};
 
     var cueEntities=entityCandidatesFromText(t,domainFromText(t)||''),ranked=pool.map(function(x){
@@ -436,16 +617,69 @@
     return map;
   }
 
+  function statementSimilarityText(v){
+    return C(v)
+      .replace(/ありません/g,'ない')
+      .replace(/あります/g,'ある')
+      .replace(/でした/g,'だ')
+      .replace(/です/g,'')
+      .replace(/ました/g,'た');
+  }
   function statementSimilarity(a,b){
-    var x=C(a),y=C(b);if(!x||!y)return 0;
+    var x=statementSimilarityText(a),y=statementSimilarityText(b);if(!x||!y)return 0;
     if(x===y)return 1;if(x.indexOf(y)>=0||y.indexOf(x)>=0)return Math.min(x.length,y.length)/Math.max(x.length,y.length)+0.35;
     function grams(v){var o={};if(v.length<2){o[v]=1;return o;}for(var i=0;i<v.length-1;i++)o[v.slice(i,i+2)]=1;return o;}
     var gx=grams(x),gy=grams(y),inter=0,total=0,k;
     for(k in gx){total++;if(gy[k])inter++;}for(k in gy)if(!gx[k])total++;
     return total?inter/total:0;
   }
+  function statementSemanticConflict(a,b){
+    var x=S(a),y=S(b);if(!x||!y)return false;
+    var pairs=[
+      [/無料|タダ/,/有料|課金/],
+      [/好き/,/(?:嫌い|苦手)/],
+      [/できる|出来る|使える|利用できる/,/(?:できない|出来ない|使えない|利用できない)/],
+      [/ある|あります|存在する/,/(?:ない|ありません|存在しない)/],
+      [/安全|安心/,/(?:危険|危ない|安全ではない|安全じゃない)/],
+      [/完了|終わった|済んだ/,/(?:未完了|終わってない|済んでない)/]
+    ];
+    for(var i=0;i<pairs.length;i++){
+      var a1=pairs[i][0].test(x),a2=pairs[i][1].test(x),b1=pairs[i][0].test(y),b2=pairs[i][1].test(y);
+      if((a1&&b2)||(a2&&b1))return true;
+    }
+    return false;
+  }
+
+  function statementFacetGroups(text){
+    var t=S(text),groups=[];
+    var defs=[
+      ['free',/(?:無料|タダ|有料|課金)/],
+      ['safety',/(?:安全|安心|危険|危ない)/],
+      ['family',/(?:家族|親族|父|母|兄|弟|姉|妹|息子|娘|子供|子ども|妻|夫|結婚)/],
+      ['stats',/(?:成績|打率|本塁打|ホームラン|打点|防御率|勝利|勝数|セーブ|ホールド|記録)/],
+      ['role',/(?:投手|野手|捕手|監督|コーチ|内野手|外野手|ピッチャー)/],
+      ['age',/(?:年齢|何歳|歳)/],
+      ['current',/(?:現在|今は|今も|現役|引退|存命|亡くな)/],
+      ['usage',/(?:使い方|使える|利用|用途|何ができる|できること)/],
+      ['price',/(?:料金|価格|値段|費用)/],
+      ['history',/(?:歴史|由来|創設|沿革)/],
+      ['anecdote',/(?:逸話|エピソード|伝説|名場面)/],
+      ['effect',/(?:効果|倍率|上限|下限|必要数|必要個数|入手方法|取り方)/]
+    ];
+    defs.forEach(function(d){if(d[1].test(t))groups.push(d[0]);});
+    return groups;
+  }
+  function statementFacetCompatible(claim,candidate){
+    var cg=statementFacetGroups(claim);if(!cg.length)return true;
+    var tg=statementFacetGroups(candidate);
+    for(var i=0;i<cg.length;i++)if(tg.indexOf(cg[i])<0)return false;
+    return true;
+  }
+
   function priorStatementReference(history,currentMessage){
     var t=S(currentMessage);if(!t)return null;
+    // 「さっき何話してたっけ？」は発言内容の真偽照合ではなく、話題の再開要求。
+    if(/^(?:(?:さっき|前|この前|前回)(?:は)?[、,\s]*)?(?:何|なに)(?:を)?話してた(?:っけ|かな)|^(?:どこまで|何の話まで)話した(?:っけ|かな)/.test(t))return null;
     var cue=/(?:前に|さっき|この前|以前)(?:[^。！？]{0,90})?(?:って|と)?(?:言ってた|言っていた|言った|話してた|話していた|言ってなかった|言ったよね|言ってたよね)|(?:前にも|さっきも)(?:そう|同じこと)(?:言ってた|言った)/.test(t);
     if(!cue)return null;
     var speaker='assistant';
@@ -458,10 +692,17 @@
     for(var i=h.length-1,seen=0;i>=0&&seen<80;i--){
       var x=h[i];if(!x||x.role!==speaker||!S(x.text))continue;seen++;
       var tx=S(x.text);if(!claimed){best={speaker:speaker,text:tx,index:i,score:0.5};break;}
+      // 過去の質問文を、後から「そう言った」という断定記憶として扱わない。
+      if(/[？?]/.test(tx))continue;
+      // 「無料」と「有料」など意味が逆の内容は、文字列が似ていても一致候補にしない。
+      if(statementSemanticConflict(claimed,tx))continue;
+      // 「Firebase」という主題だけ同じでも、「無料」「安全」「家族」など肝心の観点が違えば同じ発言とは扱わない。
+      if(!statementFacetCompatible(claimed,tx))continue;
       var sc=statementSimilarity(claimed,tx);
       if(sc>bestScore){bestScore=sc;best={speaker:speaker,text:tx,index:i,score:sc};}
     }
-    if(best&&(!claimed||bestScore>=0.16))return {found:true,speaker:speaker,claimed:claimed,match:best.text,index:best.index,score:best.score};
+    var minScore=statementFacetGroups(claimed).length?0.12:0.34;
+    if(best&&(!claimed||bestScore>=minScore))return {found:true,speaker:speaker,claimed:claimed,match:best.text,index:best.index,score:best.score};
     return {found:false,speaker:speaker,claimed:claimed,match:'',score:bestScore};
   }
 
@@ -469,8 +710,25 @@
     var t=S(text);if(!t)return false;
     return /^(?:(?:じゃあ|では|さて)[、,\s]*)?(?:前回|この前)(?:の)?(?:話|続き)(?:から|を|に|へ)?(?:続け(?:よう|て)|話(?:そう|して)|戻(?:ろう|って|る|して))?[？?！!。]*$/.test(t)||
       /^(?:(?:じゃあ|では)[、,\s]*)?さっきの続き(?:から|を|に|へ)?(?:続け(?:よう|て)|話(?:そう|して))?[？?！!。]*$/.test(t)||
-      /^(?:続きから|続き(?:を)?話そう|続き(?:を)?しよう|前回どこまで話した(?:っけ|かな)?|どこまで話した(?:っけ|かな)?)[？?！!。]*$/.test(t);
+      /^(?:続きから|続き(?:を)?話そう|続き(?:を)?しよう|前回どこまで話した(?:っけ|かな)?|どこまで話した(?:っけ|かな)?|(?:(?:さっき|前|この前|前回)(?:は)?[、,\s]*)?(?:何|なに)(?:を)?話してた(?:っけ|かな)?)[？?！!。]*$/.test(t);
   }
+
+  function isConversationRecallCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:前回どこまで話した(?:っけ|かな)?|どこまで話した(?:っけ|かな)?|何の話まで話した(?:っけ|かな)?|(?:(?:さっき|前|この前|前回)(?:は)?[、,\s]*)?(?:何|なに)(?:を)?話してた(?:っけ|かな)?)[？?！!。]*$/.test(t);
+  }
+
+  function recallConversationState(history,currentMessage){
+    if(!isConversationRecallCue(currentMessage))return null;
+    var r=restoreNaturalResume(history,currentMessage);
+    if(!r||!r.restoreMessage)return {control:'recall',answer:'直前の実質的な話題をこちらでは特定できませんでした。',restoreMessage:'',domain:'',sourceText:'',resume:true};
+    var aspectMap={family:'家族',anecdote:'逸話',history:'歴史',current:'現在',stats:'成績',career:'経歴',rank:'順位',schedule:'日程',result:'結果',compare:'比較',counter:'カウンター',overview:'概要'};
+    var label='';
+    if(r.primary&&r.primary.value)label=S(r.primary.value)+(r.aspect&&aspectMap[r.aspect]?'の'+aspectMap[r.aspect]:'');
+    if(!label)label=S(r.sourceText||r.restoreMessage).replace(/[？?！!。]+$/,'');
+    return {control:'recall',answer:'直前は「'+label+'」の話をしていました。',restoreMessage:r.restoreMessage,domain:r.domain||'',sourceText:r.sourceText||'',sourceIndex:r.sourceIndex,resume:true,aspect:r.aspect||'',primary:r.primary||null};
+  }
+
   function isResumeNoise(text){
     var t=S(text);return /^(?:こんにちは|こんばんは|おはよう(?:ございます)?|ただいま|おかえり|ありがとう|ありがと|了解|わかった|分かった|またね|じゃあね|おやすみ|久しぶり|ひさしぶり)[。！!？?]*$/.test(t);
   }
@@ -478,7 +736,7 @@
     if(!isGeneralResumeCue(currentMessage))return null;
     var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h,{limit:48});
     for(var i=frames.length-1;i>=0;i--){
-      var f=frames[i];if(!f||!S(f.userText)||isResumeNoise(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText)||isGeneralResumeCue(f.userText))continue;
+      var f=frames[i];if(!f||!S(f.userText)||isResumeNoise(f.userText)||isFollowupOnlyUtterance(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText)||isGeneralResumeCue(f.userText))continue;
       if(isPlanRecallCue(f.userText))continue;
       var b=frameAsBranch(f);if(!b||!b.message)continue;
       if(f.primary||f.domain||f.aspect||S(f.userText).length>=6)return {control:'back',restoreMessage:b.message,domain:b.domain||'',sourceText:b.sourceText||'',sourceIndex:b.index,branch:true,resume:true,aspect:b.aspect||'',primary:b.primary||null};
@@ -488,24 +746,84 @@
 
   // 「あれ」「あの件」「そっちの話」など、人物名を含まない談話指示語を具体的な会話枝へ戻す。
   // 並行話題が複数残る「そっち」は勝手に一つへ決めない。
+  function rewriteTopicFollowup(subject,suffix){
+    var sub=S(subject),q=S(suffix);if(!sub||!q)return'';
+    q=q.replace(/^の[、,\s]*/,'').replace(/^は[、,\s]*/,'').replace(/^って[、,\s]*/,'');
+    if(/^(?:何|なに|どんな)(?:が|ことが)?(?:できる|出来る)(?:の|んですか)?[？?]?$/.test(q))return sub+'について、何ができる？';
+    if(/^(?:どう使う|どうやって使う|使い方(?:は|って)?)(?:の|んですか)?[？?]?$/.test(q))return sub+'の使い方は？';
+    if(/^(?:使える|利用できる)(?:の|んですか)?[？?]?$/.test(q))return sub+'は使える？';
+    if(/^(?:料金|値段|価格)(?:は|って)?[？?]?$/.test(q))return sub+'の料金は？';
+    if(/^(?:無料|タダ)(?:なの|ですか)?[？?]?$/.test(q))return sub+'は無料で使える？';
+    if(/^(?:何|なに)に使う(?:の|んですか)?[？?]?$/.test(q))return sub+'は何に使う？';
+    if(/^(?:どこで使う|どこで使える)(?:の|んですか)?[？?]?$/.test(q))return sub+'はどこで使える？';
+    if(/^(?:必要|必要なの|必要ですか)[？?]?$/.test(q))return sub+'は必要？';
+    if(/^(?:難しい|むずかしい|簡単|かんたん)(?:の|んですか)?[？?]?$/.test(q))return sub+'は'+q.replace(/[？?]+$/,'')+'？';
+    if(/^(?:安全|安全なの|安全ですか)[？?]?$/.test(q))return sub+'は安全？';
+    if(/^(?:いつから|いつ頃から|いつごろから)(?:なの|ですか)?[？?]?$/.test(q))return sub+'はいつから？';
+    if(/^(?:他と|ほかと)?(?:何|なに)(?:が|がどう)?違う(?:の|んですか)?[？?]?$/.test(q))return sub+'は他と何が違う？';
+    if(/^(?:実際|じっさい)?(?:どう|どんな感じ)(?:なの|ですか)?[？?]?$/.test(q))return sub+'について、実際どんな感じ？';
+    if(/^(?:どんな時|どんなとき|いつ)(?:に)?使う(?:の|んですか)?[？?]?$/.test(q))return sub+'はどんな時に使う？';
+    if(/^(?:誰向け|だれ向け|どんな人向け|向いてる人(?:は)?|向いている人(?:は)?)(?:なの|ですか)?[？?]?$/.test(q))return sub+'はどんな人向け？';
+    if(/^(?:初心者|初めての人)(?:でも)?使える(?:の|んですか)?[？?]?$/.test(q))return sub+'は初心者でも使える？';
+    if(/^(?:初心者向け|初めての人向け)(?:なの|ですか)?[？?]?$/.test(q))return sub+'は初心者向け？';
+    if(/^(?:実用的|実践的)(?:なの|ですか)?[？?]?$/.test(q))return sub+'は実用的？';
+    if(/^(?:便利|便利なの|便利ですか)[？?]?$/.test(q))return sub+'は便利？';
+    if(/^(?:有名|有名なの|有名ですか)[？?]?$/.test(q))return sub+'は有名？';
+    if(/^(?:人気|人気なの|人気ですか)[？?]?$/.test(q))return sub+'は人気？';
+    if(/^(?:今も|現在も)?(?:使われてる|使われている|利用されてる|利用されている)(?:の|んですか)?[？?]?$/.test(q))return sub+'は現在も使われている？';
+    if(/^(?:将来性|今後|これから)(?:は|って)?[？?]?$/.test(q))return sub+'の将来性は？';
+    if(/^(?:一番の|主な)?(?:利点|良い点|いい点)(?:は|って)?[？?]?$/.test(q))return sub+'の主なメリットは？';
+    if(/^(?:注意点|気をつける点|気を付ける点)(?:は|って)?[？?]?$/.test(q))return sub+'の注意点は？';
+    if(/^(?:代わり|代替|代替候補)(?:は|って)?[？?]?$/.test(q))return sub+'の代替候補は？';
+    if(/^(?:他に|ほかに)?(?:似たの|似たもの|似てるの|似ているもの)(?:ある|はある|ってある)(?:の|んですか)?[？?]?$/.test(q))return sub+'に似たものはある？';
+    if(/^(?:結局|けっきょく)おすすめ(?:なの|ですか)?[？?]?$/.test(q))return sub+'はどんな場合におすすめ？';
+    if(/^(?:結局|けっきょく)?(?:使うべき|使った方がいい|使ったほうがいい|おすすめする)(?:なの|ですか)?[？?]?$/.test(q))return sub+'はどんな場合におすすめ？';
+    if(/^(?:導入|設定|始めるの)(?:は)?(?:難しい|むずかしい|大変)(?:の|んですか)?[？?]?$/.test(q))return sub+'の導入は難しい？';
+    if(/^(?:学ぶ|覚える|使いこなす)(?:の)?(?:は)?(?:難しい|むずかしい|大変)(?:の|んですか)?[？?]?$/.test(q))return sub+'を学ぶのは大変？';
+    return'';
+  }
+
   function resolveDiscourseDeictic(text,history){
-    var t=S(text);if(!t||t.length>72)return null;
-    var m=t.match(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(あれ|あの件|あの話|さっきのやつ|前のやつ|その前のやつ|そっち|そっちの話|あっち|あっちの話)(.*)$/);
+    var t=S(text);if(!t||t.length>96)return null;
+    var m=t.match(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(あれ|あの件|あの話|例のやつ|例の話|この前(?:に)?言ってたやつ|この前(?:に)?話してたやつ|さっき(?:に)?言ってたやつ|さっき(?:に)?話してたやつ|前に言ってたやつ|前に話してたやつ|さっきのやつ|前のやつ|前のは|その前のやつ|その前のは|こっち|こっちの話|そっち|そっちの話|あっち|あっちの話)(.*)$/);
     if(!m)return null;
-    var head=m[1],suffix=S(m[2]||''),h=historyBeforeCurrent(history,t);
+    var head=m[1],suffix=S(m[2]||''),h=historyBeforeCurrent(history,t),branches=recentTopicBranches(h,t);
+
+    // 「そっち/あっち」は、明示的な並行話題があればその候補を使う。
+    // 並行指定がなくても直近に複数の異なる枝がある時は、勝手に一つへ決めない。
     if(/^(?:そっち|あっち)/.test(head)){
       var ps=parallelTopics(h,t);
       if(ps.length>1)return {ambiguous:true,candidates:ps.map(function(x){return x.subject||x.message;}).filter(Boolean).slice(0,4),kind:'parallel_deictic'};
+      if(branches.length>1){
+        var alt=[],seenAlt={};
+        branches.slice(0,4).forEach(function(x){
+          var label=x.message||x.sourceText;if(!label||seenAlt[label])return;seenAlt[label]=1;alt.push(label);
+        });
+        if(alt.length>1)return {ambiguous:true,candidates:alt.slice(0,4),kind:'discourse_deictic'};
+      }
     }
-    var branches=recentTopicBranches(h,t),depth=/その前/.test(head)?1:0;
+
+    if(!branches.length)return null;
+    var depth=0;
+    // 「前の」は現在の具体的な枝から一つ前、「その前」はさらに一つ前。
+    // 既存の「前の話に戻ろう」と同じ深さ規則にそろえる。
+    if(/^(?:前のやつ|前のは)$/.test(head))depth=1;
+    else if(/^(?:その前のやつ|その前のは)$/.test(head))depth=2;
+    // 「この前言ってたやつ」「さっき言ってたやつ」「例の話」は最後の実質的な枝を指す。
     if(branches.length<=depth)return null;
-    var b=branches[depth];
-    if(!suffix||/^(?:は|って)?[？?！!。]*$/.test(suffix))suffix='について';
+    var b=branches[depth],defaultRef=!suffix||/^(?:は|って)?[？?！!。]*$/.test(suffix);
+    if(defaultRef)suffix='について';
     var base=b.message||b.sourceText;
     if(!base)return null;
+
+    // 「あれの家族」のように新しい観点を明示した時だけ主役へ戻す。
+    // 単なる「あれは？」「前のやつは？」では、黒田×家族のような枝を丸ごと保持する。
     if(/^の/.test(suffix)&&b.primary&&b.primary.value)base=b.primary.value;
-    else if(/^について/.test(suffix)&&b.primary&&b.primary.value)base=b.primary.value;
     else suffix=suffix.replace(/^は[、,\s]*/,'');
+    if(defaultRef)return {message:base,reference:b.primary||null,branch:b,kind:'discourse_deictic'};
+    var topicSubject=b.primary&&b.primary.type==='topic'?b.primary.value:(/について$/.test(base)?base.replace(/について$/,''):'');
+    var topicRewrite=topicSubject?rewriteTopicFollowup(topicSubject,suffix):'';
+    if(topicRewrite)return {message:topicRewrite,reference:b.primary||null,branch:b,kind:'discourse_deictic'};
     return {message:base+(suffix==='について'?'':(/^の|^について/.test(suffix)?suffix:('、'+suffix))),reference:b.primary||null,branch:b,kind:'discourse_deictic'};
   }
 
@@ -530,7 +848,7 @@
       var target=null;
       if(f.primary&&f.primary.value)target=frameAsBranch(f);
       if(!target){
-        for(var j=i-1;j>=0;j--){if(frames[j]&&S(frames[j].userText)){target=frameAsBranch(frames[j]);break;}}
+        for(var j=i-1;j>=0;j--){if(frames[j]&&S(frames[j].userText)&&!isFollowupOnlyUtterance(frames[j].userText)&&!isBackCue(frames[j].userText)&&!isTopicChangeCue(frames[j].userText)){target=frameAsBranch(frames[j]);break;}}
       }
       stack.push({sourceText:t,message:target&&target.message||'',domain:target&&target.domain||'',aspect:target&&target.aspect||'',primary:target&&target.primary||null,index:f.index});
       if(stack.length>5)stack.shift();
@@ -547,11 +865,35 @@
     var t=S(text);if(!t)return false;
     return /(?:両方|両方とも|どっちも|どちらも|それぞれ|並行(?:して)?|交互に).*(?:気になる|知りたい|話したい|進めたい|見たい|覚えて|追いたい)|(?:気になる|知りたい|話したい|進めたい).*(?:両方|どっちも|どちらも|それぞれ|並行)/.test(t);
   }
+  function parallelResumeParts(text){
+    var t=S(text),m;if(!t)return null;
+    m=t.match(/^(?:(?:じゃあ|では)[、,\s]*)?(?:前者|最初の方|最初のほう|一つ目|1つ目)(?:の)?(?:話|方|ほう)?(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'first'};
+    m=t.match(/^(?:(?:じゃあ|では)[、,\s]*)?(?:後者|後の方|後のほう|二つ目|2つ目)(?:の)?(?:話|方|ほう)?(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'last'};
+    m=t.match(/^(?:(?:じゃあ|では)[、,\s]*)?(?:もう片方|もう一方)(?:の)?(?:話|方|ほう)?(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'other'};
+    m=t.match(/^(?:(?:じゃあ|では)[、,\s]*)?(?:もうひとつ|もう一つ)の話(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'other'};
+    m=t.match(/^(?:(?:じゃあ|では)[、,\s]*)?(?:そっち|そっちの話)(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'other'};
+    m=t.match(/^(?:並行してた|両方追ってた)(?:話|やつ)?(?:の)?(?:もう片方|もう一方|もうひとつ|もう一つ)(?:は|に|へ)?[、,\s]*(.*)$/);
+    if(m)return {suffix:S(m[1]||''),kind:'other'};
+    return null;
+  }
   function isResumeParallelCue(text){
-    var t=S(text);if(!t)return false;
-    return /^(?:(?:じゃあ|では)[、,\s]*)?(?:もう片方|もう一方)(?:の)?(?:話|方|ほう)?(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)?[？?！!。]*$/.test(t)||
-      /^(?:(?:じゃあ|では)[、,\s]*)?(?:もうひとつ|もう一つ)の話(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)?[？?！!。]*$/.test(t)||
-      /^(?:並行してた|両方追ってた)(?:話|やつ)?(?:の)?(?:もう片方|もう一方|もうひとつ|もう一つ)(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て))?[？?！!。]*$/.test(t);
+    var raw=S(text);
+    // 明示的な並行話題が履歴に無ければ restoreParallelTopic 側が null を返すため、
+    // ここでは自然な比較表現も入口として許可する。
+    if(/^(?:二つ|2つ|両方|この二つ|この2つ)(?:の)?違い(?:は|って)?[？?]?$/.test(raw))return true;
+    if(/^(?:どっち|どちら)(?:の方|のほう)?(?:が)?(?:簡単|かんたん|難しい|むずかしい|おすすめ|向いてる|向いている|便利|安全)(?:なの|ですか)?[？?]?$/.test(raw))return true;
+    if(/^(?:それぞれ|両方)(?:は|の)?(?:何|なに)(?:が)?(?:得意|できる|向いてる|向いている)(?:なの|ですか)?[？?]?$/.test(raw))return true;
+    var p=parallelResumeParts(raw);if(!p)return false;
+    var s=S(p.suffix||'');
+    if(!s)return true;
+    if(/^(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)[？?！!。]*$/.test(s))return true;
+    // 「もう片方は無料？」「そっちは安全？」のように、そのまま質問を続ける形。
+    return /[？?]$/.test(s)||/(?:無料|料金|使い方|使える|安全|必要|難しい|簡単|何|なに|どう|どこ|いつ|メリット|デメリット)/.test(s);
   }
   // 明示的に「両方/並行」と言われた時だけ、同じ発言に出た複数人物を並行スロットとして保持する。
   // 一般の「AとB」を勝手に並行タスクへしない。
@@ -573,10 +915,35 @@
   }
   function restoreParallelTopic(history,currentMessage){
     var list=parallelTopics(history,currentMessage||'');if(list.length<2)return null;
+    var raw=S(currentMessage||''),parts=parallelResumeParts(raw),suffix=S(parts&&parts.suffix||'');
+
+    // 明示的な並行2話題への比較質問。「両方」を宣言した履歴がある時だけ発動する。
+    if(list.length===2){
+      var a=list[0],b=list[1],pair=a.subject+'と'+b.subject;
+      if(/^(?:二つ|2つ|両方|この二つ|この2つ)(?:の)?違い(?:は|って)?[？?]?$/.test(raw))
+        return {control:'back',restoreMessage:pair+'の違いは？',domain:'',sourceText:a.sourceText||'',parallel:true,compare:true,candidates:[a.subject,b.subject]};
+      if(/^(?:どっち|どちら)(?:の方|のほう)?(?:が)?(?:簡単|かんたん|難しい|むずかしい|おすすめ|向いてる|向いている|便利|安全)(?:なの|ですか)?[？?]?$/.test(raw)){
+        var m=raw.match(/(?:簡単|かんたん|難しい|むずかしい|おすすめ|向いてる|向いている|便利|安全)/),facet=m?m[0]:'比較';
+        return {control:'back',restoreMessage:pair+'では、どちらが'+facet+'？',domain:'',sourceText:a.sourceText||'',parallel:true,compare:true,candidates:[a.subject,b.subject]};
+      }
+      if(/^(?:それぞれ|両方)(?:は|の)?(?:何|なに)(?:が)?(?:得意|できる|向いてる|向いている)(?:なの|ですか)?[？?]?$/.test(raw))
+        return {control:'back',restoreMessage:pair+'は、それぞれ何が得意？',domain:'',sourceText:a.sourceText||'',parallel:true,compare:true,candidates:[a.subject,b.subject]};
+    }
+
     var recent=recentSubjects(historyBeforeCurrent(history,currentMessage||''),{limit:4}),current=recent.length?recent[0].value:'';
     var options=list.filter(function(x){return x.subject!==current;});
-    if(options.length===1){
-      var x=options[0];return {control:'back',restoreMessage:x.message,domain:x.domain||'',sourceText:x.sourceText||'',sourceIndex:x.index,branch:true,parallel:true,primary:{value:x.subject,type:x.type||'topic'}};
+    if(/^[？?！!。、,\s]*$/.test(suffix))suffix='';
+    if(/^(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)[？?！!。]*$/.test(suffix))suffix='';
+
+    // 「前者／後者」は現在話題に関係なく、並行宣言時の並びをそのまま参照する。
+    var selected=null;
+    if(parts&&parts.kind==='first')selected=list[0];
+    else if(parts&&parts.kind==='last')selected=list[list.length-1];
+    else if(options.length===1)selected=options[0];
+    if(selected){
+      var msg=selected.message;
+      if(suffix)msg=rewriteTopicFollowup(selected.subject,suffix)||(selected.subject+'について、'+suffix);
+      return {control:'back',restoreMessage:msg,domain:selected.domain||'',sourceText:selected.sourceText||'',sourceIndex:selected.index,branch:true,parallel:true,primary:{value:selected.subject,type:selected.type||'topic'},suffix:suffix};
     }
     return {control:'back',restoreMessage:'',domain:'',sourceText:'',parallel:true,ambiguous:true,candidates:options.map(function(x){return x.subject;}).slice(0,4)};
   }
@@ -597,7 +964,7 @@
   // ユーザーがこの発言で実際に強調している「会話上の焦点」を読む。
   // 心理や本音は推測せず、質問・強調語・対比・繰り返し・発言末尾など観測できる手掛かりだけを使う。
   function focusClauses(text){
-    var t=S(text).replace(/^(?:そういえば|ところで|それはそうと|話(?:は|を)?変(?:わる|える)(?:けど|が|と)?|話題(?:は|を)?変(?:わる|える)(?:けど|が|と)?|別件(?:だけど|ですが|なんだけど|で)?)[、,\s]*/,'');
+    var t=S(text).replace(/^(?:そういえば|ところで|それはそうと|それはそれとして|話(?:は|を)?変(?:わる|える)(?:けど|が|と)?|話題(?:は|を)?変(?:わる|える)(?:けど|が|と)?|別件(?:だけど|ですが|なんだけど|で)?)[、,\s]*/,'');
     if(!t)return[];
     var first=t.split(/[。！？!?\n]+/).map(S).filter(Boolean),out=[];
     first.forEach(function(part){
@@ -655,7 +1022,8 @@
     concrete=concrete.replace(/^(?:でも|ただ|それでも|とはいえ|特に|とくに|その中でも)[、,\s]*/,'').slice(0,100);
 
     var stance=conversationalStance(h,t),unfinished=unfinishedThoughtCue(t);
-    var narrativeMomentum=unfinished || /(?:それで|それでさ|でさ|そしたら|そのあと(?:さ|ね)?|まだ(?:あって|続きがあって)|続きがある|聞いてよ|聞いてほしい)[…。、\s]*$/.test(t) ||
+    var connectiveOpen=/^(?:でさ|でね|それでさ|それでね|そしたら|そのあとさ|そのあとね|あとさ|それからさ)[、,\s].*(?:て|で|けど|けどさ|んだけど|なんだけど|って)[、,…\.\s]*$/.test(t);
+    var narrativeMomentum=unfinished || connectiveOpen || /(?:それで|それでさ|でさ|そしたら|そのあと(?:さ|ね)?|まだ(?:あって|続きがあって)|続きがある|聞いてよ|聞いてほしい)[…。、\s]*$/.test(t) ||
       (ls.openness==='open'&&!hasQuestion&&/(?:それで|まだ|続き|話したい|聞いて)/.test(t));
     var flow='respond',askPolicy='optional';
     var currentClosed=/もういい|十分|そこまで|興味(?:は)?ない|興味なくな|気にならない|もう気にならない|知りたくない/.test(t);
@@ -724,11 +1092,13 @@
     if(!t||t.length>24)return null;
 
     var kind='';
-    if(/^(?:違う|それは違う|違うと思う|そうは思わない|ちょっと違う|違う気がする)$/.test(c))kind='disagreement';
-    else if(/^(?:そうかな|そうなのかな|本当かな|ほんとかな|どうだろう|うーん|んー|微妙)$/.test(c))kind='skepticism';
-    else if(/^(?:まあそうだけど|確かにそうだけど|たしかにそうだけど|そうなんだけど|分かるけど|わかるけど)$/.test(c))kind='partial_agreement';
-    else if(/^(?:なるほど|そうなんだ|そうなのか|そうか|そっか|そうだね|だよね|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにね|そういうことか|理解した|把握した)$/.test(c))kind='ack';
-    else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|それ面白いね|それおもしろいね|それは面白いね|それはおもしろいね|面白いね|おもしろいね|すごい|すげえ|それはすごい|さすが|おお|おー|興味深い|きょうみぶかい)$/.test(c))kind='positive';
+    if(/^(?:違う|それは違う|違うと思う|そうは思わない|ちょっと違う|違う気がする|それはない|いやそれはない)$/.test(c))kind='disagreement';
+    else if(/^(?:マジ|マジで|まじ|まじで|マジか|まじか|うそでしょ|嘘でしょ|そうなん|そうなの)$/.test(c))kind='surprise_check';
+    else if(/^(?:え)?(?:(?:それは|そこは))?(?:そうかな|そうなのかな|本当かな|ほんとかな|ほんと|本当|違くない|ちがくない|どうだろう|どうなんだろう|うーん|んー|微妙)$/.test(c))kind='skepticism';
+    else if(/^(?:まあそうだけど|確かにそうだけど|たしかにそうだけど|そうなんだけど|分かるけど|わかるけど|わからんでもない|分からんでもない)$/.test(c))kind='partial_agreement';
+    else if(/^(?:なるほど|なるほどな|そうなんだ|そうなのか|そうなんか|そうか|そっか|そうだね|だよね|それな|ほんとそれ|本当それ|わかる|分かる|わかるわ|分かるわ|そうそう|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにな|たしかにね|そういうことか|そういうことね|理解した|把握した)$/.test(c))kind='ack';
+    else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|それ面白いね|それおもしろいね|それは面白いね|それはおもしろいね|面白いね|おもしろいね|すごい|すげえ|それはすごい|そりゃすごい|そりゃ面白い|そりゃおもしろい|さすが|おお|おー|興味深い|きょうみぶかい)$/.test(c))kind='positive';
+    else if(/^(?:(?:それは|それ|そこは|そりゃ))?(?:きつい|きついね|きつそう|つらい|つらいね|辛い|辛いね|しんどい|しんどいね|大変|大変だね|大変そう|ひどい|ひどいね|怖い|こわい|嫌だ|いやだ|かわいそう)$/.test(c))kind='negative_reaction';
     else if(/^(?:知らなかった|しらなかった|初めて知った|はじめて知った|そんなことあったんだ|そんなことがあったんだ|意外だね|いがいだね|意外だった|びっくり|びっくりした|驚いた|おどろいた)$/.test(c))kind='surprise';
     else if(/^(?:(?:昔|当時)は)?(?:そんなに|かなり|ずいぶん|相当)?(?:すごかった|強かった|有名だった|人気だった|活躍してた|活躍していた|大変だった|苦労した)(?:んだね|んですね|んだな|のか|んだ|んですねえ)?$/.test(c))kind='reflection';
     else if(/^(?:わかった|分かった|了解|りょうかい|おっけー|オッケー|ok)$/.test(c))kind='understood';
@@ -744,7 +1114,7 @@
     }
     if(!lastAssistant)return null;
 
-    var domain=recentDomain(h),label='';
+    var rx=immediateReactionContext(h),domain=rx.domain||'',label='';
     if(domain==='carp')label='カープ';
     else if(domain==='counter')label='カウンター';
     else if(domain==='jinpo')label='陣法';
@@ -756,12 +1126,13 @@
 
     var subject='',personAmbiguous=false;
     try{
-      var personRef=findRecentEntity(h,{personOnly:true});
+      var reactionHistory=rx&&rx.history&&rx.history.length?rx.history:h;
+      var personRef=findRecentEntity(reactionHistory,{personOnly:true});
       personAmbiguous=!!(personRef&&personRef.ambiguous);
       if(personRef&&!personRef.ambiguous&&personRef.value)subject=personRef.value;
       // 同じ返答に人物が複数いる時は、感想だけから誰か一人を勝手に選ばない。
       if(!subject&&!personAmbiguous){
-        var entityRef=findRecentEntity(h);
+        var entityRef=findRecentEntity(reactionHistory);
         if(entityRef&&!entityRef.ambiguous&&entityRef.value)subject=entityRef.value;
       }
     }catch(subjectErr){}
@@ -797,7 +1168,16 @@
       weather:['分かるのですよ。天気は日ごとの差を見ると意外と変化があって面白いのです。']
     };
 
-    if(kind==='disagreement'){
+    if(kind==='surprise_check'){
+      answers=subject?[
+        'そこ、ちょっと驚きますよね。「'+subject+'」の話として聞くと、なおさらです。',
+        '「ほんと？」ってなりますよね。「'+subject+'」のその点は、驚きやすいところです。'
+      ]:[
+        'びっくりしますよね。',
+        '「ほんと？」ってなりますよね。',
+        'そこ、ちょっと驚くところですよね。'
+      ];
+    }else if(kind==='disagreement'){
       answers=subject?[
         'なるほど。「'+subject+'」のその点は、前の説明を押し通さずに捉え直します。',
         'そこは違うということですね。「'+subject+'」について、今の指摘を優先して見直します。'
@@ -815,8 +1195,9 @@
       ];
     }else if(kind==='partial_agreement'){
       answers=[
-        'そこまでは同意だけど、後半には引っかかりがあるという感じですね。留保のほうも無視せず見ます。',
-        '分かります。全部に同意というより、納得できる部分と違う部分があるということですね。'
+        '分かります。完全に同意ってほどではないけど、言いたいことは分かる感じですね。',
+        'なるほど。納得できる部分はあるけど、全部そのままではない感じですね。',
+        '「分からなくもない」くらいの距離感ですね。そこは無理に白黒つけなくてよさそうです。'
       ];
     }else if(kind==='positive'){
       if(subject){
@@ -830,6 +1211,20 @@
           'ですよね。そこ、ちょっと面白いところなのです。',
           'ふふっ、そこに反応してもらえるとうれしいのですよ。',
           '分かるのですよ。そこはもう少し掘ってみたくなるところですね。'
+        ];
+      }
+    }else if(kind==='negative_reaction'){
+      if(subject){
+        answers=[
+          'ですよね。「'+subject+'」のその部分は、かなり重く感じるところです。',
+          'そこはきつく感じますよね。「'+subject+'」の話の中でも、軽く流しにくいところです。',
+          '分かります。「'+subject+'」のそこは、簡単には受け流せないところですね。'
+        ];
+      }else{
+        answers=[
+          'ですよね。そこはきつく感じます。',
+          'うん、そこは軽く流しにくいところですね。',
+          'それはしんどく感じますよね。'
         ];
       }
     }else if(kind==='surprise'){
@@ -872,10 +1267,18 @@
     if(style.pace==='terse'){
       if(kind==='understood')answers=['了解です。','わかりました。','はい、そのまま進めます。'];
       else if(kind==='disagreement')answers=['了解です。そこは捉え直します。','そこは違うんですね。押し通さず見直します。'];
+      else if(kind==='surprise_check')answers=['びっくりしますよね。','「ほんと？」ってなりますよね。'];
       else if(kind==='skepticism')answers=['そこは断定しないで見ます。','うん、そこは少し引っかかりますね。'];
-      else if(kind==='partial_agreement')answers=['なるほど、全部に同意というわけではないんですね。','そこは分けて見ます。'];
+      else if(kind==='partial_agreement')answers=['分からなくもない、くらいの感じですね。','全部に同意ではないけど、分かる部分はある感じですね。'];
       else if(kind==='ack')answers=['そうなんです。','その理解で大丈夫です。','うん、そういうことです。'];
-      else if(kind==='positive')answers=subject?['ですよね。「'+subject+'」、そこ面白いです。','「'+subject+'」のそこ、面白いところです。','分かります。「'+subject+'」はそこが面白いです。']:['ですよね。そこ面白いです。','分かります。そこ、いいところです。'];
+      else if(kind==='positive'){
+        if(subject)answers=['ですよね。「'+subject+'」、そこ面白いです。','「'+subject+'」のそこ、面白いところです。','分かります。「'+subject+'」はそこが面白いです。'];
+        else if(domain==='carp')answers=['ですよね。カープのそこ、面白いです。','分かります。カープのそこは話が広がるところです。'];
+        else if(domain==='jinpo')answers=['ですよね。陣法のそこ、面白いです。','分かります。陣法はそこが面白いです。'];
+        else if(domain==='counter')answers=['ですよね。そこ、カウンターの面白いところです。'];
+        else answers=['ですよね。そこ面白いです。','分かります。そこ、いいところです。'];
+      }
+      else if(kind==='negative_reaction')answers=subject?['ですよね。「'+subject+'」のそこはきついです。','そこは重いところですね。']:['ですよね。そこはきついです。','うん、そこは重いですね。'];
       else if(kind==='surprise')answers=['そこは意外ですよね。','そうなんです。ちょっと驚くところです。'];
       else if(kind==='reflection')answers=['そう感じますよね。','当時の文脈で見ると印象が変わります。'];
     }
@@ -885,10 +1288,12 @@
   function stripCorrection(text){
     var t=S(text);
     var before=t;
-    t=t.replace(
-      /^(?:(?:そう|そっち|それ)(?:じゃ|では)?(?:ない|なくて|なく|違う)|(?:いや|いえ|違う|ちがう|訂正|ごめん|ごめんね|やっぱり|やっぱ))[、。,:：\s]*/,
-      ''
-    ).trim();
+    // 「そうじゃない」は単独でも明確な訂正開始。
+    t=t.replace(/^(?:そう|そっち|それ)(?:じゃ|では)?(?:ない|なくて|なく|違う)[、。,:：\s]*/,'').trim();
+    // 訂正語は区切りがある時だけ前置きとして落とす。
+    // 「いやでも面白い」「いやまあ分かる」のような一体の口語から「いや」だけを剥がさない。
+    t=t.replace(/^(?:違う|ちがう|訂正|ごめん|ごめんね|やっぱり|やっぱ)[、。,:：\s]+/,'').trim();
+    t=t.replace(/^(?:いや|いえ)[、。,:：\s]+(?!(?:でも|まあ))/,'').trim();
     return {text:t||before,corrected:t!==before};
   }
 
@@ -958,6 +1363,34 @@
     return'';
   }
 
+
+  // 短い相槌・感想では、何ターンも前の専門話題を引きずらず、
+  // 直前の1往復だけを反応対象にする。これにより
+  // 「カープの話 → 日常雑談 → それな」で古いカープへ戻る誤りを防ぐ。
+  function immediateReactionContext(history){
+    var h=filterHistory(history),lastAssistant=-1;
+    for(var i=h.length-1;i>=0;i--){
+      if(h[i]&&h[i].role==='assistant'&&S(h[i].text)){lastAssistant=i;break;}
+    }
+    if(lastAssistant<0)return {history:[],domain:'',assistantText:'',userText:''};
+    var start=lastAssistant,prevUser=-1;
+    for(var j=lastAssistant-1;j>=0;j--){
+      if(h[j]&&h[j].role==='user'&&S(h[j].text)){prevUser=j;start=j;break;}
+      // 直前応答よりさらに前のassistantへは広げない。
+      if(h[j]&&h[j].role==='assistant'&&S(h[j].text))break;
+    }
+    var slice=h.slice(start,lastAssistant+1),domain='';
+    // assistant側のmodeが最も確実。その次に直前user文を見る。
+    domain=domainFromHistoryItem(h[lastAssistant])||'';
+    if(!domain&&prevUser>=0)domain=domainFromHistoryItem(h[prevUser])||'';
+    return {
+      history:slice,
+      domain:domain,
+      assistantText:S(h[lastAssistant]&&h[lastAssistant].text),
+      userText:prevUser>=0?S(h[prevUser].text):''
+    };
+  }
+
   var ENTITY_STOP={
     '歩き巫女':1,'カープ':1,'広島東洋カープ':1,'陣法':1,'天気':1,'全MAX':1,
     '資料基準日':1,'正本資料':1,'正本':1,'候補':1,'選手':1,'監督':1,'投手':1,
@@ -970,6 +1403,7 @@
     var x=S(v)
       .replace(/^[「『【\[（(\s]+|[」』】\]）)\s]+$/g,'')
       .replace(/^(?:その中でも|中でも|特に|とくに|例えば|たとえば|なお|ちなみに)[、\s]*/,'')
+      .replace(/(?:って何|ってなに|とは)$/,'')
       .replace(/(?:選手|監督|投手|野手|捕手|内野手|外野手|氏|さん|くん|ちゃん)$/,'')
       .trim();
     if(!x||x.length<2||x.length>30||ENTITY_STOP[x])return'';
@@ -982,9 +1416,13 @@
     var x=cleanEntityCandidate(v);if(!x)return false;
     // 一般トピックを「その人」の候補にしない。固有名詞らしい英字/漢字でも、
     // 開発・仕事・ゲーム等の語は会話上のtopicとして保持する。
-    if(ENTITY_STOP[x]||/年|月|日|試合|球団|資料|情報|記録|成績|順位|逸話|歴史|カウンター|編集|運営|経営|開発|機能|検索|設定|サイト|動画|ゲーム|野球|仕事|会社|プログラム|コード|Firebase|Gemini|ChatGPT|JavaScript|CSS|AI$|編$|章$/i.test(x))return false;
+    if(ENTITY_STOP[x]||/年|月|日|試合|球団|資料|情報|記録|成績|順位|逸話|歴史|カウンター|編集|運営|経営|開発|機能|検索|設定|サイト|動画|ゲーム|野球|仕事|会社|プログラム|コード|Firebase|ChatGPT|JavaScript|CSS|AI$|編$|章$|^(?:九十九|鬼神石|魔導結晶|見聞録|文曲|鶴翼|方円|魚鱗|衡軛|こうやく)$|^(?:生命|気合|腕力|耐久(?:力)?|器用|知力|魅力|土|水|火|風)$|(?:無料枠|有料枠)$|(?:枠|欄|項目|条件|履歴|資料|結果|機能|設定|モード|画面|ボタン|サービス|プラン|料金|価格|値段|認証|データ|通知|権限|検索|会話|記憶|仕組み|方法)$/.test(x))return false;
     if(/^[一-龠々]{2,8}$/.test(x))return true;
-    if(/^[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28}$/.test(x))return true;
+    // 英字1語はサービス・製品名であることが多いので、人物接尾辞などが無い限りtopicを優先する。
+    // "Shohei Ohtani" のような複数語は人物候補として扱い、"Ohtani選手" は上の人物接尾辞抽出で確定する。
+    if(/^[A-Za-z][A-Za-z.'’\-]*$/.test(x))return false;
+    if(/^[A-Za-z][A-Za-z.'’\- ]{2,28}$/.test(x)&&/\s/.test(x))return true;
+    if(/^[ァ-ヶ][ァ-ヶ・ー.'’\-]{2,28}$/.test(x))return true;
     return false;
   }
 
@@ -1007,12 +1445,24 @@
     var knownPeople=t.match(/今川義元|今川氏真|足利義輝|足利義昭|織田信長|豊臣秀吉|徳川家康/g)||[];
     knownPeople.forEach(function(name){add(name,'person',115);});
 
+    // 「AとB、両方気になる」のように並行話題を明示した時だけ、正本が遅延読込前でも
+    // 2つの主題を会話スロットとして保持する。通常の「AとB」はここでは分解しない。
+    if(isParallelCue(t)){
+      var pm=t.match(/^(.{2,24}?)と(.{2,24}?)[、,\s]*(?:両方(?:とも)?|どっちも|どちらも|それぞれ)(?:が|は|も)?(?:気になる|知りたい|話したい|進めたい|見たい|追いたい)/);
+      if(pm){
+        var pv1=S(pm[1]).replace(/^(?:まず|じゃあ|では)[、,\s]*/,'');
+        var pv2=S(pm[2]);
+        if(pv1)add(pv1,looksLikePersonName(pv1)?'person':'topic',82);
+        if(pv2)add(pv2,looksLikePersonName(pv2)?'person':'topic',82);
+      }
+    }
+
     // 見出しは回答の主題になりやすい。「【江夏の21球】」などを拾う。
     var m,re=/【([^】]{2,30})】/g;
     while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',92);
 
     // 「○○選手」「○○監督」などは一般人物名として扱える。
-    re=/([一-龠々ァ-ヶA-Za-z・ー.'’\-]{2,28})(?:選手|監督|投手|野手|捕手|内野手|外野手|氏|さん)(?=[はがの、。！？\s]|$)/g;
+    re=/([一-龠々ァ-ヶA-Za-z・ー.'’\-]{2,28})(?:選手|監督|投手|野手|捕手|内野手|外野手|氏|さん)(?=について|[はがの、。！？\s]|$)/g;
     while((m=re.exec(t)))add(m[1],'person',88);
 
     // 回答冒頭や文頭の「黒田博樹は」「新井貴浩について」のような主語。
@@ -1021,7 +1471,7 @@
 
     // 一般テーマも会話グラフの主役として保持する。
     // 「サイト運営について話そう」「動画編集についてどう思う？」のような混在文字列を拾う。
-    re=/(?:^|[\n。！？])\s*([^\n。！？、]{2,24}?)(?:について|の話)(?:を)?(?:教えて|知りたい|話そう|話したい|詳しく|どう思う|どうなの|しよう|する)?(?=[？?！!。\s]|$)/g;
+    re=/(?:^|[\n。！？])\s*(?:(?:まず(?:は)?|じゃあ|では|次は)[、,\s]*)?([^\n。！？、]{2,24}?)(?:について|の話)(?:を)?(?:教えて|知りたい|話そう|話したい|詳しく|どう思う|どうなの|しよう|する)?(?=[？?！!。\s]|$)/g;
     while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',76);
 
     // 「新井貴浩の家族」「黒田博樹の経歴」のような所有・観点表現。
@@ -1101,6 +1551,7 @@
     // 「その人」「その選手」「今はどう？」のような追質問は、前フレームの主役を継承する。
     if(previousFrame&&previousFrame.primary&&(
        /^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|それ|これ|その件|その話|さっきの話|今の話|前の話|今は|現在は|その後|それから|もっと|詳しく)/.test(S(userText)) ||
+       isFollowupOnlyUtterance(userText) ||
        (aspectFromText(userText)&&S(userText).length<=24)
     )){
       return {value:previousFrame.primary.value,type:previousFrame.primary.type||'topic',source:'carry'};
@@ -1125,7 +1576,9 @@
         current={
           index:i,at:Number(item.at||0),userText:S(item.text),assistantText:'',
           domain:domainFromHistoryItem(item)||'',aspect:aspectFromText(item.text),
-          userEntities:entityCandidatesFromText(item.text,domainFromHistoryItem(item)||''),
+          // 「料金は？」「注意点は？」などの追質問専用短文を新しい主題として登録しない。
+          // これらは直前主題を継承し、会話グラフ上の主役を「料金」「注意点」へすり替えない。
+          userEntities:isFollowupOnlyUtterance(item.text)?[]:entityCandidatesFromText(item.text,domainFromHistoryItem(item)||''),
           assistantEntities:[],primary:null,secondaryPeople:[]
         };
         var prev=frames.length?frames[frames.length-1]:null;
@@ -1556,6 +2009,62 @@
     };
   }
 
+  // 歩き巫女が「候補が複数」と聞き返した直後の「前者」「2番目」「義輝の方」などを、
+  // 元の質問へ差し戻す。候補は実際の直前会話フレームからだけ取り、推測で増やさない。
+  function clarificationSelection(text,history){
+    var t=S(text);if(!t||t.length>40)return null;
+    var h=historyBeforeCurrent(history,t);if(!h.length)return null;
+    var frames=topicFrames(h),f=null;
+    for(var i=frames.length-1;i>=0&&i>=frames.length-4;i--){
+      var x=frames[i],a=S(x&&x.assistantText);
+      if(!a)continue;
+      if(/(?:(?:複数候補|候補が複数|複数ある).*(?:どれ|どちら|名前|教えて)|(?:どれか|どちらか|どの人).*(?:名前|教えて))/.test(a)){
+        f=x;break;
+      }
+    }
+    if(!f)return null;
+    var candidates=[];
+    function add(v){v=S(v);if(v&&candidates.indexOf(v)<0)candidates.push(v);}
+    if(f.primary&&f.primary.value)add(f.primary.value);
+    (f.secondaryPeople||[]).forEach(add);
+    if(candidates.length<2)return null;
+
+    // 「義昭じゃなくて義輝」「前者じゃなくて後者」のような訂正は、
+    // 否定された側ではなく「じゃなくて」以降だけを選択回答として読む。
+    var selectionText=t,cm=t.match(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく)[、,\s]*(.+)$/);
+    if(cm&&S(cm[1]))selectionText=S(cm[1]);
+    var c=C(selectionText),idx=-1,m;
+    if(/^(?:どっちでもない|どちらでもない|どれでもない|どの人でもない|違う|ちがう|その二人じゃない|その2人じゃない|その候補じゃない)$/.test(c))
+      return {rejected:true,candidates:candidates,kind:'clarification_rejected',frame:f};
+    if(/^(?:両方|両方とも|二人とも|2人とも|どっちも|どちらも)$/.test(c)){
+      if(candidates.length!==2)return {ambiguous:true,candidates:candidates,kind:'clarification_selection',reason:'both_requires_two',frame:f};
+      var both=candidates[0]+'と'+candidates[1],bothBase=S(f.userText),bothMessage='';
+      if(bothBase)bothMessage=bothBase.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|彼)/,both);
+      if(!bothMessage||bothMessage===bothBase)bothMessage=both+'について'+bothBase;
+      return {message:bothMessage,selected:both,candidates:candidates,both:true,kind:'clarification_selection',frame:f};
+    }
+    if(/^(?:前者|最初|最初の人|一人目|1人目|1番目|一番目|上|上の方|上の人)$/.test(c))idx=0;
+    else if(/^(?:後者|最後|最後の人|二人目|2人目|2番目|二番目|下|下の方|下の人)$/.test(c)&&candidates.length===2)idx=1;
+    else if((m=c.match(/^(?:第)?([1-6])(?:人目|番目|番)?$/)))idx=Number(m[1])-1;
+    if(idx<0){
+      var hits=[];
+      for(i=0;i<candidates.length;i++){
+        var cv=C(candidates[i]);
+        if(c&&cv&&(cv.indexOf(c)>=0||c.indexOf(cv)>=0||C(selectionText.replace(/(?:の方|のほう|で|です|かな|ね)$/,'')).length>=2&&cv.indexOf(C(selectionText.replace(/(?:の方|のほう|で|です|かな|ね)$/,'')))>=0))hits.push(i);
+      }
+      if(hits.length===1)idx=hits[0];
+      else if(hits.length>1)return {ambiguous:true,candidates:hits.map(function(n){return candidates[n];}),kind:'clarification_selection'};
+    }
+    if(idx<0||idx>=candidates.length)return null;
+    var chosen=candidates[idx],base=S(f.userText),message='';
+    if(base){
+      message=base.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|彼)/,chosen);
+      if(message===base&&/(?:どれ|どっち|どちら|誰|だれ)/.test(base))message=chosen+'について'+base;
+    }
+    if(!message||message===base&&base===t)message=chosen;
+    return {message:message,selected:chosen,candidates:candidates,kind:'clarification_selection',frame:f};
+  }
+
   function multiTurnReference(text,history){
     var t=S(text);if(!t||t.length>100)return null;
     var h=historyBeforeCurrent(history,t),m,anchor,tail,ref,pair;
@@ -1580,6 +2089,28 @@
       }
     }
 
+    // 「さっきのFirebaseの料金ってどうだった？」「前に話した黒田の成績は？」のように、
+    // 名前と観点を明示して過去の枝へ戻る。名前が明示されているため、現在主題とは独立して安全に復帰できる。
+    m=t.match(/^(?:さっきの|この前の|前に(?:話した|話してた|話していた|言ってた|言っていた)?)[、,\s]*(.{1,24}?)の(家族|親族|成績|逸話|経歴|歴史|現在|近況|料金|価格|値段|使い方|安全|安全性|メリット|デメリット|注意点|入手方法|取り方|上限|下限|効果|倍率)(?:って)?(?:結局)?(?:どうだった|どうなの|どう|は)?[？?！!。]*$/);
+    if(m){
+      ref=findSubjectByAnchor(h,m[1]);
+      if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_history_aspect'};
+      if(ref&&ref.value){
+        var histAspect=S(m[2]),histMsg=rewriteTopicFollowup(ref.value,histAspect+'は？');
+        if(!histMsg)histMsg=ref.value+'の'+histAspect+'について教えて';
+        return {message:histMsg,reference:ref,kind:'named_history_aspect'};
+      }
+    }
+    m=t.match(/^(?:さっきの|この前の|前に(?:話した|話してた|話していた|言ってた|言っていた)?)[、,\s]*(.{1,24}?)(?:って|は)[、,\s]*(無料|タダ|安全|必要|使える|利用できる)(?:だった|なの|だったっけ|だっけ|ですか)?[？?！!。]*$/);
+    if(m){
+      ref=findSubjectByAnchor(h,m[1]);
+      if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_history_property'};
+      if(ref&&ref.value){
+        var propMsg=rewriteTopicFollowup(ref.value,S(m[2])+'？');
+        if(propMsg)return {message:propMsg,reference:ref,kind:'named_history_property'};
+      }
+    }
+
     // 「さっき黒田の話で言ってた家族の方は？」のように、数ターン前の主役を名前で呼び戻す。
     m=t.match(/^(?:じゃあ[、,\s]*)?(?:さっき|前に|この前)(?:の)?(.{1,24}?)(?:の)?話(?:で)?(?:言ってた|言っていた|出てた|出ていた|話してた|話していた|触れてた|触れていた)?[、,\s]*(.+)$/);
     if(m){
@@ -1597,7 +2128,15 @@
     if(m){
       ref=findSubjectByAnchor(h,m[1]);
       if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_back'};
-      if(ref&&ref.value)return {message:ref.value+'について、'+S(m[2]),reference:ref,kind:'named_back'};
+      if(ref&&ref.value){
+        var namedBackTail=S(m[2]),namedBackMsg=rewriteTopicFollowup(ref.value,namedBackTail);
+        if(!namedBackMsg){
+          var nbm=namedBackTail.match(/^(家族|親族|成績|逸話|経歴|歴史|現在|近況)(?:は|って)?[？?！!。]*$/);
+          if(nbm)namedBackMsg=ref.value+'の'+nbm[1]+'について教えて';
+        }
+        if(!namedBackMsg)namedBackMsg=ref.value+'について、'+namedBackTail;
+        return {message:namedBackMsg,reference:ref,kind:'named_back'};
+      }
     }
 
     // 「前の二人ならどっち？」は、直近で主役だった別人物2人を比較する。
@@ -1688,6 +2227,9 @@
 
   function resolveEntityReference(text,history){
     var t=S(text);if(!t||t.length>64)return null;
+    // 「それで？」は対象指示の「それ＋で」ではなく、会話を先へ進める短い追質問。
+    // ここで「黒田博樹で？」のように人物へ貼り付けず、genericFollowup()へ渡す。
+    if(/^(?:それで)[？?]$/.test(t))return null;
     var h=historyBeforeCurrent(history,t),m,suffix,ref;
 
     m=t.match(/^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|さっきの監督|その投手|その野手|彼)(.*)$/);
@@ -1711,12 +2253,29 @@
     return null;
   }
 
+  // 相槌・言い換え要求・短い追質問は「新しい話題」ではない。
+  // 会話枝や「前の話」を作る時に主題として残さず、直前の実質的な話題を維持する。
+  function isFollowupOnlyUtterance(text){
+    var t=S(text);if(!t||t.length>48)return false;
+    if(/^(?:うん|うんうん|はい|そっか|そうか|そうなんだ|そうなんだね|そうなんか|そうなんよ|なるほど|なるほどね|なるほどな|へえ|へー|ふーん|まあね|まあな|たしかに|確かに|たしかにな|それな|ほんとそれ|わかる|分かる|わかるわ|分かるわ|わかりみ|そういうことね|そういうことか|そんな感じ|まあそんなもん|だよね|ですよね|そうそう|せやな|せやねん|了解|りょ|OK|ok|おけ|おっけ|わかった|分かった|ありがとう|ありがと)[。！!？?\s]*$/.test(t))return true;
+    if(/^(?:マジ(?:で|か)?|まじ(?:で|か)?|うそでしょ|嘘でしょ|そうなん|そうなの)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:わからんでもない|分からんでもない|わからないでもない|分からないでもない|まあいっか|ま[、,\s]*いっか|知らんけど|知らないけど|別にいいけど|ちょっと待って|それはそれとして|それはそうと|それは置いといて|それは置いておいて|あとでいい|後でいい|話戻すけど)[。！!？?\s]*$/.test(t))return true;
+    if(/^(?:どゆこと|どういうこと|どういう意味|まだ(?:よく)?(?:わからん|分からん|わかんない|分かんない|わかんね|分かんね)|わかんない|分かんない|わかんね|分かんね|意味わからん|意味分からん|何言ってるかわからん|何言ってるか分からん)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:もう一回|もう一度|もっかい|もっぺん|もっと短く|簡単に(?:言って)?|ざっくり(?:言うと)?|一言で|ひとことで|具体的には|具体的に|例ある|例は|たとえば|例えば|例で教えて|例を出して)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:それで|で|んで|そんで|ほんで|それから|続き|続きは|結局|要するに|つまり|もっと|もう少し|詳しく|他には|ほかには|ほかは|それだけ|もっとある|逆に|じゃあ逆に|メリットは|デメリットは)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:いつ|いつの話|いつのこと|どこ|どこの話|どこのこと|誰|だれ|昔は|以前は|前は|何があった|なにがあった|何が起きた|なにが起きた)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:(?:それ|これ)(?:って|は)?|(?:その|この)(?:機能|サービス|仕組み)(?:って|は)?)?[、,\s]*(?:何ができる|なにができる|どう使う|どうやって使う|使い方(?:は|って)?|使える|利用できる|料金(?:は|って)?|値段(?:は|って)?|価格(?:は|って)?|無料|タダ|何に使う|なにに使う|どこで使う|どこで使える|必要|難しい|むずかしい|簡単|かんたん|安全|いつから|いつ頃から|いつごろから|何が違う|なにが違う|他と何が違う|ほかと何が違う|実際どう|どんな感じ|どんな時に使う|どんなときに使う|誰向け|だれ向け|どんな人向け|向いてる人(?:は)?|向いている人(?:は)?|初心者でも使える|初心者向け|実用的|便利|有名|人気|今も使われてる|現在も使われている|将来性(?:は)?|一番の利点(?:は)?|主な利点(?:は)?|良い点(?:は)?|いい点(?:は)?|注意点(?:は)?|代わり(?:は)?|代替(?:は)?|他に似たのある|ほかに似たのある|結局使うべき|使った方がいい|使ったほうがいい|おすすめする|結局おすすめ|導入難しい|導入は難しい|学ぶの大変|覚えるの大変)[？?。！!\s]*$/.test(t))return true;
+    if(/^(?:あとさ|あとね|でさ|でね|それでさ|それでね|ていうかさ|というかさ|てかさ|つーかさ|でもさ|たださ|いやさ|でもまあ|まあでも|いやでも|いやまあ|うーん|んー|えっと|あの)[、,…\.\s]*$/.test(t))return true;
+    return false;
+  }
+
   function lastSubstantiveUser(history){
     var h=filterHistory(history);
     for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
       if(!h[i]||h[i].role!=='user')continue;
       var t=S(h[i].text);
       if(!t)continue;
+      if(isFollowupOnlyUtterance(t))continue;
       if(/^(?:もっと|詳しく|くわしく|なんで|なぜ|どうして|それ|これ|じゃあ|では|なら|順位|選手|明日|今日)[？?]?$/.test(t))continue;
       return t;
     }
@@ -1772,7 +2331,7 @@
   }
 
   function isMoreCue(text){
-    return /^(?:もっと|他にも|ほかにも|他には|ほかには|別のも|別の|もう一つ|もう1つ|続き|つづき|まだある|ほかは)[？?！!。]*$/.test(S(text));
+    return /^(?:もっと|他にも|ほかにも|他には|ほかには|別のも|別の|もう一つ|もう1つ|続き|つづき|まだある|もっとある|それだけ|ほかは)[？?！!。]*$/.test(S(text));
   }
 
   function recentCounterAmbiguity(history){
@@ -1978,7 +2537,7 @@
     var kind='';
     if(/^(?:じゃあ[、,\s]*)?(?:今は|今だと|現在は|今現在は|今のところは|いまは)?(?:どうなんだろう|どうなんだろ|どうなの|どうなってる(?:の)?|どうなっている(?:の)?|どうなんですか|どうですか)[？?！!。]*$/.test(t) ||
        /^(?:じゃあ[、,\s]*)?(?:今|現在)(?:は)?[？?！!。]*$/.test(t))kind='current';
-    else if(/^(?:じゃあ[、,\s]*)?(?:その後|それから|以後|そのあと)(?:は|って)?(?:どうなった(?:の)?|どうなってる(?:の)?|どうなったんだろう|どうだった(?:の)?|は)?[？?！!。]*$/.test(t))kind='after';
+    else if(/^(?:(?:じゃあ|で|結局)[、,\s]*)?(?:(?:その後|それから|以後|そのあと)(?:は|って)?)?(?:どうなった(?:の)?|どうなってる(?:の)?|どうなったんだろう|どうだった(?:の)?)?[？?！!。]*$/.test(t) && /(?:その後|それから|以後|そのあと|どうなった|どうなってる|どうだった)/.test(t))kind='after';
     if(!kind)return null;
 
     var h=historyBeforeCurrent(history,t);
@@ -1992,7 +2551,8 @@
     // 人物に限定せず、見出し化された出来事・制度なども直前の主題として使う。
     var ref=findRecentEntity(h);
     if(!ref&&person&&person.value)ref=person;
-    var target=ref&&ref.value?ref.value:'';
+    // 「それから？」「どうなった？」も、人物名だけでなく直近の「家族/逸話」等の枝を優先。
+    var target=followupBranchBase(h,t)||(ref&&ref.value?ref.value:'');
     if(!target){
       var ant=lastSubstantiveUser(h);
       if(ant)target=cleanFollowupTarget(ant);
@@ -2008,22 +2568,294 @@
     };
   }
 
+  // 「さっきの説明と違う」のような指摘では、可能なら直前の事実質問そのものへ戻して
+  // 正本・実データ側へ再ルーティングする。操作系コマンドは勝手に再実行しない。
+  function conflictRecheckTarget(history,currentMessage){
+    var sig=continuitySignal(history,currentMessage);
+    if(!sig||sig.type!=='assistant_conflict')return null;
+    var h=historyBeforeCurrent(history,currentMessage),frames=topicFrames(h);
+    for(var i=frames.length-1;i>=0&&i>=frames.length-10;i--){
+      var f=frames[i],u=S(f&&f.userText),d=S(f&&f.domain);
+      if(!u||!S(f.assistantText))continue;
+      if(isExplicitTopicShift(u))continue;
+      // 検索・適用・解除・変更などのサイト操作は、矛盾指摘だけで再実行しない。
+      if(/(?:検索して|探して|適用|解除|全解除|差替|差し替|変更して|にして|使って|入れて|除外|固定|戻して|実行して|押して)/.test(u))continue;
+      var factual=factCue(u)||['carp','counter','tsukumo','kishin','madou','weather'].indexOf(d)>=0||
+        /(?:教えて|知りたい|とは|って何|ってなに|誰|だれ|いつ|どこ|なぜ|なんで|どうして|意味|由来|歴史|家族|成績|逸話|現在|順位|結果)/.test(u);
+      if(!factual)continue;
+      return {message:u,domain:d,frame:f,kind:'assistant_conflict_recheck'};
+    }
+    return null;
+  }
+
+  function correctionFollowup(text,history){
+    var t=S(text);if(!t||t.length>110)return null;
+    var repair=utteranceRepair(history,t);
+    // 「いや成績」「違う家族」のように区切りを省いた短い訂正は、
+    // 右側が既知の観点語で、直前に具体的な主題がある時だけ訂正として扱う。
+    // 「いや面白い」など普通の反応まで訂正扱いしない。
+    var compactAspect=t.match(/^(?:いや|違う|ちがう)[、,\s]*(家族|親族|逸話|昔話|歴史|成績|経歴|現在|順位|日程|結果|カウンター)(?:の話|について)?[。！!？?\s]*$/);
+    if((!repair||repair.type!=='correction')&&!compactAspect)return null;
+    // サイト操作の訂正はここで会話文へ変換せず、陣法parser等へそのまま渡す。
+    if(/(?:検索|探して|適用|解除|全MAX|差替|差し替|配置|除外|固定|実行|押して)/.test(t))return null;
+
+    var positive=compactAspect?S(compactAspect[1]):'',m=t.match(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく)[、,\s]*(.+)$/);
+    if(!positive&&m)positive=S(m[1]);
+    if(!positive){
+      positive=t.replace(/^(?:いや[、,\s]*)?(?:違う|ちがう|そうじゃなくて|そうじゃなく|そこじゃなくて|そこじゃなく|訂正(?:すると)?|正しくは|正確には)[、,\s]*/,'').trim();
+    }
+    positive=positive.replace(/^(?:その|こっちの|あっちの)[、,\s]*/,'')
+      .replace(/(?:のこと|の話|について)$/,'').replace(/[？?！!。]+$/,'').trim();
+    if(!positive||positive.length>42)return null;
+
+    var frames=topicFrames(history),prev=null;
+    for(var i=frames.length-1;i>=0;i--){if(frames[i]&&frames[i].primary&&frames[i].primary.value){prev=frames[i];break;}}
+    var asp=aspectFromText(positive),labels={family:'家族',anecdote:'逸話',history:'歴史',stats:'成績',career:'経歴',current:'現在',rank:'順位',schedule:'日程',result:'結果',compare:'比較',counter:'カウンター'};
+    if(asp&&prev&&prev.primary&&prev.primary.value){
+      return {message:prev.primary.value+'の'+(labels[asp]||positive)+'について',domain:prev.domain||'',kind:'aspect_correction',aspect:asp,subject:prev.primary.value};
+    }
+
+    // 訂正後が短い固有名・話題なら、現在の観点だけを引き継ぐ。
+    // 「新井」のような姓だけはここで人物を決め打ちせず、その文字列のまま専用知識へ渡す。
+    if(!/[？?]/.test(positive)&&positive.length<=28){
+      var prevAsp=prev&&prev.aspect||'',label=labels[prevAsp]||'';
+      var msg=positive+(label&&prevAsp!=='overview'?'の'+label+'について':'について');
+      return {message:msg,domain:prev&&prev.domain||'',kind:'subject_correction',aspect:prevAsp,subject:positive};
+    }
+    return null;
+  }
+
+  // 短い追質問で使う対象は、単なる直前ユーザー文より会話グラフ上の具体的な枝を優先する。
+  // 例: 「黒田について」→「家族は？」の後の「続きは？」を「黒田の家族」へつなぐ。
+  function followupBranchBase(history,currentText){
+    var branches=recentTopicBranches(history,currentText||'');
+    if(branches&&branches.length&&branches[0]&&branches[0].message){
+      return S(branches[0].message).replace(/[？?！!。]+$/,'')
+        .replace(/(?:について)?(?:教えて|説明して|知りたい|詳しく|くわしく)$/,'')
+        .replace(/(?:って何|ってなに|とは|って)$/,'')
+        .replace(/について$/,'').trim();
+    }
+    var ant=lastSubstantiveUser(history);
+    if(!ant)return'';
+    return ant.replace(/[？?！!。]+$/,'')
+      .replace(/(?:について)?(?:教えて|説明して|知りたい|詳しく|くわしく)$/,'')
+      .replace(/(?:って何|ってなに|とは|って)$/,'').trim();
+  }
+
+  // 「どう思う？」「それってあり？」など、直前の具体的な枝への意見要求。
+  // 「それ」を人物名へ直接置換すると「黒田博樹ってあり？」のような不自然な文になるため、
+  // 通常の指示語解決より先に“意見要求”として扱う。
+  function isOpinionFollowupCue(text){
+    var t=S(text);if(!t||t.length>48)return false;
+    return /^(?:それ(?:について)?[、,\s]*)?(?:どう思う|どう感じる|どうかな|率直にどう)(?:の|かな|ですか)?[？?]*$/.test(t)||
+      /^(?:(?:でも|じゃあ)[、,\s]*)?(?:(?:それ|これ)(?:って|は)?[、,\s]*)?(?:どうなの|どうなんだろう|あり|アリ|なし|ナシ)(?:だと思う|かな|ですか)?[？?]*$/.test(t)||
+      /^(?:どっち|どちら)(?:が|の方が|のほうが)?(?:いい|良い|よさそう|良さそう|無難|見やすい|自然|おすすめ)(?:と思う|かな|ですか)?[？?]*$/.test(t)||
+      /^おすすめ(?:は|って)?[？?]*$/.test(t);
+  }
+
+  function activeRecentSubject(history,opt){
+    opt=opt||{};
+    var frames=topicFrames(history,{limit:12});
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];if(!f)continue;
+      var u=S(f.userText||'');
+      if(f.primary&&f.primary.value){
+        if(opt.personOnly&&f.primary.type!=='person')return null;
+        return {value:S(f.primary.value),type:f.primary.type||'topic',domain:f.domain||'',aspect:f.aspect||'',frameIndex:i,userText:u,assistantText:S(f.assistantText||'')};
+      }
+      if(!u)continue;
+      // 挨拶・相槌・短い追質問は主題を切り替えない。
+      if(isResumeNoise(u)||isFollowupOnlyUtterance(u)||isBackCue(u)||isGeneralResumeCue(u)||isConversationRecallCue(u))continue;
+      // 実質的な別話題が一つでも入ったら、昔の人物・機能を裸の省略質問で復活させない。
+      return null;
+    }
+    return null;
+  }
+
+  function followupPrimarySubject(history){
+    var a=activeRecentSubject(history)||null;
+    return a&&a.value?S(a.value):'';
+  }
+
   function genericFollowup(text,history){
     var t=S(text),ant=lastSubstantiveUser(history);
     if(!ant)return'';
 
-    var d=recentDomain(history);
-    if(isMoreCue(t)){
-      if(d==='carp'&&recentCarpSubtopic(history)==='anecdote')return'カープの他の逸話';
-      return ant.replace(/[？?]$/,'')+'について、もう少し続けて';
+    var d=recentDomain(history),base=followupBranchBase(history,t);
+    var subjectInfo=activeRecentSubject(history)||null;
+    var subject=subjectInfo&&subjectInfo.value?S(subjectInfo.value):followupPrimarySubject(history);
+    var personSubject=subjectInfo&&subjectInfo.type==='person'?subject:'';
+
+    // 人物・主題を省いた、日常的な短い追質問。
+    if(/^(?:(?:まだ|ちょっと)?(?:よく)?(?:分からん|わからん|分からない|わからない|分かんない|わかんない|分かんね|わかんね)|(?:意味分からん|意味わからん|何言ってるか分からん|何言ってるかわからん))[？?。！!]*$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、もう少し分かりやすく説明して';
+    if(/^(?:もう一回|もういっかい|もう一度|もういちど|もっかい|もっぺん)(?:お願い|説明して|教えて)?[？?。！!]*$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、もう一度説明して';
+    if(/^(?:もっと)?(?:簡単|かんたん)(?:に|にして|に説明して|に言って)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、もっと簡単に説明して';
+    if(/^(?:もっと)?(?:短く|みじかく)(?:して|言って|説明して)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、もっと短く説明して';
+    if(/^(?:例えば|たとえば)(?:は|って)?[？?]?$|^(?:例|具体例)(?:は|ある|あるの|って)?[？?]?$|^(?:例で教えて|例を出して|具体例を出して)[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、具体例を一つ挙げて';
+    if(/^(?:ざっくり|ざっくり言うと|大まかに|おおまかに)[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、ざっくり要点だけ説明して';
+    if(/^(?:一言で|ひとことで|一言なら|ひとことなら)[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、一言で要点を説明して';
+    if(/^(?:具体的には|具体的に)(?:どういうこと|教えて|説明して)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、具体的に説明して';
+    if(/^(?:いつ|いつの話|いつのこと)(?:なの|ですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、直前の話はいつのこと？';
+    if(/^(?:どこ|どこの話|どこのこと)(?:なの|ですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、直前の話はどこのこと？';
+    if(/^(?:昔は|以前は|前は)(?:どう|どうだった)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、以前はどうだった？';
+    if(/^(?:何があった|なにがあった|何が起きた|なにが起きた)(?:の|んですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、何があったの？';
+
+    // 人物以外の機能・サービス・一般テーマでも、短い省略追質問は直前の説明対象へつなぐ。
+    // 雑談の出来事そのものは topicFrames に主題として残らないため、むやみに前の一言へ連結しない。
+    var priorKnowledgeQuestion=/(?:について|って何|ってなに|とは|教えて|説明して|知りたい|詳しく|使い方|機能|仕組み)/.test(ant)||!!d;
+    var generalTarget=subject||(priorKnowledgeQuestion?base:'');
+    if(generalTarget){
+      // 「それ無料？」「その機能どう使う？」のような短い指示語は、
+      // 明確な説明対象が残っている時だけその対象へ戻す。
+      var generalCue=t.replace(/^(?:(?:それ|これ)(?:って|は)?|(?:その|この)(?:機能|サービス|仕組み)(?:って|は)?)[、,\s]*/,'');
+      if(!generalCue)generalCue=t;
+      var sharedGeneralRewrite=rewriteTopicFollowup(generalTarget,generalCue);
+      if(sharedGeneralRewrite)return sharedGeneralRewrite;
+      if(/^(?:何|なに|どんな)(?:が|ことが)?(?:できる|出来る)(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'について、何ができる？';
+      if(/^(?:どう使う|どうやって使う|使い方(?:は|って)?)(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'の使い方は？';
+      if(/^(?:使える|利用できる)(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'は使える？';
+      if(/^(?:料金|値段|価格)(?:は|って)?[？?]?$/.test(generalCue))
+        return generalTarget+'の料金は？';
+      if(/^(?:無料|タダ)(?:なの|ですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'は無料で使える？';
+      if(/^(?:何|なに)に使う(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'は何に使う？';
+      if(/^(?:どこで使う|どこで使える)(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'はどこで使える？';
+      if(/^(?:必要|必要なの|必要ですか)[？?]?$/.test(generalCue))
+        return generalTarget+'は必要？';
+      if(/^(?:難しい|むずかしい|簡単|かんたん)(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'は'+generalCue.replace(/[？?]+$/,'')+'？';
+      if(/^(?:安全|安全なの|安全ですか)[？?]?$/.test(generalCue))
+        return generalTarget+'は安全？';
+      if(/^(?:いつから|いつ頃から|いつごろから)(?:なの|ですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'はいつから？';
+      if(/^(?:他と|ほかと)?(?:何|なに)(?:が|がどう)?違う(?:の|んですか)?[？?]?$/.test(generalCue))
+        return generalTarget+'は他と何が違う？';
     }
 
+    if(personSubject&&/^(?:何歳|なんさい|年齢(?:は)?|いくつ)(?:なの|ですか)?[？?]?$/.test(t))
+      return personSubject+'の年齢は？';
+    if(personSubject&&/^(?:何年生まれ|なんねんうまれ|いつ生まれ|生年月日(?:は)?|誕生日(?:は)?)(?:なの|ですか)?[？?]?$/.test(t))
+      return personSubject+'の生年月日・生年は？';
+    if(/^(?:理由(?:は)?|何が原因|なにが原因|原因(?:は)?)(?:なの|ですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、その理由や原因は？';
+    if(/^(?:どのくらい|どれくらい|どんくらい)(?:なの|ですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、どのくらい？';
+    if(/^(?:いつまで)(?:なの|ですか)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、いつまで？';
+    if(personSubject&&/^(?:今|いま)?(?:何してる|なにしてる|何をしてる|何している|なにしている)(?:の|んですか)?[？?]?$/.test(t))
+      return personSubject+'について、現在は何をしている？';
+    if(personSubject&&/^(?:元気|元気なの|元気ですか|げんき)[？?]+$/.test(t))
+      return personSubject+'について、現在は元気？';
+    if(personSubject&&/^(?:趣味(?:は)?|好きな食べ物(?:は)?|好物(?:は)?)(?:何|なに)?[？?]?$/.test(t))
+      return personSubject+'について、'+t.replace(/[？?]+$/,'')+'？';
+    if(/^(?:じゃあ[、,\s]*)?逆に[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、逆の見方や反対側の面も教えて';
+    if(/^(?:メリット|良いところ|いいところ|長所)(?:は|って)?[？?]?$|^(?:何|なに|どこ)(?:が|は)?(?:いい|良い)(?:の|ところ)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、良いところや評価されている点は？';
+    if(/^(?:デメリット|悪いところ|わるいところ|短所)(?:は|って)?[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、注意点や弱いところは？';
+    if(/^(?:つまり|要するに)(?:何が言いたいの|なにが言いたいの|どういうこと|何|なに)[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、要点だけ短く説明して';
+    if(/^(?:待って[、,\s]*)?(?:今の|さっきの)(?:何|なに|どういうこと)[？?]?$/.test(t))
+      return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、今の説明をもう一度分かりやすく説明して';
+    var truthCue=/^(?:それ(?:って|は)?[、,\s]*)?(?:本当|ほんと|ホント|マジ(?:で)?|まじ(?:で)?|うそでしょ|嘘でしょ)(?:なの|ですか|か)?[？?]?$/.test(t)||/^(?:そうなん|そうなの)[？?]+$/.test(t);
+    if(truthCue){
+      var truthBranches=recentTopicBranches(history,t),truthTop=truthBranches&&truthBranches[0]||null;
+      var factContext=['carp','counter','jinpo','tsukumo','kishin','madou','weather','kashin_name'].indexOf(d)>=0||factCue(ant)||!!(truthTop&&truthTop.primary&&truthTop.primary.type==='person');
+      if(factContext)return (base||subject||ant.replace(/[？?！!。]+$/,''))+'について、本当か事実確認して';
+      return'';
+    }
+
+    if(subject){
+      if(personSubject){
+      // 人物名を毎回言い直さない日本語の追質問を、直前人物へ安全に接続する。
+      // 物理的な現在地を推測するのではなく、「今どこ？」は現在の所属・活動として扱う。
+      if(/^(?:どんな人|どういう人|どんな人物|どういう人物)(?:なの|ですか)?[？?]?$/.test(t))return subject+'はどんな人物？';
+      if(/^(?:結婚してる|結婚している|結婚は|既婚|独身)(?:なの|ですか)?[？?]?$/.test(t))return subject+'は結婚している？';
+      if(/^(?:まだ)?現役(?:なの|ですか)?[？?]?$/.test(t))return subject+'は現在も現役？';
+      if(/^(?:いつ|何年に|なんねんに)?(?:引退した|引退したの|引退)(?:の|ですか)?[？?]?$/.test(t))return subject+'はいつ引退した？';
+      if(/^(?:まだ)?(?:生きてる|生きている|存命)(?:なの|ですか)?[？?]?$/.test(t))return subject+'は現在存命？';
+      if(/^(?:どこ出身|出身はどこ|出身地(?:は)?)(?:なの|ですか)?[？?]?$/.test(t))return subject+'の出身地は？';
+      if(/^(?:身長|体重)(?:は|って)?[？?]?$/.test(t))return subject+'の'+t.replace(/[？?]+$/,'')+'？';
+      if(/^(?:背番号|ポジション|守備位置)(?:は|って)?[？?]?$/.test(t))return subject+'の'+t.replace(/[？?]+$/,'')+'？';
+      if(/^(?:右投げ|左投げ|右打ち|左打ち|投打)(?:なの|ですか)?[？?]?$/.test(t))return subject+'の投打は？';
+      if(/^(?:何年いた|なんねんいた|何年間いた|在籍年数(?:は)?)(?:の|ですか)?[？?]?$/.test(t))return subject+'は何年間在籍した？';
+      if(/^(?:何勝した|なんしょうした|通算何勝)(?:の|ですか)?[？?]?$/.test(t))return subject+'の通算勝利数は？';
+      if(/^(?:何本打った|通算何本)(?:の|ですか)?[？?]?$/.test(t))return subject+'の通算本塁打数は？';
+      if(/^(?:何安打|通算何安打)(?:の|ですか)?[？?]?$/.test(t))return subject+'の通算安打数は？';
+      if(/^(?:一番|いちばん)(?:すごい|凄い|良かった|よかった)(?:年|シーズン)(?:は|って)?[？?]?$/.test(t))return subject+'の最も活躍したシーズンは？';
+      if(/^(?:代表歴|日本代表歴|代表経験)(?:は|って)?[？?]?$/.test(t))return subject+'の代表歴は？';
+      if(/^(?:今|いま)(?:どこにいる|どこ|何してる|なにしてる)(?:の|んですか)?[？?]?$/.test(t))return subject+'の現在の所属・活動は？';
+      if(/^(?:何歳で|なんさいで)?(?:亡くなった|死去した)(?:の|んですか)?[？?]?$/.test(t))return subject+'はいつ、何歳で亡くなった？';
+      var kin=t.match(/^(父親|父|母親|母|兄弟|兄|弟|姉|妹|妻|夫|息子|娘|子供|子ども)(?:は|って)?[？?]?$/);
+      if(kin)return subject+'の'+kin[1]+'は？';
+      if(/^(?:本人|その人)(?:の)?(?:話|こと)?(?:に|へ)?戻(?:って|ろう|る|して)?[？?]?$/.test(t))return subject+'について教えて';
+      if(/^(?:何|なに|どこ)(?:が|が一番)?(?:すごい|凄い|有名)(?:の|ですか)?[？?]?$/.test(t))return subject+'について、何が特にすごいの？';
+      if(/^(?:一番|いちばん)(?:有名|すごい|凄い)(?:なの|なのは|のは|の)?[？?]?$/.test(t))return subject+'について、一番有名な出来事は？';
+      if(/^(?:誰|だれ)(?:と|に)(?:関係|つながり)(?:が)?(?:ある|深い)(?:の|ですか)?[？?]?$/.test(t))return subject+'は誰と関係が深い？';
+      var rel=t.match(/^(.{1,18}?)(?:とは|との関係(?:は)?|とどういう関係)[？?]?$/);
+      if(rel&&S(rel[1])&&C(rel[1])!==C(subject))return subject+'と'+S(rel[1])+'はどういう関係？';
+      }
+      if(/^(?:逆に[、,\s]*)?(?:弱点|欠点|弱いところ|苦手なところ)(?:は|って)?[？?]?$/.test(t))return subject+'の弱点や欠点として確認できることは？';
+    }
+
+    if(isOpinionFollowupCue(t)){
+      var opinionBase=base||ant.replace(/[？?！!。]+$/,'').replace(/について$/,'').trim();
+      if(!opinionBase)return'';
+      // 人物名・名詞句ならそのまま「〜について」、出来事や変更を表す文なら引用して日本語を崩さない。
+      var opinionTarget=/(?:した|して|だった|迷って|変えた|変えて|大きく|小さく|光らせ|使う|使って|する|したい|なった|できた)/.test(opinionBase)
+        ?'「'+opinionBase+'」について'
+        :opinionBase+'について';
+      if(/^(?:どっち|どちら)/.test(t))return opinionTarget+'、どちらがいいと思う？';
+      return opinionTarget+'、どう思う？';
+    }
+    if(isMoreCue(t)){
+      if(d==='carp'&&recentCarpSubtopic(history)==='anecdote')return'カープの他の逸話';
+      return (base||ant.replace(/[？?]$/,''))+'について、もう少し続けて';
+    }
+
+    // 「それで？」「続きは？」は直近の具体的な会話枝を継続する。
+    // 「続きは後で話す」のようなユーザー自身の伏線は control() 側が先に処理するため、ここでは短い追質問だけ扱う。
+    if(/^(?:(?:それで|で|それから)[、,\s]*)?[？?]$/.test(t) ||
+       /^(?:それで|で|それから)[？?]?$/.test(t) ||
+       /^(?:(?:その|さっきの|前の)[、,\s]*)?(?:続き|つづき)(?:は|って|を教えて|教えて|お願い)?[？?]?$/.test(t))
+      return (base||ant.replace(/[？?]$/,''))+'について、続きを教えて';
+
+    // 「結局？」は新しい事実を作らず、すでに話している枝の要点・結論を求める追質問として扱う。
+    if(/^(?:(?:で|それで)[、,\s]*)?(?:結局|要するに|つまり)(?:どういうこと|どうなの|何|なに)?[？?]?$/.test(t))
+      return (base||ant.replace(/[？?]$/,''))+'について、要点と結論を短く教えて';
+
     if(/^(?:もっと|もう少し|詳しく|くわしく)[？?]?$/.test(t))
-      return ant.replace(/[？?]$/,'')+'について、もう少し詳しく教えて';
+      return (base||ant.replace(/[？?]$/,''))+'について、もう少し詳しく教えて';
     if(/^(?:なんで|なぜ|どうして)[？?]?$/.test(t))
-      return ant.replace(/[？?]$/,'')+'について、なぜそうなるの？';
+      return (base||ant.replace(/[？?]$/,''))+'について、なぜそうなるの？';
     if(/^(?:それは|それって|それ何|それなに)[？?]?$/.test(t))
-      return ant.replace(/[？?]$/,'')+'について説明して';
+      return (base||ant.replace(/[？?]$/,''))+'について説明して';
+    if(/^(?:それ(?:って|は)?[、,\s]*)?(?:どういう意味|どういうこと|何の意味|なんの意味)[？?]?$/.test(t)){
+      var meaningTarget=base||ant.replace(/[？?！!。]+$/,'').replace(/(?:について)?(?:教えて|説明して|知りたい|詳しく|くわしく)$/,'').replace(/(?:って何|ってなに|とは)$/,'').trim();
+      return (meaningTarget||ant.replace(/[？?]$/,''))+'について、どういう意味か説明して';
+    }
+    if(/^(?:何の話|なんの話|何のこと|なんのこと)[？?]?$/.test(t)){
+      var topicTarget=base||ant.replace(/[？?！!。]+$/,'').replace(/(?:について)?(?:教えて|説明して|知りたい|詳しく|くわしく)$/,'').replace(/(?:って何|ってなに|とは)$/,'').trim();
+      return (topicTarget||ant.replace(/[？?]$/,''))+'について、何を指しているか説明して';
+    }
     return'';
   }
 
@@ -2041,7 +2873,7 @@
   function recentTopicBranches(history,currentMessage){
     var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h),out=[],seen={};
     for(var i=frames.length-1;i>=0;i--){
-      var f=frames[i];if(!f||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
+      var f=frames[i];if(!f||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText)||isFollowupOnlyUtterance(f.userText))continue;
       var p=f.primary&&f.primary.value?S(f.primary.value):'',a=S(f.aspect),d=S(f.domain);
       var key=p?((f.primary.type||'topic')+'|'+p+'|'+(a||'overview')):(d?('domain|'+d+'|'+C(f.userText)):'text|'+C(f.userText));
       if(!key||seen[key])continue;seen[key]=1;
@@ -2086,7 +2918,7 @@
       }
     }
     for(var i=priorFrames.length-1;i>=0;i--){
-      var f=priorFrames[i];if(!f||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
+      var f=priorFrames[i];if(!f||!S(f.userText)||isFollowupOnlyUtterance(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
       return frameAsBranch(f);
     }
     return null;
@@ -2208,13 +3040,19 @@
       var hr=restoreConversationHook(history,t);
       return hr||restoreNaturalResume(history,t)||{control:'back',restoreMessage:'',domain:'',sourceText:'',hook:true};
     }
+    if(isConversationRecallCue(t)){
+      return recallConversationState(history,t)||{control:'recall',answer:'直前の実質的な話題をこちらでは特定できませんでした。',restoreMessage:'',domain:'',sourceText:'',resume:true};
+    }
     if(isGeneralResumeCue(t)){
       var nr=restoreNaturalResume(history,t);
       return nr||{control:'back',restoreMessage:'',domain:'',sourceText:'',resume:true};
     }
     if(isResumeParallelCue(t)){
       var pr=restoreParallelTopic(history,t);
-      return pr||{control:'back',restoreMessage:'',domain:'',sourceText:'',parallel:true};
+      if(pr)return pr;
+      // 「もう片方／前者／後者」は並行参照そのものなので候補なしでも制御として返す。
+      // 一方「どっちが簡単？」等の比較表現は、並行履歴が無ければ通常の二択処理へ流す。
+      if(parallelResumeParts(t))return {control:'back',restoreMessage:'',domain:'',sourceText:'',parallel:true};
     }
     if(isResumeDeferredCue(t)){
       var dr=restoreDeferredTopic(history,t);
@@ -2246,6 +3084,36 @@
     return score;
   }
 
+  function splitDifferentSubjectAspects(text){
+    var t=S(text);if(!t||t.length<8||t.length>220)return [];
+    var aspect='(?:家族|親族|成績|逸話|経歴|歴史|現在|近況|順位|使い方|料金|価格|値段|安全|安全性|メリット|デメリット|入手方法|取り方|入手|上限|下限|効果|倍率|必要数|必要個数)';
+    var re=new RegExp('^(.{1,45}?)の('+aspect+')\s*(?:と|、|,)\s*(.{1,45}?)の('+aspect+')(?:を)?(?:教えて|知りたい|説明して|詳しく教えて|は[？?])(?:[。！!]*)$');
+    var m=t.match(re);if(!m)return [];
+    var s1=S(m[1]),a1=S(m[2]),s2=S(m[3]),a2=S(m[4]);
+    if(!s1||!s2||!a1||!a2||C(s1)===C(s2))return [];
+    return [s1+'の'+a1+'について教えて',s2+'の'+a2+'について教えて'];
+  }
+
+  function splitCoordinatedAspects(text){
+    var t=S(text);if(!t||t.length<6||t.length>180)return [];
+    // 「黒田の成績と家族を教えて」「Firebaseの使い方と料金は？」のように、
+    // 同じ主題に対して明確に別観点が並んだ時だけ分ける。
+    var m=t.match(/^(.{1,60})の(.+?)(?:(?:を)?(?:教えて|知りたい|説明して|詳しく教えて)|(?:は|って)?[？?])(?:[。！!]*)$/);
+    if(!m)return [];
+    var subject=S(m[1]),body=S(m[2]);if(!subject||!body)return [];
+    var allowed={
+      '家族':1,'親族':1,'成績':1,'逸話':1,'経歴':1,'歴史':1,'現在':1,'近況':1,
+      '使い方':1,'料金':1,'価格':1,'値段':1,'安全':1,'安全性':1,'メリット':1,'デメリット':1,
+      '入手方法':1,'取り方':1,'入手':1,'上限':1,'下限':1,'効果':1,'倍率':1,'必要数':1,'必要個数':1
+    };
+    var parts=body.split(/(?:と|、|,)/).map(function(x){return S(x).replace(/^(?:それと|あと)[、,\s]*/,'');}).filter(Boolean);
+    if(parts.length<2||parts.length>4)return [];
+    if(parts.some(function(x){return !allowed[x];}))return [];
+    var out=[];
+    parts.forEach(function(a){out.push(subject+'の'+a+'について教えて');});
+    return out;
+  }
+
   // 1発言に複数の依頼・質問がある時だけ、安全な境界で分割する。
   // 「腕力と耐久」「黒田と新井」のような同一条件・並列表現は分割しない。
   function splitCompoundIntents(text){
@@ -2253,10 +3121,13 @@
     try{rawText=rawText.normalize('NFKC');}catch(e){}
     rawText=rawText.replace(/[\u3000\t]+/g,' ').replace(/ *\r?\n */g,'\n').trim();
     var original=S(rawText);if(!original||original.length<8||original.length>500)return [];
+    var differentSubjects=splitDifferentSubjectAspects(original);if(differentSubjects.length)return differentSubjects;
+    var coordinated=splitCoordinatedAspects(original);if(coordinated.length)return coordinated;
     var mark='\u241e',t=rawText;
 
-    // 「〜を知りたいし、〜も教えて」のような依頼接続。
+    // 「〜を知りたいし、〜も教えて」「〜知りたいけど、〜も教えて」のような依頼接続。
     t=t.replace(/((?:知りたい|教えて|調べて|見せて|見たい|探して|検索して|比較して|お願い|してほしい|して欲しい))\s*し[、,]?\s*/g,'$1'+mark);
+    t=t.replace(/((?:知りたい|教えて|調べて|見せて|見たい|探して|検索して|比較して))\s*(?:けど|けれど|けれども|ですが|だけど)[、,]?\s*/g,'$1'+mark);
 
     // 明示的に別件を足す接続語。文頭の「あと」は対象外。
     t=t.replace(/[、,]\s*(?:それと|それから|あと|ついでに|もう一つ|もう1つ)[、,\s]*/g,mark);
@@ -2293,8 +3164,13 @@
 
   function resolve(text,history,opt){
     var original=S(text);
+    var casual=normalizeCasualInput(original);
+    var routingText=casual.text||original;
     var priorHistory=historyBeforeCurrent(history,original);
-    var correction=stripCorrection(original);
+    var fragmentCarry=stitchUserFragment(routingText,priorHistory);
+    if(fragmentCarry&&fragmentCarry.message)routingText=fragmentCarry.message;
+    var inlineCorrection={text:routingText,changed:false,type:'none'};
+    var correction=stripCorrection(routingText);
     var message=correction.text;
     var domain=domainFromText(message);
     var explicitTopicShift=isExplicitTopicShift(message);
@@ -2302,8 +3178,39 @@
     var prevDomain=explicitTopicShift?'':recentDomain(priorHistory);
     var carried='',referenceClarification='',conversationExpansion=null;
 
+    // 直前に候補確認を返している時は、「前者」「2番目」「義輝の方」のような短い回答を
+    // 先に元質問へ復元する。通常の談話指示語より優先する。
+    var clarification=clarificationSelection(message,priorHistory);
+    if(clarification&&clarification.rejected){
+      referenceClarification='了解です。その候補ではないんですね。対象の名前か、分かる特徴を一つ教えてください。';
+    }else if(clarification&&clarification.ambiguous){
+      referenceClarification='候補がまだ複数残っているのですよ。'+(clarification.candidates||[]).join('、')+'のどれか教えてください。';
+    }else if(clarification&&clarification.message){
+      message=clarification.message;
+      domain=domainFromText(message)||domain||prevDomain;
+      carried=message;
+    }
+
+    // 候補選択ではない一般訂正も、「主役だけ変更」「観点だけ変更」に分けて前の枝へつなぐ。
+    var correctionCarry=!clarification&&!referenceClarification?correctionFollowup(routingText,priorHistory):null;
+    if(correctionCarry&&correctionCarry.message){
+      message=correctionCarry.message;
+      domain=correctionCarry.domain||domainFromText(message)||domain||prevDomain;
+      carried=message;
+    }else if(!clarification&&!referenceClarification){
+      // 履歴を使う訂正で解決できなかった時だけ、同一発話内の「A、いやB」を処理する。
+      // これにより「黒田じゃなくて新井」は従来どおり前の観点を保持しつつ、
+      // 「黒田の家族、いや成績を教えて」のような途中言い直しも扱える。
+      inlineCorrection=inlineSelfCorrection(routingText);
+      if(inlineCorrection&&inlineCorrection.changed){
+        message=inlineCorrection.text;
+        domain=domainFromText(message)||domain||prevDomain;
+        carried=message;
+      }
+    }
+
     // 「あれ」「あの件」「そっちの話」のような談話指示語は、人物名ではなく具体的な会話枝から解決する。
-    var discourseRef=resolveDiscourseDeictic(message,priorHistory);
+    var discourseRef=!clarification&&!referenceClarification&&!correctionCarry?resolveDiscourseDeictic(message,priorHistory):null;
     if(discourseRef&&discourseRef.ambiguous){
       referenceClarification='指している話題が複数あるのですよ。'+(discourseRef.candidates||[]).join('、')+'のどれか教えてください。';
     }else if(discourseRef&&discourseRef.message){
@@ -2324,7 +3231,9 @@
 
     // 「その人」「その選手」「それはいつ？」などは、直前の回答側に出た対象も参照する。
     // 「封印編」のような属性語からdomainが先に付いても、指示語そのものは解決する。
-    var entityRef=!referenceClarification&&!discourseRef?resolveEntityReference(message,priorHistory):null;
+    var shortStance=conversationalStance(priorHistory,message);
+    var stanceOnly=shortStance&&['skepticism','disagreement','partial_agreement','agreement'].indexOf(shortStance.type)>=0&&S(message).length<=36;
+    var entityRef=!referenceClarification&&!discourseRef&&!correctionCarry&&!stanceOnly&&!explicitTopicShift&&!isOpinionFollowupCue(message)?resolveEntityReference(message,priorHistory):null;
     if(entityRef&&entityRef.ambiguous){
       referenceClarification='「その人」が複数候補に当てはまるのですよ。'+(entityRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
     }else if(entityRef&&entityRef.message){
@@ -2357,6 +3266,17 @@
       }
     }
 
+    // 「前の説明と違う」と指摘された時は、操作を再実行しない範囲で直前の事実質問へ戻す。
+    var conflictRecheck=null;
+    if(!referenceClarification){
+      conflictRecheck=conflictRecheckTarget(priorHistory,message);
+      if(conflictRecheck&&conflictRecheck.message){
+        message=conflictRecheck.message;
+        domain=conflictRecheck.domain||domainFromText(message)||domain||prevDomain;
+        carried=message;
+      }
+    }
+
     // 新しいデータ種別は今の発言を最優先。
     // ただし「じゃあ鬼神石では？」のように対象だけ切り替えた時は、
     // 直前の腕力/知力/トップN/番号など移植可能な条件だけ引き継ぐ。
@@ -2368,7 +3288,7 @@
       }
     }
 
-    if(!domain){
+    if(!domain&&!referenceClarification){
       if(prevDomain==='counter'&&isCounterCandidateFollowup(message,priorHistory)){
         carried=message;
         domain='counter';
@@ -2381,7 +3301,7 @@
       }
     }
 
-    if(!carried){
+    if(!carried&&!referenceClarification){
       var generic=genericFollowup(message,priorHistory);
       if(generic){
         message=generic;
@@ -2402,7 +3322,12 @@
     return {
       original:original,
       message:message,
-      corrected:correction.corrected,
+      normalizedInput:routingText,
+      inputNormalized:!!casual.changed,
+      corrected:!!(correction.corrected||(inlineCorrection&&inlineCorrection.changed)),
+      fragmentStitched:!!(fragmentCarry&&fragmentCarry.message),
+      fragmentSource:fragmentCarry?fragmentCarry.fragment:'',
+      inlineCorrection:inlineCorrection&&inlineCorrection.changed?inlineCorrection.type:'',
       carried:!!carried,
       domain:domain||prevDomain||'',
       previousDomain:prevDomain,
@@ -2413,17 +3338,24 @@
       conversationExpansion:conversationExpansion,
       planRecall:recallPlan(priorHistory,original),
       positionRecall:recallPosition(priorHistory,original),
-      priorStatement:priorStatementReference(priorHistory,original)
+      priorStatement:priorStatementReference(priorHistory,original),
+      conflictRecheck:conflictRecheck
     };
   }
 
   window.JINPO_BOT_CONVERSATION={
     version:VERSION,
     resolve:resolve,
+    normalizeCasualInput:normalizeCasualInput,
+    isOpenUserFragment:isOpenUserFragment,
+    stitchUserFragment:stitchUserFragment,
+    inlineSelfCorrection:inlineSelfCorrection,
+    clarificationSelection:clarificationSelection,
     navigationCue:navigationCue,
     factCue:factCue,
     domainFromText:domainFromText,
     recentDomain:recentDomain,
+    immediateReactionContext:immediateReactionContext,
     stripCorrection:stripCorrection,
     isWeakAssistantText:isWeakAssistantText,
     control:control,
@@ -2451,8 +3383,11 @@
     retractedMemoryIndexes:retractedMemoryIndexes,
     priorStatementReference:priorStatementReference,
     isGeneralResumeCue:isGeneralResumeCue,
+    isConversationRecallCue:isConversationRecallCue,
+    recallConversationState:recallConversationState,
     restoreNaturalResume:restoreNaturalResume,
     resolveDiscourseDeictic:resolveDiscourseDeictic,
+    rewriteTopicFollowup:rewriteTopicFollowup,
     utteranceRepair:utteranceRepair,
     isConversationHookCue:isConversationHookCue,
     isResumeHookCue:isResumeHookCue,
@@ -2468,6 +3403,8 @@
     carriedListenIntent:carriedListenIntent,
     restorePreviousTopic:restorePreviousTopic,
     recentTopicBranches:recentTopicBranches,
+    followupPrimarySubject:followupPrimarySubject,
+    activeRecentSubject:activeRecentSubject,
     isDeferCue:isDeferCue,
     isResumeDeferredCue:isResumeDeferredCue,
     deferredTopics:deferredTopics,
@@ -2511,7 +3448,13 @@
     resolveEntityReference:resolveEntityReference,
     workingMemory:workingMemory,
     splitCompoundIntents:splitCompoundIntents,
+    splitCoordinatedAspects:splitCoordinatedAspects,
+    splitDifferentSubjectAspects:splitDifferentSubjectAspects,
     compoundClauseScore:compoundClauseScore,
-    openEndedFollowup:openEndedFollowup
+    openEndedFollowup:openEndedFollowup,
+    isOpinionFollowupCue:isOpinionFollowupCue,
+    isFollowupOnlyUtterance:isFollowupOnlyUtterance,
+    correctionFollowup:correctionFollowup,
+    conflictRecheckTarget:conflictRecheckTarget
   };
 })();

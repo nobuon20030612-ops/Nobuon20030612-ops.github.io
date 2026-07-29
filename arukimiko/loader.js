@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.21.0-memory-state
+ * 歩き巫女 サイト共通ローダー v3.21.1-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.21.0';
+  var ASSET_VERSION='3.21.1';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.21.0-memory-state',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.21.1-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.21.0',
+    version:'3.21.1',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -134,6 +134,7 @@
   ];
 
   var coreCommon=[
+    'arukimiko-local-only-guard.js',
     'jinpo-bot-conversation.js',
     'jinpo-bot-context.js',
     'jinpo-bot-dialog.js',
@@ -171,11 +172,6 @@
     ],
     smalltalk:[
       'jinpo-bot-smalltalk.js'
-    ],
-    ai:[
-      'jinpo-bot-firebase-config.js',
-      'jinpo-bot-ai-config.js',
-      'jinpo-bot-ai-brain.js'
     ],
     tool:[
       'jinpo-bot-tool-data.js',
@@ -283,19 +279,12 @@
     return /桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|封印|今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t);
   }
 
-
-  function instantLocalMessage(text){
-    var t=String(text||'').trim();
-    return /^(?:こんにちは|こんにちわ|おはよう(?:ございます)?|こんばんは|こんばんわ|ありがとう(?:ございます)?|ありがと|ごめん(?:なさい)?|すみません|おやすみ(?:なさい)?|またね|ばいばい|バイバイ|ただいま|いってきます|行ってきます)[。！!？?ー〜~\s]*$/i.test(t);
-  }
-
   function groupsForMessage(text,history){
     var t=String(text||'');
     var groups=[];
 
-    // 常時小さな学習補助。挨拶など完全ローカルで完結する短文はAI読込を待たせない。
+    // 常時小さな学習補助。外部生成AIは使用しない。
     groups.push('learning');
-    if(!instantLocalMessage(t))groups.push('ai');
 
     if(/九十九|つくも|鬼神石|魔導結晶|まどう|不壊金剛|八幡神の武運/.test(t)){
       groups.push('tool');
@@ -332,8 +321,8 @@
     }
 
     // 専用話題に当たらない通常会話は雑談エンジンも読む。
-    // AIが未設定・無料枠到達・通信失敗でも、自然会話をすぐローカルへ戻せるようにする。
-    var hasSpecialist=groups.some(function(g){return g!=='learning'&&g!=='ai';});
+    // 専用話題に当たらない会話はローカル雑談エンジンを使う。
+    var hasSpecialist=groups.some(function(g){return g!=='learning';});
     if(!hasSpecialist||/こんにちは|こんばんは|おはよう|疲れ|眠い|暑い|寒い|暇|お腹|腹減|元気|ありがとう|ごめん|ほんと|ばか|おばか|雑談|話そう/.test(t)){
       groups.push('smalltalk');
     }
@@ -354,7 +343,7 @@
   function loadLightIdleOptional(){
     // 起動直後に先読みするのは、小さく使用頻度の高い会話補助だけ。
     // Web / カープ / 家臣命名 / 正本データは実際に使うまで取得しない。
-    var idleGroups=['learning','help','smalltalk','ai'];
+    var idleGroups=['learning','help','smalltalk'];
     return Promise.all(idleGroups.map(ensureGroup)).then(function(){
       window.ARUKIMIKO_LOAD_METRICS.lightOptionalReadyMs=elapsed();
       window.ARUKIMIKO_SHARED.lightOptionalReady=true;

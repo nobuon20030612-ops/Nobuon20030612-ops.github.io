@@ -1,0 +1,38 @@
+===== test_character_states.js =====
+CHARACTER STATE TEST: 8/8 PASS
+===== test_colloquial_round3.js =====
+COLLOQUIAL ROUND3: 88/88 PASS
+===== test_compound_aspects_vnext.js =====
+COMPOUND ASPECTS: 8/8 PASS
+===== test_compound_subject_switch_vnext.js =====
+COMPOUND SUBJECT SWITCH: 7/7 PASS
+===== test_context_semantics_vnext.js =====
+CONTEXT SEMANTICS: 78/78 PASS
+===== test_deictic_longchat_vnext.js =====
+PASS 13 / 13
+===== test_entity_type_safety_vnext.js =====
+ENTITY TYPE SAFETY: 21/21 PASS
+===== test_everyday_natural_vnext.js =====
+PASS 52 / 52
+===== test_general_topic_followup_vnext.js =====
+GENERAL TOPIC FOLLOWUP: 65/65 PASS
+===== test_incremental_repair_vnext.js =====
+INCREMENTAL REPAIR: 28/28 PASS
+===== test_language_nuance_vnext.js =====
+LANGUAGE NUANCE: 33/33 PASS
+===== test_longchat_round2.js =====
+PASS 36 / 36
+===== test_message_character.js =====
+MESSAGE CHARACTER TEST: 11/11 PASS
+===== test_named_history_resume_vnext.js =====
+NAMED HISTORY RESUME: 6/6 PASS
+===== test_natural_batch.js =====
+PASS 37 / 37
+===== test_parallel_general_topics_vnext.js =====
+PARALLEL GENERAL TOPICS: 14/14 PASS
+===== test_statement_memory_priority_vnext.js =====
+STATEMENT MEMORY PRIORITY: 18/18 PASS
+===== arukimiko/tools/test_local_conversation.js =====
+LOCAL CONVERSATION REGRESSION: 195/195 PASS
+===== arukimiko/tools/test_local_specialist_conversation.js =====
+LOCAL SPECIALIST CONVERSATION: 9/9 PASS
