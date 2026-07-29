@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.4.0
+ * 歩き巫女 日常会話・雑談 v3.5.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.4.0';
+  var VERSION='3.5.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -558,6 +558,10 @@
     var conv=window.JINPO_BOT_CONVERSATION;if(!conv||typeof conv.listeningSignals!=='function')return'';
     var sig=null;try{sig=conv.listeningSignals((opt&&opt.history)||[],text)||{};}catch(e){return'';}
     var pace='normal';try{pace=conversationStyle((opt&&opt.history)||[],text).pace||'normal';}catch(e){}
+    var focus=null;try{if(typeof conv.conversationalFocus==='function')focus=conv.conversationalFocus((opt&&opt.history)||[],text)||null;}catch(e2){}
+    if(focus&&focus.narrativeMomentum){
+      return pace==='terse'?pick(['うん、その続き聞いてます。','うん。続けて。','聞いてますよ。']):pick(['うん、その続き聞いています。途中で結論を挟まないので、そのままどうぞ。','聞いてますよ。まだ続きがあるなら、そのまま話して大丈夫です。','うん。流れを止めずに聞くので、そのまま続けてください。']);
+    }
     if(sig.mode==='listen_only')return pace==='terse'?pick(['うん、聞いてます。','うん。続けて大丈夫です。','聞いてますよ。']):pick(['うん、聞いています。そのまま話して大丈夫ですよ。','聞いてますよ。続きもそのまま受け取ります。','うん。先回りせず聞くので、そのまま続けてください。']);
     if(sig.mode==='sharing'){
       var tt=S(text);

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v2.3.0
+ * 歩き巫女 AI会話脳 v2.4.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.3.0';
+  var VERSION='2.4.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -420,6 +420,18 @@
     return '最近の冒頭: '+openings.slice(0,4).join(' / ')+'\n最近の締め: '+endings.slice(0,4).join(' / ')+'\n「なのです」系の使用回数: '+nano+'\n質問で終えた回数: '+questionEnds+' / 汎用的な誘い文句: '+genericInvites;
   }
 
+  function conversationalFocusSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.conversationalFocus!=='function')return'（会話の焦点信号なし）';
+    try{
+      var f=conv.conversationalFocus(history||[],currentMessage||'')||{};
+      var flow={answer:'質問・依頼へ答える',yield:'ユーザーが話を続ける余地を残す',reflect:'具体的一点を受ける',expand:'質問せず一段だけ内容を広げてもよい',close:'この話を閉じる',respond:'通常応答'}[f.flow]||'通常応答';
+      var ask={none:'追加質問はしない',prefer_statement:'質問より関連する一言・視点を優先',optional:'質問は自然な時だけ'}[f.askPolicy]||'質問は自然な時だけ';
+      var point=S(f.concreteText||f.text||'').slice(0,120);
+      return '観測できる主な焦点: '+(point||'（特定なし）')+' / 確度='+(f.confidence||'low')+' / 流れ='+flow+' / '+ask+(f.narrativeMomentum?' / 話の続きがありそうな形':'');
+    }catch(e){return'（会話の焦点信号の取得に失敗）';}
+  }
+
   function followupGuidance(history,currentMessage){
     var h=filterRawHistory(history),cur=S(currentMessage),recentQuestions=0,recentInvites=0,seen=0;
     if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
@@ -428,16 +440,38 @@
       if(/[？?]\s*$/.test(t))recentQuestions++;
       if(/(?:他にも|ほかにも|気になったら|言ってください|聞いてください|話してください)/.test(t))recentInvites++;
     }
-    var ls=null,conv=window.JINPO_BOT_CONVERSATION;
+    var ls=null,focus=null,conv=window.JINPO_BOT_CONVERSATION;
     try{if(conv&&typeof conv.listeningSignals==='function')ls=conv.listeningSignals(history||[],cur)||null;}catch(e){}
+    try{if(conv&&typeof conv.conversationalFocus==='function')focus=conv.conversationalFocus(history||[],cur)||null;}catch(e2){}
     if(ls&&ls.openness==='closed')return'この話を勝手に深掘りしない。短く受けて閉じる。';
+    if(focus&&focus.flow==='yield')return'ユーザー側に話の主導権があります。焦点の具体的一点だけ短く受け、質問や結論で割り込まず続きを待つ。';
     if(recentQuestions>=2)return'直近で質問終わりが続いているため、今回は追加質問を避け、内容への反応か答えで終える。';
     if(ls&&ls.mode==='listen_only'&&ls.openness==='open')return'続きを話したそうなので、短く受けて待つ。質問するなら一つだけで、先回りしない。';
     if(ls&&(ls.mode==='venting'||ls.mode==='mixed_sharing'))return'まず出来事の具体的一点を受ける。助言を求められていなければ質問や解決策を足さなくてよい。';
-    if(ls&&ls.mode==='celebration')return'一緒に喜ぶことを優先。分析へ逸れず、自然なら関連する一言だけ添える。';
+    if(ls&&ls.mode==='celebration')return'一緒に喜ぶことを優先。分析へ逸れず、自然なら焦点に関係する一言だけ添える。';
+    if(focus&&focus.flow==='expand')return'関心が続いている話題です。質問で返すより、今回の焦点に直接つながる一段深い事実・視点・短い補足を一つだけ添えるのを優先する。';
+    if(focus&&focus.flow==='reflect'&&focus.confidence==='high')return'共有の中で強く出ている具体的一点へ反応する。全文要約や汎用質問ではなく、その一点に沿った一言を返す。';
     if(cur.length>=70&&!/[？?]/.test(cur))return'長めの共有なので全文要約はせず、一番印象的な一点だけ拾う。深掘り質問は多くても一つ。';
     if(recentInvites>=2)return'汎用的な「他にも」誘導は避け、内容そのものだけでつなぐ。';
     return'自然な会話なら質問なしで終えてよい。深掘りする場合も一度に一つだけ。';
+  }
+
+  function initiativeBalanceSummary(history,currentMessage){
+    var h=filterRawHistory(history),cur=S(currentMessage),as=[],us=[];
+    if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
+    for(var i=h.length-1;i>=0&&(as.length<4||us.length<4);i--){
+      var x=h[i]||{},t=S(x.text);if(!t)continue;
+      if(x.role==='assistant'&&as.length<4)as.push(t);
+      else if(x.role==='user'&&us.length<4)us.push(t);
+    }
+    function avg(list){return list.length?Math.round(list.reduce(function(a,b){return a+b.length;},0)/list.length):0;}
+    var aa=avg(as),ua=avg(us),longA=as.filter(function(t){return t.length>=120;}).length,lead=as.filter(function(t){return /^(?:ちなみに|さらに|もう一つ|それと|関連して)/.test(t)||/(?:他にも|ほかにも).*?(?:あります|できます|見られます)/.test(t);}).length;
+    var conv=window.JINPO_BOT_CONVERSATION,focus=null;
+    try{if(conv&&typeof conv.conversationalFocus==='function')focus=conv.conversationalFocus(history||[],cur)||null;}catch(e){}
+    if(focus&&(focus.flow==='answer'||focus.flow==='yield'||focus.flow==='close'))return'今回の依頼・会話の流れを優先。歩き巫女側から新しい話題を増やさない。';
+    if(as.length>=2&&longA>=2&&ua>0&&aa>=Math.max(100,ua*2.6))return'直近は歩き巫女側の説明量が多めです。今回は短めに返し、ユーザー側へ会話の余白を戻す。';
+    if(lead>=2)return'直近で歩き巫女側から話を広げる動きが続いています。今回は新しい枝を増やさず、現在の焦点だけに反応する。';
+    return'会話の主導権は固定しない。ユーザーが話を広げている時は追従し、必要な時だけ一段広げる。';
   }
 
   function currentResponsePreference(message){
@@ -475,13 +509,13 @@
     }catch(e){return'（聞き方信号の取得に失敗）';}
   }
 
-  function currentTurnMode(message){
+  function currentTurnMode(message,history){
     var t=S(message);
     if(!t)return'conversation';
     var conv=window.JINPO_BOT_CONVERSATION;
     try{
       if(conv&&typeof conv.listeningSignals==='function'){
-        var ls=conv.listeningSignals([],t)||{};
+        var ls=conv.listeningSignals(history||[],t)||{};
         if(ls.mode==='listen_only')return'listen_only';
         if(ls.mode==='advice')return'advice_request';
         if(ls.mode==='opinion_request')return'opinion_request';
@@ -500,8 +534,8 @@
     return'conversation';
   }
 
-  function turnModeSummary(message){
-    var m=currentTurnMode(message),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
+  function turnModeSummary(message,history){
+    var m=currentTurnMode(message,history),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
     return labels[m]||labels.conversation;
   }
 
@@ -529,8 +563,10 @@
     var styleBlock=responseStyleSummary(opt.history||[],opt.currentMessage||'');
     var interactionBlock=interactionStyleSummary(opt.history||[],opt.currentMessage||'');
     var listeningBlock=listeningStyleSummary(opt.history||[],opt.currentMessage||'');
+    var focusBlock=conversationalFocusSummary(opt.history||[],opt.currentMessage||'');
     var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
-    var turnModeBlock=turnModeSummary(opt.currentMessage||'');
+    var initiativeBlock=initiativeBalanceSummary(opt.history||[],opt.currentMessage||'');
+    var turnModeBlock=turnModeSummary(opt.currentMessage||'',opt.history||[]);
     var responsePreference=currentResponsePreference(opt.currentMessage||'');
     var priorVerified=verifiedPriorOutputs(opt.history||[]);
     var priorVerifiedBlock=priorVerified.length?priorVerified.join('\n\n'):'（直近に確認済みローカル出力なし）';
@@ -595,6 +631,11 @@
       '48. 深掘り質問は一度に一つまでです。直近の返答が質問続きなら、質問せず関連する一言を添えて終えて構いません。',
       '49. 「聞いて」と話し始めた段階では先回りして結論を作らず、話の続きがありそうなら短く受けて待ちます。',
       '50. ユーザーが自分から話を広げている時は、汎用的な「他には？」ではなく、その発言中の具体語を一つだけ拾ってつなげます。',
+      '51. 「一番」「特に」「でも」「ただ」「結局」「やっぱり」など、ユーザー自身が強調・対比した箇所を会話の中心として優先します。こちらで隠れた本音を推測して主題を作らないでください。',
+      '52. ユーザーが話の途中で「それで」「そしたら」「まだあって」など続きを示している時は、質問で流れを止めず、短く受けて話す余地を残します。',
+      '53. 関心が続いている話題を広げる時は、質問を投げ返すだけでなく、直前の焦点に直接つながる一段深い情報や見方を一つ添える方法を優先して構いません。',
+      '54. 複数の出来事が一度に語られた場合、全部へ均等にコメントせず、質問・強調・対比・最後に置かれた具体点のうち最も明確な一点へ反応します。',
+      '55. 歩き巫女側が長い説明や話題追加を続けている時は、自分からさらに枝を増やさず短く返して会話の余白をユーザーへ戻します。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -619,8 +660,14 @@
       '今回の聞き方・受け方の信号（ユーザーが発言内で示した範囲だけ）:',
       listeningBlock,
       '',
+      '今回の会話上の焦点（本音推測ではなく、質問・強調・対比など発言上の手掛かりだけ）:',
+      focusBlock,
+      '',
       '今回の深掘り方針:',
       followupBlock,
+      '',
+      '会話の主導権バランス:',
+      initiativeBlock,
       '',
       '今回の返答指定:',
       responsePreference,
@@ -638,6 +685,7 @@
       '- 会話として自然なら短く、説明が必要なら十分に詳しくする。',
       '- 共有だけの発言には、頼まれていない解決策を足さず、まず内容そのものへ反応する。',
       '- 深掘りするならユーザー発言の具体語を一つ拾う。質問の連発や気持ちの決めつけは避ける。',
+      '- 強調・対比・質問で焦点が明確なら、その一点を先に扱う。複数論点を均等に薄くなぞらない。',
       '- ツール結果の数字・固有名詞を勝手に変更しない。'
     ].join('\n');
   }
@@ -1477,6 +1525,8 @@
     _turnModeSummary:turnModeSummary,
     _currentResponsePreference:currentResponsePreference,
     _followupGuidance:followupGuidance,
+    _conversationalFocusSummary:conversationalFocusSummary,
+    _initiativeBalanceSummary:initiativeBalanceSummary,
     _verifiedPriorOutputs:verifiedPriorOutputs
   };
 })();

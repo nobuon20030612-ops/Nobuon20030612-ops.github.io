@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.7.0
+ * 歩き巫女 共通会話ルーター v2.8.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.7.0';
+  var VERSION='2.8.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -117,7 +117,7 @@
     if(carriedListen){need='listen';mode='listen_only';}
 
     var positive=/^(?:やった|やったー|やったぞ)[！!。\s]*$/.test(t)||/(?:うれしい|嬉しい|できた|成功(?:した)?|うまくいった|最高|楽しかった|助かった|勝った|当たった|完成した|通った|合格した|受かった|採用された|達成した|公開できた|リリースできた|直った)(?:んだ|んだよ|よ|ね|ぞ)?[！!。\s]*$/.test(t)||/(?:めっちゃ|すごく|かなり).*(?:うれしい|嬉しい|楽しい|よかった|良かった)/.test(t);
-    var negative=/(?:つらい|辛い|しんどい|疲れた|最悪|落ち込|へこん|困った|嫌だった|いやだった|悲しい|かなしい|うまくいかない|失敗した|怒られた|ミスした|腹立つ|むかつく|悔しい|不安|心配|迷ってる|迷っている|忙しい|バタバタ|時間ない|手が回らない|めんどくさい|面倒くさい|バグ(?:った|出た|が出た)|エラー(?:が)?出た|動かない|壊れた)/.test(t);
+    var negative=/(?:つらい|つらかった|辛い|辛かった|きつい|きつかった|しんどい|疲れた|最悪|落ち込|へこん|困った|嫌だった|いやだった|悲しい|かなしい|うまくいかない|失敗した|怒られた|ミスした|腹立つ|むかつく|悔しい|不安|心配|迷ってる|迷っている|忙しい|バタバタ|時間ない|手が回らない|めんどくさい|面倒くさい|バグ(?:った|出た|が出た)|エラー(?:が)?出た|動かない|壊れた)/.test(t);
     var uncertain=/(?:迷ってる|迷っている|決めきれない|どうしようかな|悩んでる|悩んでいる|自信ない|よく分からない|よくわからない)/.test(t);
 
     var valence=positive&&!negative?'positive':negative&&!positive?'negative':positive&&negative?'mixed':'neutral';
@@ -147,6 +147,94 @@
       explicit:explicit,
       carriedListen:carriedListen,
       compact:c
+    };
+  }
+
+  // ユーザーがこの発言で実際に強調している「会話上の焦点」を読む。
+  // 心理や本音は推測せず、質問・強調語・対比・繰り返し・発言末尾など観測できる手掛かりだけを使う。
+  function focusClauses(text){
+    var t=S(text).replace(/^(?:そういえば|ところで|それはそうと|話(?:は|を)?変(?:わる|える)(?:けど|が|と)?|話題(?:は|を)?変(?:わる|える)(?:けど|が|と)?|別件(?:だけど|ですが|なんだけど|で)?)[、,\s]*/,'');
+    if(!t)return[];
+    var first=t.split(/[。！？!?\n]+/).map(S).filter(Boolean),out=[];
+    first.forEach(function(part){
+      var pieces=part.split(/(?:、|,)\s*(?=(?:でも|ただ|それでも|とはいえ|特に|とくに|一番|いちばん|結局|やっぱり|その中でも|それが|そこが))/).map(S).filter(Boolean);
+      pieces.forEach(function(piece){
+        var m=piece.match(/^(.{3,}?)(?:けど|けれども|けれど|けどさ|けどね)[、,\s]*(.{3,})$/);
+        if(m){out.push({text:S(m[1]),contrast:false});out.push({text:S(m[2]),contrast:true});}
+        else out.push({text:piece,contrast:/^(?:でも|ただ|それでも|とはいえ)/.test(piece)});
+      });
+    });
+    return out.slice(0,8);
+  }
+
+  function isVagueFocusClause(text){
+    var t=S(text);
+    return /^(?:それ|これ|そこ|そういうの|そういうこと)(?:が|は|も)?(?:一番|いちばん|かなり|本当に|ほんとに)?(?:きつい|きつかった|つらい|つらかった|辛い|辛かった|大変|大変だった|嫌|いや|うれしい|嬉しい|よかった|良かった|気になる|引っかかる)(?:んだ|んだよ|んだよね|んだね|ね|よ)?$/.test(t);
+  }
+
+  function conversationalFocus(history,currentMessage){
+    var t=S(currentMessage),clauses=focusClauses(t),ls=listeningSignals(history,t),h=historyBeforeCurrent(history,t);
+    if(!t)return {text:'',concreteText:'',reason:'none',confidence:'low',flow:'respond',askPolicy:'optional',narrativeMomentum:false};
+    if(!clauses.length)clauses=[{text:t,contrast:false}];
+
+    var recent=recentSubjects(h,{limit:4}),hasQuestion=/[？?]/.test(t)||/(?:教えて|知りたい|どう思う|どうしたら|どうすれば|何|なに|誰|だれ|どこ|いつ|なぜ|なんで|どうして|どっち)/.test(t);
+    var scored=clauses.map(function(x,idx){
+      var c=S(x.text),score=0,reasons=[];
+      if(!c)return {text:c,score:-99,reasons:[],idx:idx,contrast:!!x.contrast};
+      score+=Math.min(3,Math.max(0,c.length-3)/12);
+      var cq=/[？?]/.test(c)||/(?:教えて|知りたい|どう思う|どうしたら|どうすれば|何|なに|誰|だれ|どこ|いつ|なぜ|なんで|どうして|どっち)/.test(c);
+      if(cq){score+=hasQuestion?9:5;reasons.push('question');}
+      else if(hasQuestion)score-=3;
+      if(/(?:一番|いちばん|特に|とくに|何より|なにより|結局|やっぱり|一番言いたい|問題は|困るのは|気になるのは|引っかかるのは)/.test(c)){score+=6;reasons.push('emphasis');}
+      if(x.contrast||/^(?:でも|ただ|それでも|とはいえ)/.test(c)){score+=4;reasons.push('contrast');}
+      if(/(?:つらい|辛い|しんどい|疲れた|最悪|嫌|いや|困った|悔しい|不安|心配|うれしい|嬉しい|最高|楽しい|助かった|成功|できた|完成|直った|公開|リリース|バグ|エラー|動かない|手こず|苦労|びっくり|驚いた)/.test(c)){score+=3;reasons.push('concrete_reaction');}
+      if(/[0-9０-９]|(?:回|個|人|時間|分|件|日|週間|ヶ月|年)/.test(c)){score+=1.5;reasons.push('detail');}
+      recent.forEach(function(r){
+        var a=S(r&&r.value);if(a&&c.indexOf(a)>=0){score+=2.5;reasons.push('recent_subject');}
+      });
+      if(idx===clauses.length-1){score+=1.5;reasons.push('latest');}
+      if(/^(?:まあ|うん|いや|なんか|とりあえず)[、,\s]/.test(c))score-=1;
+      if(isVagueFocusClause(c))score-=2;
+      return {text:c,score:score,reasons:reasons,idx:idx,contrast:!!x.contrast};
+    }).sort(function(a,b){return b.score-a.score||b.idx-a.idx;});
+
+    var best=scored[0]||{text:t,score:0,reasons:[],idx:0},concrete=S(best.text);
+    if(isVagueFocusClause(concrete)&&best.idx>0){
+      var prev=clauses[best.idx-1]&&S(clauses[best.idx-1].text);
+      if(prev&&prev.length>=4){
+        // 「それが一番きつかった」のような指示語なら、直前節のうち最後の具体部分を焦点として使う。
+        var prevParts=prev.split(/[、,]/).map(S).filter(Boolean);
+        concrete=prevParts.length?prevParts[prevParts.length-1]:prev;
+      }
+    }
+    concrete=concrete.replace(/^(?:でも|ただ|それでも|とはいえ|特に|とくに|その中でも)[、,\s]*/,'').slice(0,100);
+
+    var narrativeMomentum=/(?:それで|それでさ|でさ|そしたら|そのあと(?:さ|ね)?|まだ(?:あって|続きがあって)|続きがある|聞いてよ|聞いてほしい)[…。、\s]*$/.test(t) ||
+      (ls.openness==='open'&&!hasQuestion&&/(?:それで|まだ|続き|話したい|聞いて)/.test(t));
+    var flow='respond',askPolicy='optional';
+    var currentClosed=/もういい|十分|そこまで|興味(?:は)?ない|興味なくな|気にならない|もう気にならない|知りたくない/.test(t);
+    var currentEngaged=!currentClosed&&/(?:もっと|さらに|もう少し|面白い|おもしろい|興味(?:ある|がある|深い)|気になる|掘りたい|深掘り)/.test(t);
+    // 「興味は薄いけど必要なので教えて」のように明示依頼がある時は、閉じる語より依頼を優先する。
+    if(ls.need==='advice'||ls.need==='opinion'||hasQuestion){flow='answer';askPolicy='none';}
+    else if(ls.openness==='closed'||currentClosed){flow='close';askPolicy='none';}
+    else if(ls.mode==='listen_only'||narrativeMomentum){flow='yield';askPolicy='none';}
+    else if(ls.mode==='venting'||ls.mode==='mixed_sharing'||ls.mode==='sharing'||ls.mode==='celebration'||ls.mode==='uncertain'){flow='reflect';askPolicy='optional';}
+    else{
+      var sig=conversationSignals(h);
+      if(currentEngaged||(sig&&sig.engagement==='engaged'&&Number(sig.engagementAge||99)<=3)){flow='expand';askPolicy='prefer_statement';}
+    }
+
+    return {
+      text:S(best.text),
+      concreteText:concrete,
+      reason:(best.reasons||[]).join('+')||'latest_clause',
+      confidence:best.score>=8?'high':best.score>=4?'medium':'low',
+      score:Math.round(best.score*10)/10,
+      flow:flow,
+      askPolicy:askPolicy,
+      narrativeMomentum:narrativeMomentum,
+      explicitQuestion:hasQuestion,
+      listeningMode:ls.mode||'conversation'
     };
   }
 
@@ -308,7 +396,7 @@
     if(style.pace==='terse'){
       if(kind==='understood')answers=['了解です。','わかりました。','はい、そのまま進めます。'];
       else if(kind==='ack')answers=['そうなんです。','その理解で大丈夫です。','うん、そういうことです。'];
-      else if(kind==='positive')answers=subject?['ですよね。「'+subject+'」、そこ面白いです。','そこ、面白いところです。']:['ですよね。そこ面白いです。','分かります。そこ、いいところです。'];
+      else if(kind==='positive')answers=subject?['ですよね。「'+subject+'」、そこ面白いです。','「'+subject+'」のそこ、面白いところです。','分かります。「'+subject+'」はそこが面白いです。']:['ですよね。そこ面白いです。','分かります。そこ、いいところです。'];
       else if(kind==='surprise')answers=['そこは意外ですよね。','そうなんです。ちょっと驚くところです。'];
       else if(kind==='reflection')answers=['そう感じますよね。','当時の文脈で見ると印象が変わります。'];
     }
@@ -754,7 +842,7 @@
   // セッション内だけの会話傾向。個人属性を推測せず、ユーザーが実際に示した
   // 「そこは知っている」「もっと知りたい」「違う」などの会話上の信号だけを圧縮する。
   function conversationSignals(history){
-    var h=filterHistory(history),frames=topicFrames(h),known=[],corrections=[],engagement='neutral',seenKnown={};
+    var h=filterHistory(history),frames=topicFrames(h),known=[],corrections=[],engagement='neutral',engagementAge=0,seenKnown={};
     var userCount=0,explicitDepth='',depthPersistent=false;
 
     // 「これからは短く/詳しく」のような継続指定は、100件履歴の範囲で最後の指定を保持する。
@@ -781,8 +869,9 @@
       }
 
       if(engagement==='neutral'){
-        if(/もっと|他には|ほかには|続き|詳しく|面白い|おもしろい|興味|気になる|知りたい|初めて知った|知らなかった/.test(t))engagement='engaged';
-        else if(/もういい|十分|そこまで|話変え|別の話|次の話/.test(t))engagement='closed';
+        // 「興味ない」「もう気にならない」は、語中に「興味」「気になる」があっても閉じる合図を優先する。
+        if(/もういい|十分|そこまで|話変え|別の話|次の話|興味(?:は)?ない|興味なくな|気にならない|もう気にならない|知りたくない/.test(t)){engagement='closed';engagementAge=userCount;}
+        else if(/もっと|他には|ほかには|続き|詳しく|面白い|おもしろい|興味(?:ある|がある|深い)|気になる|知りたい|初めて知った|知らなかった/.test(t)){engagement='engaged';engagementAge=userCount;}
       }
     }
 
@@ -799,6 +888,7 @@
 
     return {
       engagement:engagement,
+      engagementAge:engagementAge,
       known:known,
       corrections:corrections,
       depth:explicitDepth,
@@ -1712,6 +1802,8 @@
     isExplicitTopicShift:isExplicitTopicShift,
     interactionStyle:interactionStyle,
     listeningSignals:listeningSignals,
+    conversationalFocus:conversationalFocus,
+    focusClauses:focusClauses,
     carriedListenIntent:carriedListenIntent,
     restorePreviousTopic:restorePreviousTopic,
     resetContext:resetContext,
