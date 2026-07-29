@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.0.0
+ * 歩き巫女 共通会話ルーター v2.1.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -364,15 +364,228 @@
     return null;
   }
 
+  function aspectFromText(text){
+    var t=S(text);if(!t)return'';
+    if(/家族|親族|父|母|兄|弟|姉|妹|息子|娘|妻|夫|配偶者|子供|子ども/.test(t))return'family';
+    if(/逸話|昔話|名場面|伝説|エピソード/.test(t))return'anecdote';
+    if(/歴史|創設|沿革|昔の名前|由来/.test(t))return'history';
+    if(/現在|今は|今どう|最近|最新|その後|それから/.test(t))return'current';
+    if(/成績|打率|本塁打|ホームラン|打点|防御率|勝率|勝ち|セーブ|ホールド|記録/.test(t))return'stats';
+    if(/経歴|所属|移籍|入団|退団|引退|現役|ドラフト/.test(t))return'career';
+    if(/順位|何位|ゲーム差/.test(t))return'rank';
+    if(/日程|予定|次の試合|対戦相手/.test(t))return'schedule';
+    if(/結果|スコア|勝った|負けた|引き分け/.test(t))return'result';
+    if(/比較|比べ|どっち|違い/.test(t))return'compare';
+    if(/カウンター/.test(t))return'counter';
+    return'';
+  }
+
+  function entityValues(list,type){
+    var out=[];
+    (Array.isArray(list)?list:[]).forEach(function(x){
+      if(!x||!x.value||(type&&x.type!==type)||out.indexOf(x.value)>=0)return;
+      out.push(x.value);
+    });
+    return out;
+  }
+
+  function choosePrimaryEntity(userEntities,assistantEntities,previousFrame,userText){
+    var up=entityValues(userEntities,'person');
+    if(up.length)return {value:up[0],type:'person',source:'user'};
+    var ue=entityValues(userEntities);
+    if(ue.length)return {value:ue[0],type:(userEntities.find(function(x){return x&&x.value===ue[0];})||{}).type||'topic',source:'user'};
+
+    // 「その人」「その選手」「今はどう？」のような追質問は、前フレームの主役を継承する。
+    if(previousFrame&&previousFrame.primary&&(
+       /^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|それ|これ|その件|その話|さっきの話|今の話|前の話|今は|現在は|その後|それから|もっと|詳しく)/.test(S(userText)) ||
+       (aspectFromText(userText)&&S(userText).length<=24)
+    )){
+      return {value:previousFrame.primary.value,type:previousFrame.primary.type||'topic',source:'carry'};
+    }
+
+    var ap=entityValues(assistantEntities,'person');
+    // 回答に一人だけ人物が出た時だけ、回答側から主役を補う。複数なら決め打ちしない。
+    if(ap.length===1)return {value:ap[0],type:'person',source:'assistant'};
+    var ae=entityValues(assistantEntities);
+    if(ae.length===1)return {value:ae[0],type:(assistantEntities.find(function(x){return x&&x.value===ae[0];})||{}).type||'topic',source:'assistant'};
+    return null;
+  }
+
+  // 会話を「ユーザー質問 + その回答」のフレームにまとめる。
+  // 主役・分野・質問した観点・回答内に出た人物を分離し、直前回答の脇役を主語と誤認しにくくする。
+  function topicFrames(history){
+    var h=filterHistory(history),frames=[],current=null;
+    for(var i=0;i<h.length;i++){
+      var item=h[i];if(!item||!S(item.text)||item.role==='system')continue;
+      if(item.role==='user'){
+        current={
+          index:i,at:Number(item.at||0),userText:S(item.text),assistantText:'',
+          domain:domainFromHistoryItem(item)||'',aspect:aspectFromText(item.text),
+          userEntities:entityCandidatesFromText(item.text,domainFromHistoryItem(item)||''),
+          assistantEntities:[],primary:null,secondaryPeople:[]
+        };
+        var prev=frames.length?frames[frames.length-1]:null;
+        current.primary=choosePrimaryEntity(current.userEntities,[],prev,current.userText);
+        if(!current.domain&&prev&&current.primary&&prev.primary&&current.primary.value===prev.primary.value)current.domain=prev.domain||'';
+        frames.push(current);
+      }else if(item.role==='assistant'){
+        if(!current){
+          current={index:i,at:Number(item.at||0),userText:'',assistantText:'',domain:domainFromHistoryItem(item)||'',aspect:'',userEntities:[],assistantEntities:[],primary:null,secondaryPeople:[]};
+          frames.push(current);
+        }
+        current.assistantText+=(current.assistantText?'\n':'')+S(item.text);
+        var ad=domainFromHistoryItem(item)||'';
+        if(!current.domain&&ad)current.domain=ad;
+        current.assistantEntities=current.assistantEntities.concat(entityCandidatesFromText(item.text,current.domain||ad));
+        if(!current.primary){
+          var prevFrame=frames.length>1?frames[frames.length-2]:null;
+          current.primary=choosePrimaryEntity(current.userEntities,current.assistantEntities,prevFrame,current.userText);
+        }
+        var pp=current.primary&&current.primary.value||'';
+        current.secondaryPeople=entityValues(current.assistantEntities,'person').filter(function(x){return x!==pp;});
+      }
+    }
+    return frames.slice(-16);
+  }
+
+  function recentSubjects(history,opt){
+    opt=opt||{};
+    var frames=topicFrames(history),out=[],seen={};
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i],p=f&&f.primary;if(!p||!p.value)continue;
+      if(opt.personOnly&&p.type!=='person')continue;
+      var key=p.type+'|'+p.value;if(seen[key])continue;seen[key]=1;
+      out.push({value:p.value,type:p.type||'topic',domain:f.domain||'',aspect:f.aspect||'',frameIndex:i,userText:f.userText||'',assistantText:f.assistantText||'',secondaryPeople:(f.secondaryPeople||[]).slice()});
+      if(out.length>=(Number(opt.limit)||8))break;
+    }
+    return out;
+  }
+
+  function normalizeAnchor(v){
+    return C(v).replace(/(?:選手|監督|投手|野手|さん|氏)$/,'');
+  }
+
+  function findSubjectByAnchor(history,anchor,opt){
+    var a=normalizeAnchor(anchor);if(!a)return null;
+    var list=recentSubjects(history,opt||{}),hits=[];
+    list.forEach(function(x){
+      var v=normalizeAnchor(x.value);
+      if(v===a||v.indexOf(a)>=0||a.indexOf(v)>=0)hits.push(x);
+    });
+    if(hits.length===1)return hits[0];
+    if(hits.length>1)return {ambiguous:true,candidates:hits.map(function(x){return x.value;}).slice(0,6)};
+    return null;
+  }
+
+  function previousDistinctSubject(history,opt){
+    var list=recentSubjects(history,opt||{});
+    return {current:list[0]||null,previous:list[1]||null,list:list};
+  }
+
+  function askedHistory(history,limit){
+    var frames=topicFrames(history),out=[],n=Number(limit)||6;
+    for(var i=frames.length-1;i>=0&&out.length<n;i--){
+      var f=frames[i];if(!f||!f.userText)continue;
+      out.push({subject:f.primary&&f.primary.value||'',domain:f.domain||'',aspect:f.aspect||'',question:f.userText,index:f.index});
+    }
+    return out;
+  }
+
+  function subjectMemory(history){
+    var frames=topicFrames(history),out=[],map={};
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i],p=f&&f.primary;if(!p||!p.value)continue;
+      var key=(p.type||'topic')+'|'+p.value,m=map[key];
+      if(!m){
+        m=map[key]={subject:p.value,type:p.type||'topic',domain:f.domain||'',aspects:[],questions:[],lastAssistant:f.assistantText||'',lastIndex:f.index};
+        out.push(m);
+      }
+      if(f.aspect&&m.aspects.indexOf(f.aspect)<0)m.aspects.push(f.aspect);
+      if(f.userText&&m.questions.indexOf(f.userText)<0)m.questions.push(f.userText);
+      if(!m.domain&&f.domain)m.domain=f.domain;
+      if(!m.lastAssistant&&f.assistantText)m.lastAssistant=f.assistantText;
+    }
+    return out.slice(0,8);
+  }
+
+  function recentFrameByAspect(history,aspect){
+    var frames=topicFrames(history);
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];
+      if(f&&f.aspect===aspect&&f.primary&&f.primary.value)return f;
+    }
+    return null;
+  }
+
   function workingMemory(history){
     var h=filterHistory(history),entity=findRecentEntity(h),person=findRecentEntity(h,{personOnly:true});
+    var frames=topicFrames(h),subjects=recentSubjects(h,{limit:8}),people=recentSubjects(h,{personOnly:true,limit:8});
     return {
       domain:recentDomain(h),
       entity:entity,
       person:person,
       lastUser:lastSubstantiveUser(h),
-      lastAssistant:recentAssistantAnswers(h,1)[0]||''
+      lastAssistant:recentAssistantAnswers(h,1)[0]||'',
+      frames:frames,
+      subjects:subjects,
+      people:people,
+      asked:askedHistory(h,8),
+      subjectMemory:subjectMemory(h)
     };
+  }
+
+  function multiTurnReference(text,history){
+    var t=S(text);if(!t||t.length>100)return null;
+    var h=historyBeforeCurrent(history,t),m,anchor,tail,ref,pair;
+    if(!h.length)return null;
+
+    // 「さっき聞いた家族の続きは？」のように、質問済みの観点から主役を呼び戻す。
+    m=t.match(/^(?:じゃあ[、,\s]*)?(?:さっき|前に)(?:聞いた|聞いてた|話した|話してた)?(?:の)?(家族|親族|逸話|昔話|歴史|成績|経歴)(?:の)?(?:話|こと)?(?:の)?続き(?:は|って)?[？?！!。]*$/);
+    if(m){
+      var aspectMap={家族:'family',親族:'family',逸話:'anecdote',昔話:'anecdote',歴史:'history',成績:'stats',経歴:'career'};
+      var af=recentFrameByAspect(h,aspectMap[m[1]]||'');
+      if(af&&af.primary&&af.primary.value)return {message:af.primary.value+'の'+m[1]+'について、もう少し続けて',reference:{value:af.primary.value,type:af.primary.type||'topic',domain:af.domain||''},kind:'asked_aspect'};
+    }
+
+    // 「さっき黒田の話で言ってた家族の方は？」のように、数ターン前の主役を名前で呼び戻す。
+    m=t.match(/^(?:じゃあ[、,\s]*)?(?:さっき|前に|この前)(?:の)?(.{1,24}?)(?:の)?話(?:で)?(?:言ってた|言っていた|出てた|出ていた|話してた|話していた|触れてた|触れていた)?[、,\s]*(.+)$/);
+    if(m){
+      anchor=S(m[1]);tail=S(m[2]);
+      ref=findSubjectByAnchor(h,anchor);
+      if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_history'};
+      if(ref&&ref.value){
+        tail=tail.replace(/^(?:その|この|あの)/,'').replace(/^(?:人|選手)の/,'');
+        return {message:ref.value+'について、'+tail,reference:ref,kind:'named_history'};
+      }
+    }
+
+    // 「黒田の話に戻って、家族は？」のような明示的な話題復帰。
+    m=t.match(/^(.{1,24}?)(?:の)?話(?:に|へ)?戻(?:って|ろう|る|して)[、,\s]*(.+)$/);
+    if(m){
+      ref=findSubjectByAnchor(h,m[1]);
+      if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_back'};
+      if(ref&&ref.value)return {message:ref.value+'について、'+S(m[2]),reference:ref,kind:'named_back'};
+    }
+
+    // 「その前の選手と比べると？」は、今の主役と一つ前の別人物を比較する。
+    if(/(?:その前|一つ前|ひとつ前|前に話してた|前に話した)(?:の)?(?:選手|人|監督|投手|野手)/.test(t)){
+      pair=previousDistinctSubject(h,{personOnly:true});
+      if(pair.previous){
+        if(/比べ|比較|どっち|違い/.test(t)&&pair.current){
+          return {message:pair.current.value+'と'+pair.previous.value+'を比較すると？',reference:pair.previous,current:pair.current,kind:'previous_person_compare'};
+        }
+        var rewritten=t.replace(/(?:その前|一つ前|ひとつ前|前に話してた|前に話した)(?:の)?(?:選手|人|監督|投手|野手)/,pair.previous.value);
+        return {message:rewritten,reference:pair.previous,kind:'previous_person'};
+      }
+    }
+
+    // 「さっきの選手と前の選手を比べて」のような二重参照。
+    if(/(?:さっき|今)(?:の)?(?:選手|人).*(?:前|その前)(?:の)?(?:選手|人)/.test(t)&&/比べ|比較|どっち|違い/.test(t)){
+      pair=previousDistinctSubject(h,{personOnly:true});
+      if(pair.current&&pair.previous)return {message:pair.current.value+'と'+pair.previous.value+'を比較して',reference:pair.previous,current:pair.current,kind:'two_person_compare'};
+    }
+
+    return null;
   }
 
   function resolveEntityReference(text,history){
@@ -868,9 +1081,19 @@
     var prevDomain=recentDomain(priorHistory);
     var carried='',referenceClarification='';
 
+    // 数ターン前の主役を明示/相対参照する表現を、直前指示語より先に解決する。
+    var multiRef=multiTurnReference(message,priorHistory);
+    if(multiRef&&multiRef.ambiguous){
+      referenceClarification='前の話題に候補が複数あるのですよ。'+(multiRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
+    }else if(multiRef&&multiRef.message){
+      message=multiRef.message;
+      domain=domainFromText(message)||(multiRef.reference&&multiRef.reference.domain)||domain||prevDomain;
+      carried=message;
+    }
+
     // 「その人」「その選手」「それはいつ？」などは、直前の回答側に出た対象も参照する。
     // 「封印編」のような属性語からdomainが先に付いても、指示語そのものは解決する。
-    var entityRef=resolveEntityReference(message,priorHistory);
+    var entityRef=!referenceClarification?resolveEntityReference(message,priorHistory):null;
     if(entityRef&&entityRef.ambiguous){
       referenceClarification='「その人」が複数候補に当てはまるのですよ。'+(entityRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
     }else if(entityRef&&entityRef.message){
@@ -978,6 +1201,14 @@
     domainFromHistoryItem:domainFromHistoryItem,
     entityCandidatesFromText:entityCandidatesFromText,
     findRecentEntity:findRecentEntity,
+    topicFrames:topicFrames,
+    recentSubjects:recentSubjects,
+    findSubjectByAnchor:findSubjectByAnchor,
+    previousDistinctSubject:previousDistinctSubject,
+    askedHistory:askedHistory,
+    subjectMemory:subjectMemory,
+    recentFrameByAspect:recentFrameByAspect,
+    multiTurnReference:multiTurnReference,
     resolveEntityReference:resolveEntityReference,
     workingMemory:workingMemory,
     splitCompoundIntents:splitCompoundIntents,
