@@ -84,10 +84,17 @@
 
     var width,height,left,top;
     width=mobile?Math.min(r.width*.78,330):Math.min(Math.max(r.width*.68,360),560);
+    /* 枠を画面上端近くへ移動した時は、キャラを切らずに収まる範囲まで自動縮小する。 */
+    if(!mobile){
+      var visibleHeightPerWidth=(2/3)*.776;
+      var maxWidthByTop=Math.max(250,(r.top+5)/visibleHeightPerWidth);
+      width=Math.min(width,maxWidthByTop);
+    }
     height=width*(2/3);
     left=r.left+(r.width-width)/2;
     /* 元画像の実体下端は画像高のおよそ77.6%。そこを枠上端へ重ねる。 */
     top=r.top-height*.776+7;
+    top=Math.max(2,top);
     left=Math.max(2,Math.min((window.innerWidth||document.documentElement.clientWidth)-width-2,left));
 
     characterLayer.style.left=Math.round(left)+'px';

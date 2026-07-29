@@ -17,6 +17,9 @@
   var restorePositionTimer = 0;
   var dragging = null;
   var busy = false;
+  var manualResizeActive = false;
+  var lastViewportW = 0;
+  var lastViewportH = 0;
   var memoryUi = {};
   var memoryHistory = [];
 
@@ -162,11 +165,14 @@
       if(s.open&&!s.hidden) open(false);
       return;
     }
-    if(Number.isFinite(s.left)) win.style.left = s.left + 'px';
-    if(Number.isFinite(s.top)) win.style.top = s.top + 'px';
-    if(Number.isFinite(s.width)) win.style.width = clamp(s.width,310,Math.max(310,innerWidth-24)) + 'px';
-    if(Number.isFinite(s.height)) win.style.height = clamp(s.height,300,Math.max(300,innerHeight-24)) + 'px';
-    if(Number.isFinite(s.left) || Number.isFinite(s.top)){ win.style.right='auto'; win.style.bottom='auto'; keepInViewport(); }
+    if(s.userMoved){
+      if(Number.isFinite(s.left)) win.style.left = s.left + 'px';
+      if(Number.isFinite(s.top)) win.style.top = s.top + 'px';
+      if(Number.isFinite(s.left) || Number.isFinite(s.top)){ win.style.right='auto'; win.style.bottom='auto'; }
+    }
+    applyResponsiveWindowSize(s);
+    applyResponsiveWindowPosition(s);
+    if(s.userMoved&&(Number.isFinite(s.left)||Number.isFinite(s.top))) keepInViewport();
     if(s.minimized) win.classList.add('isMinimized');
     syncMinimizeButton();
     if(s.open&&!s.hidden) open(false);
@@ -265,11 +271,71 @@
     if(!on){ keepInViewport(); setTimeout(function(){ input.focus(); },0); }
   }
 
+  function responsiveDefaultTop(vw,vh,external){
+    if(!external) return 12;
+    var medium=vw<=980;
+    return medium
+      ? clamp(Math.round(vh*.23),150,230)
+      : clamp(Math.round(vh*.27),190,285);
+  }
+
+  function responsiveSizeLimits(){
+    var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
+    var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+    var external=!!(win&&win.classList&&win.classList.contains('hasJinpoExternalCharacter'));
+    var medium=vw<=980&&vw>760;
+    var gap=medium?20:24;
+    var topReserve=responsiveDefaultTop(vw,vh,external);
+    var maxW=Math.max(310,vw-gap);
+    var maxH=Math.max(280,vh-(external?topReserve+8:gap));
+    var minW=Math.min(medium?440:560,maxW);
+    var minH=Math.min(external?(medium?320:360):(medium?420:500),maxH);
+    return {vw:vw,vh:vh,medium:medium,external:external,topReserve:topReserve,maxW:maxW,maxH:maxH,minW:minW,minH:minH};
+  }
+
+  function applyResponsiveWindowSize(state){
+    if(!win || window.matchMedia('(max-width:760px)').matches || win.classList.contains('isMinimized')) return;
+    var s=state||loadUi();
+    var lim=responsiveSizeLimits();
+    var w,h;
+    /* 自動計算で保存された比率ではなく、本当に手動リサイズした時だけ比率を再利用する。 */
+    if(s&&s.userResized&&Number.isFinite(s.widthRatio)&&Number.isFinite(s.heightRatio)){
+      w=lim.vw*s.widthRatio;
+      h=lim.vh*s.heightRatio;
+    }else{
+      w=lim.vw*(lim.medium?.60:.42);
+      h=lim.vh*.72;
+    }
+    win.style.width=clamp(w,lim.minW,lim.maxW)+'px';
+    win.style.height=clamp(h,lim.minH,lim.maxH)+'px';
+    lastViewportW=lim.vw; lastViewportH=lim.vh;
+  }
+
+  function applyResponsiveWindowPosition(state){
+    if(!win || window.matchMedia('(max-width:760px)').matches || win.classList.contains('isMinimized')) return;
+    var s=state||loadUi();
+    if(s&&s.userMoved) return;
+    if(!win.classList.contains('hasJinpoExternalCharacter')) return;
+    var lim=responsiveSizeLimits();
+    win.style.left='auto';
+    win.style.right=(lim.medium?'16px':'24px');
+    win.style.top=lim.topReserve+'px';
+    win.style.bottom='auto';
+  }
+
+  function expandedWindowMinTop(){
+    if(!win||window.matchMedia('(max-width:760px)').matches||win.classList.contains('isMinimized'))return 8;
+    // 枠上キャラクターの最小表示幅(約250px)を、枠上辺との接点を保ったまま収める余白。
+    return win.classList.contains('hasJinpoExternalCharacter')?126:8;
+  }
+
   function keepInViewport(){
     if(!win || !win.classList.contains('isOpen') || window.matchMedia('(max-width:760px)').matches) return;
     var r = win.getBoundingClientRect();
+    var minTop=expandedWindowMinTop();
     var left = clamp(r.left,8,Math.max(8,innerWidth-r.width-8));
-    var top = clamp(r.top,8,Math.max(8,innerHeight-r.height-8));
+    var maxTop=Math.max(minTop,innerHeight-r.height-8);
+    var top = clamp(r.top,minTop,maxTop);
     win.style.left = left+'px'; win.style.top = top+'px'; win.style.right='auto'; win.style.bottom='auto';
   }
 
@@ -285,29 +351,63 @@
       if(!dragging || dragging.id !== ev.pointerId) return;
       var r = win.getBoundingClientRect();
       var left = clamp(ev.clientX-dragging.dx,8,Math.max(8,innerWidth-r.width-8));
-      var top = clamp(ev.clientY-dragging.dy,8,Math.max(8,innerHeight-r.height-8));
+      var minTop=expandedWindowMinTop();
+      var top = clamp(ev.clientY-dragging.dy,minTop,Math.max(minTop,innerHeight-r.height-8));
       win.style.left=left+'px'; win.style.top=top+'px'; win.style.right='auto'; win.style.bottom='auto';
     });
     function end(ev){
       if(!dragging || dragging.id !== ev.pointerId) return;
-      dragging=null; var r=win.getBoundingClientRect(); saveUi({left:Math.round(r.left),top:Math.round(r.top)});
+      dragging=null; var r=win.getBoundingClientRect(); saveUi({left:Math.round(r.left),top:Math.round(r.top),userMoved:true});
     }
     header.addEventListener('pointerup',end); header.addEventListener('pointercancel',end);
   }
 
   function bindResizeSave(){
     var timer=0, lastW=0, lastH=0;
+    lastViewportW=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
+    lastViewportH=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+
+    win.addEventListener('pointerdown',function(ev){
+      if(window.matchMedia('(max-width:980px)').matches||win.classList.contains('isMinimized')) return;
+      var r=win.getBoundingClientRect();
+      manualResizeActive=(r.right-ev.clientX<=28 && r.bottom-ev.clientY<=28);
+    });
+    window.addEventListener('pointerup',function(){
+      if(!manualResizeActive||!win||win.classList.contains('isMinimized')){ manualResizeActive=false; return; }
+      manualResizeActive=false;
+      var b=win.getBoundingClientRect();
+      var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
+      var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+      saveUi({userResized:true,width:Math.round(b.width),height:Math.round(b.height),widthRatio:b.width/vw,heightRatio:b.height/vh,viewportWidth:vw,viewportHeight:vh,left:Math.round(b.left),top:Math.round(b.top)});
+    });
+
     if(typeof ResizeObserver !== 'undefined'){
       new ResizeObserver(function(entries){
         if(window.matchMedia('(max-width:760px)').matches || win.classList.contains('isMinimized')) return;
         var r=entries[0] && entries[0].contentRect; if(!r) return;
         if(Math.abs(r.width-lastW)<1 && Math.abs(r.height-lastH)<1) return; lastW=r.width; lastH=r.height;
         clearTimeout(timer); timer=setTimeout(function(){
-          var b=win.getBoundingClientRect(); saveUi({width:Math.round(b.width),height:Math.round(b.height),left:Math.round(b.left),top:Math.round(b.top)}); keepInViewport();
+          var b=win.getBoundingClientRect();
+          var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
+          var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+          var extra={
+            width:Math.round(b.width),height:Math.round(b.height),left:Math.round(b.left),top:Math.round(b.top),
+            widthRatio:b.width/vw,heightRatio:b.height/vh,viewportWidth:vw,viewportHeight:vh
+          };
+          if(manualResizeActive) extra.userResized=true;
+          saveUi(extra); keepInViewport();
         },180);
       }).observe(win);
     }
-    window.addEventListener('resize', function(){ keepInViewport(); scheduleRestorePosition(); });
+    window.addEventListener('resize', function(){
+      if(!window.matchMedia('(max-width:760px)').matches && win && !win.classList.contains('isMinimized')){
+        applyResponsiveWindowSize();
+        applyResponsiveWindowPosition();
+      }
+      keepInViewport(); scheduleRestorePosition();
+      lastViewportW=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
+      lastViewportH=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+    });
     window.addEventListener('scroll', function(){ if(root&&root.classList.contains('isBotHidden'))scheduleRestorePosition(); },{passive:true});
   }
 

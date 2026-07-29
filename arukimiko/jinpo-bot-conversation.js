@@ -623,7 +623,10 @@
       .replace(/あります/g,'ある')
       .replace(/でした/g,'だ')
       .replace(/です/g,'')
-      .replace(/ました/g,'た');
+      .replace(/ました/g,'た')
+      .replace(/(?:タダ|ただで使える|無料枠)/g,'無料')
+      .replace(/(?:利用できる|利用可能|使うことができる)/g,'使える')
+      .replace(/(?:安心して使える|安心)/g,'安全');
   }
   function statementSimilarity(a,b){
     var x=statementSimilarityText(a),y=statementSimilarityText(b);if(!x||!y)return 0;
@@ -641,7 +644,8 @@
       [/できる|出来る|使える|利用できる/,/(?:できない|出来ない|使えない|利用できない)/],
       [/ある|あります|存在する/,/(?:ない|ありません|存在しない)/],
       [/安全|安心/,/(?:危険|危ない|安全ではない|安全じゃない)/],
-      [/完了|終わった|済んだ/,/(?:未完了|終わってない|済んでない)/]
+      [/完了|終わった|済んだ/,/(?:未完了|終わってない|済んでない)/],
+      [/投手|ピッチャー/,/(?:野手|捕手|内野手|外野手)/]
     ];
     for(var i=0;i<pairs.length;i++){
       var a1=pairs[i][0].test(x),a2=pairs[i][1].test(x),b1=pairs[i][0].test(y),b2=pairs[i][1].test(y);
@@ -672,8 +676,44 @@
   function statementFacetCompatible(claim,candidate){
     var cg=statementFacetGroups(claim);if(!cg.length)return true;
     var tg=statementFacetGroups(candidate);
-    for(var i=0;i<cg.length;i++)if(tg.indexOf(cg[i])<0)return false;
+    // 「無料で使える」「安全に使える」の「使える」は補助表現。
+    // 具体的な観点が同時にある時は generic usage を必須一致にしない。
+    var strong=cg.filter(function(g){return g!=='usage';});
+    var need=strong.length?strong:cg;
+    for(var i=0;i<need.length;i++)if(tg.indexOf(need[i])<0)return false;
     return true;
+  }
+
+  // 「Firebase」と「Firestore」のように観点は同じでも対象が違う発言を
+  // 過去発言の一致として扱わない。主語が明示されている時だけ保守的に照合する。
+  function statementExplicitSubjects(text){
+    var t=S(text),out=[],seen={};
+    function add(v){
+      var x=cleanEntityCandidate(v);if(!x)return;
+      var c=C(x);if(!c||seen[c])return;
+      if(/^(?:前|さっき|この前|以前|私|俺|僕|自分|歩き巫女|あなた|君|きみ)$/.test(x))return;
+      seen[c]=1;out.push(x);
+    }
+    var m,re=/(?:^|[。！？\n「『])\s*([A-Za-z][A-Za-z0-9._+\-]{1,40}|[一-龠々ァ-ヶー]{2,20})(?:に?は|では|が|について|とは|って)/g;
+    while((m=re.exec(t)))add(m[1]);
+    // 「黒田の成績」「Firebaseの料金」のような所有・観点形。
+    re=/(?:^|[。！？\n「『])\s*([A-Za-z][A-Za-z0-9._+\-]{1,40}|[一-龠々ァ-ヶー]{2,20})の(?:家族|親族|成績|経歴|逸話|歴史|料金|価格|使い方|安全性|特徴|機能|無料枠)/g;
+    while((m=re.exec(t)))add(m[1]);
+    return out;
+  }
+  function statementSubjectCompatible(claim,candidate){
+    var a=statementExplicitSubjects(claim),b=statementExplicitSubjects(candidate);
+    if(!a.length||!b.length)return true;
+    for(var i=0;i<a.length;i++){
+      var ca=C(a[i]);
+      for(var j=0;j<b.length;j++){
+        var cb=C(b[j]);
+        if(ca===cb)return true;
+        // 「黒田」↔「黒田博樹」のような省略は許可。英字製品名の前方一致は許可しない。
+        if(/^[一-龠々ァ-ヶー]{2,}$/.test(a[i])&&/^[一-龠々ァ-ヶー]{2,}$/.test(b[j])&&(ca.indexOf(cb)===0||cb.indexOf(ca)===0))return true;
+      }
+    }
+    return false;
   }
 
   function priorStatementReference(history,currentMessage){
@@ -698,10 +738,12 @@
       if(statementSemanticConflict(claimed,tx))continue;
       // 「Firebase」という主題だけ同じでも、「無料」「安全」「家族」など肝心の観点が違えば同じ発言とは扱わない。
       if(!statementFacetCompatible(claimed,tx))continue;
+      // 観点が同じでも、Firebase と Firestore のように対象が違えば一致させない。
+      if(!statementSubjectCompatible(claimed,tx))continue;
       var sc=statementSimilarity(claimed,tx);
       if(sc>bestScore){bestScore=sc;best={speaker:speaker,text:tx,index:i,score:sc};}
     }
-    var minScore=statementFacetGroups(claimed).length?0.12:0.34;
+    var minScore=statementFacetGroups(claimed).length?0.09:0.34;
     if(best&&(!claimed||bestScore>=minScore))return {found:true,speaker:speaker,claimed:claimed,match:best.text,index:best.index,score:best.score};
     return {found:false,speaker:speaker,claimed:claimed,match:'',score:bestScore};
   }

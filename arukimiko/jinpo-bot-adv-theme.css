@@ -1435,3 +1435,82 @@
 #jinpoAiRoot.jinpoAdvTheme.jinpoWindowMinimized #jinpoAiLauncher{
   display:block!important;
 }
+
+/* ===== vNext: PC窓レスポンシブ化 / 最小化ボタン視認性改善 ===== */
+@media(min-width:981px){
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized){
+    width:clamp(560px,42vw,760px);
+    height:clamp(500px,72vh,760px);
+    min-width:min(560px,calc(100vw - 24px));
+    min-height:min(500px,calc(100vh - 24px));
+    max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 24px);
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoExternalCharacter:not(.isMinimized){
+    min-height:min(360px,calc(100vh - 190px))!important;
+    max-height:calc(100vh - 190px)!important;
+  }
+}
+
+/* 「画面最小化」が無効ボタンに見えないよう、独立した明るい紫桃色にする。 */
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn{
+  border:2px solid #e9b2ff!important;
+  background:linear-gradient(180deg,#a85fc2 0%,#7b3d99 55%,#5f2d7d 100%)!important;
+  color:#fff!important;
+  text-shadow:0 1px 1px rgba(47,16,63,.75)!important;
+  box-shadow:
+    0 0 0 1px rgba(255,237,255,.16) inset,
+    0 2px 0 rgba(48,19,61,.46),
+    0 0 10px rgba(204,104,238,.48)!important;
+  opacity:1!important;
+  filter:none!important;
+  cursor:pointer!important;
+}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn:hover,
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn:focus-visible{
+  border-color:#f6d8ff!important;
+  background:linear-gradient(180deg,#c574dd 0%,#914cad 55%,#71378e 100%)!important;
+  color:#fff!important;
+  box-shadow:
+    0 0 0 2px rgba(255,241,255,.22) inset,
+    0 2px 0 rgba(48,19,61,.38),
+    0 0 17px rgba(218,117,247,.72)!important;
+  transform:translateY(-1px)!important;
+  outline:none!important;
+}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn:active{
+  transform:translateY(1px)!important;
+  box-shadow:0 0 0 1px rgba(255,237,255,.18) inset,0 0 8px rgba(204,104,238,.44)!important;
+}
+
+/* ===== vNext-2: 中間幅レスポンシブ / ヘッダー詰まり防止 ===== */
+@media(min-width:761px) and (max-width:980px){
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized){
+    width:clamp(440px,60vw,600px);
+    height:clamp(420px,72vh,720px);
+    min-width:min(440px,calc(100vw - 20px));
+    min-height:min(420px,calc(100vh - 170px));
+    max-width:calc(100vw - 20px);
+    max-height:calc(100vh - 158px);
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoExternalCharacter:not(.isMinimized){
+    min-height:min(320px,calc(100vh - 170px))!important;
+    max-height:calc(100vh - 158px)!important;
+  }
+  /* 540px前後では非必須の育成札を隠し、操作ボタンを潰さない。 */
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingBadge{
+    display:none!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderResetBtn.jinpoAiHeaderBtn{
+    min-width:118px!important;
+    height:40px!important;
+    padding:6px 11px!important;
+    font-size:14px!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn,
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderHideBtn.jinpoAiHeaderBtn{
+    height:38px!important;
+    padding:6px 10px!important;
+    font-size:13px!important;
+  }
+}
