@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.13.0';
+  var VERSION='3.15.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -31,12 +31,27 @@
   function shouldAiLeadConversation(text){
     var t=String(text||'').trim();
     if(!t)return false;
-    // 実操作・厳密な数値/現在情報は、従来の決定論ルートを先に通す。
+    // 実操作は従来の決定論ルートを先に通す。
     if(/(?:陣法|陣形|因縁|英傑|全MAX|差替|配置|除外|検索).*(?:して|やって|探して|適用|解除|設定|変更|選んで)/.test(t))return false;
-    if(/天気|気温|予報|降水|雨|雪|湿度|風速|何番|いくつ|数値|トップ\d*|順位|日程|試合結果|今日|明日|現在|最新|速報/.test(t))return false;
+
+    // 「今日は最悪だった」「今日やっと直った」のような共有まで、
+    // 単に「今日」を含むという理由だけで最新情報照会へ送らない。
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.listeningSignals==='function'){
+        var ls=conv.listeningSignals([],t)||{};
+        if(ls.mode==='listen_only'||ls.mode==='celebration'||ls.mode==='mixed_sharing'||ls.mode==='venting'||ls.mode==='sharing'||ls.mode==='opinion_request')return true;
+      }
+    }catch(e){}
+
+    // 厳密な数値・現在情報の質問は、従来の決定論ルートを先に通す。
+    if(/天気|気温|予報|降水|湿度|風速|何番|いくつ|数値|トップ\d*|順位|日程|試合結果|最新|速報/.test(t))return false;
+    if(/(?:今日|明日|現在|最近)/.test(t)&&/(?:教えて|調べて|検索して|何|なに|どう|順位|日程|試合|結果|予定|ニュース|情報|天気|気温|予報|速報|最新)/.test(t))return false;
+
     // 感想・人物像・印象・共感など「正解だけ」より会話の自然さが重要な発言。
     return /すご(?:い|かった)|面白(?:い|かった)|おもしろ|意外|懐かし|知らなかった|初めて知|びっくり|そうなんだ|なるほど|やっぱり|なんだね|だよね|どんな人|どんな選手|どう思う|印象|気になる|好きなの|好き？|好き\?|かな[？?]?|かも/.test(t);
   }
+
   function fmtNum(v){return String(v==null?'':v);}
   function conditionLabel(s){
     s=s||{};var p=[];
@@ -386,6 +401,11 @@
         }
       }catch(e){}
       try{
+        if(interpreter()&&typeof interpreter().clearPending==='function'){
+          interpreter().clearPending();
+        }
+      }catch(e){}
+      try{
         if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.pause==='function'){
           window.JINPO_BOT_KASHIN_NAME.pause();
         }
@@ -463,6 +483,11 @@
       try{
         if(window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.clearPending==='function'){
           window.JINPO_BOT_DIALOG.clearPending();
+        }
+      }catch(e){}
+      try{
+        if(interpreter()&&typeof interpreter().clearPending==='function'){
+          interpreter().clearPending();
         }
       }catch(e){}
       try{

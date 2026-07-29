@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v2.1.0
+ * 歩き巫女 AI会話脳 v2.3.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.1.0';
+  var VERSION='2.3.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -408,14 +408,36 @@
       answers.push(text.replace(/\s+/g,' ').trim());
     }
     if(!answers.length)return'（直近返答なし）';
-    var openings=[],endings=[],nano=0;
+    var openings=[],endings=[],nano=0,questionEnds=0,genericInvites=0;
     answers.forEach(function(t){
       var first=t.split(/[。！？!?]/)[0].slice(0,42);if(first&&openings.indexOf(first)<0)openings.push(first);
       var parts=t.split(/[。！？!?]/).filter(Boolean);var last=parts.length?parts[parts.length-1].slice(-42):'';
       if(last&&endings.indexOf(last)<0)endings.push(last);
       nano+=(t.match(/なのです(?:よ)?/g)||[]).length;
+      if(/[？?]\s*$/.test(t))questionEnds++;
+      if(/(?:気になったら|気になるところ|他にも|ほかにも|何でも|そのままどうぞ|言ってください|聞いてください|話してください)/.test(t))genericInvites++;
     });
-    return '最近の冒頭: '+openings.slice(0,4).join(' / ')+'\n最近の締め: '+endings.slice(0,4).join(' / ')+'\n「なのです」系の使用回数: '+nano;
+    return '最近の冒頭: '+openings.slice(0,4).join(' / ')+'\n最近の締め: '+endings.slice(0,4).join(' / ')+'\n「なのです」系の使用回数: '+nano+'\n質問で終えた回数: '+questionEnds+' / 汎用的な誘い文句: '+genericInvites;
+  }
+
+  function followupGuidance(history,currentMessage){
+    var h=filterRawHistory(history),cur=S(currentMessage),recentQuestions=0,recentInvites=0,seen=0;
+    if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
+    for(var i=h.length-1;i>=0&&seen<4;i--){
+      var x=h[i]||{},t=S(x.text);if(x.role!=='assistant'||!t)continue;seen++;
+      if(/[？?]\s*$/.test(t))recentQuestions++;
+      if(/(?:他にも|ほかにも|気になったら|言ってください|聞いてください|話してください)/.test(t))recentInvites++;
+    }
+    var ls=null,conv=window.JINPO_BOT_CONVERSATION;
+    try{if(conv&&typeof conv.listeningSignals==='function')ls=conv.listeningSignals(history||[],cur)||null;}catch(e){}
+    if(ls&&ls.openness==='closed')return'この話を勝手に深掘りしない。短く受けて閉じる。';
+    if(recentQuestions>=2)return'直近で質問終わりが続いているため、今回は追加質問を避け、内容への反応か答えで終える。';
+    if(ls&&ls.mode==='listen_only'&&ls.openness==='open')return'続きを話したそうなので、短く受けて待つ。質問するなら一つだけで、先回りしない。';
+    if(ls&&(ls.mode==='venting'||ls.mode==='mixed_sharing'))return'まず出来事の具体的一点を受ける。助言を求められていなければ質問や解決策を足さなくてよい。';
+    if(ls&&ls.mode==='celebration')return'一緒に喜ぶことを優先。分析へ逸れず、自然なら関連する一言だけ添える。';
+    if(cur.length>=70&&!/[？?]/.test(cur))return'長めの共有なので全文要約はせず、一番印象的な一点だけ拾う。深掘り質問は多くても一つ。';
+    if(recentInvites>=2)return'汎用的な「他にも」誘導は避け、内容そのものだけでつなぐ。';
+    return'自然な会話なら質問なしで終えてよい。深掘りする場合も一度に一つだけ。';
   }
 
   function currentResponsePreference(message){
@@ -425,6 +447,62 @@
     if(/例(?:も|を)|具体例|たとえば|例えば/.test(t))out.push('具体例を含める');
     if(/結論から|先に結論/.test(t))out.push('結論を先に置く');
     return out.length?out.join(' / '):'（明示指定なし）';
+  }
+
+  function interactionStyleSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.interactionStyle!=='function')return'（会話テンポ信号なし）';
+    try{
+      var st=conv.interactionStyle(history||[],currentMessage||'')||{};
+      var pace=st.pace==='terse'?'短文テンポ':st.pace==='elaborate'?'しっかり説明するテンポ':'標準テンポ';
+      var reg=st.register==='casual'?'ややくだけた話し方':st.register==='polite'?'丁寧な話し方':'中立的な話し方';
+      var en=st.energy==='lively'?'反応はやや活発':st.energy==='calm'?'落ち着いた反応':'通常の反応量';
+      var shift=st.topicShift?' / 今回は明示的な話題転換':' ';
+      return 'ユーザーの現在の会話テンポ: '+pace+' / '+reg+' / '+en+' / 平均'+Number(st.avgLength||0)+'文字'+shift;
+    }catch(e){return'（会話テンポ信号の取得に失敗）';}
+  }
+
+  function listeningStyleSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.listeningSignals!=='function')return'（聞き方信号なし）';
+    try{
+      var x=conv.listeningSignals(history||[],currentMessage||'')||{};
+      var need={listen:'解決策ではなく、まず話を受け止めてほしい',advice:'具体的な助言・一緒に考えることを求めている',opinion:'歩き巫女の意見を求めている',respond:'特別な返答形式の指定なし'}[x.need]||'特別な返答形式の指定なし';
+      var mode={listen_only:'聞いてほしい共有',advice:'相談',opinion_request:'意見要求',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどい・不満な出来事の共有',uncertain:'迷い・不確かさの共有',sharing:'出来事の共有',conversation:'通常会話'}[x.mode]||'通常会話';
+      var val={positive:'前向きな反応',negative:'つらさ・不満が明示されている',mixed:'良い面と悪い面が混在',neutral:'感情方向は明示されていない'}[x.valence]||'中立';
+      var open={open:'話を続けたい合図あり',closed:'この話を閉じたい合図あり',neutral:'話の続行可否は未指定'}[x.openness]||'未指定';
+      return '受け方: '+mode+' / 希望: '+need+' / 発言上の感情信号: '+val+' / '+open+' / 強さ='+(x.intensity||'normal')+(x.avoidAdvice?' / 頼まれていない助言は避ける':'');
+    }catch(e){return'（聞き方信号の取得に失敗）';}
+  }
+
+  function currentTurnMode(message){
+    var t=S(message);
+    if(!t)return'conversation';
+    var conv=window.JINPO_BOT_CONVERSATION;
+    try{
+      if(conv&&typeof conv.listeningSignals==='function'){
+        var ls=conv.listeningSignals([],t)||{};
+        if(ls.mode==='listen_only')return'listen_only';
+        if(ls.mode==='advice')return'advice_request';
+        if(ls.mode==='opinion_request')return'opinion_request';
+        if(ls.mode==='celebration')return'celebration';
+        if(ls.mode==='mixed_sharing')return'mixed_sharing';
+        if(ls.mode==='venting')return'venting';
+        if(ls.mode==='uncertain')return'uncertain';
+        if(ls.mode==='sharing')return'sharing';
+      }
+    }catch(e){}
+    if(/(?:どうしたら|どうすれば|どうするのがいい|アドバイス(?:して|ください|ほしい|欲しい|ある|お願い)|相談したい|相談乗って|助けて|意見(?:を)?聞きたい)/.test(t))return'advice_request';
+    if(/^(?:なるほど|そうなんだ|そっか|へえ|へー|ほう|了解|わかった|分かった|いいね|面白い|おもしろい|すごい|まじか|マジか)[。！!？?]*$/.test(t))return'reaction';
+    if(/[？?]/.test(t)||/(?:教えて|知りたい|何|なに|誰|だれ|どこ|いつ|なぜ|なんで|どうして|どうなの|どっち|いくら|何位|何番)/.test(t))return'question';
+    if(/(?:と思う|気がする|好き|嫌い|いいと思|微妙|面白い|おもしろい|すごい|やばい|懐かしい|うれしい|嬉しい)/.test(t))return'opinion';
+    if(/(?:今日|昨日|きのう|さっき|この前|先週|最近).*(?:した|してた|してて|てた|てて|てたら|だった|あった|起きた|言われた|なった)|(?:したんだ|だったんだ|あったんだ|してたんだ|てたんだ)(?:よ|けど|けどさ)?[。！!]*$/.test(t))return'sharing';
+    return'conversation';
+  }
+
+  function turnModeSummary(message){
+    var m=currentTurnMode(message),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
+    return labels[m]||labels.conversation;
   }
 
   function verifiedPriorOutputs(history){
@@ -449,14 +527,22 @@
     var continuity=recentAssistantContinuity(opt.history||[],opt.currentMessage||'');
     var continuityBlock=continuity.length?continuity.join('\n'):'（直近の歩き巫女返答なし）';
     var styleBlock=responseStyleSummary(opt.history||[],opt.currentMessage||'');
+    var interactionBlock=interactionStyleSummary(opt.history||[],opt.currentMessage||'');
+    var listeningBlock=listeningStyleSummary(opt.history||[],opt.currentMessage||'');
+    var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
+    var turnModeBlock=turnModeSummary(opt.currentMessage||'');
     var responsePreference=currentResponsePreference(opt.currentMessage||'');
     var priorVerified=verifiedPriorOutputs(opt.history||[]);
     var priorVerifiedBlock=priorVerified.length?priorVerified.join('\n\n'):'（直近に確認済みローカル出力なし）';
+    var personaGuide=(window.JINPO_BOT_PERSONA_GUIDE&&S(window.JINPO_BOT_PERSONA_GUIDE.prompt))||'親しみやすく丁寧な現代日本語で話し、キャラクター語尾を毎文固定しない。';
 
     return [
       'あなたは「たいらの野望」サイト常駐AIの歩き巫女です。',
       'ユーザーとは自然な日本語で会話してください。機械的なメニュー会話を避け、前後の文脈・省略・ひらがな・軽い誤字を意味から理解します。',
       '口調は可愛く丁寧で、必要な時だけ「〜なのですよ」「〜なのです」を自然に使います。毎文につけないでください。',
+      '',
+      '人格ガイド:',
+      personaGuide,
       '',
       '最重要ルール:',
       '1. ゲーム内の数値、カウンター、九十九、鬼神石、魔導結晶、陣法検索結果などは絶対に推測しません。必ず利用可能な正本ツールを使います。',
@@ -490,6 +576,25 @@
       '29. 長い会話では、以前の説明を丸ごと再掲せず「前に触れた点」を短く踏まえて新しい情報へ進みます。ユーザーが再説明を求めた時だけ戻ります。',
       '30. ユーザーが「それは知ってる」「そこは分かる」と示したら、知識確認を繰り返さず一段深い内容へ移ります。勝手に新事実を作らず、必要なら正本を使います。',
       '31. 最近訂正された内容と同じ断定を繰り返さないでください。不一致が事実問題なら正本/Webで再確認し、会話上の誤解なら何を取り違えたかだけ簡潔に直します。',
+      '32. ユーザーの会話テンポには軽く合わせます。短文が続く相手には返答も引き締め、長く具体的に話す相手には必要な説明量を確保します。ただし露骨な口調模倣や乱暴な表現のコピーはしません。',
+      '33. 「ところで」「そういえば」「話変わるけど」「別件」など明示的な話題転換がある時は、前の話題を無理につなげず新しい話として受けます。',
+      '34. ユーザーが同じ話題に強く関心を示している時は、回答後に関連する一段深いポイントを自然に一つ添えて構いません。関心が閉じた反応なら、勝手に話題を再開しません。',
+      '35. 相手が短くテンポよく話している時に、毎回長い共感・前置き・確認質問を足さないでください。必要な答えを先に出し、自然なら一言で終えて構いません。',
+      '36. 相手の砕けた話し方には少し親しみを寄せて構いませんが、語尾や俗語を機械的に真似しません。歩き巫女自身の柔らかい敬語を保ちます。',
+      '37. 直近の歩き巫女返答が何度も質問で終わっている場合、追加情報が本当に必要でない限り次も質問で締めません。答えて終わる自然さを優先します。',
+      '38. 「他にも知りたいですか」「気になったら言ってください」など汎用的な誘い文句を連続させません。会話が続く時は内容そのものをつなぎます。',
+      '39. ユーザーが出来事や感想を共有しているだけの時、頼まれていない助言・手順・改善策へすぐ切り替えません。まずその話そのものを受け、助言を求められた時に解決モードへ入ります。',
+      '40. ユーザーの意見に対して、毎回知識解説や事実確認で上書きしません。事実誤認が重要でない限り、意見として会話を続けます。',
+      '41. 質問・情報要求では回り道せず答えを先に返します。相談・助言要求では具体策を出し、単なる共有とは区別します。',
+      '42. 「ただ聞いて」「愚痴を聞いて」「アドバイスはいらない」など聞くことを明示された時は、解決策・手順・改善案を出しません。内容の具体的な一点を受け止め、必要なら短く続きを促す程度にします。',
+      '43. つらさ・不満の共有では、すぐ「でも」「きっと良くなる」「大丈夫」と前向きに塗り替えません。ユーザーが実際に述べた出来事を一度そのまま受けます。',
+      '44. うれしい報告では、分析や注意事項より先に一緒に喜びます。相手の勢いが強い時だけ少し勢いを合わせ、毎回大げさにはしません。',
+      '45. 「迷っている」「決めきれない」だけなら、即座に結論を押し付けません。意見や助言を求められていれば整理し、求められていなければ迷っている点を自然に受けます。',
+      '46. 共感では気持ちを断定しすぎません。「絶対つらい」「きっと悲しい」のように内面を決めつけず、発言で確認できる出来事や言葉に寄せます。',
+      '47. 相手が長めに出来事を話している時、返答の最初で全文を要約し直しません。最も重要そうな一点だけ拾い、会話として返します。',
+      '48. 深掘り質問は一度に一つまでです。直近の返答が質問続きなら、質問せず関連する一言を添えて終えて構いません。',
+      '49. 「聞いて」と話し始めた段階では先回りして結論を作らず、話の続きがありそうなら短く受けて待ちます。',
+      '50. ユーザーが自分から話を広げている時は、汎用的な「他には？」ではなく、その発言中の具体語を一つだけ拾ってつなげます。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -505,6 +610,18 @@
       '最近の返答スタイル（同じ型を避けるための参考）:',
       styleBlock,
       '',
+      'ユーザー側の会話テンポ（軽く合わせる。人格の模倣には使わない）:',
+      interactionBlock,
+      '',
+      '今回の発話タイプ:',
+      turnModeBlock,
+      '',
+      '今回の聞き方・受け方の信号（ユーザーが発言内で示した範囲だけ）:',
+      listeningBlock,
+      '',
+      '今回の深掘り方針:',
+      followupBlock,
+      '',
       '今回の返答指定:',
       responsePreference,
       '',
@@ -516,7 +633,11 @@
       '- 不要な前置きや同じ説明の反復を避ける。',
       '- 雑談なら雑談として返し、陣法やサイト機能へ無理に結び付けない。',
       '- 1～3文で自然に済む内容を、定型メニューのように長くしない。',
+      '- ユーザーが短文テンポなら、まず短く返す。明示的に詳しさを求められた場合はそちらを優先する。',
+      '- 明示的な話題転換では、前話題への橋渡し文を無理に入れない。',
       '- 会話として自然なら短く、説明が必要なら十分に詳しくする。',
+      '- 共有だけの発言には、頼まれていない解決策を足さず、まず内容そのものへ反応する。',
+      '- 深掘りするならユーザー発言の具体語を一つ拾う。質問の連発や気持ちの決めつけは避ける。',
       '- ツール結果の数字・固有名詞を勝手に変更しない。'
     ].join('\n');
   }
@@ -1351,7 +1472,11 @@
     _conversationStateSummary:conversationStateSummary,
     _recentAssistantContinuity:recentAssistantContinuity,
     _responseStyleSummary:responseStyleSummary,
+    _interactionStyleSummary:interactionStyleSummary,
+    _currentTurnMode:currentTurnMode,
+    _turnModeSummary:turnModeSummary,
     _currentResponsePreference:currentResponsePreference,
+    _followupGuidance:followupGuidance,
     _verifiedPriorOutputs:verifiedPriorOutputs
   };
 })();

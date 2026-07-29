@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.2.0
+ * 歩き巫女 日常会話・雑談 v3.4.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.2.0';
+  var VERSION='3.4.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -68,6 +68,14 @@
     return false;
   }
   function includesAny(t,arr){for(var i=0;i<arr.length;i++)if(t.indexOf(arr[i])>=0)return true;return false;}
+
+  function conversationStyle(history,current){
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.interactionStyle==='function')return conv.interactionStyle(history||[],current||'')||{};
+    }catch(e){}
+    return {pace:'normal',register:'neutral',energy:'neutral'};
+  }
 
   var REPLIES={
     hello:[
@@ -546,10 +554,28 @@
     return'Firebase共有記憶は設定されていますが、まだ接続準備中か一時的に利用できない状態なのですよ。陣法検索はそのまま使えるのです。';
   }
 
+  function listeningFallback(text,opt){
+    var conv=window.JINPO_BOT_CONVERSATION;if(!conv||typeof conv.listeningSignals!=='function')return'';
+    var sig=null;try{sig=conv.listeningSignals((opt&&opt.history)||[],text)||{};}catch(e){return'';}
+    var pace='normal';try{pace=conversationStyle((opt&&opt.history)||[],text).pace||'normal';}catch(e){}
+    if(sig.mode==='listen_only')return pace==='terse'?pick(['うん、聞いてます。','うん。続けて大丈夫です。','聞いてますよ。']):pick(['うん、聞いています。そのまま話して大丈夫ですよ。','聞いてますよ。続きもそのまま受け取ります。','うん。先回りせず聞くので、そのまま続けてください。']);
+    if(sig.mode==='sharing'){
+      var tt=S(text);
+      if(/公開|リリース/.test(tt))return pace==='terse'?pick(['お、公開までいったんですね。','公開したんですね。ひと区切りですね。']):pick(['お、公開までいったんですね。そこまで形になったのは大きいです。','公開したんですね。ひと区切りついた感じがありますね。']);
+      if(/完成|終わった|片づいた|片付いた/.test(tt))return pace==='terse'?pick(['ひと区切りついたんですね。','終わったんですね。お疲れさまです。']):pick(['ひと区切りついたんですね。そこまで進めたのは大きいです。','終わったんですね。まずはそこまでお疲れさまです。']);
+      return pace==='terse'?pick(['お、そうだったんですね。','なるほど、そんなことがあったんですね。']):pick(['そうだったんですね。今日の出来事として、そのまま聞いています。','なるほど、そんなことがあったんですね。']);
+    }
+    if(sig.mode==='mixed_sharing')return pace==='terse'?pick(['大変だったけど、最後はよかったですね。','それは振れ幅ありますね。','疲れた分、直ったのはうれしいですね。']):pick(['途中はかなり大変だったのに、最後はちゃんと直ったんですね。その振れ幅は大きいです。','しんどい流れのあとに結果が出たんですね。そこは素直にほっとするところです。','それは疲れますね。でも最後にうまくいったところまで含めると、かなり濃い一日です。']);
+    if(sig.mode==='celebration')return pace==='terse'?pick(['おお、やりましたね。','それはうれしいですね。','いいですね、成功です。']):pick(['おお、それはうれしい報告ですね。ちゃんと結果が出たのがいいです。','やりましたね。そこまで進んだなら、かなり気分がいいやつです。','それはいいですね。うまくいった報告は素直にうれしいです。']);
+    if(sig.mode==='venting')return pace==='terse'?pick(['それはしんどいですね。','うわ、それは嫌ですね。','それは疲れますね。']):pick(['それはしんどいですね。そういう日は、言いたくもなります。','うわ、それは嫌な流れでしたね。言いたくなるのも分かります。','それは疲れますね。軽く流せる感じの話ではなさそうです。']);
+    if(sig.mode==='uncertain')return pace==='terse'?pick(['迷いますね、それ。','それは決めきりにくいですね。','悩むところですね。']):pick(['それは迷うところですね。まだ結論を急がなくても、どこで引っかかっているかは整理できそうです。','決めきれない感じなんですね。今の段階では、無理に片方へ寄せないほうが自然そうです。','そこは悩みますね。意見が必要なら一緒に整理できますが、今はまず迷っている点をそのまま聞きます。']);
+    return'';
+  }
+
   function local(text,opt){
     opt=opt||{};
     setHistoryReplyKeys(opt.history||[]);
-    var t=S(text),c=compact(t);
+    var t=S(text),c=compact(t),userStyle=conversationStyle(opt.history||[],t);
     if(!t||hasSiteIntent(t))return null;
 
     // 単発の定型相槌より先に、直前の会話を見た反応を返す。
@@ -559,6 +585,9 @@
         if(rr&&rr.handled&&rr.answer)return rr.answer;
       }
     }catch(reactionErr){}
+
+    // 高性能AIが使えない時も、共有・愚痴・喜びをいきなり助言テンプレートへ変えない。
+    var listening=listeningFallback(t,opt);if(listening)return listening;
 
     var nr=naturalReply(t);if(nr)return nr;
     var cr=capabilitiesReply(t);if(cr)return cr;
@@ -571,8 +600,14 @@
     if(near(t,['おはよう','おはよ','おはようございます'],1)||near(t,['おはようございます'],2))return pick(REPLIES.morning);
     if(near(t,['こんばんは','こんばんわ','ばんは'],1)||near(t,['こんばんは','こんばんわ'],2))return pick(REPLIES.evening);
 
-    if(near(t,['ありがとう','ありがと','ありがとー','サンキュー','さんきゅー','助かった'],1)||/ありがとう|ありがと|助かった|サンキュ|thanks/i.test(t))return pick(REPLIES.thanks);
-    if(near(t,['ごめん','ごめんなさい','すみません','すまん'],1)||/ごめん|すまん|すみません|申し訳/.test(t))return pick(REPLIES.sorry);
+    if(near(t,['ありがとう','ありがと','ありがとー','サンキュー','さんきゅー','助かった'],1)||/ありがとう|ありがと|助かった|サンキュ|thanks/i.test(t)){
+      if(userStyle.pace==='terse')return pick(['どういたしまして。','いえいえ、大丈夫です。','こちらこそです。']);
+      return pick(REPLIES.thanks);
+    }
+    if(near(t,['ごめん','ごめんなさい','すみません','すまん'],1)||/ごめん|すまん|すみません|申し訳/.test(t)){
+      if(userStyle.pace==='terse')return pick(['大丈夫です。','気にしなくて大丈夫です。','平気ですよ。']);
+      return pick(REPLIES.sorry);
+    }
     var comm=communicationTalk(t);if(comm)return comm;
     var work=workTalk(t);if(work)return work;
     if(/元気[？?]?|調子どう|元気なの|げんき/.test(t))return pick(['元気なのですよ。こうして話しかけてもらえると、ちょっと張り切ってしまうのです。','元気なのです。今日も歩き巫女は稼働中なのですよ。','元気なのですよ。そちらはどうですか？']);
@@ -586,8 +621,9 @@
     if(/バグった|バグ出た|エラー出た|動かない|壊れた/.test(t))return pick(['まず慌てず、直前に変えたところと再現条件を見るのですよ。バグは条件が分かると急に捕まえやすくなるのです。','出ましたね、調査の時間なのですよ。再現できるか、どこまで正常か、順番に切り分けましょう。','大丈夫なのです。いきなり全部直そうとせず、原因候補を一つずつ潰すのですよ。']);
     if(/うれしい|嬉しい|やった[ー!！]*$|最高|うまくいった|できた[!！]*$/.test(t))return pick(REPLIES.happy);
     if(/悲しい|かなしい|落ち込|へこん|つらいな|うまくいかない/.test(t))return pick(REPLIES.sad);
-    if(/かわいい|可愛い|綺麗|きれいだね/.test(t))return pick(REPLIES.cute);
-    if(/好き[だ？?]?|推し|気に入った/.test(t))return pick(REPLIES.like);
+    // 対象が書かれていない「好き」「かわいい」を、歩き巫女への言葉と勝手に決めない。
+    if(/(?:歩き巫女|巫女ちゃん|君|きみ|あなた).*(?:かわいい|可愛い|綺麗|きれい)|(?:かわいい|可愛い|綺麗|きれい).*(?:歩き巫女|巫女ちゃん)/.test(t))return pick(REPLIES.cute);
+    if(/(?:歩き巫女|巫女ちゃん|君|きみ|あなた).*(?:好き|推し|気に入った)|(?:好き|推し|気に入った).*(?:歩き巫女|巫女ちゃん)/.test(t))return pick(REPLIES.like);
 
     if(/冗談|ジョーク|笑わせて|面白いこと|おもしろいこと|なんか笑える|一発ギャグ/.test(t))return pick(JOKES.concat(GENERAL_WORK_JOKES));
     if(/笑$|草+$|ｗ+$|w+$|ワロタ|わろた|おもろ/.test(c)||/笑った|吹いた/.test(t))return pick(REPLIES.laugh);
@@ -597,8 +633,8 @@
       'なぞなぞです。「増えれば増えるほど、見つけるのが大変になるものは？」……候補なのです。陣法あるある寄りなのですよ。'
     ]);
 
-    if(/おやすみ|寝るね|ねるね|もう寝る|寝ます/.test(t))return pick(REPLIES.goodnight);
-    if(/またね|じゃあね|またあとで|ばいばい|バイバイ|また今度/.test(t))return pick(REPLIES.bye);
+    if(/おやすみ|寝るね|ねるね|もう寝る|寝ます/.test(t))return userStyle.pace==='terse'?pick(['おやすみなさい。','おやすみです。またね。']):pick(REPLIES.goodnight);
+    if(/またね|じゃあね|またあとで|ばいばい|バイバイ|また今度/.test(t))return userStyle.pace==='terse'?pick(['またね。','ではまた。','またどうぞ。']):pick(REPLIES.bye);
     if(/ただいま|戻った|もどった/.test(t))return pick(REPLIES.welcomeBack);
     if(/いってきます|行ってきます|出かけてくる/.test(t))return pick(REPLIES.leaving);
     if(/褒めて|ほめて|褒めてよ/.test(t))return pick(REPLIES.praise);
@@ -736,6 +772,7 @@
     local:local,
     naturalKind:naturalKind,
     naturalReply:naturalReply,
+    listeningFallback:listeningFallback,
     capabilitiesReply:capabilitiesReply,
     recentReplyCount:function(){return recentReplies.length;},
     resetRecentReplies:function(){recentReplies=[];historyReplyKeys=[];},
