@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.4.8';
+  var VERSION='3.6.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -395,13 +395,21 @@
     // 明確な日常会話は、陣法の意図推定より先に返す。
     // 「暑い」「疲れた」「何できる？」などを検索コマンドに誤分類しない。
     try{
-      if(window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
-        var quickTalk=window.JINPO_BOT_SMALLTALK.local(originalMessage);
+      var blockEarlySmalltalk=false;
+      try{
+        var ip=interpreter()&&typeof interpreter().getPending==='function'?interpreter().getPending():null;
+        var dp=window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.state==='function'?window.JINPO_BOT_DIALOG.state():null;
+        var kp=window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.state==='function'?window.JINPO_BOT_KASHIN_NAME.state():null;
+        blockEarlySmalltalk=!!(ip||(dp&&dp.pending)||(kp&&kp.active));
+      }catch(pendingCheckErr){}
+
+      if(!blockEarlySmalltalk&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
+        var quickTalk=window.JINPO_BOT_SMALLTALK.local(originalMessage,{history:history,pageContext:pageContext});
         if(quickTalk){
           return {
             answer:String(quickTalk),
             sources:[],links:[],mode:'日常会話',
-            data:{smalltalk:true,early:true}
+            data:{smalltalk:true,early:true,contextual:true}
           };
         }
       }
@@ -455,6 +463,10 @@
         if(intentInfo.message)message=String(intentInfo.message);
       }
     }catch(conversationErr){}
+
+    if(intentInfo&&intentInfo.referenceClarification){
+      return {answer:String(intentInfo.referenceClarification),sources:[],links:[],mode:'会話文脈',data:{needsReferenceClarification:true}};
+    }
 
     var contextInfo={original:originalMessage,message:message,resolved:message!==originalMessage,reason:dialogInfo.reason||'',confidence:dialogInfo.handled?0.99:0};
     try{

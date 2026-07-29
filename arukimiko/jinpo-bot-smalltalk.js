@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v2.6.0
+ * 歩き巫女 日常会話・雑談 v3.1.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='2.9.0';
+  var VERSION='3.1.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -13,7 +13,22 @@
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function compact(v){return S(v).toLowerCase().replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…]/g,'');}
-  function pick(a){return a[Math.floor(Math.random()*a.length)];}
+  var RECENT_REPLY_LIMIT=8,recentReplies=[];
+  function rememberReply(text){
+    var c=compact(text);if(!c)return;
+    recentReplies=recentReplies.filter(function(x){return x!==c;});
+    recentReplies.unshift(c);
+    if(recentReplies.length>RECENT_REPLY_LIMIT)recentReplies.length=RECENT_REPLY_LIMIT;
+  }
+  function pick(a){
+    if(!a||!a.length)return'';
+    var candidates=a.filter(function(x){return recentReplies.indexOf(compact(x))<0;});
+    if(!candidates.length&&recentReplies.length)candidates=a.filter(function(x){return compact(x)!==recentReplies[0];});
+    if(!candidates.length)candidates=a.slice();
+    var chosen=candidates[Math.floor(Math.random()*candidates.length)];
+    rememberReply(chosen);
+    return chosen;
+  }
   function hasSiteIntent(t){return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|英傑|配置|除外|差替|MAX|マックス|見聞録|鬼神石|転生|込み合計|検索条件|おすすめ検索|鶴翼|方円|魚鱗|衡軛|こうやく|文曲|発動因縁|検索結果/.test(S(t));}
 
   // 隣接文字の入れ替えも1文字の誤りとして扱うDamerau-Levenshtein。
@@ -520,9 +535,18 @@
     return'Firebase共有記憶は設定されていますが、まだ接続準備中か一時的に利用できない状態なのですよ。陣法検索はそのまま使えるのです。';
   }
 
-  function local(text){
+  function local(text,opt){
+    opt=opt||{};
     var t=S(text),c=compact(t);
     if(!t||hasSiteIntent(t))return null;
+
+    // 単発の定型相槌より先に、直前の会話を見た反応を返す。
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.naturalReaction==='function'){
+        var rr=window.JINPO_BOT_CONVERSATION.naturalReaction(t,opt.history||[]);
+        if(rr&&rr.handled&&rr.answer)return rr.answer;
+      }
+    }catch(reactionErr){}
 
     var nr=naturalReply(t);if(nr)return nr;
     var cr=capabilitiesReply(t);if(cr)return cr;
@@ -633,7 +657,7 @@
     if(carp&&carp.handled)return carp;
 
     // 日常会話を先に判定。誤字の挨拶をWeb検索へ飛ばさないためにもここを優先する。
-    var a=local(text);if(a)return {handled:true,answer:a,sources:[],mode:'日常会話'};
+    var a=local(text,{history:opt.history||[]});if(a)return {handled:true,answer:a,sources:[],mode:'日常会話'};
 
     var memory=window.JINPO_BOT_MEMORY;
     if(memory&&typeof memory.recallText==='function'){
@@ -700,6 +724,8 @@
     local:local,
     naturalKind:naturalKind,
     naturalReply:naturalReply,
-    capabilitiesReply:capabilitiesReply
+    capabilitiesReply:capabilitiesReply,
+    recentReplyCount:function(){return recentReplies.length;},
+    resetRecentReplies:function(){recentReplies=[];}
   };
 })();

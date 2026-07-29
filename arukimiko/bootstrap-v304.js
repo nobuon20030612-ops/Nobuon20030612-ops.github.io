@@ -9,7 +9,7 @@
   window.ARUKIMIKO_BOOT_VERSION='3.0.5-fast';
 
   var BASE='/arukimiko/';
-  var VERSION='3.4.8';
+  var VERSION='3.6.0';
 
   function abs(name){
     return new URL(name,location.origin+BASE).href;

@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 会話コンテキスト v2.5.0
+ * 歩き巫女 会話コンテキスト v2.7.0
  * 直前の会話を参照し、短い追答・指示語・不足スロットを保守的に補完する。
  * 推測し過ぎないことを優先し、確信できる場合だけ入力を補完する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.5.3';
+  var VERSION='2.7.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -63,6 +63,7 @@
     var x=t
       .replace(/^(?:それ|これ|その件|さっきの|今の|前の)(?:について|のこと)?[、\s]*/,'')
       .replace(/(?:について)?(?:を)?(?:教えて|調べて|検索して|知りたい|詳しく)(?:ください|ほしい)?[。？?]*$/,'')
+      .replace(/(?:って|とは|は)(?:何|なに|誰|だれ|どこ|いつ|どういう意味|どういうこと)?[。？?]*$/,'')
       .replace(/[。！？!?]+$/g,'').trim();
     if(hasExplicitWeather(x)){var p=extractWeatherPlace(x);return p? p+'の天気':'天気';}
     if(x.length>60)return'';
@@ -240,6 +241,18 @@
       resolved=corrected;reason='explicit_correction';confidence=0.995;
     }
 
+    // 共通会話ルーターの短期ワーキングメモリを使い、回答側に新しく出た人物・対象も参照できるようにする。
+    if(resolved===original){
+      try{
+        if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.resolveEntityReference==='function'){
+          var entityRef=window.JINPO_BOT_CONVERSATION.resolveEntityReference(original,h);
+          if(entityRef&&entityRef.message){
+            resolved=entityRef.message;reason=entityRef.kind==='person'?'working_memory_person':'working_memory_entity';confidence=0.97;
+          }
+        }
+      }catch(entityRefErr){}
+    }
+
     // 「カープ」→「順位」→「選手」のような、人なら分かる短い追質問を前の話題へ結ぶ。
     if(resolved===original&&!counterCandidateFollowup){
       var carried=carryDomain(original,h);
@@ -288,20 +301,25 @@
 
     // 人が会話でよく使う短い追質問。「詳しく」「なんで？」「どこ？」など。
     // 直前のユーザー話題がはっきりしている時だけ補完し、無関係な新話題へは広げない。
-    if(resolved===original&&/^(?:もっと|もう少し|もうちょい|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|詳しく|くわしく|なんで|なぜ|どうして|どこ|いつ|誰|だれ|何|なに|どういうこと|どういう意味|意味は|それで|で[？?]?|続き|つづき|もう一回説明|もう1回説明)[？?]?$/.test(original)){
+    if(resolved===original&&/^(?:もっと|もう少し|もうちょい|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|詳しく|くわしく|具体的には|具体例は|たとえば|例えば|例は|要するに|簡単に言うと|かんたんに|つまり|結局|逆に|反対は|逆の場合は|なんで|なぜ|どうして|どこ|いつ|誰|だれ|何|なに|どういうこと|どういう意味|意味は|どのくらい|どれくらい|本当|ほんと|マジ|まじ|それ本当|それほんと|それで|で[？?]?|続き|つづき|もう一回説明|もう1回説明)[？?]?$/.test(original)){
       var gant=findAntecedent(h);
       if(gant){
         var gc=C(original),gs='';
         if(/他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ/.test(original))gs='について別のものも教えて';
         else if(/もう一回説明|もう1回説明/.test(original))gs='についてもう一度説明して';
+        else if(/具体的には|具体例は|たとえば|例えば|例は/.test(original))gs='について具体例も含めて教えて';
+        else if(/要するに|簡単に言うと|かんたんに|つまり|結局/.test(original))gs='について要点と結論を短く教えて';
+        else if(/逆に|反対は|逆の場合は/.test(original))gs='について逆の場合はどうなる？';
+        else if(/本当|ほんと|マジ|まじ/.test(original))gs='について事実確認して';
         else if(/もっと|もう少し|もうちょい|詳しく|くわしく/.test(original))gs='についてもう少し詳しく教えて';
         else if(/なんで|なぜ|どうして/.test(original))gs='はなぜ？';
         else if(/どこ/.test(original))gs='はどこ？';
         else if(/いつ/.test(original))gs='はいつ？';
         else if(/誰|だれ/.test(original))gs='は誰？';
+        else if(/どのくらい|どれくらい/.test(original))gs='はどのくらい？';
         else if(/何|なに|どういうこと|どういう意味|意味は/.test(original))gs='ってどういう意味？';
         else gs='について続きを教えて';
-        resolved=gant+gs;reason='generic_followup';confidence=0.86;
+        resolved=gant+gs;reason='generic_followup';confidence=0.88;
       }
     }
 

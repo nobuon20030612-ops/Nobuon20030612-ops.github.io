@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.6.0
+ * 歩き巫女 共通会話ルーター v1.8.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.6.1';
+  var VERSION='1.8.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -41,6 +41,119 @@
   }
   function C(v){
     return S(v).toLowerCase().replace(/[？?！!。、・「」『』【】（）()\[\]［］\s]/g,'');
+  }
+
+
+  function historyBeforeCurrent(history,current){
+    var h=filterHistory(history),cur=C(current);
+    while(h.length&&h[h.length-1]&&h[h.length-1].role==='system')h.pop();
+    if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&C(h[h.length-1].text)===cur)h.pop();
+    return h;
+  }
+
+  function recentAssistantAnswers(history,limit){
+    var h=filterHistory(history),out=[],n=Number(limit)||5;
+    for(var i=h.length-1;i>=0&&out.length<n;i--){
+      if(!h[i]||h[i].role!=='assistant')continue;
+      var t=S(h[i].text);if(t)out.push(t);
+    }
+    return out;
+  }
+
+  function stablePick(list,seed,history){
+    if(!list||!list.length)return'';
+    var recent=recentAssistantAnswers(history,5).map(C);
+    var candidates=list.filter(function(x){return recent.indexOf(C(x))<0;});
+    if(!candidates.length&&recent.length){
+      candidates=list.filter(function(x){return C(x)!==recent[0];});
+    }
+    if(!candidates.length)candidates=list.slice();
+    seed=S(seed);var h=0;
+    for(var i=0;i<seed.length;i++)h=((h<<5)-h+seed.charCodeAt(i))|0;
+    return candidates[Math.abs(h)%candidates.length];
+  }
+
+  function naturalReaction(text,history){
+    var t=S(text),c=C(t);
+    if(!t||t.length>24)return null;
+
+    var kind='';
+    if(/^(?:なるほど|そうなんだ|そうなのか|そうか|そっか|そうだね|だよね|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにね|そういうことか|理解した|把握した)$/.test(c))kind='ack';
+    else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|すごい|すげえ|それはすごい|さすが|おお|おー)$/.test(c))kind='positive';
+    else if(/^(?:わかった|分かった|了解|りょうかい|おっけー|オッケー|ok)$/.test(c))kind='understood';
+    if(!kind)return null;
+
+    // 操作確認の「了解」等は会話反応で奪わない。main側でもpending時は早期雑談を止める。
+    var h=historyBeforeCurrent(history,t);
+    if(!h.length)return null;
+
+    var lastAssistant='';
+    for(var i=h.length-1;i>=0;i--){
+      if(h[i]&&h[i].role==='assistant'&&S(h[i].text)){lastAssistant=S(h[i].text);break;}
+    }
+    if(!lastAssistant)return null;
+
+    var domain=recentDomain(h),label='';
+    if(domain==='carp')label='カープ';
+    else if(domain==='counter')label='カウンター';
+    else if(domain==='jinpo')label='陣法';
+    else if(domain==='weather')label='天気';
+    else if(domain==='kashin_name')label='家臣名付け';
+    else if(domain==='tsukumo')label='九十九';
+    else if(domain==='kishin')label='鬼神石';
+    else if(domain==='madou')label='魔導結晶';
+
+    var seed=t+'|'+lastAssistant.slice(0,120)+'|'+domain;
+    var answers;
+    var domainAck={
+      carp:[
+        'そうなんですよ。カープの話は、選手や時代をたどっていくとどんどんつながってくるのです。',
+        'そうなんですよ。カープは昔の話まで掘っていくと、いろいろつながって面白いのです。'
+      ],
+      counter:[
+        'そうなんですよ。カウンターは章や相手を取り違えないように見るのが大事なのです。',
+        'そういうことなのです。カウンターは同じ呼び方でも対象をきちんと分けて見る必要があるのですよ。'
+      ],
+      jinpo:[
+        'そうなんですよ。陣法は条件を少し変えるだけでも結果が動くので、話しながら詰めるのが合っているのです。',
+        'そういうことなのです。陣法は条件同士がつながっているので、一つずつ見ていくと分かりやすいのですよ。'
+      ],
+      weather:[
+        'そうなんですよ。天気の続きなら、場所や日付だけ変えてそのまま聞いて大丈夫なのです。',
+        'そういうことなのです。天気はこのまま地域や日付を変えて続けられるのですよ。'
+      ],
+      kashin_name:['そうなんですよ。名前は候補を見ながら少しずつ好みに寄せていくと選びやすいのです。'],
+      tsukumo:['そうなんですよ。九十九は正本の数値を見ながら、そのまま条件を変えて比べられるのです。'],
+      kishin:['そうなんですよ。鬼神石は正本の数値を基準に、そのまま比較していけるのです。'],
+      madou:['そうなんですよ。魔導結晶は正本の数値を基準に、そのまま比較していけるのです。']
+    };
+    var domainPositive={
+      carp:['ですよね。カープは逸話や選手同士のつながりまで入ると、さらに面白くなるのです。'],
+      counter:['そこ、面白いところなのですよ。章や相手ごとの差まで見ると、かなり奥が深いのです。'],
+      jinpo:['そこが陣法の面白いところなのですよ。条件を変えた時の動きまで見ると、かなり奥が深いのです。'],
+      weather:['分かるのですよ。天気は日ごとの差を見ると意外と変化があって面白いのです。']
+    };
+
+    if(kind==='positive'){
+      answers=domainPositive[domain]||[
+        'ですよね。そこ、ちょっと面白いところなのです。',
+        'ふふっ、そこに反応してもらえるとうれしいのですよ。',
+        '分かるのですよ。そこはもう少し掘ってみたくなるところですね。'
+      ];
+    }else if(kind==='understood'){
+      answers=[
+        '了解なのですよ。続けましょう。',
+        '分かりました。では、そのまま続けますね。',
+        '了解です。次もそのままどうぞなのですよ。'
+      ];
+    }else{
+      answers=domainAck[domain]||[
+        'そうなんですよ。',
+        'そういうことなのです。',
+        'なるほど、という感じなのですよ。'
+      ];
+    }
+    return {handled:true,kind:kind,domain:domain,answer:stablePick(answers,seed,h)};
   }
 
   function stripCorrection(text){
@@ -93,14 +206,155 @@
     return /ページはこちら|こちらから開け|入口がある|サイト内のページ案内|該当ページを開く/.test(t);
   }
 
+  function domainFromHistoryItem(item){
+    if(!item)return'';
+    var d=domainFromText(item.text||'');
+    if(d)return d;
+    var mode=S(item.meta&&item.meta.mode||'');
+    if(/カープ/.test(mode))return'carp';
+    if(/カウンター|たいらの野望/.test(mode))return'counter';
+    if(/陣法|検索結果|おすすめ陣法/.test(mode))return'jinpo';
+    if(/天気/.test(mode))return'weather';
+    if(/家臣.*(?:名前|名付)/.test(mode))return'kashin_name';
+    if(/九十九/.test(mode))return'tsukumo';
+    if(/鬼神石/.test(mode))return'kishin';
+    if(/魔導/.test(mode))return'madou';
+    return'';
+  }
+
   function recentDomain(history){
     var h=filterHistory(history);
     for(var i=h.length-1;i>=0&&i>=h.length-14;i--){
       if(!h[i])continue;
-      var d=domainFromText(h[i].text||'');
+      var d=domainFromHistoryItem(h[i]);
       if(d)return d;
     }
     return'';
+  }
+
+  var ENTITY_STOP={
+    '歩き巫女':1,'カープ':1,'広島東洋カープ':1,'陣法':1,'天気':1,'全MAX':1,
+    '資料基準日':1,'正本資料':1,'正本':1,'候補':1,'選手':1,'監督':1,'投手':1,
+    '野手':1,'家族':1,'親族':1,'試合':1,'結果':1,'順位':1,'今日':1,'明日':1,
+    '昨日':1,'今回':1,'現在':1,'最新情報':1,'検索結果':1,'おすすめ':1
+  };
+
+  function cleanEntityCandidate(v){
+    var x=S(v)
+      .replace(/^[「『【\[（(\s]+|[」』】\]）)\s]+$/g,'')
+      .replace(/^(?:その中でも|中でも|特に|とくに|例えば|たとえば|なお|ちなみに)[、\s]*/,'')
+      .replace(/(?:選手|監督|投手|野手|捕手|内野手|外野手|氏|さん|くん|ちゃん)$/,'')
+      .trim();
+    if(!x||x.length<2||x.length>30||ENTITY_STOP[x])return'';
+    if(/^(?:そう|これ|それ|その|この|あの|ここ|そこ|どこ|もの|こと|ため|よう|感じ|内容|情報)$/.test(x))return'';
+    if(/^[0-9０-９.,年月日時分秒\-\/]+$/.test(x))return'';
+    return x;
+  }
+
+  function looksLikePersonName(v){
+    var x=cleanEntityCandidate(v);if(!x)return false;
+    if(ENTITY_STOP[x]||/年|月|日|試合|球団|資料|情報|記録|成績|順位|逸話|歴史|カウンター|編$|章$/.test(x))return false;
+    if(/^[一-龠々]{2,8}$/.test(x))return true;
+    if(/^[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28}$/.test(x))return true;
+    return false;
+  }
+
+  function entityCandidatesFromText(text,domain){
+    var t=S(text),out=[],seen={};
+    function add(value,type,score){
+      var x=cleanEntityCandidate(value);if(!x||seen[x])return;
+      seen[x]=1;out.push({value:x,type:type||'topic',score:Number(score)||0});
+    }
+
+    // カープ正本が既に読込済みなら、955名索引を最優先の人物辞書として使う。
+    try{
+      if(window.JINPO_BOT_CARP_KNOWLEDGE&&typeof window.JINPO_BOT_CARP_KNOWLEDGE.foundNames==='function'){
+        var names=window.JINPO_BOT_CARP_KNOWLEDGE.foundNames(t)||[];
+        names.slice(0,4).forEach(function(name){add(name,'person',120);});
+      }
+    }catch(e){}
+
+    // たいらの野望で取り違えやすい人物は明示的に人物として保持する。
+    var knownPeople=t.match(/今川義元|今川氏真|足利義輝|足利義昭|織田信長|豊臣秀吉|徳川家康/g)||[];
+    knownPeople.forEach(function(name){add(name,'person',115);});
+
+    // 見出しは回答の主題になりやすい。「【江夏の21球】」などを拾う。
+    var m,re=/【([^】]{2,30})】/g;
+    while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',92);
+
+    // 「○○選手」「○○監督」などは一般人物名として扱える。
+    re=/([一-龠々ァ-ヶA-Za-z・ー.'’\-]{2,28})(?:選手|監督|投手|野手|捕手|内野手|外野手|氏|さん)(?=[はがの、。！？\s]|$)/g;
+    while((m=re.exec(t)))add(m[1],'person',88);
+
+    // 回答冒頭や文頭の「黒田博樹は」「新井貴浩について」のような主語。
+    re=/(?:^|[\n。！？])\s*([一-龠々]{2,8}|[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28})(?:は|が|について)/g;
+    while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',78);
+
+    // 引用された短い固有名詞も汎用の話題として保持する。
+    re=/「([^」]{2,30})」/g;
+    while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',70);
+
+    out.sort(function(a,b){return b.score-a.score;});
+    return out;
+  }
+
+  function findRecentEntity(history,opt){
+    opt=opt||{};
+    var h=filterHistory(history),wantPerson=!!opt.personOnly,limit=Number(opt.limit)||18;
+    for(var i=h.length-1,age=0;i>=0&&age<limit;i--,age++){
+      var item=h[i];if(!item||!S(item.text))continue;
+      var d=domainFromHistoryItem(item)||recentDomain(h.slice(0,i+1));
+      var list=entityCandidatesFromText(item.text,d).filter(function(x){return !wantPerson||x.type==='person';});
+      if(!list.length)continue;
+
+      // 同じ直近発言に人物が複数いる時、「その人」を片方へ決め打ちしない。
+      if(wantPerson){
+        var people=[];
+        list.forEach(function(x){if(people.indexOf(x.value)<0)people.push(x.value);});
+        if(people.length>1){
+          return {ambiguous:true,candidates:people.slice(0,6),type:'person',domain:d||'',role:item.role||'',sourceText:S(item.text),index:i};
+        }
+      }
+
+      return {value:list[0].value,type:list[0].type,domain:d||'',role:item.role||'',sourceText:S(item.text),index:i};
+    }
+    return null;
+  }
+
+  function workingMemory(history){
+    var h=filterHistory(history),entity=findRecentEntity(h),person=findRecentEntity(h,{personOnly:true});
+    return {
+      domain:recentDomain(h),
+      entity:entity,
+      person:person,
+      lastUser:lastSubstantiveUser(h),
+      lastAssistant:recentAssistantAnswers(h,1)[0]||''
+    };
+  }
+
+  function resolveEntityReference(text,history){
+    var t=S(text);if(!t||t.length>64)return null;
+    var h=historyBeforeCurrent(history,t),m,suffix,ref;
+
+    m=t.match(/^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|さっきの監督|その投手|その野手|彼)(.*)$/);
+    if(m){
+      suffix=S(m[1]);
+      if(!suffix||/^(?:は|って)?[？?]?$|^(?:の|は|って|について|を|が|も|以外|以外の).+/.test(suffix)){
+        ref=findRecentEntity(h,{personOnly:true});
+        if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],reference:ref,kind:'person'};
+        if(ref&&ref.value)return {message:ref.value+(suffix||'について'),reference:ref,kind:'person'};
+      }
+    }
+
+    m=t.match(/^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:それ|これ|その件|この件|その話|この話|さっきの話|今の話|前の話|さっきの|今の|前の)(.*)$/);
+    if(m){
+      suffix=S(m[1]);
+      // 「それいいね」等の感想は参照解決しない。
+      if(suffix&&!/^(?:は|って)?[？?]?$|^(?:の|は|って|について|を|が|で|も|以外|以外の).+/.test(suffix))return null;
+      ref=findRecentEntity(h);
+      if(ref)return {message:ref.value+(suffix||'について'),reference:ref,kind:'entity'};
+    }
+    return null;
   }
 
   function lastSubstantiveUser(history){
@@ -304,8 +558,9 @@
 
     if(domain==='carp'){
       var ct=t.replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'');
-      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる|逸話|他の逸話|別の逸話|昔話|歴史|名場面|伝説|スター|名選手)[？?]?$/.test(ct)){
-        return'カープの'+ct;
+      var ctCore=ct.replace(/は(?=[？?]?$)/,'');
+      if(/^(?:順位|何位|なんい|選手|選手一覧|メンバー|日程|予定|結果|試合結果|先発|スタメン|打率|本塁打|防御率|誰がいる|逸話|他の逸話|別の逸話|昔話|歴史|名場面|伝説|スター|名選手)[？?]?$/.test(ctCore)){
+        return'カープの'+ctCore;
       }
       var dayOnly=t.replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'');
       if(/^(?:今日|きょう|昨日|きのう|明日|あした|明後日|あさって|一昨日|おととい)(?:は)?[？?]?$/.test(dayOnly)){
@@ -472,7 +727,18 @@
     var message=correction.text;
     var domain=domainFromText(message);
     var prevDomain=recentDomain(history);
-    var carried='';
+    var carried='',referenceClarification='';
+
+    // 「その人」「その選手」「それはいつ？」などは、直前の回答側に出た対象も参照する。
+    // 「封印編」のような属性語からdomainが先に付いても、指示語そのものは解決する。
+    var entityRef=resolveEntityReference(message,history);
+    if(entityRef&&entityRef.ambiguous){
+      referenceClarification='「その人」が複数候補に当てはまるのですよ。'+(entityRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
+    }else if(entityRef&&entityRef.message){
+      message=entityRef.message;
+      domain=domainFromText(message)||(entityRef.reference&&entityRef.reference.domain)||domain||prevDomain;
+      carried=message;
+    }
 
     // 新しいデータ種別は今の発言を最優先。
     // ただし「じゃあ鬼神石では？」のように対象だけ切り替えた時は、
@@ -525,7 +791,8 @@
       previousDomain:prevDomain,
       intent:intent,
       navigation:nav,
-      fact:fact
+      fact:fact,
+      referenceClarification:referenceClarification
     };
   }
 
@@ -555,6 +822,12 @@
     portableToolIntentFromText:portableToolIntentFromText,
     recentPortableToolIntent:recentPortableToolIntent,
     isDatasetOnlySwitch:isDatasetOnlySwitch,
-    carryExplicitToolDatasetSwitch:carryExplicitToolDatasetSwitch
+    carryExplicitToolDatasetSwitch:carryExplicitToolDatasetSwitch,
+    naturalReaction:naturalReaction,
+    domainFromHistoryItem:domainFromHistoryItem,
+    entityCandidatesFromText:entityCandidatesFromText,
+    findRecentEntity:findRecentEntity,
+    resolveEntityReference:resolveEntityReference,
+    workingMemory:workingMemory
   };
 })();
