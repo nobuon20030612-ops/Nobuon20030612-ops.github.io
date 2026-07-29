@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v2.4.0
+ * 歩き巫女 AI会話脳 v2.5.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.4.0';
+  var VERSION='2.5.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -249,6 +249,28 @@
       }
     }
 
+    // 「そうかな？」「それは違うと思う」のような短い異議でも、直前が正本/最新情報の回答なら再確認する。
+    // 意見への反論まで検索へ変えないよう、直前assistantのmodeが検証済み系の時だけ発動する。
+    try{
+      var convStance=window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.conversationalStance==='function'
+        ?window.JINPO_BOT_CONVERSATION.conversationalStance(history||[],t):null;
+      if(convStance&&/^(?:skepticism|disagreement|correction)$/.test(convStance.type||'')){
+        var hh=filterRawHistory(history||[]),lastMode='';
+        for(var hi=hh.length-1;hi>=0;hi--){
+          var hx=hh[hi]||{};if(hx.role!=='assistant'||!S(hx.text))continue;
+          lastMode=S(hx.meta&&hx.meta.mode||'');break;
+        }
+        if(/カープ専用正本知識|カープ公式情報|カープ公式日付情報|カープ公式選手情報|カープ公式順位|カープ最新Web|カープWeb調査/.test(lastMode))
+          return {reason:'stance-recheck-carp',allowed:['lookup_carp_knowledge','lookup_carp_current']};
+        if(/たいらの野望専用知識/.test(lastMode))
+          return {reason:'stance-recheck-tairano',allowed:['lookup_tairano_knowledge']};
+        if(/たいらの野望ツール実データ|九十九|鬼神石|魔導結晶/.test(lastMode))
+          return {reason:'stance-recheck-tool-data',allowed:['lookup_game_tool_data']};
+        if(/天気|リアルタイムWeb自動参照|無料公開Web自動参照/.test(lastMode))
+          return {reason:'stance-recheck-realtime',allowed:['lookup_web_or_weather']};
+      }
+    }catch(stanceVerifyErr){}
+
     // 過去回答との矛盾指摘は、会話の分野に応じた正本で再検証する。
     if(/前と違|さっきと違|前に言ってた|さっき言ってた|言ってること違|矛盾|どっちが正しい|どちらが正しい/.test(t)){
       var convDomain='';
@@ -432,6 +454,16 @@
     }catch(e){return'（会話の焦点信号の取得に失敗）';}
   }
 
+  function conversationalStanceSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.conversationalStance!=='function')return'（同意・反論信号なし）';
+    try{
+      var x=conv.conversationalStance(history||[],currentMessage||'')||{};
+      var label={agreement:'同意・納得',partial_agreement:'一部は同意しつつ留保あり',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',neutral:'明示的な立場なし'}[x.type]||'明示的な立場なし';
+      return '今回の立場信号: '+label+' / 確度='+(x.confidence||'low')+'. 同意と反論を取り違えず、反論時は前の説明を押し通さない。';
+    }catch(e){return'（同意・反論信号の取得に失敗）';}
+  }
+
   function followupGuidance(history,currentMessage){
     var h=filterRawHistory(history),cur=S(currentMessage),recentQuestions=0,recentInvites=0,seen=0;
     if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
@@ -440,9 +472,14 @@
       if(/[？?]\s*$/.test(t))recentQuestions++;
       if(/(?:他にも|ほかにも|気になったら|言ってください|聞いてください|話してください)/.test(t))recentInvites++;
     }
-    var ls=null,focus=null,conv=window.JINPO_BOT_CONVERSATION;
+    var ls=null,focus=null,stance=null,conv=window.JINPO_BOT_CONVERSATION;
     try{if(conv&&typeof conv.listeningSignals==='function')ls=conv.listeningSignals(history||[],cur)||null;}catch(e){}
     try{if(conv&&typeof conv.conversationalFocus==='function')focus=conv.conversationalFocus(history||[],cur)||null;}catch(e2){}
+    try{if(conv&&typeof conv.conversationalStance==='function')stance=conv.conversationalStance(history||[],cur)||null;}catch(e3){}
+    if(focus&&focus.unfinishedThought)return'発言が「けど…」「でも…」など未完の形です。続きを勝手に補完せず、短く受けて発話権をユーザーへ残す。';
+    if(stance&&stance.type==='correction')return'前の解釈への訂正です。防御的にならず、古い解釈を押し通さず、ユーザーが今示した修正を優先する。';
+    if(stance&&(stance.type==='disagreement'||stance.type==='skepticism'))return'同意として処理しない。反論・疑問の対象になっている点へ直接応じ、事実問題なら必要に応じて正本で確認する。質問攻めにはしない。';
+    if(stance&&stance.type==='partial_agreement')return'全面同意へ丸めない。同意している部分と留保している部分を分け、留保側を無視しない。';
     if(ls&&ls.openness==='closed')return'この話を勝手に深掘りしない。短く受けて閉じる。';
     if(focus&&focus.flow==='yield')return'ユーザー側に話の主導権があります。焦点の具体的一点だけ短く受け、質問や結論で割り込まず続きを待つ。';
     if(recentQuestions>=2)return'直近で質問終わりが続いているため、今回は追加質問を避け、内容への反応か答えで終える。';
@@ -526,6 +563,16 @@
         if(ls.mode==='sharing')return'sharing';
       }
     }catch(e){}
+    try{
+      if(conv&&typeof conv.conversationalStance==='function'){
+        var cs=conv.conversationalStance(history||[],t)||{};
+        if(cs.type==='correction')return'correction';
+        if(cs.type==='disagreement')return'disagreement';
+        if(cs.type==='skepticism')return'skepticism';
+        if(cs.type==='partial_agreement')return'partial_agreement';
+        if(cs.type==='agreement')return'agreement';
+      }
+    }catch(e2){}
     if(/(?:どうしたら|どうすれば|どうするのがいい|アドバイス(?:して|ください|ほしい|欲しい|ある|お願い)|相談したい|相談乗って|助けて|意見(?:を)?聞きたい)/.test(t))return'advice_request';
     if(/^(?:なるほど|そうなんだ|そっか|へえ|へー|ほう|了解|わかった|分かった|いいね|面白い|おもしろい|すごい|まじか|マジか)[。！!？?]*$/.test(t))return'reaction';
     if(/[？?]/.test(t)||/(?:教えて|知りたい|何|なに|誰|だれ|どこ|いつ|なぜ|なんで|どうして|どうなの|どっち|いくら|何位|何番)/.test(t))return'question';
@@ -535,7 +582,7 @@
   }
 
   function turnModeSummary(message,history){
-    var m=currentTurnMode(message,history),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
+    var m=currentTurnMode(message,history),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',agreement:'同意・納得',partial_agreement:'一部同意＋留保',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
     return labels[m]||labels.conversation;
   }
 
@@ -564,6 +611,7 @@
     var interactionBlock=interactionStyleSummary(opt.history||[],opt.currentMessage||'');
     var listeningBlock=listeningStyleSummary(opt.history||[],opt.currentMessage||'');
     var focusBlock=conversationalFocusSummary(opt.history||[],opt.currentMessage||'');
+    var stanceBlock=conversationalStanceSummary(opt.history||[],opt.currentMessage||'');
     var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
     var initiativeBlock=initiativeBalanceSummary(opt.history||[],opt.currentMessage||'');
     var turnModeBlock=turnModeSummary(opt.currentMessage||'',opt.history||[]);
@@ -636,6 +684,11 @@
       '53. 関心が続いている話題を広げる時は、質問を投げ返すだけでなく、直前の焦点に直接つながる一段深い情報や見方を一つ添える方法を優先して構いません。',
       '54. 複数の出来事が一度に語られた場合、全部へ均等にコメントせず、質問・強調・対比・最後に置かれた具体点のうち最も明確な一点へ反応します。',
       '55. 歩き巫女側が長い説明や話題追加を続けている時は、自分からさらに枝を増やさず短く返して会話の余白をユーザーへ戻します。',
+      '56. 「そうだね」と「そうかな」と「それは違う」を同じ相槌として扱いません。同意・疑い・反論・訂正を発言どおりに分けて応じます。',
+      '57. 一部同意の「確かにそうだけど…」を全面同意へ丸めません。同意部分と留保部分の両方を保ち、特に後半の留保を無視しません。',
+      '58. ユーザーが反論した時に、前の説明を言い換えて押し通したり、説得しようとしません。事実問題なら確認し、意見なら異なる見方として自然に扱います。',
+      '59. 「けど…」「でも…」「というか…」のように発言が未完の形で終わった時は、結論を勝手に補完しません。短く受け、ユーザーが続きを置ける余白を残します。',
+      '60. 話題が枝分かれした後に「前の話に戻って」と言われたら、大分類だけでなく直前に離れた具体的な人物・観点へ戻ります。戻った直後に既説明内容を最初から繰り返しません。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -662,6 +715,9 @@
       '',
       '今回の会話上の焦点（本音推測ではなく、質問・強調・対比など発言上の手掛かりだけ）:',
       focusBlock,
+      '',
+      '今回の同意・疑い・反論・訂正の信号:',
+      stanceBlock,
       '',
       '今回の深掘り方針:',
       followupBlock,
@@ -1526,6 +1582,7 @@
     _currentResponsePreference:currentResponsePreference,
     _followupGuidance:followupGuidance,
     _conversationalFocusSummary:conversationalFocusSummary,
+    _conversationalStanceSummary:conversationalStanceSummary,
     _initiativeBalanceSummary:initiativeBalanceSummary,
     _verifiedPriorOutputs:verifiedPriorOutputs
   };

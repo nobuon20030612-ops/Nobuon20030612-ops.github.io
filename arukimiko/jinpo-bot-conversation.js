@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.8.0
+ * 歩き巫女 共通会話ルーター v2.9.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.8.0';
+  var VERSION='2.9.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -150,6 +150,37 @@
     };
   }
 
+  // 短い反応が「同意」「保留」「軽い反論」「訂正」のどれかを読む。
+  // 単語だけではなく、発話全体の形を見て「違いを教えて」のような通常質問を反論扱いしない。
+  function conversationalStance(history,currentMessage){
+    var t=S(currentMessage),c=C(t);
+    if(!t)return {type:'neutral',confidence:'low',explicit:false};
+    var infoRequest=/(?:教えて|知りたい|調べて|検索して|とは|って何|ってなに|違い(?:は|を)|比較|どっち|どちら|何が違)/.test(t);
+    if(infoRequest&&!/^(?:いや|でも|うーん|んー|そうかな|本当かな|ほんとかな|それは違|そうじゃ)/.test(t))return {type:'neutral',confidence:'low',explicit:false};
+
+    if(/^(?:いや[、,\s]*)?(?:違う|そうじゃない|そこじゃない|そういう意味じゃない|そういうことじゃない|言いたいのは違う|話が違う)(?:[。！!…\s]|$)/.test(t)||/^(?:いや|違う)[、,\s]+.{2,}/.test(t))
+      return {type:'correction',confidence:'high',explicit:true};
+    if(/^(?:いや|でも|ただ)[、,\s]*(?:それは違う|違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする)|^(?:それは|そこは)?(?:違うと思う|そうは思わない|納得できない|ちょっと違う|違う気がする)/.test(t))
+      return {type:'disagreement',confidence:'high',explicit:true};
+    if(/^(?:そうかな|そうなのかな|本当かな|ほんとかな|本当にそう|ほんとにそう|どうだろう|どうなんだろう|うーん|んー|微妙(?:だな|かも)?|そうとも限らない)(?:[。！!？?…\s]|$)/.test(t))
+      return {type:'skepticism',confidence:/[？?]/.test(t)?'high':'medium',explicit:true};
+    if(/^(?:まあ|確かに|たしかに|そうだね|そうなんだけど|分かる|わかる|それはそう)(?:[^。！？!?]{0,30})?(?:けど|けれど|ただ|でも)(?:[、,\s]|$)/.test(t))
+      return {type:'partial_agreement',confidence:'high',explicit:true};
+    if(/^(?:うん|うんうん|そうだね|そうそう|確かに|たしかに|その通り|分かる|わかる|そう思う|同感|なるほどね|たしかにね|確かにね)(?:[。！!\s]|$)/.test(t) && t.length<=36)
+      return {type:'agreement',confidence:'high',explicit:true};
+    return {type:'neutral',confidence:'low',explicit:false,compact:c};
+  }
+
+  // 「けど…」「でも…」のように結論を置かず発話を開いたままにしている形。
+  // こちらで続きを補完せず、相手に発話権を残すための信号としてのみ使う。
+  function unfinishedThoughtCue(text){
+    var t=S(text);if(!t||/[？?]/.test(t))return false;
+    if(/(?:けど|けれど|けれども|けどさ|でも|でもさ|ただ|たださ|というか|ていうか|なんというか|なんていうか|なんか|まあ)[、,…\.\s]*$/.test(t))return true;
+    if(/(?:けどね|でもね|ただね|まあね)[…\.]+$/.test(t))return true;
+    if(/(?:うーん|んー|えっと|あの)[…\.\s]*$/.test(t))return true;
+    return false;
+  }
+
   // ユーザーがこの発言で実際に強調している「会話上の焦点」を読む。
   // 心理や本音は推測せず、質問・強調語・対比・繰り返し・発言末尾など観測できる手掛かりだけを使う。
   function focusClauses(text){
@@ -160,7 +191,8 @@
       var pieces=part.split(/(?:、|,)\s*(?=(?:でも|ただ|それでも|とはいえ|特に|とくに|一番|いちばん|結局|やっぱり|その中でも|それが|そこが))/).map(S).filter(Boolean);
       pieces.forEach(function(piece){
         var m=piece.match(/^(.{3,}?)(?:けど|けれども|けれど|けどさ|けどね)[、,\s]*(.{3,})$/);
-        if(m){out.push({text:S(m[1]),contrast:false});out.push({text:S(m[2]),contrast:true});}
+        // 「黒田は好きだけど…」の末尾の三点リーダーだけを“後半主張”として切り出さない。
+        if(m&&/[一-龯々ぁ-んァ-ヶA-Za-z0-9]/.test(S(m[2]))){out.push({text:S(m[1]),contrast:false});out.push({text:S(m[2]),contrast:true});}
         else out.push({text:piece,contrast:/^(?:でも|ただ|それでも|とはいえ)/.test(piece)});
       });
     });
@@ -209,7 +241,8 @@
     }
     concrete=concrete.replace(/^(?:でも|ただ|それでも|とはいえ|特に|とくに|その中でも)[、,\s]*/,'').slice(0,100);
 
-    var narrativeMomentum=/(?:それで|それでさ|でさ|そしたら|そのあと(?:さ|ね)?|まだ(?:あって|続きがあって)|続きがある|聞いてよ|聞いてほしい)[…。、\s]*$/.test(t) ||
+    var stance=conversationalStance(h,t),unfinished=unfinishedThoughtCue(t);
+    var narrativeMomentum=unfinished || /(?:それで|それでさ|でさ|そしたら|そのあと(?:さ|ね)?|まだ(?:あって|続きがあって)|続きがある|聞いてよ|聞いてほしい)[…。、\s]*$/.test(t) ||
       (ls.openness==='open'&&!hasQuestion&&/(?:それで|まだ|続き|話したい|聞いて)/.test(t));
     var flow='respond',askPolicy='optional';
     var currentClosed=/もういい|十分|そこまで|興味(?:は)?ない|興味なくな|気にならない|もう気にならない|知りたくない/.test(t);
@@ -218,6 +251,7 @@
     if(ls.need==='advice'||ls.need==='opinion'||hasQuestion){flow='answer';askPolicy='none';}
     else if(ls.openness==='closed'||currentClosed){flow='close';askPolicy='none';}
     else if(ls.mode==='listen_only'||narrativeMomentum){flow='yield';askPolicy='none';}
+    else if(stance.type==='correction'||stance.type==='disagreement'||stance.type==='skepticism'||stance.type==='partial_agreement'){flow='respond';askPolicy='none';}
     else if(ls.mode==='venting'||ls.mode==='mixed_sharing'||ls.mode==='sharing'||ls.mode==='celebration'||ls.mode==='uncertain'){flow='reflect';askPolicy='optional';}
     else{
       var sig=conversationSignals(h);
@@ -233,6 +267,9 @@
       flow:flow,
       askPolicy:askPolicy,
       narrativeMomentum:narrativeMomentum,
+      unfinishedThought:unfinished,
+      stance:stance.type||'neutral',
+      stanceConfidence:stance.confidence||'low',
       explicitQuestion:hasQuestion,
       listeningMode:ls.mode||'conversation'
     };
@@ -272,7 +309,10 @@
     if(!t||t.length>24)return null;
 
     var kind='';
-    if(/^(?:なるほど|そうなんだ|そうなのか|そうか|そっか|そうだね|だよね|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにね|そういうことか|理解した|把握した)$/.test(c))kind='ack';
+    if(/^(?:違う|それは違う|違うと思う|そうは思わない|ちょっと違う|違う気がする)$/.test(c))kind='disagreement';
+    else if(/^(?:そうかな|そうなのかな|本当かな|ほんとかな|どうだろう|うーん|んー|微妙)$/.test(c))kind='skepticism';
+    else if(/^(?:まあそうだけど|確かにそうだけど|たしかにそうだけど|そうなんだけど|分かるけど|わかるけど)$/.test(c))kind='partial_agreement';
+    else if(/^(?:なるほど|そうなんだ|そうなのか|そうか|そっか|そうだね|だよね|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにね|そういうことか|理解した|把握した)$/.test(c))kind='ack';
     else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|それ面白いね|それおもしろいね|それは面白いね|それはおもしろいね|面白いね|おもしろいね|すごい|すげえ|それはすごい|さすが|おお|おー|興味深い|きょうみぶかい)$/.test(c))kind='positive';
     else if(/^(?:知らなかった|しらなかった|初めて知った|はじめて知った|そんなことあったんだ|そんなことがあったんだ|意外だね|いがいだね|意外だった|びっくり|びっくりした|驚いた|おどろいた)$/.test(c))kind='surprise';
     else if(/^(?:(?:昔|当時)は)?(?:そんなに|かなり|ずいぶん|相当)?(?:すごかった|強かった|有名だった|人気だった|活躍してた|活躍していた|大変だった|苦労した)(?:んだね|んですね|んだな|のか|んだ|んですねえ)?$/.test(c))kind='reflection';
@@ -342,7 +382,28 @@
       weather:['分かるのですよ。天気は日ごとの差を見ると意外と変化があって面白いのです。']
     };
 
-    if(kind==='positive'){
+    if(kind==='disagreement'){
+      answers=subject?[
+        'なるほど。「'+subject+'」のその点は、前の説明を押し通さずに捉え直します。',
+        'そこは違うということですね。「'+subject+'」について、今の指摘を優先して見直します。'
+      ]:[
+        'なるほど、そこは同じ見方ではないんですね。前の説明を押し通さずに捉え直します。',
+        '分かりました。そこは前の言い方に固執せず、いったん切り分けます。'
+      ];
+    }else if(kind==='skepticism'){
+      answers=subject?[
+        'そうかな、というところですね。「'+subject+'」のその点は、いったん断定せずに見ます。',
+        'そこは少し引っかかりますよね。「'+subject+'」について、前の言い方をそのまま確定扱いしないでおきます。'
+      ]:[
+        'そうかな、というところですね。そこは断定せずに見たほうがよさそうです。',
+        'うん、そこは少し引っかかるところですね。前の言い方をそのまま押し通さないでおきます。'
+      ];
+    }else if(kind==='partial_agreement'){
+      answers=[
+        'そこまでは同意だけど、後半には引っかかりがあるという感じですね。留保のほうも無視せず見ます。',
+        '分かります。全部に同意というより、納得できる部分と違う部分があるということですね。'
+      ];
+    }else if(kind==='positive'){
       if(subject){
         answers=[
           'ですよね。「'+subject+'」の話として前後までつなげて見ると、さらに面白くなるのです。',
@@ -395,6 +456,9 @@
     var style=interactionStyle(h,t);
     if(style.pace==='terse'){
       if(kind==='understood')answers=['了解です。','わかりました。','はい、そのまま進めます。'];
+      else if(kind==='disagreement')answers=['了解です。そこは捉え直します。','そこは違うんですね。押し通さず見直します。'];
+      else if(kind==='skepticism')answers=['そこは断定しないで見ます。','うん、そこは少し引っかかりますね。'];
+      else if(kind==='partial_agreement')answers=['なるほど、全部に同意というわけではないんですね。','そこは分けて見ます。'];
       else if(kind==='ack')answers=['そうなんです。','その理解で大丈夫です。','うん、そういうことです。'];
       else if(kind==='positive')answers=subject?['ですよね。「'+subject+'」、そこ面白いです。','「'+subject+'」のそこ、面白いところです。','分かります。「'+subject+'」はそこが面白いです。']:['ですよね。そこ面白いです。','分かります。そこ、いいところです。'];
       else if(kind==='surprise')answers=['そこは意外ですよね。','そうなんです。ちょっと驚くところです。'];
@@ -663,6 +727,11 @@
           frames.push(current);
         }
         current.assistantText+=(current.assistantText?'\n':'')+S(item.text);
+        // 「前の話に戻ろう」のような制御発言はユーザー文だけでは観点が分からない。
+        // 戻した直後の回答に明示された観点だけを補い、次の「さらに前へ」で枝を失わないようにする。
+        if(!current.aspect&&isBackCue(current.userText)){
+          var restoredAspect=aspectFromText(item.text);if(restoredAspect)current.aspect=restoredAspect;
+        }
         var ad=domainFromHistoryItem(item)||'';
         if(!current.domain&&ad)current.domain=ad;
         current.assistantEntities=current.assistantEntities.concat(entityCandidatesFromText(item.text,current.domain||ad));
@@ -1077,6 +1146,17 @@
       var aspectMap={家族:'family',親族:'family',逸話:'anecdote',昔話:'anecdote',歴史:'history',成績:'stats',経歴:'career'};
       var af=recentFrameByAspect(h,aspectMap[m[1]]||'');
       if(af&&af.primary&&af.primary.value)return {message:af.primary.value+'の'+m[1]+'について、もう少し続けて',reference:{value:af.primary.value,type:af.primary.type||'topic',domain:af.domain||''},kind:'asked_aspect'};
+    }
+
+    // 「家族の話に戻って」「逸話に戻ろう」のように、観点だけで過去の枝へ戻る。
+    m=t.match(/^(家族|親族|逸話|昔話|歴史|成績|経歴|現在)(?:の)?(?:話|こと)?(?:に|へ)?戻(?:って|ろう|る|して)(?:[、,\s]*(.*))?[？?！!。]*$/);
+    if(m){
+      var backAspectMap={家族:'family',親族:'family',逸話:'anecdote',昔話:'anecdote',歴史:'history',成績:'stats',経歴:'career',現在:'current'};
+      var bf=recentFrameByAspect(h,backAspectMap[m[1]]||'');
+      if(bf&&bf.primary&&bf.primary.value){
+        var bt=S(m[2]||'');
+        return {message:bf.primary.value+'の'+m[1]+'について'+(bt?'、'+bt:''),reference:{value:bf.primary.value,type:bf.primary.type||'topic',domain:bf.domain||''},kind:'aspect_back'};
+      }
     }
 
     // 「さっき黒田の話で言ってた家族の方は？」のように、数ターン前の主役を名前で呼び戻す。
@@ -1526,8 +1606,32 @@
     return'';
   }
 
+  var BRANCH_ASPECT_LABELS={overview:'概要',family:'家族',anecdote:'逸話',history:'歴史',stats:'成績',career:'経歴',current:'現在',schedule:'日程',result:'結果',ranking:'順位',comparison:'比較',counter:'カウンター'};
+  function branchMessage(frame){
+    if(!frame)return'';
+    var p=frame.primary&&frame.primary.value?S(frame.primary.value):'',a=S(frame.aspect),u=S(frame.userText);
+    if(p){
+      var label=BRANCH_ASPECT_LABELS[a]||'';
+      if(label&&a!=='overview')return p+'の'+label+'について';
+      return p+'について';
+    }
+    return u;
+  }
+  function recentTopicBranches(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h),out=[],seen={};
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];if(!f||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
+      var p=f.primary&&f.primary.value?S(f.primary.value):'',a=S(f.aspect),d=S(f.domain);
+      var key=p?((f.primary.type||'topic')+'|'+p+'|'+(a||'overview')):(d?('domain|'+d+'|'+C(f.userText)):'text|'+C(f.userText));
+      if(!key||seen[key])continue;seen[key]=1;
+      out.push({message:branchMessage(f),sourceText:S(f.userText),domain:d,aspect:a,primary:f.primary||null,index:f.index});
+      if(out.length>=8)break;
+    }
+    return out;
+  }
+
   function isBackCue(text){
-    return /^(?:話(?:を|に)?戻(?:そう|して|す|る)|前の話(?:に|へ)?戻(?:そう|して|る)?|さっきの話(?:に|へ)?戻(?:そう|して|る)?|一個前(?:に)?戻(?:そう|して|る)?|元の話(?:に)?戻(?:そう|して|る)?|戻ろう|もどろう)[？?！!。]*$/.test(S(text));
+    return /^(?:話(?:を|に)?戻(?:そう|ろう|して|す|る)|前の話(?:に|へ)?戻(?:そう|ろう|して|る)?|さっきの話(?:に|へ)?戻(?:そう|ろう|して|る)?|その前の話(?:に|へ)?戻(?:そう|ろう|して|る)?|さらに前(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|る)?|(?:二つ|2つ|二個|2個)前(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|る)?|一個前(?:に)?戻(?:そう|ろう|して|る)?|元の話(?:に)?戻(?:そう|ろう|して|る)?|戻ろう|もどろう)[？?！!。]*$/.test(S(text));
   }
 
   function isTopicChangeCue(text){
@@ -1550,9 +1654,19 @@
     return out;
   }
 
-  function restorePreviousTopic(history){
+  function restorePreviousTopic(history,currentMessage){
+    // まず同一ドメイン内の枝（例: 黒田の家族 → 新井の経歴）まで含めて戻す。
+    var branches=recentTopicBranches(history,currentMessage||''),cue=S(currentMessage||''),depth=1;
+    if(/^(?:その前|さらに前|(?:二つ|2つ|二個|2個)前)/.test(cue))depth=2;
+    else if(/^元の話/.test(cue))depth=Math.max(1,branches.length-1);
+    if(branches.length>depth){
+      var b=branches[depth];
+      return {control:'back',restoreMessage:b.message||b.sourceText,domain:b.domain||'',sourceText:b.sourceText,sourceIndex:b.index,branch:true,branchDepth:depth,aspect:b.aspect||'',primary:b.primary||null};
+    }
+
+    // 人物・話題フレームが作れない天気などは従来のドメイン単位へフォールバック。
     var list=userTopicCandidates(history);
-    if(!list.length)return null;
+    if(!list.length)return branches.length?{control:'back',restoreMessage:branches[0].message||branches[0].sourceText,domain:branches[0].domain||'',sourceText:branches[0].sourceText,sourceIndex:branches[0].index,branch:true}:null;
 
     var x=list.length>=2?list[1]:list[0];
     var message=x.text;
@@ -1564,13 +1678,7 @@
       message=message+'の天気';
     }
 
-    return {
-      control:'back',
-      restoreMessage:message,
-      domain:x.domain,
-      sourceText:x.text,
-      sourceIndex:x.index
-    };
+    return {control:'back',restoreMessage:message,domain:x.domain,sourceText:x.text,sourceIndex:x.index};
   }
 
   function latestByDomain(history,domain){
@@ -1604,7 +1712,7 @@
     }
 
     if(isBackCue(t)){
-      var r=restorePreviousTopic(history);
+      var r=restorePreviousTopic(history,t);
       return r||{control:'back',restoreMessage:'',domain:'',sourceText:''};
     }
     if(isTopicChangeCue(t)){
@@ -1802,10 +1910,13 @@
     isExplicitTopicShift:isExplicitTopicShift,
     interactionStyle:interactionStyle,
     listeningSignals:listeningSignals,
+    conversationalStance:conversationalStance,
+    unfinishedThoughtCue:unfinishedThoughtCue,
     conversationalFocus:conversationalFocus,
     focusClauses:focusClauses,
     carriedListenIntent:carriedListenIntent,
     restorePreviousTopic:restorePreviousTopic,
+    recentTopicBranches:recentTopicBranches,
     resetContext:resetContext,
     filterHistory:filterHistory,
     resetAt:resetAt,
