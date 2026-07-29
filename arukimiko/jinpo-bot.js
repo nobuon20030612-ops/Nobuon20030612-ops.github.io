@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.10.0';
+  var VERSION='3.12.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -13,6 +13,30 @@
   function state(){return window.JINPO_BOT_STATE;}
   function help(){return window.JINPO_BOT_HELP;}
   function capabilities(){return window.JINPO_BOT_CAPABILITIES;}
+  function aiBrain(){return window.JINPO_BOT_AI_BRAIN;}
+  function aiAvailable(){
+    var b=aiBrain();
+    try{
+      if(!(b&&typeof b.respond==='function'&&typeof b.configured==='function'&&b.configured()&&(!b.appCheckReady||b.appCheckReady())))return false;
+      var st=typeof b.status==='function'?b.status():null;
+      if(st&&st.cooldown)return false;
+      return true;
+    }catch(e){return false;}
+  }
+  function instantLocalSmalltalk(text){
+    var t=String(text||'').trim();
+    return /^(?:こんにちは|こんにちわ|おはよう(?:ございます)?|こんばんは|こんばんわ|ありがとう(?:ございます)?|ありがと|ごめん(?:なさい)?|すみません|おやすみ(?:なさい)?|またね|ばいばい|バイバイ|ただいま|いってきます|行ってきます)[。！!？?ー〜~\s]*$/i.test(t);
+  }
+
+  function shouldAiLeadConversation(text){
+    var t=String(text||'').trim();
+    if(!t)return false;
+    // 実操作・厳密な数値/現在情報は、従来の決定論ルートを先に通す。
+    if(/(?:陣法|陣形|因縁|英傑|全MAX|差替|配置|除外|検索).*(?:して|やって|探して|適用|解除|設定|変更|選んで)/.test(t))return false;
+    if(/天気|気温|予報|降水|雨|雪|湿度|風速|何番|いくつ|数値|トップ\d*|順位|日程|試合結果|今日|明日|現在|最新|速報/.test(t))return false;
+    // 感想・人物像・印象・共感など「正解だけ」より会話の自然さが重要な発言。
+    return /すご(?:い|かった)|面白(?:い|かった)|おもしろ|意外|懐かし|知らなかった|初めて知|びっくり|そうなんだ|なるほど|やっぱり|なんだね|だよね|どんな人|どんな選手|どう思う|印象|気になる|好きなの|好き？|好き\?|かな[？?]?|かも/.test(t);
+  }
   function fmtNum(v){return String(v==null?'':v);}
   function conditionLabel(s){
     s=s||{};var p=[];
@@ -275,6 +299,7 @@
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
     var compoundChild=!!payloadObj.__compoundChild;
+    var aiToolChild=!!payloadObj.__aiToolChild;
 
     // 先に会話リセット以前の履歴を除外。
     // その有効履歴を使って、候補追質問でも必要な正本をlazy選択する。
@@ -398,13 +423,31 @@
       }
     }catch(transientSanitizeErr){}
 
-    // Geminiは使用しない構成。旧AIコマンドも外部通信しない。
+    // 高性能AIの接続状態を実測する診断。診断時だけモデル通信とFunction Callingを確認する。
     if(/^(?:AI|ai|ＡＩ).*(?:診断|接続|確認|テスト|状態)$/.test(originalMessage.replace(/\s+/g,''))){
-      return {
-        answer:'現在の歩き巫女は、利用回数で性能が変わらない通常Bot一本で動いています。Geminiへの接続やAI診断は行いません。',
-        sources:[],links:[],mode:'歩き巫女',
-        data:{geminiDisabled:true}
-      };
+      var diagBrain=aiBrain();
+      if(!diagBrain||typeof diagBrain.diagnose!=='function'){
+        return {
+          answer:'高性能AIの診断モジュールをまだ読み込めていません。通常Botはそのまま使えるので、少ししてからもう一度「AI診断」と送ってください。',
+          sources:[],links:[],mode:'AI接続確認',
+          data:{aiDiagnostic:true,moduleMissing:true}
+        };
+      }
+      try{
+        var report=await diagBrain.diagnose({toolTest:true});
+        var diagText=typeof diagBrain.formatDiagnosis==='function'?diagBrain.formatDiagnosis(report):JSON.stringify(report);
+        return {
+          answer:String(diagText||''),
+          sources:[],links:[],mode:'AI接続確認',
+          data:{aiDiagnostic:true,report:report||null}
+        };
+      }catch(diagErr){
+        return {
+          answer:'AI診断そのものの実行中にエラーが出ました。通常Botへは自動で戻れるので、サイト機能はそのまま使えます。',
+          sources:[],links:[],mode:'AI接続確認',
+          data:{aiDiagnostic:true,error:String(diagErr&&diagErr.message||diagErr)}
+        };
+      }
     }
 
     // AIが利用できなかった時のローカル会話制御。
@@ -462,7 +505,9 @@
 
       if(!blockEarlySmalltalk&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
         var quickTalk=window.JINPO_BOT_SMALLTALK.local(originalMessage,{history:history,pageContext:pageContext});
-        if(quickTalk){
+        // 高性能AIが使える時は、挨拶など即答向きの短文だけローカルで先に返す。
+        // 文脈のある雑談・相談は後段のAIへ渡し、固定文だけで会話を終わらせない。
+        if(quickTalk&&(!aiAvailable()||instantLocalSmalltalk(originalMessage))){
           return {
             answer:String(quickTalk),
             sources:[],links:[],mode:'日常会話',
@@ -587,6 +632,35 @@
       }
     }catch(learningReplyErr){}
 
+    // 感想・人物像・印象などは、正本の事実経路を壊さない範囲で高性能AIを先に使う。
+    // AI側は必要な専門正本をFunction Callingし、失敗時は直後の従来ルートへそのまま戻る。
+    if(!aiToolChild&&aiAvailable()&&shouldAiLeadConversation(originalMessage)){
+      try{
+        var leadBrain=aiBrain();
+        var leadReply=await leadBrain.respond(message,{
+          original:originalMessage,
+          history:history,
+          pageContext:pageContext,
+          context:contextInfo,
+          intentInfo:intentInfo,
+          localHandle:pageContext.mode==='jinpo'?function(q){
+            return handle({message:String(q||''),history:history,__aiToolChild:true,__compoundChild:true});
+          }:null
+        });
+        if(leadReply&&leadReply.handled){
+          return {
+            answer:String(leadReply.answer||''),
+            sources:Array.isArray(leadReply.sources)?leadReply.sources:[],
+            links:Array.isArray(leadReply.links)?leadReply.links:[],
+            mode:String(leadReply.mode||'AI歩き巫女'),
+            data:Object.assign({aiBrain:true,aiLeadConversation:true,context:contextInfo},leadReply.data||{})
+          };
+        }
+      }catch(aiLeadErr){
+        try{console.warn('歩き巫女 AI lead fallback:',aiLeadErr);}catch(e){}
+      }
+    }
+
     // AIフォールバック時でも、カープ専用会話を直接使う。
     // これが無いと「カープ」を一般Webや別の途中タスクへ流してしまう。
     try{
@@ -672,6 +746,35 @@
         }
       }
     }catch(learningFindErr){}
+
+    // 正本・実操作・明示的な学習/案内で処理されなかった会話は、高性能AI会話脳へ。
+    // AI側が利用不可・無料枠到達・App Check未準備なら handled:false で従来Botへ自動フォールバック。
+    if(!aiToolChild&&aiAvailable()){
+      try{
+        var brain=aiBrain();
+        var aiReply=await brain.respond(message,{
+          original:originalMessage,
+          history:history,
+          pageContext:pageContext,
+          context:contextInfo,
+          intentInfo:intentInfo,
+          localHandle:pageContext.mode==='jinpo'?function(q){
+            return handle({message:String(q||''),history:history,__aiToolChild:true,__compoundChild:true});
+          }:null
+        });
+        if(aiReply&&aiReply.handled){
+          return {
+            answer:String(aiReply.answer||''),
+            sources:Array.isArray(aiReply.sources)?aiReply.sources:[],
+            links:Array.isArray(aiReply.links)?aiReply.links:[],
+            mode:String(aiReply.mode||'AI歩き巫女'),
+            data:Object.assign({aiBrain:true,context:contextInfo},aiReply.data||{})
+          };
+        }
+      }catch(aiBrainErr){
+        try{console.warn('歩き巫女 AI brain fallback:',aiBrainErr);}catch(e){}
+      }
+    }
 
     // HELPはv3.3.8から遅延読込。
     // 陣法検索の実行条件にHELPまで要求すると、起動直後の検索が一時的に

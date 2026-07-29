@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='1.9.0';
+  var VERSION='2.0.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -219,6 +219,11 @@
     var t=S(message),history=(opt&&opt.history)||[];
     var recent=joinedRecentUsers(history,message);
     var all=(recent+' / '+t);
+    var carpRecognized=false;
+    try{
+      carpRecognized=!!(window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.isCarp==='function'&&window.JINPO_BOT_CARP.isCarp(t));
+    }catch(e){}
+    var carpContext=carpRecognized||/カープ|かーぷ|広島東洋|広島カープ/.test(all);
 
     // Page navigation only when explicitly requested.
     if(/(?:ページ|サイト|リンク).*(?:開|見|行|案内|どこ)|(?:開いて|ひらいて|見せて|移動して|案内して|リンク教えて)/.test(t)){
@@ -244,11 +249,30 @@
       }
     }
 
+    // 過去回答との矛盾指摘は、会話の分野に応じた正本で再検証する。
+    if(/前と違|さっきと違|前に言ってた|さっき言ってた|言ってること違|矛盾|どっちが正しい|どちらが正しい/.test(t)){
+      var convDomain='';
+      try{
+        if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.recentDomain==='function')
+          convDomain=window.JINPO_BOT_CONVERSATION.recentDomain(history||[]);
+      }catch(e){}
+      if(convDomain==='carp'||/カープ|広島東洋|広島カープ/.test(all))return {reason:'consistency-carp',allowed:['lookup_carp_knowledge']};
+      if(convDomain==='counter'||/カウンター|天下統一奇譚|修羅の間|天下武技大会/.test(all))return {reason:'consistency-tairano',allowed:['lookup_tairano_knowledge']};
+      if(convDomain==='tsukumo'||convDomain==='kishin'||convDomain==='madou'||/九十九|鬼神石|魔導/.test(all))return {reason:'consistency-tool-data',allowed:['lookup_game_tool_data']};
+      if(convDomain==='weather'||/天気|気温|予報/.test(all))return {reason:'consistency-realtime',allowed:['lookup_web_or_weather']};
+    }
+
     // Current Carp info. Follow-ups like "順位は？" inherit from recent user topic.
-    if(/カープ|かーぷ|広島東洋|広島カープ/.test(all)){
-      if(/順位|何位|試合|日程|予定|結果|成績|選手|先発|スタメン|打率|本塁打|防御率|登録|抹消|今日|明日|今季|今年|現在/.test(t) || shortFollowup(t)){
+    if(carpContext){
+      if(/順位|何位|試合|日程|予定|結果|成績|選手|先発|スタメン|打率|本塁打|防御率|登録|抹消|今日|明日|今季|今年|現在|最近|今(?:どう|は|の|も|って)/.test(t)){
         return {reason:'carp-current',allowed:['lookup_carp_current']};
       }
+    }
+
+    // カープ人物・歴史の会話的な聞き方でも、事実部分は必ず専用正本へ戻す。
+    // 例: 「黒田ってどんな人？」「黒田ってすごかったんだね」。好き嫌いだけの雑談は強制しない。
+    if(carpRecognized&&/どんな人|どんな選手|誰|家族|逸話|歴史|経歴|成績|記録|すご(?:い|かった)|意外|有名|教えて|知りたい|について/.test(t)){
+      return {reason:'carp-canonical',allowed:['lookup_carp_knowledge']};
     }
 
     // Fresh/current information must use retrieval.
@@ -324,6 +348,44 @@
     };
   }
 
+  var ASPECT_JA={overview:'概要',career:'経歴',stats:'成績',anecdote:'逸話',family:'家族',current:'現在',history:'歴史',rank:'順位',schedule:'日程',result:'結果',compare:'比較',counter:'カウンター'};
+
+  function conversationStateSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.workingMemory!=='function')return'（会話グラフ未利用）';
+    try{
+      var h=Array.isArray(history)?history.slice():[],cur=S(currentMessage);
+      if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
+      var wm=conv.workingMemory(h),lines=[];
+      if(wm.domain)lines.push('現在の分野: '+wm.domain);
+      var subjects=Array.isArray(wm.subjects)?wm.subjects:[];
+      if(subjects.length)lines.push('現在の主役: '+subjects[0].value);
+      var memories=Array.isArray(wm.subjectMemory)?wm.subjectMemory:[];
+      memories.slice(0,5).forEach(function(m){
+        var aspects=(m.aspects||[]).map(function(a){return ASPECT_JA[a]||a;});
+        lines.push('話題 '+m.subject+(aspects.length?' / 既に触れた観点: '+aspects.join('・'):' / まだ観点記録なし'));
+      });
+      var g=wm.graph||{},nodes=Array.isArray(g.nodes)?g.nodes:[],edges=Array.isArray(g.edges)?g.edges:[],names={};
+      nodes.forEach(function(n){if(n&&n.id)names[n.id]=n.subject;});
+      edges.slice(0,6).forEach(function(e){
+        var a=names[e.from],b=names[e.to];if(!a||!b)return;
+        lines.push('会話内の接続: '+a+' → '+(e.label||e.relation||'言及')+' → '+b);
+      });
+      return lines.length?lines.join('\n'):'（このリセット以降の会話状態なし）';
+    }catch(e){return'（会話状態の取得に失敗）';}
+  }
+
+  function verifiedPriorOutputs(history){
+    var h=filterRawHistory(history),out=[];
+    var verified=/^(?:カープ専用正本知識|カープ公式情報|カープ公式日付情報|カープ公式選手情報|カープ公式順位|カープ最新Web|カープWeb調査|たいらの野望専用知識|たいらの野望ツール実データ|天気|リアルタイムWeb自動参照|無料公開Web自動参照|調査記憶|Firebase共有記憶|陣法条件修正|歩き巫女)$/;
+    for(var i=h.length-1;i>=0&&out.length<3;i--){
+      var x=h[i]||{},meta=x.meta||{},mode=S(meta.mode),text=S(x.text);
+      if(x.role!=='assistant'||!text||!verified.test(mode))continue;
+      out.push('['+mode+'] '+text.slice(0,900));
+    }
+    return out.reverse();
+  }
+
   function systemInstruction(opt){
     opt=opt||{};
     var p=pageInfo(opt);
@@ -331,6 +393,9 @@
     var recentBlock=recentUsers.length
       ?recentUsers.map(function(x,i){return (i+1)+'. '+x;}).join('\n')
       :'（この話題リセット以降の過去発言なし）';
+    var conversationBlock=conversationStateSummary(opt.history||[],opt.currentMessage||'');
+    var priorVerified=verifiedPriorOutputs(opt.history||[]);
+    var priorVerifiedBlock=priorVerified.length?priorVerified.join('\n\n'):'（直近に確認済みローカル出力なし）';
 
     return [
       'あなたは「たいらの野望」サイト常駐AIの歩き巫女です。',
@@ -359,11 +424,21 @@
       '19. ユーザーが話題を変えたら即座に新しい話へ移ります。前のタスクを完了させようとして引き戻してはいけません。',
       '20. 相手の発言を長く言い換えてから答える癖を避けます。必要なら一言だけ受けて、すぐ本題へ入ります。',
       '21. 曖昧でも会話履歴から十分推測できる時は確認質問を増やさず、その解釈で自然に答えます。重大な誤操作につながる時だけ確認します。',
+      '22. 会話状態に「既に触れた観点」がある時、ユーザーが再説明を求めていない限り、同じ説明を最初から繰り返さず前の説明を踏まえて続けます。',
+      '23. 「前と違う」「さっきと言っていることが違う」「矛盾してない？」と指摘されたら、過去の回答を盲信せず、該当する正本/Webツールで再確認して、どこが一致・不一致かを率直に説明します。',
+      '24. 会話グラフの人物関係は「会話中にそう言及された」という文脈情報です。外部事実として勝手に確定せず、必要なら正本で確認します。',
+      '25. ユーザーが既に知っていると示した内容は繰り返し説明せず、必要なら未説明部分だけ補足します。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
       '直近のユーザー発言（古い→新しい）:',
       recentBlock,
+      '',
+      '会話グラフ要約:',
+      conversationBlock,
+      '',
+      '直近の確認済み出力（矛盾指摘時の比較材料。これ自体を再検証なしで絶対視しない）:',
+      priorVerifiedBlock,
       '',
       '返答方針:',
       '- 最初にユーザーが知りたい答えを言う。',
@@ -496,6 +571,12 @@
           description:'九十九・鬼神石・魔導結晶の番号、名称、能力値、入手先、最大値・順位を正本CSVから確認する。これらの数値質問では必ず使う。',
           parameters:schema,
           functionReference:toolData
+        },
+        {
+          name:'lookup_carp_knowledge',
+          description:'広島東洋カープの人物、歴史、逸話、家族、過去成績などをカープ専用正本で確認する。過去の回答との整合性確認にも使う。',
+          parameters:schema,
+          functionReference:carp
         },
         {
           name:'lookup_carp_current',
@@ -1195,6 +1276,8 @@
     _modelCandidates:modelCandidates,
     _retryableModelError:retryableModelError,
     _diagnosticSummary:diagnosticSummary,
-    _systemInstruction:systemInstruction
+    _systemInstruction:systemInstruction,
+    _conversationStateSummary:conversationStateSummary,
+    _verifiedPriorOutputs:verifiedPriorOutputs
   };
 })();

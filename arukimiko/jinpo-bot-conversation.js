@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.2.0
+ * 歩き巫女 共通会話ルーター v2.4.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.2.0';
+  var VERSION='2.4.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -333,6 +333,15 @@
     re=/(?:^|[\n。！？])\s*([一-龠々]{2,8}|[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28})(?:は|が|について)/g;
     while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',78);
 
+    // 「新井貴浩の家族」「黒田博樹の経歴」のような所有・観点表現。
+    // 正本の人物索引がまだ遅延読込されていない起動直後でも主役を保持する。
+    re=/(?:^|[\n。！？、])\s*([一-龠々]{2,8}|[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28})の(?:家族|親族|経歴|成績|逸話|歴史|父|母|兄|弟|姉|妹|息子|娘|妻|夫)/g;
+    while((m=re.exec(t)))add(m[1],'person',84);
+
+    // 家族説明の「弟は新井良太」「父：○○」から、回答内の関係人物を拾う。
+    re=/(?:父|母|兄|弟|姉|妹|息子|娘|妻|夫|配偶者|長男|次男|三男|長女|次女|三女)(?:は|が|[:：])\s*([一-龠々]{2,8}|[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28})(?=[です、。！？\s]|$)/g;
+    while((m=re.exec(t)))add(m[1],'person',86);
+
     // 引用された短い固有名詞も汎用の話題として保持する。
     re=/「([^」]{2,30})」/g;
     while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',70);
@@ -377,6 +386,9 @@
     if(/結果|スコア|勝った|負けた|引き分け/.test(t))return'result';
     if(/比較|比べ|どっち|違い/.test(t))return'compare';
     if(/カウンター/.test(t))return'counter';
+    // 人物・話題そのものを尋ねる「概要」。特定観点より後で判定し、
+    // 「家族について教えて」などをoverviewへ潰さない。
+    if(/について(?:教えて|知りたい|説明して|詳しく(?:教えて)?)|どんな(?:人|選手|人物|監督)|何者|(?:誰|だれ)(?:なの|ですか|だった)/.test(t))return'overview';
     return'';
   }
 
@@ -425,6 +437,11 @@
           assistantEntities:[],primary:null,secondaryPeople:[]
         };
         var prev=frames.length?frames[frames.length-1]:null;
+        // 「それは知ってる」「そこは分かってる」は、直前に説明した観点を既知として保持する。
+        // 以後の「他には？」で同じ観点へ戻りにくくする。
+        if(!current.aspect&&prev&&prev.aspect&&/^(?:それ|そこ|その話)?(?:は|もう)?(?:知ってる|知っている|分かってる|わかってる|分かっている|わかっている)(?:よ|って|から)?[。！!？?]*$/.test(current.userText)){
+          current.aspect=prev.aspect;
+        }
         current.primary=choosePrimaryEntity(current.userEntities,[],prev,current.userText);
         if(!current.domain&&prev&&current.primary&&prev.primary&&current.primary.value===prev.primary.value)current.domain=prev.domain||'';
         frames.push(current);
@@ -609,6 +626,145 @@
     return out.slice(0,8);
   }
 
+  function graphNodeId(type,value){
+    return String(type||'topic')+'|'+String(value||'');
+  }
+
+  // 会話内だけの関係を保持する軽量グラフ。
+  // ここでは外部事実を推測せず、「質問した」「回答内に出た」「家族回答で弟として出た」
+  // といった会話上で確認済みの接続だけを記録する。
+  function conversationGraph(history){
+    var frames=topicFrames(history),nodes=[],edges=[],nodeMap={},edgeMap={};
+
+    function ensureNode(value,type,domain,index){
+      if(!value)return null;
+      type=type||'topic';
+      var id=graphNodeId(type,value),n=nodeMap[id];
+      if(!n){
+        n=nodeMap[id]={id:id,subject:value,type:type,domain:domain||'',aspects:[],questions:[],lastIndex:Number(index)||0};
+        nodes.push(n);
+      }
+      if(domain&&!n.domain)n.domain=domain;
+      if(Number(index)>n.lastIndex)n.lastIndex=Number(index);
+      return n;
+    }
+    function addEdge(from,to,relation,label,index){
+      if(!from||!to||from.id===to.id)return;
+      relation=relation||'mentioned';
+      var key=from.id+'>'+to.id+'|'+relation;
+      if(edgeMap[key])return;
+      edgeMap[key]=1;
+      edges.push({from:from.id,to:to.id,relation:relation,label:label||relation,lastIndex:Number(index)||0});
+    }
+
+    frames.forEach(function(f){
+      if(!f)return;
+      var p=f.primary&&f.primary.value?ensureNode(f.primary.value,f.primary.type||'topic',f.domain||'',f.index):null;
+      if(p){
+        if(f.aspect&&p.aspects.indexOf(f.aspect)<0)p.aspects.push(f.aspect);
+        if(f.userText&&p.questions.indexOf(f.userText)<0)p.questions.push(f.userText);
+      }
+
+      var secondary=(f.secondaryPeople||[]).filter(Boolean);
+      secondary.forEach(function(name){
+        var sn=ensureNode(name,'person',f.domain||'',f.index);
+        if(p)addEdge(p,sn,'mentioned','回答内で言及',f.index);
+      });
+
+      // 家族回答で関係語と人物が同じ文脈に結び付いた場合だけ、関係エッジを追加する。
+      if(p&&f.aspect==='family'){
+        ['父','母','兄','弟','姉','妹','息子','娘','妻','夫','子供'].forEach(function(rel){
+          relationPeopleFromFrame(f,rel).forEach(function(name){
+            var rn=ensureNode(name,'person',f.domain||'',f.index);
+            addEdge(p,rn,'family:'+rel,rel,f.index);
+          });
+        });
+      }
+
+      // 比較質問でユーザー側に2人以上が明示されている時だけ比較接続を記録する。
+      if(f.aspect==='compare'){
+        var people=entityValues(f.userEntities,'person');
+        for(var i=0;i<people.length;i++)for(var j=i+1;j<people.length;j++){
+          addEdge(ensureNode(people[i],'person',f.domain||'',f.index),ensureNode(people[j],'person',f.domain||'',f.index),'compared','比較した',f.index);
+        }
+      }
+    });
+
+    nodes.sort(function(a,b){return b.lastIndex-a.lastIndex;});
+    edges.sort(function(a,b){return b.lastIndex-a.lastIndex;});
+    return {nodes:nodes.slice(0,24),edges:edges.slice(0,48)};
+  }
+
+  function memoryForSubject(history,subject){
+    var a=normalizeAnchor(subject);if(!a)return null;
+    var mem=conversationGraph(history).nodes||[],hits=[];
+    mem.forEach(function(x){
+      var v=normalizeAnchor(x.subject);
+      if(v===a||v.indexOf(a)>=0||a.indexOf(v)>=0)hits.push(x);
+    });
+    return hits.length===1?hits[0]:null;
+  }
+
+  var ASPECT_LABELS={career:'経歴',stats:'成績',anecdote:'逸話',family:'家族',current:'現在',history:'歴史'};
+  function nextUnaskedAspect(history,subject,domain){
+    var mem=memoryForSubject(history,subject);if(!mem)return'';
+    domain=domain||mem.domain||'';
+    // 現時点では正本の観点分けが最も安定しているカープ人物を中心に広げる。
+    // 他ドメインは既存の専門ルーターへ任せ、会話グラフが勝手に質問内容を作らない。
+    var plan=domain==='carp'?['career','stats','anecdote','family','current']:[];
+    if(!plan.length)return'';
+    var seen=mem.aspects||[];
+    for(var i=0;i<plan.length;i++)if(seen.indexOf(plan[i])<0)return plan[i];
+    return'';
+  }
+
+  function genericOverviewAnchor(text){
+    var t=S(text).replace(/[？?！!。]+$/,'').trim(),m;
+    m=t.match(/^(.{1,32}?)(?:について|って)(?:教えて|知りたい|説明して|詳しく(?:教えて)?)$/);
+    if(m)return S(m[1]);
+    m=t.match(/^(.{1,24}?)(?:は|って)?どんな(?:人|選手|人物|監督)(?:なの|ですか|だった)?$/);
+    if(m)return S(m[1]);
+    return'';
+  }
+
+  // 同じ概要説明をそのまま繰り返す代わりに、まだ聞いていない観点へ自然に展開する。
+  // 「もう一度」「最初から」など再説明を明示した場合は一切変換しない。
+  function conversationGraphExpansion(text,history){
+    var t=S(text);if(!t||t.length>80)return null;
+    if(/もう一度|もう一回|改めて|あらためて|最初から|同じ説明|さっきの説明/.test(t))return null;
+    var h=historyBeforeCurrent(history,t);if(!h.length)return null;
+
+    var ref=null,reason='';
+    if(isMoreCue(t)){
+      var frames=topicFrames(h),last=frames.length?frames[frames.length-1]:null;
+      // 逸話・家族など特定観点の直後の「他には？」は、その観点の続きを意味し得るため既存処理を優先。
+      if(last&&last.aspect&&last.aspect!=='overview')return null;
+      var recent=recentSubjects(h,{limit:1});
+      if(recent.length)ref=recent[0];
+      reason='more_after_overview';
+    }else{
+      var anchor=genericOverviewAnchor(t);if(!anchor)return null;
+      ref=findSubjectByAnchor(h,anchor);
+      if(!ref||ref.ambiguous||!ref.value)return null;
+      var mem=memoryForSubject(h,ref.value);if(!mem)return null;
+      // 概要をまだ聞いていないなら通常の概要質問をそのまま通す。
+      if((mem.aspects||[]).indexOf('overview')<0)return null;
+      reason='repeated_overview';
+    }
+
+    if(!ref||!ref.value)return null;
+    var aspect=nextUnaskedAspect(h,ref.value,ref.domain||'');
+    if(!aspect)return null;
+    var label=ASPECT_LABELS[aspect]||'';if(!label)return null;
+    return {
+      message:ref.value+'の'+label+'について教えて',
+      reference:ref,
+      aspect:aspect,
+      reason:reason,
+      kind:'conversation_graph_expansion'
+    };
+  }
+
   function recentFrameByAspect(history,aspect){
     var frames=topicFrames(history);
     for(var i=frames.length-1;i>=0;i--){
@@ -631,7 +787,8 @@
       subjects:subjects,
       people:people,
       asked:askedHistory(h,8),
-      subjectMemory:subjectMemory(h)
+      subjectMemory:subjectMemory(h),
+      graph:conversationGraph(h)
     };
   }
 
@@ -673,6 +830,15 @@
       var recentPair=recentSubjects(h,{personOnly:true,limit:3});
       if(recentPair.length>=2){
         return {message:recentPair[0].value+'と'+recentPair[1].value+'を比較すると？',reference:recentPair[1],current:recentPair[0],kind:'recent_two_people_compare'};
+      }
+    }
+
+    // 「その二人ってどういう関係？」は、直近の別人物2人を明示して専門知識側へ渡す。
+    // 会話グラフは関係そのものを推測せず、対象人物の特定だけを担う。
+    if(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(?:その|この|さっきの|前の)?(?:二人|2人)(?:って|は|の)?(?:どういう|どんな)?(?:関係|つながり|繋がり)(?:なの|ですか|だった|だったの)?[？?！!。]*$/.test(t)){
+      var relationPair=recentSubjects(h,{personOnly:true,limit:3});
+      if(relationPair.length>=2){
+        return {message:relationPair[0].value+'と'+relationPair[1].value+'はどういう関係？',reference:relationPair[1],current:relationPair[0],kind:'recent_two_people_relation'};
       }
     }
 
@@ -1236,7 +1402,7 @@
     var message=correction.text;
     var domain=domainFromText(message);
     var prevDomain=recentDomain(priorHistory);
-    var carried='',referenceClarification='';
+    var carried='',referenceClarification='',conversationExpansion=null;
 
     // 数ターン前の主役を明示/相対参照する表現を、直前指示語より先に解決する。
     var multiRef=multiTurnReference(message,priorHistory);
@@ -1268,6 +1434,18 @@
         message=openFollow.message;
         domain=domainFromText(message)||(openFollow.reference&&openFollow.reference.domain)||domain||prevDomain;
         carried=message;
+      }
+    }
+
+    // 同じ人物・話題の概要を再度聞かれた時は、会話グラフ上でまだ未質問の観点へ広げる。
+    // 明示的な再説明要求や、逸話/家族など特定観点の「他には？」は既存経路を優先する。
+    if(!referenceClarification){
+      var graphExpansion=conversationGraphExpansion(message,priorHistory);
+      if(graphExpansion&&graphExpansion.message){
+        message=graphExpansion.message;
+        domain=domainFromText(message)||(graphExpansion.reference&&graphExpansion.reference.domain)||domain||prevDomain;
+        carried=message;
+        conversationExpansion=graphExpansion;
       }
     }
 
@@ -1323,7 +1501,8 @@
       intent:intent,
       navigation:nav,
       fact:fact,
-      referenceClarification:referenceClarification
+      referenceClarification:referenceClarification,
+      conversationExpansion:conversationExpansion
     };
   }
 
@@ -1369,6 +1548,10 @@
     relationPeopleFromFrame:relationPeopleFromFrame,
     askedHistory:askedHistory,
     subjectMemory:subjectMemory,
+    conversationGraph:conversationGraph,
+    memoryForSubject:memoryForSubject,
+    nextUnaskedAspect:nextUnaskedAspect,
+    conversationGraphExpansion:conversationGraphExpansion,
     recentFrameByAspect:recentFrameByAspect,
     multiTurnReference:multiTurnReference,
     resolveEntityReference:resolveEntityReference,

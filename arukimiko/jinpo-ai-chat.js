@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.4
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.5
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -94,6 +94,13 @@
 
     var actions = el('div','jinpoAiHeaderActions');
 
+    aiInfoBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderInfoBtn',{
+      type:'button',
+      'aria-label':'AI状態と制限を確認',
+      'aria-expanded':'false',
+      title:'高性能AIの状態・制限・診断を確認',
+      text:'AI状態'
+    });
     resetBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderResetBtn',{
       type:'button',
       'aria-label':'会話をリセット',
@@ -102,6 +109,7 @@
     });
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
+    actions.appendChild(aiInfoBtn);
     actions.appendChild(resetBtn);
     actions.appendChild(minBtn);
     actions.appendChild(hideBtn);
@@ -186,6 +194,7 @@
     root.appendChild(launcher); root.appendChild(win); root.appendChild(restoreBtn); document.body.appendChild(root);
 
     launcher.addEventListener('click', function(){ if(win.classList.contains('isOpen')) close(); else open(); });
+    aiInfoBtn.addEventListener('click', function(ev){ ev.stopPropagation(); if(aiInfoPanel&&aiInfoPanel.hidden)showAiInfo(); else hideAiInfo(); });
     resetBtn.addEventListener('click', function(ev){ ev.stopPropagation(); resetConversationFromButton(); });
     minBtn.addEventListener('click', function(ev){ ev.stopPropagation(); toggleMinimize(); });
     hideBtn.addEventListener('click', function(ev){ ev.stopPropagation(); hideAll(); });
@@ -206,8 +215,46 @@
   }
 
 
+  function refreshAiInfoState(){
+    if(!aiInfoState)return;
+    try{
+      var brain=window.JINPO_BOT_AI_BRAIN;
+      if(!brain||typeof brain.status!=='function'){
+        aiInfoState.classList.remove('isFallback');
+        aiInfoState.textContent='現在の状態：高性能AIモジュールを準備中（通常Botは利用できます）';
+        return;
+      }
+      var st=brain.status()||{};
+      var configured=st.configured!==false;
+      var cooldown=!!st.cooldown;
+      var phase=String(st.phase||'');
+      var model=String(st.activeModel||st.model||'').trim();
+      var suffix=model?' / '+model:'';
+      if(!configured){
+        aiInfoState.classList.add('isFallback');
+        aiInfoState.textContent='現在の状態：高性能AIは未設定 / 通常Botで利用できます';
+      }else if(cooldown||phase==='fallback'){
+        aiInfoState.classList.add('isFallback');
+        aiInfoState.textContent='現在の状態：通常Botへ一時退避中'+suffix;
+      }else if(phase==='online'){
+        aiInfoState.classList.remove('isFallback');
+        aiInfoState.textContent='現在の状態：高性能AI 接続済み'+suffix;
+      }else if(phase==='thinking'||phase==='checking'){
+        aiInfoState.classList.remove('isFallback');
+        aiInfoState.textContent='現在の状態：高性能AI 接続確認中'+suffix;
+      }else{
+        aiInfoState.classList.remove('isFallback');
+        aiInfoState.textContent='現在の状態：高性能AI 待機中（必要時に接続）'+suffix;
+      }
+    }catch(e){
+      aiInfoState.classList.add('isFallback');
+      aiInfoState.textContent='現在の状態：通常Botは利用できます';
+    }
+  }
+
   function showAiInfo(){
     if(!aiInfoPanel)return;
+    refreshAiInfoState();
     aiInfoPanel.hidden=false;
     if(aiInfoBtn){
       aiInfoBtn.classList.add('isOpen');
@@ -461,10 +508,24 @@
 
   function setBrainStatus(status,detail){
     brainStatus=String(status||'案内・検索OK');
+    var mode=String(detail||'').trim();
+    var isAi=/^AI歩き巫女$|高性能AI|Gemini/i.test(mode);
+    var isFallback=/通常Bot|フォールバック|fallback|ローカル|専用正本|ツール実データ|天気|Web|陣法|歩き巫女$/i.test(mode)&&!isAi;
     if(statusEl&&!busy)statusEl.textContent=brainStatus;
     try{
       root.setAttribute('data-bot-status',brainStatus);
-      if(detail)root.setAttribute('data-bot-detail',String(detail).slice(0,180));
+      if(mode)root.setAttribute('data-bot-detail',mode.slice(0,180));
+      if(aiInfoBtn){
+        aiInfoBtn.classList.toggle('isFallback',isFallback);
+        aiInfoBtn.textContent=isAi?'AI会話中':(isFallback?'通常Bot':'AI状態');
+        aiInfoBtn.title=isAi?'高性能AIで会話中です':(isFallback?'高性能AIを使わず通常Botで処理しました。クリックで状態確認':'高性能AIの状態・制限・診断を確認');
+      }
+      if(aiInfoState){
+        aiInfoState.classList.toggle('isFallback',isFallback);
+        aiInfoState.textContent=isAi
+          ?'現在の状態：高性能AIで会話中'
+          :(isFallback?'現在の状態：通常Botで処理中（高性能AIが不要・未使用・一時退避のいずれか）':'現在の状態：'+brainStatus);
+      }
     }catch(e){}
   }
 
