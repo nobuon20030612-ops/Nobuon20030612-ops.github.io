@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.4.0
+ * 歩き巫女 共通会話ルーター v2.5.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.4.0';
+  var VERSION='2.5.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -296,7 +296,9 @@
 
   function looksLikePersonName(v){
     var x=cleanEntityCandidate(v);if(!x)return false;
-    if(ENTITY_STOP[x]||/年|月|日|試合|球団|資料|情報|記録|成績|順位|逸話|歴史|カウンター|編$|章$/.test(x))return false;
+    // 一般トピックを「その人」の候補にしない。固有名詞らしい英字/漢字でも、
+    // 開発・仕事・ゲーム等の語は会話上のtopicとして保持する。
+    if(ENTITY_STOP[x]||/年|月|日|試合|球団|資料|情報|記録|成績|順位|逸話|歴史|カウンター|編集|運営|経営|開発|機能|検索|設定|サイト|動画|ゲーム|野球|仕事|会社|プログラム|コード|Firebase|Gemini|ChatGPT|JavaScript|CSS|AI$|編$|章$/i.test(x))return false;
     if(/^[一-龠々]{2,8}$/.test(x))return true;
     if(/^[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28}$/.test(x))return true;
     return false;
@@ -332,6 +334,11 @@
     // 回答冒頭や文頭の「黒田博樹は」「新井貴浩について」のような主語。
     re=/(?:^|[\n。！？])\s*([一-龠々]{2,8}|[ァ-ヶA-Za-z][ァ-ヶA-Za-z・ー.'’\- ]{2,28})(?:は|が|について)/g;
     while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',78);
+
+    // 一般テーマも会話グラフの主役として保持する。
+    // 「サイト運営について話そう」「動画編集についてどう思う？」のような混在文字列を拾う。
+    re=/(?:^|[\n。！？])\s*([^\n。！？、]{2,24}?)(?:について|の話)(?:を)?(?:教えて|知りたい|話そう|話したい|詳しく|どう思う|どうなの|しよう|する)?(?=[？?！!。\s]|$)/g;
+    while((m=re.exec(t)))add(m[1],looksLikePersonName(m[1])?'person':'topic',76);
 
     // 「新井貴浩の家族」「黒田博樹の経歴」のような所有・観点表現。
     // 正本の人物索引がまだ遅延読込されていない起動直後でも主役を保持する。
@@ -626,6 +633,62 @@
     return out.slice(0,8);
   }
 
+
+  // セッション内だけの会話傾向。個人属性を推測せず、ユーザーが実際に示した
+  // 「そこは知っている」「もっと知りたい」「違う」などの会話上の信号だけを圧縮する。
+  function conversationSignals(history){
+    var h=filterHistory(history),frames=topicFrames(h),known=[],corrections=[],engagement='neutral',seenKnown={};
+    var userCount=0,explicitDepth='',depthPersistent=false;
+
+    // 「これからは短く/詳しく」のような継続指定は、100件履歴の範囲で最後の指定を保持する。
+    for(var pi=h.length-1;pi>=0;pi--){
+      var px=h[pi];if(!px||px.role!=='user')continue;
+      var pt=S(px.text);if(!pt||!/(?:今後|これから|以降|これ以降)/.test(pt))continue;
+      if(/短く|簡潔|簡単に|要点だけ/.test(pt)){explicitDepth='brief';depthPersistent=true;break;}
+      if(/詳しく|深く|細かく|徹底的/.test(pt)){explicitDepth='deep';depthPersistent=true;break;}
+    }
+
+    for(var i=h.length-1;i>=0&&userCount<14;i--){
+      var item=h[i];if(!item||item.role!=='user')continue;
+      var t=S(item.text);if(!t)continue;
+      userCount++;
+
+      if(!explicitDepth&&/(?:短く|簡潔に|要点だけ).*(?:答えて|話して|お願い)/.test(t)){
+        explicitDepth='brief';
+      }else if(!explicitDepth&&/(?:詳しく|深く|細かく).*(?:答えて|話して|お願い)/.test(t)){
+        explicitDepth='deep';
+      }
+
+      if(corrections.length<3&&/(?:違う|ちがう|そうじゃない|それじゃない|前と違|さっきと違|矛盾|間違|まちが)/.test(t)){
+        corrections.push(t.slice(0,160));
+      }
+
+      if(engagement==='neutral'){
+        if(/もっと|他には|ほかには|続き|詳しく|面白い|おもしろい|興味|気になる|知りたい|初めて知った|知らなかった/.test(t))engagement='engaged';
+        else if(/もういい|十分|そこまで|話変え|別の話|次の話/.test(t))engagement='closed';
+      }
+    }
+
+    for(var j=frames.length-1;j>=0&&known.length<8;j--){
+      var f=frames[j];if(!f||!f.userText)continue;
+      if(!/(?:知ってる|知っている|分かってる|わかってる|分かっている|わかっている|既に知って|もう知って)/.test(f.userText))continue;
+      var subject=f.primary&&f.primary.value||'';
+      var aspect=f.aspect||'';
+      var key=subject+'|'+aspect;
+      if(seenKnown[key])continue;
+      seenKnown[key]=1;
+      known.push({subject:subject,aspect:aspect,text:S(f.userText).slice(0,160)});
+    }
+
+    return {
+      engagement:engagement,
+      known:known,
+      corrections:corrections,
+      depth:explicitDepth,
+      depthPersistent:depthPersistent
+    };
+  }
+
   function graphNodeId(type,value){
     return String(type||'topic')+'|'+String(value||'');
   }
@@ -641,7 +704,7 @@
       type=type||'topic';
       var id=graphNodeId(type,value),n=nodeMap[id];
       if(!n){
-        n=nodeMap[id]={id:id,subject:value,type:type,domain:domain||'',aspects:[],questions:[],lastIndex:Number(index)||0};
+        n=nodeMap[id]={id:id,subject:value,type:type,domain:domain||'',aspects:[],questions:[],lastQuestion:'',lastAssistant:'',lastIndex:Number(index)||0};
         nodes.push(n);
       }
       if(domain&&!n.domain)n.domain=domain;
@@ -663,6 +726,8 @@
       if(p){
         if(f.aspect&&p.aspects.indexOf(f.aspect)<0)p.aspects.push(f.aspect);
         if(f.userText&&p.questions.indexOf(f.userText)<0)p.questions.push(f.userText);
+        if(f.userText)p.lastQuestion=S(f.userText).slice(0,220);
+        if(f.assistantText)p.lastAssistant=S(f.assistantText).slice(0,420);
       }
 
       var secondary=(f.secondaryPeople||[]).filter(Boolean);
@@ -788,6 +853,7 @@
       people:people,
       asked:askedHistory(h,8),
       subjectMemory:subjectMemory(h),
+      signals:conversationSignals(h),
       graph:conversationGraph(h)
     };
   }
@@ -1548,6 +1614,7 @@
     relationPeopleFromFrame:relationPeopleFromFrame,
     askedHistory:askedHistory,
     subjectMemory:subjectMemory,
+    conversationSignals:conversationSignals,
     conversationGraph:conversationGraph,
     memoryForSubject:memoryForSubject,
     nextUnaskedAspect:nextUnaskedAspect,

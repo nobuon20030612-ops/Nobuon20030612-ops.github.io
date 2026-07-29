@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.12.0-ai-orchestration
+ * 歩き巫女 サイト共通ローダー v3.13.0-long-conversation
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.12.0';
+  var ASSET_VERSION='3.13.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.12.0-ai-orchestration',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.13.0-long-conversation',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.12.0',
+    version:'3.13.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,

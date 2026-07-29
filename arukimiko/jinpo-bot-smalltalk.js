@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.1.0
+ * 歩き巫女 日常会話・雑談 v3.2.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.1.0';
+  var VERSION='3.2.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -13,7 +13,15 @@
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function compact(v){return S(v).toLowerCase().replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…]/g,'');}
-  var RECENT_REPLY_LIMIT=8,recentReplies=[];
+  var RECENT_REPLY_LIMIT=8,recentReplies=[],historyReplyKeys=[];
+  function setHistoryReplyKeys(history){
+    var h=Array.isArray(history)?history:[],out=[];
+    for(var i=h.length-1;i>=0&&out.length<10;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var c=compact(x.text);if(c&&out.indexOf(c)<0)out.push(c);
+    }
+    historyReplyKeys=out;
+  }
   function rememberReply(text){
     var c=compact(text);if(!c)return;
     recentReplies=recentReplies.filter(function(x){return x!==c;});
@@ -22,8 +30,11 @@
   }
   function pick(a){
     if(!a||!a.length)return'';
-    var candidates=a.filter(function(x){return recentReplies.indexOf(compact(x))<0;});
-    if(!candidates.length&&recentReplies.length)candidates=a.filter(function(x){return compact(x)!==recentReplies[0];});
+    var candidates=a.filter(function(x){var c=compact(x);return recentReplies.indexOf(c)<0&&historyReplyKeys.indexOf(c)<0;});
+    if(!candidates.length&&(recentReplies.length||historyReplyKeys.length)){
+      var latest=recentReplies[0]||historyReplyKeys[0]||'';
+      candidates=a.filter(function(x){return compact(x)!==latest;});
+    }
     if(!candidates.length)candidates=a.slice();
     var chosen=candidates[Math.floor(Math.random()*candidates.length)];
     rememberReply(chosen);
@@ -537,6 +548,7 @@
 
   function local(text,opt){
     opt=opt||{};
+    setHistoryReplyKeys(opt.history||[]);
     var t=S(text),c=compact(t);
     if(!t||hasSiteIntent(t))return null;
 
@@ -726,6 +738,7 @@
     naturalReply:naturalReply,
     capabilitiesReply:capabilitiesReply,
     recentReplyCount:function(){return recentReplies.length;},
-    resetRecentReplies:function(){recentReplies=[];}
+    resetRecentReplies:function(){recentReplies=[];historyReplyKeys=[];},
+    _setHistoryReplyKeys:setHistoryReplyKeys
   };
 })();

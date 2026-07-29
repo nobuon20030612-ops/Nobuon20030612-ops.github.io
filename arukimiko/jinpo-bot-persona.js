@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 キャラクター口調 v1.3.0
+ * 歩き巫女 キャラクター口調 v1.4.0
  * コアActionの結果や数値は変更せず、表示文だけを柔らかい敬語へ整える。
  */
 (function(){
   'use strict';
   if(window.__JINPO_BOT_PERSONA_INSTALLED__)return;
   window.__JINPO_BOT_PERSONA_INSTALLED__=true;
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
 
   function S(v){return String(v==null?'':v);}
   function isTechnical(text){return /構成ファイル|JSファイル|準備できていません|HTTP\s*\d+|エラー|例外|internal_id|読み込み順/.test(text);}
@@ -29,14 +29,8 @@
       .replace(/^候補が多めです。/,'候補が少し多めなのですよ。')
       .replace(/ということでよろしいですか？/g,'ということで合っていますか？');
 
-    if(/で検索しました。/.test(text)&&!/なのですよ/.test(text)){
-      text=text.replace(/で検索しました。/,'で検索しました。');
-      text+='\n気になる候補を見ていくのですよ。';
-    }else if(/適用しました。/.test(text)&&!/なのですよ/.test(text)){
-      text+='\n次の操作もそのまま選べるのですよ。';
-    }else if(/差替候補を取得しました。/.test(text)&&!/なのですよ/.test(text)){
-      text+='\n良さそうな候補を一緒に見てみるのですよ。';
-    }
+    // 成功メッセージの末尾へ毎回同じ案内文を足すと、長い会話で機械的に見える。
+    // 操作結果そのものは変えず、必要な次操作はユーザーの発言に応じて会話側から案内する。
     return text;
   }
 

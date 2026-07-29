@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v1.9.0
+ * 歩き巫女 AI会話脳 v2.1.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -363,16 +363,68 @@
       var memories=Array.isArray(wm.subjectMemory)?wm.subjectMemory:[];
       memories.slice(0,5).forEach(function(m){
         var aspects=(m.aspects||[]).map(function(a){return ASPECT_JA[a]||a;});
-        lines.push('話題 '+m.subject+(aspects.length?' / 既に触れた観点: '+aspects.join('・'):' / まだ観点記録なし'));
+        var line='話題 '+m.subject+(aspects.length?' / 既に触れた観点: '+aspects.join('・'):' / まだ観点記録なし');
+        if(m.questions&&m.questions.length)line+=' / 最近の質問: '+S(m.questions[0]).slice(0,120);
+        lines.push(line);
       });
+      var signals=wm.signals||{};
+      if(Array.isArray(signals.known)&&signals.known.length){
+        lines.push('ユーザーが既知と示した内容: '+signals.known.slice(0,5).map(function(x){return (x.subject?x.subject+' / ':'')+(ASPECT_JA[x.aspect]||x.aspect||'直前内容');}).join('、'));
+      }
+      if(signals.engagement==='engaged')lines.push('会話傾向: この話題への関心が続いている');
+      if(signals.engagement==='closed')lines.push('会話傾向: 直前の話題をいったん閉じたい反応がある');
+      if(signals.depth&&signals.depthPersistent)lines.push('継続的な返答希望: '+(signals.depth==='brief'?'短く要点優先':'詳しく深める'));
+      if(Array.isArray(signals.corrections)&&signals.corrections.length)lines.push('会話傾向: 最近、訂正・食い違いの指摘がある');
       var g=wm.graph||{},nodes=Array.isArray(g.nodes)?g.nodes:[],edges=Array.isArray(g.edges)?g.edges:[],names={};
       nodes.forEach(function(n){if(n&&n.id)names[n.id]=n.subject;});
+      nodes.slice(0,3).forEach(function(n){
+        if(!n||!n.subject)return;
+        if(n.lastAssistant)lines.push('前回の返答メモ['+n.subject+']: '+S(n.lastAssistant).replace(/\s+/g,' ').slice(0,220));
+      });
       edges.slice(0,6).forEach(function(e){
         var a=names[e.from],b=names[e.to];if(!a||!b)return;
         lines.push('会話内の接続: '+a+' → '+(e.label||e.relation||'言及')+' → '+b);
       });
       return lines.length?lines.join('\n'):'（このリセット以降の会話状態なし）';
     }catch(e){return'（会話状態の取得に失敗）';}
+  }
+
+  function recentAssistantContinuity(history,currentMessage){
+    var h=filterRawHistory(history),cur=S(currentMessage),out=[];
+    if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
+    for(var i=h.length-1;i>=0&&out.length<4;i--){
+      var x=h[i]||{},text=S(x.text);if(x.role!=='assistant'||!text)continue;
+      var mode=S((x.meta||{}).mode)||'会話';
+      out.push('['+mode+'] '+text.replace(/\s+/g,' ').slice(0,260));
+    }
+    return out.reverse();
+  }
+
+  function responseStyleSummary(history,currentMessage){
+    var h=filterRawHistory(history),cur=S(currentMessage),answers=[];
+    if(h.length&&h[h.length-1]&&h[h.length-1].role==='user'&&S(h[h.length-1].text)===cur)h.pop();
+    for(var i=h.length-1;i>=0&&answers.length<6;i--){
+      var x=h[i]||{},text=S(x.text);if(x.role!=='assistant'||!text)continue;
+      answers.push(text.replace(/\s+/g,' ').trim());
+    }
+    if(!answers.length)return'（直近返答なし）';
+    var openings=[],endings=[],nano=0;
+    answers.forEach(function(t){
+      var first=t.split(/[。！？!?]/)[0].slice(0,42);if(first&&openings.indexOf(first)<0)openings.push(first);
+      var parts=t.split(/[。！？!?]/).filter(Boolean);var last=parts.length?parts[parts.length-1].slice(-42):'';
+      if(last&&endings.indexOf(last)<0)endings.push(last);
+      nano+=(t.match(/なのです(?:よ)?/g)||[]).length;
+    });
+    return '最近の冒頭: '+openings.slice(0,4).join(' / ')+'\n最近の締め: '+endings.slice(0,4).join(' / ')+'\n「なのです」系の使用回数: '+nano;
+  }
+
+  function currentResponsePreference(message){
+    var t=S(message),out=[];
+    if(/短く|簡潔|簡単に|要点だけ|一言で/.test(t))out.push('今回は短く要点優先');
+    if(/詳しく|深く|細かく|徹底的|全部/.test(t))out.push('今回は十分に詳しく');
+    if(/例(?:も|を)|具体例|たとえば|例えば/.test(t))out.push('具体例を含める');
+    if(/結論から|先に結論/.test(t))out.push('結論を先に置く');
+    return out.length?out.join(' / '):'（明示指定なし）';
   }
 
   function verifiedPriorOutputs(history){
@@ -394,6 +446,10 @@
       ?recentUsers.map(function(x,i){return (i+1)+'. '+x;}).join('\n')
       :'（この話題リセット以降の過去発言なし）';
     var conversationBlock=conversationStateSummary(opt.history||[],opt.currentMessage||'');
+    var continuity=recentAssistantContinuity(opt.history||[],opt.currentMessage||'');
+    var continuityBlock=continuity.length?continuity.join('\n'):'（直近の歩き巫女返答なし）';
+    var styleBlock=responseStyleSummary(opt.history||[],opt.currentMessage||'');
+    var responsePreference=currentResponsePreference(opt.currentMessage||'');
     var priorVerified=verifiedPriorOutputs(opt.history||[]);
     var priorVerifiedBlock=priorVerified.length?priorVerified.join('\n\n'):'（直近に確認済みローカル出力なし）';
 
@@ -428,6 +484,12 @@
       '23. 「前と違う」「さっきと言っていることが違う」「矛盾してない？」と指摘されたら、過去の回答を盲信せず、該当する正本/Webツールで再確認して、どこが一致・不一致かを率直に説明します。',
       '24. 会話グラフの人物関係は「会話中にそう言及された」という文脈情報です。外部事実として勝手に確定せず、必要なら正本で確認します。',
       '25. ユーザーが既に知っていると示した内容は繰り返し説明せず、必要なら未説明部分だけ補足します。',
+      '26. 直近の歩き巫女返答メモは会話継続のための材料であり、事実の正本ではありません。数値・人物関係・最新情報を再利用する時は必要な正本ツールで確認します。',
+      '27. ユーザーが感想や相槌を返した時、文脈が明確なら内容を受けて一段だけ自然に話を広げて構いません。ただし毎回質問や「他にも知りますか？」で終えません。',
+      '28. 最近の返答と同じ冒頭・同じ締め・同じ「なのですよ」連打を避けます。キャラクター性は語尾の固定ではなく、柔らかさと親しみで保ちます。',
+      '29. 長い会話では、以前の説明を丸ごと再掲せず「前に触れた点」を短く踏まえて新しい情報へ進みます。ユーザーが再説明を求めた時だけ戻ります。',
+      '30. ユーザーが「それは知ってる」「そこは分かる」と示したら、知識確認を繰り返さず一段深い内容へ移ります。勝手に新事実を作らず、必要なら正本を使います。',
+      '31. 最近訂正された内容と同じ断定を繰り返さないでください。不一致が事実問題なら正本/Webで再確認し、会話上の誤解なら何を取り違えたかだけ簡潔に直します。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -436,6 +498,15 @@
       '',
       '会話グラフ要約:',
       conversationBlock,
+      '',
+      '直近の歩き巫女返答メモ（会話継続専用。事実根拠としては使わない）:',
+      continuityBlock,
+      '',
+      '最近の返答スタイル（同じ型を避けるための参考）:',
+      styleBlock,
+      '',
+      '今回の返答指定:',
+      responsePreference,
       '',
       '直近の確認済み出力（矛盾指摘時の比較材料。これ自体を再検証なしで絶対視しない）:',
       priorVerifiedBlock,
@@ -1278,6 +1349,9 @@
     _diagnosticSummary:diagnosticSummary,
     _systemInstruction:systemInstruction,
     _conversationStateSummary:conversationStateSummary,
+    _recentAssistantContinuity:recentAssistantContinuity,
+    _responseStyleSummary:responseStyleSummary,
+    _currentResponsePreference:currentResponsePreference,
     _verifiedPriorOutputs:verifiedPriorOutputs
   };
 })();
