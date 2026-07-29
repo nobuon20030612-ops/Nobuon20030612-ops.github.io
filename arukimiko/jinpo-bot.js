@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.6.0';
+  var VERSION='3.7.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -274,6 +274,7 @@
     var message=String(payloadObj.message||'');
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
+    var compoundChild=!!payloadObj.__compoundChild;
 
     // 先に会話リセット以前の履歴を除外。
     // その有効履歴を使って、候補追質問でも必要な正本をlazy選択する。
@@ -295,6 +296,62 @@
     try{
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
+
+    // 1つの発言に複数の独立した質問・依頼がある場合は、順番を保ったまま個別処理する。
+    // 子処理では再分割しないため、再帰ループにはならない。
+    if(!compoundChild&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.splitCompoundIntents==='function'){
+      try{
+        var compoundParts=window.JINPO_BOT_CONVERSATION.splitCompoundIntents(originalMessage)||[];
+        if(compoundParts.length>1){
+          var baseHistory=history.slice();
+          while(baseHistory.length&&baseHistory[baseHistory.length-1]&&baseHistory[baseHistory.length-1].role==='system')baseHistory.pop();
+          if(baseHistory.length&&baseHistory[baseHistory.length-1]&&baseHistory[baseHistory.length-1].role==='user'&&
+             String(baseHistory[baseHistory.length-1].text||'').trim()===originalMessage.trim())baseHistory.pop();
+
+          var compoundAnswers=[],compoundSources=[],compoundLinks=[],compoundModes=[],completed=0;
+          var evolvingHistory=baseHistory.slice(),stopForFollowup=false;
+          var seenSource={},seenLink={};
+
+          for(var ci=0;ci<compoundParts.length;ci++){
+            var part=String(compoundParts[ci]||'').trim();if(!part)continue;
+            var at=Date.now()+ci;
+            var childHistory=evolvingHistory.concat([{role:'user',text:part,at:at}]);
+            var child=await handle({message:part,history:childHistory,__compoundChild:true});
+            child=child||{};
+            var childAnswer=String(child.answer||'').trim();
+            if(childAnswer){
+              compoundAnswers.push(childAnswer);
+              evolvingHistory.push({role:'user',text:part,at:at});
+              evolvingHistory.push({role:'assistant',text:childAnswer,meta:{mode:String(child.mode||'')},at:at+0.1});
+            }
+            (Array.isArray(child.sources)?child.sources:[]).forEach(function(src){
+              var key=String(src&&src.url||src&&src.title||'');
+              if(!key||seenSource[key])return;seenSource[key]=1;compoundSources.push(src);
+            });
+            (Array.isArray(child.links)?child.links:[]).forEach(function(link){
+              var key=typeof link==='string'?link:String(link&&link.url||link&&link.href||link&&link.title||'');
+              if(!key||seenLink[key])return;seenLink[key]=1;compoundLinks.push(link);
+            });
+            if(child.mode&&compoundModes.indexOf(String(child.mode))<0)compoundModes.push(String(child.mode));
+            completed++;
+
+            var cd=child.data||{};
+            stopForFollowup=!!(cd.needsClarification||cd.needsConfirmation||cd.needsLocation||cd.needsSpecifiedSearchCondition||cd.notFound||cd.temporaryError);
+            if(stopForFollowup)break;
+          }
+
+          return {
+            answer:compoundAnswers.join('\n\n'),
+            sources:compoundSources,
+            links:compoundLinks,
+            mode:compoundModes.length>1?'複合会話':(compoundModes[0]||'複合会話'),
+            data:{compound:true,parts:compoundParts.slice(),completed:completed,total:compoundParts.length,stoppedForFollowup:stopForFollowup}
+          };
+        }
+      }catch(compoundErr){
+        console.warn('歩き巫女 compound conversation:',compoundErr);
+      }
+    }
 
 
     function resetTransientConversationState(){

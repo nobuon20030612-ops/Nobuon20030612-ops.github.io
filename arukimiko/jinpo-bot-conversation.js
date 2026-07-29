@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.8.0
+ * 歩き巫女 共通会話ルーター v1.9.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.8.0';
+  var VERSION='1.9.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -236,7 +236,8 @@
     '歩き巫女':1,'カープ':1,'広島東洋カープ':1,'陣法':1,'天気':1,'全MAX':1,
     '資料基準日':1,'正本資料':1,'正本':1,'候補':1,'選手':1,'監督':1,'投手':1,
     '野手':1,'家族':1,'親族':1,'試合':1,'結果':1,'順位':1,'今日':1,'明日':1,
-    '昨日':1,'今回':1,'現在':1,'最新情報':1,'検索結果':1,'おすすめ':1
+    '昨日':1,'今回':1,'現在':1,'最新情報':1,'検索結果':1,'おすすめ':1,
+    '代表例':1,'代表':1,'一例':1,'具体例':1,'例':1
   };
 
   function cleanEntityCandidate(v){
@@ -721,17 +722,74 @@
     return null;
   }
 
+
+  function compoundClauseScore(text){
+    var t=S(text);if(!t)return 0;
+    var score=0,d=domainFromText(t);
+    if(d)score+=2;
+    if(/[？?]/.test(t))score+=2;
+    if(/(?:教えて|知りたい|調べて|見せて|見たい|探して|検索して|比較して|お願い|してほしい|して欲しい|どう|どこ|いつ|誰|だれ|何|なに|なぜ|なんで|順位|成績|逸話|歴史|家族|親族|現在|最新)/.test(t))score+=1;
+    if(/^(?:こんにちは|こんばんは|おはよう|ありがとう|ありがと|了解|わかった|なるほど|そうなんだ)[。！!？?]*$/.test(t))score-=2;
+    return score;
+  }
+
+  // 1発言に複数の依頼・質問がある時だけ、安全な境界で分割する。
+  // 「腕力と耐久」「黒田と新井」のような同一条件・並列表現は分割しない。
+  function splitCompoundIntents(text){
+    var rawText=String(text==null?'':text);
+    try{rawText=rawText.normalize('NFKC');}catch(e){}
+    rawText=rawText.replace(/[\u3000\t]+/g,' ').replace(/ *\r?\n */g,'\n').trim();
+    var original=S(rawText);if(!original||original.length<8||original.length>500)return [];
+    var mark='\u241e',t=rawText;
+
+    // 「〜を知りたいし、〜も教えて」のような依頼接続。
+    t=t.replace(/((?:知りたい|教えて|調べて|見せて|見たい|探して|検索して|比較して|お願い|してほしい|して欲しい))\s*し[、,]?\s*/g,'$1'+mark);
+
+    // 明示的に別件を足す接続語。文頭の「あと」は対象外。
+    t=t.replace(/[、,]\s*(?:それと|それから|あと|ついでに|もう一つ|もう1つ)[、,\s]*/g,mark);
+    t=t.replace(/\s+(?:それと|それから|ついでに)\s+/g,mark);
+
+    // 疑問符・改行は強い発話境界。疑問符自体は前の節に残す。
+    t=t.replace(/[？?]+\s*(?=\S)/g,function(m){return m.charAt(0)+mark;});
+    t=t.replace(/\s*\n+\s*/g,mark);
+
+    // 句点は両側が質問/依頼らしい時だけ後段の検証で採用する。
+    t=t.replace(/。\s*(?=\S)/g,'。'+mark);
+
+    var raw=t.split(mark).map(function(x){
+      return S(x).replace(/^(?:それと|それから|ついでに|もう一つ|もう1つ)[、,\s]*/,'').replace(/^あと[、,\s]+/,'');
+    }).filter(Boolean);
+    if(raw.length<2||raw.length>4)return [];
+    if(raw.some(function(x){return x.length<2;}))return [];
+
+    var scored=raw.map(compoundClauseScore);
+    var meaningful=scored.filter(function(x){return x>0;}).length;
+    if(meaningful<2)return [];
+
+    // 「こんにちは。今日は暑いね」のような単なる雑談2文は複合タスク扱いしない。
+    if(scored.some(function(x){return x<=0;}))return [];
+
+    // 同じ内容を句読点だけで重複させたケースは除外。
+    var compact=raw.map(C),seen={};
+    for(var i=0;i<compact.length;i++){
+      if(seen[compact[i]])return [];
+      seen[compact[i]]=1;
+    }
+    return raw;
+  }
+
   function resolve(text,history,opt){
     var original=S(text);
+    var priorHistory=historyBeforeCurrent(history,original);
     var correction=stripCorrection(original);
     var message=correction.text;
     var domain=domainFromText(message);
-    var prevDomain=recentDomain(history);
+    var prevDomain=recentDomain(priorHistory);
     var carried='',referenceClarification='';
 
     // 「その人」「その選手」「それはいつ？」などは、直前の回答側に出た対象も参照する。
     // 「封印編」のような属性語からdomainが先に付いても、指示語そのものは解決する。
-    var entityRef=resolveEntityReference(message,history);
+    var entityRef=resolveEntityReference(message,priorHistory);
     if(entityRef&&entityRef.ambiguous){
       referenceClarification='「その人」が複数候補に当てはまるのですよ。'+(entityRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
     }else if(entityRef&&entityRef.message){
@@ -744,7 +802,7 @@
     // ただし「じゃあ鬼神石では？」のように対象だけ切り替えた時は、
     // 直前の腕力/知力/トップN/番号など移植可能な条件だけ引き継ぐ。
     if(domain&&isToolDatasetDomain(domain)&&isToolDatasetDomain(prevDomain)&&domain!==prevDomain){
-      var switched=carryExplicitToolDatasetSwitch(message,domain,prevDomain,history);
+      var switched=carryExplicitToolDatasetSwitch(message,domain,prevDomain,priorHistory);
       if(switched){
         message=switched;
         carried=switched;
@@ -752,11 +810,11 @@
     }
 
     if(!domain){
-      if(prevDomain==='counter'&&isCounterCandidateFollowup(message,history)){
+      if(prevDomain==='counter'&&isCounterCandidateFollowup(message,priorHistory)){
         carried=message;
         domain='counter';
       }else{
-        carried=carryByDomain(message,prevDomain,history);
+        carried=carryByDomain(message,prevDomain,priorHistory);
         if(carried){
           message=carried;
           domain=domainFromText(message)||prevDomain;
@@ -765,7 +823,7 @@
     }
 
     if(!carried){
-      var generic=genericFollowup(message,history);
+      var generic=genericFollowup(message,priorHistory);
       if(generic){
         message=generic;
         domain=domainFromText(message)||prevDomain;
@@ -828,6 +886,8 @@
     entityCandidatesFromText:entityCandidatesFromText,
     findRecentEntity:findRecentEntity,
     resolveEntityReference:resolveEntityReference,
-    workingMemory:workingMemory
+    workingMemory:workingMemory,
+    splitCompoundIntents:splitCompoundIntents,
+    compoundClauseScore:compoundClauseScore
   };
 })();
