@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.6.0
+ * 歩き巫女 日常会話・雑談 v3.7.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.6.0';
+  var VERSION='3.7.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -598,6 +598,27 @@
     setHistoryReplyKeys(opt.history||[]);
     var t=S(text),c=compact(t),userStyle=conversationStyle(opt.history||[],t);
     if(!t||hasSiteIntent(t))return null;
+
+    // AIが使えない時も、会話履歴に実在する予定・過去発言だけを思い出す。
+    try{
+      var convMem=window.JINPO_BOT_CONVERSATION;
+      if(convMem&&typeof convMem.recallPlan==='function'&&typeof convMem.isPlanRecallCue==='function'&&convMem.isPlanRecallCue(t)){
+        var pr=convMem.recallPlan(opt.history||[],t)||{};
+        if(!pr.found)return 'この会話履歴では、その予定は確認できないです。覚えているふりはしないでおきます。';
+        if(pr.ambiguous&&Array.isArray(pr.candidates)&&pr.candidates.length>1){
+          return '予定として残っているのは、'+pr.candidates.slice(-3).map(function(x){return '「'+S(x.text)+'」';}).join('、')+'です。どれのことか分かれば、その続きから話せます。';
+        }
+        return '前に「'+S(pr.plan&&pr.plan.text)+'」って話していました。会話上の記録としてはこれです。';
+      }
+      if(convMem&&typeof convMem.priorStatementReference==='function'){
+        var sr=convMem.priorStatementReference(opt.history||[],t);
+        if(sr){
+          if(!sr.found)return 'この会話履歴では、その発言は確認できないです。言ったことにはしないでおきます。';
+          if(sr.speaker==='user')return 'はい、履歴では「'+S(sr.match)+'」って話していました。';
+          return '履歴では、私は「'+S(sr.match)+'」と答えています。';
+        }
+      }
+    }catch(memoryRecallErr){}
 
     // 単発の定型相槌より先に、直前の会話を見た反応を返す。
     try{

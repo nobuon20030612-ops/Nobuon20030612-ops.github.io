@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.9.0
+ * 歩き巫女 共通会話ルーター v3.2.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.1.0';
+  var VERSION='3.2.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -235,6 +235,134 @@
     if(/(?:前は|以前は)[^。！？]{2,70}(?:てた|ていた|だった|してた|していた|思ってた|好きだった|嫌いだった)[^。！？]{0,35}(?:けど|が|でも)[、\s]*(?:今は|最近は|今だと|今なら)/.test(t))
       return {type:'temporal_update',confidence:'high',latestWins:true};
     return {type:'none',confidence:'low'};
+  }
+
+
+  // 会話履歴の中でユーザー自身が明示した予定・約束を軽量に保持する。
+  // ここで扱うのは「会話上そう言った」という記録だけで、実際のリマインダー作成や実行完了を意味しない。
+  function planTimePhrase(text){
+    var t=S(text),m=t.match(/(?:今日(?:中)?|今夜|今晩|明日|明後日|あさって|週末|今週|来週|再来週|来月|[月火水木金土日]曜(?:日)?|\d{1,2}月\d{1,2}日|\d{1,2}日|\d{1,2}時(?:\d{1,2}分)?|あとで|後で|そのうち)/);
+    return m?m[0]:'';
+  }
+  function isPlanRecallCue(text){
+    var t=S(text);if(!t)return false;
+    return /(?:前に|さっき|この前)?(?:言ってた|話してた|決めた)?(?:予定|つもり|約束)(?:は|って)?(?:何|なんだっけ|何だっけ|どうだった|覚えてる)|(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた|予定だった)(?:っけ|かな)?|(?:明日|今夜|週末|来週)(?:は)?(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)?/.test(t);
+  }
+  function isPlanCancellation(text){
+    var t=S(text);if(!t)return false;
+    return /(?:やっぱり|予定(?:を)?変更|予定変え|予定が変わ|予定なくな|キャンセル|延期).*(?:やめ|しない|延期|変更|別の日|なくな|キャンセル)|(?:明日|今夜|週末|来週).*(?:やめる|やらない|しない|延期する|変更する)/.test(t);
+  }
+  function explicitUserPlan(text){
+    var t=S(text);if(!t||/[？?]/.test(t))return null;
+    if(/(?:予定|日程|スケジュール|次の試合).*(?:教えて|知りたい|何|なに|いつ)/.test(t))return null;
+    var strong=/(?:予定(?:だ|です|にしてる|にしている)|つもり(?:だ|です)?|ことにした|やることにした|することにした|約束(?:した|してる|している)|忘れないように(?:する|しないと))/.test(t);
+    var timed=/(?:今日(?:中)?|今夜|今晩|明日|明後日|あさって|週末|今週|来週|再来週|来月|[月火水木金土日]曜(?:日)?|\d{1,2}月\d{1,2}日|\d{1,2}時|あとで|後で).{0,48}(?:する|やる|行く|見る|更新する|公開する|試す|確認する|直す|修正する|作る|送る|アップする|差し替える|差替える|休む|寝る|話す|続ける)(?:よ|ね|から|予定|つもり|ことにした|。|$)/.test(t);
+    if(!strong&&!timed)return null;
+    if(/^(?:カープ|試合|天気|ニュース).*(?:予定|日程)/.test(t))return null;
+    return {text:t,time:planTimePhrase(t),kind:/約束/.test(t)?'commitment':'plan'};
+  }
+  function planMemory(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),list=[],start=Math.max(0,h.length-160);
+    for(var i=start;i<h.length;i++){
+      var x=h[i];if(!x||x.role!=='user')continue;
+      var t=S(x.text);if(!t)continue;
+      if(isPlanCancellation(t)){
+        var tm=planTimePhrase(t),removed=false;
+        for(var r=list.length-1;r>=0;r--){
+          if(!tm||list[r].time===tm||t.indexOf(list[r].time)>=0){list.splice(r,1);removed=true;break;}
+        }
+        if(!removed&&list.length)list.pop();
+        continue;
+      }
+      var p=explicitUserPlan(t);if(!p)continue;
+      p.index=i;p.at=Number(x.at||0);p.entities=entityCandidatesFromText(t,domainFromHistoryItem(x)||'');
+      var key=C(p.text),duplicate=false;
+      for(var j=list.length-1;j>=0;j--){if(C(list[j].text)===key){duplicate=true;break;}}
+      if(!duplicate)list.push(p);
+      if(list.length>8)list.shift();
+    }
+    return list;
+  }
+  function recallPlan(history,currentMessage){
+    var t=S(currentMessage);if(!isPlanRecallCue(t))return null;
+    var list=planMemory(history,t);if(!list.length)return {found:false,candidates:[]};
+    var tm=planTimePhrase(t),hits=tm?list.filter(function(x){return x.time===tm||x.text.indexOf(tm)>=0;}):list.slice(-3);
+    if(!hits.length)hits=list.slice(-3);
+    if(hits.length===1)return {found:true,plan:hits[0],candidates:hits};
+    return {found:true,ambiguous:true,plan:hits[hits.length-1],candidates:hits.slice(-4)};
+  }
+
+  function statementSimilarity(a,b){
+    var x=C(a),y=C(b);if(!x||!y)return 0;
+    if(x===y)return 1;if(x.indexOf(y)>=0||y.indexOf(x)>=0)return Math.min(x.length,y.length)/Math.max(x.length,y.length)+0.35;
+    function grams(v){var o={};if(v.length<2){o[v]=1;return o;}for(var i=0;i<v.length-1;i++)o[v.slice(i,i+2)]=1;return o;}
+    var gx=grams(x),gy=grams(y),inter=0,total=0,k;
+    for(k in gx){total++;if(gy[k])inter++;}for(k in gy)if(!gx[k])total++;
+    return total?inter/total:0;
+  }
+  function priorStatementReference(history,currentMessage){
+    var t=S(currentMessage);if(!t)return null;
+    var cue=/(?:前に|さっき|この前|以前)(?:[^。！？]{0,90})?(?:って|と)?(?:言ってた|言っていた|言った|話してた|話していた|言ってなかった|言ったよね|言ってたよね)|(?:前にも|さっきも)(?:そう|同じこと)(?:言ってた|言った)/.test(t);
+    if(!cue)return null;
+    var speaker='assistant';
+    if(/(?:私|俺|僕|自分)(?:が|は)?.{0,40}(?:言ってた|言った|話してた)/.test(t))speaker='user';
+    else if(/(?:歩き巫女|あなた|君|きみ|そっち)(?:が|は)?.{0,40}(?:言ってた|言った|話してた)/.test(t))speaker='assistant';
+    var claimed='';
+    var m=t.match(/(?:前に|さっき|この前|以前)(?:歩き巫女|あなた|君|きみ|私|俺|僕|自分)?(?:が|は)?[、,\s]*([^。！？]{2,90}?)(?:って|と)(?:言ってた|言っていた|言った|話してた|話していた|言ってなかった)/);
+    if(m)claimed=S(m[1]).replace(/^(?:そう|同じこと)$/,'');
+    var h=historyBeforeCurrent(history,t),best=null,bestScore=0;
+    for(var i=h.length-1,seen=0;i>=0&&seen<80;i--){
+      var x=h[i];if(!x||x.role!==speaker||!S(x.text))continue;seen++;
+      var tx=S(x.text);if(!claimed){best={speaker:speaker,text:tx,index:i,score:0.5};break;}
+      var sc=statementSimilarity(claimed,tx);
+      if(sc>bestScore){bestScore=sc;best={speaker:speaker,text:tx,index:i,score:sc};}
+    }
+    if(best&&(!claimed||bestScore>=0.16))return {found:true,speaker:speaker,claimed:claimed,match:best.text,index:best.index,score:best.score};
+    return {found:false,speaker:speaker,claimed:claimed,match:'',score:bestScore};
+  }
+
+  function isGeneralResumeCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:(?:じゃあ|では|さて)[、,\s]*)?(?:前回|この前)(?:の)?(?:話|続き)(?:から|を|に|へ)?(?:続け(?:よう|て)|話(?:そう|して)|戻(?:ろう|って|る|して))?[？?！!。]*$/.test(t)||
+      /^(?:(?:じゃあ|では)[、,\s]*)?さっきの続き(?:から|を|に|へ)?(?:続け(?:よう|て)|話(?:そう|して))?[？?！!。]*$/.test(t)||
+      /^(?:続きから|続き(?:を)?話そう|続き(?:を)?しよう|前回どこまで話した(?:っけ|かな)?|どこまで話した(?:っけ|かな)?)[？?！!。]*$/.test(t);
+  }
+  function isResumeNoise(text){
+    var t=S(text);return /^(?:こんにちは|こんばんは|おはよう(?:ございます)?|ただいま|おかえり|ありがとう|ありがと|了解|わかった|分かった|またね|じゃあね|おやすみ|久しぶり|ひさしぶり)[。！!？?]*$/.test(t);
+  }
+  function restoreNaturalResume(history,currentMessage){
+    if(!isGeneralResumeCue(currentMessage))return null;
+    var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h,{limit:48});
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];if(!f||!S(f.userText)||isResumeNoise(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText)||isGeneralResumeCue(f.userText))continue;
+      if(isPlanRecallCue(f.userText))continue;
+      var b=frameAsBranch(f);if(!b||!b.message)continue;
+      if(f.primary||f.domain||f.aspect||S(f.userText).length>=6)return {control:'back',restoreMessage:b.message,domain:b.domain||'',sourceText:b.sourceText||'',sourceIndex:b.index,branch:true,resume:true,aspect:b.aspect||'',primary:b.primary||null};
+    }
+    return null;
+  }
+
+  // 「あれ」「あの件」「そっちの話」など、人物名を含まない談話指示語を具体的な会話枝へ戻す。
+  // 並行話題が複数残る「そっち」は勝手に一つへ決めない。
+  function resolveDiscourseDeictic(text,history){
+    var t=S(text);if(!t||t.length>72)return null;
+    var m=t.match(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(あれ|あの件|あの話|さっきのやつ|前のやつ|その前のやつ|そっち|そっちの話|あっち|あっちの話)(.*)$/);
+    if(!m)return null;
+    var head=m[1],suffix=S(m[2]||''),h=historyBeforeCurrent(history,t);
+    if(/^(?:そっち|あっち)/.test(head)){
+      var ps=parallelTopics(h,t);
+      if(ps.length>1)return {ambiguous:true,candidates:ps.map(function(x){return x.subject||x.message;}).filter(Boolean).slice(0,4),kind:'parallel_deictic'};
+    }
+    var branches=recentTopicBranches(h,t),depth=/その前/.test(head)?1:0;
+    if(branches.length<=depth)return null;
+    var b=branches[depth];
+    if(!suffix||/^(?:は|って)?[？?！!。]*$/.test(suffix))suffix='について';
+    var base=b.message||b.sourceText;
+    if(!base)return null;
+    if(/^の/.test(suffix)&&b.primary&&b.primary.value)base=b.primary.value;
+    else if(/^について/.test(suffix)&&b.primary&&b.primary.value)base=b.primary.value;
+    else suffix=suffix.replace(/^は[、,\s]*/,'');
+    return {message:base+(suffix==='について'?'':(/^の|^について/.test(suffix)?suffix:('、'+suffix))),reference:b.primary||null,branch:b,kind:'discourse_deictic'};
   }
 
   // 「続きは後で話す」「もう一つあるけど後で」のような、ユーザー自身が置いた会話の伏線。
@@ -1933,7 +2061,11 @@
 
     if(isResumeHookCue(t)){
       var hr=restoreConversationHook(history,t);
-      return hr||{control:'back',restoreMessage:'',domain:'',sourceText:'',hook:true};
+      return hr||restoreNaturalResume(history,t)||{control:'back',restoreMessage:'',domain:'',sourceText:'',hook:true};
+    }
+    if(isGeneralResumeCue(t)){
+      var nr=restoreNaturalResume(history,t);
+      return nr||{control:'back',restoreMessage:'',domain:'',sourceText:'',resume:true};
     }
     if(isResumeParallelCue(t)){
       var pr=restoreParallelTopic(history,t);
@@ -2025,8 +2157,18 @@
     var prevDomain=explicitTopicShift?'':recentDomain(priorHistory);
     var carried='',referenceClarification='',conversationExpansion=null;
 
+    // 「あれ」「あの件」「そっちの話」のような談話指示語は、人物名ではなく具体的な会話枝から解決する。
+    var discourseRef=resolveDiscourseDeictic(message,priorHistory);
+    if(discourseRef&&discourseRef.ambiguous){
+      referenceClarification='指している話題が複数あるのですよ。'+(discourseRef.candidates||[]).join('、')+'のどれか教えてください。';
+    }else if(discourseRef&&discourseRef.message){
+      message=discourseRef.message;
+      domain=domainFromText(message)||(discourseRef.branch&&discourseRef.branch.domain)||domain||prevDomain;
+      carried=message;
+    }
+
     // 数ターン前の主役を明示/相対参照する表現を、直前指示語より先に解決する。
-    var multiRef=multiTurnReference(message,priorHistory);
+    var multiRef=!referenceClarification?multiTurnReference(message,priorHistory):null;
     if(multiRef&&multiRef.ambiguous){
       referenceClarification='前の話題に候補が複数あるのですよ。'+(multiRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
     }else if(multiRef&&multiRef.message){
@@ -2037,7 +2179,7 @@
 
     // 「その人」「その選手」「それはいつ？」などは、直前の回答側に出た対象も参照する。
     // 「封印編」のような属性語からdomainが先に付いても、指示語そのものは解決する。
-    var entityRef=!referenceClarification?resolveEntityReference(message,priorHistory):null;
+    var entityRef=!referenceClarification&&!discourseRef?resolveEntityReference(message,priorHistory):null;
     if(entityRef&&entityRef.ambiguous){
       referenceClarification='「その人」が複数候補に当てはまるのですよ。'+(entityRef.candidates||[]).join('、')+'のどれか、名前で教えてください。';
     }else if(entityRef&&entityRef.message){
@@ -2123,7 +2265,9 @@
       navigation:nav,
       fact:fact,
       referenceClarification:referenceClarification,
-      conversationExpansion:conversationExpansion
+      conversationExpansion:conversationExpansion,
+      planRecall:recallPlan(priorHistory,original),
+      priorStatement:priorStatementReference(priorHistory,original)
     };
   }
 
@@ -2146,6 +2290,15 @@
     pragmaticTone:pragmaticTone,
     humorResponsePolicy:humorResponsePolicy,
     continuitySignal:continuitySignal,
+    planTimePhrase:planTimePhrase,
+    isPlanRecallCue:isPlanRecallCue,
+    explicitUserPlan:explicitUserPlan,
+    planMemory:planMemory,
+    recallPlan:recallPlan,
+    priorStatementReference:priorStatementReference,
+    isGeneralResumeCue:isGeneralResumeCue,
+    restoreNaturalResume:restoreNaturalResume,
+    resolveDiscourseDeictic:resolveDiscourseDeictic,
     utteranceRepair:utteranceRepair,
     isConversationHookCue:isConversationHookCue,
     isResumeHookCue:isResumeHookCue,
