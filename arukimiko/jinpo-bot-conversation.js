@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.0.0';
+  var VERSION='3.1.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -196,6 +196,117 @@
     if(/(?:www+|ｗｗ+|草(?:$|[。！!\s])|[（(]?笑[）)]?\s*$)/i.test(t)&&t.length<=80)
       return {type:'playful',confidence:'low',explicit:false};
     return {type:'neutral',confidence:'low',explicit:false,compact:c};
+  }
+
+
+  // 冗談へどの程度「冗談で返すか」を会話の勢いから決める。
+  // 冗談を検出したからといって毎回大きくボケ返さず、真面目・皮肉・聞き役では抑える。
+  function humorResponsePolicy(history,currentMessage){
+    var t=S(currentMessage),tone=pragmaticTone(history,t),style=interactionStyle(history,t),listen=listeningSignals(history,t);
+    var h=historyBeforeCurrent(history,t),recentPlayful=0,seen=0;
+    for(var i=h.length-1;i>=0&&seen<5;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;seen++;
+      if(/(?:ふふ|冗談|なんちゃって|ボケ|ツッコミ|笑|ｗ|w{2,}|草)/i.test(S(x.text)))recentPlayful++;
+    }
+    if(tone.type==='serious')return {mode:'none',reason:'serious',confidence:'high'};
+    if(tone.type==='possible_irony')return {mode:'ack',reason:'possible_irony',confidence:tone.confidence||'medium'};
+    if(listen&&listen.need==='listen'&&(listen.valence==='negative'||listen.valence==='mixed'))return {mode:'ack',reason:'listening_first',confidence:'high'};
+    if(tone.type==='joke'){
+      if(recentPlayful>=2)return {mode:'light',reason:'avoid_humor_pileup',confidence:'high'};
+      if(style.energy==='lively'||style.register==='casual')return {mode:'playful',reason:'explicit_joke_lively_context',confidence:'medium'};
+      return {mode:'light',reason:'explicit_joke',confidence:'high'};
+    }
+    if(tone.type==='playful'){
+      if(recentPlayful>=2)return {mode:'ack',reason:'recent_playful_replies',confidence:'medium'};
+      return {mode:'light',reason:'playful_signal',confidence:'low'};
+    }
+    return {mode:'none',reason:'no_humor_signal',confidence:'low'};
+  }
+
+  // ユーザー自身の「考えが変わった」と、歩き巫女への「前の説明と違う」を区別する。
+  // 前者は矛盾として責めず最新の発言を採用し、後者だけ正本再確認の対象にする。
+  function continuitySignal(history,currentMessage){
+    var t=S(currentMessage);if(!t)return {type:'none',confidence:'low'};
+    if(/(?:前と違う|さっきと違う|前に言ってたのと違う|さっき言ってたのと違う|言ってること(?:が)?違う|矛盾して(?:る|ない)|どっちが正しい|どちらが正しい)/.test(t))
+      return {type:'assistant_conflict',confidence:'high',latestWins:false};
+    if(/(?:さっき|前に|この前)(?:は|、|そう)?[^。！？]{0,50}(?:って言った|と言った|思ってた|思っていた|言ってた|言っていた)[^。！？]{0,30}(?:けど|けれど|が)[^。！？]{0,40}(?:やっぱり|今は|今回は)/.test(t)||
+       /(?:やっぱり|やっぱ)[、\s]*[^。！？]{1,60}(?:にする|がいい|と思う|好き|嫌い|違う|かな|かも|だな)(?:[。！!\s]|$)/.test(t))
+      return {type:'user_revision',confidence:'high',latestWins:true};
+    if(/(?:前は|以前は)[^。！？]{2,70}(?:てた|ていた|だった|してた|していた|思ってた|好きだった|嫌いだった)[^。！？]{0,35}(?:けど|が|でも)[、\s]*(?:今は|最近は|今だと|今なら)/.test(t))
+      return {type:'temporal_update',confidence:'high',latestWins:true};
+    return {type:'none',confidence:'low'};
+  }
+
+  // 「続きは後で話す」「もう一つあるけど後で」のような、ユーザー自身が置いた会話の伏線。
+  // 内容を推測せず、どの会話枝に紐づいた未回収メモかだけを保持する。
+  function isConversationHookCue(text){
+    var t=S(text);if(!t)return false;
+    return /(?:この話には|この件には|それには)?(?:まだ)?(?:続き|もう一つ|もうひとつ|別の話|話したいこと)(?:が)?(?:ある|あって).*(?:あとで|後で)|(?:あとで|後で)(?:話す|話したい|言う|教える|続き(?:を)?話す)|(?:続きは|もう一つは|もうひとつは)(?:あとで|後で)/.test(t);
+  }
+  function isResumeHookCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:(?:じゃあ|では|そういえば)[、,\s]*)?(?:さっき|前に|この前)(?:言ってた|言っていた|話してた|話していた)?(?:続き|もう一つ|もうひとつ|件|やつ|話)(?:に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|話(?:そう|して))?[？?！!。]*$/.test(t)||
+      /^(?:さっきの|前の)(?:続き|もう一つ|もうひとつ)(?:に|へ)?戻(?:ろう|って|る|して)[？?！!。]*$/.test(t);
+  }
+  function conversationHooks(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h,{limit:64}),stack=[];
+    for(var i=0;i<frames.length;i++){
+      var f=frames[i];if(!f||!S(f.userText))continue;
+      var t=S(f.userText);
+      if(isResumeHookCue(t)){if(stack.length)stack.pop();continue;}
+      if(!isConversationHookCue(t))continue;
+      var target=null;
+      if(f.primary&&f.primary.value)target=frameAsBranch(f);
+      if(!target){
+        for(var j=i-1;j>=0;j--){if(frames[j]&&S(frames[j].userText)){target=frameAsBranch(frames[j]);break;}}
+      }
+      stack.push({sourceText:t,message:target&&target.message||'',domain:target&&target.domain||'',aspect:target&&target.aspect||'',primary:target&&target.primary||null,index:f.index});
+      if(stack.length>5)stack.shift();
+    }
+    return stack;
+  }
+  function restoreConversationHook(history,currentMessage){
+    var list=conversationHooks(history,currentMessage||'');if(!list.length)return null;
+    var x=list[list.length-1];
+    return {control:'back',restoreMessage:x.message||x.sourceText,domain:x.domain||'',sourceText:x.sourceText||'',sourceIndex:x.index,branch:true,hook:true,aspect:x.aspect||'',primary:x.primary||null};
+  }
+
+  function isParallelCue(text){
+    var t=S(text);if(!t)return false;
+    return /(?:両方|両方とも|どっちも|どちらも|それぞれ|並行(?:して)?|交互に).*(?:気になる|知りたい|話したい|進めたい|見たい|覚えて|追いたい)|(?:気になる|知りたい|話したい|進めたい).*(?:両方|どっちも|どちらも|それぞれ|並行)/.test(t);
+  }
+  function isResumeParallelCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:(?:じゃあ|では)[、,\s]*)?(?:もう片方|もう一方)(?:の)?(?:話|方|ほう)?(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)?[？?！!。]*$/.test(t)||
+      /^(?:(?:じゃあ|では)[、,\s]*)?(?:もうひとつ|もう一つ)の話(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|どう|教えて)?[？?！!。]*$/.test(t)||
+      /^(?:並行してた|両方追ってた)(?:話|やつ)?(?:の)?(?:もう片方|もう一方|もうひとつ|もう一つ)(?:は|に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て))?[？?！!。]*$/.test(t);
+  }
+  // 明示的に「両方/並行」と言われた時だけ、同じ発言に出た複数人物を並行スロットとして保持する。
+  // 一般の「AとB」を勝手に並行タスクへしない。
+  function parallelTopics(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h,{limit:48}),latest=null;
+    for(var i=0;i<frames.length;i++){
+      var f=frames[i];if(!f)continue;
+      if(/(?:両方|並行|この二つ|この2つ)(?:の話)?(?:は|を)?(?:もう)?(?:いい|終わり|終わろう|やめよう|閉じよう)/.test(S(f.userText))){latest=null;continue;}
+      if(!isParallelCue(f.userText))continue;
+      var vals=entityValues(f.userEntities),uniq=[];
+      vals.forEach(function(v){if(v&&uniq.indexOf(v)<0)uniq.push(v);});
+      if(uniq.length<2)continue;
+      latest=uniq.slice(0,4).map(function(v){
+        var ent=(f.userEntities||[]).find(function(x){return x&&x.value===v;})||{};
+        return {message:v+'について',subject:v,type:ent.type||'topic',domain:f.domain||'',aspect:f.aspect||'',sourceText:f.userText,index:f.index};
+      });
+    }
+    return latest||[];
+  }
+  function restoreParallelTopic(history,currentMessage){
+    var list=parallelTopics(history,currentMessage||'');if(list.length<2)return null;
+    var recent=recentSubjects(historyBeforeCurrent(history,currentMessage||''),{limit:4}),current=recent.length?recent[0].value:'';
+    var options=list.filter(function(x){return x.subject!==current;});
+    if(options.length===1){
+      var x=options[0];return {control:'back',restoreMessage:x.message,domain:x.domain||'',sourceText:x.sourceText||'',sourceIndex:x.index,branch:true,parallel:true,primary:{value:x.subject,type:x.type||'topic'}};
+    }
+    return {control:'back',restoreMessage:'',domain:'',sourceText:'',parallel:true,ambiguous:true,candidates:options.map(function(x){return x.subject;}).slice(0,4)};
   }
 
   // 「前の内容を直す」のか「同じ内容を言い換える」のか「情報を足すだけ」なのかを分ける。
@@ -1165,7 +1276,10 @@
       subjectMemory:subjectMemory(h),
       signals:conversationSignals(h),
       interactionStyle:interactionStyle(h,''),
-      graph:conversationGraph(h)
+      graph:conversationGraph(h),
+      hooks:conversationHooks(h,''),
+      parallelTopics:parallelTopics(h,''),
+      continuity:continuitySignal(h,'')
     };
   }
 
@@ -1666,6 +1780,9 @@
 
   function isDeferCue(text){
     var t=S(text);if(!t)return false;
+    // 「続きは後で話す」はユーザーが自分で後から話す“伏線”であり、
+    // 歩き巫女がその話題を保留して回答へ戻る指示とは分ける。
+    if(isConversationHookCue(t))return false;
     return /(?:この話|その話|それ|これ|.+?の話|.+?について)?(?:は|を)?[、,\s]*(?:いったん|一旦)?(?:置いといて|置いておいて|置いとく|保留(?:にして|して)?|後回し(?:にして)?|あとで(?:にして|話そう|戻ろう)?|後で(?:にして|話そう|戻ろう)?)/.test(t);
   }
 
@@ -1814,6 +1931,14 @@
       }
     }
 
+    if(isResumeHookCue(t)){
+      var hr=restoreConversationHook(history,t);
+      return hr||{control:'back',restoreMessage:'',domain:'',sourceText:'',hook:true};
+    }
+    if(isResumeParallelCue(t)){
+      var pr=restoreParallelTopic(history,t);
+      return pr||{control:'back',restoreMessage:'',domain:'',sourceText:'',parallel:true};
+    }
     if(isResumeDeferredCue(t)){
       var dr=restoreDeferredTopic(history,t);
       return dr||{control:'back',restoreMessage:'',domain:'',sourceText:'',deferred:true};
@@ -2019,7 +2144,17 @@
     listeningSignals:listeningSignals,
     conversationalStance:conversationalStance,
     pragmaticTone:pragmaticTone,
+    humorResponsePolicy:humorResponsePolicy,
+    continuitySignal:continuitySignal,
     utteranceRepair:utteranceRepair,
+    isConversationHookCue:isConversationHookCue,
+    isResumeHookCue:isResumeHookCue,
+    conversationHooks:conversationHooks,
+    restoreConversationHook:restoreConversationHook,
+    isParallelCue:isParallelCue,
+    isResumeParallelCue:isResumeParallelCue,
+    parallelTopics:parallelTopics,
+    restoreParallelTopic:restoreParallelTopic,
     unfinishedThoughtCue:unfinishedThoughtCue,
     conversationalFocus:conversationalFocus,
     focusClauses:focusClauses,

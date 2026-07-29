@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.18.0';
+  var VERSION='3.19.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -508,6 +508,13 @@
         if(conversationControl.restoreMessage){
           message=String(conversationControl.restoreMessage);
         }else{
+          if(conversationControl.ambiguous&&Array.isArray(conversationControl.candidates)&&conversationControl.candidates.length){
+            return {
+              answer:'「もう片方」が複数候補に当てはまります。'+conversationControl.candidates.join('、')+'のどれに戻るか、名前で教えてください。',
+              sources:[],links:[],mode:'会話制御',
+              data:{conversationControl:'back',needsTopic:true,ambiguous:true,candidates:conversationControl.candidates.slice()}
+            };
+          }
           return {
             answer:'戻したい話題をこちらで特定できなかったのですよ。「カープの話に戻ろう」みたいに一言だけ足してもらえれば、そこへ戻します。',
             sources:[],links:[],mode:'会話制御',

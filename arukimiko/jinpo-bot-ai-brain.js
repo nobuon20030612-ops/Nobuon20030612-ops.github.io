@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.6.0';
+  var VERSION='2.7.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -566,6 +566,47 @@
     }catch(e){return'（言い直し・補足信号の取得に失敗）';}
   }
 
+
+  function humorPolicySummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.humorResponsePolicy!=='function')return'（冗談返し強度の信号なし）';
+    try{
+      var x=conv.humorResponsePolicy(history||[],currentMessage||'')||{};
+      var label={none:'冗談で返さない',ack:'軽く受けるだけ',light:'軽いユーモアまで',playful:'少し遊びのある返し可'}[x.mode]||'冗談で返さない';
+      return '返しの強度: '+label+' / 理由='+(x.reason||'none')+'. ユーザーより強い冗談へ勝手にエスカレートしない。';
+    }catch(e){return'（冗談返し強度の取得に失敗）';}
+  }
+
+  function continuitySignalSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.continuitySignal!=='function')return'（長期一貫性の更新信号なし）';
+    try{
+      var x=conv.continuitySignal(history||[],currentMessage||'')||{};
+      var label={user_revision:'ユーザー自身が以前の考え・選択を更新した',temporal_update:'時間経過による状態更新',assistant_conflict:'歩き巫女の過去回答との食い違い指摘',none:'明示的な更新・矛盾信号なし'}[x.type]||'明示信号なし';
+      return '一貫性信号: '+label+(x.latestWins?' / 最新のユーザー発言を優先':'')+'.';
+    }catch(e){return'（長期一貫性信号の取得に失敗）';}
+  }
+
+  function conversationHookSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.conversationHooks!=='function')return'（未回収の会話伏線なし）';
+    try{
+      var list=conv.conversationHooks(history||[],currentMessage||'')||[];
+      if(!list.length)return'（未回収の会話伏線なし）';
+      return list.slice(-3).reverse().map(function(x){return (x.message||x.sourceText||'').slice(0,120);}).join(' / ');
+    }catch(e){return'（会話伏線の取得に失敗）';}
+  }
+
+  function parallelTopicSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.parallelTopics!=='function')return'（明示的な並行話題なし）';
+    try{
+      var list=conv.parallelTopics(history||[],currentMessage||'')||[];
+      if(!list.length)return'（明示的な並行話題なし）';
+      return list.map(function(x){return x.subject||x.message;}).filter(Boolean).join(' / ');
+    }catch(e){return'（並行話題の取得に失敗）';}
+  }
+
   function deferredTopicSummary(history,currentMessage){
     var conv=window.JINPO_BOT_CONVERSATION;
     if(!conv||typeof conv.deferredTopics!=='function')return'（保留中の話題なし）';
@@ -656,7 +697,11 @@
     var focusBlock=conversationalFocusSummary(opt.history||[],opt.currentMessage||'');
     var stanceBlock=conversationalStanceSummary(opt.history||[],opt.currentMessage||'');
     var pragmaticBlock=pragmaticToneSummary(opt.history||[],opt.currentMessage||'');
+    var humorBlock=humorPolicySummary(opt.history||[],opt.currentMessage||'');
+    var continuitySignalBlock=continuitySignalSummary(opt.history||[],opt.currentMessage||'');
     var repairBlock=repairSummary(opt.history||[],opt.currentMessage||'');
+    var hookBlock=conversationHookSummary(opt.history||[],opt.currentMessage||'');
+    var parallelBlock=parallelTopicSummary(opt.history||[],opt.currentMessage||'');
     var deferredBlock=deferredTopicSummary(opt.history||[],opt.currentMessage||'');
     var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
     var initiativeBlock=initiativeBalanceSummary(opt.history||[],opt.currentMessage||'');
@@ -741,6 +786,12 @@
       '64. 「訂正」「AじゃなくてB」は前の解釈を修正します。一方、「補足すると」「ちなみに」「あと、」は前の内容を取り消さず情報を足します。「言い直すと」は原則として同じ意図の言い換えとして文脈を保持します。',
       '65. 「この話はいったん置いといて」「後で戻ろう」と明示された話題は保留として扱います。別の話題を進めても、ユーザーが「保留した話に戻ろう」と言った時だけ最新の保留話題へ戻ります。',
       '66. 保留話題が複数ある場合は最後に保留した話から戻り、戻った話を再び最初から説明せず、その時点の観点から続けます。',
+      '67. 冗談が明示されても毎回それ以上の強さでボケ返しません。会話の勢いに合わせ、落ち着いた文脈なら軽く受けるだけ、くだけた雑談なら一段だけ遊びを足します。',
+      '68. 皮肉の可能性がある発言は笑いで上書きしません。文字どおりの称賛にも決め打ちせず、出来事そのものへ自然に反応します。',
+      '69. ユーザーが「前はそう言ったけど、今は違う」「やっぱりこちらにする」と自分の考えを更新した時は、矛盾として責めず最新の発言を現在の意向として扱います。',
+      '70. 一方、「前の歩き巫女の説明と違う」「矛盾している」と指摘された時はユーザーの心変わりと混同せず、必要な正本/Webで回答側を再検証します。',
+      '71. ユーザーが「続きは後で話す」「もう一つあるけど後で」と置いた会話の伏線は、内容を想像せず“未回収の話がある”ことだけ覚えます。ユーザーが戻した時にだけ自然に拾います。',
+      '72. 「両方気になる」「並行で話したい」と明示された複数話題は、一方へ移っただけで他方を捨てません。「もう片方」に戻された時は明示された並行話題から復帰します。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -774,8 +825,20 @@
       '今回の冗談・本気・皮肉の信号（皮肉は断定しない）:',
       pragmaticBlock,
       '',
+      '今回の冗談返し強度（相手より強くしすぎない）:',
+      humorBlock,
+      '',
+      '今回の長期一貫性・意向更新信号:',
+      continuitySignalBlock,
+      '',
       '今回の言い直し・訂正・補足の信号:',
       repairBlock,
+      '',
+      '未回収の会話伏線（勝手に回収せず、ユーザーが戻した時だけ使う）:',
+      hookBlock,
+      '',
+      '明示的に並行している話題:',
+      parallelBlock,
       '',
       '現在保留中の話題（新しい順）:',
       deferredBlock,
@@ -1646,6 +1709,10 @@
     _conversationalStanceSummary:conversationalStanceSummary,
     _pragmaticToneSummary:pragmaticToneSummary,
     _repairSummary:repairSummary,
+    _humorPolicySummary:humorPolicySummary,
+    _continuitySignalSummary:continuitySignalSummary,
+    _conversationHookSummary:conversationHookSummary,
+    _parallelTopicSummary:parallelTopicSummary,
     _deferredTopicSummary:deferredTopicSummary,
     _initiativeBalanceSummary:initiativeBalanceSummary,
     _verifiedPriorOutputs:verifiedPriorOutputs

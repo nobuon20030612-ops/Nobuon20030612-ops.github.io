@@ -559,8 +559,11 @@
     var tone=null,repair=null;try{tone=conv.pragmaticTone((opt&&opt.history)||[],text)||{};}catch(e){return'';}
     try{if(typeof conv.utteranceRepair==='function')repair=conv.utteranceRepair((opt&&opt.history)||[],text)||{};}catch(e2){}
     var t=S(text),pace=(opt&&opt.pace)||'';
-    if(tone.type==='joke'&&/^(?:冗談(?:だよ|です|だから)?|なんちゃって|うそうそ|ウソウソ|嘘嘘|ジョーク(?:だよ|です)?)[。！!…\s]*$/.test(t))
-      return pick(['ふふ、冗談の方でしたか。','なるほど、そっちは冗談だったんですね。','ふふ、了解です。そこは冗談として受け取ります。']);
+    if(tone.type==='joke'&&/^(?:冗談(?:だよ|です|だから)?|なんちゃって|うそうそ|ウソウソ|嘘嘘|ジョーク(?:だよ|です)?)[。！!…\s]*$/.test(t)){
+      var hp=null;try{if(conv&&typeof conv.humorResponsePolicy==='function')hp=conv.humorResponsePolicy(opt.history||[],t)||null;}catch(he){}
+      if(hp&&hp.mode==='playful')return pick(['ふふ、一本取られました。','なるほど、そっちは冗談でしたか。危うく真顔で受け取るところでした。','ふふ、了解です。そこは軽く流しておきます。']);
+      return pick(['ふふ、冗談の方でしたか。','なるほど、そっちは冗談だったんですね。','了解です。そこは冗談として受け取ります。']);
+    }
     if(tone.type==='serious'&&/^(?:冗談じゃなく|冗談抜き|本気で|真面目に|まじめに)[。！!…\s]*$/.test(t))
       return pace==='terse'?'うん、本気の話として聞きます。':'うん、そこは本気の話として受け取ります。茶化さず聞きますね。';
     if(repair&&repair.type==='supplement'&&/^(?:補足すると|ちなみに|あと[、,]|それと[、,])[^？?]{0,60}$/.test(t)&&t.length<8)
@@ -603,6 +606,15 @@
         if(rr&&rr.handled&&rr.answer)return rr.answer;
       }
     }catch(reactionErr){}
+
+    // 高性能AIが使えない時も、ユーザー自身の意向更新は「矛盾」扱いせず今の発言を優先する。
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.continuitySignal==='function'){
+        var csig=window.JINPO_BOT_CONVERSATION.continuitySignal(opt.history||[],t)||{};
+        if(csig.type==='user_revision'&&t.length<=90&&!/[？?]/.test(t))return pick(['うん、今はそっちなんですね。','了解です。今の方を優先して受け取ります。','なるほど、考えが変わったんですね。今はそちらで受け取ります。']);
+        if(csig.type==='temporal_update'&&t.length<=90&&!/[？?]/.test(t))return pick(['なるほど、前とは状況が変わったんですね。','今はそうなっているんですね。']);
+      }
+    }catch(continuityErr){}
 
     // 高性能AIが使えない時も、共有・愚痴・喜びをいきなり助言テンプレートへ変えない。
     var pragmatic=pragmaticFallback(t,opt);if(pragmatic)return pragmatic;
