@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v2.8.0
+ * 歩き巫女 AI会話脳 v2.9.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.8.0';
+  var VERSION='2.9.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -621,13 +621,31 @@
     var conv=window.JINPO_BOT_CONVERSATION;
     if(!conv||typeof conv.planMemory!=='function')return'（会話中に明示された予定・約束なし）';
     try{
-      var list=conv.planMemory(history||[],currentMessage||'')||[];
+      var list=(typeof conv.planLedger==='function'?conv.planLedger(history||[],currentMessage||''):conv.planMemory(history||[],currentMessage||''))||[];
       var recall=typeof conv.recallPlan==='function'?conv.recallPlan(history||[],currentMessage||''):null;
-      var lines=list.slice(-5).reverse().map(function(x,i){return (i+1)+'. '+S(x.text)+(x.time?' / 時間表現='+x.time:'');});
+      var labels={active:'未完了',completed:'完了',cancelled:'取消',postponed:'延期'};
+      var lines=list.slice(-6).reverse().map(function(x,i){return (i+1)+'. '+S(x.text)+(x.time?' / 時間表現='+x.time:'')+' / 状態='+(labels[x.status]||'未完了');});
       if(!lines.length)lines=['（会話中に明示された予定・約束なし）'];
-      if(recall&&recall.found&&recall.plan)lines.push('今回の予定参照候補: '+S(recall.plan.text));
+      if(recall&&recall.found&&recall.plan)lines.push('今回の予定参照候補: '+S(recall.plan.text)+' / 状態='+(labels[recall.plan.status]||'未完了'));
       return lines.join('\n');
     }catch(e){return'（予定・約束記憶の取得に失敗）';}
+  }
+
+  function positionMemorySummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.positionMemory!=='function')return'（明示された現在の選択・好みなし）';
+    try{
+      var list=conv.positionMemory(history||[],currentMessage||'')||[];
+      var active=list.filter(function(x){return x&&x.status==='active';}).slice(-5).reverse();
+      var old=list.filter(function(x){return x&&x.status==='replaced';}).slice(-3).reverse();
+      var lines=[];
+      active.forEach(function(x){lines.push('現在: '+(x.kind==='decision'?'選択':'好み')+' / 「'+S(x.text).slice(0,220)+'」');});
+      old.forEach(function(x){lines.push('過去扱い: '+(x.kind==='decision'?'選択':'好み')+' / 「'+S(x.text).slice(0,180)+'」');});
+      if(!lines.length)return'（明示された現在の選択・好みなし）';
+      var recall=typeof conv.recallPosition==='function'?conv.recallPosition(history||[],currentMessage||''):null;
+      if(recall&&recall.found&&recall.position)lines.push('今回の参照候補: 「'+S(recall.position.text).slice(0,220)+'」');
+      return lines.join('\n');
+    }catch(e){return'（選択・好み記憶の取得に失敗）';}
   }
 
   function priorStatementSummary(history,currentMessage){
@@ -646,7 +664,9 @@
     if(!t)return'conversation';
     var conv=window.JINPO_BOT_CONVERSATION;
     try{
+      if(conv&&typeof conv.isMemoryRetractionCue==='function'&&conv.isMemoryRetractionCue(t))return'memory_retraction';
       if(conv&&typeof conv.isPlanRecallCue==='function'&&conv.isPlanRecallCue(t))return'plan_recall';
+      if(conv&&typeof conv.isPositionRecallCue==='function'&&conv.isPositionRecallCue(t))return'position_recall';
       if(conv&&typeof conv.priorStatementReference==='function'&&conv.priorStatementReference(history||[],t))return'prior_statement';
       if(conv&&typeof conv.isGeneralResumeCue==='function'&&conv.isGeneralResumeCue(t))return'resume_topic';
     }catch(memoryModeErr){}
@@ -695,7 +715,7 @@
   }
 
   function turnModeSummary(message,history){
-    var m=currentTurnMode(message,history),labels={plan_recall:'以前に自分が話した予定・約束の確認',prior_statement:'以前の発言内容を履歴と照合している',resume_topic:'以前の具体的な話題の続きを再開したい',joke:'冗談として明示された発言',possible_irony:'軽い皮肉の可能性がある発言',serious:'本気・真面目だと明示された発言',rephrase:'前の意図の言い換え',supplement:'前の内容への補足',listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',agreement:'同意・納得',partial_agreement:'一部同意＋留保',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
+    var m=currentTurnMode(message,history),labels={memory_retraction:'直前に明言した会話記憶を現在扱いから外したい',plan_recall:'以前に自分が話した予定・約束の確認',position_recall:'以前に自分が明言した選択・好みの確認',prior_statement:'以前の発言内容を履歴と照合している',resume_topic:'以前の具体的な話題の続きを再開したい',joke:'冗談として明示された発言',possible_irony:'軽い皮肉の可能性がある発言',serious:'本気・真面目だと明示された発言',rephrase:'前の意図の言い換え',supplement:'前の内容への補足',listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',agreement:'同意・納得',partial_agreement:'一部同意＋留保',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
     return labels[m]||labels.conversation;
   }
 
@@ -733,6 +753,7 @@
     var parallelBlock=parallelTopicSummary(opt.history||[],opt.currentMessage||'');
     var deferredBlock=deferredTopicSummary(opt.history||[],opt.currentMessage||'');
     var planBlock=planMemorySummary(opt.history||[],opt.currentMessage||'');
+    var positionBlock=positionMemorySummary(opt.history||[],opt.currentMessage||'');
     var priorStatementBlock=priorStatementSummary(opt.history||[],opt.currentMessage||'');
     var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
     var initiativeBlock=initiativeBalanceSummary(opt.history||[],opt.currentMessage||'');
@@ -829,6 +850,15 @@
       '76. 「前にこう言ってたよね」と過去発言を指された時は、下記の過去発言照合結果を優先します。一致が無いのに「そう言いました」と同意してはいけません。',
       '77. 「前回の続き」「続きから」と言われた時は、挨拶や相槌ではなく直近の具体的な人物・観点・話題枝から再開します。既に説明済みの冒頭からやり直しません。',
       '78. 会話中の予定・約束・過去発言の記憶は会話履歴の記録です。外部カレンダー、通知、バックグラウンド処理、現実世界での完了を意味しません。',
+      '79. ユーザーが「Aが好き」「Bにする」「やっぱりCでいく」のように自分の好み・選択を明言した時だけ、会話上の現在判断として扱います。発言から推測した性格や好みを記憶扱いにしません。',
+      '80. 「やっぱり」「今は」「AじゃなくてB」のように変更が明示された時は、古い同種判断を現在扱いにせず、最新の明言を優先します。ただし「前はどう言ってた？」では過去扱いの記録を参照できます。',
+      '81. 「どっちが好きって言ってた？」「何にするって決めてたっけ？」では、下記の明示判断記憶に実在する内容だけを答えます。履歴に無ければ推測で埋めません。',
+      '82. 好み・選択の記憶も会話履歴上の記録です。永久的なユーザープロフィールや外部保存を意味しません。',
+      '83. ユーザーが予定していた行動について、その後「終わった」「済んだ」「更新した」のように同じ行動の完了を明示した場合だけ、会話上の予定状態を完了へ進めます。無関係な成功報告を古い予定の完了と結び付けません。',
+      '84. 「延期」「やめる」「キャンセル」の明示があれば、その予定を未完了の現在予定として出し続けません。予定状態について聞かれた時は、未完了・完了・延期・取消を区別します。',
+      '85. 予定の完了・延期・取消も会話履歴上の状態であり、外部サービス上の実行状態を確認したものではありません。',
+      '86. 「今のなし」「それは覚えなくていい」のように明示された時は、対象となる直近の予定・選択・好みを現在有効な会話記憶として使い続けません。生の会話履歴そのものを消去したとは言いません。',
+      '87. 記憶撤回の対象が曖昧な時に、何ターンも前の無関係な判断まで勝手に忘れた扱いにしません。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -882,6 +912,9 @@
       '',
       '会話中にユーザーが明示した予定・約束（記録のみ。通知設定ではない）:',
       planBlock,
+      '',
+      'ユーザーが会話中に明言した現在の選択・好み（推測ではなく発言のみ）:',
+      positionBlock,
       '',
       '今回の「前に言ってた」発言照合:',
       priorStatementBlock,
@@ -1758,6 +1791,7 @@
     _parallelTopicSummary:parallelTopicSummary,
     _deferredTopicSummary:deferredTopicSummary,
     _planMemorySummary:planMemorySummary,
+    _positionMemorySummary:positionMemorySummary,
     _priorStatementSummary:priorStatementSummary,
     _initiativeBalanceSummary:initiativeBalanceSummary,
     _verifiedPriorOutputs:verifiedPriorOutputs

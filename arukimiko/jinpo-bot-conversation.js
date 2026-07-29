@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v3.2.0
+ * 歩き巫女 共通会話ルーター v3.3.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.2.0';
+  var VERSION='3.3.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -187,7 +187,7 @@
     var t=S(currentMessage),c=C(t);
     if(!t)return {type:'neutral',confidence:'low',explicit:false};
 
-    if(/(?:冗談じゃなく|冗談じゃない|冗談抜き|ふざけ(?:て)?ない|本気で|本気なんだけど|マジで(?:相談|困|聞|言)|真面目に|まじめに)(?:[、,。！!？?…\s]|$)/.test(t))
+    if(/(?:冗談じゃなく|冗談じゃない|冗談抜き(?:で(?:本気|真面目(?:に)?|まじめ(?:に)?)?)?|ふざけ(?:て)?ない|本気で|本気なんだけど|マジで(?:相談|困|聞|言)|真面目に|まじめに)(?:[、,。！!？?…\s]|$)/.test(t))
       return {type:'serious',confidence:'high',explicit:true};
     if(/(?:って(?:いう|の)は冗談|冗談(?:だよ|です|だけど|だけね|だから)|なんちゃって|うそうそ|ウソウソ|嘘嘘|ジョーク(?:だよ|です)?)(?:[、,。！!…\s]|$)/.test(t))
       return {type:'joke',confidence:'high',explicit:true};
@@ -246,7 +246,7 @@
   }
   function isPlanRecallCue(text){
     var t=S(text);if(!t)return false;
-    return /(?:前に|さっき|この前)?(?:言ってた|話してた|決めた)?(?:予定|つもり|約束)(?:は|って)?(?:何|なんだっけ|何だっけ|どうだった|覚えてる)|(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた|予定だった)(?:っけ|かな)?|(?:明日|今夜|週末|来週)(?:は)?(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)?/.test(t);
+    return /(?:前に|さっき|この前)?(?:言ってた|話してた|決めた)?(?:予定|つもり|約束)(?:は|って)?(?:何|なんだっけ|何だっけ|どうだった|どうなった|覚えてる)|(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた|予定だった)(?:っけ|かな)?|(?:明日|今夜|週末|来週)(?:は)?(?:何|なに)(?:する|やる)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)?|(?:あの|その|前の)?予定(?:って|は)?(?:どうなった|終わった|済んだ|完了した|まだある|残ってる)(?:っけ|かな|の)?/.test(t);
   }
   function isPlanCancellation(text){
     var t=S(text);if(!t)return false;
@@ -261,35 +261,179 @@
     if(/^(?:カープ|試合|天気|ニュース).*(?:予定|日程)/.test(t))return null;
     return {text:t,time:planTimePhrase(t),kind:/約束/.test(t)?'commitment':'plan'};
   }
-  function planMemory(history,currentMessage){
-    var h=historyBeforeCurrent(history,currentMessage||''),list=[],start=Math.max(0,h.length-160);
+  function isPlanCompletion(text){
+    var t=S(text);if(!t||/[？?]/.test(t))return false;
+    return /(?:終わった|終えた|済んだ|すんだ|完了した|片付いた|片づいた|やり終えた|やってきた|できた|出来た|公開した|更新した|送った|アップした|差し替えた|差替えた)(?:よ|ね|ぞ|。|！|!|$)/.test(t);
+  }
+  function planActionFingerprint(text){
+    var t=S(text)
+      .replace(/(?:今日(?:中)?|今夜|今晩|明日|明後日|あさって|週末|今週|来週|再来週|来月|[月火水木金土日]曜(?:日)?|\d{1,2}月\d{1,2}日|\d{1,2}日|\d{1,2}時(?:\d{1,2}分)?|あとで|後で|そのうち)/g,'')
+      .replace(/(?:予定(?:だ|です|にしてる|にしている)?|つもり(?:だ|です)?|ことにした|やることにした|することにした|約束(?:した|してる|している)?|忘れないように(?:する|しないと))/g,'')
+      .replace(/(?:終わった|終えた|済んだ|すんだ|完了した|片付いた|片づいた|やり終えた|やってきた|できた|出来た)/g,'')
+      .replace(/(?:する|やる|行く|見る|試す|確認する|直す|修正する|作る|休む|寝る|話す|続ける)$/,'')
+      .replace(/[「」『』、,。.!！?？\s]/g,'');
+    return t;
+  }
+  function planEventScore(plan,eventText){
+    var a=planActionFingerprint(plan&&plan.text||''),b=planActionFingerprint(eventText||'');
+    if(!a||!b)return 0;
+    if(a===b)return 1;
+    if(a.indexOf(b)>=0||b.indexOf(a)>=0)return Math.min(a.length,b.length)/Math.max(a.length,b.length)+0.35;
+    return statementSimilarity(a,b);
+  }
+  function planLedger(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),list=[],start=Math.max(0,h.length-180),retracted=retractedMemoryIndexes(h,'');
     for(var i=start;i<h.length;i++){
       var x=h[i];if(!x||x.role!=='user')continue;
       var t=S(x.text);if(!t)continue;
       if(isPlanCancellation(t)){
-        var tm=planTimePhrase(t),removed=false;
+        var tm=planTimePhrase(t),best=-1,bestScore=0;
         for(var r=list.length-1;r>=0;r--){
-          if(!tm||list[r].time===tm||t.indexOf(list[r].time)>=0){list.splice(r,1);removed=true;break;}
+          if(list[r].status!=='active')continue;
+          var sc=planEventScore(list[r],t)+(tm&&list[r].time===tm?1:0);
+          if(sc>bestScore){bestScore=sc;best=r;}
         }
-        if(!removed&&list.length)list.pop();
+        if(best<0){for(var r2=list.length-1;r2>=0;r2--)if(list[r2].status==='active'){best=r2;break;}}
+        if(best>=0){list[best].status=/延期/.test(t)?'postponed':'cancelled';list[best].closedBy=t;list[best].closedIndex=i;}
         continue;
       }
-      var p=explicitUserPlan(t);if(!p)continue;
-      p.index=i;p.at=Number(x.at||0);p.entities=entityCandidatesFromText(t,domainFromHistoryItem(x)||'');
+      if(isPlanCompletion(t)){
+        var cbest=-1,cscore=0;
+        for(var cr=list.length-1;cr>=0;cr--){
+          if(list[cr].status!=='active')continue;
+          var cs=planEventScore(list[cr],t);if(cs>cscore){cscore=cs;cbest=cr;}
+        }
+        // 十分に同じ行動だと確認できた時だけ完了扱い。単なる「できた」は勝手に結び付けない。
+        if(cbest>=0&&cscore>=0.34){list[cbest].status='completed';list[cbest].closedBy=t;list[cbest].closedIndex=i;}
+      }
+      var p=explicitUserPlan(t);if(!p||retracted[i])continue;
+      p.index=i;p.at=Number(x.at||0);p.entities=entityCandidatesFromText(t,domainFromHistoryItem(x)||'');p.status='active';p.closedBy='';p.closedIndex=-1;
       var key=C(p.text),duplicate=false;
-      for(var j=list.length-1;j>=0;j--){if(C(list[j].text)===key){duplicate=true;break;}}
+      for(var j=list.length-1;j>=0;j--){if(C(list[j].text)===key&&list[j].status==='active'){duplicate=true;break;}}
       if(!duplicate)list.push(p);
-      if(list.length>8)list.shift();
+      if(list.length>12)list.shift();
     }
     return list;
   }
+  function planMemory(history,currentMessage){
+    return planLedger(history,currentMessage||'').filter(function(x){return x&&x.status==='active';}).slice(-8);
+  }
   function recallPlan(history,currentMessage){
     var t=S(currentMessage);if(!isPlanRecallCue(t))return null;
-    var list=planMemory(history,t);if(!list.length)return {found:false,candidates:[]};
-    var tm=planTimePhrase(t),hits=tm?list.filter(function(x){return x.time===tm||x.text.indexOf(tm)>=0;}):list.slice(-3);
-    if(!hits.length)hits=list.slice(-3);
+    var statusCue=/(?:どうなった|終わった|終えた|済んだ|完了|キャンセル|延期|まだ|残って)/.test(t);
+    var list=statusCue?planLedger(history,t):planMemory(history,t);if(!list.length)return {found:false,candidates:[]};
+    var tm=planTimePhrase(t),hits=tm?list.filter(function(x){return x.time===tm||x.text.indexOf(tm)>=0;}):list.slice(-4);
+    if(!hits.length)hits=list.slice(-4);
+    // 質問中に予定本文の語があれば優先する。
+    hits=hits.map(function(x){return {x:x,score:planEventScore(x,t)+(x.status==='active'?0.05:0)};}).sort(function(a,b){return b.score-a.score||b.x.index-a.x.index;}).map(function(v){return v.x;});
     if(hits.length===1)return {found:true,plan:hits[0],candidates:hits};
-    return {found:true,ambiguous:true,plan:hits[hits.length-1],candidates:hits.slice(-4)};
+    var s1=planEventScore(hits[0],t),s2=planEventScore(hits[1],t);
+    if(s1>=0.34&&s1>s2+0.08)return {found:true,plan:hits[0],candidates:hits};
+    return {found:true,ambiguous:true,plan:hits[0],candidates:hits.slice(0,4)};
+  }
+
+  // ユーザーが「自分で明言した」現在の選択・好みだけを会話履歴から整理する。
+  // 推測した性格・嗜好は入れない。更新語がある時だけ古い同種レコードを置き換え扱いにする。
+  function cleanPositionValue(v){
+    var x=S(v).replace(/^(?:私は|わたしは|俺は|僕は|自分は|今は|今なら|今回は|結局|やっぱり|やっぱ|正直)[、,\s]*/,'');
+    if(/(?:じゃなくて|ではなく|じゃなく|よりも)/.test(x))x=S(x.split(/(?:じゃなくて|ではなく|じゃなく|よりも)/).pop());
+    if(/なら/.test(x))x=S(x.split(/なら/).pop());
+    return x.replace(/^(?:やっぱり|やっぱ|今は|今回は|結局)[、,\s]*/,'').replace(/[「」『』]/g,'').trim();
+  }
+  function positionRevisionCue(text){
+    var t=S(text);return /(?:やっぱり|やっぱ|今は|今なら|今回は|結局|前は.*(?:けど|が|でも).*今は|じゃなくて|ではなく|訂正|変更|変え(?:る|た)|にし直す|考え直した)/.test(t);
+  }
+  function explicitUserPosition(text){
+    var t=S(text),m,value='';if(!t||/[？?]/.test(t))return null;
+    // 「AとBどっちが好き？」のような質問や、他人の好みを述べる文は記憶しない。
+    if(/(?:どっち|どれ|何|なに).*(?:好き|好み|選ぶ|選ん|にする|決め)/.test(t))return null;
+    if(/(?:らしい|みたい|と言ってた|って言ってた|そうだ)/.test(t)&&!/(?:私は|わたしは|俺は|僕は|自分は)/.test(t))return null;
+
+    m=t.match(/(.{1,58}?)(?:の方|のほう)?(?:が|は)(?:一番|いちばん)?(?:好き|好み)(?:だ|です|かな|かも|なんだ|なの)?(?:[。！!]|$)/);
+    if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'positive',value:value,text:t,revision:positionRevisionCue(t)};}
+    m=t.match(/(.{1,58}?)(?:が|は)(?:嫌い|苦手)(?:だ|です|かな|かも|なんだ|なの)?(?:[。！!]|$)/);
+    if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'negative',value:value,text:t,revision:positionRevisionCue(t)};}
+    m=t.match(/(.{1,64}?)(?:にする|でいく|に決めた|に決める|を選ぶ|を選んだ|を採用する|を採用した|にしようと思う|で進める)(?:[。！!]|$)/);
+    if(m){value=cleanPositionValue(m[1]);if(value)return {kind:'decision',polarity:'selected',value:value,text:t,revision:positionRevisionCue(t)||/(?:決めた|採用した)/.test(t)};}
+    m=t.match(/(.{1,58}?)(?:の方|のほう)?(?:が|は)(?:いい|良い)(?:と思う|かな|かも|な|です)?(?:[。！!]|$)/);
+    if(m&&/(?:私は|わたしは|俺は|僕は|自分は|なら|やっぱ|今は|正直|と思う)/.test(t)){
+      value=cleanPositionValue(m[1]);if(value)return {kind:'preference',polarity:'positive',value:value,text:t,revision:positionRevisionCue(t)};
+    }
+    return null;
+  }
+  function isPositionRecallCue(text){
+    var t=S(text);if(!t)return false;
+    var recall=/(?:前に|さっき|この前|以前|前は|結局).*(?:言ってた|言った|話してた|決めてた|選んでた|好きって|好みって)|(?:どっち|どれ|何|なに).*(?:好き|好み|にする|選ぶ|選んだ|決めた).*(?:言ってた|話してた|決めてた|っけ|かな)|(?:何|なに)(?:に|を)(?:する|選ぶ|決める)(?:って)?(?:言ってた|決めてた)?(?:っけ|かな)/.test(t);
+    return recall;
+  }
+  function positionMemory(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),records=[],start=Math.max(0,h.length-180),retracted=retractedMemoryIndexes(h,'');
+    for(var i=start;i<h.length;i++){
+      var x=h[i];if(!x||x.role!=='user')continue;
+      var p=explicitUserPosition(x.text);if(!p||retracted[i])continue;
+      p.index=i;p.at=Number(x.at||0);p.status='active';p.replacedBy=-1;
+      p.domain=domainFromHistoryItem(x)||domainFromText(p.text)||'';
+      p.entities=entityCandidatesFromText(p.text,p.domain||'');
+      if(p.revision){
+        for(var r=records.length-1;r>=0;r--){
+          var old=records[r];if(!old||old.status!=='active'||old.kind!==p.kind)continue;
+          // 更新の明示がある時だけ、直前の同種判断を過去扱いにする。
+          old.status='replaced';old.replacedBy=i;break;
+        }
+      }
+      records.push(p);
+      if(records.length>16)records.shift();
+    }
+    return records;
+  }
+  function recallPosition(history,currentMessage){
+    var t=S(currentMessage);if(!isPositionRecallCue(t))return null;
+    var all=positionMemory(history,t);if(!all.length)return {found:false,candidates:[]};
+    var kind=/好き|好み|嫌い|苦手|どっちがいい|どれがいい/.test(t)?'preference':(/にする|選ぶ|選ん|決め/.test(t)?'decision':'');
+    var wantsPast=/(?:前は|以前は|元々|もともと)/.test(t);
+    var pool=all.filter(function(x){return (!kind||x.kind===kind)&&(wantsPast?x.status==='replaced':x.status==='active');});
+    if(!pool.length&&wantsPast)pool=all.filter(function(x){return !kind||x.kind===kind;}).slice(0,-1);
+    if(!pool.length)pool=all.filter(function(x){return !kind||x.kind===kind;});
+    if(!pool.length)return {found:false,candidates:[]};
+
+    var cueEntities=entityCandidatesFromText(t,domainFromText(t)||''),ranked=pool.map(function(x){
+      var score=x.index/100000,cv=C(x.value);if(cv&&C(t).indexOf(cv)>=0)score+=20;
+      (cueEntities||[]).forEach(function(e){var ev=C(e&&e.value);if(!ev)return;(x.entities||[]).forEach(function(pe){if(C(pe&&pe.value)===ev)score+=8;});});
+      if(x.status==='active'&&!wantsPast)score+=2;
+      return {x:x,score:score};
+    }).sort(function(a,b){return b.score-a.score||b.x.index-a.x.index;});
+    var top=ranked[0],second=ranked[1];
+    if(second&&Math.abs(top.score-second.score)<0.01&&top.x.value!==second.x.value){
+      return {found:true,ambiguous:true,position:top.x,candidates:ranked.slice(0,4).map(function(v){return v.x;})};
+    }
+    return {found:true,position:top.x,candidates:ranked.slice(0,4).map(function(v){return v.x;})};
+  }
+
+  function isMemoryRetractionCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:今の(?:は)?なし|さっきの(?:は)?なし|今言ったの(?:は)?なし|それ(?:は|も)?覚えなくていい|それ(?:は|も)?記憶しないで|今の(?:は)?忘れて|さっきの(?:は)?忘れて|忘れといて|忘れておいて)[。！!？?]*$/.test(t)||
+      /(?:その|この|さっきの)?(?:予定|約束|好み|選択|決めたこと)(?:は|を)?(?:なしにして|忘れて|覚えなくていい|記憶しないで)/.test(t);
+  }
+  function retractedMemoryIndexes(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),map={},lastPlan=null,lastPosition=null,userSerial=0;
+    for(var i=0;i<h.length;i++){
+      var x=h[i];if(!x||x.role!=='user')continue;userSerial++;
+      var t=S(x.text);if(!t)continue;
+      if(isMemoryRetractionCue(t)){
+        var target=null,maxAge=3;
+        if(/予定|約束/.test(t)){target=lastPlan;maxAge=10;}
+        else if(/好み|選択|決めたこと/.test(t)){target=lastPosition;maxAge=10;}
+        else{
+          if(lastPlan&&lastPosition)target=lastPlan.serial>lastPosition.serial?lastPlan:lastPosition;
+          else target=lastPlan||lastPosition;
+        }
+        if(target&&userSerial-target.serial<=maxAge)map[target.index]=true;
+        continue;
+      }
+      var pp=explicitUserPlan(t);if(pp)lastPlan={index:i,serial:userSerial};
+      var pos=explicitUserPosition(t);if(pos)lastPosition={index:i,serial:userSerial};
+    }
+    return map;
   }
 
   function statementSimilarity(a,b){
@@ -1407,6 +1551,7 @@
       graph:conversationGraph(h),
       hooks:conversationHooks(h,''),
       parallelTopics:parallelTopics(h,''),
+      positions:positionMemory(h,''),
       continuity:continuitySignal(h,'')
     };
   }
@@ -2267,6 +2412,7 @@
       referenceClarification:referenceClarification,
       conversationExpansion:conversationExpansion,
       planRecall:recallPlan(priorHistory,original),
+      positionRecall:recallPosition(priorHistory,original),
       priorStatement:priorStatementReference(priorHistory,original)
     };
   }
@@ -2293,8 +2439,16 @@
     planTimePhrase:planTimePhrase,
     isPlanRecallCue:isPlanRecallCue,
     explicitUserPlan:explicitUserPlan,
+    isPlanCompletion:isPlanCompletion,
+    planLedger:planLedger,
     planMemory:planMemory,
     recallPlan:recallPlan,
+    explicitUserPosition:explicitUserPosition,
+    isPositionRecallCue:isPositionRecallCue,
+    positionMemory:positionMemory,
+    recallPosition:recallPosition,
+    isMemoryRetractionCue:isMemoryRetractionCue,
+    retractedMemoryIndexes:retractedMemoryIndexes,
     priorStatementReference:priorStatementReference,
     isGeneralResumeCue:isGeneralResumeCue,
     restoreNaturalResume:restoreNaturalResume,

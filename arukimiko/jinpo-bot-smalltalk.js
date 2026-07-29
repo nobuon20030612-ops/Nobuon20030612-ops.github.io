@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.7.0
+ * 歩き巫女 日常会話・雑談 v3.8.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.7.0';
+  var VERSION='3.8.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -602,13 +602,30 @@
     // AIが使えない時も、会話履歴に実在する予定・過去発言だけを思い出す。
     try{
       var convMem=window.JINPO_BOT_CONVERSATION;
+      if(convMem&&typeof convMem.isMemoryRetractionCue==='function'&&convMem.isMemoryRetractionCue(t)){
+        return '了解です。今の内容は、現在の予定や好みとして使わないようにします。';
+      }
       if(convMem&&typeof convMem.recallPlan==='function'&&typeof convMem.isPlanRecallCue==='function'&&convMem.isPlanRecallCue(t)){
         var pr=convMem.recallPlan(opt.history||[],t)||{};
         if(!pr.found)return 'この会話履歴では、その予定は確認できないです。覚えているふりはしないでおきます。';
         if(pr.ambiguous&&Array.isArray(pr.candidates)&&pr.candidates.length>1){
-          return '予定として残っているのは、'+pr.candidates.slice(-3).map(function(x){return '「'+S(x.text)+'」';}).join('、')+'です。どれのことか分かれば、その続きから話せます。';
+          return '予定として確認できる候補は、'+pr.candidates.slice(0,3).map(function(x){var st={completed:'完了',cancelled:'取消',postponed:'延期',active:'未完了'}[x.status]||'';return '「'+S(x.text)+'」'+(st?'（'+st+'）':'');}).join('、')+'です。どれのことか分かれば絞れます。';
         }
-        return '前に「'+S(pr.plan&&pr.plan.text)+'」って話していました。会話上の記録としてはこれです。';
+        var pst=pr.plan&&pr.plan.status||'active';
+        if(pst==='completed')return '前に「'+S(pr.plan.text)+'」と話していて、その後「'+S(pr.plan.closedBy||'完了した')+'」と報告しています。会話上では完了扱いです。';
+        if(pst==='postponed')return '前に「'+S(pr.plan.text)+'」と話していましたが、その後の発言では延期扱いになっています。';
+        if(pst==='cancelled')return '前に「'+S(pr.plan.text)+'」と話していましたが、その後の発言では取りやめ扱いになっています。';
+        return '前に「'+S(pr.plan&&pr.plan.text)+'」って話していました。会話上ではまだ未完了の予定として残っています。';
+      }
+      if(convMem&&typeof convMem.recallPosition==='function'&&typeof convMem.isPositionRecallCue==='function'&&convMem.isPositionRecallCue(t)){
+        var pos=convMem.recallPosition(opt.history||[],t)||{};
+        if(!pos.found)return 'この会話履歴では、その選択や好みは確認できないです。言ったことにはしないでおきます。';
+        if(pos.ambiguous&&Array.isArray(pos.candidates)&&pos.candidates.length>1){
+          return '明言していた内容が複数残っています。'+pos.candidates.slice(0,3).map(function(x){return '「'+S(x.text)+'」';}).join('、')+'です。どの話のことか分かれば絞れます。';
+        }
+        var pp=pos.position||{};
+        if(pp.kind==='decision')return '履歴では「'+S(pp.text)+'」と決めていました。今の判断として確認できるのはこれです。';
+        return '履歴では「'+S(pp.text)+'」と話していました。明言していた好みとして確認できるのはこれです。';
       }
       if(convMem&&typeof convMem.priorStatementReference==='function'){
         var sr=convMem.priorStatementReference(opt.history||[],t);
