@@ -1514,3 +1514,75 @@
     font-size:13px!important;
   }
 }
+
+/* ===== vNext-3: viewport完全収容 / Bot実幅ベースのヘッダー圧縮 =====
+   Bot窓の外形はJSでvisualViewportへ収め、内部はgridの可変行だけをスクロールさせる。
+*/
+@media(min-width:761px){
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized){
+    max-width:calc(100dvw - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoExternalCharacter:not(.isMinimized){
+    min-height:min(340px,calc(100dvh - 148px))!important;
+    max-height:calc(100dvh - 16px)!important;
+    grid-template-rows:auto minmax(0,1fr) auto!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoExternalCharacter.hasJinpoBotGuide:not(.isMinimized){
+    grid-template-rows:auto minmax(0,1fr) auto auto!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized) > .jinpoAiMessages{
+    min-width:0!important;
+    min-height:0!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow:not(.isMinimized) > .jinpoAiComposer{
+    min-width:0!important;
+    flex:0 0 auto!important;
+  }
+}
+
+/* viewportではなく、実際のBot窓幅が狭い時にヘッダーを圧縮する。 */
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiTrainingBadge{
+  display:none!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiHeader{
+  gap:6px!important;
+  padding:8px 9px!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiHeaderActions{
+  gap:5px!important;
+  min-width:0!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiHeaderResetBtn.jinpoAiHeaderBtn{
+  min-width:118px!important;
+  height:40px!important;
+  padding:6px 10px!important;
+  font-size:14px!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiHeaderMinBtn.jinpoAiHeaderBtn,
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderCompact:not(.isMinimized) .jinpoAiHeaderHideBtn.jinpoAiHeaderBtn{
+  height:38px!important;
+  padding:6px 9px!important;
+  font-size:13px!important;
+  white-space:nowrap!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderTight:not(.isMinimized) .jinpoAiStatus{
+  display:none!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderTight:not(.isMinimized) .jinpoAiHeaderText{
+  min-width:92px!important;
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeaderTight:not(.isMinimized) .jinpoAiHeaderResetBtn.jinpoAiHeaderBtn{
+  min-width:104px!important;
+  font-size:13px!important;
+}
+
+/* 高さが低い環境ではメニューが本文/入力欄を押し出さないよう、メニュー自身をスクロール可能にする。 */
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.jinpoHeightTight:not(.isMinimized) #jinpoBotGuide{
+  max-height:170px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain;
+}

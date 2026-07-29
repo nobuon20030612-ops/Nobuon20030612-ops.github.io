@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.4.0-dev';
+  var VERSION='3.5.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -518,6 +518,9 @@
   }
   function isPositionRecallCue(text){
     var t=S(text);if(!t)return false;
+    // 話者が歩き巫女側だと明示されている「前にあなたが～と言った」は、
+    // ユーザー本人の好み/選択記憶ではなく、歩き巫女の実発言履歴を照合する。
+    if(/(?:歩き巫女|あなた|君|きみ|そっち)(?:が|は)?.{0,60}(?:言ってた|言っていた|言った|話してた|話していた|答えた)/.test(t))return false;
     // 「前に○○って言ってたよね？」は好み/選択の検索ではなく、実際の発言履歴の照合を優先する。
     if(/(?:前に|さっき|この前|以前)(?:[^。！？]{0,90})?(?:って|と)(?:言ってた|言っていた|言った|話してた|話していた|言ってたよね|言ったよね|言ってなかった)/.test(t)&&
        !/(?:好き|好み|嫌い|苦手|どっちがいい|どれがいい|にする|選ぶ|選ん|決め)/.test(t))return false;
@@ -619,6 +622,8 @@
 
   function statementSimilarityText(v){
     return C(v)
+      /* 発言照合では「私は/歩き巫女は」など話者の自己主語は内容本体から外す。話者判定自体はroleで行う。 */
+      .replace(/^(?:私は|わたしは|俺は|僕は|自分は|歩き巫女は)/,'')
       .replace(/ありません/g,'ない')
       .replace(/あります/g,'ある')
       .replace(/でした/g,'だ')

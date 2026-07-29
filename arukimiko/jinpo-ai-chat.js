@@ -271,26 +271,52 @@
     if(!on){ keepInViewport(); setTimeout(function(){ input.focus(); },0); }
   }
 
+  function viewportMetrics(){
+    var de=document.documentElement||{};
+    var iw=Number(window.innerWidth)||Number(de.clientWidth)||1280;
+    var ih=Number(window.innerHeight)||Number(de.clientHeight)||720;
+    var vv=window.visualViewport;
+    var vw=iw,vh=ih;
+    /* ブラウザの可視領域を優先。ズーム/ブラウザUI変化でも見切れないようにする。 */
+    if(vv){
+      var vvw=Number(vv.width),vvh=Number(vv.height);
+      if(Number.isFinite(vvw)&&vvw>0)vw=Math.min(vw,vvw);
+      if(Number.isFinite(vvh)&&vvh>0)vh=Math.min(vh,vvh);
+    }
+    return {vw:Math.max(320,Math.floor(vw)),vh:Math.max(240,Math.floor(vh))};
+  }
+
   function responsiveDefaultTop(vw,vh,external){
     if(!external) return 12;
     var medium=vw<=980;
+    /* 枠上キャラを残しつつ、チャット本文へ高さを多く割り当てる。 */
     return medium
-      ? clamp(Math.round(vh*.23),150,230)
-      : clamp(Math.round(vh*.27),190,285);
+      ? clamp(Math.round(vh*.18),132,185)
+      : clamp(Math.round(vh*.20),150,220);
   }
 
   function responsiveSizeLimits(){
-    var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
-    var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+    var vp=viewportMetrics(),vw=vp.vw,vh=vp.vh;
     var external=!!(win&&win.classList&&win.classList.contains('hasJinpoExternalCharacter'));
     var medium=vw<=980&&vw>760;
-    var gap=medium?20:24;
+    var sideGap=medium?20:24;
+    var bottomGap=10;
     var topReserve=responsiveDefaultTop(vw,vh,external);
-    var maxW=Math.max(310,vw-gap);
-    var maxH=Math.max(280,vh-(external?topReserve+8:gap));
+    var maxW=Math.max(310,vw-sideGap);
+    var maxH=Math.max(260,vh-(external?topReserve+bottomGap:sideGap));
     var minW=Math.min(medium?440:560,maxW);
-    var minH=Math.min(external?(medium?320:360):(medium?420:500),maxH);
-    return {vw:vw,vh:vh,medium:medium,external:external,topReserve:topReserve,maxW:maxW,maxH:maxH,minW:minW,minH:minH};
+    var minH=Math.min(external?(medium?300:340):(medium?400:480),maxH);
+    return {vw:vw,vh:vh,medium:medium,external:external,topReserve:topReserve,bottomGap:bottomGap,maxW:maxW,maxH:maxH,minW:minW,minH:minH};
+  }
+
+  function syncResponsiveWindowClasses(){
+    if(!win)return;
+    var r=win.getBoundingClientRect();
+    var w=Number(r.width)||0,h=Number(r.height)||0;
+    /* viewport幅ではなくBot窓そのものの幅でヘッダー密度を変える。 */
+    win.classList.toggle('jinpoHeaderCompact',w>0&&w<780);
+    win.classList.toggle('jinpoHeaderTight',w>0&&w<620);
+    win.classList.toggle('jinpoHeightTight',h>0&&h<560);
   }
 
   function applyResponsiveWindowSize(state){
@@ -303,12 +329,15 @@
       w=lim.vw*s.widthRatio;
       h=lim.vh*s.heightRatio;
     }else{
-      w=lim.vw*(lim.medium?.60:.42);
+      /* 画面がやや狭いPCでは横幅を少し広めに確保し、ヘッダー/本文の見切れを防ぐ。 */
+      var autoWidthRatio=lim.medium?.60:(lim.vw<1500?.50:.42);
+      w=lim.vw*autoWidthRatio;
       h=lim.vh*.72;
     }
     win.style.width=clamp(w,lim.minW,lim.maxW)+'px';
     win.style.height=clamp(h,lim.minH,lim.maxH)+'px';
     lastViewportW=lim.vw; lastViewportH=lim.vh;
+    syncResponsiveWindowClasses();
   }
 
   function applyResponsiveWindowPosition(state){
@@ -331,12 +360,22 @@
 
   function keepInViewport(){
     if(!win || !win.classList.contains('isOpen') || window.matchMedia('(max-width:760px)').matches) return;
-    var r = win.getBoundingClientRect();
+    var vp=viewportMetrics();
     var minTop=expandedWindowMinTop();
-    var left = clamp(r.left,8,Math.max(8,innerWidth-r.width-8));
-    var maxTop=Math.max(minTop,innerHeight-r.height-8);
-    var top = clamp(r.top,minTop,maxTop);
-    win.style.left = left+'px'; win.style.top = top+'px'; win.style.right='auto'; win.style.bottom='auto';
+    var r=win.getBoundingClientRect();
+
+    /* 先に寸法を可視領域へ収める。位置だけclampすると下端/右端が切れるため。 */
+    var maxWidth=Math.max(310,vp.vw-16);
+    var maxHeight=Math.max(260,vp.vh-minTop-8);
+    if(r.width>maxWidth+1){win.style.width=Math.floor(maxWidth)+'px';}
+    if(r.height>maxHeight+1){win.style.height=Math.floor(maxHeight)+'px';}
+    r=win.getBoundingClientRect();
+
+    var left=clamp(r.left,8,Math.max(8,vp.vw-r.width-8));
+    var maxTop=Math.max(minTop,vp.vh-r.height-8);
+    var top=clamp(r.top,minTop,maxTop);
+    win.style.left=left+'px';win.style.top=top+'px';win.style.right='auto';win.style.bottom='auto';
+    syncResponsiveWindowClasses();
   }
 
   function bindDrag(){
@@ -350,9 +389,10 @@
     header.addEventListener('pointermove', function(ev){
       if(!dragging || dragging.id !== ev.pointerId) return;
       var r = win.getBoundingClientRect();
-      var left = clamp(ev.clientX-dragging.dx,8,Math.max(8,innerWidth-r.width-8));
+      var vp=viewportMetrics();
+      var left = clamp(ev.clientX-dragging.dx,8,Math.max(8,vp.vw-r.width-8));
       var minTop=expandedWindowMinTop();
-      var top = clamp(ev.clientY-dragging.dy,minTop,Math.max(minTop,innerHeight-r.height-8));
+      var top = clamp(ev.clientY-dragging.dy,minTop,Math.max(minTop,vp.vh-r.height-8));
       win.style.left=left+'px'; win.style.top=top+'px'; win.style.right='auto'; win.style.bottom='auto';
     });
     function end(ev){
@@ -364,8 +404,9 @@
 
   function bindResizeSave(){
     var timer=0, lastW=0, lastH=0;
-    lastViewportW=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
-    lastViewportH=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+    var initialVp=viewportMetrics();
+    lastViewportW=initialVp.vw;
+    lastViewportH=initialVp.vh;
 
     win.addEventListener('pointerdown',function(ev){
       if(window.matchMedia('(max-width:980px)').matches||win.classList.contains('isMinimized')) return;
@@ -376,8 +417,7 @@
       if(!manualResizeActive||!win||win.classList.contains('isMinimized')){ manualResizeActive=false; return; }
       manualResizeActive=false;
       var b=win.getBoundingClientRect();
-      var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
-      var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+      var vp=viewportMetrics(),vw=vp.vw,vh=vp.vh;
       saveUi({userResized:true,width:Math.round(b.width),height:Math.round(b.height),widthRatio:b.width/vw,heightRatio:b.height/vh,viewportWidth:vw,viewportHeight:vh,left:Math.round(b.left),top:Math.round(b.top)});
     });
 
@@ -388,26 +428,33 @@
         if(Math.abs(r.width-lastW)<1 && Math.abs(r.height-lastH)<1) return; lastW=r.width; lastH=r.height;
         clearTimeout(timer); timer=setTimeout(function(){
           var b=win.getBoundingClientRect();
-          var vw=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
-          var vh=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
+          var vp=viewportMetrics(),vw=vp.vw,vh=vp.vh;
           var extra={
             width:Math.round(b.width),height:Math.round(b.height),left:Math.round(b.left),top:Math.round(b.top),
-            widthRatio:b.width/vw,heightRatio:b.height/vh,viewportWidth:vw,viewportHeight:vh
+            viewportWidth:vw,viewportHeight:vh
           };
-          if(manualResizeActive) extra.userResized=true;
-          saveUi(extra); keepInViewport();
+          /* 自動レスポンシブで縮んだ寸法を、手動リサイズ比率へ上書きしない。 */
+          if(manualResizeActive){
+            extra.userResized=true;
+            extra.widthRatio=b.width/vw;
+            extra.heightRatio=b.height/vh;
+          }
+          saveUi(extra);keepInViewport();
         },180);
       }).observe(win);
     }
-    window.addEventListener('resize', function(){
+    function handleViewportResize(){
       if(!window.matchMedia('(max-width:760px)').matches && win && !win.classList.contains('isMinimized')){
         applyResponsiveWindowSize();
         applyResponsiveWindowPosition();
       }
-      keepInViewport(); scheduleRestorePosition();
-      lastViewportW=Math.max(320,innerWidth||document.documentElement.clientWidth||1280);
-      lastViewportH=Math.max(240,innerHeight||document.documentElement.clientHeight||720);
-    });
+      keepInViewport();scheduleRestorePosition();syncResponsiveWindowClasses();
+      var vp=viewportMetrics();lastViewportW=vp.vw;lastViewportH=vp.vh;
+    }
+    window.addEventListener('resize',handleViewportResize);
+    if(window.visualViewport&&window.visualViewport.addEventListener){
+      window.visualViewport.addEventListener('resize',handleViewportResize,{passive:true});
+    }
     window.addEventListener('scroll', function(){ if(root&&root.classList.contains('isBotHidden'))scheduleRestorePosition(); },{passive:true});
   }
 
