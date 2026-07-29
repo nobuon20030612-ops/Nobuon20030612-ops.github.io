@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 AI会話脳 v2.5.0
+ * 歩き巫女 AI会話脳 v2.6.0
  *
  * Firebase AI Logic / Gemini を「頭脳」にする。
  * 正確な数値・最新情報・サイト操作は Function Calling で既存の正本/機能を使う。
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_AI_BRAIN)return;
 
-  var VERSION='2.5.0';
+  var VERSION='2.6.0';
   var CONTEXT_EPOCH_KEY='jinpoAiContextEpoch.v1';
 
   var ctx={
@@ -546,10 +546,53 @@
     }catch(e){return'（聞き方信号の取得に失敗）';}
   }
 
+  function pragmaticToneSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.pragmaticTone!=='function')return'（冗談・本気信号なし）';
+    try{
+      var x=conv.pragmaticTone(history||[],currentMessage||'')||{};
+      var label={joke:'冗談だと明示されている',serious:'本気・真面目な話だと明示されている',possible_irony:'軽い皮肉の可能性あり（断定禁止）',playful:'軽い笑い・遊びの合図あり',neutral:'明示的な冗談/本気信号なし'}[x.type]||'明示信号なし';
+      return label+' / 確度='+(x.confidence||'low');
+    }catch(e){return'（冗談・本気信号の取得に失敗）';}
+  }
+
+  function repairSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.utteranceRepair!=='function')return'（言い直し・補足信号なし）';
+    try{
+      var x=conv.utteranceRepair(history||[],currentMessage||'')||{};
+      var label={correction:'前の内容を訂正している。古い内容を押し通さない',rephrase:'同じ意図を言い換えている。前の文脈は保持する',supplement:'前の内容への補足。前の内容を取り消さない',none:'訂正・言い換え・補足の明示なし'}[x.type]||'明示なし';
+      return label;
+    }catch(e){return'（言い直し・補足信号の取得に失敗）';}
+  }
+
+  function deferredTopicSummary(history,currentMessage){
+    var conv=window.JINPO_BOT_CONVERSATION;
+    if(!conv||typeof conv.deferredTopics!=='function')return'（保留中の話題なし）';
+    try{
+      var list=conv.deferredTopics(history||[],currentMessage||'')||[];
+      if(!list.length)return'（保留中の話題なし）';
+      return list.slice().reverse().slice(0,4).map(function(x,i){return (i+1)+'. '+S(x.message||x.sourceText);}).join('\n');
+    }catch(e){return'（保留話題の取得に失敗）';}
+  }
+
   function currentTurnMode(message,history){
     var t=S(message);
     if(!t)return'conversation';
     var conv=window.JINPO_BOT_CONVERSATION;
+    try{
+      if(conv&&typeof conv.pragmaticTone==='function'){
+        var pt=conv.pragmaticTone(history||[],t)||{};
+        if(pt.type==='joke')return'joke';
+        if(pt.type==='possible_irony')return'possible_irony';
+        if(pt.type==='serious')return'serious';
+      }
+      if(conv&&typeof conv.utteranceRepair==='function'){
+        var ur=conv.utteranceRepair(history||[],t)||{};
+        if(ur.type==='rephrase')return'rephrase';
+        if(ur.type==='supplement')return'supplement';
+      }
+    }catch(pragmaticErr){}
     try{
       if(conv&&typeof conv.listeningSignals==='function'){
         var ls=conv.listeningSignals(history||[],t)||{};
@@ -582,7 +625,7 @@
   }
 
   function turnModeSummary(message,history){
-    var m=currentTurnMode(message,history),labels={listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',agreement:'同意・納得',partial_agreement:'一部同意＋留保',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
+    var m=currentTurnMode(message,history),labels={joke:'冗談として明示された発言',possible_irony:'軽い皮肉の可能性がある発言',serious:'本気・真面目だと明示された発言',rephrase:'前の意図の言い換え',supplement:'前の内容への補足',listen_only:'解決策より、まず聞いてほしい共有',advice_request:'相談・助言を求めている',opinion_request:'歩き巫女の意見を求めている',celebration:'うれしい出来事の共有',mixed_sharing:'良い面としんどい面が混じる共有',venting:'しんどさ・不満の共有',uncertain:'迷い・不確かさの共有',agreement:'同意・納得',partial_agreement:'一部同意＋留保',skepticism:'疑い・保留',disagreement:'反対・異なる見方',correction:'前の解釈への訂正',reaction:'相槌・反応',question:'質問・情報要求',opinion:'感想・意見の共有',sharing:'出来事の共有',conversation:'通常の会話'};
     return labels[m]||labels.conversation;
   }
 
@@ -612,6 +655,9 @@
     var listeningBlock=listeningStyleSummary(opt.history||[],opt.currentMessage||'');
     var focusBlock=conversationalFocusSummary(opt.history||[],opt.currentMessage||'');
     var stanceBlock=conversationalStanceSummary(opt.history||[],opt.currentMessage||'');
+    var pragmaticBlock=pragmaticToneSummary(opt.history||[],opt.currentMessage||'');
+    var repairBlock=repairSummary(opt.history||[],opt.currentMessage||'');
+    var deferredBlock=deferredTopicSummary(opt.history||[],opt.currentMessage||'');
     var followupBlock=followupGuidance(opt.history||[],opt.currentMessage||'');
     var initiativeBlock=initiativeBalanceSummary(opt.history||[],opt.currentMessage||'');
     var turnModeBlock=turnModeSummary(opt.currentMessage||'',opt.history||[]);
@@ -689,6 +735,12 @@
       '58. ユーザーが反論した時に、前の説明を言い換えて押し通したり、説得しようとしません。事実問題なら確認し、意見なら異なる見方として自然に扱います。',
       '59. 「けど…」「でも…」「というか…」のように発言が未完の形で終わった時は、結論を勝手に補完しません。短く受け、ユーザーが続きを置ける余白を残します。',
       '60. 話題が枝分かれした後に「前の話に戻って」と言われたら、大分類だけでなく直前に離れた具体的な人物・観点へ戻ります。戻った直後に既説明内容を最初から繰り返しません。',
+      '61. 「冗談だよ」「なんちゃって」のように冗談が明示されたら、その内容を事実主張として深刻に確定しません。軽く受けて会話を続けます。',
+      '62. 「本気で」「冗談抜き」のように真面目さが明示された時は、冗談で返したり茶化したりせず、その内容を通常より慎重に受けます。',
+      '63. 皮肉は断定しません。「（棒）」など明示的な合図や、称賛語と明確な悪い出来事が同居する時だけ“文字通りではない可能性”として扱い、勝手にユーザーの意図を決めません。',
+      '64. 「訂正」「AじゃなくてB」は前の解釈を修正します。一方、「補足すると」「ちなみに」「あと、」は前の内容を取り消さず情報を足します。「言い直すと」は原則として同じ意図の言い換えとして文脈を保持します。',
+      '65. 「この話はいったん置いといて」「後で戻ろう」と明示された話題は保留として扱います。別の話題を進めても、ユーザーが「保留した話に戻ろう」と言った時だけ最新の保留話題へ戻ります。',
+      '66. 保留話題が複数ある場合は最後に保留した話から戻り、戻った話を再び最初から説明せず、その時点の観点から続けます。',
       '',
       '現在ページ: mode='+p.mode+' / title='+p.title+' / path='+p.path,
       '',
@@ -718,6 +770,15 @@
       '',
       '今回の同意・疑い・反論・訂正の信号:',
       stanceBlock,
+      '',
+      '今回の冗談・本気・皮肉の信号（皮肉は断定しない）:',
+      pragmaticBlock,
+      '',
+      '今回の言い直し・訂正・補足の信号:',
+      repairBlock,
+      '',
+      '現在保留中の話題（新しい順）:',
+      deferredBlock,
       '',
       '今回の深掘り方針:',
       followupBlock,
@@ -1583,6 +1644,9 @@
     _followupGuidance:followupGuidance,
     _conversationalFocusSummary:conversationalFocusSummary,
     _conversationalStanceSummary:conversationalStanceSummary,
+    _pragmaticToneSummary:pragmaticToneSummary,
+    _repairSummary:repairSummary,
+    _deferredTopicSummary:deferredTopicSummary,
     _initiativeBalanceSummary:initiativeBalanceSummary,
     _verifiedPriorOutputs:verifiedPriorOutputs
   };

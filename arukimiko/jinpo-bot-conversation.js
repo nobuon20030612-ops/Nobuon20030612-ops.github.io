@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.9.0';
+  var VERSION='3.0.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -181,6 +181,36 @@
     return false;
   }
 
+  // 「冗談」「本気」「軽い皮肉の可能性」を、明示的な言葉だけから保守的に読む。
+  // 皮肉は断定せず possible_irony として返し、文字通りの称賛へ決め打ちしないためにだけ使う。
+  function pragmaticTone(history,currentMessage){
+    var t=S(currentMessage),c=C(t);
+    if(!t)return {type:'neutral',confidence:'low',explicit:false};
+
+    if(/(?:冗談じゃなく|冗談じゃない|冗談抜き|ふざけ(?:て)?ない|本気で|本気なんだけど|マジで(?:相談|困|聞|言)|真面目に|まじめに)(?:[、,。！!？?…\s]|$)/.test(t))
+      return {type:'serious',confidence:'high',explicit:true};
+    if(/(?:って(?:いう|の)は冗談|冗談(?:だよ|です|だけど|だけね|だから)|なんちゃって|うそうそ|ウソウソ|嘘嘘|ジョーク(?:だよ|です)?)(?:[、,。！!…\s]|$)/.test(t))
+      return {type:'joke',confidence:'high',explicit:true};
+    if(/(?:皮肉(?:だよ|です|だから)|[（(]\s*棒\s*[）)]|棒読み|はいはい[、,\s]*(?:さすが|最高|すごい)|(?:最高|ありがたい|助かる|さすが)(?:だね|ですね|だな)?[、,。.!！\s]*(?:また|なのに|バグ|エラー|失敗|落ち|動かない|最悪))/.test(t))
+      return {type:'possible_irony',confidence:/[（(]\s*棒/.test(t)?'high':'medium',explicit:/[（(]\s*棒|棒読み/.test(t)};
+    if(/(?:www+|ｗｗ+|草(?:$|[。！!\s])|[（(]?笑[）)]?\s*$)/i.test(t)&&t.length<=80)
+      return {type:'playful',confidence:'low',explicit:false};
+    return {type:'neutral',confidence:'low',explicit:false,compact:c};
+  }
+
+  // 「前の内容を直す」のか「同じ内容を言い換える」のか「情報を足すだけ」なのかを分ける。
+  // 補足を訂正として扱って前の文脈を捨てないための会話信号。
+  function utteranceRepair(history,currentMessage){
+    var t=S(currentMessage);if(!t)return {type:'none',confidence:'low',preservePrevious:true};
+    if(/^(?:訂正(?:すると|です|、|,)?|違う[、,\s]|いや[、,\s]*(?:違う|そうじゃなく)|言い間違えた|言い間違い|間違えた|正しくは|正確には).{1,}/.test(t)||/(?:じゃなくて|ではなくて|じゃなく|ではなく).{1,}/.test(t))
+      return {type:'correction',confidence:'high',preservePrevious:false};
+    if(/^(?:言い直すと|言い換えると|というより|ていうより|もう少し正確に言うと|正確に言うなら|要するに[、,]).{2,}/.test(t))
+      return {type:'rephrase',confidence:'high',preservePrevious:true};
+    if(/^(?:補足(?:すると|だけど|ですが)?|付け加えると|あと(?:もう一つ)?[、,]|それと[、,]|ちなみに[、,]).{2,}/.test(t))
+      return {type:'supplement',confidence:'high',preservePrevious:true};
+    return {type:'none',confidence:'low',preservePrevious:true};
+  }
+
   // ユーザーがこの発言で実際に強調している「会話上の焦点」を読む。
   // 心理や本音は推測せず、質問・強調語・対比・繰り返し・発言末尾など観測できる手掛かりだけを使う。
   function focusClauses(text){
@@ -270,6 +300,8 @@
       unfinishedThought:unfinished,
       stance:stance.type||'neutral',
       stanceConfidence:stance.confidence||'low',
+      pragmaticTone:(pragmaticTone(h,t).type||'neutral'),
+      repairType:(utteranceRepair(h,t).type||'none'),
       explicitQuestion:hasQuestion,
       listeningMode:ls.mode||'conversation'
     };
@@ -701,7 +733,8 @@
 
   // 会話を「ユーザー質問 + その回答」のフレームにまとめる。
   // 主役・分野・質問した観点・回答内に出た人物を分離し、直前回答の脇役を主語と誤認しにくくする。
-  function topicFrames(history){
+  function topicFrames(history,opt){
+    opt=opt||{};
     var h=filterHistory(history),frames=[],current=null;
     for(var i=0;i<h.length;i++){
       var item=h[i];if(!item||!S(item.text)||item.role==='system')continue;
@@ -743,7 +776,8 @@
         current.secondaryPeople=entityValues(current.assistantEntities,'person').filter(function(x){return x!==pp;});
       }
     }
-    return frames.slice(-16);
+    var frameLimit=Math.max(8,Math.min(64,Number(opt.limit)||16));
+    return frames.slice(-frameLimit);
   }
 
   function recentSubjects(history,opt){
@@ -1630,6 +1664,75 @@
     return out;
   }
 
+  function isDeferCue(text){
+    var t=S(text);if(!t)return false;
+    return /(?:この話|その話|それ|これ|.+?の話|.+?について)?(?:は|を)?[、,\s]*(?:いったん|一旦)?(?:置いといて|置いておいて|置いとく|保留(?:にして|して)?|後回し(?:にして)?|あとで(?:にして|話そう|戻ろう)?|後で(?:にして|話そう|戻ろう)?)/.test(t);
+  }
+
+  function isResumeDeferredCue(text){
+    var t=S(text);if(!t)return false;
+    return /^(?:(?:じゃあ|では|そろそろ)[、,\s]*)?(?:さっき|前に)?(?:保留(?:に)?した|保留してた|置いといた|置いてた|後回しにした|あとにした|後にした)(?:話|やつ|件)(?:に|へ)?(?:戻(?:ろう|って|る|して)|続け(?:よう|て)|話(?:そう|して))?[？?！!。]*$/.test(t) ||
+      /^(?:保留中|保留してた)(?:の)?(?:話|やつ|件)(?:に|へ)?戻(?:ろう|って|る|して)[？?！!。]*$/.test(t);
+  }
+
+  function frameAsBranch(f){
+    if(!f)return null;
+    return {message:branchMessage(f),sourceText:S(f.userText),domain:S(f.domain),aspect:S(f.aspect),primary:f.primary||null,index:f.index};
+  }
+
+  function deferTargetFromText(text,priorFrames){
+    var t=S(text),prefix=t.split(/(?:は|を)?[、,\s]*(?:いったん|一旦)?(?:置いといて|置いておいて|置いとく|保留(?:にして|して)?|後回し(?:にして)?|あとで|後で)/)[0]||'';
+    prefix=S(prefix).replace(/^(?:じゃあ|では|その|この)[、,\s]*/,'').replace(/(?:この話|その話|それ|これ)$/,'');
+    var aspect=aspectFromText(prefix);
+    var entities=entityCandidatesFromText(prefix,domainFromText(prefix));
+    var primary=entities.length?entities[0]:null;
+    if(primary&&primary.value){
+      var synthetic={userText:prefix,domain:domainFromText(prefix)||'',aspect:aspect||'',primary:primary,index:-1};
+      return frameAsBranch(synthetic);
+    }
+    if(aspect){
+      for(var ai=priorFrames.length-1;ai>=0;ai--){
+        if(priorFrames[ai]&&priorFrames[ai].aspect===aspect&&priorFrames[ai].primary)return frameAsBranch(priorFrames[ai]);
+      }
+    }
+    for(var i=priorFrames.length-1;i>=0;i--){
+      var f=priorFrames[i];if(!f||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
+      return frameAsBranch(f);
+    }
+    return null;
+  }
+
+  // 明示的に「後で」「保留」とされた話題だけをスタックとして復元する。
+  // 会話履歴から毎回再構成するので、永続状態が壊れて古い保留が残ることを避ける。
+  function deferredTopics(history,currentMessage){
+    var h=historyBeforeCurrent(history,currentMessage||''),frames=topicFrames(h,{limit:48}),stack=[];
+    for(var i=0;i<frames.length;i++){
+      var f=frames[i];if(!f||!S(f.userText))continue;
+      var t=S(f.userText);
+      if(isResumeDeferredCue(t)){
+        if(stack.length)stack.pop();
+        continue;
+      }
+      if(!isDeferCue(t))continue;
+      var target=deferTargetFromText(t,frames.slice(0,i));
+      if(!target||!target.message)continue;
+      var key=(target.primary&&target.primary.value||'')+'|'+(target.aspect||'')+'|'+target.message;
+      for(var j=stack.length-1;j>=0;j--){
+        var x=stack[j],xk=(x.primary&&x.primary.value||'')+'|'+(x.aspect||'')+'|'+x.message;
+        if(xk===key)stack.splice(j,1);
+      }
+      stack.push(target);
+      if(stack.length>6)stack.shift();
+    }
+    return stack;
+  }
+
+  function restoreDeferredTopic(history,currentMessage){
+    var list=deferredTopics(history,currentMessage||'');if(!list.length)return null;
+    var x=list[list.length-1];
+    return {control:'back',restoreMessage:x.message||x.sourceText,domain:x.domain||'',sourceText:x.sourceText||'',sourceIndex:x.index,branch:true,deferred:true,aspect:x.aspect||'',primary:x.primary||null};
+  }
+
   function isBackCue(text){
     return /^(?:話(?:を|に)?戻(?:そう|ろう|して|す|る)|前の話(?:に|へ)?戻(?:そう|ろう|して|る)?|さっきの話(?:に|へ)?戻(?:そう|ろう|して|る)?|その前の話(?:に|へ)?戻(?:そう|ろう|して|る)?|さらに前(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|る)?|(?:二つ|2つ|二個|2個)前(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|る)?|一個前(?:に)?戻(?:そう|ろう|して|る)?|元の話(?:に)?戻(?:そう|ろう|して|る)?|戻ろう|もどろう)[？?！!。]*$/.test(S(text));
   }
@@ -1711,6 +1814,10 @@
       }
     }
 
+    if(isResumeDeferredCue(t)){
+      var dr=restoreDeferredTopic(history,t);
+      return dr||{control:'back',restoreMessage:'',domain:'',sourceText:'',deferred:true};
+    }
     if(isBackCue(t)){
       var r=restorePreviousTopic(history,t);
       return r||{control:'back',restoreMessage:'',domain:'',sourceText:''};
@@ -1911,12 +2018,18 @@
     interactionStyle:interactionStyle,
     listeningSignals:listeningSignals,
     conversationalStance:conversationalStance,
+    pragmaticTone:pragmaticTone,
+    utteranceRepair:utteranceRepair,
     unfinishedThoughtCue:unfinishedThoughtCue,
     conversationalFocus:conversationalFocus,
     focusClauses:focusClauses,
     carriedListenIntent:carriedListenIntent,
     restorePreviousTopic:restorePreviousTopic,
     recentTopicBranches:recentTopicBranches,
+    isDeferCue:isDeferCue,
+    isResumeDeferredCue:isResumeDeferredCue,
+    deferredTopics:deferredTopics,
+    restoreDeferredTopic:restoreDeferredTopic,
     resetContext:resetContext,
     filterHistory:filterHistory,
     resetAt:resetAt,

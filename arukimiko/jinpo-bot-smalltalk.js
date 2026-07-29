@@ -1,11 +1,11 @@
 /*
- * 歩き巫女 日常会話・雑談 v3.5.0
+ * 歩き巫女 日常会話・雑談 v3.6.0
  * 陣法操作と競合しない日常会話、誤字ゆれ吸収、冗談、一般知識の自動Web参照を担当。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_SMALLTALK)return;
-  var VERSION='3.5.0';
+  var VERSION='3.6.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -554,6 +554,20 @@
     return'Firebase共有記憶は設定されていますが、まだ接続準備中か一時的に利用できない状態なのですよ。陣法検索はそのまま使えるのです。';
   }
 
+  function pragmaticFallback(text,opt){
+    var conv=window.JINPO_BOT_CONVERSATION;if(!conv||typeof conv.pragmaticTone!=='function')return'';
+    var tone=null,repair=null;try{tone=conv.pragmaticTone((opt&&opt.history)||[],text)||{};}catch(e){return'';}
+    try{if(typeof conv.utteranceRepair==='function')repair=conv.utteranceRepair((opt&&opt.history)||[],text)||{};}catch(e2){}
+    var t=S(text),pace=(opt&&opt.pace)||'';
+    if(tone.type==='joke'&&/^(?:冗談(?:だよ|です|だから)?|なんちゃって|うそうそ|ウソウソ|嘘嘘|ジョーク(?:だよ|です)?)[。！!…\s]*$/.test(t))
+      return pick(['ふふ、冗談の方でしたか。','なるほど、そっちは冗談だったんですね。','ふふ、了解です。そこは冗談として受け取ります。']);
+    if(tone.type==='serious'&&/^(?:冗談じゃなく|冗談抜き|本気で|真面目に|まじめに)[。！!…\s]*$/.test(t))
+      return pace==='terse'?'うん、本気の話として聞きます。':'うん、そこは本気の話として受け取ります。茶化さず聞きますね。';
+    if(repair&&repair.type==='supplement'&&/^(?:補足すると|ちなみに|あと[、,]|それと[、,])[^？?]{0,60}$/.test(t)&&t.length<8)
+      return 'うん、補足もそのまま聞きます。';
+    return'';
+  }
+
   function listeningFallback(text,opt){
     var conv=window.JINPO_BOT_CONVERSATION;if(!conv||typeof conv.listeningSignals!=='function')return'';
     var sig=null;try{sig=conv.listeningSignals((opt&&opt.history)||[],text)||{};}catch(e){return'';}
@@ -591,6 +605,7 @@
     }catch(reactionErr){}
 
     // 高性能AIが使えない時も、共有・愚痴・喜びをいきなり助言テンプレートへ変えない。
+    var pragmatic=pragmaticFallback(t,opt);if(pragmatic)return pragmatic;
     var listening=listeningFallback(t,opt);if(listening)return listening;
 
     var nr=naturalReply(t);if(nr)return nr;
@@ -776,6 +791,7 @@
     local:local,
     naturalKind:naturalKind,
     naturalReply:naturalReply,
+    pragmaticFallback:pragmaticFallback,
     listeningFallback:listeningFallback,
     capabilitiesReply:capabilitiesReply,
     recentReplyCount:function(){return recentReplies.length;},
