@@ -15,7 +15,15 @@ const C=global.JINPO_BOT_CARP;
 let pass=0,fail=0;
 function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('FAIL:',name,detail===undefined?'':detail);}
 (async()=>{
-  let r=await C.respond('黒田博樹について、どう思う？',{history:[]});
+  let r=await C.respond('黒田博樹について教えて',{history:[]});
+  check('overview starts player profile',r&&r.handled&&String(r.answer||'').indexOf('【人物:黒田博樹】')>=0&&String(r.answer||'').indexOf('【人物:黒田博樹】')<String(r.answer||'').indexOf('【2015年:黒田博樹の広島復帰】'),r&&r.answer);
+  check('overview does not start family',!/専用資料ではこう整理されています。\n【アスリート同士・野球一家/.test(r&&r.answer||''),r&&r.answer);
+
+  r=await C.respond('新井貴浩について教えて',{history:[]});
+  check('arai overview starts player profile',r&&r.handled&&/専用資料ではこう整理されています。\n【人物:新井貴浩】/.test(r.answer||''),r&&r.answer);
+  check('arai overview avoids duplicate manager category',((String(r&&r.answer||'').match(/【2023-2026:新井貴浩監督時代】/g)||[]).length===1),r&&r.answer);
+
+  r=await C.respond('黒田博樹について、どう思う？',{history:[]});
   check('carp person opinion handled',r&&r.handled===true,r);
   check('carp person opinion grounded',r&&r.data&&r.data.groundedOpinion===true,r);
   check('carp person opinion says source basis',/正本で確認できる内容/.test(r.answer||''),r&&r.answer);
@@ -31,6 +39,28 @@ function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('F
 
   r=await C.respond('黒田博樹は今どう？',{history:[]});
   check('current person bypasses grounded historical opinion',!(r&&r.data&&r.data.groundedOpinion),r);
+
+  const kurodaHistory=[{role:'user',text:'黒田博樹について教えて'},{role:'assistant',text:'黒田博樹について説明します。'}];
+  r=await C.respond('家族は？',{history:kurodaHistory});
+  check('family followup focused family',r&&r.handled&&/黒田博樹の父母/.test(r.answer||''),r&&r.answer);
+  check('family followup excludes unrelated comeback',!/2015年:黒田博樹の広島復帰/.test(r&&r.answer||''),r&&r.answer);
+
+  r=await C.respond('成績は？',{history:kurodaHistory});
+  check('kuroda record focused',r&&r.handled&&/日米通算200勝/.test(r.answer||''),r&&r.answer);
+  check('kuroda record excludes family',!/黒田博樹の父母/.test(r&&r.answer||''),r&&r.answer);
+
+  r=await C.respond('現役時代は？',{history:kurodaHistory});
+  check('career followup handles active era',r&&r.handled&&/1997-2007年/.test(r.answer||''),r&&r.answer);
+  check('career followup excludes family',!/黒田博樹の父母/.test(r&&r.answer||''),r&&r.answer);
+
+  const araiHistory=[{role:'user',text:'新井貴浩について教えて'},{role:'assistant',text:'新井貴浩について説明します。'}];
+  r=await C.respond('成績は？',{history:araiHistory});
+  check('arai record has concrete achievement',r&&r.handled&&/2000安打/.test(r.answer||'')&&/300本塁打/.test(r.answer||''),r&&r.answer);
+  check('arai record excludes family block',!/兄弟でプロ野球/.test(r&&r.answer||''),r&&r.answer);
+
+  r=await C.respond('経歴は？',{history:araiHistory});
+  check('arai career has player profile',r&&r.handled&&/人物:新井貴浩/.test(r.answer||''),r&&r.answer);
+  check('arai career excludes family block',!/兄弟でプロ野球/.test(r&&r.answer||''),r&&r.answer);
 
   console.log(`LOCAL SPECIALIST CONVERSATION: ${pass}/${pass+fail} PASS`);
   if(fail)process.exit(1);

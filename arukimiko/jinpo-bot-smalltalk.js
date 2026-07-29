@@ -1515,6 +1515,59 @@
     return !!(bareRe&&bareRe.test(t));
   }
 
+  // Firebase / Firestore は一般テーマ文脈の代表例として、
+  // ネット接続が無くても変わりにくい基本説明だけローカルで返す。
+  // 料金・無料枠・最新仕様・障害状況など変動情報はここで断定せず、Web経路へ渡す。
+  function stableGeneralTopicReply(text){
+    var t=S(text);if(!t)return'';
+    var isFirestore=/(?:Cloud\s*)?Firestore|ファイアストア|ファイヤストア/i.test(t);
+    var isFirebase=/Firebase|ファイアベース|ファイヤベース/i.test(t);
+    if(!isFirestore&&!isFirebase)return'';
+    if(/料金|価格|値段|無料|有料|課金|プラン|最新|現在の仕様|今の仕様|変更|アップデート|障害|接続状態|稼働状況/.test(t))return'';
+
+    var subject=isFirestore?'Firestore':'Firebase';
+
+    // 両方を明示した質問では、概要より先に質問観点を読む。
+    if(isFirebase&&isFirestore&&/使い方|どう使う|どうやって使う|始め方|導入/.test(t)){
+      return '両方の使い方ですね。Firebaseはまずプロジェクトを作成して必要な機能を有効にし、WebやアプリへFirebase SDKと設定を組み込みます。FirestoreはそのFirebaseプロジェクト内でデータベースを有効にし、コレクションとドキュメントをSDKから読み書きする形で使うのですよ。';
+    }
+    if(isFirebase&&isFirestore&&/(?:何|なに|どんな).*(?:できる|出来る)|できること|機能/.test(t)){
+      return '両方でできることを分けると、Firebaseは認証・Hosting・データ保存などバックエンド機能をまとめて扱えます。Firestoreはその中で、ドキュメント単位のデータ保存・取得やリアルタイム同期を担当するデータベースなのですよ。';
+    }
+    if(isFirebase&&isFirestore&&/安全|セキュリティ|注意点|気をつけ/.test(t)){
+      return '両方とも設定が重要なのですよ。Firebase側ではAuthenticationなどの認証設計を行い、FirestoreではSecurity Rulesで誰が何を読めるか・書けるかを絞る必要があります。';
+    }
+
+    // 両方を明示した時だけ並行話題として受け取り、普通の二択へは広げない。
+    if(isFirebase&&isFirestore&&/(?:両方|どっちも|どちらも|両方気になる)/.test(t)){
+      return '両方ですね。Firebaseは認証・データベース・Hostingなどをまとめて扱うサービス群で、Firestoreはその中でもデータ保存に使えるドキュメント指向データベースなのですよ。前者・後者のように続けても、それぞれの話として分けて受け取れます。';
+    }
+    if(isFirebase&&isFirestore&&/(?:違い|比較|どう違う)/.test(t)){
+      return 'FirebaseはWeb・アプリ開発向けのサービス群全体、Firestoreはその中で利用できるデータベースの一つ、と分けると分かりやすいのですよ。';
+    }
+
+    if(/(?:何|なに|どんな).*(?:できる|出来る)|できること|機能/.test(t)){
+      if(isFirestore)return 'Firestoreでは、アプリのデータをドキュメント単位で保存・取得し、リアルタイム更新や端末間の同期などを扱えるのですよ。Firebase Authenticationなど他のFirebase機能とも組み合わせられます。';
+      return 'Firebaseでは、認証、Firestoreによるデータ保存、Hostingなど、Webやアプリのバックエンドで使う機能をまとめて扱えるのですよ。必要な機能だけ選んで使えます。';
+    }
+    if(/使い方|どう使う|どうやって使う|始め方|導入/.test(t)){
+      if(isFirestore)return 'Firestoreは、Firebaseプロジェクトでデータベースを有効にして、Webやアプリ側のFirebase SDKからコレクションとドキュメントを読み書きする形で使うのですよ。';
+      return 'Firebaseは、Firebaseプロジェクトを作成し、使いたい機能を有効にして、WebやアプリへFirebase SDKと設定を組み込む形で使うのですよ。';
+    }
+    if(/安全|セキュリティ|注意点|気をつけ/.test(t)){
+      if(isFirestore)return 'Firestoreは、Security Rulesや認証の設定が重要なのですよ。データベースを作っただけで安全になるわけではないので、誰が何を読めるか・書けるかをルールで絞る必要があります。';
+      return 'Firebase自体に認証やアクセス制御の仕組みはありますが、安全性は設定次第なのですよ。特にAuthentication、FirestoreのSecurity Rules、公開してよい設定値と秘密情報の区別が大切です。';
+    }
+    if(/初心者|初めて/.test(t)){
+      return subject+'は、Webやアプリから使い始めやすい部類なのですよ。ただし認証やデータベースの権限設定は、最初から意味を確認しながら進めるのが安全です。';
+    }
+    if(/について|って何|ってなに|とは|教えて|概要|どんな(?:もの|サービス)/.test(t)){
+      if(isFirestore)return 'Firestoreは、Google Cloudのドキュメント指向NoSQLデータベースで、Firebaseからも利用できるのですよ。アプリのデータ保存やリアルタイム同期に使われます。';
+      return 'Firebaseは、Googleが提供するWeb・アプリ開発向けのサービス群なのですよ。認証、データベース、Hostingなどを組み合わせて、バックエンド機能を用意できます。';
+    }
+    return'';
+  }
+
   function local(text,opt){
     opt=opt||{};
     setHistoryReplyKeys(opt.history||[]);
@@ -1605,6 +1658,10 @@
 
     // 会話履歴そのものを尋ねる短い確認は、知識検索へ回す前に履歴から直接答える。
     var metaRecall=metaRecallFallback(t,opt);if(metaRecall)return metaRecall;
+
+    // Firebase / Firestore の変わりにくい基本説明はローカルで成立させる。
+    // 料金・最新仕様などは stableGeneralTopicReply() が空を返し、下のWeb経路へ渡す。
+    var stableTopic=stableGeneralTopicReply(t);if(stableTopic)return stableTopic;
 
     // 明示的な質問・検索が同居する時は、感情テンプレートで質問を消さず専門経路へ渡す。
     if(shouldYieldToTask(t,opt))return null;

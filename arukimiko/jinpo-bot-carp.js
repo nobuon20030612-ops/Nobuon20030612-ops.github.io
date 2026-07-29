@@ -420,6 +420,13 @@
   function shouldLiveFirst(text,kind){
     var t=S(text),kb=knowledge();
 
+    // 人物名が確定している年齢・現役・引退・現在活動などは、
+    // まずユーザー提供のカープ正本を優先する。チーム順位・試合等のlive判定は従来どおり。
+    if(kb&&typeof kb.foundNames==='function'&&typeof kb.followupAttribute==='function'){
+      var focusedNames=kb.foundNames(t)||[],focusedAttr=kb.followupAttribute(t);
+      if(focusedNames.length&&['age','birth','active','current_activity','retirement'].indexOf(focusedAttr)>=0)return false;
+    }
+
     if(kind==='news_detail'){
       // 現在を明示した故障・復帰・移籍はlive。
       if(/今日|現在|今の|いまの|最新|速報|今季|今シーズン|復帰|登録|抹消|トレード|新外国人/.test(t))return true;

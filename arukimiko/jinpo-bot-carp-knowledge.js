@@ -167,6 +167,37 @@
     var h=Array.isArray(history)?history:[];
     var ctx={player:'',year:0,topic:'',sourceText:''};
 
+    // 会話モジュールが使える時は、ユーザーが現在維持している「主役」を正とする。
+    // Bot回答本文にたまたま出た脇役選手を、次の「家族は？」等の主語へ昇格させない。
+    // また、人物の後にFirebase・仕事・雑談など実質的な別話題へ移った場合は、
+    // 昔の人物を裸の省略質問で勝手に復活させない。
+    var conv=window.JINPO_BOT_CONVERSATION,conversationAware=false;
+    if(conv&&typeof conv.activeRecentSubject==='function'){
+      conversationAware=true;
+      try{
+        var activeAny=conv.activeRecentSubject(h)||null;
+        var frames=typeof conv.topicFrames==='function'?(conv.topicFrames(h,{limit:12})||[]):[];
+        var latestFrame=frames.length?frames[frames.length-1]:null;
+
+        // 直近の実質話題がカープ以外なら、過去のカープ回答本文から
+        // 人物名や年度を拾って文脈を復活させない。
+        // 「ありがとう」等の相槌はtopicFrames側でcarryされるため、ここでは切れない。
+        if((activeAny&&activeAny.type!=='person'&&activeAny.domain!=='carp')||
+           (!activeAny&&latestFrame&&latestFrame.domain!=='carp')){
+          return ctx;
+        }
+
+        var active=conv.activeRecentSubject(h,{personOnly:true});
+        if(active&&active.value){
+          var activeSub=detectCurrentSubject(active.value);
+          if(activeSub&&activeSub.kind==='player'){
+            ctx.player=activeSub.player;
+            ctx.sourceText=S(active.userText||active.value);
+          }
+        }
+      }catch(activeContextError){}
+    }
+
     // 古い話題を復活させない。
     // 最大8メッセージだけ見て、別分野のユーザー発言が出たらそこで打ち切る。
     for(var i=h.length-1,count=0;i>=0&&count<8;i--,count++){
@@ -177,7 +208,9 @@
       if(x.role==='user'&&contextBarrier(t))break;
 
       var sub=detectCurrentSubject(t);
-      if(sub.kind==='player'&&!ctx.player){
+      // conversation側の主役判定が利用できる時は、履歴本文から人物を拾い直さない。
+      // 特にassistant回答の列挙選手を「直前人物」と誤認するのを防ぐ。
+      if(!conversationAware&&sub.kind==='player'&&!ctx.player){
         ctx.player=sub.player;
         ctx.sourceText=t;
       }
@@ -204,12 +237,16 @@
   function followupAttribute(text){
     var t=S(text);
     if(/怪我|けが|ケガ|故障|アキレス腱|負傷/.test(t))return'injury';
-    if(/家族|親族|奥さん|妻|嫁|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t))return'family';
+    if(/(?:何歳|なんさい|年齢|いくつ)/.test(t))return'age';
+    if(/(?:生年月日|誕生日|何年生まれ|なんねんうまれ|いつ生まれ)/.test(t))return'birth';
+    if(/家族|親族|奥さん|妻|嫁|夫人|配偶者|夫|旦那|父|母|兄|弟|姉|妹|娘|息子/.test(t))return'family';
     if(/逸話|エピソード|昔話|伝説|名場面|他にも|もっと|別の/.test(t))return'anecdote';
-    if(/出身|生まれ|出生|どこ出身/.test(t))return'birthplace';
+    if(/出身|出生地|どこ出身|どこ生まれ/.test(t))return'birthplace';
     if(/背番号|何番/.test(t))return'number';
     if(/ポジション|守備位置|何の選手/.test(t))return'position';
-    if(/在籍|何年いた|いつから|いつまで|経歴|移籍/.test(t))return'career';
+    if(/(?:現在も|まだ)?現役(?:なの|ですか|だった|だっけ|でしたっけ|か)?/.test(t))return'active';
+    if(/(?:今|いま|現在)(?:は|も)?(?:何してる|なにしてる|何をしてる|何している|なにしている|何をしている)|現在の所属|現在の活動|今どこ/.test(t))return'current_activity';
+    if(/在籍|何年いた|いつから|いつまで|経歴|現役時代|移籍/.test(t))return'career';
     if(/成績|打率|本塁打|ホームラン|打点|防御率|勝利|セーブ|記録|タイトル/.test(t))return'record';
     if(/引退|辞めた|やめた/.test(t))return'retirement';
     if(/監督|コーチ|首脳陣/.test(t))return'manager';
@@ -291,9 +328,13 @@
           return {text:ctx.player+'の他の逸話',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'player_more'}};
         return {text:ctx.player+'の逸話',resolved:true,context:{player:ctx.player,year:ctx.year,topic:'anecdote'}};
       }
+      if(attr==='age')return {text:ctx.player+'の年齢は？',resolved:true,context:ctx};
+      if(attr==='birth')return {text:ctx.player+'の生年月日・生年は？',resolved:true,context:ctx};
       if(attr==='birthplace')return {text:ctx.player+'の出身・出生地',resolved:true,context:ctx};
       if(attr==='number')return {text:ctx.player+'の背番号',resolved:true,context:ctx};
       if(attr==='position')return {text:ctx.player+'のポジション・守備位置',resolved:true,context:ctx};
+      if(attr==='active')return {text:ctx.player+'は現在も現役？',resolved:true,context:ctx};
+      if(attr==='current_activity')return {text:ctx.player+'の現在の所属・活動は？',resolved:true,context:ctx};
       if(attr==='career')return {text:ctx.player+'の在籍年・経歴・移籍',resolved:true,context:ctx};
       if(attr==='record')return {text:ctx.player+'の成績・記録・タイトル',resolved:true,context:ctx};
       if(attr==='retirement')return {text:ctx.player+'の引退・退団',resolved:true,context:ctx};
@@ -345,6 +386,8 @@
     var names=foundNames(text);
     if(!names.length)return null;
     var t=S(text);
+    // 経歴の詳細質問を「在籍していたか」のYes/No判定へ潰さない。
+    if(/経歴|在籍年|何年いた|いつから|いつまで|現役時代|移籍|FA|復帰|入団|退団|ドラフト|所属歴/.test(t))return null;
     if(!/いた|在籍|所属|元カープ|カープの選手|広島にいた|広島で|OB|選手だった|いる/.test(t))return null;
 
     var name=names[0],cur=currentPlayerByName(name);
@@ -364,6 +407,139 @@
         player:name
       };
     }
+    return null;
+  }
+
+  function profileRecord(name){
+    name=S(name);
+    if(!name)return null;
+    for(var i=0;i<RECORDS.length;i++){
+      var r=RECORDS[i];
+      if(S(r.title)==='人物:'+name)return r;
+    }
+    return null;
+  }
+
+  function focusedFamilyRelation(text){
+    var t=S(text);
+    if(/奥さん|妻|嫁|夫人|配偶者/.test(t))return {key:'spouse',label:'妻・配偶者',re:/妻|嫁|奥さん|夫人|配偶者/};
+    if(/(?:^|の)(?:夫|旦那)(?:は|って|の|$)/.test(t))return {key:'spouse',label:'夫・配偶者',re:/夫|旦那|配偶者/};
+    if(/父親|父/.test(t))return {key:'father',label:'父',re:/父|父親/};
+    if(/母親|母/.test(t))return {key:'mother',label:'母',re:/母|母親/};
+    if(/兄弟|兄|弟/.test(t))return {key:'brother',label:'兄弟',re:/兄弟|兄|弟/};
+    if(/姉妹|姉|妹/.test(t))return {key:'sister',label:'姉妹',re:/姉妹|姉|妹/};
+    if(/息子|娘|子供|子ども/.test(t))return {key:'child',label:'子ども',re:/息子|娘|子供|子ども/};
+    return null;
+  }
+
+  // 人物の短い属性質問は、広い全文検索へ落として無関係な資料を混ぜない。
+  // 正本に明記がなければ推測せず、その旨だけを返す。
+  function playerAttributeAnswer(text){
+    var t=S(text),names=foundNames(t);
+    if(!names.length)return null;
+    var name=names[0],attr=followupAttribute(t),profile=profileRecord(name),cur=currentPlayerByName(name);
+
+    if(attr==='age'||attr==='birth'){
+      return {
+        handled:true,
+        answer:name+'の'+(attr==='age'?'年齢':'生年月日・生年')+'については、今のカープ正本資料では確認できないのですよ。資料にない数字は推測で補いません。',
+        kind:'player_attribute_unknown',player:name,attribute:attr
+      };
+    }
+
+    if(attr==='family'){
+      var rel=focusedFamilyRelation(t);
+      if(!rel)return null;
+      var family=RECORDS.filter(function(r){
+        if(r.category!=='family')return false;
+        var full=S(r.title)+' '+S(r.text);
+        return full.indexOf(name)>=0&&rel.re.test(full);
+      }).sort(function(a,b){return (b.priority||0)-(a.priority||0);});
+      if(!family.length){
+        return {
+          handled:true,
+          answer:name+'の'+rel.label+'については、今のカープ正本資料では確認できないのですよ。家族資料にない私生活情報は推測で補いません。',
+          kind:'player_family_relation_unknown',player:name,attribute:rel.key
+        };
+      }
+      var familyLines=[],seen={};
+      for(var fi=0;fi<family.length&&familyLines.length<2;fi++){
+        var fr=family[fi],sig=compact(fr.text);if(seen[sig])continue;seen[sig]=1;
+        familyLines.push('【'+cleanText(fr.title)+'】\n'+snippet(fr,520));
+      }
+      return {
+        handled:true,
+        answer:name+'の'+rel.label+'について、カープ正本ではこう確認できます。\n'+familyLines.join('\n\n'),
+        kind:'player_family_relation',player:name,attribute:rel.key
+      };
+    }
+
+    if(attr==='retirement'){
+      var tail=profile?' 正本の人物記録では「'+snippet(profile,260)+'」までは確認できます。':'';
+      return {
+        handled:true,
+        answer:name+'の引退年については、今のカープ正本資料では「引退年」として明記された記録を確認できないのですよ。'+tail+' 引退年は推測で断定しません。',
+        kind:'player_retirement',player:name,attribute:'retirement'
+      };
+    }
+
+    if(attr==='active'){
+      if(cur){
+        return {
+          handled:true,
+          answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの現役選手名簿に載っていて、'+cur.position+'・背番号'+cur.number+'・'+cur.status+'なのですよ。',
+          kind:'player_active',player:name,attribute:'active'
+        };
+      }
+      var hist=profile?' 正本の人物記録では「'+snippet(profile,260)+'」と確認できます。':'';
+      return {
+        handled:true,
+        answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの現役選手名簿には載っていません。'+hist+' 他球団を含む現在の現役状況は、この正本だけでは推測で断定しません。',
+        kind:'player_active',player:name,attribute:'active'
+      };
+    }
+
+    if(attr==='current_activity'){
+      if(cur){
+        return {
+          handled:true,
+          answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの'+cur.position+'で、背番号'+cur.number+'、'+cur.status+'なのですよ。',
+          kind:'player_current_activity',player:name,attribute:'current_activity'
+        };
+      }
+      var currentRecords=RECORDS.filter(function(r){
+        var full=S(r.title)+' '+S(r.text);
+        if(full.indexOf(name)<0)return false;
+        return /2026年現在|2026年.*(?:監督|コーチ)|現監督|2023-\s*\/|2023年から監督|2023年.*監督に就任/.test(full);
+      }).sort(function(a,b){
+        function currentFocus(r){
+          var title=S(r.title),text=S(r.text),score=Number(r.priority)||0;
+          // 「今何してる？」では家族記事より、現在の役職・人物記録を優先する。
+          if(r.category==='manager')score+=500;
+          else if(r.category==='player')score+=300;
+          else if(r.category==='family')score-=200;
+          if(/監督時代|監督就任|在任.*監督/.test(title))score+=260;
+          if(/^人物:/.test(title))score+=180;
+          if(/2026年現在も監督|2026年.*(?:1軍|一軍)?監督/.test(text))score+=160;
+          return score;
+        }
+        return currentFocus(b)-currentFocus(a);
+      });
+      if(currentRecords.length){
+        var cr=currentRecords[0];
+        return {
+          handled:true,
+          answer:name+'の現在の活動について、カープ正本ではこう確認できます。\n【'+cleanText(cr.title)+'】\n'+snippet(cr,560),
+          kind:'player_current_activity',player:name,attribute:'current_activity'
+        };
+      }
+      return {
+        handled:true,
+        answer:name+'の現在の所属・活動については、今のカープ正本資料では確認できないのですよ。最新状況を正本にない内容で推測はしません。',
+        kind:'player_current_activity_unknown',player:name,attribute:'current_activity'
+      };
+    }
+
     return null;
   }
 
@@ -559,24 +735,107 @@
   }
 
   function answerFromSearch(text){
-    var hits=search(text,5);
-    if(!hits.length)return null;
-
     var names=foundNames(text);
     var t=S(text);
     var familyCue=/家族|親族|妻|嫁|奥さん|夫|旦那|父|母|兄|弟|姉|妹|娘|息子|兄弟|夫婦/.test(t);
     var scandalCue=/スキャンダル|不祥事|事件|問題|処分|ドーピング|逮捕|起訴|判決|暴力|論争|の件/.test(t);
     var anecdoteCue=/逸話|伝説|名場面|昔話|エピソード|江夏の21球|神ってる|樽募金|赤ヘル/.test(t);
+    var recordCue=/成績|記録|タイトル|打率|本塁打|ホームラン|打点|防御率|勝利|セーブ|安打|MVP|最優秀/.test(t);
+    var careerCue=/経歴|在籍|現役時代|移籍|FA|復帰|入団|退団|ドラフト|所属/.test(t);
+    var overviewCue=!!(names.length&&!familyCue&&!scandalCue&&!anecdoteCue&&!recordCue&&!careerCue&&
+      /について(?:教えて|知りたい|説明して|詳しく)?|どんな(?:人|選手|人物)|プロフィール|人物(?:像)?/.test(t));
+    var focused=!!(familyCue||scandalCue||anecdoteCue||(names.length&&(recordCue||careerCue||overviewCue)));
+    // 観点指定時は上位5件だけで打ち切らず、名前一致の正本候補を少し広く見てから絞る。
+    var hits=search(text,focused?14:5);
+    if(!hits.length)return null;
+
+    function fullText(h){return S(h&&h.record&&h.record.title)+' '+S(h&&h.record&&h.record.text);}
+    function hasName(h){
+      if(!names.length)return true;
+      var full=fullText(h);
+      return names.some(function(name){return full.indexOf(name)>=0;});
+    }
 
     var preferred=hits.filter(function(h){
-      if(familyCue)return h.record.category==='family';
-      if(scandalCue)return h.record.category==='scandal';
-      if(anecdoteCue)return h.record.category==='anecdote';
+      var r=h.record||{},full=fullText(h),title=S(r.title);
+      if(familyCue)return r.category==='family'&&hasName(h);
+      if(scandalCue)return r.category==='scandal'&&hasName(h);
+      if(anecdoteCue)return r.category==='anecdote'&&hasName(h);
+      if(recordCue&&names.length){
+        if(!hasName(h)||['family','editorial','culture','overview'].indexOf(r.category)>=0)return false;
+        if(/^人物:/.test(title))return true;
+        // 個人の実績・受賞・具体的な勝敗数がある資料だけを成績回答へ残す。
+        if(/(?:\d{2,4}安打|\d{2,4}本塁打|通算\d{2,4}勝|日米通算\d{2,4}勝|防御率\s*\d|打率\s*[.0-9]|\d+勝\d+敗)/.test(full))return true;
+        if(/MVP|最優秀|首位打者|本塁打王|打点王|最多勝|沢村賞|タイトル|記録達成/.test(title))return true;
+        return false;
+      }
+      if(careerCue&&names.length){
+        if(!hasName(h)||['family','editorial','culture','overview'].indexOf(r.category)>=0)return false;
+        if(/^人物:/.test(title))return true;
+        if(/移籍|FA|復帰|入団|退団|引退|ドラフト|MLB|メジャー|監督時代|監督就任/.test(title))return true;
+        if(r.category==='player'&&/在籍|移籍|FA|復帰|入団|退団|引退|ドラフト|MLB|メジャー|阪神|所属/.test(full))return true;
+        return false;
+      }
+      if(overviewCue&&names.length){
+        if(!hasName(h)||['family','scandal','editorial','culture','overview','season','lineup'].indexOf(r.category)>=0)return false;
+        if(/^人物:/.test(title))return true;
+        return ['player','manager','anecdote','championship','history'].indexOf(r.category)>=0;
+      }
       return true;
     });
-    if(preferred.length){
-      var rest=hits.filter(function(x){return preferred.indexOf(x)<0;});
-      hits=preferred.concat(rest);
+    if(recordCue&&names.length&&preferred.length){
+      preferred.sort(function(a,b){
+        function focusScore(h){
+          var r=h.record||{},full=fullText(h),title=S(r.title),score=0;
+          if(/^人物:/.test(title))score+=100;
+          if(/(?:\d{2,4}安打|\d{2,4}本塁打|通算\d{2,4}勝|日米通算\d{2,4}勝|防御率\s*\d|打率\s*[.0-9])/.test(full))score+=90;
+          if(/MVP|最優秀|首位打者|本塁打王|打点王|最多勝|沢村賞|タイトル|記録達成/.test(full))score+=45;
+          if(/\d+勝\d+敗/.test(full)&&r.category==='manager')score+=35;
+          return score+(Number(h.score)||0)/1000;
+        }
+        return focusScore(b)-focusScore(a);
+      });
+    }
+    if(careerCue&&names.length&&preferred.length){
+      preferred.sort(function(a,b){
+        function focusScore(h){
+          var r=h.record||{},full=fullText(h),title=S(r.title),score=0;
+          if(/^人物:/.test(title))score+=100;
+          if(/移籍|FA|復帰|MLB|メジャー|阪神/.test(full))score+=70;
+          if(/入団|退団|引退|ドラフト|在籍/.test(full))score+=45;
+          if(/監督就任/.test(full))score+=20;
+          return score+(Number(h.score)||0)/1000;
+        }
+        return focusScore(b)-focusScore(a);
+      });
+    }
+    if(overviewCue&&names.length&&preferred.length){
+      preferred.sort(function(a,b){
+        function focusScore(h){
+          var r=h.record||{},title=S(r.title),score=0;
+          if(/^人物:/.test(title))score+=200;
+          else if(r.category==='manager')score+=70;
+          else if(r.category==='anecdote')score+=55;
+          else if(r.category==='championship')score+=45;
+          else if(r.category==='history')score+=35;
+          else if(r.category==='player')score+=30;
+          return score+(Number(h.score)||0)/1000;
+        }
+        return focusScore(b)-focusScore(a);
+      });
+    }
+    if(overviewCue&&preferred.length){
+      var seenOverviewCategory={};
+      preferred=preferred.filter(function(h){
+        var c=S(h&&h.record&&h.record.category)||'other';
+        if(seenOverviewCategory[c])return false;
+        seenOverviewCategory[c]=1;
+        return true;
+      });
+    }
+    // 観点が明示されている時は無関係な残りを混ぜない。
+    if(preferred.length&&focused){
+      hits=preferred;
     }else if(familyCue&&names.length){
       return {
         handled:true,
@@ -623,10 +882,15 @@
     var resolved=resolveFollowup(text,opt);
     var t=S(resolved.text);
 
-    if(isRealtimeQuery(t))return null;
-
     var amb=ambiguityAnswer(t);
     if(amb)return amb;
+
+    // 年齢・配偶者・現役・引退・現在活動など人物属性は、
+    // realtime判定や広い全文検索より先に正本の明記有無を確認する。
+    var attributeAnswer=playerAttributeAnswer(t);
+    if(attributeAnswer){attributeAnswer.resolvedQuery=t;attributeAnswer.context=resolved.context;return attributeAnswer;}
+
+    if(isRealtimeQuery(t))return null;
 
     if(resolved.context&&resolved.context.player&&resolved.context.topic==='player_more'){
       var pm=nextPlayerStory(resolved.context.player);

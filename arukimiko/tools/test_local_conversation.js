@@ -136,6 +136,20 @@ check('compound two tasks',C.splitCompoundIntents('黒田の逸話も知りた�
 check('compound stats not split',C.splitCompoundIntents('腕力と耐久が高い編成を探して').length===0,C.splitCompoundIntents('腕力と耐久が高い編成を探して'));
 check('compound people not split',C.splitCompoundIntents('黒田と新井について教えて').length===0,C.splitCompoundIntents('黒田と新井について教えて'));
 
+// 11.5 一般テーマ: Firebase / Firestore の基本説明はローカルで成立し、変動情報はWeb経路へ残す。
+let fbIntro=S.local('Firebaseについて教えて',{history:[]})||'';
+check('firebase local overview',/Firebase/.test(fbIntro)&&/認証|データベース/.test(fbIntro),fbIntro);
+let fsIntro=S.local('Firestoreって何？',{history:[]})||'';
+check('firestore local overview',/Firestore/.test(fsIntro)&&/NoSQL|データベース/.test(fsIntro),fsIntro);
+const hFirebase=[{role:'user',text:'Firebaseについて教えて'},{role:'assistant',text:fbIntro}];
+let fbFollow=C.resolve('何ができる？',hFirebase);
+check('firebase followup carries subject',/Firebase/.test(fbFollow.message)&&/何ができる/.test(fbFollow.message),fbFollow);
+check('firebase followup local answer',/Firestore|認証/.test(S.local(fbFollow.message,{history:hFirebase})||''),S.local(fbFollow.message,{history:hFirebase}));
+eq('firebase pricing remains dynamic route',S.local('Firebaseの料金は？',{history:hFirebase}),null);
+let fbFsBoth=S.local('FirebaseとFirestore、両方気になる',{history:[]})||'';
+check('firebase firestore parallel intro',/Firebase/.test(fbFsBoth)&&/Firestore/.test(fbFsBoth)&&/両方/.test(fbFsBoth),fbFsBoth);
+check('firebase firestore stable difference',/サービス群/.test(S.local('FirebaseとFirestoreの違いは？',{history:[]})||''),S.local('FirebaseとFirestoreの違いは？',{history:[]}));
+
 // 12. 感情と質問が同居しても、質問を雑談が横取りしない。
 for(const q of ['疲れたけど黒田について教えて','今日は最悪だった。カープの順位は？','うれしい！ところで全MAXって何？','バグ出て最悪。鬼神石の耐久トップ3は？','眠いけど陣法検索したい']){
   eq('mixed question yields '+q,S.local(q,{history:[]}),null);

@@ -44,6 +44,16 @@
   }
   function smalltalk(kind){if(kind==='greeting')return'こんにちは。歩き巫女なのですよ。今日は何を話しましょう？';if(kind==='thanks')return'どういたしましてなのですよ。続けてそのまま話しかけてくださいね。';if(kind==='weather')return'そうですね。無理せず快適に過ごしてくださいね。';if(kind==='identity')return'歩き巫女なのですよ。雑談や調べものから、必要な時には陣法のお手伝いもするのです。';return'';}
 
+  // 人物文脈が切れた後の「家族は？」を、昔の人物へ勝手に戻したり
+  // 汎用エラーに落としたりせず、必要な主語だけ自然に聞き返す。
+  function barePersonRelationClarification(text){
+    var t=String(text||'').trim();
+    if(/^(?:家族|親族)(?:は|って|について)?[？?。！!]*$/.test(t))return'誰の家族についてですか？ 人物名だけ教えてもらえれば、その人の話として続けます。';
+    if(/^(?:奥さん|妻|嫁|配偶者|夫人|旦那|夫)(?:は|って|について)?[？?。！!]*$/.test(t))return'誰の配偶者についてですか？ 人物名を一つ教えてください。';
+    if(/^(?:父親|お父さん|父|母親|お母さん|母|兄弟|姉妹)(?:は|って|について)?[？?。！!]*$/.test(t))return'誰についての家族関係ですか？ 人物名を一つ教えてください。';
+    return'';
+  }
+
   function isRestorableAction(name){
     return [
       'apply_result','apply_swap','clear_placement',
@@ -59,6 +69,26 @@
       'apply_search','run_recommended','update_recommended',
       'run_best','run_specified_simple','run_current_search','rerun_search'
     ].indexOf(name)>=0;
+  }
+
+  // 会話の「前の話に戻って」で、過去のサイト操作をもう一度実行しない。
+  // 検索・適用・解除・配置・除外などは「話題として復帰」だけ行う。
+  function isBackReplayRisk(control){
+    if(!control||control.control!=='back')return false;
+    var t=String(control.sourceText||control.restoreMessage||'').trim();
+    if(!t)return false;
+    return /(?:検索(?:して|したい|する|お願い|実行して)|探して|探したい|おすすめ(?:を)?(?:出して|探して|検索して|実行して)|(?:[0-9０-９]+(?:位|番目)?|検索結果[^、。！？\s]*)を?適用(?:して|する)?|適用(?:して|する|したい|お願い)|解除(?:して|する|したい|お願い)|全解除(?:して|する|お願い)|差替(?:して|する|したい)|差し替(?:えて|える|えたい)|配置(?:して|する|したい|お願い)|除外(?:して|する|したい|お願い)|固定(?:して|する|したい)|実行(?:して|する|お願い)|押して|変更(?:して|する|したい)|切替(?:して|する)|切り替(?:えて|える)|全MAX(?:にして|解除して|解除する|ONにして|オンにして)|保存(?:して|する)|削除(?:して|する)|読み込(?:んで|む)|読込(?:して|する)|インポート(?:して|する)|リセット(?:して|する))/.test(t);
+  }
+
+  function backResumeWithoutReplay(control){
+    var source=String(control&&control.sourceText||control&&control.restoreMessage||'').trim();
+    var shown=source?('前回の内容は「'+source+'」です。\n'):'';
+    var topic=String(control&&control.domain||'')==='jinpo'?'前の陣法の話':'前の操作の話';
+    return {
+      answer:topic+'に戻りました。過去の操作は再実行していません。\n'+shown+'条件を変える場合は、そのまま続けてください。',
+      sources:[],links:[],mode:'会話制御',
+      data:{conversationControl:'back',domain:'jinpo',resumedWithoutReplay:true,sourceText:source}
+    };
   }
 
   function lastSearchRecipe(plan,outputs){
@@ -230,6 +260,163 @@
 
   function isNonRestorableMutation(name){return ['exit_recommended','all_max','clear_all_max','panel_max','panel_clear','set_kenbun','set_kishin','set_tensei','save_current','delete_saved','apply_override_bond_master','reset_bond_master','clear_formation_master','reset_all'].indexOf(name)>=0;}
 
+  // 「両方／二人とも」で明示的に2人物を選んだ後の裸の観点質問は、
+  // 片方へ勝手に寄せず既存の複合質問処理へ渡す。
+  // 履歴上で別話題・前者/後者・人物名指定が入った時点で効かなくする。
+  function expandRecentBothPersonFollowup(text,history){
+    var raw=String(text||'').trim();
+    if(!raw||!window.JINPO_BOT_CONVERSATION)return '';
+    var C=window.JINPO_BOT_CONVERSATION;
+    if(typeof C.parallelTopics!=='function')return '';
+
+    var slots=C.parallelTopics(history||[],raw)||[];
+    var subjects=[],ok=true;
+    slots.forEach(function(slot){
+      if(!slot||slot.type!=='person'||!slot.subject)ok=false;
+      else if(subjects.indexOf(String(slot.subject))<0)subjects.push(String(slot.subject));
+    });
+
+    // 曖昧確認に対して「両方／二人とも」と明示された瞬間から、2人物を別々に回答する。
+    if(/^(?:両方|両方とも|二人とも|2人とも|どっちも|どちらも)[？?！!。]*$/i.test(raw)){
+      if(ok&&subjects.length===2)return subjects[0]+'について教えて、それと'+subjects[1]+'について教えて';
+      return '';
+    }
+
+    var aspect='',overviewMore=false,moreCue=/^(?:もっと|もっと詳しく|詳しく|もう少し|続き|続きは|その続き)[？?！!。]*$/i.test(raw);
+    if(/^家族(?:は|について)?[？?]?$/i.test(raw))aspect='家族を教えて';
+    else if(/^(?:成績|記録|実績)(?:は|について)?[？?]?$/i.test(raw))aspect='成績を教えて';
+    else if(/^(?:逸話|エピソード)(?:は|について)?[？?]?$/i.test(raw))aspect='逸話を教えて';
+    else if(/^(?:経歴|現役時代)(?:は|について)?[？?]?$/i.test(raw))aspect='経歴を教えて';
+    else if(/^(?:奥さん|妻|配偶者)(?:は|について)?[？?]?$/i.test(raw))aspect='妻・配偶者について教えて';
+    else if(/^(?:何歳|年齢)(?:だったっけ|だっけ|なの|ですか|は)?[？?]?$/i.test(raw))aspect='何歳？';
+    else if(/^(?:今|現在)(?:は)?何してる(?:の|ん|のですか)?[？?]?$/i.test(raw))aspect='今何してる？';
+    else if(/^現役(?:だったっけ|なの|ですか|は)?[？?]?$/i.test(raw))aspect='現役だった？';
+    else if(/^(?:いつ)?引退(?:した|したっけ|したの|ですか)?[？?]?$/i.test(raw))aspect='いつ引退した？';
+
+    if(slots.length!==2||!ok||subjects.length!==2)return '';
+
+    // 「もっと」系は、両方を選んだ後で最後に共有していた観点を2人とも維持する。
+    if(moreCue){
+      var mh=Array.isArray(history)?history:[],foundBothForMore=false,resumedBothForMore=false;
+      for(var mi=mh.length-1;mi>=0;mi--){
+        var mitem=mh[mi]||{};if(mitem.role!=='user')continue;
+        var mu=String(mitem.text||'').trim();if(!mu)continue;
+        if(/^(?:両方|両方とも|二人とも|2人とも|どっちも|どちらも)[？?！!。]*$/i.test(mu)){foundBothForMore=true;break;}
+        if(/^(?:前の話|さっきの話)(?:に|へ)?戻(?:って|る|ろう|して)[？?！!。]*$/i.test(mu)){
+          if(expandBackToBothPersonBranch(mu,mh.slice(0,mi+1))){resumedBothForMore=true;continue;}
+          return '';
+        }
+        if(/^家族(?:は|について)?[？?]?$/i.test(mu)){aspect='家族についてもっと教えて';break;}
+        if(/^(?:成績|記録|実績)(?:は|について)?[？?]?$/i.test(mu)){aspect='成績についてもっと教えて';break;}
+        if(/^(?:逸話|エピソード)(?:は|について)?[？?]?$/i.test(mu)){aspect='逸話についてもっと教えて';break;}
+        if(/^(?:経歴|現役時代)(?:は|について)?[？?]?$/i.test(mu)){aspect='経歴についてもっと教えて';break;}
+        if(/^(?:奥さん|妻|配偶者)(?:は|について)?[？?]?$/i.test(mu)){aspect='妻・配偶者についてもっと教えて';break;}
+        if(/^(?:もっと|もっと詳しく|詳しく|もう少し|続き|続きは|その続き)[？?！!。]*$/i.test(mu))continue;
+        if(/^(?:うん|はい|そう|なるほど|ありがとう|ありがと|了解|わかった|分かった)[ねよ！!。？?]*$/i.test(mu))continue;
+        if(resumedBothForMore)continue;
+        return '';
+      }
+      if(!aspect){
+        if(!foundBothForMore)return '';
+        overviewMore=true;
+      }
+    }
+    if(!aspect&&!overviewMore)return '';
+
+    // 直近の「両方」以降に、裸の観点質問・軽い相槌以外があれば両人物状態を終了扱いにする。
+    var h=Array.isArray(history)?history:[],foundBoth=false,resumedBoth=false;
+    for(var i=h.length-1;i>=0;i--){
+      var item=h[i]||{};if(item.role!=='user')continue;
+      var u=String(item.text||'').trim();if(!u)continue;
+      if(/^(?:両方|両方とも|二人とも|2人とも|どっちも|どちらも)[？?！!。]*$/i.test(u)){foundBoth=true;break;}
+      if(/^(?:前の話|さっきの話)(?:に|へ)?戻(?:って|る|ろう|して)[？?！!。]*$/i.test(u)){
+        if(expandBackToBothPersonBranch(u,h.slice(0,i+1))){resumedBoth=true;continue;}
+        return '';
+      }
+      if(/^(?:前者|後者|最初の方|最初のほう|後の方|後のほう|もう片方|もう一方)(?:は|って|について)?[？?！!。]*$/i.test(u))return '';
+      if(/^(?:家族|成績|記録|実績|逸話|エピソード|経歴|現役時代|奥さん|妻|配偶者)(?:は|について)?[？?]?$/i.test(u))continue;
+      if(/^(?:何歳|年齢)(?:だったっけ|だっけ|なの|ですか|は)?[？?]?$/i.test(u))continue;
+      if(/^(?:今|現在)(?:は)?何してる(?:の|ん|のですか)?[？?]?$/i.test(u))continue;
+      if(/^現役(?:だったっけ|なの|ですか|は)?[？?]?$/i.test(u))continue;
+      if(/^(?:いつ)?引退(?:した|したっけ|したの|ですか)?[？?]?$/i.test(u))continue;
+      if(/^(?:もっと|もっと詳しく|詳しく|もう少し|続き|続きは|その続き)[？?！!。]*$/i.test(u))continue;
+      if(/^(?:うん|はい|そう|なるほど|ありがとう|ありがと|了解|わかった|分かった)[ねよ！!。？?]*$/i.test(u))continue;
+      if(resumedBoth)continue;
+      return '';
+    }
+    if(!foundBoth)return '';
+
+    var a=subjects[0],b=subjects[1];
+    function clause(subject){
+      if(overviewMore)return subject+'についてもっと教えて';
+      if(/[？?]$/.test(aspect))return subject+'は'+aspect;
+      return subject+'の'+aspect;
+    }
+    return clause(a)+'、それと'+clause(b);
+  }
+
+  // 2人物を「両方」で話していた枝から別話題へ移った後の「前の話に戻って」は、
+  // 裸の「家族は？」等だけを復元せず、2人物＋その観点を複合質問として復元する。
+  function expandBackToBothPersonBranch(text,history){
+    var raw=String(text||'').trim();
+    if(!/^(?:前の話|さっきの話)(?:に|へ)?戻(?:って|る|ろう|して)[？?！!。]*$/i.test(raw))return '';
+    var C=window.JINPO_BOT_CONVERSATION;
+    if(!C||typeof C.parallelTopics!=='function')return '';
+    var slots=C.parallelTopics(history||[],raw)||[],subjects=[],ok=true;
+    slots.forEach(function(slot){
+      if(!slot||slot.type!=='person'||!slot.subject)ok=false;
+      else if(subjects.indexOf(String(slot.subject))<0)subjects.push(String(slot.subject));
+    });
+    if(!ok||subjects.length!==2)return '';
+
+    var h=Array.isArray(history)?history:[],bothAt=-1;
+    for(var i=h.length-1;i>=0;i--){
+      var it=h[i]||{};if(it.role!=='user')continue;
+      if(/^(?:両方|両方とも|二人とも|2人とも|どっちも|どちらも)[？?！!。]*$/i.test(String(it.text||'').trim())){bothAt=i;break;}
+    }
+    if(bothAt<0)return '';
+
+    var kind='overview',leftBoth=false,terminated=false;
+    function aspectKind(u){
+      if(/^家族(?:は|について)?[？?]?$/i.test(u))return 'family';
+      if(/^(?:成績|記録|実績)(?:は|について)?[？?]?$/i.test(u))return 'stats';
+      if(/^(?:逸話|エピソード)(?:は|について)?[？?]?$/i.test(u))return 'anecdote';
+      if(/^(?:経歴|現役時代)(?:は|について)?[？?]?$/i.test(u))return 'career';
+      if(/^(?:奥さん|妻|配偶者)(?:は|について)?[？?]?$/i.test(u))return 'spouse';
+      if(/^(?:何歳|年齢)(?:だったっけ|だっけ|なの|ですか|は)?[？?]?$/i.test(u))return 'age';
+      if(/^(?:今|現在)(?:は)?何してる(?:の|ん|のですか)?[？?]?$/i.test(u))return 'current';
+      if(/^現役(?:だったっけ|なの|ですか|は)?[？?]?$/i.test(u))return 'active';
+      if(/^(?:いつ)?引退(?:した|したっけ|したの|ですか)?[？?]?$/i.test(u))return 'retirement';
+      return '';
+    }
+    for(var j=bothAt+1;j<h.length;j++){
+      var x=h[j]||{};if(x.role!=='user')continue;
+      var u=String(x.text||'').trim();if(!u||u===raw)continue;
+      if(/^(?:前者|後者|最初の方|最初のほう|後の方|後のほう|もう片方|もう一方)(?:は|って|について)?[？?！!。]*$/i.test(u)){terminated=true;break;}
+      var k=aspectKind(u);
+      if(!leftBoth&&k){kind=k;continue;}
+      if(!leftBoth&&/^(?:もっと|もっと詳しく|詳しく|もう少し|続き|続きは|その続き)[？?！!。]*$/i.test(u))continue;
+      if(/^(?:うん|はい|そう|なるほど|ありがとう|ありがと|了解|わかった|分かった)[ねよ！!。？?]*$/i.test(u))continue;
+      // 両方の枝から別の実質話題へ移ったと判断。
+      leftBoth=true;
+    }
+    if(terminated||!leftBoth)return '';
+
+    function clause(subject){
+      if(kind==='family')return subject+'の家族を教えて';
+      if(kind==='stats')return subject+'の成績を教えて';
+      if(kind==='anecdote')return subject+'の逸話を教えて';
+      if(kind==='career')return subject+'の経歴を教えて';
+      if(kind==='spouse')return subject+'の妻・配偶者について教えて';
+      if(kind==='age')return subject+'は何歳？';
+      if(kind==='current')return subject+'は今何してる？';
+      if(kind==='active')return subject+'は現役だった？';
+      if(kind==='retirement')return subject+'はいつ引退した？';
+      return subject+'について教えて';
+    }
+    return clause(subjects[0])+'、それと'+clause(subjects[1]);
+  }
+
   function resetConversationState(opt){
     opt=opt||{};
     var epoch=0,errors=[];
@@ -273,6 +460,7 @@
   async function handle(payload){
     var payloadObj=typeof payload==='string'?{message:payload,history:[]}:((payload&&typeof payload==='object')?payload:{});
     var message=String(payloadObj.message||'');
+    var userMessage=message;
     var originalMessage=message;
     var history=Array.isArray(payloadObj.history)?payloadObj.history:[];
     var compoundChild=!!payloadObj.__compoundChild;
@@ -284,6 +472,21 @@
         history=window.JINPO_BOT_CONVERSATION.filterHistory(history);
       }
     }catch(historyEpochErr){}
+
+    // 直近で2人物を「両方」と確定している場合、裸の観点質問を複合質問へ展開してから
+    // lazy選択・複合分割へ渡す。画面上のユーザー発話そのものは履歴側に残る。
+    if(!compoundChild){
+      try{
+        var bothBackExpanded=expandBackToBothPersonBranch(originalMessage,history);
+        var bothPersonExpanded=bothBackExpanded||expandRecentBothPersonFollowup(originalMessage,history);
+        if(bothPersonExpanded){
+          message=bothPersonExpanded;
+          originalMessage=bothPersonExpanded;
+        }
+      }catch(bothPersonErr){
+        console.warn('歩き巫女 both-person followup:',bothPersonErr);
+      }
+    }
 
     try{
       if(window.ARUKIMIKO_LAZY&&typeof window.ARUKIMIKO_LAZY.ensureForMessage==='function'){
@@ -306,8 +509,10 @@
         if(compoundParts.length>1){
           var baseHistory=history.slice();
           while(baseHistory.length&&baseHistory[baseHistory.length-1]&&baseHistory[baseHistory.length-1].role==='system')baseHistory.pop();
-          if(baseHistory.length&&baseHistory[baseHistory.length-1]&&baseHistory[baseHistory.length-1].role==='user'&&
-             String(baseHistory[baseHistory.length-1].text||'').trim()===originalMessage.trim())baseHistory.pop();
+          if(baseHistory.length&&baseHistory[baseHistory.length-1]&&baseHistory[baseHistory.length-1].role==='user'){
+            var lastBaseUser=String(baseHistory[baseHistory.length-1].text||'').trim();
+            if(lastBaseUser===String(userMessage||'').trim()||lastBaseUser===originalMessage.trim())baseHistory.pop();
+          }
 
           var compoundAnswers=[],compoundSources=[],compoundLinks=[],compoundModes=[],completed=0;
           var evolvingHistory=baseHistory.slice(),stopForFollowup=false;
@@ -446,8 +651,25 @@
         };
       }
 
+      if(conversationControl.control==='fragment_cancel'){
+        return {
+          answer:'了解です。今の言いかけはここでやめておきます。',
+          sources:[],links:[],mode:'会話制御',
+          data:{conversationControl:'fragment_cancel',fragmentCancelled:true}
+        };
+      }
+
       if(conversationControl.control==='back'){
         if(conversationControl.restoreMessage){
+          if(String(conversationControl.domain||'')==='kashin_name'&&window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.resume==='function'){
+            try{
+              var resumedNaming=window.JINPO_BOT_KASHIN_NAME.resume();
+              if(resumedNaming&&resumedNaming.handled){
+                return {answer:String(resumedNaming.answer||''),sources:[],links:[],mode:String(resumedNaming.mode||'家臣名付け'),data:{conversationControl:'back',domain:'kashin_name',resumedNaming:true}};
+              }
+            }catch(resumeNamingErr){}
+          }
+          if(isBackReplayRisk(conversationControl))return backResumeWithoutReplay(conversationControl);
           message=String(conversationControl.restoreMessage);
         }else{
           if(conversationControl.ambiguous&&Array.isArray(conversationControl.candidates)&&conversationControl.candidates.length){
@@ -466,6 +688,21 @@
       }
     }
 
+    // 家臣名付けが進行中の時だけ、その継続入力を一般の文脈解決より先に受け取る。
+    // 「もっと」「別の5個」などが以前の人物話題へ誤接続されるのを防ぐ。
+    try{
+      if(window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.state==='function'&&typeof window.JINPO_BOT_KASHIN_NAME.respond==='function'){
+        var activeNamingState=window.JINPO_BOT_KASHIN_NAME.state();
+        if(activeNamingState&&activeNamingState.active){
+          // respond()自身に継続判定を任せる。別話題ならここでpauseされ、後続ルーターへ渡る。
+          var activeNamingReply=window.JINPO_BOT_KASHIN_NAME.respond(originalMessage,{history:history,pageContext:pageContext});
+          if(activeNamingReply&&activeNamingReply.handled){
+            return {answer:String(activeNamingReply.answer||''),sources:[],links:[],mode:String(activeNamingReply.mode||'家臣名付け'),data:{kashinNaming:true,activeContinuation:true}};
+          }
+        }
+      }
+    }catch(activeNamingErr){}
+
     // 明確な日常会話は、陣法の意図推定より先に返す。
     // 「暑い」「疲れた」「何できる？」などを検索コマンドに誤分類しない。
     try{
@@ -475,6 +712,30 @@
         var dp=window.JINPO_BOT_DIALOG&&typeof window.JINPO_BOT_DIALOG.state==='function'?window.JINPO_BOT_DIALOG.state():null;
         var kp=window.JINPO_BOT_KASHIN_NAME&&typeof window.JINPO_BOT_KASHIN_NAME.state==='function'?window.JINPO_BOT_KASHIN_NAME.state():null;
         blockEarlySmalltalk=!!(ip||(dp&&dp.pending)||(kp&&kp.active));
+        if(!blockEarlySmalltalk&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.activeRecentSubject==='function'){
+          var rawContextual=String(originalMessage||'').trim();
+          var contextualShort=/^(?:もっと|もう少し|詳しく|くわしく|続き(?:は|って)?|その続き(?:は|って)?|それで[？?]?|結局[？?]?|なんで[？?]?|なぜ[？?]?|どういう意味[？?]?)[。！!？?]*$/.test(rawContextual);
+          var deicticContextual=/^(?:それ|これ|その件|この件|その話|この話|今の話|さっきの話)(?:の|は|って|について)?[、,\s]*(?:何ができる|なにができる|使い方(?:は|って)?|どう使う|どうやって使う|無料|タダ|料金(?:は|って)?|値段(?:は|って)?|安全|必要|難しい|簡単|何に使う|なにに使う|どこで使う|どこで使える|注意点(?:は|って)?|メリット(?:は|って)?|デメリット(?:は|って)?|もっと|もう少し|詳しく|くわしく)(?:なの|ですか|の|んですか)?[？?。！!]*$/.test(rawContextual);
+          var discourseShort=/^(?:あれ|あの件|あの話|例のやつ|例の話|さっきのやつ|前のやつ|前のは|その前のやつ|その前のは|こっち|こっちの話|そっち|そっちの話|あっち|あっちの話)(?:は|って|について)?[？?。！!]*$/.test(rawContextual);
+          if((contextualShort||deicticContextual||discourseShort)&&window.JINPO_BOT_CONVERSATION.activeRecentSubject(history))blockEarlySmalltalk=true;
+
+          // 検索直後の「同じの／同じので／今ので」は、日常相槌ではなく
+          // 直前の成功検索を指す短い再検索指示として扱う。
+          // 別話題を挟んだ後の裸の「同じの」まで昔の検索へ飛ばさないよう、
+          // 最後の成功検索ラベルと直前ユーザー発言が一致する時だけ優先する。
+          if(!blockEarlySmalltalk&&pageContext.mode==='jinpo'&&/^(?:同じの|同じので|今ので)[。！!？?]*$/.test(rawContextual)){
+            var recentSearch=state()&&typeof state().getLastSearch==='function'?state().getLastSearch():null;
+            var previousUserText='';
+            for(var hui=(history||[]).length-1;hui>=0;hui--){
+              var hu=(history||[])[hui]||{};
+              if(hu.role!=='user')continue;
+              var hut=String(hu.text||hu.message||'').trim();
+              if(!hut||hut===String(originalMessage||'').trim())continue;
+              previousUserText=hut;break;
+            }
+            if(recentSearch&&String(recentSearch.label||'').trim()===previousUserText)blockEarlySmalltalk=true;
+          }
+        }
       }catch(pendingCheckErr){}
 
       if(!blockEarlySmalltalk&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
@@ -690,6 +951,11 @@
         }
       }
     }catch(learningFindErr){}
+
+    var relationClarification=barePersonRelationClarification(message);
+    if(relationClarification){
+      return {answer:relationClarification,sources:[],links:[],mode:'会話確認',data:{needsClarification:true,missingSubject:true,context:contextInfo}};
+    }
 
     // HELPはv3.3.8から遅延読込。
     // 陣法検索の実行条件にHELPまで要求すると、起動直後の検索が一時的に

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 家臣名付け v1.1.0
+ * 歩き巫女 家臣名付け v1.1.1
  * 信長の野望Onlineの家臣向け。苗字6文字・名前6文字以内。
  * 好みを会話で聞き出し、希望なしなら完全おまかせで候補を作る。
  */
@@ -7,7 +7,7 @@
   'use strict';
   if(window.JINPO_BOT_KASHIN_NAME)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.1.2';
   var KEY='arukimikoKashinNaming.v1';
 
   function S(v){
@@ -28,7 +28,7 @@
     return /(?:家臣|かしん).*(?:名前|なまえ|名付け|なづけ|命名|めいめい)|(?:名前|なまえ|名付け|なづけ|命名).*(?:家臣|かしん)|家臣名|かしんめい/.test(t);
   }
   function isRandom(text){
-    return /おまかせ|任せる|なんでも|何でも|適当|てきとう|ランダム|らんだむ|希望なし|特にない|とくにない|ないよ|なし/.test(S(text));
+    return /おまかせ|お任せ|任せ(?:る|て|ます|よう)?|なんでも|何でも|適当|てきとう|ランダム|らんだむ|希望なし|特にない|とくにない|ないよ|なし/.test(S(text));
   }
   function isCancel(text){return /やめ|中止|キャンセル|名付けやめ/.test(S(text));}
   function wantsMore(text){return /もっと|別の|べつの|もう.*個|他の|ほかの|やり直|再生成/.test(S(text));}
@@ -51,7 +51,7 @@
     if(/男|男性|女|女性|中性|どっちでも|性別/.test(t))return true;
     if(/強|武骨|猛将|豪傑|勇猛|かわい|可愛|雅|上品|綺麗|優雅|神秘|妖|闇|夜|珍し|変わった|個性的|レア|戦国|武将|古風|王道|普通|実在|創作|ファンタジ/.test(t))return true;
     if(/桜|月|雪|龍|風|花|星|水/.test(t))return true;
-    if(/^(?:なし|ない|特にない|おまかせ|任せる|どれでも|なんでも)$/.test(t))return true;
+    if(/^(?:全部)?(?:なし|ない|特にない|おまかせ|お任せ|任せ(?:る|て|ます)?|どれでも|なんでも)$/.test(t))return true;
     if(/^[1-5１-５](?:番|ばん|個目|こめ)/.test(t))return true;
 
     // Do not consume ordinary free conversation just because a naming flow is active.
@@ -67,6 +67,23 @@
       save(st);
     }
     return st;
+  }
+
+  function resume(){
+    var st=load();
+    if(!st||(!st.paused&&!st.active))return null;
+    st.active=true;
+    st.paused=false;
+    delete st.pausedAt;
+    save(st);
+
+    if(st.step==='done'&&Array.isArray(st.last)&&st.last.length){
+      return {handled:true,answer:'家臣名付けの話に戻ったのですよ。前に出した候補はこちらです。\n'+formatCandidates(st.last)+'\n\n「もっと」「別の5個」「もっと渋く」など、そのまま続けられます。',mode:'家臣名付け'};
+    }
+    if(st.step==='gender')return {handled:true,answer:'家臣名付けの話に戻ったのですよ。男性っぽい・女性っぽい・中性的・おまかせ、どれが近いですか？',mode:'家臣名付け'};
+    if(st.step==='style')return {handled:true,answer:'家臣名付けの話に戻ったのですよ。王道の戦国風・強そう・雅・かわいい・神秘的・珍しい、どれが近いですか？',mode:'家臣名付け'};
+    if(st.step==='theme')return {handled:true,answer:'家臣名付けの話に戻ったのですよ。入れたい漢字やイメージがあれば教えてください。なければ「なし」で続けられます。',mode:'家臣名付け'};
+    return {handled:true,answer:'家臣名付けの話に戻ったのですよ。前の条件を保持したまま続けられます。「もう出して」「もっと」など、そのまま言ってください。',mode:'家臣名付け'};
   }
 
   var surnames={
@@ -276,6 +293,7 @@
     validPart:validPart,
     clear:clear,
     pause:pause,
+    resume:resume,
     state:load,
     isRelevantContinuation:isRelevantContinuation
   };
