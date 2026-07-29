@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 広島東洋カープ専用会話 v2.0.0
+ * 歩き巫女 広島東洋カープ専用会話 v2.1.0
  * - カープの基本知識・歴史を専用返答
  * - 試合結果/順位/日程/主要成績は NPB公式ページを Reader 経由で自動確認
  * - 最新ニュース/先発/スタメン/登録関連は既存の無料Webニュース検索へフォールバック
@@ -9,7 +9,7 @@
   'use strict';
   if(window.JINPO_BOT_CARP)return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var NPB_TEAM_URL='https://npb.jp/bis/teams/index_c.html';
   var NPB_READER_URL='https://r.jina.ai/'+NPB_TEAM_URL;
   var NPB_ROSTER_URL='https://npb.jp/bis/teams/rst_c.html';
@@ -385,6 +385,13 @@
     var t=S(text);
     if(/ニュース|速報|最新情報|話題|報道|記事/.test(t))return'news';
     if(/スタメン|先発|予告先発|登録抹消|一軍登録|故障|けが|怪我|復帰|移籍|トレード|新外国人/.test(t))return'news_detail';
+
+    // 「黒田は今どう？」のように人物を明示した現在質問は、
+    // チーム全体のoverviewへ落とさず、その人物の最新情報として扱う。
+    if(/最近どう|今どう|いまどう|現在どう|今はどう|現在はどう|どうなって/.test(t)){
+      var kb=knowledge();
+      if(kb&&typeof kb.foundNames==='function'&&(kb.foundNames(t)||[]).length)return'news_detail';
+    }
     if(/順位|何位|何勝|何敗|勝敗|勝率|ゲーム差|シーズン成績|(?:カープ|広島).*(?:成績)|^成績[？?]?$/.test(t))return'rank';
     if(/選手一覧|選手|メンバー|誰がいる|だれがいる|投手陣|野手陣|捕手陣|内野手|外野手|監督/.test(t))return'players';
     if(/次の試合|次いつ|次はいつ|日程|予定|いつ試合|今日(?:の)?試合|明日(?:の)?試合|明後日(?:の)?試合|試合ある|試合はある|対戦相手/.test(t))return'schedule';

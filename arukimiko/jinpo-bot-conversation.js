@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.9.0
+ * 歩き巫女 共通会話ルーター v2.0.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.9.0';
+  var VERSION='2.0.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -79,7 +79,9 @@
 
     var kind='';
     if(/^(?:なるほど|そうなんだ|そうなのか|そうか|そっか|そうだね|だよね|ふむ|ふむふむ|へえ|へー|ほう|確かに|たしかに|たしかにね|そういうことか|理解した|把握した)$/.test(c))kind='ack';
-    else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|すごい|すげえ|それはすごい|さすが|おお|おー)$/.test(c))kind='positive';
+    else if(/^(?:いいね|それいいね|面白い|おもしろい|それ面白い|それおもしろい|それは面白い|それはおもしろい|それ面白いね|それおもしろいね|それは面白いね|それはおもしろいね|面白いね|おもしろいね|すごい|すげえ|それはすごい|さすが|おお|おー|興味深い|きょうみぶかい)$/.test(c))kind='positive';
+    else if(/^(?:知らなかった|しらなかった|初めて知った|はじめて知った|そんなことあったんだ|そんなことがあったんだ|意外だね|いがいだね|意外だった|びっくり|びっくりした|驚いた|おどろいた)$/.test(c))kind='surprise';
+    else if(/^(?:(?:昔|当時)は)?(?:そんなに|かなり|ずいぶん|相当)?(?:すごかった|強かった|有名だった|人気だった|活躍してた|活躍していた|大変だった|苦労した)(?:んだね|んですね|んだな|のか|んだ|んですねえ)?$/.test(c))kind='reflection';
     else if(/^(?:わかった|分かった|了解|りょうかい|おっけー|オッケー|ok)$/.test(c))kind='understood';
     if(!kind)return null;
 
@@ -103,7 +105,19 @@
     else if(domain==='kishin')label='鬼神石';
     else if(domain==='madou')label='魔導結晶';
 
-    var seed=t+'|'+lastAssistant.slice(0,120)+'|'+domain;
+    var subject='',personAmbiguous=false;
+    try{
+      var personRef=findRecentEntity(h,{personOnly:true});
+      personAmbiguous=!!(personRef&&personRef.ambiguous);
+      if(personRef&&!personRef.ambiguous&&personRef.value)subject=personRef.value;
+      // 同じ返答に人物が複数いる時は、感想だけから誰か一人を勝手に選ばない。
+      if(!subject&&!personAmbiguous){
+        var entityRef=findRecentEntity(h);
+        if(entityRef&&!entityRef.ambiguous&&entityRef.value)subject=entityRef.value;
+      }
+    }catch(subjectErr){}
+
+    var seed=t+'|'+lastAssistant.slice(0,120)+'|'+domain+'|'+subject;
     var answers;
     var domainAck={
       carp:[
@@ -135,10 +149,38 @@
     };
 
     if(kind==='positive'){
-      answers=domainPositive[domain]||[
-        'ですよね。そこ、ちょっと面白いところなのです。',
-        'ふふっ、そこに反応してもらえるとうれしいのですよ。',
-        '分かるのですよ。そこはもう少し掘ってみたくなるところですね。'
+      if(subject){
+        answers=[
+          'ですよね。「'+subject+'」の話として前後までつなげて見ると、さらに面白くなるのです。',
+          '分かるのですよ。「'+subject+'」は、今の話の続きとしてもう少し掘ると見え方が広がるのです。',
+          'そこ、面白いところなのですよ。「'+subject+'」を軸にすると話がつながりやすいのです。'
+        ];
+      }else{
+        answers=domainPositive[domain]||[
+          'ですよね。そこ、ちょっと面白いところなのです。',
+          'ふふっ、そこに反応してもらえるとうれしいのですよ。',
+          '分かるのですよ。そこはもう少し掘ってみたくなるところですね。'
+        ];
+      }
+    }else if(kind==='surprise'){
+      answers=subject?[
+        '意外に感じますよね。「'+subject+'」の話としてつなげて見ると、印象が変わるところなのです。',
+        'そうなんですよ。「'+subject+'」には、こうして続けて見ないと気づきにくい話もあるのです。',
+        'そこは驚きますよね。「'+subject+'」の続きを追うと、前の話とのつながりも見えやすくなるのです。'
+      ]:[
+        '意外に感じますよね。こういうところは、前後の話までつなげると見え方が変わるのです。',
+        'そうなんですよ。知っているつもりでも、掘ると初めて出てくる話があるのです。',
+        'そこはちょっと驚くところですよね。'
+      ];
+    }else if(kind==='reflection'){
+      answers=subject?[
+        'そう感じますよね。今話していた「'+subject+'」は、当時の話と今を分けて見ると整理しやすいのです。',
+        'そうなんですよ。「'+subject+'」を当時の文脈で見ると、今の印象とはまた違って見えるのです。',
+        'ですよね。「'+subject+'」は、その時代の中で見ていくと話がつながりやすいのです。'
+      ]:[
+        'そう感じますよね。当時の話として見ると、今とはまた違った見え方になるのです。',
+        'ですよね。昔の話は、その時代の流れまで見ると印象が変わるのです。',
+        'そうなんですよ。今の感覚だけでなく、当時の文脈で見ると分かりやすいのです。'
       ];
     }else if(kind==='understood'){
       answers=[
@@ -616,6 +658,45 @@
     return'';
   }
 
+  // 「今はどうなんだろう」「その後どうなった？」のような、
+  // 主語を省いた自然な続き方を直前の回答側の人物・出来事へ接続する。
+  function openEndedFollowup(text,history){
+    var t=S(text);
+    if(!t||t.length>36)return null;
+
+    var kind='';
+    if(/^(?:じゃあ[、,\s]*)?(?:今は|今だと|現在は|今現在は|今のところは|いまは)?(?:どうなんだろう|どうなんだろ|どうなの|どうなってる(?:の)?|どうなっている(?:の)?|どうなんですか|どうですか)[？?！!。]*$/.test(t) ||
+       /^(?:じゃあ[、,\s]*)?(?:今|現在)(?:は)?[？?！!。]*$/.test(t))kind='current';
+    else if(/^(?:じゃあ[、,\s]*)?(?:その後|それから|以後|そのあと)(?:は|って)?(?:どうなった(?:の)?|どうなってる(?:の)?|どうなったんだろう|どうだった(?:の)?|は)?[？?！!。]*$/.test(t))kind='after';
+    if(!kind)return null;
+
+    var h=historyBeforeCurrent(history,t);
+    if(!h.length)return null;
+
+    var person=findRecentEntity(h,{personOnly:true});
+    if(person&&person.ambiguous){
+      return {ambiguous:true,candidates:person.candidates||[],kind:kind};
+    }
+
+    // 人物に限定せず、見出し化された出来事・制度なども直前の主題として使う。
+    var ref=findRecentEntity(h);
+    if(!ref&&person&&person.value)ref=person;
+    var target=ref&&ref.value?ref.value:'';
+    if(!target){
+      var ant=lastSubstantiveUser(h);
+      if(ant)target=cleanFollowupTarget(ant);
+    }
+    if(!target)return null;
+
+    return {
+      message:kind==='current'
+        ?target+'について、現在はどうなっている？'
+        :target+'について、その後どうなった？',
+      reference:ref||null,
+      kind:kind
+    };
+  }
+
   function genericFollowup(text,history){
     var t=S(text),ant=lastSubstantiveUser(history);
     if(!ant)return'';
@@ -798,6 +879,18 @@
       carried=message;
     }
 
+    // 主語を省いた「今はどう？」「その後は？」も、直前の回答内容へ接続する。
+    if(!referenceClarification){
+      var openFollow=openEndedFollowup(message,priorHistory);
+      if(openFollow&&openFollow.ambiguous){
+        referenceClarification='直前に人物が複数出ているのですよ。'+(openFollow.candidates||[]).join('、')+'のどれについて聞いているか、名前で教えてください。';
+      }else if(openFollow&&openFollow.message){
+        message=openFollow.message;
+        domain=domainFromText(message)||(openFollow.reference&&openFollow.reference.domain)||domain||prevDomain;
+        carried=message;
+      }
+    }
+
     // 新しいデータ種別は今の発言を最優先。
     // ただし「じゃあ鬼神石では？」のように対象だけ切り替えた時は、
     // 直前の腕力/知力/トップN/番号など移植可能な条件だけ引き継ぐ。
@@ -888,6 +981,7 @@
     resolveEntityReference:resolveEntityReference,
     workingMemory:workingMemory,
     splitCompoundIntents:splitCompoundIntents,
-    compoundClauseScore:compoundClauseScore
+    compoundClauseScore:compoundClauseScore,
+    openEndedFollowup:openEndedFollowup
   };
 })();
