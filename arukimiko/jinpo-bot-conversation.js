@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v2.1.0
+ * 歩き巫女 共通会話ルーター v2.2.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='2.1.0';
+  var VERSION='2.2.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -482,6 +482,107 @@
     return {current:list[0]||null,previous:list[1]||null,list:list};
   }
 
+  // 回答内に出た「主役以外の人物」を、話題移動用の脇役として保持する。
+  // 直近フレームを優先し、同一人物の重複は除く。
+  function recentSecondaryPeople(history,opt){
+    opt=opt||{};
+    var frames=topicFrames(history),out=[],seen={},limit=Number(opt.limit)||8;
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];if(!f)continue;
+      var pp=f.primary&&f.primary.value||'';
+      var people=Array.isArray(f.secondaryPeople)?f.secondaryPeople:[];
+      for(var j=0;j<people.length;j++){
+        var v=people[j];if(!v||v===pp||seen[v])continue;
+        seen[v]=1;
+        out.push({value:v,type:'person',domain:f.domain||'',aspect:f.aspect||'',frameIndex:i,primary:pp,userText:f.userText||'',assistantText:f.assistantText||''});
+        if(out.length>=limit)return out;
+      }
+    }
+    return out;
+  }
+
+  function latestSecondaryFrame(history,opt){
+    opt=opt||{};
+    var frames=topicFrames(history);
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];if(!f)continue;
+      if(opt.aspect&&f.aspect!==opt.aspect)continue;
+      var pp=f.primary&&f.primary.value||'';
+      var people=(f.secondaryPeople||[]).filter(function(v){return v&&v!==pp;});
+      var uniq=[];people.forEach(function(v){if(uniq.indexOf(v)<0)uniq.push(v);});
+      if(uniq.length)return {frame:f,people:uniq};
+    }
+    return null;
+  }
+
+  function findPersonByAnchor(history,anchor){
+    var a=normalizeAnchor(anchor);if(!a)return null;
+    var pool=recentSubjects(history,{personOnly:true,limit:10}).concat(recentSecondaryPeople(history,{limit:10}));
+    var hits=[],seen={};
+    pool.forEach(function(x){
+      if(!x||!x.value||seen[x.value])return;
+      var v=normalizeAnchor(x.value);
+      if(v===a||v.indexOf(a)>=0||a.indexOf(v)>=0){seen[x.value]=1;hits.push(x);}
+    });
+    if(hits.length===1)return hits[0];
+    if(hits.length>1)return {ambiguous:true,candidates:hits.map(function(x){return x.value;}).slice(0,6)};
+    return null;
+  }
+
+  function pairFromNamedAnchors(history,left,right){
+    var a=findPersonByAnchor(history,left);
+    var b=findPersonByAnchor(history,right);
+    if(a&&a.ambiguous)return {ambiguous:true,candidates:a.candidates||[],side:'left'};
+    if(b&&b.ambiguous)return {ambiguous:true,candidates:b.candidates||[],side:'right'};
+    if(!a||!a.value||!b||!b.value||a.value===b.value)return null;
+    return {left:a,right:b};
+  }
+
+  function relationPeopleFromFrame(frame,relation){
+    if(!frame)return[];
+    var pp=frame.primary&&frame.primary.value||'',people=(frame.secondaryPeople||[]).filter(function(v){return v&&v!==pp;});
+    var text=S(frame.assistantText||''),out=[];
+    if(!people.length||!text)return out;
+    var aliases={
+      '父':['父','父親','お父さん'], '母':['母','母親','お母さん'],
+      '兄':['兄','兄貴','お兄さん'], '弟':['弟','弟さん'], '姉':['姉','お姉さん'], '妹':['妹','妹さん'],
+      '息子':['息子','長男','次男','三男'], '娘':['娘','長女','次女','三女'],
+      '妻':['妻','奥さん','夫人','配偶者'], '夫':['夫','旦那','配偶者'], '子供':['子供','子ども','子']
+    };
+    var words=aliases[relation]||[relation],scores={};
+    function positions(hay,needle){
+      var a=[],from=0,p;while((p=hay.indexOf(needle,from))>=0){a.push(p);from=p+Math.max(1,needle.length);}return a;
+    }
+    words.forEach(function(w){
+      positions(text,w).forEach(function(wp){
+        people.forEach(function(name){
+          positions(text,name).forEach(function(np){
+            var left=Math.min(wp,np),right=Math.max(wp+w.length,np+name.length);
+            var between=text.slice(left,right);
+            if(/[。！？\n]/.test(between))return;
+            var after=np>=wp+w.length;
+            var dist=after?(np-(wp+w.length)):(wp-(np+name.length)+12);
+            if(dist<0||dist>36)return;
+            if(scores[name]==null||dist<scores[name])scores[name]=dist;
+          });
+        });
+      });
+    });
+    var ranked=Object.keys(scores).sort(function(a,b){return scores[a]-scores[b];});
+    if(ranked.length){
+      var best=scores[ranked[0]];
+      // ほぼ同距離の候補が複数なら、関係を決め打ちしない。
+      return ranked.filter(function(name){return scores[name]<=best+1;});
+    }
+    // 文構造が特殊な時だけ、同じ文に関係語と人物がいるかを保守的に見る。
+    var sentences=text.split(/[。！？\n]/).filter(Boolean);
+    sentences.forEach(function(sentence){
+      if(!words.some(function(w){return sentence.indexOf(w)>=0;}))return;
+      people.forEach(function(name){if(sentence.indexOf(name)>=0&&out.indexOf(name)<0)out.push(name);});
+    });
+    return out;
+  }
+
   function askedHistory(history,limit){
     var frames=topicFrames(history),out=[],n=Number(limit)||6;
     for(var i=frames.length-1;i>=0&&out.length<n;i--){
@@ -565,6 +666,62 @@
       ref=findSubjectByAnchor(h,m[1]);
       if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],kind:'named_back'};
       if(ref&&ref.value)return {message:ref.value+'について、'+S(m[2]),reference:ref,kind:'named_back'};
+    }
+
+    // 「前の二人ならどっち？」は、直近で主役だった別人物2人を比較する。
+    if(/(?:前|さっき|今まで)(?:の)?(?:二人|2人)/.test(t)&&/(?:なら|どっち|どちら|比べ|比較|違い)/.test(t)){
+      var recentPair=recentSubjects(h,{personOnly:true,limit:3});
+      if(recentPair.length>=2){
+        return {message:recentPair[0].value+'と'+recentPair[1].value+'を比較すると？',reference:recentPair[1],current:recentPair[0],kind:'recent_two_people_compare'};
+      }
+    }
+
+    // 「黒田と新井なら？」のように、最近の会話に出た略称2人をフルネームへ戻して比較する。
+    m=t.match(/^(.{1,18}?)(?:と|＆|&)(.{1,18}?)(?:(?:なら|だったら|ならば)(?:[、,\s]*(?:どっち|どちら)(?:が)?[^？?！!。]*)?|[、,\s]*(?:どっち|どちら)(?:が)?[^？?！!。]*)[？?！!。]*$/);
+    if(m){
+      var namedPair=pairFromNamedAnchors(h,m[1],m[2]);
+      if(namedPair&&namedPair.ambiguous)return {ambiguous:true,candidates:namedPair.candidates||[],kind:'named_pair'};
+      if(namedPair&&namedPair.left&&namedPair.right){
+        return {message:namedPair.left.value+'と'+namedPair.right.value+'を比較すると？',reference:namedPair.right,current:namedPair.left,kind:'named_pair_compare'};
+      }
+    }
+
+    // 「さっき出てきた別の人は？」は、回答内に一人だけ出た脇役人物へ話題を移す。
+    if(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(?:さっき|前に|今)(?:の話で)?(?:出てきた|出てた|出ていた|名前(?:が)?出た|触れてた)?(?:別の|ほかの|他の|もう一人の?)(?:人|選手|人物)?(.*)$/.test(t)){
+      var sec=latestSecondaryFrame(h);
+      if(sec){
+        if(sec.people.length>1)return {ambiguous:true,candidates:sec.people.slice(0,6),kind:'secondary_person'};
+        var sm=t.match(/(?:人|選手|人物)(.*)$/),ss=S(sm&&sm[1]||'');
+        if(!ss||/^(?:は|って)?[？?！!。]*$/.test(ss))ss='について';
+        return {message:sec.people[0]+ss,reference:{value:sec.people[0],type:'person',domain:sec.frame.domain||''},kind:'secondary_person'};
+      }
+    }
+
+    // 「その弟について詳しく」のように、家族回答で示された関係から人物を特定する。
+    m=t.match(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(?:その|この|さっきの|前の)?(?:お)?(父|母|兄|弟|姉|妹|息子|娘|妻|夫|奥さん|旦那|配偶者|子供|子ども)(?:さん)?(?:の)?(?:人|方|人物)?(.*)$/);
+    if(m){
+      var rel=m[1],relKey=rel;
+      if(rel==='奥さん')relKey='妻';else if(rel==='旦那')relKey='夫';else if(rel==='子ども')relKey='子供';
+      var framesForRel=topicFrames(h);
+      for(var rfi=framesForRel.length-1;rfi>=0;rfi--){
+        var rf=framesForRel[rfi];if(!rf||rf.aspect!=='family')continue;
+        var rp=relationPeopleFromFrame(rf,relKey);
+        if(!rp.length)continue;
+        if(rp.length>1)return {ambiguous:true,candidates:rp.slice(0,6),kind:'family_relation_person'};
+        var rs=S(m[2]||'');if(!rs||/^(?:は|って)?[？?！!。]*$/.test(rs))rs='について';
+        return {message:rp[0]+rs,reference:{value:rp[0],type:'person',domain:rf.domain||''},kind:'family_relation_person'};
+      }
+    }
+
+    // 「その家族の人について詳しく」は、直近の家族回答で主役以外に出た人物へ移る。
+    if(/^(?:(?:じゃあ|では|なら)[、,\s]*)?(?:その|この|さっきの|前の)?(?:家族|親族)(?:の)?(?:人|方|人物)(.*)$/.test(t)){
+      var fam=latestSecondaryFrame(h,{aspect:'family'});
+      if(fam){
+        if(fam.people.length>1)return {ambiguous:true,candidates:fam.people.slice(0,6),kind:'family_secondary_person'};
+        var fm=t.match(/(?:人|方|人物)(.*)$/),fs=S(fm&&fm[1]||'');
+        if(!fs||/^(?:は|って)?[？?！!。]*$/.test(fs))fs='について';
+        return {message:fam.people[0]+fs,reference:{value:fam.people[0],type:'person',domain:fam.frame.domain||''},kind:'family_secondary_person'};
+      }
     }
 
     // 「その前の選手と比べると？」は、今の主役と一つ前の別人物を比較する。
@@ -1205,6 +1362,11 @@
     recentSubjects:recentSubjects,
     findSubjectByAnchor:findSubjectByAnchor,
     previousDistinctSubject:previousDistinctSubject,
+    recentSecondaryPeople:recentSecondaryPeople,
+    latestSecondaryFrame:latestSecondaryFrame,
+    findPersonByAnchor:findPersonByAnchor,
+    pairFromNamedAnchors:pairFromNamedAnchors,
+    relationPeopleFromFrame:relationPeopleFromFrame,
     askedHistory:askedHistory,
     subjectMemory:subjectMemory,
     recentFrameByAspect:recentFrameByAspect,
