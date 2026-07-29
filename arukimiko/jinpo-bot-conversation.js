@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v1.5.0
+ * 歩き巫女 共通会話ルーター v1.6.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='1.5.1';
+  var VERSION='1.6.1';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -76,7 +76,7 @@
   function domainFromText(text){
     var t=S(text);
     if(/カープ|かーぷ|広島東洋|carp/i.test(t))return'carp';
-    if(counterCue(t)||/天下統一奇譚|修羅の間|天下武技大会|二条城|桶狭間|比叡山|賤ヶ岳/.test(t))return'counter';
+    if(counterCue(t)||/天下統一奇譚|修羅の間|天下武技大会|二条城|桶狭間|比叡山|賤ヶ岳|封印/.test(t))return'counter';
     if(/九十九|つくも/.test(t))return'tsukumo';
     if(/鬼神石|きしん/.test(t))return'kishin';
     if(/魔導結晶|魔導|まどう/.test(t))return'madou';
@@ -183,11 +183,17 @@
       .replace(/[？?！!。]+$/,'')
       .trim();
 
-    if(!t||t.length>28)return false;
+    if(!t||t.length>40)return false;
+
+    t=t
+      .replace(/^(?:いや|違う|ちがう|そうじゃない|それじゃない|そっちじゃない|訂正|やっぱり|やっぱ|ごめん|すまん|まちがえた|間違えた)[、,\s]*/,'')
+      .trim();
+    var parts=t.split(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく)/);
+    if(parts.length>=2)t=parts[parts.length-1].trim();
 
     if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
 
-    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間/.test(t))return true;
+    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|封印/.test(t))return true;
     if(/今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t))return true;
 
     return false;
@@ -195,6 +201,101 @@
 
   function isCounterCandidateFollowup(text,history){
     return recentCounterAmbiguity(history)&&counterCandidateSelector(text);
+  }
+
+  function isToolDatasetDomain(domain){
+    return domain==='tsukumo'||domain==='kishin'||domain==='madou';
+  }
+
+  function toolDatasetLabel(domain){
+    if(domain==='tsukumo')return'九十九';
+    if(domain==='kishin')return'鬼神石';
+    if(domain==='madou')return'魔導結晶';
+    return'';
+  }
+
+  function portableToolIntentFromText(text){
+    var t=S(text),stat=(t.match(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/)||[])[0]||'';
+    var num=0,m=t.match(/([0-9０-９]{1,4})\s*(?:番|ばん)(?!目)/);
+    if(m){
+      num=Number(m[1].replace(/[０-９]/g,function(c){
+        return String.fromCharCode(c.charCodeAt(0)-0xFEE0);
+      }))||0;
+    }
+
+    var top=0;
+    m=t.match(/(?:トップ|top|上位)\s*([1-9１-９][0-9０-９]?)/i);
+    if(m){
+      top=Number(m[1].replace(/[０-９]/g,function(c){
+        return String.fromCharCode(c.charCodeAt(0)-0xFEE0);
+      }))||0;
+    }
+
+    var ranking=!!(stat&&/一番|いちばん|最大|最高|トップ|top|上位|高い|高め|強い/.test(t));
+    if(ranking&&!top)top=1;
+
+    if(stat)return {kind:ranking?'stat_ranking':'stat',stat:stat,top:top};
+    if(num)return {kind:'number',number:num};
+    return null;
+  }
+
+  function recentPortableToolIntent(history){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      if(!h[i]||h[i].role!=='user')continue;
+      var d=domainFromText(h[i].text||'');
+      if(!isToolDatasetDomain(d))continue;
+      var intent=portableToolIntentFromText(h[i].text||'');
+      if(intent){
+        intent.domain=d;
+        return intent;
+      }
+    }
+    return null;
+  }
+
+  function isDatasetOnlySwitch(text,domain){
+    if(!isToolDatasetDomain(domain))return false;
+
+    var t=S(text)
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら|次は|つぎは)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    if(domain==='tsukumo')t=t.replace(/九十九|つくも/g,'');
+    if(domain==='kishin')t=t.replace(/鬼神石|きしん(?:せき)?/g,'');
+    if(domain==='madou')t=t.replace(/魔導結晶|魔導|まどう(?:けっしょう)?/g,'');
+
+    t=t.replace(/^(?:で|では|は|なら|だと|の場合|の方|のほう)+/,'')
+       .replace(/(?:で|では|は|なら|だと|の場合|の方|のほう)+$/,'')
+       .trim();
+
+    // 今の入力に新しい条件が書かれているなら、古い条件を足さない。
+    if(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/.test(t))return false;
+    if(/[0-9０-９]+\s*(?:番|ばん|位)/.test(t))return false;
+    if(/トップ|top|上位|一番|最大|最高|高い|高め|強い/.test(t))return false;
+    if(/入手|どこで|取れる|取り方|詳細|全部|他の能力|ほかの能力/.test(t))return false;
+
+    return t===''||/^(?:で|では|は|なら|だと|の場合|の方|のほう)*$/.test(t);
+  }
+
+  function carryExplicitToolDatasetSwitch(text,currentDomain,previousDomain,history){
+    if(!isToolDatasetDomain(currentDomain))return'';
+    if(!isToolDatasetDomain(previousDomain))return'';
+    if(currentDomain===previousDomain)return'';
+    if(!isDatasetOnlySwitch(text,currentDomain))return'';
+
+    var intent=recentPortableToolIntent(history);
+    if(!intent)return'';
+
+    var label=toolDatasetLabel(currentDomain);
+    if(intent.kind==='stat_ranking'){
+      if(intent.top>1)return label+'で'+intent.stat+'トップ'+intent.top;
+      return label+'で'+intent.stat+'一番高いのは？';
+    }
+    if(intent.kind==='stat')return label+'の'+intent.stat+'は？';
+    if(intent.kind==='number')return label+intent.number+'番は？';
+    return'';
   }
 
   function carryByDomain(text,domain,history){
@@ -373,6 +474,17 @@
     var prevDomain=recentDomain(history);
     var carried='';
 
+    // 新しいデータ種別は今の発言を最優先。
+    // ただし「じゃあ鬼神石では？」のように対象だけ切り替えた時は、
+    // 直前の腕力/知力/トップN/番号など移植可能な条件だけ引き継ぐ。
+    if(domain&&isToolDatasetDomain(domain)&&isToolDatasetDomain(prevDomain)&&domain!==prevDomain){
+      var switched=carryExplicitToolDatasetSwitch(message,domain,prevDomain,history);
+      if(switched){
+        message=switched;
+        carried=switched;
+      }
+    }
+
     if(!domain){
       if(prevDomain==='counter'&&isCounterCandidateFollowup(message,history)){
         carried=message;
@@ -438,6 +550,11 @@
     recentJinpoStatStyle:recentJinpoStatStyle,
     recentCounterAmbiguity:recentCounterAmbiguity,
     counterCandidateSelector:counterCandidateSelector,
-    isCounterCandidateFollowup:isCounterCandidateFollowup
+    isCounterCandidateFollowup:isCounterCandidateFollowup,
+    isToolDatasetDomain:isToolDatasetDomain,
+    portableToolIntentFromText:portableToolIntentFromText,
+    recentPortableToolIntent:recentPortableToolIntent,
+    isDatasetOnlySwitch:isDatasetOnlySwitch,
+    carryExplicitToolDatasetSwitch:carryExplicitToolDatasetSwitch
   };
 })();

@@ -6,7 +6,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONTEXT)return;
-  var VERSION='2.5.1';
+  var VERSION='2.5.3';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -115,7 +115,7 @@
     if(hasExplicitWeather(t))return'weather';
     if(hasExplicitFx(t))return'fx';
     if(hasExplicitSiteIntent(t))return'jinpo';
-    if(/たいらの野望|鬼神石|九十九|魔導結晶|七星転生|家臣計算|能力計算|天下統一奇譚|二条城|富士地下洞穴|修羅の間|天下武技大会|カウンター/.test(t))return'tairano';
+    if(/たいらの野望|鬼神石|九十九|魔導結晶|七星転生|家臣計算|能力計算|天下統一奇譚|二条城|富士地下洞穴|修羅の間|天下武技大会|封印|カウンター/.test(t))return'tairano';
     return'';
   }
   function recentDomain(h){
@@ -212,11 +212,17 @@
       .replace(/[？?！!。]+$/,'')
       .trim();
 
-    if(!t||t.length>28)return false;
+    if(!t||t.length>40)return false;
+
+    t=t
+      .replace(/^(?:いや|違う|ちがう|そうじゃない|それじゃない|そっちじゃない|訂正|やっぱり|やっぱ|ごめん|すまん|まちがえた|間違えた)[、,\s]*/,'')
+      .trim();
+    var parts=t.split(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく)/);
+    if(parts.length>=2)t=parts[parts.length-1].trim();
 
     if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
 
-    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間/.test(t))return true;
+    if(/桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|封印/.test(t))return true;
     if(/今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t))return true;
 
     return false;

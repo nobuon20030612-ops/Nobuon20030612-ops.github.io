@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.5.5-countere2e
+ * 歩き巫女 サイト共通ローダー v3.5.8-excelcounter
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.4.5';
+  var ASSET_VERSION='3.4.8';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -31,7 +31,7 @@
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.4.5',
+    version:'3.4.8',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -265,11 +265,17 @@
       .replace(/[？?！!。]+$/,'')
       .trim();
 
-    if(!t||t.length>28)return false;
+    if(!t||t.length>40)return false;
+
+    t=t
+      .replace(/^(?:いや|違う|ちがう|そうじゃない|それじゃない|そっちじゃない|訂正|やっぱり|やっぱ|ごめん|すまん|まちがえた|間違えた)[、,\s]*/,'')
+      .trim();
+    var parts=t.split(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく)/);
+    if(parts.length>=2)t=parts[parts.length-1].trim();
 
     if(/^(?:[1-6一二三四五六](?:番|番目|つ目)?|上から[1-6一二三四五六](?:番|番目|つ目)?|最初|一番上|上(?:のやつ|の方|のほう)?|真ん中|中(?:のやつ|の方|のほう)?|最後|一番下|下(?:のやつ|の方|のほう)?)$/.test(t))return true;
 
-    return /桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t);
+    return /桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|封印|今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t);
   }
 
   function groupsForMessage(text,history){
@@ -284,7 +290,7 @@
     }
 
     if(
-      /カウンター|かうんた|修羅の間|天下武技大会|天下統一奇譚|二条城|桶狭間|足利義昭|禅魔|雪斎/.test(t) ||
+      /カウンター|かうんた|修羅の間|天下武技大会|天下統一奇譚|二条城|桶狭間|封印|足利義昭|禅魔|雪斎/.test(t) ||
       (recentTairanoAmbiguity(history)&&counterCandidateSelector(t))
     ){
       groups.push('tairano');

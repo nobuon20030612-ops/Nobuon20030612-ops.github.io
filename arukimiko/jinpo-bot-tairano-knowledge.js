@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 たいらの野望 専用知識エンジン v1.7.0
+ * 歩き巫女 たいらの野望 専用知識エンジン v1.9.0
  *
  * v1.1:
  * - ひらがな/カタカナ統一
@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.7.0';
+  var VERSION='1.9.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -135,6 +135,36 @@
       }
     });
     return unique(forms.concat(more));
+  }
+
+  function baseNameForms(f){
+    var base=[];
+    (f.aliases||[]).forEach(function(x){base.push(x);});
+    (f.readings||[]).forEach(function(x){base.push(x);});
+    base.push(f.canonical||'');
+    return unique(base);
+  }
+
+  function explicitNameLength(text,f){
+    var t=N(text),best=0,forms=baseNameForms(f);
+    for(var i=0;i<forms.length;i++){
+      var x=forms[i];
+      // 1文字名は誤爆しやすいため完全一致優先フィルタには使わない。
+      if(!x||x.length<2)continue;
+      if(t.indexOf(x)>=0&&x.length>best)best=x.length;
+    }
+    return best;
+  }
+
+  function exactExplicitNamePool(text,facts){
+    var maxLen=0,out=[];
+    (facts||[]).forEach(function(f){
+      var len=explicitNameLength(text,f);
+      if(!len)return;
+      if(len>maxLen){maxLen=len;out=[f];}
+      else if(len===maxLen)out.push(f);
+    });
+    return {maxLen:maxLen,facts:out};
   }
 
   function nameMatchScore(rem,f,cueFound){
@@ -365,17 +395,49 @@
     return score;
   }
 
+  function correctionTargetText(text){
+    var raw=S(text).trim();
+    if(!raw)return'';
+
+    raw=raw
+      .replace(/^(?:いや|違う|ちがう|そうじゃない|それじゃない|そっちじゃない|訂正|やっぱり|やっぱ|ごめん|すまん|まちがえた|間違えた)[、,\s]*/,'')
+      .trim();
+
+    // AじゃなくB → B
+    var parts=raw.split(/(?:じゃなくて|じゃなく|ではなくて|ではなく|でなくて|でなく|じゃない方で|じゃないほうで)/);
+    if(parts.length>=2)raw=parts[parts.length-1].trim();
+
+    raw=raw
+      .replace(/(?:でお願いします|でおねがい|にして)\s*$/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    return raw;
+  }
+
+  function isCorrectionPhrase(text){
+    return /違う|ちがう|そうじゃない|それじゃない|そっちじゃない|訂正|やっぱり|やっぱ|ごめん|すまん|まちがえた|間違えた|じゃなく|ではなく|でなく/.test(S(text));
+  }
+
   function resolveCandidateFollowup(text,history,facts){
     var candidates=recentAmbiguityCandidates(history,facts);
     if(!candidates.length)return null;
 
-    var idx=ordinalCandidateIndex(text,candidates.length);
+    var correction=isCorrectionPhrase(text);
+    var targetText=correction?correctionTargetText(text):S(text);
+    if(!targetText)return null;
+
+    var idx=ordinalCandidateIndex(targetText,candidates.length);
     if(idx>=0){
-      return counterAnswer(candidates[idx],{nameKind:'candidate_ordinal'},text);
+      return counterAnswer(
+        candidates[idx],
+        {nameKind:correction?'candidate_correction':'candidate_ordinal'},
+        text
+      );
     }
 
     var ranked=candidates.map(function(f){
-      return {f:f,score:candidateTextScore(text,f)};
+      return {f:f,score:candidateTextScore(targetText,f)};
     }).filter(function(x){return x.score>0;})
       .sort(function(a,b){return b.score-a.score;});
 
@@ -385,7 +447,11 @@
     var same=ranked.filter(function(x){return x.score>=top-5;});
 
     if(same.length===1){
-      return counterAnswer(same[0].f,{nameKind:'candidate_followup'},text);
+      return counterAnswer(
+        same[0].f,
+        {nameKind:correction?'candidate_correction':'candidate_followup'},
+        text
+      );
     }
 
     return ambiguityAnswer(same,text);
@@ -415,6 +481,8 @@
       interpreted='「'+S(original)+'」は、'+S(f.canonical)+'のカウンターとして受け取ります。\n';
     }else if(meta&&(meta.nameKind==='candidate_ordinal'||meta.nameKind==='candidate_followup')){
       interpreted='候補の中では、'+S(f.location)+'の'+S(f.canonical)+'ですね。\n';
+    }else if(meta&&meta.nameKind==='candidate_correction'){
+      interpreted='了解なのですよ。訂正して、'+S(f.location)+'の'+S(f.canonical)+'ですね。\n';
     }
     var body=none
       ? S(f.location)+'の'+S(f.canonical)+'は、カウンター持ちは無しなのですよ。'
@@ -458,8 +526,15 @@
       return counterAnswer(preferred,{nameKind:'preferred_shorthand'},original);
     }
 
+    // v1.9.0: 今の入力に完全な人物名/別名が書かれている場合は、
+    // その最長一致名だけを検索対象にする。
+    // 例: 「足利義昭」を「足利義輝」の1文字誤字候補として混ぜない。
+    //     「足利」だけなら従来どおり省略名として扱える。
+    var exactPool=exactExplicitNamePool(original,d.facts||[]);
+    var searchFacts=exactPool.facts.length?exactPool.facts:(d.facts||[]);
+
     var ranked=[];
-    (d.facts||[]).forEach(function(f){
+    searchFacts.forEach(function(f){
       var m=factScore(original,f,history);
       if(m.score>0)ranked.push({f:f,m:m,score:m.score});
     });
@@ -528,6 +603,6 @@
     version:VERSION,respond:respond,search:search,normalize:N,
     _test:{detectCue:detectCue,nameForms:nameForms,editDistance:editDistance,
     preferredCounterFact:preferredCounterFact,factScore:factScore,nameMatchScore:nameMatchScore,
-    contextScore:contextScore,textHasAnyKnownContext:textHasAnyKnownContext,recentAmbiguityCandidates:recentAmbiguityCandidates,ordinalCandidateIndex:ordinalCandidateIndex,candidateTextScore:candidateTextScore,resolveCandidateFollowup:resolveCandidateFollowup}
+    contextScore:contextScore,textHasAnyKnownContext:textHasAnyKnownContext,baseNameForms:baseNameForms,explicitNameLength:explicitNameLength,exactExplicitNamePool:exactExplicitNamePool,recentAmbiguityCandidates:recentAmbiguityCandidates,ordinalCandidateIndex:ordinalCandidateIndex,candidateTextScore:candidateTextScore,correctionTargetText:correctionTargetText,isCorrectionPhrase:isCorrectionPhrase,resolveCandidateFollowup:resolveCandidateFollowup}
   };
 })();

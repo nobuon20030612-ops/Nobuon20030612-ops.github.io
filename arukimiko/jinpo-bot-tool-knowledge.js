@@ -5,7 +5,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_TOOL_KNOWLEDGE)return;
-  var VERSION='1.1.0';
+  var VERSION='1.4.0';
   var STATS=['生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];
 
   function S(v){
@@ -198,15 +198,68 @@
       /何|なに|どんな|詳細|詳しく|教えて|おしえて|他の能力|ほかの能力|全部|全能力|ステータス/.test(t);
   }
 
+  function portableIntentFromText(text){
+    var t=S(text),stat=detectStat(t),num=numberFromText(t);
+    var ranking=isRanking(t),top=ranking?topCount(t):0;
+    if(stat)return {kind:ranking?'stat_ranking':'stat',stat:stat,top:top};
+    if(num)return {kind:'number',number:num};
+    return null;
+  }
+
+  function recentPortableIntent(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-18;i--){
+      if(!h[i]||h[i].role!=='user')continue;
+      var ds=detectDataset(h[i].text||'');
+      if(!ds)continue;
+      var x=portableIntentFromText(h[i].text||'');
+      if(x){
+        x.dataset=ds.key;
+        return x;
+      }
+    }
+    return null;
+  }
+
+  function datasetOnlySwitch(text,ds){
+    if(!ds)return false;
+    var raw=S(text)
+      .replace(/^(?:じゃあ|では|なら|それじゃ|それなら|次は|つぎは)[、,\s]*/,'')
+      .replace(/[？?！!。]+$/,'')
+      .trim();
+
+    (ds.data.aliases||[]).sort(function(a,b){return String(b).length-String(a).length;}).forEach(function(a){
+      raw=raw.replace(new RegExp(escRe(a),'g'),'');
+    });
+
+    raw=raw
+      .replace(/^(?:で|では|は|なら|だと|の場合|の方|のほう)+/,'')
+      .replace(/(?:で|では|は|なら|だと|の場合|の方|のほう)+$/,'')
+      .trim();
+
+    if(detectStat(raw)||numberFromText(raw)||isRanking(raw)||isAcquisition(raw))return false;
+    if(/詳細|全部|他の能力|ほかの能力/.test(raw))return false;
+    return raw==='';
+  }
+
   function respond(text,opt){
     opt=opt||{};
     var original=S(text);if(!original)return{handled:false};
     var history=Array.isArray(opt.history)?opt.history:[];
     var ds=detectDataset(original);
-    var stat=detectStat(original);
-    var num=numberFromText(original);
+
+    // Conversation層を通らない呼び出しでも、
+    // 「九十九で腕力一番 → じゃあ鬼神石では？」を理解する安全網。
+    var portableCarry=null;
+    if(ds&&datasetOnlySwitch(original,ds)){
+      portableCarry=recentPortableIntent(history);
+      if(portableCarry&&portableCarry.dataset===ds.key)portableCarry=null;
+    }
+
+    var stat=detectStat(original)||(portableCarry&&portableCarry.stat)||'';
+    var num=numberFromText(original)||(portableCarry&&portableCarry.number)||0;
     var acquisition=isAcquisition(original);
-    var ranking=isRanking(original);
+    var ranking=isRanking(original)||!!(portableCarry&&portableCarry.kind==='stat_ranking');
     var recentItem=recentConcreteItem(history);
     var recentDs=recentDataset(history);
     var referenceFollowup=isReferenceFollowup(original);
@@ -238,7 +291,7 @@
     var d=ds.data;
 
     // Don't steal ordinary page navigation or jinpo's 鬼神石MAX command.
-    if(!directQuestion(original)){
+    if(!directQuestion(original)&&!portableCarry){
       return{handled:false};
     }
     if(/(?:MAX|マックス|全MAX)/i.test(original)&&!/番号|番|入手|どこ|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/.test(original)){
@@ -246,7 +299,9 @@
     }
 
     if(ranking&&stat){
-      var n=topCount(original);
+      var n=(portableCarry&&portableCarry.kind==='stat_ranking'&&portableCarry.top)
+        ?portableCarry.top
+        :topCount(original);
       var sorted=(d.rows||[]).slice().sort(function(a,b){
         var diff=Number(b[stat]||0)-Number(a[stat]||0);
         return diff!==0?diff:Number(a['番号']||0)-Number(b['番号']||0);
@@ -357,6 +412,9 @@
     detectStat:detectStat,
     recentConcreteItem:recentConcreteItem,
     stripDatasetPrefix:stripDatasetPrefix,
-    isReferenceFollowup:isReferenceFollowup
+    isReferenceFollowup:isReferenceFollowup,
+    portableIntentFromText:portableIntentFromText,
+    recentPortableIntent:recentPortableIntent,
+    datasetOnlySwitch:datasetOnlySwitch
   };
 })();
