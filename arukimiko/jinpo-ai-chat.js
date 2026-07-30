@@ -188,7 +188,10 @@
   }
   function close(){ win.classList.remove('isOpen'); launcher.setAttribute('aria-expanded','false'); saveUi({open:false}); }
   function hideAll(){
-    hideAiInfo();
+    // 旧UI側の補助情報を閉じる関数が存在する場合だけ呼ぶ。
+    // v3.23.0では関数本体が無いため、無条件呼出しするとここで例外停止し、
+    // 非表示処理そのものが実行されない。
+    try{if(typeof window.hideAiInfo==='function')window.hideAiInfo();}catch(e){}
     win.classList.remove('isOpen');
     launcher.setAttribute('aria-expanded','false');
     win.classList.remove('isMinimized');

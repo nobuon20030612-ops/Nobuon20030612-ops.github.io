@@ -1568,11 +1568,41 @@
     return'';
   }
 
+  function foldNicknameText(value){
+    var t=S(value);
+    try{t=t.normalize('NFKC');}catch(e){}
+    t=t.replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);})
+      .replace(/ヴ/g,'ゔ')
+      .replace(/真美/g,'まみ')
+      .replace(/田中/g,'たなか')
+      .toLowerCase()
+      .replace(/[\s\u3000、，,。.!！?？「」『』（）()【】\[\]・~〜＾^－_\-]/g,'');
+    return t;
+  }
+
+  function specialNicknameReply(text){
+    var t=foldNicknameText(text);if(!t)return'';
+    var targets=[
+      {key:'まみたん',reply:'おやつは買ってあげないですよ＾－＾'},
+      {key:'あふろたなか',reply:'キャバクラ代浮きますね＾－＾'}
+    ];
+    var prefix='(?:私は|わたしは|わたくしは|僕は|ぼくは|俺は|おれは|自分は|名前は|なまえは|ニックネームは|ハンドルネームは|hnは)?';
+    var suffix='(?:です|だ|だよ|といいます|と言います|と申します|っていいます|って言います|と名乗ります|って名乗ります|と名乗っています|って名乗っています|って名乗ってます|と呼ばれています|って呼ばれています)?';
+    var tail='(?:よろしく|よろしくお願いします|よろしくね)?';
+    for(var i=0;i<targets.length;i++){
+      var item=targets[i];
+      var re=new RegExp('^'+prefix+item.key+suffix+tail+'$');
+      if(re.test(t))return item.reply;
+    }
+    return'';
+  }
+
   function local(text,opt){
     opt=opt||{};
     setHistoryReplyKeys(opt.history||[]);
     var t=casualText(text),c=compact(t),userStyle=conversationStyle(opt.history||[],t);
     if(!t)return null;
+    var nicknameReply=specialNicknameReply(t);if(nicknameReply)return nicknameReply;
     // 入力途中の短い断片は、専門語を含んでいても勝手に検索・操作へ進めず続きを待つ。
     // 次の発言は conversation.js 側で直前断片と安全に連結する。
     try{

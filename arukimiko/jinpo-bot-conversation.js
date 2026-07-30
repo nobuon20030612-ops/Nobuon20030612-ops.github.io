@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.5.1';
+  var VERSION='3.5.2';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -1469,6 +1469,7 @@
     if(/九十九|つくも/.test(t))return'tsukumo';
     if(/鬼神石|きしん/.test(t))return'kishin';
     if(/魔導結晶|魔導|まどう/.test(t))return'madou';
+    if(/たいらの野望/.test(t))return'tairano';
     if(/家臣.*(?:名前|名付|命名)|(?:名前|名付|命名).*家臣/.test(t))return'kashin_name';
     if(/天気|気温|予報|降水|雨|雪|湿度|風速/.test(t))return'weather';
     if(/陣法|因縁|陣形|鶴翼|方円|魚鱗|衡軛|英傑|全MAX/.test(t))return'jinpo';
@@ -1486,15 +1487,26 @@
     if(!item)return'';
     // assistantのmodeは実際に通ったルーターを示すため、本文中の語より優先する。
     // 例: 家臣名候補「時雨」で天気、「黒田」でカープへ誤分類しない。
+    // 「たいらの野望ツール実データ」を先にcounter扱いすると、
+    // 鬼神石1番→「入手は？」がカウンターへ誤接続するため、個別正本を先に判定する。
     var mode=S(item.meta&&item.meta.mode||'');
     if(/カープ/.test(mode))return'carp';
-    if(/カウンター|たいらの野望/.test(mode))return'counter';
-    if(/陣法|検索結果|おすすめ陣法/.test(mode))return'jinpo';
-    if(/天気/.test(mode))return'weather';
-    if(/家臣.*(?:名前|名付)/.test(mode))return'kashin_name';
     if(/九十九/.test(mode))return'tsukumo';
     if(/鬼神石/.test(mode))return'kishin';
     if(/魔導/.test(mode))return'madou';
+    if(/カウンター/.test(mode))return'counter';
+    // 現行の「たいらの野望専用知識」はカウンター正本エンジンのmode名。
+    if(mode==='たいらの野望専用知識')return'counter';
+    // ツール実データのmode名は共通なので、回答本文に書かれたデータ種別で判定する。
+    if(mode==='たいらの野望ツール実データ'){
+      var toolModeDomain=domainFromText(item.text||'');
+      if(toolModeDomain==='tsukumo'||toolModeDomain==='kishin'||toolModeDomain==='madou')return toolModeDomain;
+      return'tairano';
+    }
+    if(/たいらの野望|サイト総合案内/.test(mode))return'tairano';
+    if(/陣法|検索結果|おすすめ陣法/.test(mode))return'jinpo';
+    if(/天気/.test(mode))return'weather';
+    if(/家臣.*(?:名前|名付)/.test(mode))return'kashin_name';
     var d=domainFromText(item.text||'');
     if(d)return d;
     return'';
@@ -1544,7 +1556,7 @@
     '野手':1,'家族':1,'親族':1,'試合':1,'結果':1,'順位':1,'今日':1,'明日':1,
     '昨日':1,'今回':1,'現在':1,'最新情報':1,'検索結果':1,'おすすめ':1,
     '前者':1,'後者':1,'もう片方':1,'もう一方':1,'そっち':1,
-    '代表例':1,'代表':1,'一例':1,'具体例':1,'例':1
+    '代表例':1,'代表':1,'一例':1,'具体例':1,'例':1,'入手':1,'必要数':1,'上限':1,'下限':1
   };
 
   function cleanEntityCandidate(v){
@@ -3394,6 +3406,7 @@
     if(/^(?:カープ|かーぷ|広島東洋(?:カープ)?)(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/i.test(t))return'carp';
     if(/^天気(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/.test(t))return'weather';
     if(/^(?:陣法|陣形)(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/.test(t))return'jinpo';
+    if(/^(?:たいらの野望|たいらの)(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/.test(t))return'tairano';
     if(/^カウンター(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/.test(t))return'counter';
     if(/^家臣(?:名付け|の名前|の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)?[？?！!。]*$/.test(t))return'kashin_name';
     return'';
@@ -3490,6 +3503,67 @@
     return null;
   }
 
+  function isTairanoDomain(domain){
+    return ['tairano','counter','tsukumo','kishin','madou','jinpo'].indexOf(String(domain||''))>=0;
+  }
+
+  // 「たいらの野望の話に戻って」は、サイト案内だけでなく、最後に話していた
+  // カウンター・九十九・鬼神石・魔導結晶・陣法を含む具体的な枝へ戻す。
+  function tairanoRestoreMessage(frame){
+    var f=frame||{},u=S(f.userText),a=S(f.assistantText),domain=String(f.domain||'');
+
+    if(domain==='counter'){
+      // 正本回答に含まれる「場所＋人物」を使い、短い「義輝は？」を曖昧な状態へ戻さない。
+      var cm=a.match(/(?:^|\n)([^。\n]{2,60}?)の([^。\n]{2,28}?)ですね。カウンター(?:は|持ちは)/);
+      if(cm)return S(cm[1])+'の'+S(cm[2])+'のカウンターは？';
+      return u;
+    }
+
+    if(domain==='tsukumo'||domain==='kishin'||domain==='madou'){
+      var label=domain==='tsukumo'?'九十九':(domain==='kishin'?'鬼神石':'魔導結晶');
+      var tm=a.match(/(?:九十九|鬼神石|魔導結晶)\s*([0-9０-９]{1,4})番/);
+      if(tm){
+        var num=String(tm[1]).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);});
+        if(/入手|どこで|取れる|取り方/.test(u))return label+num+'番の入手は？';
+        var stat=(u.match(/生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風/)||[])[0]||'';
+        if(stat)return label+num+'番の'+stat+'は？';
+        if(/詳細|詳しく|全部|他の能力|ほかの能力/.test(u))return label+num+'番を詳しく';
+        return label+num+'番は？';
+      }
+      if(new RegExp(label).test(u))return u;
+      return label+'の'+u;
+    }
+
+    return u;
+  }
+
+  function latestTairanoBranch(history){
+    var frames=topicFrames(history,{limit:64});
+    for(var i=frames.length-1;i>=0;i--){
+      var f=frames[i];
+      if(!f||!isTairanoDomain(f.domain)||!S(f.userText)||isBackCue(f.userText)||isTopicChangeCue(f.userText))continue;
+      var b=frameAsBranch(f)||{};
+      // 専用正本の回答から対象・場所・番号・観点を組み直し、長時間後でも同じ枝へ戻す。
+      b.message=tairanoRestoreMessage(f);
+      b.sourceText=S(f.userText);
+      b.domain=f.domain||b.domain||'tairano';
+      b.index=f.index;
+      return b;
+    }
+    return null;
+  }
+
+  function latestTairanoText(history){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];
+      if(!x||x.role!=='user'||!S(x.text)||isBackCue(x.text)||isTopicChangeCue(x.text))continue;
+      var d=domainFromHistoryItem(x);
+      if(isTairanoDomain(d))return S(x.text);
+    }
+    return'';
+  }
+
 
   // 「Firebaseに戻って」「黒田に戻って」のように、ドメイン名ではなく
   // 履歴上の具体的な主題名を指定した復帰。観点語だけの「家族に戻って」は
@@ -3516,14 +3590,15 @@
     var named=namedBackDomain(t);
 
     if(named){
-      var namedBranch=latestBranchByDomain(history,named);
+      var namedBranch=named==='tairano'?latestTairanoBranch(history):latestBranchByDomain(history,named);
       if(namedBranch){
-        return {control:'back',restoreMessage:namedBranch.message||namedBranch.sourceText,domain:named,sourceText:namedBranch.sourceText||'',sourceIndex:namedBranch.index,branch:true,aspect:namedBranch.aspect||'',primary:namedBranch.primary||null,namedDomain:true};
+        var restoredDomain=named==='tairano'?(namedBranch.domain||'tairano'):named;
+        return {control:'back',restoreMessage:namedBranch.message||namedBranch.sourceText,domain:restoredDomain,sourceText:namedBranch.sourceText||'',sourceIndex:namedBranch.index,branch:true,aspect:namedBranch.aspect||'',primary:namedBranch.primary||null,namedDomain:true,tairanoGroup:named==='tairano'};
       }
-      var prev=latestByDomain(history,named);
+      var prev=named==='tairano'?latestTairanoText(history):latestByDomain(history,named);
       if(prev){
         if(named==='carp'&&!/カープ|かーぷ|広島東洋/i.test(prev))prev='カープの'+prev;
-        return {control:'back',restoreMessage:prev,domain:named,sourceText:prev,namedDomain:true};
+        return {control:'back',restoreMessage:prev,domain:named,sourceText:prev,namedDomain:true,tairanoGroup:named==='tairano'};
       }
     }
 
