@@ -542,6 +542,8 @@
                   siteItem:String(child.data.siteItem||''),
                   siteFeature:String(child.data.siteFeature||''),
                   siteFeatures:Array.isArray(child.data.siteFeatures)?child.data.siteFeatures.slice(0,8):[],
+                  siteItems:Array.isArray(child.data.siteItems)?child.data.siteItems.slice(0,8):[],
+                  siteComparison:Array.isArray(child.data.siteComparison)?child.data.siteComparison.slice(0,8):[],
                   candidates:Array.isArray(child.data.candidates)?child.data.candidates.slice(0,8):[],
                   siteCandidates:Array.isArray(child.data.siteCandidates)?child.data.siteCandidates.slice(0,8):[],
                   needsClarification:!!child.data.needsClarification

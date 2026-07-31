@@ -61,7 +61,7 @@ function isGuide(r,id){return !!(r&&r.mode==='サイト総合案内'&&r.data&&r.
     ['陣法で何できんの','jinpo',r=>isGuide(r,'jinpo')&&/使い方/.test(r.answer||'')],
     ['桶狭間見たいんだけど','okehazama',r=>isGuide(r,'okehazama')],
     ['魔導結晶の見方わからん','mado',r=>isGuide(r,'mado')&&/使い方/.test(r.answer||'')],
-    ['鬼神石と九十九どっちがいい',null,r=>isGuide(r)&&Array.isArray(r.links)&&r.links.length===2&&/扱う対象が違う/.test(r.answer||'')]
+    ['鬼神石と九十九どっちがいい',null,r=>isGuide(r)&&Array.isArray(r.links)&&r.links.length===2&&/違いはこちら/.test(r.answer||'')&&/合成最低発現数/.test(r.answer||'')]
   ];
   for(const [q,id,judge] of direct){const r=await session().ask(q);check('direct '+q,judge(r),r);}
 
