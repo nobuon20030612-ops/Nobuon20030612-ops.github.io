@@ -4,7 +4,12 @@
 
   function normalize(t){
     var s=String(t==null?'':t).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).replace(/[　\s]+/g,' ').trim();
-    try{var conv=window.JINPO_BOT_CONVERSATION;if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}}catch(kanaErr){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeCasualInput==='function'){var c=conv.normalizeCasualInput(s);if(c&&c.text)s=String(c.text);}
+      if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}
+      if(conv&&typeof conv.normalizeKnownInput==='function'){var n=conv.normalizeKnownInput(s);if(n&&n.text)s=String(n.text);}
+    }catch(normalizeErr){}
     return s;
   }
   function A(){return window.JINPO_BOT_ACTIONS||{};}
@@ -537,5 +542,5 @@
     return plan;
   }
 
-  window.JINPO_BOT_PARSER={version:'2.9.0',parse:parse,normalize:normalize};
+  window.JINPO_BOT_PARSER={version:'3.0.0',parse:parse,normalize:normalize};
 })();

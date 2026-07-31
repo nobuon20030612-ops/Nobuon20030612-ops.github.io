@@ -13,7 +13,7 @@
 (function(){
   'use strict';
   if(window.JINPO_TAIRANO_KNOWLEDGE)return;
-  var VERSION='1.9.0';
+  var VERSION='1.10.0';
 
   function S(v){
     var s=String(v==null?'':v);
@@ -570,6 +570,10 @@
       }
       return counterAnswer(top.f,top.m,original);
     }
+
+    // 場所名だけで「表を見たい・ページを開きたい」と言われた時は、
+    // 未登録人物の値質問へ誤分類せず、後段のサイト案内へ渡す。
+    if(wantsNavigation(original))return {handled:false};
 
     // 人物名 + カウンター意図があるのに正本に一致しない場合、
     // genericなカウンターメニュー説明へ落とさない。

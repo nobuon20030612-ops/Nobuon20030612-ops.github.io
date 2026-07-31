@@ -629,7 +629,18 @@
     addBubble('user',text); setBusy(true); var typing=addTyping();
     try{
       var result=await requestAi(text,currentHistory()); if(typing&&typing.parentNode)typing.remove();
-      addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||''});
+      var historyData=null;
+      if(result.data&&result.data.siteGuide){
+        historyData={
+          siteGuide:true,
+          siteItem:String(result.data.siteItem||''),
+          siteFeature:String(result.data.siteFeature||''),
+          candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,8):[],
+          siteCandidates:Array.isArray(result.data.siteCandidates)?result.data.siteCandidates.slice(0,8):[],
+          needsClarification:!!result.data.needsClarification
+        };
+      }
+      addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||'',data:historyData});
       setBrainStatus('案内・検索OK',String(result.mode||'歩き巫女'));
     }catch(err){
       if(typing&&typing.parentNode)typing.remove();

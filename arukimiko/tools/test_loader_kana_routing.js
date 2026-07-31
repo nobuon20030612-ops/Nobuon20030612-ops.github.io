@@ -52,5 +52,10 @@ check('one kana omitted foreign Carp lazy group',groups('えるどれどのか�
 check('one kana omitted ordinary relative blocked',!groups('しんせきのはなし').includes('tool')&&!groups('しんせきのはなし').includes('tairano'),groups('しんせきのはなし'));
 
 check('transposed name alone blocked',!groups('あさひなやすもとは？').includes('tairano'),groups('あさひなやすもとは？'));
+check('known kanji typo tool lazy group',groups('鬼神席1番の入手').includes('tool'),groups('鬼神席1番の入手'));
+check('known mixed typo tool lazy group',groups('魔導結品の能力').includes('tool'),groups('魔導結品の能力'));
+check('known omission tool lazy group',groups('魔導結の入手').includes('tool'),groups('魔導結の入手'));
+check('ordinary ninety people remains blocked',!groups('九十人いる').includes('tool'),groups('九十人いる'));
+check('ordinary relative remains blocked after known typo layer',!groups('親戚の話').includes('tool'),groups('親戚の話'));
 console.log(`LOADER KANA ROUTING: ${pass} / ${pass+fail} PASS`);
 if(fail)process.exit(1);

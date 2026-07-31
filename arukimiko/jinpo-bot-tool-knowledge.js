@@ -5,7 +5,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_TOOL_KNOWLEDGE)return;
-  var VERSION='1.4.0';
+  var VERSION='1.5.0';
   var STATS=['生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];
 
   function S(v){
@@ -408,6 +408,27 @@
           data:{dataset:ds.key,stat:stat,max:mv}
         };
       }
+    }
+
+    // データ種別までは分かるが、対象の番号・名称が無い質問。
+    // 無関係な一般確認へ落とさず、何を足せば答えられるかを具体的に返す。
+    if(acquisition){
+      return {
+        handled:true,
+        answer:d.name+'の入手についてですね。どの番号または名称を調べるか教えてください。たとえば「'+d.name+'1番の入手」「名称の入手」のように言えば、正本データから答えるのですよ。',
+        mode:'たいらの野望ツール実データ',
+        sources:[],links:[],
+        data:{dataset:ds.key,needsItem:true,acquisition:true}
+      };
+    }
+    if(/何|なに|どんな|詳細|詳しく|教えて|おしえて|全部|全能力|ステータス/.test(original)){
+      return {
+        handled:true,
+        answer:d.name+'についてですね。番号または名称を指定すると、能力値と入手情報を正本データから確認できます。「'+d.name+'1番は？」「名称の耐久は？」「'+d.name+'で知力トップ3」のようにも聞けるのですよ。',
+        mode:'たいらの野望ツール実データ',
+        sources:[],links:[],
+        data:{dataset:ds.key,needsItemOrQuestion:true}
+      };
     }
 
     return{handled:false};

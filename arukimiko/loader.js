@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.25.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.29.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.25.0';
+  var ASSET_VERSION='3.29.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.25.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.29.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.25.0',
+    version:'3.29.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -139,6 +139,7 @@
     'jinpo-bot-context.js',
     'jinpo-bot-dialog.js',
     'jinpo-bot-page-context.js',
+    'jinpo-bot-site-source-data.js',
     'jinpo-bot-site-guide.js',
     'jinpo-bot-memory.js',
     'jinpo-bot-arukimiko.js'
@@ -243,15 +244,23 @@
   var tairanoReadingHints=["きょくかんきほうてんぐ","ざんぎゃくなるまじゅう","だいろくてんしゅらおう","しれんのふうまいしゃ","すぎたにぜんじゅぼう","ひょうけつのまちょう","ふかんぜんなきょじん","ほんがんじきょうにょ","かみいずみのぶつな","きょうらんこんごう","ごうせつおんりょう","こばやかわたかかげ","しらつゆのあいこん","ほうじょううじやす","ほんがんじけんにょ","まつだいらもとやす","むめいのこぶしょう","ゆきやまのせいれい","あさくらかげのり","あさくらそうてき","あさくらよしかげ","あさひなやすとも","あしかがよしあき","あしかがよしてる","いしかわいえなり","いまがわうじざね","いまがわよしもと","うえすぎけんしん","うごめくじゃれい","かげふみのてんぐ","きえないおんねん","げんえいだいじゃ","ごうゆうのあっき","さいとうどうさん","しもつまらいれん","せきぐちうじひろ","たちばなむねしげ","とくがわいえやす","とこよのじゅつし","とこよのせんぺい","なだかきくぎょう","はっとりはんぞう","はなかげのめがみ","はなさきのめがみ","ひたんのせいれい","ふなおかやまうば","ほそかわふじたか","むめいのくぎょう","ももちさんだゆう","あざいすけまさ","あざいながまさ","あらきむらしげ","いそのかずまさ","おかべもとのぶ","くろだかんべえ","ごほうあしゅら","さいかまごいち","さかいただつぐ","さなだまさゆき","しまづよしひろ","しゅてんどうじ","しゅらふうじん","しゅららいじん","しんあんのおに","じんらいらせつ","すずきしげおき","ぜんませっさい","たけだしんげん","たけだのぶとら","なぞのばけもの","はしばひでよし","ふうまこたろう","まがらなおたか","まついむねのぶ","みよしながやす","みよしながよし","やまとのまえい","よしだやまうば","いいなおもり","おだのぶゆき","かてんやしゃ","きそよしなか","ぐふうらせつ","じょろうぐも","だてまさむね","なぞのおとこ","もりよしなり","じゅけいに","おいち","おまつ","ぜつ"];
 
   function normalizeKanaForRouting(text){
-    var raw=String(text||'');
+    var raw=String(text||''),out=raw;
     try{
       var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeCasualInput==='function'){
+        var casual=conv.normalizeCasualInput(out);
+        if(casual&&casual.text)out=String(casual.text);
+      }
       if(conv&&typeof conv.normalizeKanaInput==='function'){
-        var r=conv.normalizeKanaInput(raw);
-        if(r&&r.text)return String(r.text);
+        var kana=conv.normalizeKanaInput(out);
+        if(kana&&kana.text)out=String(kana.text);
+      }
+      if(conv&&typeof conv.normalizeKnownInput==='function'){
+        var known=conv.normalizeKnownInput(out);
+        if(known&&known.text)out=String(known.text);
       }
     }catch(e){}
-    return raw;
+    return out;
   }
 
   function carpHintFold(value){

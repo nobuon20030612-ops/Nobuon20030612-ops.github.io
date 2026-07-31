@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v3.3.0
+ * 歩き巫女 共通会話ルーター v3.9.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.7.0';
+  var VERSION='3.9.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -78,7 +78,19 @@
       [/^そなん(?=[ねなよわ？?！!。…\s]*$)/g,'そうなん'],
       [/^あ[ー~〜～]*そういう(?=[？?！!。\s]*$)/g,'そういうことね'],
       [/^そっか[ー~〜～]+(?=[？?！!。\s]*$)/g,'そっか'],
-      [/まぢ(?=(?:で)?[？?！!。\s]*$)/g,'マジ']
+      [/まぢ(?=(?:で)?[？?！!。\s]*$)/g,'マジ'],
+      [/何すりゃ(?:いい|よい)(?:ん|の)?/g,'何をすればいい'],
+      [/何すれば(?:いい|よい)(?:ん|の)?/g,'何をすればいい'],
+      [/何できんの/g,'何ができるの'],
+      [/何できるん(?:だ|です)?(?:の)?/g,'何ができるの'],
+      [/どこ押すん/g,'どこを押すの'],
+      [/どれ押すん/g,'どれを押すの'],
+      [/見れん/g,'見られない'],
+      [/見れる/g,'見られる'],
+      [/わからん/g,'分からない'],
+      [/分からん/g,'分からない'],
+      [/どっから/g,'どこから'],
+      [/なんこれ/g,'これ何']
     ];
     for(var i=0;i<rules.length;i++)t=t.replace(rules[i][0],rules[i][1]);
     return {text:t,changed:t!==original,original:original};
@@ -132,6 +144,7 @@
   var KANA_CANONICAL_RULES=[
     ['広島東洋カープ',['ひろしまとうようかーぷ','ひろしまとうようかあぷ']],
     ['たいらの野望',['たいらのやぼう']],
+    ['ページ',['ぺーじ']],
     ['天下統一奇譚',['てんかとういつきたん']],
     ['天下武技大会',['てんかぶぎたいかい']],
     ['富士地下洞穴',['ふじちかどうけつ']],
@@ -283,7 +296,6 @@
     ['候補',['こうほ']],
     ['結果',['けっか']],
     ['比較',['ひかく']],
-    ['違い',['ちがい']],
     ['絞り込み',['しぼりこみ','しぼり込み']],
     ['上下限',['じょうげげん']],
     ['未満',['みまん']],
@@ -713,11 +725,169 @@
     text=applyFoldedKanaRules(text,KANA_CANONICAL_SMALL_ENTRIES,smallKanaFold);
     text=applyFoldedKanaRules(text,KANA_CANONICAL_LOOSE_ENTRIES,unvoiceKanaFold);
     text=applyKanaRules(text,KANA_CANONICAL_ENTRIES);
+    // 「ちがい」は単独語・助詞境界にある時だけ正規化する。
+    // 部分一致で「どっちがいい」を「どっ違いい」に壊さない。
+    text=text.replace(/(^|[\s、。,.!！?？「」『』【】（）()・のはをにでとがもへ])(?:ちがい|チガイ)(?=$|[\s、。,.!！?？「」『』【】（）()・はをにでとがもへ])/g,function(_,pre){return pre+'違い';});
     text=normalizeNumericKanaForms(text);
     if(text!==original&&/[ァ-ヶ]/.test(text))text=normalizeKatakanaGrammar(text);
     text=normalizeNumericKanaForms(text);
     storeKanaResult(cacheKey,text);
     return {text:text,changed:text!==original,original:original};
+  }
+
+
+  // ------------------------------------------------------------
+  // 既知語の誤字・脱字予測
+  // ------------------------------------------------------------
+  // かな表記だけでなく、音声入力・IME変換で起きる漢字の取り違え、
+  // 1文字抜け、隣接文字の入れ替わりを、既知のサイト用語に限って補正する。
+  // 人物名や正本の数値は対象にせず、候補が一つに決まらない時は直さない。
+  var KNOWN_INPUT_TYPO_RULES=[
+    {to:'たいらの野望',aliases:['たいらの野望う','たいらの野望望'],fuzzy:'always'},
+    {to:'天下統一奇譚',aliases:['天下統一奇談','天下統一綺譚','天下統一きたん'],fuzzy:'always'},
+    {to:'天下武技大会',aliases:['天下武器大会','天下武義大会','天武技大会'],fuzzy:'always'},
+    {to:'富士地下洞穴',aliases:['富士地下洞窟','富士地下同穴'],fuzzy:'always'},
+    {to:'星海の荒石',aliases:['星界の荒石','星海荒石','星海の荒岩'],fuzzy:'always'},
+    {to:'魔導結晶',aliases:['魔道結晶','魔動結晶','魔導結品','魔導結昌','魔導結石'],fuzzy:'always'},
+    {to:'鬼神石',aliases:['鬼神席','鬼人石','鬼神積','鬼神岩'],fuzzy:'always'},
+    {to:'九十九',aliases:['九十九神','九十久'],fuzzy:'domain'},
+    {to:'見聞録',aliases:['見聞禄','見門録'],fuzzy:'domain'},
+    {to:'七星転生',aliases:['七星転成','七星転性'],fuzzy:'always'},
+    {to:'鎮魂符',aliases:['鎮魂府','鎮魂札'],fuzzy:'always'},
+    {to:'御蔵番',aliases:['御倉番','御蔵版','お蔵番'],fuzzy:'always'},
+    {to:'家臣計算機',aliases:['家臣計算気','家臣計算器','家信計算機'],fuzzy:'always'},
+    {to:'能力計算',aliases:['能力計算気','能力計算器','能録計算'],fuzzy:'domain'},
+    {to:'徒党登録',aliases:['徒党登緑','徒党登錄'],fuzzy:'always'},
+    {to:'修羅の間',aliases:['修羅間','修羅のま'],fuzzy:'always'},
+    {to:'二条城',aliases:['二條城'],fuzzy:'always'},
+    {to:'桶狭間',aliases:['桶峡間','桶狭問'],fuzzy:'always'},
+    {to:'比叡山',aliases:['比英山','比叡産'],fuzzy:'always'},
+    {to:'賤ヶ岳',aliases:['賤ケ岳','賤が岳','しずが岳'],fuzzy:'always'},
+    {to:'カウンター',aliases:['カウター','カウンタ','カンタ―','カンタ－'],fuzzy:'domain'},
+    {to:'トーナメント',aliases:['トーナメン卜','トナーメント'],fuzzy:'always'},
+    {to:'ルーレット',aliases:['ルーレツト','ルレット'],fuzzy:'always'},
+    {to:'陣法',aliases:['陣方','陳法'],fuzzy:'domain'},
+    {to:'陣形',aliases:['陣型','陣けい'],fuzzy:'domain'},
+    {to:'発動因縁',aliases:['発動因円','発動因緑'],fuzzy:'domain'},
+    {to:'全MAX込み',aliases:['全MAXこみ','全MX込み','全部MAX込み'],fuzzy:'domain'},
+    {to:'全MAX',aliases:['全MX','全部MAX','全マックス'],fuzzy:false},
+    {to:'込み合計',aliases:['込合計','こみ合計'],fuzzy:'domain'},
+    {to:'検索結果',aliases:['検索結課','検索結化','検索けっか','検索結か'],fuzzy:'domain'},
+    {to:'検索条件',aliases:['検索条件','検索情件'],fuzzy:'domain'},
+    {to:'発動中因縁',aliases:['発動中因円','発動中因緑'],fuzzy:'domain'},
+    {to:'英傑一覧',aliases:['英傑一欄','英傑覧','英傑一覽'],fuzzy:'always'},
+    {to:'因縁一覧',aliases:['因縁一欄','因円一覧'],fuzzy:'domain'},
+    {to:'検索結果一覧',aliases:['検索結果一欄','検索結課一覧'],fuzzy:'domain'},
+    {to:'配置英傑',aliases:['配値英傑','配置英決'],fuzzy:'domain'},
+    {to:'除外英傑',aliases:['除害英傑','除外英決'],fuzzy:'domain'},
+    {to:'差替候補',aliases:['差し変え候補','差換候補','差替え候補'],fuzzy:'domain'},
+    {to:'基礎値',aliases:['基楚値','基礎地'],fuzzy:'domain'},
+    {to:'検索基準',aliases:['検索規準','検索基淮'],fuzzy:'domain'},
+    {to:'第1優先',aliases:['第一優先','第１優先','第1優線'],fuzzy:'domain'},
+    {to:'第2優先',aliases:['第二優先','第２優先','第2優線'],fuzzy:'domain'},
+    {to:'ヒット件数',aliases:['ヒット軒数','ヒット数'],fuzzy:'domain'},
+    {to:'表示件数',aliases:['表示軒数'],fuzzy:'domain'},
+    {to:'並べ替え',aliases:['並び替え','並べ変え'],fuzzy:'domain'},
+    {to:'全解除',aliases:['全解徐','全部解除'],fuzzy:'domain'},
+    {to:'見聞録MAX',aliases:['見聞禄MAX','見聞録MX'],fuzzy:'domain'},
+    {to:'鬼神石MAX',aliases:['鬼神席MAX','鬼神石MX'],fuzzy:'domain'},
+    {to:'転生MAX',aliases:['転成MAX','転生MX'],fuzzy:'domain'},
+    {to:'文曲除外',aliases:['文局除外','文曲徐外'],fuzzy:'domain'},
+    {to:'入手方法',aliases:['入手方々','入手法方','手に入れ方'],fuzzy:'domain'},
+    {to:'使い方',aliases:['使方','やり方','つかい方'],fuzzy:'domain'},
+    {to:'必要数',aliases:['必用数','必要個数'],fuzzy:'domain'},
+    {to:'非表示',aliases:['非表事','隠して'],fuzzy:'domain'},
+    {to:'最小化',aliases:['最少化','小さくして'],fuzzy:'domain'},
+    {to:'再表示',aliases:['再表事','もう一度表示'],fuzzy:'domain'}
+  ];
+
+  function knownTypoFold(v){
+    return hiraText(v).toLowerCase().replace(/[\s　・]/g,'');
+  }
+  function knownTypoDistance(a,b){
+    a=knownTypoFold(a);b=knownTypoFold(b);
+    var n=a.length,m=b.length;if(!n)return m;if(!m)return n;
+    var d=new Array(n+1),i,j;
+    for(i=0;i<=n;i++){d[i]=new Array(m+1);d[i][0]=i;}
+    for(j=0;j<=m;j++)d[0][j]=j;
+    for(i=1;i<=n;i++)for(j=1;j<=m;j++){
+      var cost=a.charAt(i-1)===b.charAt(j-1)?0:1;
+      d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+cost);
+      if(i>1&&j>1&&a.charAt(i-1)===b.charAt(j-2)&&a.charAt(i-2)===b.charAt(j-1)){
+        d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1);
+      }
+    }
+    return d[n][m];
+  }
+  function knownTypoDomainContext(text){
+    return /たいらの野望|サイト|ページ|ツール|陣法|陣形|因縁|英傑|検索|結果|候補|優先|全MAX|MAX|見聞録|鬼神石|九十九|魔導|七星|鎮魂|御蔵|家臣|能力|徒党|カウンタ|天下|修羅|桶狭間|富士|京都|比叡|二条|賤ヶ岳|使い方|入手|必要|表示|開|見せ|教えて|調べ|計算|探して|どこ|何ができる/.test(S(text));
+  }
+  function knownTypoBoundary(text,start,end,targetLength){
+    if(targetLength>=6)return true;
+    var pre=start>0?text.charAt(start-1):'',post=end<text.length?text.charAt(end):'';
+    var boundary=/[\s、。,.!！?？「」『』【】（）()・のはをにでとがもへか]/;
+    return !pre||!post||boundary.test(pre)||boundary.test(post)||/^(?:見|開|教|使|調|計|探|戻|出|比|選)/.test(post);
+  }
+  function replaceKnownExactAliases(text,corrections){
+    var out=S(text);
+    KNOWN_INPUT_TYPO_RULES.forEach(function(rule){
+      (rule.aliases||[]).forEach(function(alias){
+        if(!alias||alias===rule.to||out.indexOf(alias)<0)return;
+        var re=new RegExp(escKanaRe(alias),'g');
+        out=out.replace(re,function(match,offset){
+          if(out.slice(offset,offset+rule.to.length)===rule.to)return match;
+          corrections.push({from:match,to:rule.to,kind:'known_alias',confidence:0.99});
+          return rule.to;
+        });
+      });
+    });
+    return out;
+  }
+  function fuzzyKnownCandidates(text){
+    var out=S(text),candidates=[],domain=knownTypoDomainContext(out);
+    KNOWN_INPUT_TYPO_RULES.forEach(function(rule){
+      if(!rule.fuzzy||rule.fuzzy==='domain'&&!domain||out.indexOf(rule.to)>=0)return;
+      var target=rule.to,tl=target.length;if(tl<4)return;
+      var maxDist=tl>=8?2:1,minLen=Math.max(3,tl-maxDist),maxLen=Math.min(out.length,tl+maxDist);
+      for(var len=minLen;len<=maxLen;len++)for(var start=0;start+len<=out.length;start++){
+        var sub=out.slice(start,start+len);
+        if(/[\s、。,.!！?？「」『』【】（）()]/.test(sub))continue;
+        // 漢字で終わる既知語へ直す際、直後の助詞・語尾まで誤字として飲み込まない。
+        // 例: 「家臣計算どっから」→「家臣計算機っから」にしない。
+        if(/[一-龯々〆ヵヶ]$/.test(target)&&/[ぁ-ゖ]$/.test(sub)&&sub.length>=tl)continue;
+        if(!knownTypoBoundary(out,start,start+len,tl))continue;
+        var dist=knownTypoDistance(sub,target);if(!dist||dist>maxDist)continue;
+        var score=1-dist/Math.max(knownTypoFold(sub).length,knownTypoFold(target).length);
+        if(score<(tl>=8?0.76:(tl===4?0.74:0.80)))continue;
+        candidates.push({start:start,end:start+len,from:sub,to:target,score:score,distance:dist,length:tl});
+      }
+    });
+    candidates.sort(function(a,b){return b.score-a.score||a.distance-b.distance||Math.abs((a.end-a.start)-a.length)-Math.abs((b.end-b.start)-b.length)||(b.end-b.start)-(a.end-a.start)||b.length-a.length||a.start-b.start;});
+    return candidates;
+  }
+  var KNOWN_TYPO_CACHE=Object.create(null),KNOWN_TYPO_KEYS=[],KNOWN_TYPO_CACHE_MAX=1200;
+  function normalizeKnownInput(v){
+    var original=S(v);if(!original)return {text:'',changed:false,original:original,corrections:[]};
+    if(Object.prototype.hasOwnProperty.call(KNOWN_TYPO_CACHE,original)){
+      var cached=KNOWN_TYPO_CACHE[original];return {text:cached,changed:cached!==original,original:original,corrections:[]};
+    }
+    var corrections=[],text=replaceKnownExactAliases(original,corrections),candidates=fuzzyKnownCandidates(text),chosen=[];
+    candidates.forEach(function(c){
+      if(chosen.some(function(x){return !(c.end<=x.start||c.start>=x.end);} ))return;
+      var rival=candidates.find(function(x){return x.to!==c.to&&x.start===c.start&&x.end===c.end&&Math.abs(x.score-c.score)<0.08;});
+      if(rival)return;
+      chosen.push(c);
+    });
+    chosen.sort(function(a,b){return b.start-a.start;}).forEach(function(c){
+      text=text.slice(0,c.start)+c.to+text.slice(c.end);
+      corrections.push({from:c.from,to:c.to,kind:'known_fuzzy',confidence:c.score});
+    });
+    if(!Object.prototype.hasOwnProperty.call(KNOWN_TYPO_CACHE,original)){
+      KNOWN_TYPO_KEYS.push(original);
+      if(KNOWN_TYPO_KEYS.length>KNOWN_TYPO_CACHE_MAX){var old=KNOWN_TYPO_KEYS.shift();delete KNOWN_TYPO_CACHE[old];}
+    }
+    KNOWN_TYPO_CACHE[original]=text;
+    return {text:text,changed:text!==original,original:original,corrections:corrections};
   }
 
   // 入力途中で送信された短い断片を保守的に検出する。
@@ -4222,7 +4392,10 @@
   // 履歴上の具体的な主題名を指定した復帰。観点語だけの「家族に戻って」は
   // multiTurnReference() 側へ残し、主題名として誤認しない。
   function namedSubjectBack(text,history){
-    var t=S(text).replace(/もど/g,'戻'),m=t.match(/^(.{1,28}?)(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)[？?！!。]*$/);
+    var t=S(text).replace(/もど/g,'戻');
+    // 「どこに戻る？」「戻り先は？」はページUIの質問であり、過去話題へ戻す命令ではない。
+    if(/(?:どこ|何処|どのページ|戻り先|戻る先).{0,8}戻|戻(?:る|った)先|どこに戻(?:る|ります)/.test(t))return null;
+    var m=t.match(/^(.{1,28}?)(?:の話)?(?:に|へ)?戻(?:そう|ろう|して|す|る|って)[？?！!。]*$/);
     if(!m)return null;
     var anchor=S(m[1]);
     if(!anchor||/^(?:前|前の|さっき|さっきの|その前|さらに前|元|元の|話|家族|親族|逸話|昔話|歴史|成績|経歴|現在)$/.test(anchor))return null;
@@ -4393,7 +4566,8 @@
     var original=S(text);
     var casual=normalizeCasualInput(original);
     var kana=normalizeKanaInput(casual.text||original);
-    var routingText=kana.text||casual.text||original;
+    var known=normalizeKnownInput(kana.text||casual.text||original);
+    var routingText=known.text||kana.text||casual.text||original;
     var contrastiveTail=contrastiveFollowupTail(routingText);
     if(contrastiveTail)routingText=contrastiveTail;
     var priorHistory=historyBeforeCurrent(history,original);
@@ -4588,7 +4762,7 @@
       original:original,
       message:message,
       normalizedInput:routingText,
-      inputNormalized:!!(casual.changed||kana.changed||contrastiveTail),
+      inputNormalized:!!(casual.changed||kana.changed||known.changed||contrastiveTail),
       contrastiveFollowup:!!contrastiveTail,
       corrected:!!(correction.corrected||parallelCorrection||(inlineCorrection&&inlineCorrection.changed)),
       fragmentStitched:!!(fragmentCarry&&fragmentCarry.message),
@@ -4615,6 +4789,8 @@
     resolve:resolve,
     normalizeCasualInput:normalizeCasualInput,
     normalizeKanaInput:normalizeKanaInput,
+    normalizeKnownInput:normalizeKnownInput,
+    knownTypoDistance:knownTypoDistance,
     smallKanaFold:smallKanaFold,
     looseKanaFold:unvoiceKanaFold,
     isOpenUserFragment:isOpenUserFragment,

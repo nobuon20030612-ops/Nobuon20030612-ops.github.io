@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.22.0';
+  var VERSION='3.23.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -515,7 +515,7 @@
           }
 
           var compoundAnswers=[],compoundSources=[],compoundLinks=[],compoundModes=[],completed=0;
-          var evolvingHistory=baseHistory.slice(),stopForFollowup=false;
+          var evolvingHistory=baseHistory.slice(),stopForFollowup=false,lastCompoundSiteItem='';
           var seenSource={},seenLink={};
 
           for(var ci=0;ci<compoundParts.length;ci++){
@@ -525,10 +525,30 @@
             var child=await handle({message:part,history:childHistory,__compoundChild:true});
             child=child||{};
             var childAnswer=String(child.answer||'').trim();
+            var childSiteItem=child&&child.data&&child.data.siteGuide?String(child.data.siteItem||''):'';
+            if(childAnswer&&childSiteItem&&lastCompoundSiteItem===childSiteItem){
+              // 同じページへの複数質問では「○○についてですね」を繰り返さず、自然に続ける。
+              childAnswer=childAnswer.replace(/^「[^」]+」についてですね。[\s]*/,'また、');
+            }
             if(childAnswer){
               compoundAnswers.push(childAnswer);
               evolvingHistory.push({role:'user',text:part,at:at});
-              evolvingHistory.push({role:'assistant',text:childAnswer,meta:{mode:String(child.mode||'')},at:at+0.1});
+              // 複合発話の次の節でも「何個まで？→九十九は？」の観点を引き継げるよう、
+              // サイト案内の最小メタデータだけを内部履歴へ残す。回答本文や正本データは複製しない。
+              var childMeta={mode:String(child.mode||'')};
+              if(child.data&&child.data.siteGuide){
+                childMeta.data={
+                  siteGuide:true,
+                  siteItem:String(child.data.siteItem||''),
+                  siteFeature:String(child.data.siteFeature||''),
+                  siteFeatures:Array.isArray(child.data.siteFeatures)?child.data.siteFeatures.slice(0,8):[],
+                  candidates:Array.isArray(child.data.candidates)?child.data.candidates.slice(0,8):[],
+                  siteCandidates:Array.isArray(child.data.siteCandidates)?child.data.siteCandidates.slice(0,8):[],
+                  needsClarification:!!child.data.needsClarification
+                };
+                childMeta.links=Array.isArray(child.links)?child.links.slice(0,8):[];
+              }
+              evolvingHistory.push({role:'assistant',text:childAnswer,meta:childMeta,at:at+0.1});
             }
             (Array.isArray(child.sources)?child.sources:[]).forEach(function(src){
               var key=String(src&&src.url||src&&src.title||'');
@@ -539,6 +559,7 @@
               if(!key||seenLink[key])return;seenLink[key]=1;compoundLinks.push(link);
             });
             if(child.mode&&compoundModes.indexOf(String(child.mode))<0)compoundModes.push(String(child.mode));
+            lastCompoundSiteItem=childSiteItem||'';
             completed++;
 
             var cd=child.data||{};
@@ -738,6 +759,15 @@
         }
       }catch(pendingCheckErr){}
 
+      // サイト案内として明確な入力は、一般雑談より先に受け取る。
+      // 「陣法で何できんの」「桶狭間見たいんだけど」などが
+      // 日常会話へ流れて案内文脈を失うのを防ぐ。
+      try{
+        if(!blockEarlySmalltalk&&window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.preflight==='function'){
+          if(window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext}))blockEarlySmalltalk=true;
+        }
+      }catch(siteGuidePreflightErr){}
+
       if(!blockEarlySmalltalk&&window.JINPO_BOT_SMALLTALK&&typeof window.JINPO_BOT_SMALLTALK.local==='function'){
         var quickTalk=window.JINPO_BOT_SMALLTALK.local(originalMessage,{history:history,pageContext:pageContext});
         // 日常会話はローカル会話エンジンで処理する。
@@ -866,6 +896,28 @@
       }
     }catch(learningReplyErr){}
 
+    // サイト実画面に関する質問は、カープの短い外国人名候補より先に処理する。
+    // 「ルーレット」「トーナメント」「ダウンロード」などの一部分が
+    // 選手名の別名へ誤一致しても、実画面案内を優先する。
+    try{
+      var proactiveGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)?String(message):String(userMessage);
+      if(window.JINPO_BOT_SITE_GUIDE&&
+         typeof window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge==='function'&&
+         typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&
+         window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(proactiveGuideInput,{original:proactiveGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo})){
+        var proactiveGuide=window.JINPO_BOT_SITE_GUIDE.respond(proactiveGuideInput,{original:proactiveGuideInput,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
+        if(proactiveGuide&&proactiveGuide.handled){
+          return {
+            answer:String(proactiveGuide.answer||''),
+            sources:Array.isArray(proactiveGuide.sources)?proactiveGuide.sources:[],
+            links:Array.isArray(proactiveGuide.links)?proactiveGuide.links:[],
+            mode:String(proactiveGuide.mode||'サイト総合案内'),
+            data:Object.assign({siteGuide:true,context:contextInfo,earlySiteGuide:true},proactiveGuide.data||{})
+          };
+        }
+      }
+    }catch(proactiveSiteGuideErr){}
+
     // カープ専用会話を直接使う。
     // これが無いと「カープ」を一般Webや別の途中タスクへ流してしまう。
     try{
@@ -893,6 +945,31 @@
         }
       }
     }catch(kashinNameErr){}
+
+    // 話題復帰でサイト案内を復元した場合は、ユーザーが今送った「戻って」ではなく、
+    // 会話制御が復元した元の案内質問をSITE_GUIDEへ渡す。
+    var siteGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)?String(message):String(userMessage);
+
+    // 明確なページ移動・使い方案内・候補選択は、専門データ回答より先に処理する。
+    // ただし「鬼神石1番の入手」「足利義昭のカウンター」のような
+    // 正本数値・個別対象の質問はSITE_GUIDE側の境界判定でここを通過しない。
+    try{
+      if(window.JINPO_BOT_SITE_GUIDE&&
+         typeof window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge==='function'&&
+         typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&
+         window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(siteGuideInput,{original:siteGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo})){
+        var earlyGuide=window.JINPO_BOT_SITE_GUIDE.respond(siteGuideInput,{original:siteGuideInput,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
+        if(earlyGuide&&earlyGuide.handled){
+          return {
+            answer:String(earlyGuide.answer||''),
+            sources:Array.isArray(earlyGuide.sources)?earlyGuide.sources:[],
+            links:Array.isArray(earlyGuide.links)?earlyGuide.links:[],
+            mode:String(earlyGuide.mode||'サイト総合案内'),
+            data:Object.assign({siteGuide:true,context:contextInfo,earlySiteGuide:true},earlyGuide.data||{})
+          };
+        }
+      }
+    }catch(earlySiteGuideErr){}
 
     // 九十九・鬼神石・魔導結晶のCSV正本を、一般的なツール案内より先に参照。
     // 例: 「九十九1番は？」「不壊金剛の耐久は？」「魔導で知力トップ3」
@@ -935,9 +1012,9 @@
     // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
     try{
       if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'){
-        var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:originalMessage,history:history,context:contextInfo,intentInfo:intentInfo});
+        var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:siteGuideInput||message,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
         if(guide&&guide.handled){
-          return {answer:String(guide.answer||''),sources:Array.isArray(guide.sources)?guide.sources:[],links:Array.isArray(guide.links)?guide.links:[],mode:String(guide.mode||'サイト総合案内'),data:{siteGuide:true,context:contextInfo}};
+          return {answer:String(guide.answer||''),sources:Array.isArray(guide.sources)?guide.sources:[],links:Array.isArray(guide.links)?guide.links:[],mode:String(guide.mode||'サイト総合案内'),data:Object.assign({siteGuide:true,context:contextInfo},guide.data||{})};
         }
       }
     }catch(siteGuideErr){}

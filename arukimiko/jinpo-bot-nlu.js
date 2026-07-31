@@ -2,7 +2,7 @@
   'use strict';
   if(window.JINPO_BOT_NLU) return;
 
-  var VERSION='2.3.0';
+  var VERSION='2.4.0';
   var MEMORY_KEY='jinpo_bot_nlu_memory_v1';
   var MEMORY_TTL=30*60*1000;
 
@@ -39,7 +39,12 @@
 
   function S(v){
     var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}
-    try{var conv=window.JINPO_BOT_CONVERSATION;if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}}catch(kanaErr){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeCasualInput==='function'){var c=conv.normalizeCasualInput(s);if(c&&c.text)s=String(c.text);}
+      if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}
+      if(conv&&typeof conv.normalizeKnownInput==='function'){var n=conv.normalizeKnownInput(s);if(n&&n.text)s=String(n.text);}
+    }catch(normalizeErr){}
     return s;
   }
   function hira(v){return S(v).replace(/[ァ-ヶ]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0x60);});}
@@ -275,5 +280,5 @@
   }
 
   var lexiconCount=STATS.reduce(function(n,x){return n+x.a.length;},0)+FORMS.reduce(function(n,x){return n+x.a.length;},0)+PANELS.reduce(function(n,x){return n+x.a.length;},0)+SEARCH_WORDS.length+APPLY_WORDS.length+INCLUDE_WORDS.length+EXCLUDE_WORDS.length+JOBS.length;
-  window.JINPO_BOT_NLU={version:'2.2.0',infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:42,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t),basis:basis(t)};}};
+  window.JINPO_BOT_NLU={version:VERSION,infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:42,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t),basis:basis(t)};}};
 })();
