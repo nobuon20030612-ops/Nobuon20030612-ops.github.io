@@ -11,10 +11,18 @@
   function S(v){
     var s=String(v==null?'':v);
     try{s=s.normalize('NFKC');}catch(e){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeKanaInput==='function'){
+        var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);
+      }
+    }catch(kanaErr){}
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function N(v){
     return S(v).toLowerCase()
+      .replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);})
+      .replace(/ヴ/g,'ゔ')
       .replace(/[？?！!。、・「」『』【】（）()\[\]［］\s]/g,'')
       .replace(/ー/g,'');
   }

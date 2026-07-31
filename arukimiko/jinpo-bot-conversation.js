@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.5.2';
+  var VERSION='3.7.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -84,6 +84,641 @@
     return {text:t,changed:t!==original,original:original};
   }
 
+
+
+  // 漢字を知らない入力でも、既知の会話語・サイト用語・主要人物名を
+  // ひらがな/カタカナから既存の正規表記へ戻す。
+  // 一般文全体をかな変換するのではなく、意味が明確な登録語だけを置換する。
+  function hiraText(v){
+    var s=S(v);
+    return s.replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);}).replace(/ヴ/g,'ゔ');
+  }
+  function kataText(v){
+    return String(v==null?'':v).replace(/[ぁ-ゖ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)+0x60);}).replace(/ゔ/g,'ヴ');
+  }
+  function escKanaRe(v){return String(v||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+  // かな入力の安全な表記ゆれ照合用。
+  // - 小書き文字を通常サイズで入力: しょうさい -> しようさい
+  // - 濁点/半濁点を省略: まどう -> まとう
+  // 文字数は変えず、元の文字位置へ正規表記を戻せる形に限定する。
+  function smallKanaFold(v){
+    var map={'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ','っ':'つ','ゕ':'か','ゖ':'け'};
+    return hiraText(v).replace(/[ぁぃぅぇぉゃゅょゎっゕゖ]/g,function(ch){return map[ch]||ch;});
+  }
+  function unvoiceKanaFold(v){
+    var map={
+      'が':'か','ぎ':'き','ぐ':'く','げ':'け','ご':'こ',
+      'ざ':'さ','じ':'し','ず':'す','ぜ':'せ','ぞ':'そ',
+      'だ':'た','ぢ':'ち','づ':'つ','で':'て','ど':'と',
+      'ば':'は','び':'ひ','ぶ':'ふ','べ':'へ','ぼ':'ほ',
+      'ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ','ゔ':'う'
+    };
+    return smallKanaFold(v).replace(/[がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽゔ]/g,function(ch){return map[ch]||ch;});
+  }
+
+
+  // 音声入力・スマホ入力で、かなの間だけに入った空白を取り除く。
+  // 英数字や漢字の単語間スペースには触らず、日本語かな・数字の連続だけをつなぐ。
+  function collapseKanaSpacing(v){
+    var out=S(v),prev='';
+    while(prev!==out){
+      prev=out;
+      out=out.replace(/([ぁ-ゖァ-ヶー0-9０-９])\s+(?=[ぁ-ゖァ-ヶー0-9０-９])/g,'$1');
+    }
+    return out;
+  }
+
+  var KANA_CANONICAL_RULES=[
+    ['広島東洋カープ',['ひろしまとうようかーぷ','ひろしまとうようかあぷ']],
+    ['たいらの野望',['たいらのやぼう']],
+    ['天下統一奇譚',['てんかとういつきたん']],
+    ['天下武技大会',['てんかぶぎたいかい']],
+    ['富士地下洞穴',['ふじちかどうけつ']],
+    ['星海の荒石',['せいかいのあらいし']],
+    ['魔導結晶',['まどうけっしょう','まどうけつしょう']],
+    ['鬼神石',['きしんせき']],
+    ['九十九',['つくも']],
+    ['見聞録',['けんぶんろく']],
+    ['七星転生',['しちせいてんせい']],
+    ['鎮魂符',['ちんこんふ']],
+    ['御蔵番',['おくらばん']],
+    ['家臣計算機',['かしんけいさんき']],
+    ['能力計算',['のうりょくけいさん']],
+    ['徒党登録',['ととうとうろく']],
+    ['修羅の間',['しゅらのま']],
+    ['二条城',['にじょうじょう']],
+    ['桶狭間',['おけはざま']],
+    ['比叡山',['ひえいざん']],
+    ['賤ヶ岳',['しずがたけ']],
+    ['カウンター',['かうんたー','かうんたあ','かうんた']],
+    ['トーナメント',['とーなめんと','となーめんと']],
+    ['ルーレット',['るーれっと','るうれっと']],
+    ['陣法',['じんぽう']],
+    ['陣形',['じんけい']],
+    ['発動因縁',['はつどういんねん']],
+    ['5因縁',['ごいんねん']],['6因縁',['ろくいんねん']],['7因縁',['なないんねん','しちいんねん']],['8因縁',['はちいんねん']],['9因縁',['きゅういんねん','くいんねん']],
+    ['因縁',['いんねん']],
+    ['英傑',['えいけつ']],
+    ['鶴翼',['かくよく']],
+    ['方円',['ほうえん']],
+    ['魚鱗',['ぎょりん']],
+    ['衡軛',['こうやく']],
+    ['全MAX込み',['ぜんまっくすこみ','ぜんまっくす込み']],
+    ['全MAX',['ぜんまっくす']],
+    ['込み合計',['こみごうけい']],
+    ['検索結果',['けんさくけっか']],
+    ['検索条件',['けんさくじょうけん']],
+    ['発動中因縁',['はつどうちゅういんねん']],
+    ['英傑一覧',['えいけついちらん']],
+    ['因縁一覧',['いんねんいちらん']],
+    ['検索結果一覧',['けんさくけっかいちらん']],
+    ['配置英傑',['はいちえいけつ']],
+    ['除外英傑',['じょがいえいけつ']],
+    ['差替候補',['さしかえこうほ']],
+    ['基礎値',['きそち']],
+    ['検索基準',['けんさくきじゅん']],
+    ['第一優先',['だいいちゆうせん']],
+    ['第二優先',['だいにゆうせん']],
+    ['第1優先',['だいいちゆうせん']],
+    ['第2優先',['だいにゆうせん']],
+    ['ヒット件数',['ひっとけんすう']],
+    ['表示件数',['ひょうじけんすう']],
+    ['並べ替え',['ならべかえ']],
+    ['上に戻る',['うえにもどる']],
+    ['全解除',['ぜんかいじょ']],
+    ['見聞録MAX',['けんぶんろくまっくす']],
+    ['鬼神石MAX',['きしんせきまっくす']],
+    ['転生MAX',['てんせいまっくす']],
+    ['生命',['せいめい']],
+    ['気合',['きあい']],
+    ['腕力',['わんりょく']],
+    ['耐久力',['たいきゅうりょく']],
+    ['耐久',['たいきゅう']],
+    ['器用さ',['きようさ']],
+    ['器用',['きよう']],
+    ['知力',['ちりょく']],
+    ['魅力',['みりょく']],
+    ['土属性',['つちぞくせい','どぞくせい']],
+    ['水属性',['みずぞくせい']],
+    ['火属性',['ひぞくせい']],
+    ['風属性',['かぜぞくせい']],
+    ['四象',['ししょう']],
+    ['総合',['そうごう']],
+    ['合計',['ごうけい']],
+    ['家臣',['かしん']],
+    ['名付け',['なづけ','なまえつけ']],
+    ['命名',['めいめい']],
+    ['家族',['かぞく']],
+    ['親族',['しんぞく']],
+    ['奥さん',['おくさん']],
+    ['配偶者',['はいぐうしゃ']],
+    ['成績',['せいせき']],
+    ['経歴',['けいれき']],
+    ['逸話',['いつわ']],
+    ['現役時代',['げんえきじだい']],
+    ['現役',['げんえき']],
+    ['引退',['いんたい']],
+    ['年齢',['ねんれい']],
+    ['現在',['げんざい']],
+    ['入手方法',['にゅうしゅほうほう']],
+    ['入手',['にゅうしゅ']],
+    ['使い方',['つかいかた']],
+    ['注意点',['ちゅういてん']],
+    ['必要数',['ひつようすう']],
+    ['上限',['じょうげん']],
+    ['下限',['かげん']],
+    ['1番',['いちばん']],['2番',['にばん']],['3番',['さんばん']],['4番',['よんばん']],['5番',['ごばん']],
+    ['6番',['ろくばん']],['7番',['ななばん','しちばん']],['8番',['はちばん']],['9番',['きゅうばん','くばん']],
+    ['高い',['たかい']],
+    ['低い',['ひくい']],
+    ['多い',['おおい']],
+    ['少ない',['すくない']],
+    ['検索',['けんさく']],
+    ['適用',['てきよう']],
+    ['解除',['かいじょ']],
+    ['配置',['はいち']],
+    ['除外',['じょがい']],
+    ['差替',['さしかえ','さしかええ']],
+    ['おすすめ',['おすすめ']],
+    ['優先',['ゆうせん']],
+    ['等級',['とうきゅう']],
+    ['文曲',['ぶんきょく']],
+    ['転生',['てんせい']],
+    ['非表示',['ひひょうじ']],
+    ['最小化',['さいしょうか']],
+    ['再表示',['さいひょうじ']],
+    ['閉じる',['とじる']],
+    ['開いて',['ひらいて']],
+    ['たたむ',['たたむ','おりたたむ']],
+    ['説明',['せつめい']],
+    ['詳しく',['くわしく']],
+    ['教えて',['おしえて']],
+    ['前の話',['まえのはなし']],
+    ['戻って',['もどって']],
+    ['両方',['りょうほう']],
+    ['前者',['ぜんしゃ']],
+    ['後者',['こうしゃ']],
+    ['広島カープ',['ひろしまかーぷ','ひろしまかあぷ']],
+    ['カープ',['かーぷ','かあぷ']],
+    ['表示中',['ひょうじちゅう']],
+    ['表示',['ひょうじ']],
+    ['画面',['がめん']],
+    ['入力欄',['にゅうりょくらん']],
+    ['会話欄',['かいわらん']],
+    ['チャット欄',['ちゃっとらん']],
+    ['ボタン',['ぼたん']],
+    ['設定',['せってい']],
+    ['機能',['きのう']],
+    ['項目',['こうもく']],
+    ['条件',['じょうけん']],
+    ['一覧',['いちらん']],
+    ['詳細',['しょうさい']],
+    ['数値',['すうち']],
+    ['名前',['なまえ']],
+    ['人物',['じんぶつ']],
+    ['選手',['せんしゅ']],
+    ['監督',['かんとく']],
+    ['場所',['ばしょ']],
+    ['候補',['こうほ']],
+    ['結果',['けっか']],
+    ['比較',['ひかく']],
+    ['違い',['ちがい']],
+    ['絞り込み',['しぼりこみ','しぼり込み']],
+    ['上下限',['じょうげげん']],
+    ['未満',['みまん']],
+    ['保存',['ほぞん']],
+    ['履歴',['りれき']],
+    ['読込中',['よみこみちゅう','よみ込み中']],
+    ['読み込み',['よみこみ']],
+    ['実行',['じっこう']],
+    ['中止',['ちゅうし']],
+    ['再検索',['さいけんさく']],
+    ['開く',['ひらく']],
+    ['消す',['けす']],
+    ['隠す',['かくす']],
+    ['戻る',['もどる']],
+    ['進む',['すすむ']],
+    ['使う',['つかう']],
+    ['因子',['いんし']],
+    ['職業',['しょくぎょう']],
+    ['コスト',['こすと']],
+    ['固有技能',['こゆうぎのう']],
+    ['技能',['ぎのう']],
+    ['食料',['しょくりょう']],
+    ['屋敷',['やしき']],
+    ['京都',['きょうと']],
+    ['駿府城',['すんぷじょう']],
+    ['封印',['ふういん']],
+    ['文曲除外',['ぶんきょくじょがい']],
+    ['転生レベル',['てんせいれべる']]
+  ];
+
+  var KANA_PERSON_RULES=[
+    ['黒田博樹',['くろだひろき']],['黒田',['くろだ']],
+    ['新井貴浩',['あらいたかひろ']],['新井',['あらい']],
+    ['鈴木誠也',['すずきせいや']],['誠也',['せいや']],
+    ['菊池涼介',['きくちりょうすけ']],['菊池',['きくち']],
+    ['丸佳浩',['まるよしひろ']],
+    ['前田智徳',['まえだとものり']],['前田',['まえだ']],
+    ['緒方孝市',['おがたこういち']],['緒方',['おがた']],
+    ['野間峻祥',['のまたかよし']],['野間',['のま']],
+    ['堂林翔太',['どうばやししょうた']],['堂林',['どうばやし']],
+    ['栗林良吏',['くりばやしりょうじ']],['栗林',['くりばやし']],
+    ['大瀬良大地',['おおせらだいち']],['大瀬良',['おおせら']],
+    ['森下暢仁',['もりしたまさと']],['森下',['もりした']],
+    ['床田寛樹',['とこだひろき']],['床田',['とこだ']],
+    ['小園海斗',['こぞのかいと']],['小園',['こぞの']],
+    ['坂倉将吾',['さかくらしょうご']],['坂倉',['さかくら']],
+    ['秋山翔吾',['あきやましょうご']],['秋山',['あきやま']],
+    ['會澤翼',['あいざわつばさ']],['會澤',['あいざわ']],
+    ['江夏豊',['えなつゆたか']],['江夏',['えなつ']],
+    ['衣笠祥雄',['きぬがささちお']],['衣笠',['きぬがさ']],
+    ['山本浩二',['やまもとこうじ']],['浩二',['こうじ']],
+    ['金本知憲',['かねもとともあき']],['金本',['かねもと']],
+    ['北別府学',['きたべっぷまなぶ']],['北別府',['きたべっぷ']],
+    ['達川光男',['たつかわみつお']],['達川',['たつかわ']],
+    ['津田恒実',['つだつねみ']],['津田',['つだ']],
+    ['佐々岡真司',['ささおかしんじ']],['佐々岡',['ささおか']],
+    ['野村謙二郎',['のむらけんじろう','のむけん']],
+    ['前田健太',['まえだけんた']],['田中広輔',['たなかこうすけ']],
+    ['田村俊介',['たむらしゅんすけ']],['末包昇大',['すえかねしょうた']],
+    ['矢野雅哉',['やのまさや']],['島内颯太郎',['しまうちそうたろう']],
+    ['森浦大輔',['もりうらだいすけ']],['中村奨成',['なかむらしょうせい']],
+    ['上本崇司',['うえもとたかし']],['松山竜平',['まつやまりゅうへい']],
+    ['野村祐輔',['のむらゆうすけ']],['大野豊',['おおのゆたか']],
+    ['古葉竹識',['こばたけし']],['高橋慶彦',['たかはしよしひこ']],
+    ['外木場義郎',['そとこばよしろう']],
+    ['織田信長',['おだのぶなが']],['武田信玄',['たけだしんげん']],
+    ['北条氏康',['ほうじょううじやす']],['今川義元',['いまがわよしもと']],
+    ['今川氏真',['いまがわうじざね']],['徳川家康',['とくがわいえやす']],
+    ['羽柴秀吉',['はしばひでよし']],['豊臣秀吉',['とよとみひでよし']],
+    ['斎藤道三',['さいとうどうさん']],['本願寺顕如',['ほんがんじけんにょ']],
+    ['朝倉義景',['あさくらよしかげ']],['浅井長政',['あざいながまさ']],
+    ['百地三太夫',['ももちさんだゆう']],['足利義輝',['あしかがよしてる']],
+    ['足利義昭',['あしかがよしあき']],['三好長慶',['みよしながよし']],
+    ['雑賀孫市',['さいかまごいち']],['伊達政宗',['だてまさむね']],
+    ['真田昌幸',['さなだまさゆき']],['上泉信綱',['かみいずみのぶつな']],
+    ['立花宗茂',['たちばなむねしげ']],['細川藤孝',['ほそかわふじたか']],
+    ['黒田官兵衛',['くろだかんべえ']],['風魔小太郎',['ふうまこたろう']],
+    ['小早川隆景',['こばやかわたかかげ']],['立花誾千代',['たちばなぎんちよ']],
+    ['島津義弘',['しまづよしひろ']],['禅魔',['ぜんま']],['雪斎',['せっさい']]
+  ];
+
+  function compileKanaRules(rules){
+    var entries=[];
+    (rules||[]).forEach(function(rule,order){
+      var canonical=rule[0],forms=rule[1]||[],seen={};
+      forms.forEach(function(form){
+        [form,kataText(form)].forEach(function(v){
+          if(v&&!seen[v]){
+            seen[v]=1;
+            entries.push({canonical:canonical,variant:v,order:order,regex:new RegExp(escKanaRe(v),'g')});
+          }
+        });
+      });
+    });
+    entries.sort(function(a,b){return b.variant.length-a.variant.length||a.order-b.order;});
+    return entries;
+  }
+
+  // ゆるい読みは、同じ読みが複数の正規語へ衝突しない場合だけ登録する。
+  function compileFoldedKanaRules(rules,foldFn,minLength){
+    var map=Object.create(null),orderMap=Object.create(null);
+    (rules||[]).forEach(function(rule,order){
+      var canonical=rule[0],forms=rule[1]||[];
+      forms.forEach(function(form){
+        var base=hiraText(form),key=foldFn(form);
+        if(!key||key.length<(minLength||4)||key===base)return;
+        if(!map[key])map[key]=Object.create(null);
+        map[key][canonical]=1;
+        if(orderMap[key]==null||order<orderMap[key])orderMap[key]=order;
+      });
+    });
+    var entries=[];
+    Object.keys(map).forEach(function(key){
+      var names=Object.keys(map[key]);
+      if(names.length!==1)return;
+      entries.push({canonical:names[0],variant:key,order:orderMap[key]||0,regex:new RegExp(escKanaRe(key),'g')});
+    });
+    entries.sort(function(a,b){return b.variant.length-a.variant.length||a.order-b.order;});
+    return entries;
+  }
+
+  function compilePersonKanaRules(rules){
+    return (rules||[]).map(function(rule){
+      var canonical=rule[0],forms=rule[1]||[],variants=[],foldVariants=[],seen={},foldSeen={};
+      forms.forEach(function(form){
+        [form,kataText(form)].forEach(function(v){if(v&&!seen[v]){seen[v]=1;variants.push(v);}});
+        var fv=hiraText(form);if(fv&&!foldSeen[fv]){foldSeen[fv]=1;foldVariants.push(fv);}
+      });
+      variants.sort(function(a,b){return b.length-a.length;});
+      foldVariants.sort(function(a,b){return b.length-a.length;});
+      if(!variants.length)return null;
+      var prefix='(^|[\\s、。,.!！?？「」『』（）()・はがをにでとのもへハガヲニデトノモヘ])';
+      var suffix='(?=$|[\\s、。,.!！?？「」『』（）()・]|(?:は|ハ|って|ッテ|の|ノ|について|ニツイテ|を|ヲ|が|ガ|も|モ|さん|サン|選手|センシュ|監督|カントク|投手|トウシュ|家族|カゾク|親族|シンゾク|奥さん|オクサン|妻|ツマ|成績|セイセキ|経歴|ケイレキ|逸話|イツワ|現役|ゲンエキ|引退|インタイ|年齢|ネンレイ|何歳|ナンサイ|カウンター|カウンタア))';
+      return {
+        canonical:canonical,
+        regex:new RegExp(prefix+'('+variants.map(escKanaRe).join('|')+')'+suffix,'g'),
+        foldRegex:foldVariants.length?new RegExp(prefix+'('+foldVariants.map(escKanaRe).join('|')+')'+suffix,'g'):null
+      };
+    }).filter(Boolean);
+  }
+
+  function compilePersonFoldedKanaRules(rules,foldFn,minLength){
+    var map=Object.create(null);
+    (rules||[]).forEach(function(rule){
+      var canonical=rule[0],forms=rule[1]||[];
+      forms.forEach(function(form){
+        var base=hiraText(form),key=foldFn(form);
+        if(!key||key.length<(minLength||4)||key===base)return;
+        if(!map[key])map[key]=Object.create(null);
+        map[key][canonical]=1;
+      });
+    });
+    var unique=[];
+    Object.keys(map).forEach(function(key){
+      var names=Object.keys(map[key]);
+      if(names.length===1)unique.push([names[0],[key]]);
+    });
+    return compilePersonKanaRules(unique);
+  }
+
+
+  // 読みの1文字だけを落として入力した場合の保守的な候補を作る。
+  // 6文字以上の読み、先頭・末尾以外の欠落、かつ正規語が一つに決まる場合だけ採用する。
+  // 境界付きの人物用ルールとしてコンパイルし、普通の文章中の部分一致を避ける。
+  function compileOmittedKanaRules(rules,minOriginalLength,minVariantLength){
+    var map=Object.create(null),minLen=minOriginalLength||6,minVariant=minVariantLength||5;
+    (rules||[]).forEach(function(rule){
+      var canonical=rule[0],forms=rule[1]||[];
+      forms.forEach(function(form){
+        var base=hiraText(form).replace(/[\s　・]/g,'');
+        if(!base||base.length<minLen)return;
+        for(var i=1;i<base.length;i++){
+          var key=base.slice(0,i)+base.slice(i+1);
+          if(key.length<minVariant)continue;
+          if(!map[key])map[key]=Object.create(null);
+          map[key][canonical]=1;
+        }
+      });
+    });
+    var unique=[];
+    Object.keys(map).forEach(function(key){
+      var names=Object.keys(map[key]);
+      if(names.length===1)unique.push([names[0],[key]]);
+    });
+    return compilePersonKanaRules(unique);
+  }
+
+  var KANA_CANONICAL_ENTRIES=compileKanaRules(KANA_CANONICAL_RULES);
+  var KANA_CANONICAL_SMALL_ENTRIES=compileFoldedKanaRules(KANA_CANONICAL_RULES,smallKanaFold,4);
+  // 濁点省略は誤認しやすいため、5文字以上の専門語だけを自動登録する。
+  var KANA_CANONICAL_LOOSE_ENTRIES=compileFoldedKanaRules(KANA_CANONICAL_RULES,unvoiceKanaFold,5);
+  var KANA_CANONICAL_OMISSION_ENTRIES=compileOmittedKanaRules(KANA_CANONICAL_RULES,5,4);
+  var KANA_PERSON_ENTRIES=compilePersonKanaRules(KANA_PERSON_RULES);
+  var KANA_PERSON_SMALL_ENTRIES=compilePersonFoldedKanaRules(KANA_PERSON_RULES,smallKanaFold,4);
+  var KANA_PERSON_LOOSE_ENTRIES=compilePersonFoldedKanaRules(KANA_PERSON_RULES,unvoiceKanaFold,5);
+  var KANA_PERSON_OMISSION_ENTRIES=compileOmittedKanaRules(KANA_PERSON_RULES,6,5);
+  var KANA_DYNAMIC_TAIRANO_ENTRIES=[];
+  var KANA_DYNAMIC_TAIRANO_SMALL_ENTRIES=[];
+  var KANA_DYNAMIC_TAIRANO_LOOSE_ENTRIES=[];
+  var KANA_DYNAMIC_TAIRANO_OMISSION_ENTRIES=[];
+  var KANA_DYNAMIC_TAIRANO_SIGNATURE='';
+
+  // カウンター正本が遅延読込された後は、正本に登録済みの読みを自動で人物・敵名辞書へ加える。
+  // 正本データ自体は変更せず、同じ読みが複数の別名を指す場合は勝手に一つへ決めない。
+  function ensureDynamicTairanoKanaEntries(){
+    var d=window.JINPO_TAIRANO_KNOWLEDGE_DATA;
+    var facts=d&&Array.isArray(d.facts)?d.facts:[];
+    var signature=facts.length?String(d.version||'')+':'+facts.length:'';
+    if(signature===KANA_DYNAMIC_TAIRANO_SIGNATURE)return KANA_DYNAMIC_TAIRANO_ENTRIES;
+    KANA_DYNAMIC_TAIRANO_SIGNATURE=signature;
+    KANA_DYNAMIC_TAIRANO_ENTRIES=[];
+    KANA_DYNAMIC_TAIRANO_SMALL_ENTRIES=[];
+    KANA_DYNAMIC_TAIRANO_LOOSE_ENTRIES=[];
+    KANA_DYNAMIC_TAIRANO_OMISSION_ENTRIES=[];
+    if(!facts.length)return KANA_DYNAMIC_TAIRANO_ENTRIES;
+
+    var readingMap=Object.create(null);
+    facts.forEach(function(f){
+      var canonical=S(f&&f.canonical||'');if(!canonical)return;
+      (f.readings||[]).forEach(function(reading){
+        var r=hiraText(reading).replace(/[\s　・]/g,'');
+        // 2文字以下は一般語との衝突が大きいため自動登録しない。
+        if(r.length<3)return;
+        if(!readingMap[r])readingMap[r]=Object.create(null);
+        readingMap[r][canonical]=1;
+      });
+    });
+    var rules=[];
+    Object.keys(readingMap).forEach(function(reading){
+      var names=Object.keys(readingMap[reading]);
+      if(names.length===1)rules.push([names[0],[reading]]);
+    });
+    KANA_DYNAMIC_TAIRANO_ENTRIES=compilePersonKanaRules(rules);
+    KANA_DYNAMIC_TAIRANO_SMALL_ENTRIES=compilePersonFoldedKanaRules(rules,smallKanaFold,4);
+    KANA_DYNAMIC_TAIRANO_LOOSE_ENTRIES=compilePersonFoldedKanaRules(rules,unvoiceKanaFold,5);
+    KANA_DYNAMIC_TAIRANO_OMISSION_ENTRIES=compileOmittedKanaRules(rules,6,5);
+    return KANA_DYNAMIC_TAIRANO_ENTRIES;
+  }
+
+  var TAIRANO_ENTITY_ROWS=[];
+  var TAIRANO_ENTITY_SIGNATURE='';
+  function dynamicTairanoEntityRows(){
+    var d=window.JINPO_TAIRANO_KNOWLEDGE_DATA;
+    var facts=d&&Array.isArray(d.facts)?d.facts:[];
+    var signature=facts.length?String(d.version||'')+':'+facts.length:'';
+    if(signature===TAIRANO_ENTITY_SIGNATURE)return TAIRANO_ENTITY_ROWS;
+    TAIRANO_ENTITY_SIGNATURE=signature;
+    TAIRANO_ENTITY_ROWS=[];
+    if(!facts.length)return TAIRANO_ENTITY_ROWS;
+
+    var canonicalSeen=Object.create(null),aliasMap=Object.create(null),readingMap=Object.create(null);
+    facts.forEach(function(f){
+      var canonical=S(f&&f.canonical||'');if(!canonical)return;
+      if(!canonicalSeen[canonical]){
+        canonicalSeen[canonical]=1;
+        TAIRANO_ENTITY_ROWS.push({canonical:canonical,form:canonical,reading:'',score:119});
+      }
+      (f.aliases||[]).forEach(function(alias){
+        var a=S(alias);if(!a||a===canonical||a.length<2)return;
+        if(!aliasMap[a])aliasMap[a]=Object.create(null);
+        aliasMap[a][canonical]=1;
+      });
+      (f.readings||[]).forEach(function(reading){
+        var r=hiraText(reading).replace(/[\s　・]/g,'');if(r.length<3)return;
+        if(!readingMap[r])readingMap[r]=Object.create(null);
+        readingMap[r][canonical]=1;
+      });
+    });
+    Object.keys(aliasMap).forEach(function(alias){
+      var names=Object.keys(aliasMap[alias]);
+      if(names.length===1)TAIRANO_ENTITY_ROWS.push({canonical:names[0],form:alias,reading:'',score:114});
+    });
+    Object.keys(readingMap).forEach(function(reading){
+      var names=Object.keys(readingMap[reading]);
+      if(names.length===1)TAIRANO_ENTITY_ROWS.push({canonical:names[0],form:'',reading:reading,score:116});
+    });
+    TAIRANO_ENTITY_ROWS.sort(function(a,b){
+      var al=(a.form||a.reading||'').length,bl=(b.form||b.reading||'').length;
+      return bl-al||b.score-a.score;
+    });
+    return TAIRANO_ENTITY_ROWS;
+  }
+
+  function applyKanaRules(text,entries){
+    var out=S(text);
+    (entries||[]).forEach(function(e){
+      e.regex.lastIndex=0;
+      out=out.replace(e.regex,function(match,offset){
+        // 正規表記の一部に短い読みが含まれていても、再正規化で文字を増やさない。
+        // 例: カウンター内の「カウンタ」を再びカウンターへ広げない。
+        if(out.slice(offset,offset+e.canonical.length)===e.canonical)return match;
+        return e.canonical;
+      });
+    });
+    return out;
+  }
+
+  function applyFoldedKanaRules(text,entries,foldFn){
+    var out=S(text);
+    (entries||[]).forEach(function(e){
+      var folded=foldFn(out),matches=[],m;
+      e.regex.lastIndex=0;
+      while((m=e.regex.exec(folded))){
+        var at=m.index;
+        if(out.slice(at,at+e.canonical.length)!==e.canonical)matches.push({at:at,len:m[0].length});
+        if(m[0]==='')e.regex.lastIndex++;
+      }
+      for(var i=matches.length-1;i>=0;i--){
+        var hit=matches[i];out=out.slice(0,hit.at)+e.canonical+out.slice(hit.at+hit.len);
+      }
+    });
+    return out;
+  }
+
+  function applyPersonKanaRules(text,entries){
+    var out=S(text);
+    (entries||[]).forEach(function(e){
+      e.regex.lastIndex=0;
+      out=out.replace(e.regex,function(_,pre){return pre+e.canonical;});
+
+      // ひらがなとカタカナが混ざった氏名も、読みをひらがなへ畳んで照合する。
+      // 例: 「アサヒナやすとも」→「朝比奈泰朝」。文字数が同じかな範囲だけを置換する。
+      if(!e.foldRegex)return;
+      var folded=hiraText(out),matches=[],m;
+      e.foldRegex.lastIndex=0;
+      while((m=e.foldRegex.exec(folded))){
+        var pre=m[1]||'',name=m[2]||'',at=m.index+pre.length;
+        if(name&&out.slice(at,at+e.canonical.length)!==e.canonical)matches.push({at:at,len:name.length});
+        if(m[0]==='')e.foldRegex.lastIndex++;
+      }
+      for(var i=matches.length-1;i>=0;i--){
+        var hit=matches[i];out=out.slice(0,hit.at)+e.canonical+out.slice(hit.at+hit.len);
+      }
+    });
+    return out;
+  }
+
+  function applyPersonFoldedKanaRules(text,entries,foldFn){
+    var out=S(text);
+    (entries||[]).forEach(function(e){
+      if(!e.foldRegex)return;
+      var folded=foldFn(out),matches=[],m;
+      e.foldRegex.lastIndex=0;
+      while((m=e.foldRegex.exec(folded))){
+        var pre=m[1]||'',name=m[2]||'',at=m.index+pre.length;
+        if(name&&out.slice(at,at+e.canonical.length)!==e.canonical)matches.push({at:at,len:name.length});
+        if(m[0]==='')e.foldRegex.lastIndex++;
+      }
+      for(var i=matches.length-1;i>=0;i--){
+        var hit=matches[i];out=out.slice(0,hit.at)+e.canonical+out.slice(hit.at+hit.len);
+      }
+    });
+    return out;
+  }
+
+  function normalizeKatakanaGrammar(text){
+    var out=S(text);
+    // 登録語を一つ以上正規化できた発話だけ、全カタカナ入力に残る助詞・疑問語を整える。
+    // 固有名詞そのものは変えない。
+    var rules=[
+      [/ニツイテ/g,'について'],[/オシエテ/g,'教えて'],[/ツカイカタ/g,'使い方'],
+      [/ドウヤッテ/g,'どうやって'],[/ドウ/g,'どう'],[/ナニ/g,'何'],[/ダレ/g,'誰'],[/ドコ/g,'どこ'],
+      [/イチバン/g,'1番'],[/ニバン/g,'2番'],[/サンバン/g,'3番'],[/ヨンバン/g,'4番'],[/ゴバン/g,'5番'],
+      [/ロクバン/g,'6番'],[/ナナバン/g,'7番'],[/ハチバン/g,'8番'],[/キュウバン/g,'9番'],[/バンメ/g,'番目'],[/バン/g,'番'],
+      [/タカイ/g,'高い'],[/タカメ/g,'高め'],[/ツヨイ/g,'強い'],
+      [/モドッテ/g,'戻って'],[/ヒライテ/g,'開いて'],[/シテ/g,'して'],[/ッテ/g,'って'],
+      [/ノ/g,'の'],[/ハ/g,'は'],[/ヲ/g,'を'],[/ニ/g,'に'],[/デ/g,'で'],[/ト/g,'と'],[/ガ/g,'が'],[/モ/g,'も'],[/ヘ/g,'へ']
+    ];
+    rules.forEach(function(r){out=out.replace(r[0],r[1]);});
+    return out;
+  }
+
+  function normalizeNumericKanaForms(text){
+    var out=S(text);
+    // 数字の直後にある上下限だけを変換する。「いかが」「異常」などは触らない。
+    out=out.replace(/([0-9０-９]+)\s*(?:いじょう|イジョウ)/g,'$1以上');
+    out=out.replace(/([0-9０-９]+)\s*(?:いか|イカ)(?=$|[\s、。,.!！?？「」『』（）()・]|(?:で|に|を|かつ|または))/g,'$1以下');
+
+    // 順位の読みは、助詞・文末が続く時だけ数字の「位」へ変換する。
+    // 「そこにいる」の「にい」など、普通の文章中は変換しない。
+    var rankMap={いち:'1',イチ:'1',に:'2',ニ:'2',さん:'3',サン:'3',よん:'4',ヨン:'4',ご:'5',ゴ:'5',ろく:'6',ロク:'6',なな:'7',ナナ:'7',しち:'7',シチ:'7',はち:'8',ハチ:'8',きゅう:'9',キュウ:'9',く:'9',ク:'9'};
+    out=out.replace(/(^|[\s、。,.!！?？「」『』（）()・のノはハをヲにニでデとト])(?:いち|イチ|に|ニ|さん|サン|よん|ヨン|ご|ゴ|ろく|ロク|なな|ナナ|しち|シチ|はち|ハチ|きゅう|キュウ|く|ク)[いイ](?=$|[\s、。,.!！?？「」『』（）()・]|(?:を|ヲ|の|ノ|じゃ|では|に|ニ|まで|から|で|デ))/g,function(match,pre){
+      var body=match.slice(pre.length,-1);return pre+(rankMap[body]||body)+'位';
+    });
+    return out;
+  }
+
+  var KANA_NORMALIZE_CACHE=Object.create(null),KANA_NORMALIZE_KEYS=[],KANA_NORMALIZE_CACHE_MAX=1200;
+  function cachedKanaResult(original){
+    if(!Object.prototype.hasOwnProperty.call(KANA_NORMALIZE_CACHE,original))return null;
+    return KANA_NORMALIZE_CACHE[original];
+  }
+  function storeKanaResult(original,text){
+    if(!Object.prototype.hasOwnProperty.call(KANA_NORMALIZE_CACHE,original)){
+      KANA_NORMALIZE_KEYS.push(original);
+      if(KANA_NORMALIZE_KEYS.length>KANA_NORMALIZE_CACHE_MAX){
+        var old=KANA_NORMALIZE_KEYS.shift();delete KANA_NORMALIZE_CACHE[old];
+      }
+    }
+    KANA_NORMALIZE_CACHE[original]=text;
+  }
+
+  function normalizeKanaInput(v){
+    var original=S(v),dynamicEntries=ensureDynamicTairanoKanaEntries();
+    var cacheKey=original+'\u0001'+KANA_DYNAMIC_TAIRANO_SIGNATURE;
+    var cached=cachedKanaResult(cacheKey);
+    if(cached!==null)return {text:cached,changed:cached!==original,original:original};
+    var text=collapseKanaSpacing(original);
+    var h=hiraText(text);
+    var personContext=/(?:かーぷ|かあぷ|ひろしま|せんしゅ|かぞく|しんぞく|おくさん|せいせき|けいれき|いつわ|げんえき|いんたい|なんさい|ねんれい|かうんた|てんか|しゅら|にじょう|おけはざま|ふういん)/.test(h) ||
+      /^[ぁ-ゖァ-ヶー]{2,24}(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か|[？?！!。])*$/.test(text);
+
+    // 人物・敵名の長い読みを先に確定する。
+    // 「きようらんこんごう」の先頭を能力の「器用」と部分変換しないため。
+    if(personContext){
+      text=applyPersonKanaRules(text,KANA_PERSON_ENTRIES.concat(dynamicEntries));
+      text=applyPersonFoldedKanaRules(text,KANA_PERSON_SMALL_ENTRIES.concat(KANA_DYNAMIC_TAIRANO_SMALL_ENTRIES),smallKanaFold);
+      text=applyPersonFoldedKanaRules(text,KANA_PERSON_LOOSE_ENTRIES.concat(KANA_DYNAMIC_TAIRANO_LOOSE_ENTRIES),unvoiceKanaFold);
+      text=applyPersonKanaRules(text,KANA_PERSON_OMISSION_ENTRIES.concat(KANA_DYNAMIC_TAIRANO_OMISSION_ENTRIES));
+    }
+
+    // 1文字抜けの長い専門語を、短い部分語へ先に分解される前に戻す。
+    text=applyPersonKanaRules(text,KANA_CANONICAL_OMISSION_ENTRIES);
+
+    // 長い一般語のゆれを先に戻し、その後で通常の短い登録語を補う。
+    // 例: 「けんさくけつか」を先に「検索結果」へ戻し、「検索」だけの部分変換を防ぐ。
+    text=applyFoldedKanaRules(text,KANA_CANONICAL_SMALL_ENTRIES,smallKanaFold);
+    text=applyFoldedKanaRules(text,KANA_CANONICAL_LOOSE_ENTRIES,unvoiceKanaFold);
+    text=applyKanaRules(text,KANA_CANONICAL_ENTRIES);
+    text=normalizeNumericKanaForms(text);
+    if(text!==original&&/[ァ-ヶ]/.test(text))text=normalizeKatakanaGrammar(text);
+    text=normalizeNumericKanaForms(text);
+    storeKanaResult(cacheKey,text);
+    return {text:text,changed:text!==original,original:original};
+  }
 
   // 入力途中で送信された短い断片を保守的に検出する。
   // 「黒田の」「明日は」「全MAXで」のように助詞で終わり、述語がまだ無い形だけを対象にする。
@@ -1601,6 +2236,24 @@
       }
     }catch(e){}
 
+    // カウンター正本が読込済みなら、全canonical・一意な別名・読みを会話の主役として保持する。
+    // これにより「アサヒナヤストモは？」の後の「その人は？」も朝比奈泰朝へ戻せる。
+    try{
+      var tf=hiraText(t).replace(/[\s　・]/g,'');
+      var tairanoEntityContext=domain==='counter'||domain==='tairano'||counterCue(t)||
+        /天下統一奇譚|天下武技大会|修羅の間|桶狭間|富士地下洞穴|二条城|封印/.test(t)||
+        /^[ぁ-ゖァ-ヶー]{3,24}(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か|[？?！!。])*$/.test(t);
+      if(tairanoEntityContext){
+        var tairanoRows=dynamicTairanoEntityRows();
+        for(var tri=0;tri<tairanoRows.length;tri++){
+          var tr=tairanoRows[tri],hit=false;
+          if(tr.form&&t.indexOf(tr.form)>=0)hit=true;
+          else if(tr.reading&&tf.indexOf(tr.reading)>=0)hit=true;
+          if(hit)add(tr.canonical,'person',tr.score);
+        }
+      }
+    }catch(tairanoEntityErr){}
+
     // たいらの野望で取り違えやすい人物は明示的に人物として保持する。
     var knownPeople=t.match(/今川義元|今川氏真|足利義輝|足利義昭|織田信長|豊臣秀吉|徳川家康/g)||[];
     knownPeople.forEach(function(name){add(name,'person',115);});
@@ -1734,7 +2387,7 @@
     // 「その人」「その選手」「今はどう？」のような追質問は、前フレームの主役を継承する。
     // 年齢・配偶者・現役などの人物専用短文は、前フレームが人物の時だけ継承する。
     if(previousFrame&&previousFrame.primary&&(
-       /^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|それ|これ|その件|その話|そのやつ|さっきのやつ|今のやつ|前のやつ|さっきの話|今の話|前の話|今は|現在は|その後|それから|もっと|詳しく)/.test(S(userText)) ||
+       /^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|その敵|この敵|あの敵|さっきの敵|前の敵|それ|これ|その件|その話|そのやつ|さっきのやつ|今のやつ|前のやつ|さっきの話|今の話|前の話|今は|現在は|その後|それから|もっと|詳しく)/.test(S(userText)) ||
        isFollowupOnlyUtterance(userText) ||
        (aspectFromText(userText)&&S(userText).length<=24) ||
        (previousFrame.primary.type==='person'&&isBarePersonFollowupCue(userText))
@@ -2326,10 +2979,10 @@
       var both=candidates[0]+'と'+candidates[1],bothBase=S(f.userText),bothMessage='';
       // 「その人は？」「それは？」のような曖昧確認そのものへ「両方」と答えた時は、
       // 代名詞を無理に残さず、2候補を明示した概要質問へ作り直す。
-      if(/^(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|それ|これ|その話|この話|そっち|あっち)(?:は|って|について)?[？?！!。]*$/.test(bothBase)){
+      if(/^(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|その敵|この敵|それ|これ|その話|この話|そっち|あっち)(?:は|って|について)?[？?！!。]*$/.test(bothBase)){
         bothMessage=both+'、両方について教えて';
       }else if(bothBase){
-        bothMessage=bothBase.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|彼)/,both);
+        bothMessage=bothBase.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|その敵|この敵|あの敵|さっきの敵|前の敵|彼)/,both);
       }
       if(!bothMessage||bothMessage===bothBase)bothMessage=both+'、両方について教えて';
       return {message:bothMessage,selected:both,candidates:candidates,both:true,kind:'clarification_selection',frame:f};
@@ -2367,7 +3020,7 @@
     var explicitDetailed=!!(explicitRemainder&&/(?:について|の.{2,}|は.{2,}|って.{2,}|を.{2,}|が.{2,})/.test(explicitRemainder));
     if(explicitDetailed)message=selectionText;
     if(base&&!message){
-      message=base.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|彼)/,chosen);
+      message=base.replace(/(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|その投手|その野手|その敵|この敵|あの敵|さっきの敵|前の敵|彼)/,chosen);
       // 一般テーマの「それは？」「その話は？」に候補名で答えた場合も、
       // 2回目の文脈解決で先頭候補へ戻らないよう、選んだ対象そのものへ置き換える。
       if(message===base&&/^(?:それ|これ|その件|この件|その話|この話|そっち|あっち)(?:は|って|について)?[？?！!。]*$/.test(base))message=chosen+'について';
@@ -2544,7 +3197,7 @@
     if(/^(?:それで)[？?]$/.test(t))return null;
     var h=historyBeforeCurrent(history,t),m,suffix,ref;
 
-    m=t.match(/^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|さっきの監督|その投手|その野手|彼)(.*)$/);
+    m=t.match(/^(?:(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*)?(?:その人|この人|あの人|さっきの人|前の人|その選手|この選手|さっきの選手|前の選手|その監督|さっきの監督|その投手|その野手|その敵|この敵|あの敵|さっきの敵|前の敵|彼)(.*)$/);
     if(m){
       suffix=S(m[1]);
       if(!suffix||/^(?:は|って)?[？?]?$|^(?:の|は|って|について|を|が|も|以外|以外の).+/.test(suffix)){
@@ -3739,7 +4392,8 @@
   function resolve(text,history,opt){
     var original=S(text);
     var casual=normalizeCasualInput(original);
-    var routingText=casual.text||original;
+    var kana=normalizeKanaInput(casual.text||original);
+    var routingText=kana.text||casual.text||original;
     var contrastiveTail=contrastiveFollowupTail(routingText);
     if(contrastiveTail)routingText=contrastiveTail;
     var priorHistory=historyBeforeCurrent(history,original);
@@ -3934,7 +4588,7 @@
       original:original,
       message:message,
       normalizedInput:routingText,
-      inputNormalized:!!(casual.changed||contrastiveTail),
+      inputNormalized:!!(casual.changed||kana.changed||contrastiveTail),
       contrastiveFollowup:!!contrastiveTail,
       corrected:!!(correction.corrected||parallelCorrection||(inlineCorrection&&inlineCorrection.changed)),
       fragmentStitched:!!(fragmentCarry&&fragmentCarry.message),
@@ -3960,6 +4614,9 @@
     version:VERSION,
     resolve:resolve,
     normalizeCasualInput:normalizeCasualInput,
+    normalizeKanaInput:normalizeKanaInput,
+    smallKanaFold:smallKanaFold,
+    looseKanaFold:unvoiceKanaFold,
     isOpenUserFragment:isOpenUserFragment,
     stitchUserFragment:stitchUserFragment,
     inlineSelfCorrection:inlineSelfCorrection,

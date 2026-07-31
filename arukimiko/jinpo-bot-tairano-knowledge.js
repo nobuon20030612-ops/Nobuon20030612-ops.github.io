@@ -18,6 +18,12 @@
   function S(v){
     var s=String(v==null?'':v);
     try{s=s.normalize('NFKC');}catch(e){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeKanaInput==='function'){
+        var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);
+      }
+    }catch(kanaErr){}
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function hira(v){

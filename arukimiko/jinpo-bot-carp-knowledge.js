@@ -28,6 +28,12 @@
   function S(v){
     var s=String(v==null?'':v);
     try{s=s.normalize('NFKC');}catch(e){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeKanaInput==='function'){
+        var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);
+      }
+    }catch(kanaErr){}
     return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();
   }
 
@@ -36,6 +42,58 @@
       .replace(/広島東洋カープ|広島カープ|カープ|かーぷ|hiroshima\s*toyo\s*carp|hiroshima\s*carp/gi,'')
       .replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
   }
+
+  function kanaFold(v){
+    return S(v).toLowerCase()
+      .replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);})
+      .replace(/ヴ/g,'ゔ')
+      .replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
+  }
+
+  // 正本側の氏名・別名はすでに確定表記なので、会話入力用のかな正規化を通さない。
+  // 955名を質問ごとに再正規化すると応答が重くなるため、比較用かなを起動時に一度だけ作る。
+  function kanaFoldRaw(v){
+    var s=String(v==null?'':v);
+    try{s=s.normalize('NFKC');}catch(e){}
+    return s.toLowerCase()
+      .replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);})
+      .replace(/ヴ/g,'ゔ')
+      .replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
+  }
+
+  function kanaLooseFoldRaw(v){
+    var s=String(v==null?'':v);
+    try{s=s.normalize('NFKC');}catch(e){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.looseKanaFold==='function')s=conv.looseKanaFold(s);
+      else s=kanaFoldRaw(s);
+    }catch(e){s=kanaFoldRaw(s);}
+    return String(s).toLowerCase()
+      .replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
+  }
+
+  var SORTED_NAME_ROWS=ALL_NAMES.slice().sort(function(a,b){return b.length-a.length;}).map(function(name){
+    return {name:name,fold:kanaFoldRaw(name),loose:kanaLooseFoldRaw(name),looseUnique:false};
+  });
+  var ALIAS_ROWS=aliasKeys().map(function(alias){
+    return {alias:alias,full:ALIASES[alias],fold:kanaFoldRaw(alias),loose:kanaLooseFoldRaw(alias),looseUnique:false};
+  });
+
+  // 濁点・小書き文字を省いた読みは、同じ読みが一人にだけ決まる場合に限って使う。
+  var LOOSE_NAME_MAP=Object.create(null);
+  SORTED_NAME_ROWS.forEach(function(row){
+    var k=row.loose;if(!k||k.length<5)return;
+    if(!LOOSE_NAME_MAP[k])LOOSE_NAME_MAP[k]=Object.create(null);
+    LOOSE_NAME_MAP[k][row.name]=1;
+  });
+  ALIAS_ROWS.forEach(function(row){
+    var k=row.loose;if(!k||k.length<5)return;
+    if(!LOOSE_NAME_MAP[k])LOOSE_NAME_MAP[k]=Object.create(null);
+    LOOSE_NAME_MAP[k][row.full]=1;
+  });
+  SORTED_NAME_ROWS.forEach(function(row){row.looseUnique=!!(row.loose&&LOOSE_NAME_MAP[row.loose]&&Object.keys(LOOSE_NAME_MAP[row.loose]).length===1);});
+  ALIAS_ROWS.forEach(function(row){row.looseUnique=!!(row.loose&&LOOSE_NAME_MAP[row.loose]&&Object.keys(LOOSE_NAME_MAP[row.loose]).length===1);});
 
   function cleanText(v){
     return S(v)
@@ -63,21 +121,20 @@
   }
 
   function foundNames(text){
-    var t=S(text),out=[],seen={};
-    var sorted=ALL_NAMES.slice().sort(function(a,b){return b.length-a.length;});
+    var t=S(text),tf=kanaFold(t),tLoose=kanaLooseFoldRaw(t),out=[],seen={};
 
-    for(var i=0;i<sorted.length;i++){
-      if(t.indexOf(sorted[i])>=0&&!seen[sorted[i]]){
-        seen[sorted[i]]=1;
-        out.push(sorted[i]);
+    for(var i=0;i<SORTED_NAME_ROWS.length;i++){
+      var row=SORTED_NAME_ROWS[i],name=row.name,nf=row.fold;
+      if((t.indexOf(name)>=0||(nf&&tf.indexOf(nf)>=0)||(row.looseUnique&&row.loose&&tLoose.indexOf(row.loose)>=0))&&!seen[name]){
+        seen[name]=1;
+        out.push(name);
         if(out.length>=4)break;
       }
     }
 
-    var keys=aliasKeys();
-    for(var j=0;j<keys.length&&out.length<4;j++){
-      var alias=keys[j],full=ALIASES[alias];
-      if(t.indexOf(alias)>=0&&!seen[full]){
+    for(var j=0;j<ALIAS_ROWS.length&&out.length<4;j++){
+      var ar=ALIAS_ROWS[j],alias=ar.alias,full=ar.full,af=ar.fold;
+      if((t.indexOf(alias)>=0||(af&&tf.indexOf(af)>=0)||(ar.looseUnique&&ar.loose&&tLoose.indexOf(ar.loose)>=0))&&!seen[full]){
         seen[full]=1;
         out.push(full);
       }

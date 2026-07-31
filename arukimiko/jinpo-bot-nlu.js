@@ -37,7 +37,11 @@
   var EXCLUDE_WORDS=['持ってない','もってない','未所持','所持なし','いらない','不要','抜き','抜いて','外して','除外','なしで','無しで','使わない','候補から外','出さない'];
   var POLITE_TAIL=/(?:してもらえる|してくれる|してほしい|して欲しい|して下さい|してください|してちょうだい|してくれ|お願い(?:します)?|頼む|たのむ|かな|かも|だといい|がいいな|がいい|ほしい|欲しい|です|ます|なの|なんだけど|んだけど|なんですが|んですが|ね|よ)+[。.!！?？]*$/;
 
-  function S(v){try{return String(v==null?'':v).normalize('NFKC');}catch(e){return String(v==null?'':v);}}
+  function S(v){
+    var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}
+    try{var conv=window.JINPO_BOT_CONVERSATION;if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}}catch(kanaErr){}
+    return s;
+  }
   function hira(v){return S(v).replace(/[ァ-ヶ]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0x60);});}
   function compact(v){return hira(v).toLowerCase().replace(/[\s　、。,.!！?？「」『』（）()・ー~〜～:：\/]/g,'');}
   function clean(v){var s=S(v).replace(/[　\t]+/g,' ').replace(/\s+/g,' ').trim();return s.replace(POLITE_TAIL,'').trim();}

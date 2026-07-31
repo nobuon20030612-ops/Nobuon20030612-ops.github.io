@@ -2,7 +2,11 @@
   'use strict';
   if(window.JINPO_BOT_PARSER) return;
 
-  function normalize(t){return String(t==null?'':t).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).replace(/[　\s]+/g,' ').trim();}
+  function normalize(t){
+    var s=String(t==null?'':t).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).replace(/[　\s]+/g,' ').trim();
+    try{var conv=window.JINPO_BOT_CONVERSATION;if(conv&&typeof conv.normalizeKanaInput==='function'){var k=conv.normalizeKanaInput(s);if(k&&k.text)s=String(k.text);}}catch(kanaErr){}
+    return s;
+  }
   function A(){return window.JINPO_BOT_ACTIONS||{};}
   function cleanHeroText(v){return String(v||'').replace(/^(?:じゃあ|じゃ|それなら|なら|あと|ちなみに|じゃあさ|それじゃ)\s*/,'').replace(/^(?:英傑|キャラ)\s*/,'').trim();}
   function findFormation(t){var aliases=['衡軛','衝軛','鴻鵠','こうやく','鶴翼','かくよく','方円','ほうえん','魚鱗','ぎょりん'];for(var i=0;i<aliases.length;i++)if(t.indexOf(aliases[i])>=0)return A().canonicalFormation?A().canonicalFormation(aliases[i]):aliases[i];return'';}

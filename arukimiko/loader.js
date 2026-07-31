@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.24.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.25.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.24.0';
+  var ASSET_VERSION='3.25.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.24.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.25.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.24.0',
+    version:'3.25.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -239,13 +239,136 @@
 
   var carpAliasHints=["エルドレッド","ジョンソン","ノムケン","ブラウン","ラロッカ","佐々岡","北別府","大瀬良","会沢","前田","坂倉","堂林","小園","床田","新井","會澤","栗林","森下","江夏","津田","浩二","秋山","緒方","菊池","衣笠","誠也","達川","野間","金本","黒田","丸"];
 
-  function hasCarpNameHint(text){
-    var t=String(text||'');
-    for(var i=0;i<carpNameHints.length;i++){
-      if(t.indexOf(carpNameHints[i])>=0)return true;
+  // カウンター正本の読みだけを軽量ヒントとして保持。本文と数値は従来どおりlazy読込。
+  var tairanoReadingHints=["きょくかんきほうてんぐ","ざんぎゃくなるまじゅう","だいろくてんしゅらおう","しれんのふうまいしゃ","すぎたにぜんじゅぼう","ひょうけつのまちょう","ふかんぜんなきょじん","ほんがんじきょうにょ","かみいずみのぶつな","きょうらんこんごう","ごうせつおんりょう","こばやかわたかかげ","しらつゆのあいこん","ほうじょううじやす","ほんがんじけんにょ","まつだいらもとやす","むめいのこぶしょう","ゆきやまのせいれい","あさくらかげのり","あさくらそうてき","あさくらよしかげ","あさひなやすとも","あしかがよしあき","あしかがよしてる","いしかわいえなり","いまがわうじざね","いまがわよしもと","うえすぎけんしん","うごめくじゃれい","かげふみのてんぐ","きえないおんねん","げんえいだいじゃ","ごうゆうのあっき","さいとうどうさん","しもつまらいれん","せきぐちうじひろ","たちばなむねしげ","とくがわいえやす","とこよのじゅつし","とこよのせんぺい","なだかきくぎょう","はっとりはんぞう","はなかげのめがみ","はなさきのめがみ","ひたんのせいれい","ふなおかやまうば","ほそかわふじたか","むめいのくぎょう","ももちさんだゆう","あざいすけまさ","あざいながまさ","あらきむらしげ","いそのかずまさ","おかべもとのぶ","くろだかんべえ","ごほうあしゅら","さいかまごいち","さかいただつぐ","さなだまさゆき","しまづよしひろ","しゅてんどうじ","しゅらふうじん","しゅららいじん","しんあんのおに","じんらいらせつ","すずきしげおき","ぜんませっさい","たけだしんげん","たけだのぶとら","なぞのばけもの","はしばひでよし","ふうまこたろう","まがらなおたか","まついむねのぶ","みよしながやす","みよしながよし","やまとのまえい","よしだやまうば","いいなおもり","おだのぶゆき","かてんやしゃ","きそよしなか","ぐふうらせつ","じょろうぐも","だてまさむね","なぞのおとこ","もりよしなり","じゅけいに","おいち","おまつ","ぜつ"];
+
+  function normalizeKanaForRouting(text){
+    var raw=String(text||'');
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.normalizeKanaInput==='function'){
+        var r=conv.normalizeKanaInput(raw);
+        if(r&&r.text)return String(r.text);
+      }
+    }catch(e){}
+    return raw;
+  }
+
+  function carpHintFold(value){
+    var s=String(value||'');
+    try{s=s.normalize('NFKC');}catch(e){}
+    return s.replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);}).replace(/ヴ/g,'ゔ').toLowerCase();
+  }
+
+  function compactHintFold(value){
+    return carpHintFold(value).replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
+  }
+
+  function looseHintFold(value){
+    var s=String(value||'');
+    try{s=s.normalize('NFKC');}catch(e){}
+    try{
+      var conv=window.JINPO_BOT_CONVERSATION;
+      if(conv&&typeof conv.looseKanaFold==='function')s=conv.looseKanaFold(s);
+      else s=carpHintFold(s);
+    }catch(e){s=carpHintFold(s);}
+    return String(s).toLowerCase().replace(/[\s、。,.!！?？「」『』（）()・〜~ー―…:：;；\[\]【】\/／_-]/g,'');
+  }
+
+
+  function omissionHintKeys(value,minOriginalLength,minVariantLength){
+    var base=compactHintFold(value),out=[],seen=Object.create(null);
+    var minOriginal=minOriginalLength||6,minVariant=minVariantLength||5;
+    if(!base||base.length<minOriginal||!/^[ぁ-ゖ]+$/.test(base))return out;
+    for(var i=1;i<base.length;i++){
+      var key=base.slice(0,i)+base.slice(i+1);
+      if(key.length<minVariant||seen[key])continue;
+      seen[key]=1;out.push(key);
     }
-    for(var j=0;j<carpAliasHints.length;j++){
-      if(t.indexOf(carpAliasHints[j])>=0)return true;
+    return out;
+  }
+
+  function escapeHintRe(value){return String(value||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+  function omissionHintMatches(text,folded,keys,topicRe){
+    if(!keys||!keys.length)return false;
+    var suffixRe=/^(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か|を|が|も|さん|せんしゅ|かんとく|とうしゅ|かぞく|しんぞく|おくさん|つま|せいせき|けいれき|いつわ|げんえき|いんたい|ねんれい|なんさい|かうんた)/;
+    for(var i=0;i<keys.length;i++){
+      var key=keys[i];if(!key)continue;
+      var whole=new RegExp('^'+escapeHintRe(key)+'(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か)?$');
+      if(whole.test(folded))return true;
+      if(topicRe&&topicRe.test(text)){
+        var at=folded.indexOf(key);
+        while(at>=0){
+          var before=folded.slice(0,at),after=folded.slice(at+key.length);
+          var beforeOk=!before||/(?:は|って|の|について|を|が|も)$/.test(before);
+          var afterOk=!after||suffixRe.test(after);
+          if(beforeOk&&afterOk)return true;
+          at=folded.indexOf(key,at+1);
+        }
+      }
+    }
+    return false;
+  }
+
+  var carpHintRows=null,tairanoHintRows=null;
+  function ensureCarpHintRows(){
+    if(carpHintRows)return carpHintRows;
+    var all=carpNameHints.concat(carpAliasHints),seen=Object.create(null);
+    carpHintRows=[];
+    all.forEach(function(name){
+      var exact=compactHintFold(name),loose=looseHintFold(name),key=name+'\u0001'+exact+'\u0001'+loose;
+      if(seen[key])return;seen[key]=1;
+      carpHintRows.push({name:name,exact:exact,loose:loose,allowLoose:!!(loose&&loose.length>=5&&loose!==exact),omissions:omissionHintKeys(exact,6,5)});
+    });
+    var omissionMap=Object.create(null);
+    carpHintRows.forEach(function(row){(row.omissions||[]).forEach(function(key){if(!omissionMap[key])omissionMap[key]=Object.create(null);omissionMap[key][row.name]=1;});});
+    carpHintRows.forEach(function(row){row.omissions=(row.omissions||[]).filter(function(key){return Object.keys(omissionMap[key]||{}).length===1;});});
+    carpHintRows.sort(function(a,b){return Math.max(b.exact.length,b.loose.length)-Math.max(a.exact.length,a.loose.length);});
+    return carpHintRows;
+  }
+
+  function ensureTairanoHintRows(){
+    if(tairanoHintRows)return tairanoHintRows;
+    var looseMap=Object.create(null);
+    tairanoReadingHints.forEach(function(reading){
+      var loose=looseHintFold(reading);
+      if(!loose||loose.length<5)return;
+      if(!looseMap[loose])looseMap[loose]=Object.create(null);
+      looseMap[loose][reading]=1;
+    });
+    var omissionMap=Object.create(null);
+    tairanoReadingHints.forEach(function(reading){
+      omissionHintKeys(reading,6,5).forEach(function(key){if(!omissionMap[key])omissionMap[key]=Object.create(null);omissionMap[key][reading]=1;});
+    });
+    tairanoHintRows=tairanoReadingHints.map(function(reading){
+      var exact=compactHintFold(reading),loose=looseHintFold(reading);
+      var omissions=omissionHintKeys(reading,6,5).filter(function(key){return Object.keys(omissionMap[key]||{}).length===1;});
+      return {exact:exact,loose:loose,allowLoose:!!(loose&&loose.length>=5&&looseMap[loose]&&Object.keys(looseMap[loose]).length===1),omissions:omissions};
+    }).sort(function(a,b){return Math.max(b.exact.length,b.loose.length)-Math.max(a.exact.length,a.loose.length);});
+    return tairanoHintRows;
+  }
+
+  function hasCarpNameHint(text){
+    var t=normalizeKanaForRouting(text),folded=compactHintFold(t),loose=looseHintFold(t),rows=ensureCarpHintRows();
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i];
+      if(t.indexOf(row.name)>=0||(row.exact&&folded.indexOf(row.exact)>=0)||(row.allowLoose&&loose.indexOf(row.loose)>=0)||omissionHintMatches(t,folded,row.omissions,/カープ|広島|選手|監督|家族|親族|奥さん|成績|経歴|逸話|現役|引退|年齢|何歳/))return true;
+    }
+    return false;
+  }
+
+  function hasTairanoReadingHint(text){
+    var raw=String(text||''),folded=compactHintFold(raw),loose=looseHintFold(raw),rows=ensureTairanoHintRows();
+    if(!folded)return false;
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i],hint=row.exact;
+      if(!hint)continue;
+      if(hint.length>=5&&folded.indexOf(hint)>=0)return true;
+      if(row.allowLoose&&loose.indexOf(row.loose)>=0)return true;
+      if(omissionHintMatches(text,folded,row.omissions,/カウンター|天下統一奇譚|天下武技大会|修羅の間|二条城|桶狭間|封印|場所|入手|正本/))return true;
+      // 短い読みは一般語との衝突を避け、名前そのものを尋ねている形だけに限定する。
+      if(hint.length>=3&&new RegExp('^'+hint+'(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か)?$').test(folded))return true;
     }
     return false;
   }
@@ -261,7 +384,7 @@
   }
 
   function counterCandidateSelector(text){
-    var t=String(text||'')
+    var t=normalizeKanaForRouting(text)
       .replace(/^(?:じゃあ|では|なら|それじゃ|それなら)[、,\s]*/,'')
       .replace(/[？?！!。]+$/,'')
       .trim();
@@ -280,7 +403,7 @@
   }
 
   function groupsForMessage(text,history){
-    var t=String(text||'');
+    var t=normalizeKanaForRouting(text);
     var groups=[];
 
     // 常時小さな学習補助。外部生成AIは使用しない。
@@ -292,6 +415,7 @@
 
     if(
       /カウンター|かうんた|修羅の間|天下武技大会|天下統一奇譚|二条城|桶狭間|封印|足利義昭|禅魔|雪斎/.test(t) ||
+      hasTairanoReadingHint(t) ||
       (recentTairanoAmbiguity(history)&&counterCandidateSelector(t))
     ){
       groups.push('tairano');
