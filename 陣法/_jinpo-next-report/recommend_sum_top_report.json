@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "schema": "jinpo-recommend-sum-top/v1",
+  "limit_per_formation": 500,
+  "record_size": 54,
+  "files": 220,
+  "rows": 440000,
+  "source_rows_by_mode": {
+    "normal": 1529936,
+    "grade3": 268322
+  },
+  "version": "unified-v2-top500-recsum-c63db8dfc1ce",
+  "seconds": 3.757
+}

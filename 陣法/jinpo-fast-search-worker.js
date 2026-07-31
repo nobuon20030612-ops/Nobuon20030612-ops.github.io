@@ -1,5 +1,6 @@
 (function(){
   'use strict';
+// Top500正式運用: 初期表示・優先検索は最大500件で統一する。
   var MANIFEST_PATH='data/compact_search_v2/jinpo_unified_search_manifest.json';
   var MANIFEST_RECHECK_MS=60000;
   var manifest=null,manifestPromise=null,manifestCheckedAt=0;

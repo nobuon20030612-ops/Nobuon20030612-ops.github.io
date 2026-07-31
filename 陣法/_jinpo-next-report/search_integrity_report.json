@@ -1,0 +1,241 @@
+{
+  "status": "PASS",
+  "accessible_full_records": 1798258,
+  "bondset_errors": 0,
+  "factor4_errors": 0,
+  "cycle_pair_factor4_errors": 0,
+  "fullmax_errors": 0,
+  "fullmax_records_checked": 1798258,
+  "dataset_count": 32,
+  "top_files_exact": 32,
+  "sort_top_files_exact": 132,
+  "triple_map_entries": 654507,
+  "line_cache_entries": 268325,
+  "datasets": {
+    "normal/7/衡軛": {
+      "rows": 7346,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/7/鶴翼": {
+      "rows": 7346,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/7/魚鱗": {
+      "rows": 748491,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/7/方円": {
+      "rows": 748491,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/8/衡軛": {
+      "rows": 57,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/8/鶴翼": {
+      "rows": 57,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/8/魚鱗": {
+      "rows": 9028,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/8/方円": {
+      "rows": 9028,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/9/衡軛": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/9/鶴翼": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/9/魚鱗": {
+      "rows": 46,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "normal/9/方円": {
+      "rows": 46,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/5/衡軛": {
+      "rows": 1249,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/5/鶴翼": {
+      "rows": 1249,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/5/魚鱗": {
+      "rows": 131955,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/5/方円": {
+      "rows": 131955,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/6/衡軛": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/6/鶴翼": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/6/魚鱗": {
+      "rows": 955,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/6/方円": {
+      "rows": 955,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/7/衡軛": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/7/鶴翼": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/7/魚鱗": {
+      "rows": 2,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/7/方円": {
+      "rows": 2,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/8/衡軛": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/8/鶴翼": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/8/魚鱗": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/8/方円": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/9/衡軛": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/9/鶴翼": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/9/魚鱗": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    },
+    "grade3/9/方円": {
+      "rows": 0,
+      "bondset_errors": 0,
+      "factor4_errors": 0,
+      "fullmax_errors": 0,
+      "cycle_pair_factor4_errors": 0
+    }
+  },
+  "seconds": 111.303
+}

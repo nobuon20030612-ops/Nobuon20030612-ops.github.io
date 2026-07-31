@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "source_rows_input": 383,
+  "source_rows": 383,
+  "master_rows": 383,
+  "new_heroes": [],
+  "changed_existing": [],
+  "removed_heroes": [],
+  "retired_source_rows_skipped": [],
+  "dirty_internal_ids": [],
+  "applied_overrides": [
+    {
+      "name": "鍋島直茂",
+      "occurrence": 1,
+      "field": "因子1(特化)",
+      "from": "軍楽",
+      "to": "軍学",
+      "reason": "2026-07-23確認済み: 一覧側の誤字。正しくは軍学。"
+    }
+  ],
+  "id_map_entries": 383
+}

@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "schema": "jinpo-fullmax-search/v2",
+  "fullmax_record_size": 26,
+  "recommend_record_size": 80,
+  "full_records": 1798258,
+  "sidecar_files": 32,
+  "sidecar_source": "existing-valid",
+  "sidecar_seconds": 0.0,
+  "recommend_files": 242,
+  "recommend_rows": 484000,
+  "seconds": 5.439,
+  "version": "unified-v2-top500-recsum-fullmax-b194bb031dc8"
+}

@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "datasets": {
+    "normal/7": {
+      "rows": 748491,
+      "fish_rows_improved": 5011,
+      "hoen_rows_improved": 2701,
+      "total_rows_improved": 7712,
+      "max_factor4_reduction": 2
+    },
+    "normal/8": {
+      "rows": 9028,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "normal/9": {
+      "rows": 46,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "grade3/5": {
+      "rows": 131955,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "grade3/6": {
+      "rows": 955,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "grade3/7": {
+      "rows": 2,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "grade3/8": {
+      "rows": 0,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    },
+    "grade3/9": {
+      "rows": 0,
+      "fish_rows_improved": 0,
+      "hoen_rows_improved": 0,
+      "total_rows_improved": 0,
+      "max_factor4_reduction": 0
+    }
+  },
+  "seconds": 15.894,
+  "total_rows_improved": 7712
+}

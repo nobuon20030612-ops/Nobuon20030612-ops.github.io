@@ -1,0 +1,232 @@
+{
+  "status": "PASS",
+  "datasets": {
+    "normal/7/衡軛": {
+      "rows": 7346,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/7/鶴翼": {
+      "rows": 7346,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/7/魚鱗": {
+      "rows": 748491,
+      "changed_rows": 5011,
+      "allowed_reductions": 5011,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/7/方円": {
+      "rows": 748491,
+      "changed_rows": 2701,
+      "allowed_reductions": 2701,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/8/衡軛": {
+      "rows": 57,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/8/鶴翼": {
+      "rows": 57,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/8/魚鱗": {
+      "rows": 9028,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/8/方円": {
+      "rows": 9028,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/9/衡軛": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/9/鶴翼": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/9/魚鱗": {
+      "rows": 46,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "normal/9/方円": {
+      "rows": 46,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/5/衡軛": {
+      "rows": 1249,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/5/鶴翼": {
+      "rows": 1249,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/5/魚鱗": {
+      "rows": 131955,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/5/方円": {
+      "rows": 131955,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/6/衡軛": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/6/鶴翼": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/6/魚鱗": {
+      "rows": 955,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/6/方円": {
+      "rows": 955,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/7/衡軛": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/7/鶴翼": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/7/魚鱗": {
+      "rows": 2,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/7/方円": {
+      "rows": 2,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/8/衡軛": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/8/鶴翼": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/8/魚鱗": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/8/方円": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/9/衡軛": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/9/鶴翼": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/9/魚鱗": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    },
+    "grade3/9/方円": {
+      "rows": 0,
+      "changed_rows": 0,
+      "allowed_reductions": 0,
+      "forbidden_changes": 0,
+      "first": []
+    }
+  },
+  "errors": [],
+  "changed_rows_total": 7712,
+  "unexpected_non_generated_changes": []
+}

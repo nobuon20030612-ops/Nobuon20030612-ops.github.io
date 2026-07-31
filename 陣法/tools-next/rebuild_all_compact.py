@@ -82,6 +82,11 @@ def fish_to_hoen(p):
     return (p[5],p[0],p[1],p[2],p[3],p[4])
 
 
+def hoen_to_fish(p):
+    # fish_to_hoen の逆変換。方円の同一3ライン集合を魚鱗配置へ戻す。
+    return (p[1],p[2],p[3],p[4],p[5],p[0])
+
+
 class Generator:
     def __init__(self, allowed_ids: list[int], heroes: dict, bonds: dict, coef: dict, formation_bonus_pct: dict):
         self.ids = sorted(allowed_ids)
@@ -506,6 +511,103 @@ def write_dataset(manifest, generator: Generator, mode: str, count: int, form: s
         pass
     return result
 
+
+def harmonize_cycle_pair(manifest, generator: Generator, mode: str, count: int):
+    """魚鱗・方円の同一6人＋同一因縁集合で、文曲人数が少ない代表配置へ統一する。
+
+    魚鱗と方円は3ライン集合が同型であり、fish_to_hoen/hoen_to_fishで
+    相互変換できる。既存の低い側は一切変更せず、高い側だけを置換する。
+    因縁集合・基礎ステータス・tie順は維持する。
+    """
+    forms=('魚鱗','方円')
+    raws={}; fm_raws={}; paths={}; fm_paths={}; entries={}; fm_entries={}
+    for form in forms:
+        entry=manifest['datasets'][mode][str(count)][form]
+        path=SITE/entry['file']; raw=bytearray(gzread(path))
+        if len(raw)<16 or raw[:4]!=b'JCF1' or struct.unpack_from('<H',raw,6)[0]!=REC:
+            raise RuntimeError(f'既存compact DB不正: {entry["file"]}')
+        rows=struct.unpack_from('<I',raw,8)[0]
+        if rows!=int(entry.get('rows',-1)) or len(raw)!=16+rows*REC:
+            raise RuntimeError(f'compact構造不一致: {mode}/{count}/{form}')
+        fm_entry=manifest['fullmax_stats'][mode][str(count)][form]
+        fm_path=SITE/fm_entry['file']; fm_raw=bytearray(gzread(fm_path))
+        if len(fm_raw)!=16+rows*FULLMAX_REC or fm_raw[:4]!=b'JMX1' or struct.unpack_from('<H',fm_raw,6)[0]!=FULLMAX_REC or struct.unpack_from('<I',fm_raw,8)[0]!=rows:
+            raise RuntimeError(f'fullMAX構造不一致: {mode}/{count}/{form}')
+        raws[form]=raw; fm_raws[form]=fm_raw; paths[form]=path; fm_paths[form]=fm_path
+        entries[form]=entry; fm_entries[form]=fm_entry
+
+    def row_key(raw, i):
+        off=16+i*REC
+        p=tuple(struct.unpack_from('<6H',raw,off))
+        mask=0
+        for bid in raw[off+12:off+12+count]:
+            if bid: mask |= 1 << (bid-1)
+        return (tuple(sorted(p)),mask),p
+
+    hoen_index={}
+    hoen_rows=int(entries['方円']['rows'])
+    for i in range(hoen_rows):
+        key,_=row_key(raws['方円'],i)
+        if key in hoen_index:
+            raise RuntimeError(f'方円の意味上重複: {mode}/{count}')
+        hoen_index[key]=i
+
+    fish_rows=int(entries['魚鱗']['rows'])
+    if fish_rows!=hoen_rows:
+        raise RuntimeError(f'魚鱗・方円件数不一致: {mode}/{count} {fish_rows}!={hoen_rows}')
+
+    fish_improved=hoen_improved=0
+    max_reduction=0
+    seen=set()
+    for fi in range(fish_rows):
+        key,fish_p=row_key(raws['魚鱗'],fi)
+        hi=hoen_index.get(key)
+        if hi is None:
+            raise RuntimeError(f'方円に対応キーなし: {mode}/{count} {key}')
+        seen.add(key)
+        _,hoen_p=row_key(raws['方円'],hi)
+        foff=16+fi*REC; hoff=16+hi*REC
+        fish_f4=int(raws['魚鱗'][foff+47]); hoen_f4=int(raws['方円'][hoff+47])
+        if fish_f4==hoen_f4:
+            continue
+        mask=key[1]; bids=generator.bond_ids(mask)
+        if len(bids)!=count:
+            raise RuntimeError(f'因縁数不一致: {mode}/{count} key={key}')
+        if fish_f4<hoen_f4:
+            target_p=fish_to_hoen(fish_p); target_form='方円'; target_i=hi; expected=fish_f4
+            hoen_improved+=1
+        else:
+            target_p=hoen_to_fish(hoen_p); target_form='魚鱗'; target_i=fi; expected=hoen_f4
+            fish_improved+=1
+        if generator.placement_mask(target_p,target_form)!=mask:
+            raise RuntimeError(f'代表配置変換後の因縁集合不一致: {mode}/{count}/{target_form} {target_p}')
+        target_raw=raws[target_form]; toff=16+target_i*REC
+        tie=struct.unpack_from('<I',target_raw,toff+48)[0]
+        rec,fm_rec=generator.record_bundle(target_p,bids,target_form,tie)
+        got=rec[47]
+        if got!=expected:
+            raise RuntimeError(f'代表配置変換後の文曲人数不一致: {mode}/{count}/{target_form} expected={expected} got={got}')
+        target_raw[toff:toff+REC]=rec
+        fmoff=16+target_i*FULLMAX_REC
+        fm_raws[target_form][fmoff:fmoff+FULLMAX_REC]=fm_rec
+        max_reduction=max(max_reduction,abs(fish_f4-hoen_f4))
+
+    if len(seen)!=len(hoen_index):
+        raise RuntimeError(f'魚鱗に存在しない方円キーあり: {mode}/{count}')
+
+    for form in forms:
+        raw=bytes(raws[form]); gzwrite(paths[form],raw); entries[form].update(meta(paths[form],raw,fish_rows))
+        fm_raw=bytes(fm_raws[form]); gzwrite(fm_paths[form],fm_raw); fm_entries[form].update(fullmax_meta(fm_paths[form],fm_raw,fish_rows))
+
+    return {
+        'rows':fish_rows,
+        'fish_rows_improved':fish_improved,
+        'hoen_rows_improved':hoen_improved,
+        'total_rows_improved':fish_improved+hoen_improved,
+        'max_factor4_reduction':max_reduction,
+    }
+
+
 def main():
     started = time.time()
     manifest = json.loads(MANIFEST.read_text(encoding='utf-8'))
@@ -546,6 +648,7 @@ def main():
         report['datasets'][f'normal/{count}/鶴翼'] = write_dataset(manifest,normal_gen,'normal',count,'鶴翼',normal_disjoint[count],dirty_ids)
         report['datasets'][f'normal/{count}/魚鱗'] = write_dataset(manifest,normal_gen,'normal',count,'魚鱗',normal_cycle[count],dirty_ids)
         report['datasets'][f'normal/{count}/方円'] = write_dataset(manifest,normal_gen,'normal',count,'方円',normal_cycle[count],dirty_ids,fish_to_hoen)
+        report.setdefault('cycle_representative_harmonization',{})[f'normal/{count}'] = harmonize_cycle_pair(manifest,normal_gen,'normal',count)
     del normal_cycle,normal_disjoint,normal_gen
 
     # 等級3以下5～9: コスト6以下だけから完全再生成。
@@ -561,6 +664,7 @@ def main():
         report['datasets'][f'grade3/{count}/鶴翼'] = write_dataset(manifest,grade_gen,'grade3',count,'鶴翼',grade_disjoint[count],dirty_ids)
         report['datasets'][f'grade3/{count}/魚鱗'] = write_dataset(manifest,grade_gen,'grade3',count,'魚鱗',grade_cycle[count],dirty_ids)
         report['datasets'][f'grade3/{count}/方円'] = write_dataset(manifest,grade_gen,'grade3',count,'方円',grade_cycle[count],dirty_ids,fish_to_hoen)
+        report.setdefault('cycle_representative_harmonization',{})[f'grade3/{count}'] = harmonize_cycle_pair(manifest,grade_gen,'grade3',count)
 
     manifest['generator'] = {
         'name':'tools-next/rebuild_all_compact.py',

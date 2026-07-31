@@ -300,7 +300,19 @@ def validate_existing_sidecars(m: dict):
 
 def main():
     started=time.time();m=json.loads(MANIFEST.read_text(encoding='utf-8'))
-    section,total_rows,sidecar_files=validate_existing_sidecars(m)
+    sidecar_seconds=0.0
+    try:
+        section,total_rows,sidecar_files=validate_existing_sidecars(m)
+        sidecar_source='existing-valid'
+    except RuntimeError:
+        # sidecarが未同梱・不完全な場合だけ、compact本体から安全に再生成する。
+        heroes,bonds,coef,formation_bonus_pct=load_model()
+        section,total_rows,sidecar_seconds=build_sidecars(m,heroes,bonds,coef,formation_bonus_pct)
+        sidecar_files=sum(len(forms) for counts in section.values() for forms in counts.values())
+        m['fullmax_stats']=section
+        m['fullmax_stats_record_size']=FULLMAX_REC
+        m['fullmax_model']='全MAX: 見聞録MAX+鬼神石MAX+転生MAX(最小文曲使用英傑を除外)'
+        sidecar_source='rebuilt-from-compact'
     single,pairs,files,rec_rows=build_recommend(m,section)
     m['fullmax_recommend_top']=single
     m['fullmax_recommend_sum_top']=pairs
@@ -313,7 +325,7 @@ def main():
     m['notes']=notes
     m['version']='unified-v2-top500-recsum-fullmax-'+fingerprint_manifest(m)
     MANIFEST.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    report={'status':'PASS','schema':'jinpo-fullmax-search/v2','fullmax_record_size':FULLMAX_REC,'recommend_record_size':RECOMMEND_REC,'full_records':total_rows,'sidecar_files':sidecar_files,'sidecar_source':'rebuild_all_compact.py','recommend_files':files,'recommend_rows':rec_rows,'seconds':round(time.time()-started,3),'version':m['version']}
+    report={'status':'PASS','schema':'jinpo-fullmax-search/v2','fullmax_record_size':FULLMAX_REC,'recommend_record_size':RECOMMEND_REC,'full_records':total_rows,'sidecar_files':sidecar_files,'sidecar_source':sidecar_source,'sidecar_seconds':sidecar_seconds,'recommend_files':files,'recommend_rows':rec_rows,'seconds':round(time.time()-started,3),'version':m['version']}
     REPORT_DIR.mkdir(exist_ok=True);REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');print(json.dumps(report,ensure_ascii=False,indent=2))
 
 if __name__=='__main__':

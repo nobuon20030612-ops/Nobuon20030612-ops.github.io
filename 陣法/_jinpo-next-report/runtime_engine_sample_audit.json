@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "engine": "jinpo-activation-engine.js",
+  "sample_records_checked": 3049,
+  "bondset_errors": 0,
+  "factor4_errors": 0,
+  "sample_source": "all non-empty datasets: first/middle/last plus deterministic random rows"
+}

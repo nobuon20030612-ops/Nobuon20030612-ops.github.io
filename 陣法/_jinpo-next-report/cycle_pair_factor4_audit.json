@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "errors": [],
+  "datasets": {
+    "normal/7": {
+      "rows": 748491,
+      "factor4_count_mismatches": 0
+    },
+    "normal/8": {
+      "rows": 9028,
+      "factor4_count_mismatches": 0
+    },
+    "normal/9": {
+      "rows": 46,
+      "factor4_count_mismatches": 0
+    },
+    "grade3/5": {
+      "rows": 131955,
+      "factor4_count_mismatches": 0
+    },
+    "grade3/6": {
+      "rows": 955,
+      "factor4_count_mismatches": 0
+    },
+    "grade3/7": {
+      "rows": 2,
+      "factor4_count_mismatches": 0
+    },
+    "grade3/8": {
+      "rows": 0,
+      "factor4_count_mismatches": 0
+    },
+    "grade3/9": {
+      "rows": 0,
+      "factor4_count_mismatches": 0
+    }
+  }
+}

@@ -114,6 +114,8 @@ def main():
         line_cache[line]=result;return result
 
     accessible_rows=0;bond_errors=0;f4_errors=0;fullmax_errors=0;fullmax_records_checked=0;datasets={}
+    # 魚鱗・方円は同じ3ライン集合を表すため、同じ6人＋因縁集合なら文曲人数も一致必須。
+    cycle_pair_maps={}; cycle_pair_factor4_errors=0
     generation_counts={}
     if GEN_REPORT.exists():
         gr=json.loads(GEN_REPORT.read_text(encoding='utf-8'))
@@ -130,7 +132,7 @@ def main():
         label=f'{mode}/{count}/{formation}'
         if generation_counts and label in generation_counts and int(info['rows'])!=generation_counts[label]:
             raise RuntimeError(f'生成レポート件数不一致 {label}: {info["rows"]}!={generation_counts[label]}')
-        raw,rows=read_raw(info);be=fe=fme=0
+        raw,rows=read_raw(info);be=fe=fme=0;pair_errors=0;pair_seen=set()
         fm_info=(((m.get('fullmax_stats') or {}).get(mode) or {}).get(str(count)) or {}).get(formation)
         if not fm_info: raise RuntimeError(f'全MAX sidecar不足 {label}')
         fm_raw=read_fullmax(fm_info,rows)
@@ -150,15 +152,35 @@ def main():
             if expected_f4!=raw[off+47]:
                 fe+=1
                 if fe<=3:print(f'ERROR factor4 {mode}/{count}/{formation} row={i} stored={raw[off+47]} expected={expected_f4}',file=sys.stderr)
+            if formation in {'魚鱗','方円'}:
+                sem_key=struct.pack('<6H',*sorted(ids))+bytes(sorted(stored))
+                pair_key=(mode,count)
+                if formation=='魚鱗':
+                    pair_map=cycle_pair_maps.setdefault(pair_key,{})
+                    if sem_key in pair_map:
+                        pair_errors+=1
+                    pair_map[sem_key]=expected_f4
+                else:
+                    pair_map=cycle_pair_maps.get(pair_key,{})
+                    peer=pair_map.get(sem_key)
+                    if peer is None or peer!=expected_f4:
+                        pair_errors+=1
+                        if pair_errors<=3:print(f'ERROR cycle-pair factor4 {mode}/{count} row={i} fish={peer} hoen={expected_f4}',file=sys.stderr)
+                    pair_seen.add(sem_key)
             exp_vals,exp_total=calc_fullmax_stats(ids,f4mask,tuple(sorted(stored)),formation,heroes,coef,formation_bonus_pct)
             fm_off=16+i*FULLMAX_REC
             got_vals=struct.unpack_from('<11H',fm_raw,fm_off);got_total=struct.unpack_from('<I',fm_raw,fm_off+22)[0]
             if tuple(exp_vals)!=tuple(got_vals) or exp_total!=got_total:
                 fme+=1
                 if fme<=3:print(f'ERROR fullmax {mode}/{count}/{formation} row={i}',file=sys.stderr)
-        if be or fe or fme:raise RuntimeError(f'因縁/文曲/全MAX不一致 {mode}/{count}/{formation}: bond={be} factor4={fe} fullmax={fme}')
-        accessible_rows+=rows;bond_errors+=be;f4_errors+=fe;fullmax_errors+=fme;fullmax_records_checked+=rows
-        datasets[f'{mode}/{count}/{formation}']={'rows':rows,'bondset_errors':be,'factor4_errors':fe,'fullmax_errors':fme}
+        if formation=='方円':
+            pair_key=(mode,count); pair_map=cycle_pair_maps.get(pair_key,{})
+            missing=len(pair_map)-len(pair_seen)
+            if missing>0: pair_errors+=missing
+            cycle_pair_maps.pop(pair_key,None)
+        if be or fe or fme or pair_errors:raise RuntimeError(f'因縁/文曲/全MAX不一致 {mode}/{count}/{formation}: bond={be} factor4={fe} fullmax={fme} cycle_pair={pair_errors}')
+        accessible_rows+=rows;bond_errors+=be;f4_errors+=fe;fullmax_errors+=fme;fullmax_records_checked+=rows;cycle_pair_factor4_errors+=pair_errors
+        datasets[f'{mode}/{count}/{formation}']={'rows':rows,'bondset_errors':be,'factor4_errors':fe,'fullmax_errors':fme,'cycle_pair_factor4_errors':pair_errors}
 
     # Prove every pre-generated Top500 / single-priority Top500 is derived from its full DB.
     top_files=0;sort_files=0
@@ -180,6 +202,7 @@ def main():
     report={
       'status':'PASS','accessible_full_records':accessible_rows,
       'bondset_errors':bond_errors,'factor4_errors':f4_errors,
+      'cycle_pair_factor4_errors':cycle_pair_factor4_errors,
       'fullmax_errors':fullmax_errors,'fullmax_records_checked':fullmax_records_checked,
       'dataset_count':len(specs),
       'top_files_exact':top_files,'sort_top_files_exact':sort_files,
@@ -187,7 +210,7 @@ def main():
       'datasets':datasets,'seconds':round(time.time()-started,3)
     }
     REPORT_DIR.mkdir(exist_ok=True);REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-    print(json.dumps({k:report[k] for k in ('status','accessible_full_records','bondset_errors','factor4_errors','fullmax_errors','fullmax_records_checked','top_files_exact','sort_top_files_exact','seconds')},ensure_ascii=False))
+    print(json.dumps({k:report[k] for k in ('status','accessible_full_records','bondset_errors','factor4_errors','cycle_pair_factor4_errors','fullmax_errors','fullmax_records_checked','top_files_exact','sort_top_files_exact','seconds')},ensure_ascii=False))
 
 if __name__=='__main__':
     try:main()

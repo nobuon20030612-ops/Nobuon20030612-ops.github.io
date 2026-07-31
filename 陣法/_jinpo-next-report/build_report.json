@@ -1,0 +1,151 @@
+{
+  "phase": "phase2-auto-regeneration",
+  "status": "PASS",
+  "generated_at_utc": "2026-07-31T13:54:32.965567+00:00",
+  "source": "source-next/英傑一覧.csv",
+  "site": ".",
+  "errors": [],
+  "warnings": [],
+  "source_provenance_audit": "build-standalone-audit",
+  "master_sync_source": "build-standalone-sync",
+  "applied_overrides": [
+    {
+      "name": "鍋島直茂",
+      "occurrence": 1,
+      "field": "因子1(特化)",
+      "from": "軍楽",
+      "to": "軍学",
+      "reason": "2026-07-23確認済み: 一覧側の誤字。正しくは軍学。"
+    }
+  ],
+  "source_rows_input": 383,
+  "source_rows": 383,
+  "master_rows": 383,
+  "new_heroes": [],
+  "removed_heroes": [],
+  "retired_source_rows_skipped": [],
+  "changed_existing": [],
+  "dirty_internal_ids": [],
+  "id_map_entries": 383,
+  "source_sha256": "7f348a7567a4b22352d6f59911d3dc31ab03a12a522e4fa39e81819be434ac17",
+  "master_sha256": "c65cfdc860f6d957f53519978208cb35f9701c1d7e1b019c0a534e07cd4b4b8b",
+  "generation": {
+    "full_records": 1798258,
+    "added_records": 0,
+    "removed_records": 0,
+    "seconds": 57.008,
+    "full_regeneration": true,
+    "generation_mode": "full"
+  },
+  "recommend_sum_top": {
+    "files": 220,
+    "rows": 440000,
+    "limit_per_formation": 500,
+    "seconds": 3.757
+  },
+  "fullmax_search": {
+    "full_records": 1798258,
+    "recommend_files": 242,
+    "recommend_rows": 484000,
+    "seconds": 5.439
+  },
+  "latest_update_summary_updated": false,
+  "last_added_hero": "北条氏邦(獅子)",
+  "recommend_sum_top_integrity": {
+    "files": 220,
+    "errors": 0
+  },
+  "top_limit": 500,
+  "regression_guards": {
+    "top300_removed": true,
+    "limit_500": true,
+    "hit_and_shown_count_ui": true,
+    "list_sort_ui": true,
+    "list_sort_desc_asc_toggle": true,
+    "stat_colors_and_active_column_glow": true,
+    "stat_font_enlarged": true,
+    "priority_notice_next_to_each_heading": true,
+    "applied_row_glow_survives_list_sort": true,
+    "legacy_csv_search_refs_removed": true,
+    "legacy_linegen_search_refs_removed": true,
+    "duplicate_name_internal_id_search": true,
+    "owned_hero_internal_id_priority": true,
+    "exact_bond_set_db_match": true,
+    "full_db_exact_lookup_after_swap": true,
+    "stale_async_swap_lookup_rejected": true,
+    "swap_cache_tracks_grade_owned_excluded": true,
+    "grade3_swap_cost_guard": true,
+    "excluded_swap_guard": true,
+    "search_cancel_terminates_worker": true,
+    "factor4_reset": true,
+    "priority_threshold_values_match_visible_buttons": true,
+    "factor4_duplicate_name_uses_internal_id": true,
+    "unique_bond_count_with_line_occurrences_preserved": true,
+    "manifest_fetch_fresh_before_versioned_db_cache": true,
+    "normal_5_6_worker_access_blocked": true,
+    "legacy_normal_5_6_manifest_and_files_removed": true,
+    "factor4_assignment_uses_line_hero_index": true,
+    "factor4_global_minimum_plan": true,
+    "swap_loading_waits_for_exact_lookup": true,
+    "swap_loading_stale_completion_guard": true,
+    "bonus_fallback_internal_id_first": true,
+    "bonus_recalc_after_exact_lookup": true,
+    "kenbun_job_uses_master_job_column_directly": true,
+    "global_reset_button_and_state_reset": true,
+    "all_yes_no_confirmations_use_common_modal": true,
+    "native_confirm_removed": true,
+    "recommend_mode_ui_guarded": true,
+    "recommend_mode_count_lock_guarded": true,
+    "recommend_priority_sync_guarded": true,
+    "recommend_scroll_top_guarded": true,
+    "excluded_hero_internal_id_guarded": true
+  },
+  "encoding_structure_checks": {
+    "text_files": 121,
+    "json_files": 24,
+    "csv_files": 9,
+    "mojibake": 0,
+    "utf8_errors": 0,
+    "csv_column_errors": 0,
+    "json_errors": 0
+  },
+  "compact_integrity": {
+    "files": 196,
+    "errors": 0,
+    "full_records_semantic_checked": 1798258,
+    "duplicate_combo_errors": 0,
+    "duplicate_display_names_kept_distinct_by_internal_id": [],
+    "legacy_normal_5_6_removed": true,
+    "header_row_count_errors": 0
+  },
+  "top500_rebuild_cache_version_guard": true,
+  "search_integrity_audit": {
+    "accessible_full_records": 1798258,
+    "bondset_errors": 0,
+    "factor4_errors": 0,
+    "fullmax_errors": 0,
+    "fullmax_records_checked": 1798258,
+    "top_files_exact": 32,
+    "sort_top_files_exact": 132,
+    "seconds": 111.303
+  },
+  "fullmax_search_audit": {
+    "sidecar_files": 32,
+    "sidecar_records_structural_checked": 1798258,
+    "recommend_files_checked": 242,
+    "recommend_records_checked": 484000,
+    "seconds": 1.899
+  },
+  "javascript_syntax": {
+    "external_js": 35,
+    "inline_scripts": 65,
+    "errors": 0
+  },
+  "grade3_5_6_lock": true,
+  "file_size_check": {
+    "over_25mb": 0,
+    "max_file": "data/compact_search_v2/jinpo_normal_c7_hoen_v2.bin.gz",
+    "max_bytes": 19827412
+  },
+  "message": "Phase 2: 英傑一覧から英傑マスタ・配置/除外候補・5～9因縁・Top500を自動再生成し、全検証PASS。"
+}

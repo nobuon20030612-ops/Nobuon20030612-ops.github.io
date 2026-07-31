@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "schema": "jinpo-fullmax-search-audit/v2",
+  "sidecar_files": 32,
+  "sidecar_records_structural_checked": 1798258,
+  "recommend_files_checked": 242,
+  "recommend_records_checked": 484000,
+  "seconds": 1.899
+}

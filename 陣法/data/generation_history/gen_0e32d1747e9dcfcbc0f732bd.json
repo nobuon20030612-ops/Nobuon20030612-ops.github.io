@@ -1,0 +1,3780 @@
+{
+  "schema": "jinpo-generation-history/v1",
+  "generation_id": "gen_0e32d1747e9dcfcbc0f732bd",
+  "generation_fingerprint_sha256": "0e32d1747e9dcfcbc0f732bde3f350e95aeb134e16078f2741966589b068cfa1",
+  "persisted_at_utc": "2026-07-31T14:03:15.968385+00:00",
+  "persisted_at_jst": "2026-07-31T23:03:15.968385+09:00",
+  "generation_mode": "full",
+  "counts": {
+    "heroes": 383,
+    "bonds": 91,
+    "grade3_heroes": 172,
+    "full_records": 1798258,
+    "added_records": 0,
+    "removed_records": 0
+  },
+  "timing": {
+    "generation_seconds": 57.008,
+    "build_started_at_utc": "2026-07-31T13:54:32.965567+00:00"
+  },
+  "source": {
+    "fingerprint_sha256": "38fbd85e80328da0a9297d43ab3a4162dc9ece624a14dc7cea75c84f23014652",
+    "files": [
+      {
+        "file": "source-next/英傑一覧.csv",
+        "bytes": 64954,
+        "sha256": "7f348a7567a4b22352d6f59911d3dc31ab03a12a522e4fa39e81819be434ac17"
+      },
+      {
+        "file": "data/jinpo_inen_master.csv",
+        "bytes": 13964,
+        "sha256": "36ecd4fc695dadf28047c20886af1723c03176440774b2b6188f53ed814d5572"
+      },
+      {
+        "file": "data/91因縁_計算式_倍率展開.csv",
+        "bytes": 131463,
+        "sha256": "909ceae3cb839e2cd2b4646d147b55d014a20d9052683155eabcb249ff50feb0"
+      },
+      {
+        "file": "data/formation_bonus.csv",
+        "bytes": 731,
+        "sha256": "567a44908c7794f51efee4c2105c78aca3d2d3405044ca593aacc1fbb1a44a99"
+      },
+      {
+        "file": "data/jinpo_job_mapping.json",
+        "bytes": 1599,
+        "sha256": "3d3138b43976c77e4168f26a0bb9d9ce244e1ee71699237c11f2c2c8c931fa0a"
+      }
+    ],
+    "source_rows": 383,
+    "new_heroes": [],
+    "changed_existing": [],
+    "removed_heroes": []
+  },
+  "generator": {
+    "fingerprint_sha256": "ca751a8200738ebc16322fd5f92a7546d3ea81e7e225d579493ddde9c93f8946",
+    "files": [
+      {
+        "file": "tools-next/build_jinpo_next.py",
+        "bytes": 47411,
+        "sha256": "daacd2d48a8aba84ded6e85b1a2affd5a9f022804e30301b825354ee98e6eed0"
+      },
+      {
+        "file": "tools-next/sync_eiketsu_master.py",
+        "bytes": 14516,
+        "sha256": "deed81fe52eb06ce073cdac713139d19fa38905aace4987e9b9c0034ee298080"
+      },
+      {
+        "file": "tools-next/rebuild_all_compact.py",
+        "bytes": 29626,
+        "sha256": "3a8657e1e3c29f116c8feeb0cb69d51126f4b7de32055187274945a41507ff88"
+      },
+      {
+        "file": "tools-next/rebuild_incremental_additions.py",
+        "bytes": 17528,
+        "sha256": "b9b266ecd0d15412ad2738268da087f5da4d1e94afabb911c949fdc286fec26c"
+      },
+      {
+        "file": "tools-next/rebuild_top500.py",
+        "bytes": 3782,
+        "sha256": "58bdb10f96af9267b95fcd205510aff891ecb7f7a0b504e8d1d1ec63d4516373"
+      },
+      {
+        "file": "tools-next/rebuild_recommend_sum_top.py",
+        "bytes": 8087,
+        "sha256": "f9a85f88e43ffc1e6ffc9cf68b42cbf7ad9c77889b9650a969454a32ae3eb4e5"
+      },
+      {
+        "file": "tools-next/rebuild_fullmax_search.py",
+        "bytes": 16847,
+        "sha256": "a6062fc0965e502ece7e68482b84ca5bf3e26ebe7fb4313c15953e771001ed97"
+      },
+      {
+        "file": "tools-next/fullmax_model.py",
+        "bytes": 2861,
+        "sha256": "af65255249b59102c884e915d97b8643eb72895afdb679f91c47cfaadee8efe1"
+      },
+      {
+        "file": "tools-next/factor4_optimizer.py",
+        "bytes": 4343,
+        "sha256": "8f54d2fd5be2454831d4b7003118628cd8756e85cf0cb47bac705473cf3fa0aa"
+      },
+      {
+        "file": "tools-next/approved_overrides.json",
+        "bytes": 450,
+        "sha256": "d18f4d9628c1633c4e07ee7d3f169610953824fab6edfd2ee6848431fedc6b82"
+      }
+    ],
+    "manifest_generator": {
+      "name": "tools-next/rebuild_all_compact.py",
+      "source_of_truth": [
+        "source-next/英傑一覧.csv",
+        "data/jinpo_inen_master.csv",
+        "data/91因縁_計算式_倍率展開.csv",
+        "data/formation_bonus.csv",
+        "tools-next/fullmax_model.py"
+      ],
+      "full_regeneration": true
+    },
+    "record_model_fingerprint": {
+      "schema": "jinpo-compact-record-model-v2",
+      "fingerprint": "52fa6626c5be0bacf13e7475179c72113162c70d17465fbff63b8c35be035477",
+      "inputs": {
+        "data/jinpo_eiketsu_master.csv": "c65cfdc860f6d957f53519978208cb35f9701c1d7e1b019c0a534e07cd4b4b8b",
+        "data/jinpo_inen_master.csv": "36ecd4fc695dadf28047c20886af1723c03176440774b2b6188f53ed814d5572",
+        "data/91因縁_計算式_倍率展開.csv": "909ceae3cb839e2cd2b4646d147b55d014a20d9052683155eabcb249ff50feb0",
+        "data/formation_bonus.csv": "567a44908c7794f51efee4c2105c78aca3d2d3405044ca593aacc1fbb1a44a99",
+        "tools-next/rebuild_all_compact.py": "99661d6c223b1c50878015a3fa60e4cb34ab92de692f44c3302de71ff8516d34",
+        "tools-next/factor4_optimizer.py": "8f54d2fd5be2454831d4b7003118628cd8756e85cf0cb47bac705473cf3fa0aa"
+      }
+    }
+  },
+  "datasets": {
+    "normal": {
+      "7": {
+        "衡軛": 7346,
+        "鶴翼": 7346,
+        "魚鱗": 748491,
+        "方円": 748491
+      },
+      "8": {
+        "衡軛": 57,
+        "鶴翼": 57,
+        "魚鱗": 9028,
+        "方円": 9028
+      },
+      "9": {
+        "衡軛": 0,
+        "鶴翼": 0,
+        "魚鱗": 46,
+        "方円": 46
+      }
+    },
+    "grade3": {
+      "5": {
+        "衡軛": 1249,
+        "鶴翼": 1249,
+        "魚鱗": 131955,
+        "方円": 131955
+      },
+      "6": {
+        "衡軛": 0,
+        "鶴翼": 0,
+        "魚鱗": 955,
+        "方円": 955
+      },
+      "7": {
+        "衡軛": 0,
+        "鶴翼": 0,
+        "魚鱗": 2,
+        "方円": 2
+      },
+      "8": {
+        "衡軛": 0,
+        "鶴翼": 0,
+        "魚鱗": 0,
+        "方円": 0
+      },
+      "9": {
+        "衡軛": 0,
+        "鶴翼": 0,
+        "魚鱗": 0,
+        "方円": 0
+      }
+    }
+  },
+  "artifacts": {
+    "count": 695,
+    "total_bytes": 113983911,
+    "set_sha256": "a8b2e80b6cfe500b69fab9b1c2e682bde47ce52ddd14bfac054169a379febe02",
+    "manifest_sha256": "a975b84e4cc5c344fbde4b6621c83e5c196b123f572210a4a9111692f12a1ffa",
+    "files": [
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha.bin.gz",
+        "bytes": 78508,
+        "sha256": "59512479665ee5fe4f075a63764f2e40f66490ab993b6aca8185b86ac24082ae"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__dex.bin.gz",
+        "bytes": 84283,
+        "sha256": "2b42b1cb76f6ac25009df85623488e27226626b66cd5730b3e9f5a54164e4238"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__earth.bin.gz",
+        "bytes": 91373,
+        "sha256": "fe62294b3a48e00aff1f5a6b2e4e9efab557f34ab1d020eb5babe1647dbb42e4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__fire.bin.gz",
+        "bytes": 91547,
+        "sha256": "132db1101e3120630d02ae295c4b1653d722a133106a9678ad055f32c17fc845"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__int.bin.gz",
+        "bytes": 83994,
+        "sha256": "c6b62fa61e93dccdc2a69584bd98f2b085a20880375854b0f7bf1f257cb0f729"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__ki.bin.gz",
+        "bytes": 76309,
+        "sha256": "16686d931541d0f90e8b67378a50f431d7463c4f0b70b29ea697172ac366e0f9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__life.bin.gz",
+        "bytes": 81530,
+        "sha256": "e5193ee9765dd822c82a9a63d8fb9a83c84ae114cc560708e5d118a2b48c564d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__str.bin.gz",
+        "bytes": 68529,
+        "sha256": "32201ed957d39949737d221ca8d6c54f8f4b9960d390803d393a579009bdcd6c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__vit.bin.gz",
+        "bytes": 73400,
+        "sha256": "fe79ea6f4ffb95f3ef5ef8cc161fae71437b5ff0760c57fbff9eb67ef461b8c8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__water.bin.gz",
+        "bytes": 91670,
+        "sha256": "b59180d12ebb821b7f8ef564ab1ebdcb04b30929a5109e2611ef7e57300a6e35"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/cha__wind.bin.gz",
+        "bytes": 91672,
+        "sha256": "668958a75f59f6ed0adaae57a0d8d02da513a2687eb45f59bdc0c0e9380fa3a0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex.bin.gz",
+        "bytes": 74351,
+        "sha256": "ee294ac0e8f0a1602501d6cb9e7ebeacfa5d788543e9bf564a6dd2aa235831da"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__cha.bin.gz",
+        "bytes": 84227,
+        "sha256": "928403774478e8f00a16dafe90182c4e3cd712abb59b52c04b55f0b9579368d8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__earth.bin.gz",
+        "bytes": 86032,
+        "sha256": "8941e9b1bb547233fa10d61754e9e17af658b07c7c0a72967fd733db6cf14237"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__fire.bin.gz",
+        "bytes": 86219,
+        "sha256": "2b3a208cde69678d3233d96309c6acc77c714c3eeb1b7b2471a752c098fda054"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__int.bin.gz",
+        "bytes": 86381,
+        "sha256": "8d4e47b2996871cf823439fad4b894739be2ad35335f7535f41aed70ae6aa3e6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__ki.bin.gz",
+        "bytes": 75862,
+        "sha256": "36b42a551aa018dade38fd01305a9e3ac6c5ee36b407db9207c092532cb724a0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__life.bin.gz",
+        "bytes": 80102,
+        "sha256": "9ae66ab48835563ddbf41e5f9a59e561d9a5174b806de5b0d985f99a0d06e840"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__str.bin.gz",
+        "bytes": 68178,
+        "sha256": "a326299ca00b90df700b6a7ca4265d719dc81cccf8577181ae537e10a8f48522"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__vit.bin.gz",
+        "bytes": 76364,
+        "sha256": "1817bea9646ee8f99b4045096b006d1cbc81da795215f8386f34eb28fdca7dcd"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__water.bin.gz",
+        "bytes": 85989,
+        "sha256": "08a1669e318bb827fec143fbcf11be970a43758b82f03f6ab11adbed3265bc56"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/dex__wind.bin.gz",
+        "bytes": 86108,
+        "sha256": "d8c0cb9a3f74ab877f4f5339964a572e786ef84e85e06c51c0444d628998679b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth.bin.gz",
+        "bytes": 91904,
+        "sha256": "08b7a6e2d036f43a6681500f989bac3ecee9e684cb4166a313c3a970b7e65e2f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__cha.bin.gz",
+        "bytes": 91403,
+        "sha256": "3822e1def8850a0335d9ca57f0afb8e638fc8871c7e3ef7c20b968c1c2b46d68"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__dex.bin.gz",
+        "bytes": 85968,
+        "sha256": "cfd9092fb4c7d167baf578748c535ff068bb826cf5d232d619e75a73603294df"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__fire.bin.gz",
+        "bytes": 92014,
+        "sha256": "cae728ad79869ca36ed2603c3de481889da2aec22053376ce576654f54a223c7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__int.bin.gz",
+        "bytes": 89621,
+        "sha256": "d055d7aa4731fc3dd0fb95933d22c53eea6722a7637a18876bfb43a0267b4bbf"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__ki.bin.gz",
+        "bytes": 77095,
+        "sha256": "ffcc688f88f0b26f2f3637c18121468cb212e316d547ecb0d75a009a00a7b5da"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__life.bin.gz",
+        "bytes": 84335,
+        "sha256": "1fd82f5f11aa7b6e2d456b4f1fc4739d1f3e880c47f1631dd98665ec4e4bb099"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__str.bin.gz",
+        "bytes": 74795,
+        "sha256": "4fd469aae23f85815702e0570d19ca5144ae85e2f6dacba823c39c1994fa66d3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__vit.bin.gz",
+        "bytes": 89523,
+        "sha256": "2906bda4344fff2b30ab07b4adebb96ca68785e8439b16cef598c250294ae9c5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__water.bin.gz",
+        "bytes": 91887,
+        "sha256": "c0c6c8b72818022242793c416f5ae281d1eba7240df4956ed79439b9a8cea6ed"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/earth__wind.bin.gz",
+        "bytes": 91962,
+        "sha256": "87434d24313235a845a68978ee56d4cdf532114b285a7de7f82c3ba6c5d7a0ca"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire.bin.gz",
+        "bytes": 92116,
+        "sha256": "4030be06ce26cd7d3a436586b51d87570b2e0af38479f4b67cf7cdc172eba04b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__cha.bin.gz",
+        "bytes": 91526,
+        "sha256": "4783ea710d23512ccd817cabb71eeb8fa5f8d45978cf4e7190de35fb47aa8fde"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__dex.bin.gz",
+        "bytes": 86239,
+        "sha256": "2b113fe3d9725a4f0ae499509595acbfa6429e961787c114ffcbca4b13c660ed"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__earth.bin.gz",
+        "bytes": 92062,
+        "sha256": "36063c89c0b2a2e28d60392475f877c808e4607d79ef86322bdea59a6cf787bc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__int.bin.gz",
+        "bytes": 89380,
+        "sha256": "892f1d45e3242465decbf2dfddc282c5f6c569b2d0f32b52ff10f7b6f3e82939"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__ki.bin.gz",
+        "bytes": 77064,
+        "sha256": "bc2bab1150146c214614b52512af83455178ab42e439e60c58ce9b57afbc6a34"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__life.bin.gz",
+        "bytes": 84294,
+        "sha256": "96e3a8ec8fa648d4c22fda6880edeb7eb82198d22eda9783deb1dcbfbfdd3181"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__str.bin.gz",
+        "bytes": 74637,
+        "sha256": "3aab06b98f2fe6e75ee041a4a6bc6197b18067386723b4889e464e10f9024e18"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__vit.bin.gz",
+        "bytes": 89431,
+        "sha256": "0c373cb8e73cc191cc174f99b56366057819814e16600aa68cb74bd8978419d6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__water.bin.gz",
+        "bytes": 91928,
+        "sha256": "69f2c5d3336fc271e52680ef8e4ff21f8a78e510148c34f5357dc42b5ee8534d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/fire__wind.bin.gz",
+        "bytes": 91832,
+        "sha256": "46b47349963885ef7812801f5a7c9b0082346ebfc895cb5085cea711d9e2e987"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int.bin.gz",
+        "bytes": 88722,
+        "sha256": "7790055feb767cbf8ae413e30bc31b731e765ddf12dd505f74f28182e9256dcd"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__cha.bin.gz",
+        "bytes": 84012,
+        "sha256": "56e0ad93315a221ab3acf81afdce762c9fec156a4a9e87124d10139f8e843314"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__dex.bin.gz",
+        "bytes": 86342,
+        "sha256": "78b61fc8a21d4af6ec6dcc2cf285ecb9f426501ee3cde7d85e0e6054bd117fb1"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__earth.bin.gz",
+        "bytes": 89625,
+        "sha256": "0eef0a5244485e1d4f32bb1413a053443d497da53defc2ee51a45e2db8868422"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__fire.bin.gz",
+        "bytes": 89410,
+        "sha256": "89bfc5adf97e28b12a47683590b3898cf9aeb86ce2730ceeebf1b94c1c84a3fb"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__ki.bin.gz",
+        "bytes": 76583,
+        "sha256": "2376f724050afc83bd6dbc42726ffd6ec87c30271e435f51a02013aa6e70a7d6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__life.bin.gz",
+        "bytes": 85812,
+        "sha256": "ef203e527779dd2c5f48256d5c4eb2bd794f13beb9d7a469e468ffa4c6ac4357"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__str.bin.gz",
+        "bytes": 80209,
+        "sha256": "7fab03ef5516b2942f3625477b9cac58062501e75a4ecd7cd951522c586193a9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__vit.bin.gz",
+        "bytes": 87952,
+        "sha256": "4406ec0369fdfb235cb489fe9fc26461ce6e168504d43f8d26f888ba0613414a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__water.bin.gz",
+        "bytes": 89405,
+        "sha256": "06d271e5b220963f484037eb481290afd5f372b21dd3c1780d4e5d6c81894ac6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/int__wind.bin.gz",
+        "bytes": 89322,
+        "sha256": "538f87bafd0479c4e5f5c2bc47bf910ceb511cc4f88f0353e3d53f3d09379f33"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki.bin.gz",
+        "bytes": 76129,
+        "sha256": "b8b83c299e238e155ecefd45eb9959d128357004d3f7eef7c48e7f5f9c46b143"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__cha.bin.gz",
+        "bytes": 76351,
+        "sha256": "5ec2fb97cb455a0e4f87fbda29a407bf4f38a304a2bb2d1a9c9287335a821dc5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__dex.bin.gz",
+        "bytes": 75849,
+        "sha256": "8a2b8231c01dbf96e3682b26062d302ee306bf839987b48e571035d81484fea6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__earth.bin.gz",
+        "bytes": 77114,
+        "sha256": "00f299ab917404cbd8efa59613e349424be9fe3a1ab047ac77bd06c2538423e0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__fire.bin.gz",
+        "bytes": 77095,
+        "sha256": "c7033493bfc869a4be5b9b810f370bc4e0ac451252c17fcc9eb37386a97dc128"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__int.bin.gz",
+        "bytes": 76553,
+        "sha256": "303eba7f90c72467105a6f47a6df9573b9f9b18cfb5d76e683031f10784b067e"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__life.bin.gz",
+        "bytes": 79729,
+        "sha256": "2f1940997673418b48c59daba4f6cd79363760e00330f874ea71320c30dfea7c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__str.bin.gz",
+        "bytes": 75976,
+        "sha256": "ad9b413ea34b1e06c63f3f5ed57b23c80aa7f23242da3b4c63ba0b207a545d52"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__vit.bin.gz",
+        "bytes": 76629,
+        "sha256": "c79f3f37f83ffe5dba65bff6ca7bf87299845acab6362e1f4c005fa1cb7ddf06"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__water.bin.gz",
+        "bytes": 77098,
+        "sha256": "ad064ab92bbaad0fdea97a688fe2fcf5dffe2effabbb0960d7fbf1ba88d12772"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/ki__wind.bin.gz",
+        "bytes": 77094,
+        "sha256": "6d5141e3c520aef90388b144324a00618d926299815c29517c720d605430eb11"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life.bin.gz",
+        "bytes": 80421,
+        "sha256": "1f4faa510b69e6f7ed82405df646d4571ef500db4f3e32163b40ae21319f7551"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__cha.bin.gz",
+        "bytes": 81507,
+        "sha256": "1e0b7dca1c6e230f81b5e49b0f86bc03b61f1480560d9e12afe8170f7d835bb4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__dex.bin.gz",
+        "bytes": 80123,
+        "sha256": "026e3a3342f54b7fa36158b19d898bbaee93a6deb4831a8874d9f7a171f74987"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__earth.bin.gz",
+        "bytes": 84288,
+        "sha256": "d3d0aaffbe9e0496e16c71856372b29f7e39e5aa9ab53a79cc6d41ec474f51c7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__fire.bin.gz",
+        "bytes": 84275,
+        "sha256": "a5cdce41649555fb695f31a8db43e768999947c9367a45804b953ae875517f08"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__int.bin.gz",
+        "bytes": 85798,
+        "sha256": "3223e34c7e14eb715781ae2ffbd83b666a6fbc9dc58c6b53454560e0b575da2a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__ki.bin.gz",
+        "bytes": 79720,
+        "sha256": "bbfc2d8ab6458da24170933523309582346c34586528a8f0518d8503984ab009"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__str.bin.gz",
+        "bytes": 76696,
+        "sha256": "80a865791454b2cada3faab679d67f960b33ab83ca6bdb83141ec7f8d90f8e67"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__vit.bin.gz",
+        "bytes": 81111,
+        "sha256": "bef22bb1a33d1eb5af7e224fbad6ae3d0b411fc7654e435d07d11c6fd142c918"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__water.bin.gz",
+        "bytes": 84347,
+        "sha256": "74ff03b9819ce3e18d0f31427f6e2fb39d846b3f0f15137bf95fe3126cc1732b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/life__wind.bin.gz",
+        "bytes": 84315,
+        "sha256": "2bf3ebc2a98c950c9b46df8c1ac3033dfe3a31a9db01aaa9c4b4b3e1d3dabe04"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str.bin.gz",
+        "bytes": 62989,
+        "sha256": "b4788574d201d83366c7e85e29eb7984589e1fd5682994250d9aa440a39693df"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__cha.bin.gz",
+        "bytes": 68492,
+        "sha256": "b95ab20d18139f0235a8d090f5a1c6a4d1b5975d87d3ae3cbb44785c74fef31a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__dex.bin.gz",
+        "bytes": 68112,
+        "sha256": "c8b3e6ef11c33f14e01f2443b438e84ad34a88e5aba2c455a22a1c672385e9b3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__earth.bin.gz",
+        "bytes": 74774,
+        "sha256": "8bea335647437fcdc4e9a804344e180ca831661f54228314934586f9525939ee"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__fire.bin.gz",
+        "bytes": 74617,
+        "sha256": "d52783b800f98b13224817c396a4cb1fb8007fa1e17c30904c58d49939473ede"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__int.bin.gz",
+        "bytes": 80245,
+        "sha256": "5c10b96051c584fe26e6dad68e0cb419d56f8580244fc0019fa7afb03ee6ab2a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__ki.bin.gz",
+        "bytes": 75964,
+        "sha256": "53f86d0a975b8084c091025c6a246196a40584a5f0121c116b8df848a30a0bfe"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__life.bin.gz",
+        "bytes": 76696,
+        "sha256": "bdd9e040d8100709acdb6490e9affd08e909f18431cd04bf051a880c38676b89"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__vit.bin.gz",
+        "bytes": 64335,
+        "sha256": "e87e4f97955decc417d84d00d2e547dd01548fe1fcd1241cd40fb7917176015f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__water.bin.gz",
+        "bytes": 74666,
+        "sha256": "95fc35c692fee373ee21f58d9b987b847acd8e95ce0e4da1fc9348df13e83000"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/str__wind.bin.gz",
+        "bytes": 74661,
+        "sha256": "d943deaa9bd3362bc66bdacf76f3b32b677c80fcb56bc3bdb6fc2d489a46a114"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit.bin.gz",
+        "bytes": 74435,
+        "sha256": "f5f4edd5910db32c57156d686f639e1b43a80a191b7fae540adde80951fd1c1c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__cha.bin.gz",
+        "bytes": 73482,
+        "sha256": "dd93e58bca85c71b6589b51b675154250ea7d8152ffee149eac22c0be10b639d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__dex.bin.gz",
+        "bytes": 76327,
+        "sha256": "8705e69590f3c9341785322883e861b12345c64e7727b5a98ff1bb72443d1776"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__earth.bin.gz",
+        "bytes": 89505,
+        "sha256": "adde3bb4738bbb616e34c6fa7e5387d9d674027f086ec33f009a84248d66ce38"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__fire.bin.gz",
+        "bytes": 89432,
+        "sha256": "9f2eea6af0cf8a05f1a2f87b99ad4f89caf757963d1dcf5eddb2db3d2d6ff982"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__int.bin.gz",
+        "bytes": 87936,
+        "sha256": "e9027cc275c6eb54ad9f114775ef41118e5835edf6e54beea7c64aa49227f0f3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__ki.bin.gz",
+        "bytes": 76656,
+        "sha256": "c7d9c5d25bed246bacd4853cc74350193638770d7ac4ea66ca937ca64ff9cd84"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__life.bin.gz",
+        "bytes": 81123,
+        "sha256": "9480f4f43b1b519baa81c269323e7005d4c9162805210cbb08112f1044a4da2a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__str.bin.gz",
+        "bytes": 64342,
+        "sha256": "1e5e65e3f4846855ffdad562e50833cbd0a9c9aa91e2744a6dfbfba9ab0ce760"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__water.bin.gz",
+        "bytes": 89341,
+        "sha256": "3a7457f77c00e5e2c335b4653e3905d89b1fed77eb57a36e76db592cb31ff55e"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/vit__wind.bin.gz",
+        "bytes": 89362,
+        "sha256": "1b15b09735b944638509b806e3911830c228fa8adcb4d8e569b5439974d014bd"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water.bin.gz",
+        "bytes": 91865,
+        "sha256": "2f617b862513689a29c3d1d868baaec10c21cd772b957a2e9e072fa00e8646c9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__cha.bin.gz",
+        "bytes": 91654,
+        "sha256": "b0bc3a6d02ae4db06465afaf69b0ddc2dd84c5ea96ccf0d6910cd286d9bb8a59"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__dex.bin.gz",
+        "bytes": 86042,
+        "sha256": "de9d6af0d67d60a624afa85900fa969f0b0fb5030a986b2237ccef625c6901e3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__earth.bin.gz",
+        "bytes": 91953,
+        "sha256": "7ec15d1c23e0128854091c741f220d39e4c555d5742b6063b5385df0384cf6c9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__fire.bin.gz",
+        "bytes": 91920,
+        "sha256": "cf6dc4a6c8b6afb90e2877c3e970a8af29a930d156c38300746704d3885f0f19"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__int.bin.gz",
+        "bytes": 89331,
+        "sha256": "6d81ae13cabf0a89e512c5a38a93c16f56c884ad3eae498ae49c2ef35866255f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__ki.bin.gz",
+        "bytes": 77073,
+        "sha256": "aee843958585e65246d6007f7fd309907a442995ef73ca09c53186ae12de9ac2"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__life.bin.gz",
+        "bytes": 84371,
+        "sha256": "18c5f40da4c94a47b1409cc95ffbee2e8a9867cecff9273eee18b9edeec22977"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__str.bin.gz",
+        "bytes": 74694,
+        "sha256": "4b8347ff4cc6775ece5e0e542eacd42f358292a674c47a45c15bb5ebdc679f60"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__vit.bin.gz",
+        "bytes": 89410,
+        "sha256": "903c7fb963c9b4c1914e6f27156dc5f4c61af59332355197f6a465b21a0e0aa9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/water__wind.bin.gz",
+        "bytes": 91846,
+        "sha256": "b15e4a8a48d5737d5b4101e3dae1c793e2aa29954b273cc8bdc6ff63242c43f3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind.bin.gz",
+        "bytes": 91919,
+        "sha256": "3c3b6bb2c68e86ca4a434e907c20d36ca680c07380d5a298b47f1aaf137d2e7d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__cha.bin.gz",
+        "bytes": 91718,
+        "sha256": "e2c9004cc3973f7ef92152ba3884f02477a86ed23a0ae75e23130ae93911a1dc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__dex.bin.gz",
+        "bytes": 86084,
+        "sha256": "103d6728ae9e4a9e277c1070b27ae9e057553005b251719615f6d0635573d180"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__earth.bin.gz",
+        "bytes": 91924,
+        "sha256": "3bbd50d5a970bc6c4378725b9ca9cced6eaf617eaf522e047e27a9a919338bfc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__fire.bin.gz",
+        "bytes": 91826,
+        "sha256": "1c1e92bbbf51162c7bff8a15eba28d207576c08a5832fdeaef2eef3e1aa86414"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__int.bin.gz",
+        "bytes": 89315,
+        "sha256": "e4c3e054148e1749793246da6ac6551a8b2d9efcdbc667ec041dedb74b77479c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__ki.bin.gz",
+        "bytes": 77085,
+        "sha256": "55b9a5eb0064526bbdf6710592c9cc55ba08c1e1435de5d7dc9bf3b0110cfc03"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__life.bin.gz",
+        "bytes": 84296,
+        "sha256": "0923c32249ad29b79841aae7dd06011d57032877fd6cd1d959411457498c2dd6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__str.bin.gz",
+        "bytes": 74771,
+        "sha256": "7004e59406523a923a87974180eae818cce2138eda00dc72f4ee098d916f9b1e"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__vit.bin.gz",
+        "bytes": 89464,
+        "sha256": "6cd3085a3812dae10a4084680979d4e066eb62077188e95c25c20b33d25f0a03"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/grade3/wind__water.bin.gz",
+        "bytes": 91892,
+        "sha256": "1a48c9873a945da90413b15a5f81123e007358da5a5475c46cb7762f49824665"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha.bin.gz",
+        "bytes": 101200,
+        "sha256": "7e7b6c6ad777c518e7df69a75f8a65dccf9d60ce2ba8444d3ee02704e9069c31"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__dex.bin.gz",
+        "bytes": 98548,
+        "sha256": "8f3b543d25201fb487b2e1d1e6a7c0ae827b8c0d4fa9ff3d51016c80c5e9e21e"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__earth.bin.gz",
+        "bytes": 101864,
+        "sha256": "79656cb53569287011e0151be1e695b046b9c87529fa6d1faa961b5284b7e25b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__fire.bin.gz",
+        "bytes": 101345,
+        "sha256": "c5d72a4213f513ff7390893838356c99bc8dd9c99e89ed11fe7954b8a394d9a8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__int.bin.gz",
+        "bytes": 98809,
+        "sha256": "04805c5385d7ee794be9e91a89ac1e545abd28200989d3e0692539f4e9f78d1d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__ki.bin.gz",
+        "bytes": 88159,
+        "sha256": "651c0d5bdc0ba354da859ee19e8774a834f4cb6e1951afccfb5f674d902ac073"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__life.bin.gz",
+        "bytes": 107241,
+        "sha256": "d7ddefced01a21a5dc743d885a11d0dbbb560ca67f1280092c2644114980cc1a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__str.bin.gz",
+        "bytes": 95024,
+        "sha256": "98acd1119b5999a5e4eaefb50e515c01c1bf0558dc0a3bfae97de384e59195d5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__vit.bin.gz",
+        "bytes": 100807,
+        "sha256": "5a1ac89025dc05e0519c787f0ae8dcc0d8265f8827dae880381ef09f017607ac"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__water.bin.gz",
+        "bytes": 102498,
+        "sha256": "59004149b57443db24e7937ed059739c9741b675bf5ad3f0dddf458a994f79fa"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/cha__wind.bin.gz",
+        "bytes": 100462,
+        "sha256": "578b43a574e586e091cb0a7c1e8b3ab5c901b49a0a7124ce322240d14a2ddf68"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex.bin.gz",
+        "bytes": 96577,
+        "sha256": "5738980434ba4324bfb35219aa728af5a7c4bb9d8d38f190f5f32831c09dcc28"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__cha.bin.gz",
+        "bytes": 98556,
+        "sha256": "071fecd1e71bf1c39807cb52aefdaa5fea1037596346668631eba13aae44ed0c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__earth.bin.gz",
+        "bytes": 95074,
+        "sha256": "95dc99cde226460aee61d83934c25384f94535051a2c9c42a30fb4ad64866287"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__fire.bin.gz",
+        "bytes": 95900,
+        "sha256": "c5e74a625f8f34ec0fae265021bbba45f9ffe025600d2205d3cc4724987d3132"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__int.bin.gz",
+        "bytes": 98553,
+        "sha256": "a951883f044c1056599eeaf7f4d86f8e0b96dd45dfe54c293e1d99f14da8f26a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__ki.bin.gz",
+        "bytes": 87833,
+        "sha256": "7a23ba9caa5e3f97abae6397ed04553a08837448ba35e94e2e4be2a2e47fe114"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__life.bin.gz",
+        "bytes": 106925,
+        "sha256": "06d6f64d3f3873bfd241f9c285ba86cbc0fa9e90ac9ac1661ec94b1421612f47"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__str.bin.gz",
+        "bytes": 93399,
+        "sha256": "bc7832e9ac4c274ae78df5a9ec498018602969fc0b40483837a2b8cfa2658e1b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__vit.bin.gz",
+        "bytes": 96306,
+        "sha256": "542d713c68b71ea296a12bbc8a815f53a1ff8463a36afeda4de6aa1db576b828"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__water.bin.gz",
+        "bytes": 95816,
+        "sha256": "aad51cd247ccc90df79eb9506e1fc3853668bf4e75defc7a0cc8e9d13989f40b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/dex__wind.bin.gz",
+        "bytes": 95928,
+        "sha256": "a61a52ea229943fc7f95272eb960179b36d05105230ca1f50bf1a6e5323b80c7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth.bin.gz",
+        "bytes": 91776,
+        "sha256": "7dcaab5e8484c2cac5bf670af23fff311ff44f785de6293e48ae737882f4a065"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__cha.bin.gz",
+        "bytes": 101841,
+        "sha256": "f9add7591399cc1971214a0ed21d1b78a099fea7e989224bd26bff58fd2b6383"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__dex.bin.gz",
+        "bytes": 95045,
+        "sha256": "10d41d07a8fffd2f4a06fec823d52a141cbd205d15388c5f4b1afed336bba5fa"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__fire.bin.gz",
+        "bytes": 92211,
+        "sha256": "fc81681b8efca5bd49c0f0f0222261097efdb1ca369e3bfac4d5301d364d19f8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__int.bin.gz",
+        "bytes": 93246,
+        "sha256": "2556d5eb8b437eae8f219b9337a946cbc48696c32b526f0ef2bc1f01f13240ef"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__ki.bin.gz",
+        "bytes": 87759,
+        "sha256": "4aec7957062cfb86bc7dc56ab3249758f94109025435dcbdb64f067786111b31"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__life.bin.gz",
+        "bytes": 105137,
+        "sha256": "32e44ee9753e62d1b40bbb8c2c702377c80a8f37f64be15a141c45d2af24d1e5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__str.bin.gz",
+        "bytes": 101053,
+        "sha256": "c0798aa08aaa23104476c94d75f55bf9fe4a1ab53f01fe2604de4c14c3269bd5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__vit.bin.gz",
+        "bytes": 99943,
+        "sha256": "39d3c1358ded4d89eeccf0f80328f8f9b028691b1a6f325d3a35d0344598d7c6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__water.bin.gz",
+        "bytes": 92117,
+        "sha256": "7d9bc9fbef52c236005fda75e06637fa48247d0db730b97d6336e943319d126c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/earth__wind.bin.gz",
+        "bytes": 91940,
+        "sha256": "5305703cbbad8a33e45c03f001f837154960071a6a76519d3f3e879b9e8b9711"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire.bin.gz",
+        "bytes": 93228,
+        "sha256": "b041a7e871e4a162be00d48debc2bd15212daac0615a4a2f558fe78bf3b8cae6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__cha.bin.gz",
+        "bytes": 101311,
+        "sha256": "91e5fcd8d234c30ed2c157bf557da56a865d49e469745fcdd19587937cbc94cc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__dex.bin.gz",
+        "bytes": 95832,
+        "sha256": "accabb1e554f15735b86a10b55bd2d1ed5cdecc38efb656cd55183332317f67d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__earth.bin.gz",
+        "bytes": 92180,
+        "sha256": "6ecaa645960aaadf94d52766850a3c4c46bc1c3ec7675ad9f34bdbd66f033061"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__int.bin.gz",
+        "bytes": 93768,
+        "sha256": "e6ccd9e397201ff08488ca6462f23548cde76e5fdbad9c6b10b367cb17c747ff"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__ki.bin.gz",
+        "bytes": 87777,
+        "sha256": "0c0f8c6f0222288c1a74c01cd7883afd1c6f48b93fd1f3ffaa4680b5b03cbabc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__life.bin.gz",
+        "bytes": 105141,
+        "sha256": "ef0033684e2f811d2a89ec43554e62003742df04044430b8211e676e89b5aa20"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__str.bin.gz",
+        "bytes": 101044,
+        "sha256": "54039db6dd94841d6107a4396bf5d0f074530de755c9d76032a821adcd77f6c1"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__vit.bin.gz",
+        "bytes": 100105,
+        "sha256": "e06b120606b4ea1a4972724d37a3decd17fca6fd92a2484096e6f17189df50c4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__water.bin.gz",
+        "bytes": 92947,
+        "sha256": "f36d4b25ce20a80ef97f879daae04c875f38aa7dfdecd283a10c855cf2372de2"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/fire__wind.bin.gz",
+        "bytes": 92451,
+        "sha256": "97a853b5b631cfbb99826e277d8565119802f60a2a6c1c21af34650d6bdf3f33"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int.bin.gz",
+        "bytes": 96176,
+        "sha256": "054898451ed7e62ec39dea0cfd265e6141c42ee48fe369391e0042ea21b39887"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__cha.bin.gz",
+        "bytes": 98809,
+        "sha256": "811c1c4a8f752f746dbf832fd4b6365d41cde3dcfb50df98b918b5f684183fe3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__dex.bin.gz",
+        "bytes": 98603,
+        "sha256": "58190dcdf419c91c14abecd5f8d2c1483bc8e85c2b45650412b71d2162769c33"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__earth.bin.gz",
+        "bytes": 93219,
+        "sha256": "5032eabc22fcfba3e9d89f682990c9e2638a08e29f6d9a3bdad3de2fa27f30e5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__fire.bin.gz",
+        "bytes": 93806,
+        "sha256": "0ccedffacdec1a60de7f9f93945d7fdf80157fdcbbf4c4e98976dbf5ffd3fe01"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__ki.bin.gz",
+        "bytes": 88050,
+        "sha256": "c90b0f50f95db47bab76fefc471e50877582b47cfdfc774a29a0cdb952afebf0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__life.bin.gz",
+        "bytes": 103839,
+        "sha256": "45a83413128dc825364cd6a10fd90a0724730e78174f7a16739b8e8a654ca4f8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__str.bin.gz",
+        "bytes": 98651,
+        "sha256": "df084791d30065abfa58c3d0aabfd5a10552b0cd1b7119a945c7bbff87f50bce"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__vit.bin.gz",
+        "bytes": 100013,
+        "sha256": "c55c8804716258d7f4037a23a664f11f41e84dd84bd7c6685dc7049b06a7743b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__water.bin.gz",
+        "bytes": 93559,
+        "sha256": "c57c3b47af39f2bfe15ed9e133fc3a0f2ad68bdd69125476199502852cf0a6fa"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/int__wind.bin.gz",
+        "bytes": 93251,
+        "sha256": "dc8bad018d36486962eccbf2d3167c880392008b0c30f530f2bee935acba2665"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki.bin.gz",
+        "bytes": 87666,
+        "sha256": "d59757063f4198d9c52709101d8608e3d741fdaf0b07992f0c71b94dac8957a9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__cha.bin.gz",
+        "bytes": 88158,
+        "sha256": "d152aa27153d68a828069066c3fb5c040b6f774ad273a18684e715dd5148c6a4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__dex.bin.gz",
+        "bytes": 87891,
+        "sha256": "38a5268ca940b7c15527a7bb9f1a7323f70a942112169a66e2b84bfb2cd3b92f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__earth.bin.gz",
+        "bytes": 87747,
+        "sha256": "7ad0399d95e614873a4c4d75a037c731b1389f4c26de086c3de3628e1abb3c9c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__fire.bin.gz",
+        "bytes": 87795,
+        "sha256": "87d547f0ac3d1e25bd9de46605e5d894523d2fc841c31c05b0f1eef063f4b255"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__int.bin.gz",
+        "bytes": 88015,
+        "sha256": "8095b1a4a2865cb7f51a74421cbe73f7574120d30196bee62b0e65d23c109770"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__life.bin.gz",
+        "bytes": 92010,
+        "sha256": "8c2a315b9516013a18c3d4aee76b7a0405cba998ce6423617aca6d58dd742e87"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__str.bin.gz",
+        "bytes": 88302,
+        "sha256": "a5d4f59c57c4c97cfbd18331738e866947b662d915b591216811ac694d731a87"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__vit.bin.gz",
+        "bytes": 87980,
+        "sha256": "153349dfa24cc315b740f5b6c046c144c82806f309098018b660b2b34f47722f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__water.bin.gz",
+        "bytes": 87769,
+        "sha256": "559ad8dc5b639f9adf767867647b98589e2263b9ec0d76c82d946c3d1c855c76"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/ki__wind.bin.gz",
+        "bytes": 87733,
+        "sha256": "ab177a9b4b3ba143d09d9aea677d57681646894cd5d95b9a5455fd7405ec59c3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life.bin.gz",
+        "bytes": 106393,
+        "sha256": "e556c1de22ddd079b14e2e285ccfbb119310f6d34b6b9e56271de17a3cfe9667"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__cha.bin.gz",
+        "bytes": 107229,
+        "sha256": "65f3ede71189b01c8307de8105bc80fb967d848a435a3989886425f7072d9aa1"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__dex.bin.gz",
+        "bytes": 106929,
+        "sha256": "c806d0dd15e675daf40266927531d2b482c8f88019126ee9f58c7293493b1e66"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__earth.bin.gz",
+        "bytes": 105142,
+        "sha256": "b2b84614dddc0b818468f3cc61f041959ce1d8e6f3090136214b35879a877bd4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__fire.bin.gz",
+        "bytes": 105223,
+        "sha256": "b1dff9ddd6a44251d1ff0caf6916206a973cef9bb9fc1e5e25de6d580c24d7cf"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__int.bin.gz",
+        "bytes": 103814,
+        "sha256": "7784bf7041c58414a04f71ead9ae657741661c2f75f419dae8de8341ee238b07"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__ki.bin.gz",
+        "bytes": 92058,
+        "sha256": "8739d4759fcc827ebc702bf0bf5ca1bdc1153a31dbe009887339f99d8080f587"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__str.bin.gz",
+        "bytes": 107059,
+        "sha256": "8c37820f285b58ad88b703c5789ff2cc8a3ca951bf13223d9935e527ba2f10ab"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__vit.bin.gz",
+        "bytes": 107059,
+        "sha256": "80e04cfa7b507c1e29644cb5d523db2fee146ed6588d8020a00e395a2eee46f3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__water.bin.gz",
+        "bytes": 105066,
+        "sha256": "7d2c4ac0ffb93ee57db7b3d64d30de35112a3a1087cf2a6409b8a028f1bbe21a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/life__wind.bin.gz",
+        "bytes": 105060,
+        "sha256": "74901d5fa79896ca115d47bdf278cc8671551b478d1f6ae4da0e9da2d19ff4b6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str.bin.gz",
+        "bytes": 88966,
+        "sha256": "167ea9aec8eaab3464bf805414f055b0c3ed2843a8698f222e1799e8eccf0895"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__cha.bin.gz",
+        "bytes": 95058,
+        "sha256": "569156efb9869375a8fe2e98edc8ee89f8326290e74b123b9b8a418e47a62cdf"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__dex.bin.gz",
+        "bytes": 93399,
+        "sha256": "36a5a8e1d660940598d3b3c8cabb9a7bbc7747b4f3548f29bd77e598149c6960"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__earth.bin.gz",
+        "bytes": 101089,
+        "sha256": "ede21609b19983bb3cee0776284a11dd466f01cd11b7d10bc9d97da7f4e8510b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__fire.bin.gz",
+        "bytes": 101076,
+        "sha256": "bb5858c2acb4c62b9c77b7845c0ddc682d90343dca1686ff5391a60ea40ec0bf"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__int.bin.gz",
+        "bytes": 98591,
+        "sha256": "11f85d07cf011c4ef05c866b1d2ea23ed3793e2ab5d6004d4205130bead5c7ee"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__ki.bin.gz",
+        "bytes": 88287,
+        "sha256": "8876c21ac9fe00b5a18bbdc0c14d7140c92a26951ec6d2c346db636160498c34"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__life.bin.gz",
+        "bytes": 107018,
+        "sha256": "c2c5ff656b6a848d1a48007a348a346cc2cf0b608b68ff8c91fd0bd980df39ad"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__vit.bin.gz",
+        "bytes": 91231,
+        "sha256": "2e10d5770d25c72e9c0b135d3b548050e92da0755929e8ffa549bca21681f711"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__water.bin.gz",
+        "bytes": 101492,
+        "sha256": "bf674079478c23826e8bd3a9e3c8704164213ac06c89f2fb9c8a9c5d5f85b6e5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/str__wind.bin.gz",
+        "bytes": 101494,
+        "sha256": "1182b67402739929f4418b9fe192d8869a74f9ad44acb10c3b8a367932620f91"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit.bin.gz",
+        "bytes": 94068,
+        "sha256": "048aa87cc4e0e9d0ec7692878b40c8f6362954b39997925edfd36fb2c671f2c3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__cha.bin.gz",
+        "bytes": 100816,
+        "sha256": "1776e77debe614a7293b620e6582523e4d113a6fd773ea5c9a62a8b7fe3577db"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__dex.bin.gz",
+        "bytes": 96283,
+        "sha256": "4e318d13e89eca1efa579d4b1b9cba5e10ea98614e80aeb3c099d5103a382f42"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__earth.bin.gz",
+        "bytes": 99949,
+        "sha256": "abdd16dc265e0997efd8aa8778afd700a780e7a161eaa230bea500a1fcda4ba1"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__fire.bin.gz",
+        "bytes": 100116,
+        "sha256": "c9e9c34c07a113a99231b767c2adca315d24c6bb7953b013437668dc976fd290"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__int.bin.gz",
+        "bytes": 100004,
+        "sha256": "9b5ab476b43b6e8d648e0d34703bc9b4511946e5b584d65a0c46a76cada60edb"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__ki.bin.gz",
+        "bytes": 87997,
+        "sha256": "6533bd40158a5840e1d16af436b6324d8c1d6959451648b7fa193492f1aa8ea7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__life.bin.gz",
+        "bytes": 107044,
+        "sha256": "ca52a202689755f827da990fab4212374ce4975a0d8c42f078d4497f95c300c7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__str.bin.gz",
+        "bytes": 91309,
+        "sha256": "2b274c24691c01f8848fe39838c70018f9f2ba0a3fa9ba974bba01e2a7d49b20"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__water.bin.gz",
+        "bytes": 99974,
+        "sha256": "6f2d343bb7477abfa29a59433f870748d16aed5494a6557a043c2ed5758678e3"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/vit__wind.bin.gz",
+        "bytes": 99831,
+        "sha256": "8b8cb43794b0b6bf2f55d7a4eb1c7aebbbc54f0b9e0a3540f54f70900ea54764"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water.bin.gz",
+        "bytes": 93333,
+        "sha256": "eb52f77f1a79a2d0ea726626c092f4fe852bed8ca41419013de0d117866d51c5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__cha.bin.gz",
+        "bytes": 102558,
+        "sha256": "5fa1d322391663b09931049f86a5f4e4b4758c9bd71f4c33f3bf8ff547bdde3a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__dex.bin.gz",
+        "bytes": 95826,
+        "sha256": "77a786364e684358a2e2c59c76127c2ccc1f1b34563aa69167affb0dfb843d26"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__earth.bin.gz",
+        "bytes": 92133,
+        "sha256": "03fc897b83f963ce32aa741db088c93ce2b21af8c78ec125061943154fcbcbc0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__fire.bin.gz",
+        "bytes": 92938,
+        "sha256": "9f5596791b3ee205f0a688689d9ba3d1107919ec7f49203f9aea2c01546541bd"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__int.bin.gz",
+        "bytes": 93561,
+        "sha256": "5905561b25ff6dfbd3b924f8a989eaf4516ce49579bd55c7971803a12bea4cb7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__ki.bin.gz",
+        "bytes": 87771,
+        "sha256": "c610bdf46d51e2661cb861d5074e0a6784f0f1922034fbc9636db968c9f67c56"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__life.bin.gz",
+        "bytes": 105097,
+        "sha256": "239bb1422b9ea9262f235a2f65ef6d30da587e15fe4c72fefd772ce055e6d11f"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__str.bin.gz",
+        "bytes": 101465,
+        "sha256": "3a730d8047ca9b2d607dd575b19dc00a35400be57376ae740272c6079ceb4460"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__vit.bin.gz",
+        "bytes": 99976,
+        "sha256": "8787a68a4d5f149fe87c7119b9ce9e30613e764eef3ed2e695aa69242289e9bf"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/water__wind.bin.gz",
+        "bytes": 92063,
+        "sha256": "32f525201eea76186b9f643315a895884db2736e709b529b377618b6ac136e27"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind.bin.gz",
+        "bytes": 91573,
+        "sha256": "b4b0773b380372795b84ac0a11d32d12effd1c4d7400f029b816872592fef4f4"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__cha.bin.gz",
+        "bytes": 100507,
+        "sha256": "2ec8e5d01433d29979f477942b37ac84691c37e9b2e110e9b380ebce560781fe"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__dex.bin.gz",
+        "bytes": 95855,
+        "sha256": "f35d52fe4597a05ef41250c07de6273c15e4ebac40cce094123afadbf90690a6"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__earth.bin.gz",
+        "bytes": 91892,
+        "sha256": "fac9812b27ed5eef486a48b4f3346051925cab13fbb63684967bd9163c8d6edc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__fire.bin.gz",
+        "bytes": 92467,
+        "sha256": "9b7e05802d5eab9f7ce648506a100bd1e71a3728b65285ec4497287e04ed1d07"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__int.bin.gz",
+        "bytes": 93273,
+        "sha256": "3ff236518dc57831fafc5e8e96258e917e16fb5c3cab3ada9fd53b3af0d63f3a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__ki.bin.gz",
+        "bytes": 87720,
+        "sha256": "f3768ae5a781cfc3952ec1908d97d9c7da6d1facabe5d2c116770a11f86ff5c5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__life.bin.gz",
+        "bytes": 105018,
+        "sha256": "dd0ad12fb8cfe354cbe5445e1851d527daed3e858bc072bd21ccb308767f96ec"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__str.bin.gz",
+        "bytes": 101526,
+        "sha256": "0cdb225e1de3c5b10f75ce45586fc8e6f05a1f67373e59ccfa4027fcc9bd6f13"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__vit.bin.gz",
+        "bytes": 99822,
+        "sha256": "ff1fa0019cb986b9e64a82ebc41df5bfef9c13014a209abd923448d140b76bf5"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_recommend/normal/wind__water.bin.gz",
+        "bytes": 92102,
+        "sha256": "8247ca58ecd82d0683bbc30d7a54892c1b03e84cabef035e5dd7d92b6bb27654"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c5_gyorin.bin.gz",
+        "bytes": 1840567,
+        "sha256": "66deb3339610b5fdac472e0b2172501a127f30ada0a0de7c8b1103a703c43c5e"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c5_hoen.bin.gz",
+        "bytes": 1841569,
+        "sha256": "7b86e813a9c2a2791f4cfc39913f34ac7646ab04cbc95b006a11fbf2a0aa84d8"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c5_kakuyoku.bin.gz",
+        "bytes": 19067,
+        "sha256": "deb1f785a5f49bd6a4865a99208eb39fc2ca894bfeaa10bf9d10115bee1695cc"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c5_kouyaku.bin.gz",
+        "bytes": 19061,
+        "sha256": "266bd7a3d5f2048230895c59c03760350b399cd137d4a987e4a44d4da17b5011"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c6_gyorin.bin.gz",
+        "bytes": 14359,
+        "sha256": "7385d73f77c99881f2f2cc9a27b8cc7d90a6cad9212aebe7df71a1d92615695b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c6_hoen.bin.gz",
+        "bytes": 14372,
+        "sha256": "ab62a706e2888080bd3f44bdf83606d2004f78b40472348498f2551f9a5697bb"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c6_kakuyoku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c6_kouyaku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c7_gyorin.bin.gz",
+        "bytes": 77,
+        "sha256": "ec120b9dc8d77e61f853d214a1bc4d509e2a01a4b22298352ae1e6b2a48a7c8d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c7_hoen.bin.gz",
+        "bytes": 77,
+        "sha256": "9d1c0c5aad0e84e8af0a90e836fd7c3404d4ee360d8e4afafc065bdb6111e13b"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c7_kakuyoku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c7_kouyaku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c8_gyorin.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c8_hoen.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c8_kakuyoku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c8_kouyaku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c9_gyorin.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c9_hoen.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c9_kakuyoku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/grade3/c9_kouyaku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c7_gyorin.bin.gz",
+        "bytes": 14626570,
+        "sha256": "61721619bf0c147aba66da6b5de6fe073b6d39984319aab5cedb68b7d114b3e9"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c7_hoen.bin.gz",
+        "bytes": 14654822,
+        "sha256": "d823b9ee00e83cb33bf3b8b7584ef3e083f227a81757072d5be731c4fe877275"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c7_kakuyoku.bin.gz",
+        "bytes": 148022,
+        "sha256": "a3edf0369207461ecdcabc4a6087a68ed3b334f880039d699488ed6b520385c0"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c7_kouyaku.bin.gz",
+        "bytes": 147902,
+        "sha256": "2ba8f0c755b68ef53d1f269ce514d02490aa26df745f682d18a75c98742afe3d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c8_gyorin.bin.gz",
+        "bytes": 187792,
+        "sha256": "981aedb8b15017c8a7b06c7c3c049aced80d8610ce2a6ff1d93aaf43b77cdfc7"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c8_hoen.bin.gz",
+        "bytes": 188310,
+        "sha256": "6193293709098ecce0a0010b7e86b83d5db739643e9ba940589aedaa97324c84"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c8_kakuyoku.bin.gz",
+        "bytes": 1254,
+        "sha256": "d647181ae3190482dd021f430a9f85f519746c4ae6afb4173b761258c060af40"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c8_kouyaku.bin.gz",
+        "bytes": 1249,
+        "sha256": "2b534792b7c00694779d28fab37223287d670f0edc3e1b501627cfa42186c80a"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c9_gyorin.bin.gz",
+        "bytes": 1061,
+        "sha256": "854510f64b7217d35dfd99781ebc74cc89b79e2292fca9e0a1f0e15efc899f0c"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c9_hoen.bin.gz",
+        "bytes": 1070,
+        "sha256": "e5baff073fe3e6d5940516fd3aa7a344614b5c02785c2cdfcb935413e8e134aa"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c9_kakuyoku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/fullmax_stats/normal/c9_kouyaku.bin.gz",
+        "bytes": 29,
+        "sha256": "5114b2ca562c6f2c8f3554e9a70aad76dce7173f0e46e911852d51133626661d"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c5_gyorin_v2.bin.gz",
+        "bytes": 2580283,
+        "sha256": "0ce61841d20c7b1f4484c38cb7f9cc7d017456f1d2c66386389e5b6f65c39968"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c5_hoen_v2.bin.gz",
+        "bytes": 2617846,
+        "sha256": "def294a8664b275764c7e2629028e57a41e943126396edf4b52beafb7398c45f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c5_kakuyoku_v2.bin.gz",
+        "bytes": 25966,
+        "sha256": "2cd3892be56335db4caa3325ac67f09b13255ea5d431f8ff5dc2a4227d11a8ac"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c5_kouyaku_v2.bin.gz",
+        "bytes": 25959,
+        "sha256": "4050b0d2b289601dd74754649975938ed6afd0b4b5bdce688ef263e45b1a2675"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c6_gyorin_v2.bin.gz",
+        "bytes": 20083,
+        "sha256": "ccf41e5b6f472609bae0a87df54e7067fb9a3f61391278a766ca89bf3fd3886e"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c6_hoen_v2.bin.gz",
+        "bytes": 20448,
+        "sha256": "54013e8ef128179677a7ac520d67cc0a30e5f2de8c821ac8058a9568c5a6f1b4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c6_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "6a2cb56aefcce389a07f5006d9509cdf94d355b9bdf7fd8cbf5212ab8cf1f0b2"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c6_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "1c279104f51cb19eb51fd9629e0b34d3a19a88a8e7b2b0cff1d549f5f7bd2196"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c7_gyorin_v2.bin.gz",
+        "bytes": 116,
+        "sha256": "36afa84cc48fc3bc72aa2d4d0d5dc4977d8fe8eb184be6f0b1ea4c94f808d809"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c7_hoen_v2.bin.gz",
+        "bytes": 116,
+        "sha256": "cdc83fde7439273f68c0e48fc35949a84741ae05caae11de6ad77e9b8c8b02ff"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c7_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "63084d85b27c477df074d0cf472d3f4b53cf9ed7bfdc0ded6150963a9bdad29f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c7_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "19b79673083b32cbec52cda823060edcbb90bf4471616be8dee6c8413d2565b4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c8_gyorin_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "24aeecbc388756e8d4f4fa2426d217ce7ba746bdaa74ae9fc3c39a6778f311e1"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c8_hoen_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "80bb665b31b121e63ec595caca590cc68058c3c057f7bf0685c96e99d6ba3748"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c8_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "f4421d8bb99d90557c2a352ccf35ddca13941ae0caf90d081d2a5a9fdcb7746c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c8_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "9399525b508ec8c806a30e4453fff357cc9fff6de735f051cf241cc4032e1857"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c9_gyorin_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "1660b4b93683d86c063a3dbedd1e0a8bc211bf18e9a2f648a8e45c949799097f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c9_hoen_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "4adb1c1cb59785dd5064bfb60a20c455c79f4e40ec810c64d0ca3e59f1d9a80d"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c9_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "cab9c49306c28de83899c64425bee9b454938150955ac667ed2f1ba43ef7cd16"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_grade3_c9_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "4ebaea9e07ae68f943bbc1c8bb2f601f5135954e175c050786f8e29f8d4c336f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c7_gyorin_v2.bin.gz",
+        "bytes": 19756205,
+        "sha256": "82d84aa5c019cf46de06750426943e55c2362bd3b82a81d36df6715cfbd6ef6b"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c7_hoen_v2.bin.gz",
+        "bytes": 19827412,
+        "sha256": "17315a439d296474fabe5c31cebf426d7ff9f15aa8e94bdd247a522981e08d69"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c7_kakuyoku_v2.bin.gz",
+        "bytes": 196102,
+        "sha256": "7bc9f440ff6225a687a494fa4a3b5d575abbba303689d626d84d2f15e1650cee"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c7_kouyaku_v2.bin.gz",
+        "bytes": 195897,
+        "sha256": "03e63882ce8276749666287c7e5a49df08a1bed47d20aafd7e583cb2402da465"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c8_gyorin_v2.bin.gz",
+        "bytes": 278660,
+        "sha256": "bdf0b271e7298104f2dc54a1d15031167e8e080eda778f51ab9b97b3709db85b"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c8_hoen_v2.bin.gz",
+        "bytes": 276221,
+        "sha256": "62c2a0cf12a3cf2d27038de22d6440417109a711eac0bd60c025767afa025bfa"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c8_kakuyoku_v2.bin.gz",
+        "bytes": 1881,
+        "sha256": "26ec2fb775bb580e9b152aa4d05af61fda9ee87b1ffa1683cfe04313b22ad077"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c8_kouyaku_v2.bin.gz",
+        "bytes": 1879,
+        "sha256": "e0f89681cdbd82df42ad1d3e0aa65c7e8f3bb7492474e53b941ed6e7cf26a4a8"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c9_gyorin_v2.bin.gz",
+        "bytes": 1616,
+        "sha256": "8af00da9cd3b5bd7e7980691f2a9afb61092cb1f2d11de0974608c1f2493aa04"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c9_hoen_v2.bin.gz",
+        "bytes": 1595,
+        "sha256": "34d76825d7cd2cc33ffcf51ce81b39913fa895b5805ba4873801937518b2866a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c9_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "314959592f1bbfff7a8978f20fb1214f970a2c5a6526a86f3f584aa068b9d1a9"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_normal_c9_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "835607b77f923163f4358807eb9033b6ce57821b729fdbb7086341788977ce5f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_00_v2.bin.gz",
+        "bytes": 14659,
+        "sha256": "1b8c93e2aea37255c0825d3236a21dd517b7a70a8ec04447e947b259ae41a727"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_01_v2.bin.gz",
+        "bytes": 11983,
+        "sha256": "b2a1441917a3a8320e1d1501ca770c4cc5ce0b0a7922f36c5806467558891311"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_02_v2.bin.gz",
+        "bytes": 11609,
+        "sha256": "521b4380267fae80cdaa31039b8f4f9c765c3c3896ab219e9b0f3ba7e7ae917a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_03_v2.bin.gz",
+        "bytes": 13315,
+        "sha256": "b6dfb9a4282498d78a16257852dd2b13ca7dc565deb1c4066bb2798537bf434f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_04_v2.bin.gz",
+        "bytes": 13108,
+        "sha256": "463f0d929e67e4712de773bfcd7fb482488071fe66f0454aad99f8d70cd100f8"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_05_v2.bin.gz",
+        "bytes": 13152,
+        "sha256": "7aa927da71f06ead5dbd88b1dd90ec4f1d7a2344a3a3189797a01278117be854"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_06_v2.bin.gz",
+        "bytes": 14481,
+        "sha256": "c2b54ffb41d6cf66d4a72911450d0f3ba9954e77a87ecfc4bd3f621f53365bbb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_07_v2.bin.gz",
+        "bytes": 12992,
+        "sha256": "7e2bad723aafbd3e06c62664feca5e4650a3f02c1cbfd38edc41e655e66f8ca6"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_08_v2.bin.gz",
+        "bytes": 13321,
+        "sha256": "0d13b1e81c61a7aab75291a6f9e13d76127ba52d88fcf5e1b9da82d1c860e30e"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_09_v2.bin.gz",
+        "bytes": 12876,
+        "sha256": "e69dda0bc18f649689b63fb4af82fb6c50ee6de30d20866d371d1068a0909157"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_10_v2.bin.gz",
+        "bytes": 12889,
+        "sha256": "db661c5fe969199bba861cbeaf7c4d95967e2f54b8de3f288ee296c056ef9105"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_00_v2.bin.gz",
+        "bytes": 14782,
+        "sha256": "653532fb7c8a9593b8259e81e3f6300bd9d58c6502ba8adaa03396bfbcd6337f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_01_v2.bin.gz",
+        "bytes": 12103,
+        "sha256": "a04eb262ae67089b45fcc134ea577b0c55eec56d25642407def81846879f2b5b"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_02_v2.bin.gz",
+        "bytes": 11666,
+        "sha256": "1af9d4160a7185d936a9e730e05a5d369ba208036f6ca7d5a7852407eb2e023e"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_03_v2.bin.gz",
+        "bytes": 13211,
+        "sha256": "32f43667b7dd52d648ddcfe612beb523d2a5c605bf91b0a8a50d2a6c11d796bc"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_04_v2.bin.gz",
+        "bytes": 13076,
+        "sha256": "7cd2ce23e4d1fb3ac566b78d074bb073f95ed669b97ef09adc523f5f4dd0cd99"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_05_v2.bin.gz",
+        "bytes": 13197,
+        "sha256": "e79844fb39ead40f7b1acc2f0d4d8d8a4613834ff390edb0f84a2280fe104af3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_06_v2.bin.gz",
+        "bytes": 14438,
+        "sha256": "217c877dba59819a71fe65e3ae55449998ca99d6a03f1caa8312e92d6a913bd5"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_07_v2.bin.gz",
+        "bytes": 13068,
+        "sha256": "7b89c30cc91c48653f082ef4edabc2b1689fd3142017c9d5109dbb9f9e244b56"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_08_v2.bin.gz",
+        "bytes": 13466,
+        "sha256": "aaeeb4ff0d6442d6c01cc95ed8c172a7440cb578f42076f857087983c09a7bec"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_09_v2.bin.gz",
+        "bytes": 13007,
+        "sha256": "3ccc9a41bb1ee55d3ea6496faccdeb65b0ab31a8f00984c8ccb57f993911df92"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_10_v2.bin.gz",
+        "bytes": 13019,
+        "sha256": "ae7730f5a54e2cca4910a5928f3f5291492faec962f9c0fb4d1e4cca371667f6"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_00_v2.bin.gz",
+        "bytes": 14955,
+        "sha256": "f007578d0c2b27642682ce6ce8fec32818d7481e95ceeda2087360ade970067a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_01_v2.bin.gz",
+        "bytes": 13759,
+        "sha256": "77424c131c9f89788ab234166331e2b468e06b28e228f8f0cfb2baf826cd99a4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_02_v2.bin.gz",
+        "bytes": 14242,
+        "sha256": "b01936b2754be54ce8b22920d6f24a38ec23e2792b7c69db396217ab6fd7085e"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_03_v2.bin.gz",
+        "bytes": 13804,
+        "sha256": "9cf46c29d9c05c6c636f17e63c3b00e319cd0fd1a3c54959ac84f7022447aacb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_04_v2.bin.gz",
+        "bytes": 13694,
+        "sha256": "8667cff5fb47180216006ee6ca0b97b5184b3c67e4a18e8bd0440a8412acb64e"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_05_v2.bin.gz",
+        "bytes": 13237,
+        "sha256": "afeccbf41bcd14dca449b1a88ace95a289db457da88bbaf521cc9a15b3989b65"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_06_v2.bin.gz",
+        "bytes": 14536,
+        "sha256": "c743dc761e9307990cabe4c4e116ad8ac647b2b167e2d44a2dab8aaf525698ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_07_v2.bin.gz",
+        "bytes": 13026,
+        "sha256": "fd3fec89c9a1a2fefdfb8dd93e74a90a0630734b17e61c9240f402fbad03b963"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_08_v2.bin.gz",
+        "bytes": 13160,
+        "sha256": "831056aab93978ccb00d9f300460d1c589781e39f95acb6129113ea16a9c5828"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_09_v2.bin.gz",
+        "bytes": 13338,
+        "sha256": "82a3c163c88a0d4bfaed2da117d2c2d3935f6bf70faada92480181e9e8e2fdae"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_10_v2.bin.gz",
+        "bytes": 13088,
+        "sha256": "d337241f160e0920ef696491441fe435a8bcbcf8c35de3c9b20ff51e66e37c12"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_00_v2.bin.gz",
+        "bytes": 14933,
+        "sha256": "17760b7bea9386782997c387adcc0cad237ff8dd86828468f14ba916346a225a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_01_v2.bin.gz",
+        "bytes": 13722,
+        "sha256": "e3303ade68f380d99af9eba6673a2cf76b53c41215adf0464abc76436916554d"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_02_v2.bin.gz",
+        "bytes": 14263,
+        "sha256": "622504f82bcd32db191ef382cdef1aa18f8a61473a6dc52f48c986b21b65aea0"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_03_v2.bin.gz",
+        "bytes": 13815,
+        "sha256": "10a6bc4d4651a574501616858ea1d3722eb7169c79e3719edd9767c5cea7817c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_04_v2.bin.gz",
+        "bytes": 13694,
+        "sha256": "23cfc13b9ce416b557dd6bb5b88441af6486df5396e1c9e1680f95ebcdecfe6b"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_05_v2.bin.gz",
+        "bytes": 13201,
+        "sha256": "97b7242aa8f21409cfdb1f554ea78852ef1d9c53bdb80e7d71b3d47d2efbe498"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_06_v2.bin.gz",
+        "bytes": 14506,
+        "sha256": "5e49a8318fe5d16e4eb8ebef1d9221bd1ad786a5e6630236b5cfdc7452441e62"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_07_v2.bin.gz",
+        "bytes": 12989,
+        "sha256": "e19d8c2982067323b2e8f64d8366c9ec76cb7ebf708529076c384845da9e052a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_08_v2.bin.gz",
+        "bytes": 13130,
+        "sha256": "8005dcd720b21dde7dcec2fe86644ae4ceb85ecd89a1ae261299f7f21eab6681"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_09_v2.bin.gz",
+        "bytes": 13289,
+        "sha256": "558bbaab3c6b4c345b9f6b16a5b7c656b6ef6b8e574da4d1b0f8c0ad1d472fdc"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_10_v2.bin.gz",
+        "bytes": 13054,
+        "sha256": "5523a4734e586c254483f19e65e1c4b80afd9ea18fbe573d2ae43a51a0a09302"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_00_v2.bin.gz",
+        "bytes": 15813,
+        "sha256": "fa084df2af75b04b006d72ff02aa9ddd5e214640ea49c4712e5e739de2d6c09a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_01_v2.bin.gz",
+        "bytes": 15388,
+        "sha256": "4c47766c92fcf3a4d5a095f30a6a8c4fe3ea19046a4e0f66f20b23f9e7d68895"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_02_v2.bin.gz",
+        "bytes": 15154,
+        "sha256": "1bc7749a1e6548edd74c4b0c1533c55b403d4fdbfe831b17e4f0db6a6510cbcd"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_03_v2.bin.gz",
+        "bytes": 14814,
+        "sha256": "5b61ab2c52690a4ff175d6204cfbe50312fcc9cf4c424fca97e5f0a44e6730f0"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_04_v2.bin.gz",
+        "bytes": 15588,
+        "sha256": "7fa876b9f0f9a3c1133e40b91ff7572eaab4ac15b905b6197d719a79af7a0788"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_05_v2.bin.gz",
+        "bytes": 15343,
+        "sha256": "6d16d35df67a7c517f213acf946f37c23c6dca1761e2e66ac5bcca84f497b268"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_06_v2.bin.gz",
+        "bytes": 15665,
+        "sha256": "71a325e9975a0b47b5d617ca37fe945657f966443d4e238cc3eab3a9fe1494a1"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_07_v2.bin.gz",
+        "bytes": 15380,
+        "sha256": "7cdf669282d023ac1f030842661a6bc605f0e79e7c97bc3286c019522fd4f361"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_08_v2.bin.gz",
+        "bytes": 15406,
+        "sha256": "21049b9c9ef395645d90f0af52cbe77bc4d7e8a53aa461f5b6c09d1e932057cc"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_09_v2.bin.gz",
+        "bytes": 15478,
+        "sha256": "525bdc6b986d55b325c764adf839050f08dc1b5ff3a1c35c5acb85ada0d139c9"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_10_v2.bin.gz",
+        "bytes": 15260,
+        "sha256": "02de2a446e4c970cae31cdf56ee8fd6c8ad3790b5e4cfe81ee6d78fd29f5c0ea"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_00_v2.bin.gz",
+        "bytes": 15712,
+        "sha256": "296fe97847e833a947f2cb91e6a2b4a40116fa3e2e3217ef1f77e6fcaf540e66"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_01_v2.bin.gz",
+        "bytes": 15076,
+        "sha256": "acc7c1c8e167586d4a6464a83d6bf38c30f287b38bfcd8376004aa0c84070450"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_02_v2.bin.gz",
+        "bytes": 14932,
+        "sha256": "21d9531663702f7e57f2da4b760101afe63d96092b77b1bd6c6a91f9bb5e47ce"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_03_v2.bin.gz",
+        "bytes": 14668,
+        "sha256": "e038578190a1307edbe7f24a16039bced69640787d7fab794373b6652eac2994"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_04_v2.bin.gz",
+        "bytes": 15302,
+        "sha256": "45673a032e35dd82e47c670c6dd97d982dd6a60181042db8988208285d1001a3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_05_v2.bin.gz",
+        "bytes": 15287,
+        "sha256": "9f261322c2ad2f96361f90d509747ae8d119d805fbb0a64618019640b86c9347"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_06_v2.bin.gz",
+        "bytes": 15542,
+        "sha256": "f1908a388327a8b60a76ef147d112a936549770fd50ced8cf32450af1d1464b0"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_07_v2.bin.gz",
+        "bytes": 15392,
+        "sha256": "bd981f13d3aa253709d4270a1d6ec1fd155bc115001b53ef3289bbb125245c8c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_08_v2.bin.gz",
+        "bytes": 15341,
+        "sha256": "fd87b5982b462e27fe1c5e06019faf33db548cc38ad042bc1ad3c0e0f648a3f4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_09_v2.bin.gz",
+        "bytes": 15511,
+        "sha256": "7a66c494f5e4950b92fb78350a4ea40dcbaddf88b9f98ad083df458cd160899c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_10_v2.bin.gz",
+        "bytes": 15286,
+        "sha256": "52d7e7c63515bf372d0382ff82e08c4d68abc41152c81aeaa24163c1bfd12714"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_00_v2.bin.gz",
+        "bytes": 1889,
+        "sha256": "f122c82f955e81b05a50e87be79247cff716867e727dbab9e07ec3c9408ddf75"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_01_v2.bin.gz",
+        "bytes": 1895,
+        "sha256": "9a84e7c382425a43e152f4084863356085a7ba527b1cbec77b036720966bbf97"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_02_v2.bin.gz",
+        "bytes": 1895,
+        "sha256": "218e7a62aef4eebf04a9fb716b47f880fccf27f79a6377c10ccc53cb908b0d67"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_03_v2.bin.gz",
+        "bytes": 1883,
+        "sha256": "2f248e48449af3616538ec706629c323e6be28b2af4f4cdf63b027652f49d8e3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_04_v2.bin.gz",
+        "bytes": 1904,
+        "sha256": "3f72bc043dfb54db3e014ee564f908bfc98258dc02bfca365d01acc4243703fe"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_05_v2.bin.gz",
+        "bytes": 1884,
+        "sha256": "9718d149df6994da1ec4ed3598368ab1cc5e77b75b54d02b0777c29306192956"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_06_v2.bin.gz",
+        "bytes": 1888,
+        "sha256": "f64dbba90207a7257adcb3cdb1362f80d87f36c9c750a62ed43509ad9765905c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_07_v2.bin.gz",
+        "bytes": 1897,
+        "sha256": "17c7bd1d6192abf87e7b4e2f7d4e877490d48a4de7fcb7a961855afcef1007e7"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_08_v2.bin.gz",
+        "bytes": 1899,
+        "sha256": "7dd28d68f38d6c31fded4afa984a988cbb19c49c0ec27abd3f52b6735ee19a69"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_09_v2.bin.gz",
+        "bytes": 1910,
+        "sha256": "911225f6830b25fae8ffea04ecf35a493f485f6850d8260f90c1fe958f6b3493"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_10_v2.bin.gz",
+        "bytes": 1897,
+        "sha256": "7b7baf2dd22b6820c379b793aec2a3d34ecdeba5a5b4637e2051c4b84b6742b8"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_00_v2.bin.gz",
+        "bytes": 1893,
+        "sha256": "d129e92d6375c93d97b51fa625c14781027fcab7b9220ea5f776f38d599c12e8"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_01_v2.bin.gz",
+        "bytes": 1891,
+        "sha256": "996ddc31376c65031984efec8e975989597418227a781007d11b9fcef67b59a7"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_02_v2.bin.gz",
+        "bytes": 1889,
+        "sha256": "e62eab4afb5c7df078fecf44f677e65dbdafbf7b710abfa3dcb47c221b7a2ac5"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_03_v2.bin.gz",
+        "bytes": 1875,
+        "sha256": "07c0eb94fe41beefc1a258f1b39400f951883c3f59b4364c7f3bfac9e3834254"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_04_v2.bin.gz",
+        "bytes": 1897,
+        "sha256": "9759a5dd72067f15971c94724f93a01f4b23d58b9b57fc62a4e314c9759c1be2"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_05_v2.bin.gz",
+        "bytes": 1883,
+        "sha256": "8590f06bc524e5fda2ea971af503ed04da512f090c52c4c518f1b8cfe7a76dc3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_06_v2.bin.gz",
+        "bytes": 1885,
+        "sha256": "49c4f406fa865d49bed0122f7dad99faf6cd6b09641a91a76aafcd8e774c993a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_07_v2.bin.gz",
+        "bytes": 1891,
+        "sha256": "9a9e2d7bb4b4b9b4adce5ce244ccaad82d532c60a3c0eca2dc36d139ad1489d3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_08_v2.bin.gz",
+        "bytes": 1897,
+        "sha256": "f468e260df004f08bb3a00f563a86d9c29d321e3fbbb9cf78ec2549fdd58fccf"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_09_v2.bin.gz",
+        "bytes": 1906,
+        "sha256": "7c47c89a7e4efddaf1a2f004f6e2cf3330580198cb50f8d237c2766940665a70"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_10_v2.bin.gz",
+        "bytes": 1895,
+        "sha256": "c1e7a76b1420f26c1df3f893102ee3272d1f8dd9f6e6e383f3d3524b5e61712a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_00_v2.bin.gz",
+        "bytes": 1620,
+        "sha256": "ad828456a14c4688eaf56b15b21e8bad2fb44efe9ba89cf4dae0cdc65ea7440a"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_01_v2.bin.gz",
+        "bytes": 1608,
+        "sha256": "98a978d35c39254b8558ca3ba148ac60e7c9a34b4a630076cc511c7cc835e609"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_02_v2.bin.gz",
+        "bytes": 1616,
+        "sha256": "f89d94e0e1f1d9b587d6f3a55b7a8be40cdb3c9acfcabdd8777a4604c1901734"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_03_v2.bin.gz",
+        "bytes": 1602,
+        "sha256": "967cf4a4a5ee7e37dabc46f15b352b38b5835ae2ad8dc05c4a8783bdcf9ec9df"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_04_v2.bin.gz",
+        "bytes": 1612,
+        "sha256": "b50c1dbd5e7e37d6ba2fea8dc762f99d74e3c274dbe04f0ad6e5b0c1ccf20d0c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_05_v2.bin.gz",
+        "bytes": 1606,
+        "sha256": "7cd4ad88b8c3ddf38952fd07ee351e5d5504327b049c6fff157778c66eff3191"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_06_v2.bin.gz",
+        "bytes": 1603,
+        "sha256": "0e582497b24d42863c2b68f21b628c9a1a15c5ec836cf901b2eb8671796874a1"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_07_v2.bin.gz",
+        "bytes": 1607,
+        "sha256": "625650203da64bcac501446ab61468fdfeeed20ab1dd764c2dc2b405c187bc15"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_08_v2.bin.gz",
+        "bytes": 1610,
+        "sha256": "f9be494f8519159fe9258b35d851a467d84919daf716e0299d31a2ce2d7f05b6"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_09_v2.bin.gz",
+        "bytes": 1615,
+        "sha256": "489bfdaedd50b369884929ed19759a0f23d9f8b810a321f7cec9b3e0886a7bea"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_10_v2.bin.gz",
+        "bytes": 1609,
+        "sha256": "834ae8a2ea992b6d592337b37ea9cc9edcf235182d532fda02f26d394ad19c79"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_00_v2.bin.gz",
+        "bytes": 1610,
+        "sha256": "e4883bb8699147953e0842093184493f25accc70bcef6982391bf468b6a28226"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_01_v2.bin.gz",
+        "bytes": 1600,
+        "sha256": "c3023557451f793f1f96cc36049206f8f6db9390979c6d65725f288e0fe57745"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_02_v2.bin.gz",
+        "bytes": 1600,
+        "sha256": "066d4c626d97f44bd2eca61387ca03ae269a44cd558d110cca59e38e2d58137b"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_03_v2.bin.gz",
+        "bytes": 1589,
+        "sha256": "416af2afd78cd79c38bb0a0e75c93ce726932ad78e99902f109451a262712545"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_04_v2.bin.gz",
+        "bytes": 1592,
+        "sha256": "94ef63bb455271965ba5d0638c51d214a70a82113ff4536db3961bb971c30671"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_05_v2.bin.gz",
+        "bytes": 1594,
+        "sha256": "ff60496647ce170cbae0bc6ea32c328cf45c0a103eddcab0f2a6e08f296d0abb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_06_v2.bin.gz",
+        "bytes": 1595,
+        "sha256": "61c53fa458f4753ef552038e701bc4da5c679b4cd85c6ef48ff6e5cfeada68e7"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_07_v2.bin.gz",
+        "bytes": 1590,
+        "sha256": "d4578f81086f2374db61ff7ab46d8a99ef551cfe3809bb9c10359ec3311463bd"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_08_v2.bin.gz",
+        "bytes": 1598,
+        "sha256": "cfa08bdfcf4e016f74ad74fe49924cde4285fc0e8e64cf9dce5cc417b63914ea"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_09_v2.bin.gz",
+        "bytes": 1598,
+        "sha256": "ed69e002b372173786743ee89cb336f41d2bd57d300e68170395f4c6d72033a3"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_10_v2.bin.gz",
+        "bytes": 1596,
+        "sha256": "9a797035c9b7330493811949edac4dead1c1d454d78964e3cd04c1ca1dd26709"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_00_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_01_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_02_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_03_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_04_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_05_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_06_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_07_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_08_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_09_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kakuyoku_10_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_00_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_01_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_02_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_03_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_04_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_05_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_06_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_07_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_08_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_09_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_sort_normal_c9_kouyaku_10_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c5_gyorin_v2.bin.gz",
+        "bytes": 12340,
+        "sha256": "0497cf5ac635c7b0032c48627c83ce2c9ac34f2ea1088c81cde60a50daed0ceb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c5_hoen_v2.bin.gz",
+        "bytes": 12418,
+        "sha256": "dafa36b7a70861968f4f1801ffd1503b320085a57910094ba1325469cfe315cb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c5_kakuyoku_v2.bin.gz",
+        "bytes": 11287,
+        "sha256": "fc0241cd3e7a6ad47ab77244c540006c628eb49fee7dedd3cb42bdfe9255ef02"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c5_kouyaku_v2.bin.gz",
+        "bytes": 11218,
+        "sha256": "f0b2a86e2fe5cb8d6a0b04ca2c5b6ca8100fa0d08c0e1975372425d511da770d"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c6_gyorin_v2.bin.gz",
+        "bytes": 11023,
+        "sha256": "922e874bd305f573251c4bcfa7262fe6c2e6534bea416b352afb9f62d4a5bf77"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c6_hoen_v2.bin.gz",
+        "bytes": 11102,
+        "sha256": "9e6fffce5601331eb44f411bcf808fe0b74fc954d967428beb07f6ba907228b2"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c6_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "6a2cb56aefcce389a07f5006d9509cdf94d355b9bdf7fd8cbf5212ab8cf1f0b2"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c6_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "1c279104f51cb19eb51fd9629e0b34d3a19a88a8e7b2b0cff1d549f5f7bd2196"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c7_gyorin_v2.bin.gz",
+        "bytes": 116,
+        "sha256": "36afa84cc48fc3bc72aa2d4d0d5dc4977d8fe8eb184be6f0b1ea4c94f808d809"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c7_hoen_v2.bin.gz",
+        "bytes": 116,
+        "sha256": "cdc83fde7439273f68c0e48fc35949a84741ae05caae11de6ad77e9b8c8b02ff"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c7_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "63084d85b27c477df074d0cf472d3f4b53cf9ed7bfdc0ded6150963a9bdad29f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c7_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "19b79673083b32cbec52cda823060edcbb90bf4471616be8dee6c8413d2565b4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c8_gyorin_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "24aeecbc388756e8d4f4fa2426d217ce7ba746bdaa74ae9fc3c39a6778f311e1"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c8_hoen_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "80bb665b31b121e63ec595caca590cc68058c3c057f7bf0685c96e99d6ba3748"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c8_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "f4421d8bb99d90557c2a352ccf35ddca13941ae0caf90d081d2a5a9fdcb7746c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c8_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "9399525b508ec8c806a30e4453fff357cc9fff6de735f051cf241cc4032e1857"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c9_gyorin_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "1660b4b93683d86c063a3dbedd1e0a8bc211bf18e9a2f648a8e45c949799097f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c9_hoen_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "4adb1c1cb59785dd5064bfb60a20c455c79f4e40ec810c64d0ca3e59f1d9a80d"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c9_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "cab9c49306c28de83899c64425bee9b454938150955ac667ed2f1ba43ef7cd16"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_grade3_c9_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "4ebaea9e07ae68f943bbc1c8bb2f601f5135954e175c050786f8e29f8d4c336f"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c7_gyorin_v2.bin.gz",
+        "bytes": 13650,
+        "sha256": "a513d711a84387762280373a6126b86c01ac3bd90cb43b350a9b640c87b45799"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c7_hoen_v2.bin.gz",
+        "bytes": 13678,
+        "sha256": "b050ce1711486effe759dcb70842f90053bc96492b62b115740d652dccd1d7ac"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c7_kakuyoku_v2.bin.gz",
+        "bytes": 13772,
+        "sha256": "c08707ac84729605c4f29729b618859ec1176b015d0c02597dfe504e8876e3cc"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c7_kouyaku_v2.bin.gz",
+        "bytes": 13706,
+        "sha256": "5e5ea5f8b08548cf2a47265e20b2dc3f856f95d1da8578caee8501752476f5cb"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c8_gyorin_v2.bin.gz",
+        "bytes": 15161,
+        "sha256": "cf31441783bb689b9ccf8d53cda2a770b91c2e485f5aac066bbeab73e14523bd"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c8_hoen_v2.bin.gz",
+        "bytes": 14840,
+        "sha256": "c339c95ee180484a1e216a289d031271824d5a8d985415dd3f6d9f4d6c8282ef"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c8_kakuyoku_v2.bin.gz",
+        "bytes": 1881,
+        "sha256": "3f4cb374185c8724833e8148ebc7a23c068b26b29a7a91aa0d92de800041c4e5"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c8_kouyaku_v2.bin.gz",
+        "bytes": 1879,
+        "sha256": "86be238b6eaf2fa25507ad1cd21844bcc6334a63bb0645413645ede7cbf68926"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c9_gyorin_v2.bin.gz",
+        "bytes": 1612,
+        "sha256": "138a0f9653773926944cfcb6eb8ea20efaf994c34511732179fdfbd2b2e7d3d4"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c9_hoen_v2.bin.gz",
+        "bytes": 1594,
+        "sha256": "33f456a059a7d9a3cc4b666045c71b0057f22ec64ae91855ef95332c45f4d57c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c9_kakuyoku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "457b9d7dce989569c7b78004523c7fff68035e852effb10f820aa664958a339c"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_top_normal_c9_kouyaku_v2.bin.gz",
+        "bytes": 33,
+        "sha256": "3026ee218947859422c554f83293981266caffa53ec56a393c9c710b419ee8ca"
+      },
+      {
+        "file": "data/compact_search_v2/jinpo_unified_search_manifest.json",
+        "bytes": 207183,
+        "sha256": "a975b84e4cc5c344fbde4b6621c83e5c196b123f572210a4a9111692f12a1ffa"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__dex.bin.gz",
+        "bytes": 48377,
+        "sha256": "4331531fdf9c99d6c994fd40dcf8d0e2d3939f650f6c6990f56ae14cce9f3c28"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__earth.bin.gz",
+        "bytes": 50320,
+        "sha256": "3ee70427996f1c7b3c371d92aa10876befcd185d886183db6873f9ee94b9b25f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__fire.bin.gz",
+        "bytes": 50363,
+        "sha256": "35acb5288d38e51f605184f1691b7657dc705ea42aadb87b1e4d4403eebc6abf"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__int.bin.gz",
+        "bytes": 48452,
+        "sha256": "9c93dd1932cc282ebedd5073cdd3fe85abe3bba10a4e134cf2a5b63c2c09f4a4"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__ki.bin.gz",
+        "bytes": 43430,
+        "sha256": "3bc9b230623c3c3dcec928d80e555e36c2ead514b8729b902d1392b92e249a6b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__life.bin.gz",
+        "bytes": 44804,
+        "sha256": "fd8cd8db35d0d0863415fb8b77ea7e46d4dbd7ef6dfb1744a1a95b0b50ede044"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__str.bin.gz",
+        "bytes": 39457,
+        "sha256": "36357221ae09d84c0eff51b720cf70c0068b84b41df07b91f3fe0a9ddae11c0c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__vit.bin.gz",
+        "bytes": 44350,
+        "sha256": "caa49c23f61b3eee86e8c9088260a3576c00a30baa5ed53ac658ec23286efc04"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__water.bin.gz",
+        "bytes": 50435,
+        "sha256": "7703a974cd2d4c288268a56f3d355c1ac9969e5644f14adb75dce7e8058e994f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/cha__wind.bin.gz",
+        "bytes": 50470,
+        "sha256": "d7395ea562f2d94f746b3a84e3af03e8719e6692557cfeeef5d5f75cbf11afda"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__cha.bin.gz",
+        "bytes": 48477,
+        "sha256": "5817c06762ca46d240c0abef5184670e3cfda3f21fb33ec5bc2b6bdba4051641"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__earth.bin.gz",
+        "bytes": 47674,
+        "sha256": "f791aa68dba81f3ce46ca88f60b8acfeb8218a43256645b9b72f9a89de498961"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__fire.bin.gz",
+        "bytes": 47904,
+        "sha256": "d4ddfdf8c7ff7f3de9a41de45f39967b176e8b105248ead1558025395d37d28e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__int.bin.gz",
+        "bytes": 49353,
+        "sha256": "916c259949832937ff0c62bdf2f447882d1ab70e6f4d9cb7461ac3d18f4acc37"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__ki.bin.gz",
+        "bytes": 43177,
+        "sha256": "f709238d7a9dfa7f338898eb71a19255b22b2d3b057dce48f39f93f6a67507e1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__life.bin.gz",
+        "bytes": 44636,
+        "sha256": "0c10b8a2324a2332eb54e2d7f530f26af95798b136b133aa1dac9124ce37d594"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__str.bin.gz",
+        "bytes": 38983,
+        "sha256": "508378a21f7c3db943171445e023d6575be0733411a4889a762328c4cafc2f05"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__vit.bin.gz",
+        "bytes": 44131,
+        "sha256": "8422b23659add443795da7917e8de4ffe0ea12435033a9c32ba5a43d31e2f422"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__water.bin.gz",
+        "bytes": 47755,
+        "sha256": "118ebbc6fa842b6381b8de682a3fea20d78881dafa754b94232947dcb582555a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/dex__wind.bin.gz",
+        "bytes": 47667,
+        "sha256": "bace78c98601e10d4eea1e8c3111c3b5bacf7164866ae98f8526012f9fd3174c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__cha.bin.gz",
+        "bytes": 50377,
+        "sha256": "07fe94053abde57c17ee0ae45b01e9c071818b2fcf716ec9b4dafd997d2e01fc"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__dex.bin.gz",
+        "bytes": 47717,
+        "sha256": "b47fc696784d8675dec404cdc6f561845f2008d034b84d5c7bc6138ddeeee9d5"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__fire.bin.gz",
+        "bytes": 50528,
+        "sha256": "d7238dd21a1cc7ef517b6c1724ca34e754bfd870c7b868fb3f57733d197fa423"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__int.bin.gz",
+        "bytes": 50857,
+        "sha256": "7c5931ad43a0cd7af07d474f17dbad7ed6a5eb4f41ef0db76bc5a49506db9328"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__ki.bin.gz",
+        "bytes": 43197,
+        "sha256": "296d0e9cfddb98a7be40cc2847b5943ace9c7fc17d5bdfe332c0ff7d46bd53fc"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__life.bin.gz",
+        "bytes": 44977,
+        "sha256": "79afd18c40524f7b14ab310aed109a1db6953f1540458697ce60a6bf226f861e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__str.bin.gz",
+        "bytes": 38439,
+        "sha256": "11618a8ab9544c11e34b5f5ba02f2ce048cb3ef4585a42cfa05eced974349691"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__vit.bin.gz",
+        "bytes": 50229,
+        "sha256": "58a0de000fba0a98368c25eca219e57b6adbcd41dc3215263bef92c820e235a9"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__water.bin.gz",
+        "bytes": 50646,
+        "sha256": "72c7ce346d8d7dd90ddcde663e14e5385578ce3177c631710eece9c6549cfb4d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/earth__wind.bin.gz",
+        "bytes": 50673,
+        "sha256": "70f0cd86ecaf15d5911d0a847a1d93dad1f9b7ba08cead4856962691eb440a61"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__cha.bin.gz",
+        "bytes": 50406,
+        "sha256": "ca8bc34a60a674bf3756031a5a20af771ab557bfde2d94f0a0ddc54f700b140f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__dex.bin.gz",
+        "bytes": 47889,
+        "sha256": "adab7019221b47b50776815edfecdbc745383675e4de3089df60870c06a6d2be"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__earth.bin.gz",
+        "bytes": 50528,
+        "sha256": "fd756b6e915cb53944e1da4ff26f7fc9b8f7ed2c0dc02aae8eecc862b51c8488"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__int.bin.gz",
+        "bytes": 50859,
+        "sha256": "d1b22f00214c9b02f9bdfdb8875eb868859217d897822e48f0ad8e7e85a6c1fd"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__ki.bin.gz",
+        "bytes": 43262,
+        "sha256": "670ccec499468b595358a9fb127b600b5c9e2f5d0a92e65b6504a1a033173c47"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__life.bin.gz",
+        "bytes": 44981,
+        "sha256": "d160ab8b81336ce256e16dd07fbb71cea44a75f2122def92ae312ab0410a3064"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__str.bin.gz",
+        "bytes": 38416,
+        "sha256": "56f37679419d751f69ff03cce6fcc2312ed412bb1df848a49ccd9f67bfc8e112"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__vit.bin.gz",
+        "bytes": 50059,
+        "sha256": "62897f73a91ad18990a8eed81869cf16b6cbdcf9e6e1e2bd6ed2ff491f36351d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__water.bin.gz",
+        "bytes": 50594,
+        "sha256": "88d52b332ddc1d46cc654310c0b59e86600fac2d0d753535850a0e6d44ce6d77"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/fire__wind.bin.gz",
+        "bytes": 50605,
+        "sha256": "4f72e1a30df9bc4290ca013b6dfdc49d19d6aa4dd831e8594d53dcc501d81c43"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__cha.bin.gz",
+        "bytes": 48473,
+        "sha256": "7f76e55b5a8774cc5ca324b59996655656a064670d1d0634e7c505e88f48f1ce"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__dex.bin.gz",
+        "bytes": 49331,
+        "sha256": "8e56c5e70c39dcec60404c798a25e6b95c7998c680b7af3374e3c3fcc5d5dd97"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__earth.bin.gz",
+        "bytes": 50857,
+        "sha256": "3663feee0abed59936ad5357167c7295c73ae8863d9b490f2edd14bd6ba35b2f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__fire.bin.gz",
+        "bytes": 50894,
+        "sha256": "7b14a301e547747bdd7554a2e50631b3a1804a6830ef517e5bb4dd48ce14331f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__ki.bin.gz",
+        "bytes": 43143,
+        "sha256": "b49bfec3c1a5e4e2d6e30a11f880d6503f69c632d8f92b9cf0119e46baeebaf2"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__life.bin.gz",
+        "bytes": 45825,
+        "sha256": "527ac2ac012df370e2b5748acb6cf67ae7bc27749459e17ea543c247e5f126e9"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__str.bin.gz",
+        "bytes": 41804,
+        "sha256": "63e006ca90fb6c996b92d8ae9add5b33e6ebd8910396eb48b30a0781996c3485"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__vit.bin.gz",
+        "bytes": 49443,
+        "sha256": "344c4b943bdf93d430213bbdf47b7fc30b4dcf791d52a22e67c9ab3d270b7c5a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__water.bin.gz",
+        "bytes": 51040,
+        "sha256": "4a15c04007be0c2aa3902a0621cd21178ecf31652bc887f59cd236214c1a47c1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/int__wind.bin.gz",
+        "bytes": 50863,
+        "sha256": "ccc8dd1045cc2eddaa460346ab86223b8ee42ee933ff1fe2ee5ec18fdbe85956"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__cha.bin.gz",
+        "bytes": 43426,
+        "sha256": "bc394f36856df663cc781e1fed6dd2f42a90f6e6e44f91955024b21d7fecf826"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__dex.bin.gz",
+        "bytes": 43153,
+        "sha256": "d353eec28200aa8c235451ae3e98be298b86978820eb34fb3074958d93be7bf7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__earth.bin.gz",
+        "bytes": 43187,
+        "sha256": "93a0ef1407c0aa8b68eda9daa7b3eae6a39666c0c2df7aa58d657d2d20becf5e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__fire.bin.gz",
+        "bytes": 43285,
+        "sha256": "e5f1a59bbbd66c8b987945aa62d512ff7f11a82e24164ee1bed59748675e77db"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__int.bin.gz",
+        "bytes": 43134,
+        "sha256": "306ca666e9457d31f308e3f75317b0b4aa56bbf721d4b8fd90139b3e50b06e60"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__life.bin.gz",
+        "bytes": 44376,
+        "sha256": "f085074b72ed0e971fa6822750df10be285ee9f27795230a4e9487b6d4799f24"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__str.bin.gz",
+        "bytes": 43334,
+        "sha256": "b5243e5152eaaf6d2130f646b4d1764f22c0a792b0e16cd518789b53da428209"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__vit.bin.gz",
+        "bytes": 43533,
+        "sha256": "10bdf7df23c2f35b6e3ae264825c48209c1f95af8ae3e808c148bafb12105cf0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__water.bin.gz",
+        "bytes": 43299,
+        "sha256": "d4fcccf307e6171a116f46e11a6c6554c3a4968c9df4dfa21d6c418f4109402d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/ki__wind.bin.gz",
+        "bytes": 43214,
+        "sha256": "06787795d6dce68bc9faa79a9895922b2d0629286888516eeebea753fcd348ad"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__cha.bin.gz",
+        "bytes": 44815,
+        "sha256": "a29e3d6d17956636276a53aa7d8ea346f764a7ff15858d243a6e54994088bfb3"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__dex.bin.gz",
+        "bytes": 44660,
+        "sha256": "f43c8c2aae1c800b9e7ef31017ee7aeaa2bcbfc79d89365b4a9a9286a16ff56c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__earth.bin.gz",
+        "bytes": 44972,
+        "sha256": "915e984b09ff823af6e87054d8b4a82212f3f64b6cf6c3ea81e42a26c1bde14e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__fire.bin.gz",
+        "bytes": 44964,
+        "sha256": "e3bd18881ea78cae07003e7ee3a85865765b02f47d535d314c209af3f915ee26"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__int.bin.gz",
+        "bytes": 45830,
+        "sha256": "61ec562d87da2ce3a7493d105f115b9dd11fb4c2606c221a8e3548c8e8426700"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__ki.bin.gz",
+        "bytes": 44374,
+        "sha256": "0170aca028bc989636b9669815bde8253d5dd7f5cec2f33245f4ab5a50222f46"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__str.bin.gz",
+        "bytes": 43992,
+        "sha256": "0fa243d825e12c7aa01771bb29952e5491b68c4801aea6fb0a68d3094a1ada56"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__vit.bin.gz",
+        "bytes": 44591,
+        "sha256": "5730590fcdbb55809e865750187ad00843871c9586ac7363c521b007c81c2d74"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__water.bin.gz",
+        "bytes": 44999,
+        "sha256": "7c01337dbc1d1f112db5dba7df290f9f75948649db7425b2d51a170349497117"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/life__wind.bin.gz",
+        "bytes": 44950,
+        "sha256": "229eb7420c09fc2f69ce10a3fff8c6af840b5751eb174672efe7428e4dff5f8f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__cha.bin.gz",
+        "bytes": 39396,
+        "sha256": "2f1c8c2c0482124ac7b11adecf974fe72e150c348d211cf9ffbe641699aec7d0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__dex.bin.gz",
+        "bytes": 38965,
+        "sha256": "8a87157401cacffd6f36f39a8b5e9450caa9796052039fc4f567b436124058ff"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__earth.bin.gz",
+        "bytes": 38387,
+        "sha256": "e2ca71e134d31dd11b818df0578b4c79fb885e4ebe9cceecca3e814c08d8ee95"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__fire.bin.gz",
+        "bytes": 38387,
+        "sha256": "c670a1b62a4ff83e375bd4b25428731e618acdce9bf064c60d6a8aedfb63cdba"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__int.bin.gz",
+        "bytes": 41696,
+        "sha256": "fe6fed4da03e6a74a07ffb6fd096a44431b8ed85f2ae55a97b787828300f1cdf"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__ki.bin.gz",
+        "bytes": 43274,
+        "sha256": "d86b8cedd30f80f3c7e34a4ef7e8620483b3f8ce7c009398559cbf614f450659"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__life.bin.gz",
+        "bytes": 43999,
+        "sha256": "118d474df3843d33672025948e264662e1f4f7b84cd706008c51668d66a53d05"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__vit.bin.gz",
+        "bytes": 38141,
+        "sha256": "5a9157a2959be78cdb9a2bcbdaf42f4a876d0221474eeb01f6917b5deb85cd44"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__water.bin.gz",
+        "bytes": 38412,
+        "sha256": "f29cdc45a67137371aaed724579e4b4277ecb5dac87569efe145a4edd2d9b9d0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/str__wind.bin.gz",
+        "bytes": 38368,
+        "sha256": "043c5aa297998b4abce2949cd80d7aff6d0a397518ebab17cd1bde3915f7b82e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__cha.bin.gz",
+        "bytes": 44297,
+        "sha256": "7173602edbb5cd7bf42a10081d2042c6372feb0ea390bb3e4a9cca8f12684f0a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__dex.bin.gz",
+        "bytes": 44151,
+        "sha256": "728fa94ab50d53cfed0fcd21926896beb7b274aa39ae5c9044b17b919bc4ad50"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__earth.bin.gz",
+        "bytes": 50149,
+        "sha256": "56790f252f0b6d775931687d1991d6164b33a69cad1b1631b4546ef341fb42c8"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__fire.bin.gz",
+        "bytes": 49915,
+        "sha256": "25ffc919f708b470ae5571e787081a3f5ec24f2155e5dc41f432cbf7a4905c26"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__int.bin.gz",
+        "bytes": 49435,
+        "sha256": "fd7e8270d002fc1983e2d2629ef767523a05d4b02e8125afef72a27287a6b905"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__ki.bin.gz",
+        "bytes": 43542,
+        "sha256": "da4c6005271b2805be3712ff22e5b7c239802004728dd84ad15b5fce1fab535f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__life.bin.gz",
+        "bytes": 44593,
+        "sha256": "e36ed32171afffccf1a4f38282b01c2050fdc9121cf096ccbeb3be54c07e5bd1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__str.bin.gz",
+        "bytes": 38127,
+        "sha256": "84af97e641fa3a0e7c37a3c2fcf5fddd9b25730940c81075dbe17ddf19ed4da0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__water.bin.gz",
+        "bytes": 49740,
+        "sha256": "665109042a0ddf6e3aa136a265d53ec3ee077c60008197af9ddbd520dd807b79"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/vit__wind.bin.gz",
+        "bytes": 49471,
+        "sha256": "3efb25ac74c4e2b28750a71bd318fd6bcb570f12e79575bbafa95afa62e73017"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__cha.bin.gz",
+        "bytes": 50457,
+        "sha256": "776503b60eb5d2e840bd18a6a863d41e1370cfd2cf04fbe3498b1d2fbd8c78b3"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__dex.bin.gz",
+        "bytes": 47782,
+        "sha256": "200ba0bfd0a0d846ae914159b564614f1f6f95845e81d742e654b8133ff8c7c1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__earth.bin.gz",
+        "bytes": 50601,
+        "sha256": "a277c4a90eaf7e1b26dd6b49a7bc1895b1b78cef38b3efe7da4372d82d4d5a3c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__fire.bin.gz",
+        "bytes": 50571,
+        "sha256": "06b67638b95519071ca72c55598581f6aac993cba04b01390d18c1edf87d1385"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__int.bin.gz",
+        "bytes": 51006,
+        "sha256": "4313d25ef4c949d99d7873cf50c86935de5e87844e9e3c63924eb8f47ea49c7e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__ki.bin.gz",
+        "bytes": 43288,
+        "sha256": "e9f583638e89adae42a2bb7458c645445a8617b65fa2d3b0165840d25e762fcf"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__life.bin.gz",
+        "bytes": 44976,
+        "sha256": "b508503ce85f61bb5455677759e8fab3bd8b1e266500b375c2f69e249efc711b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__str.bin.gz",
+        "bytes": 38438,
+        "sha256": "d5ebf7b741b54cbfee10bf417cb414971298d768d8fe87f1f6e9c59785792bd7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__vit.bin.gz",
+        "bytes": 49807,
+        "sha256": "1d11c640b6faacd7228f36c6bcb2664b6d156011654a603448b1f29e5973b952"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/water__wind.bin.gz",
+        "bytes": 50637,
+        "sha256": "d6faa6db9079018e7d139dd49b9c24324ffda0d9f0c8992ac9823f865a96cf89"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__cha.bin.gz",
+        "bytes": 50504,
+        "sha256": "e83493ae42b8546282fc7c767b961a162ee9f72e7dbb1afa44c4fecdafe4e83a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__dex.bin.gz",
+        "bytes": 47673,
+        "sha256": "e5c7deedf1b56b2d421451cbf870a5ec7490dfd75e80d2b29d3132af116e86fa"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__earth.bin.gz",
+        "bytes": 50689,
+        "sha256": "b38abbca479ec23c951cd963274dcff17a09210853af75d5c99993410571caad"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__fire.bin.gz",
+        "bytes": 50615,
+        "sha256": "2c1846149e3f12a97ce895b985ffea1ec4d7a1c5c937506584f12ac77f872738"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__int.bin.gz",
+        "bytes": 50871,
+        "sha256": "18673a595ae3fa64b0357f1074d95f033093c405415470cfe43ec0a148ec07ce"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__ki.bin.gz",
+        "bytes": 43233,
+        "sha256": "b8b8002617f922531eda75616e81ac614383adc1394a19fde260a57725816fce"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__life.bin.gz",
+        "bytes": 44971,
+        "sha256": "a5d9df01d414e8c58d1ca0fbb26f56ec256ccd1d80a31e41dbb2b94f758df5b6"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__str.bin.gz",
+        "bytes": 38450,
+        "sha256": "d7a19f312081df3c0bb7c42d5118dd7a97a16e0b83e43753f1fe8183f254408c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__vit.bin.gz",
+        "bytes": 49575,
+        "sha256": "449d36739125e1e0009e3390e9368a4afec96704b987df8bcebea192f49559db"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/grade3/wind__water.bin.gz",
+        "bytes": 50669,
+        "sha256": "569159ab4e9797222c6d476ac1a1faf3aaac9e551b8342322ff2ce44159d7809"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__dex.bin.gz",
+        "bytes": 55802,
+        "sha256": "bbff61f096698f3fd768ae306bd02b7984317c5fb83d4fdba1c14d73c552b327"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__earth.bin.gz",
+        "bytes": 56734,
+        "sha256": "acf1cf3d06bda6c51aac3f88384b6d8e7493adb602459fc4fefc7596d621de48"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__fire.bin.gz",
+        "bytes": 56338,
+        "sha256": "c6d8216f311abe5d1be3c646e60d7e8cf8ecabf24e6093b17d3a7489ae0d068a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__int.bin.gz",
+        "bytes": 55874,
+        "sha256": "43f7baa2adbc7b0e24eaa3d5166921a00f415f59a6d81c80c325451c4aa341d5"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__ki.bin.gz",
+        "bytes": 50872,
+        "sha256": "53dd992ea0db240bc71aa546b05fe331461244c3014d5d4525aa4e06e3f63eee"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__life.bin.gz",
+        "bytes": 60630,
+        "sha256": "d5835a9f1347b95410f4103e7aa2db32a9d7a4d79544eb46ce12b10881ef2a7d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__str.bin.gz",
+        "bytes": 54150,
+        "sha256": "a4293c12a4abc836af4c355902ef940843b36986bf4f02c8bc369dcf9c7612e8"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__vit.bin.gz",
+        "bytes": 57361,
+        "sha256": "c5e7f587c2ac3b16a811cb8449c35f8c6d086e283fc5e02c27de670fcee7f2c4"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__water.bin.gz",
+        "bytes": 57270,
+        "sha256": "8c004328198d97f2f33f53d1852f96569e563e48e77a4e26667cff02f1e7ade1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/cha__wind.bin.gz",
+        "bytes": 55380,
+        "sha256": "477efa285062f8f2915571553e4a1c771156ab8f4a9dcdebbcb9134fc82a283a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__cha.bin.gz",
+        "bytes": 55833,
+        "sha256": "a8536e832c68f35462372bed9ca7d32847253f124b90a56221cec3c95bd9ab00"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__earth.bin.gz",
+        "bytes": 54177,
+        "sha256": "af5ebe9c07ad4d38b163396587952ea1d9edc16cc0f3af863d41096498d501dd"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__fire.bin.gz",
+        "bytes": 54212,
+        "sha256": "8332f46a559a026ec7b95a3d3e426f198a8b7625a299e5ebdae2ee0c322c68c8"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__int.bin.gz",
+        "bytes": 54898,
+        "sha256": "0e406e5c19f87cba01c807b83164a2c612351a33cfc2f15b5c7929319bf2492f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__ki.bin.gz",
+        "bytes": 50528,
+        "sha256": "3c95b1cdccfbb426fd3612f1d4ed61258564f58669691a573a04bc60b0391c4c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__life.bin.gz",
+        "bytes": 60800,
+        "sha256": "7aeb3cdb6d849c5fdb55bdd09b2b40e7c3b4f36e437083f51b93ae5b5785587f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__str.bin.gz",
+        "bytes": 52145,
+        "sha256": "9ab882ab26fd60d55533481ea98ad2190cb1f0067a251f44cfad31c77fe640ad"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__vit.bin.gz",
+        "bytes": 55005,
+        "sha256": "c53e932dcd7261d65bb3ebf8bbe74803eb312c8b653a90c3522d0a3b1f498492"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__water.bin.gz",
+        "bytes": 54250,
+        "sha256": "bf9f43b765108ff0808bd90b97a2e41975dd79ce85646d07990e4e6263533478"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/dex__wind.bin.gz",
+        "bytes": 54576,
+        "sha256": "76e9341f24a8b9179fcb4ba4d12cc330b526c094746384a441056b306d089610"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__cha.bin.gz",
+        "bytes": 56706,
+        "sha256": "2c72795550edf1104578057dc7c2c3c9bf6712638ecacf33dc51fbe5ecd3832a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__dex.bin.gz",
+        "bytes": 54138,
+        "sha256": "023a34ded7d07093db6b0dedcf5abd26a9d9ce360e646fa97b79634ba299f213"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__fire.bin.gz",
+        "bytes": 52181,
+        "sha256": "be09aa6379a3d29edd58eeecf34f15e91a92021310a92e61bdf93ea1c79cce1a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__int.bin.gz",
+        "bytes": 52879,
+        "sha256": "f2350fb72f1459948b7b194f03479979514a893c8deead874d3dd5677c8537d7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__ki.bin.gz",
+        "bytes": 50739,
+        "sha256": "3e59927b079aaccdd81e27046875a88529451c3bbae14763e5deccc5114c2e5f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__life.bin.gz",
+        "bytes": 59956,
+        "sha256": "bc51f825a0d8f7b8c48557776b14b07de0af55106c0a85497713f3f576492142"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__str.bin.gz",
+        "bytes": 54507,
+        "sha256": "4059c3b58d66deab75a6fd80ce7b56c204728457a82f517c3d640029ba29674d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__vit.bin.gz",
+        "bytes": 56554,
+        "sha256": "ec653c26201e2e699ad8f41785dff27063ff251074b92d5ac007f7eda3ab3307"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__water.bin.gz",
+        "bytes": 52436,
+        "sha256": "e8dba56574ed55776ae16d2d653ca702c58038c6d346151c60b20dc15d56e389"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/earth__wind.bin.gz",
+        "bytes": 52261,
+        "sha256": "210bb5f29042c03e54a3c32f897cb6f79c8ec6ec45324d469e7770685e207219"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__cha.bin.gz",
+        "bytes": 56317,
+        "sha256": "4c3ccbdc2de0a884ebc3633f73acd77afe33e2a5bef43ba998951430d828f5cc"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__dex.bin.gz",
+        "bytes": 54147,
+        "sha256": "c9887f834ebd5fde6d00c50eaa172f63cc85004f51e7ab55f9f97f82dcdce1cc"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__earth.bin.gz",
+        "bytes": 52243,
+        "sha256": "5a73842b13bdedcc8806d06f26de70cf07dad9a0797c2a5b71896dba2b005836"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__int.bin.gz",
+        "bytes": 53216,
+        "sha256": "4fc7a75091a48c3f900e326e123f9115fb13aec8fc4a6adbe0260c4eae4687c9"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__ki.bin.gz",
+        "bytes": 50817,
+        "sha256": "7e4941589d4caaba52e6ec6a4251519de921d02a8d6492ec9edc9a353d90273c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__life.bin.gz",
+        "bytes": 59904,
+        "sha256": "94a4eb84fae06382a63b50bca460f34984010f34f3d4719c7249d88d95c58cf0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__str.bin.gz",
+        "bytes": 54836,
+        "sha256": "8c4627a11f0767ef8d7a84c8fd46445334229f2f2b7935e56f481731039cdcb3"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__vit.bin.gz",
+        "bytes": 56339,
+        "sha256": "a1805f37df09ef7f2916b93854395dd95779cb552e987823d02fa3f23f927037"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__water.bin.gz",
+        "bytes": 52740,
+        "sha256": "b37b3ece2d96d22bdd4e4cc783875c6eca74b3ad532731de7d6bcab2f405feaa"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/fire__wind.bin.gz",
+        "bytes": 52226,
+        "sha256": "d0fe7d6fea299761966d449be751b71b9221276426411e73fd879dc33cb27328"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__cha.bin.gz",
+        "bytes": 55827,
+        "sha256": "291859d02a10d97d198452acd773fcce4d2c5ccf7ebeacd0a27bc0e9b715cb7b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__dex.bin.gz",
+        "bytes": 54850,
+        "sha256": "a3cb3b338f13ea6811fe6248748be5a2a007430621fc10d00724212d340d7796"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__earth.bin.gz",
+        "bytes": 52891,
+        "sha256": "0595e594276373d837a5e6d6b9a535f04675d29672e9ea8515ff4529a1c5cf84"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__fire.bin.gz",
+        "bytes": 53209,
+        "sha256": "2c08ef160637e59bf6a50b0bad54df46e1c3908649f45b714c1b56148ce5f7df"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__ki.bin.gz",
+        "bytes": 50903,
+        "sha256": "a318e09495f09ee926bdc67a00ed455cf3d4dd9ee41b928512e24512de23d752"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__life.bin.gz",
+        "bytes": 59763,
+        "sha256": "91fa3e7089e6cbc8968276b1d87e075be0c875c511253a633e207d244abaeda5"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__str.bin.gz",
+        "bytes": 55552,
+        "sha256": "3d5b2a7aede7272b83b3c3673a31f43e0b3fef535c187602bdf826e483b65791"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__vit.bin.gz",
+        "bytes": 55590,
+        "sha256": "3f87f822496fdc2c04150d3b9aeb9860eebf8b601b958a7cf5faefb5c93b98ba"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__water.bin.gz",
+        "bytes": 53134,
+        "sha256": "c092e8741d095419b93adb9b10d058f6289265a2a841e267d3f77d4977e16362"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/int__wind.bin.gz",
+        "bytes": 52951,
+        "sha256": "d43871a6d300ba34b383e908d90049c85118ab6b22211b2bad227deb21b1cb90"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__cha.bin.gz",
+        "bytes": 50881,
+        "sha256": "49d79beb5aabc6ed32deb1fd16b679a979e94f3cf73aa4a1a37a4aeb1837f9cd"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__dex.bin.gz",
+        "bytes": 50513,
+        "sha256": "0e5fb6514df589e58ef48a20cd2703e2e5b43f3d596d41ec612a4a037bd0e83f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__earth.bin.gz",
+        "bytes": 50772,
+        "sha256": "80183e9515f136a7ffe0f5a089db65fc24921e349c2a595b35e9cd6c56553f4d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__fire.bin.gz",
+        "bytes": 50817,
+        "sha256": "4e7597a7f2172782b71cae0b0f042397871c8e552aaf87cb59b11589d726821d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__int.bin.gz",
+        "bytes": 50911,
+        "sha256": "2b4b975dc57b96cd95d9849ccf7e91652a5c4559b7797a6b0e674f3fddcac415"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__life.bin.gz",
+        "bytes": 54228,
+        "sha256": "67feaea105f581b615426bb766788c08a9ca54f785bb1b11269b7b0be6f5637e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__str.bin.gz",
+        "bytes": 50870,
+        "sha256": "7ceb3d979a4dac844457a7b342834f64d2e87f6c57f3df6414600d76a0fc14f7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__vit.bin.gz",
+        "bytes": 50918,
+        "sha256": "0146782f959fbeca78c44e54253ac7f77a92833d81c6e1ca1875c6a3e708aa58"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__water.bin.gz",
+        "bytes": 50785,
+        "sha256": "54f9aea457e81473c9fb212ef913592837ad2f4d3301f497c55b3f6e6cbc44f2"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/ki__wind.bin.gz",
+        "bytes": 50762,
+        "sha256": "cd98792ba4a2902613bd25131214ab301860082df30b47c9c4e0526b8acfdeb0"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__cha.bin.gz",
+        "bytes": 60603,
+        "sha256": "6145ad618b399e32382d7f4b720878fa3dc5c7ea20e0b7231045a811d5aa7831"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__dex.bin.gz",
+        "bytes": 60815,
+        "sha256": "97515d629e23a7c4e30eca8d90a41832b9d10a5c2cbc4ece7b53e7f056fc007f"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__earth.bin.gz",
+        "bytes": 59964,
+        "sha256": "842dcd61730d4c989910e985ec1492c09da61e4e77ec9693f9a368a154a5e1c6"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__fire.bin.gz",
+        "bytes": 59880,
+        "sha256": "a077cf3b46d1b15ca3e46e21cd7db2d84b2bef2e7d17659322b8b4c2d725182c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__int.bin.gz",
+        "bytes": 59762,
+        "sha256": "9d4fe6aa2b2c0254bfc27d1db8f43ac6a7233f34adfb07607f8de13eb78482f7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__ki.bin.gz",
+        "bytes": 54212,
+        "sha256": "2e03789e99d2980b0c6236a35367cad9e7e3a4f63cf86d1cb6033cbd73b30e58"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__str.bin.gz",
+        "bytes": 60589,
+        "sha256": "0592fa8cc6ca27b73ae8ef9c1c64ebe2074c877bab430b6f3262f3602f6fdcf7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__vit.bin.gz",
+        "bytes": 60232,
+        "sha256": "58746fb72e58f004bd440306395de430527de13ddfd00474653d390fd8f6420a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__water.bin.gz",
+        "bytes": 59925,
+        "sha256": "e782999456454fba3746d41339f066d2f9d3e07de1d330bf9ca32e77a2950cca"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/life__wind.bin.gz",
+        "bytes": 59890,
+        "sha256": "19cbbcd3adca5b2d01f645f69fc11ebb979ccfc3651a446127a3e889bb405db9"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__cha.bin.gz",
+        "bytes": 54117,
+        "sha256": "9a181f45a740bd9862f51e34612af4664a4e5d059ee9f64ddc644c0332d1a755"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__dex.bin.gz",
+        "bytes": 52030,
+        "sha256": "acaec89720214e1477d9827d8293814f5105b82f01be76114dad0ce22fa24293"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__earth.bin.gz",
+        "bytes": 54472,
+        "sha256": "6d85e61b1ce63167e31829bc827fbba6dc08248773a7779548711042905d3f65"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__fire.bin.gz",
+        "bytes": 54821,
+        "sha256": "3d1265f66dd85bfa3c8015cf542c98a064b3b24f5108a459ae34279cdb2ffe1c"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__int.bin.gz",
+        "bytes": 55529,
+        "sha256": "3e55cfbeaa6fb7b38fd3ca6cf0bf6029600b2f1b03ba04cdfa4761bc51058e2a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__ki.bin.gz",
+        "bytes": 50911,
+        "sha256": "5989d07317c271dab8da9827fefe286824414adfbc69851d8d33b86a4d128116"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__life.bin.gz",
+        "bytes": 60593,
+        "sha256": "0a2c095e32f82eea239b9c04df8a97cb7a9d7119f3260a7f82d982c8f8e5d0d3"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__vit.bin.gz",
+        "bytes": 53042,
+        "sha256": "24e63cc29f1da1d6d9f460af0895d5cb6141b4b1f0f0d7040cd503e754b1d5d7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__water.bin.gz",
+        "bytes": 54947,
+        "sha256": "8f41e43d94a12c850ff5b58fd0f964793158e63695a2e88e065a354083215dd7"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/str__wind.bin.gz",
+        "bytes": 55107,
+        "sha256": "ae73ecfc2f9b9b22baad463b24ea85908aa65db39dfa6397e42878b7dac6aec1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__cha.bin.gz",
+        "bytes": 57412,
+        "sha256": "9498eefd419640005c1aa78317e4b149495361d423274bf629a90ff8c5b288eb"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__dex.bin.gz",
+        "bytes": 54981,
+        "sha256": "61a0d4a0fc1d9e3507d714ddae115d3c7ecb079676a11c9e9e07c2043215e120"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__earth.bin.gz",
+        "bytes": 56562,
+        "sha256": "4882f722394b8f460d27cf6999dfa1d6785ae999a97cd51fa55f689e102ea40b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__fire.bin.gz",
+        "bytes": 56385,
+        "sha256": "f67c9cf2fe5d296bf2f5c0c15cbe241a9b7bae101b9f4917cec12e7f93b26cdb"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__int.bin.gz",
+        "bytes": 55626,
+        "sha256": "3062dadc2d83a78efcd346be5db934996352c4e2b681568650a731cc1d9206eb"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__ki.bin.gz",
+        "bytes": 50947,
+        "sha256": "02b4bc5ee9ed95b555b2b028ab63db2933cb44756465b13bd2c4068fa0daf183"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__life.bin.gz",
+        "bytes": 60213,
+        "sha256": "b21a8a85056f161ea0ecaf3472160c5c3bcad4566716d97a58e9223988149da2"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__str.bin.gz",
+        "bytes": 53053,
+        "sha256": "1c56199ca52d91c35de783b99513549a777c7aa9073cb9709c800bd9983a2978"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__water.bin.gz",
+        "bytes": 57418,
+        "sha256": "de10e3d2c9f4b7b4cca922f7f60837bd0455f37ba970e1a1b96c21da7806fe2e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/vit__wind.bin.gz",
+        "bytes": 56053,
+        "sha256": "04b7e47bcebeb9b5022bdb1b407426cbd3abd5191fca66ae088e90f506e0fe0e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__cha.bin.gz",
+        "bytes": 57282,
+        "sha256": "9913d8daa576d920683478fd4d4c96ad5df61a47bb2df0d305813ef20a6d26ba"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__dex.bin.gz",
+        "bytes": 54242,
+        "sha256": "999be8bb3168b20f4259e2bb12cb23422ab5c7090281bbf5a62573c8aee31b9e"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__earth.bin.gz",
+        "bytes": 52437,
+        "sha256": "2a463168499dd35f01f91359cc92c14b1e239cbf6e2ae666f805b8b21df27000"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__fire.bin.gz",
+        "bytes": 52724,
+        "sha256": "5bf768b94b1e72b96a545037efde20f5e39ab59c2e36f9641517797ca35961ab"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__int.bin.gz",
+        "bytes": 53169,
+        "sha256": "4e7b7b2963d50d72bf51086509a4dc5d5274d166e663bd5eafa285333cf5c488"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__ki.bin.gz",
+        "bytes": 50818,
+        "sha256": "521c16c01b141605c7c1c69d4c12a6aeb7c678fe11046e4bf2602b4aa42f1eed"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__life.bin.gz",
+        "bytes": 59940,
+        "sha256": "39054b5689cb95b2a1176b10f153c99282d0e58132ab449b2571ebf6ba17dfff"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__str.bin.gz",
+        "bytes": 54974,
+        "sha256": "450086e68a7173c1e4bf179bd4d7708f090a26385e79a4252787e652208a526b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__vit.bin.gz",
+        "bytes": 57454,
+        "sha256": "86fe778e52181fb6594686a76e7b021163fd3ab3532b5b1f6f6b9c7159d9b802"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/water__wind.bin.gz",
+        "bytes": 52659,
+        "sha256": "87ec71f0c5ebb5b9a934ec01d09342a24280a7113cb231ddd835b9de69bcf94d"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__cha.bin.gz",
+        "bytes": 55416,
+        "sha256": "138a1a9d50dcea238fa535c18d2c3882c6b9fdefbe13e6eeec4352b937f0d639"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__dex.bin.gz",
+        "bytes": 54464,
+        "sha256": "b974e42e66b64f77fdc3517868f57c13ada746f1ceef124805db5bd8f986a9b6"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__earth.bin.gz",
+        "bytes": 52283,
+        "sha256": "3db1a3348073786afb28773ace7393b6a9573aca6c5037b0bbd38e5657972267"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__fire.bin.gz",
+        "bytes": 52214,
+        "sha256": "2e68925739829e59fe7c03d5ba3710f9ff7bb7f4abdc7c7a4269a01a3099dd85"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__int.bin.gz",
+        "bytes": 52939,
+        "sha256": "6761fd3540b67371298a2f9ef1db88de2935213ad566e8a150a74a492044d47b"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__ki.bin.gz",
+        "bytes": 50759,
+        "sha256": "e828cf7c4adc21225c5fe0bde049b636c8b238eb841352036fe6b175afdfc3c1"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__life.bin.gz",
+        "bytes": 59914,
+        "sha256": "20c5eb93a5477d0e11254e6b8af2c715c06a69b5c762456f4cfc2da255c4f750"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__str.bin.gz",
+        "bytes": 55029,
+        "sha256": "47185a2b867b661265ae32b96263fd691e282efc42804f2c0ee7e5e1db511474"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__vit.bin.gz",
+        "bytes": 56080,
+        "sha256": "c920d0e29f264e86bfc1c84f86a1621099fac559635d6c96f1216a713f9c203a"
+      },
+      {
+        "file": "data/compact_search_v2/recommend_sum_top/normal/wind__water.bin.gz",
+        "bytes": 52629,
+        "sha256": "93524ebe890778605c8ef9afa37da117492a0be08cbc5b143dc04ccd74538de8"
+      },
+      {
+        "file": "data/compact_search_v2/record_model_fingerprint.json",
+        "bytes": 790,
+        "sha256": "0a5999ae90e6aceb4a56fdbdaf9825c43a85e0a354606766fb87895016ad0129"
+      },
+      {
+        "file": "data/jinpo_eiketsu_master.csv",
+        "bytes": 208557,
+        "sha256": "c65cfdc860f6d957f53519978208cb35f9701c1d7e1b019c0a534e07cd4b4b8b"
+      },
+      {
+        "file": "data/jinpo_latest_update_summary.json",
+        "bytes": 1313,
+        "sha256": "1f1624a2516a8ce9af2995ca11f263225583b8a2a63d21e5c0d6712ee1a5462d"
+      },
+      {
+        "file": "tools-next/hero_internal_id_map.json",
+        "bytes": 34416,
+        "sha256": "184fbe0f0fca2a4f19323316b8a0c328a19241e2793565d31da63d679db13c89"
+      }
+    ]
+  },
+  "audits": {
+    "all_pass": true,
+    "reports": [
+      {
+        "file": "_jinpo-next-report/build_report.json",
+        "status": "PASS",
+        "sha256": "ab6ea2fe0dc1c831b39e465fac66b799cf8e8c362fd6b9fdf1582f36bb6d330d"
+      },
+      {
+        "file": "_jinpo-next-report/compact_stats_report.json",
+        "status": "PASS",
+        "sha256": "907818d0eadcdd52a74b91343aa0d9b7e2a8cd4623a0d70fecd17bc97a3e27ad"
+      },
+      {
+        "file": "_jinpo-next-report/cycle_pair_factor4_audit.json",
+        "status": "PASS",
+        "sha256": "c9445eaa73813fd5d5f34827a0d640a2376b705066e6a184db06efce7160aab5"
+      },
+      {
+        "file": "_jinpo-next-report/cycle_representative_repair_report.json",
+        "status": "PASS",
+        "sha256": "dd1562f012b3022fe521435e442e1e5f2d52a84e8daaad6de11b491277c5cb27"
+      },
+      {
+        "file": "_jinpo-next-report/full_rebuild_reproducibility_report.json",
+        "status": "PASS",
+        "sha256": "5bde8406658c41054d68dcfc11e45e0a01f0d8572aa5b0d6d41cbb2c1132474d"
+      },
+      {
+        "file": "_jinpo-next-report/fullmax_search_audit_report.json",
+        "status": "PASS",
+        "sha256": "1fb29d01ae4a666d951a8da161f785f321313b5d02a2299a42def3924eb758e6"
+      },
+      {
+        "file": "_jinpo-next-report/fullmax_search_report.json",
+        "status": "PASS",
+        "sha256": "54aa0338db56556efabf3239d4b404de9e48ed408bd872fbff206dfb5b9df9c4"
+      },
+      {
+        "file": "_jinpo-next-report/generation_report.json",
+        "status": "PASS",
+        "sha256": "a6ce51c56c43180847fc489cae8e98938aaaa4a20d9ead41d3f444853a0efcda"
+      },
+      {
+        "file": "_jinpo-next-report/incremental_equivalence_report.json",
+        "status": "PASS",
+        "sha256": "facb52f2839f666f6be6932231afa0487d9b944443a6d8560f7d09cf18db8415"
+      },
+      {
+        "file": "_jinpo-next-report/independent_combo_factor4_audit.json",
+        "status": "PASS",
+        "sha256": "36265a6d7669dd2305b5afbe6af654ade17e1153e9cea0dda29416cd8a060ace"
+      },
+      {
+        "file": "_jinpo-next-report/independent_subset_completeness.json",
+        "status": "PASS",
+        "sha256": "f0d720a6d513d69007c9e6ea1b0ec82b06737195d1a329598b16c89ef245c89b"
+      },
+      {
+        "file": "_jinpo-next-report/manifest_file_integrity_audit.json",
+        "status": "PASS",
+        "sha256": "96010defbe47e4b7793baf1b4e8ef0ab5a2c7be65ba6a4500df85acfae1101e5"
+      },
+      {
+        "file": "_jinpo-next-report/master_sync.json",
+        "status": "PASS",
+        "sha256": "ed16d07914447faf7162191c0086d47f5475bb472906ae066f32bc2f06f5f3e3"
+      },
+      {
+        "file": "_jinpo-next-report/pipeline_guard_alignment_report.json",
+        "status": "PASS",
+        "sha256": "1d6da4162faaebeb35a01957e91262028300d55f23c1917e7ac36bf014c3b227"
+      },
+      {
+        "file": "_jinpo-next-report/recommend_sum_top_report.json",
+        "status": "PASS",
+        "sha256": "403e75e827632f273b3a0a18a3da83a7dcb40fb2764a640e7560f9f0dac25676"
+      },
+      {
+        "file": "_jinpo-next-report/repair_delta_audit.json",
+        "status": "PASS",
+        "sha256": "b7a87c493711d1cf13d321cb034bccac3fbd0a08d397ebdfb6c369b6cee2792a"
+      },
+      {
+        "file": "_jinpo-next-report/runtime_engine_sample_audit.json",
+        "status": "PASS",
+        "sha256": "c413fc0b4807340198938e433b54465164139101bef6963820d65bc7881e287c"
+      },
+      {
+        "file": "_jinpo-next-report/search_integrity_report.json",
+        "status": "PASS",
+        "sha256": "e833e5d3b2e1cd6e7007132d2c65c3a31be7dbcd174aedbd8a92bca933a5a93b"
+      },
+      {
+        "file": "_jinpo-next-report/source_provenance_report.json",
+        "status": "PASS",
+        "sha256": "0f8c32c1af118622c7187328e8a47896be114ea4204ed1bf79bfb6c3cd12f0e7"
+      }
+    ]
+  },
+  "github": {
+    "repository": "",
+    "source_commit_sha": "",
+    "ref_name": "",
+    "event_name": "",
+    "actor": "",
+    "run_id": "",
+    "run_number": "",
+    "run_attempt": ""
+  },
+  "integrity_sha256": "c3aeb7cabe53b8232b9f468bdeddb5e6033619ee110365c3446675c5f04edffd"
+}

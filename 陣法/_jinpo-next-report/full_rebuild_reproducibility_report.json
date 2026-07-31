@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "before_files": 781,
+  "after_files": 781,
+  "changed_files": [
+    {
+      "file": "data/compact_search_v2/jinpo_unified_search_manifest.json",
+      "before": [
+        207146,
+        "5404063d5af1bb8e727536404ab3ae6177ee60934cf3e4abb0423f303db0d216"
+      ],
+      "after": [
+        207183,
+        "a975b84e4cc5c344fbde4b6621c83e5c196b123f572210a4a9111692f12a1ffa"
+      ]
+    }
+  ],
+  "changed_count": 1,
+  "binary_search_artifacts_changed": 0,
+  "authoritative_full_pipeline": "tools-next/build_jinpo_next.py",
+  "search_binary_payload_changes": 0,
+  "manifest_change_reason": "公式パイプラインによるnotes順序・generator.inputs・fullmax metadata順序の正規化"
+}

@@ -422,7 +422,7 @@ def main():
     required_worker_fragments = [
         'q.limit||500', 'Top500正式運用', '_heroNameToIds', 'ownedInternalIds',
         'eiketsu_internal_ids:internalIds.join', "d.type==='lookupExact'",
-        'function lookupExact(q,token)', 'function exactBondIds(names,m)', "cache:'no-cache'",
+        'function lookupExact(q,token)', 'function exactBondIds(names,m)', "cache:'no-store'",
         'function normalFiveSixUnsupported(q)', "reason:'normal_5_6_not_supported'"
     ]
     for frag in required_worker_fragments:
