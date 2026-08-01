@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト総合案内 v3.3.0
+ * 歩き巫女 サイト総合案内 v3.9.0
  *
  * - たいらの野望トップページと、カウンター配下の現行ページを案内する。
  * - ページ名の誤字・脱字・かな入力・ラフな目的表現を会話側の共通正規化と連携して扱う。
@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.3.0';
+  var VERSION='3.9.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -284,12 +284,31 @@
     if(!subject||/^(?:この|その|あの|例の|たいらの野望|天下統一奇譚|修羅の間|天下武技大会)$/.test(subject))return false;
     return true;
   }
-  function correctionCue(text){return /(?:じゃなくて|ではなくて|じゃなく|ではなく|そっちじゃない|それじゃない|違う[、,\s])/.test(S(text));}
-  function correctionTail(text){
-    var t=S(text),m=t.match(/(?:じゃなくて|ではなくて|じゃなく|ではなく|そっちじゃない|それじゃない|違う[、,\s]*)(.+)$/);
-    return m?S(m[1]):'';
+  // 同じ発言の途中で「いや」「やっぱ」「そこじゃない」などと言い直した時は、
+  // 最後の訂正部分を優先する。訂正後が機能名だけなら、訂正前の単一ページ主語だけを安全に補う。
+  function siteCorrectionParts(text){
+    var t=S(text),re=/(?:じゃなくて|ではなくて|じゃなく|ではなく|そっちじゃない|それじゃない|そこじゃない|ここじゃない|あっちじゃない|(?:^|[、,。？?！!…．.\s])(?:あ[、,\s]*やっぱ(?:り)?|やっぱ(?:り)?|いや(?:違う)?|訂正(?:すると)?|ごめん(?:ね)?)[、,\s…・:：]*)/g,m,best=null;
+    while((m=re.exec(t))){
+      var tail=S(t.slice(re.lastIndex));
+      if(!tail||/^(?:でも|まあ|まー)[、,\s]/.test(tail))continue;
+      best={left:S(t.slice(0,m.index)),tail:tail,index:m.index};
+    }
+    return best;
   }
-  function deicticOpenCue(text){return /^(?:それ|そこ|そのページ|そっち|これ|このページ)?[、,\s]*(?:を)?(?:開いて|開けて|見せて|出して|行きたい|連れてって)[。！!？?]*$/.test(normalizeInput(text));}
+  function correctionCue(text){return !!siteCorrectionParts(text);}
+  function correctionTail(text){
+    var info=siteCorrectionParts(text);if(!info)return'';
+    var tail=info.tail,tailItems=mentionedItems(tail);
+    if(!tailItems.length){
+      var leftItems=mentionedItems(info.left);
+      if(leftItems.length===1&&featureIntents(tail,leftItems[0]).length)tail=leftItems[0].name+' '+tail;
+    }
+    return S(tail);
+  }
+  function deicticOpenCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:うん|はい|じゃあ|じゃ|では|それで|で|あと|それと|よし|なら)[、,\s]*)*(?:それ|そこ|そのページ|そっち|これ|このページ|あれ|あそこ|あのページ|あっち)?[、,\s]*(?:を)?(?:開いて|開けて|見せて|出して|行きたい|連れてって)[。！!？?]*$/.test(t);
+  }
 
   function featureIntents(text,item){
     var t=normalizeInput(text),page=sourcePage(item),facts=page&&page.facts||{},out=[];
@@ -309,8 +328,8 @@
     add('entry',/(?:参加|エントリー|メンバー登録|徒党登録|登録方法|何人|人数)/.test(t));
     add('schedule',/(?:日程|日時|時間|時刻|候補日|開催日|複数.*(?:日|候補)|何日)/.test(t));
     add('filter',/(?:絞り込|絞れ|絞れる|フィルタ|地域|町.*(?:選|解除|絞)|検索条件)/.test(t));
-    var shortReflectQuestion=!!(item&&(item.id==='stats'||item.id==='retainer')&&/(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石)(?:は|って|だと|なら|も)?[？?。！!]*$/.test(t));
-    add('reflect',/(?:反映|連携|取り込|入れられ|入れれる|使える|表に入|合計を入|能力計算.*(?:九十九|魔導|鎮魂|鬼神石)|家臣.*(?:九十九|魔導|鎮魂|鬼神石))/.test(t)||shortReflectQuestion);
+    var shortReflectQuestion=!!(item&&(item.id==='stats'||item.id==='retainer')&&/(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石)(?:だけ|のみ|しか)?(?:は|って|だと|なら|も)?[？?。！!]*$/.test(t));
+    add('reflect',/(?:反映|連携|取り込|取り込みたい|入れられ|入れれる|入れたい|いれたい|入らない|入れられない|いれられない|使える|使えない|使いたい|表に入|合計を入|能力計算.*(?:九十九|魔導|鎮魂|鬼神石)|家臣.*(?:九十九|魔導|鎮魂|鬼神石)|(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石).*(?:能力計算|家臣).*(?:に|へ)?入る|(?:能力計算|家臣計算).*(?:に|へ)?入る|(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石).*(?:入れる|いれる).*(?:なら|場合|どっち|どれ))/.test(t)||shortReflectQuestion);
     add('share',/(?:共有|URL|リンクをコピー|URL.*(?:送|渡)|送れる|JSON|書き出|読込|読み込)/i.test(t));
     add('save',/(?:保存|画像|スクショ|スクリーンショット|ダウンロード)/.test(t));
     add('zoom',/(?:拡大|縮小|倍率|ズーム|100%|125%|150%|175%|200%)/.test(t));
@@ -344,6 +363,12 @@
     var page=sourcePage(item),facts=page&&page.facts||{},t=normalizeInput(text),out=[],seen={};
     function add(key){var body=S(facts[key]);if(body&&!seen[body]){seen[body]=1;out.push(body);}}
     if(item&&(item.id==='stats'||item.id==='retainer')){
+      // 「九十九だけ？」のように“それ以外もあるか”を聞かれた場合は、
+      // 個別要素だけでなく計算機全体の反映対象を答える。
+      if(/(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石).*?(?:だけ(?!ど|れ)|のみ|しか)/.test(t)){
+        add('reflect');
+        return out;
+      }
       if(/九十九/.test(t))add('reflect_tsukumo');
       if(/魔導結晶|魔導/.test(t))add('reflect_mado');
       if(/鎮魂符/.test(t))add('reflect_chinkon');
@@ -352,10 +377,23 @@
     if(!out.length)add('reflect');
     return out;
   }
+  function featureSubjectIds(text){
+    var t=normalizeInput(text),out=[];
+    function add(id,re){if(re.test(t)&&out.indexOf(id)<0)out.push(id);}
+    add('tsukumo',/九十九/);
+    add('mado',/(?:魔導結晶|魔導)/);
+    add('chinkon',/鎮魂符/);
+    add('kishin',/鬼神石/);
+    return out;
+  }
+  function featureSubjectLabel(id){
+    return id==='tsukumo'?'九十九':id==='mado'?'魔導結晶':id==='chinkon'?'鎮魂符':id==='kishin'?'鬼神石':'';
+  }
+
   function featureQuestionTarget(text,recent,cur){
     var t=normalizeInput(text),detailed=findItemDetailed(t),purpose=purposeScores(t),item=detailed.item||(purpose[0]&&purpose[0].item)||null;
     // 計算機を案内した直後の「九十九も入れれる？」は、九十九一覧ではなく反映先の計算機を主語にする。
-    if(recent&&(recent.id==='stats'||recent.id==='retainer')&&/(?:反映|入れられ|入れれる|いれられ|いれれる|使える|表に入)/.test(t)&&featureIntent(t,recent))return recent;
+    if(recent&&(recent.id==='stats'||recent.id==='retainer')&&/(?:反映|入れられ|入れれる|いれられ|いれれる|入れたい|いれたい|使える|使いたい|取り込みたい|表に入)/.test(t)&&featureIntent(t,recent))return recent;
     if(/能力計算|能力計算機/.test(t)&&featureIntent(t,BY_ID.stats))item=BY_ID.stats;
     else if(/家臣(?:計算|計算機|ステ|能力)/.test(t)&&featureIntent(t,BY_ID.retainer))item=BY_ID.retainer;
     if(item&&featureIntent(text,item))return item;
@@ -371,7 +409,7 @@
       seen[item.id]=1;out.push({item:item,intents:intents});
     }
     // 反映先の計算機が直前主題なら、部品名が書かれていても計算機側の操作として答える。
-    if(recent&&(recent.id==='stats'||recent.id==='retainer')&&/(?:反映|入れられ|入れれる|いれられ|いれれる|使える|表に入)/.test(t)){
+    if(recent&&(recent.id==='stats'||recent.id==='retainer')&&/(?:反映|入れられ|入れれる|いれられ|いれれる|入れたい|いれたい|使える|使いたい|取り込みたい|表に入)/.test(t)){
       add(recent);if(out.length)return out;
     }
     var explicit=mentionedItems(t);
@@ -417,6 +455,124 @@
     if(!out.length)add(cur);
     return out;
   }
+
+  function siteClauseLead(text){
+    return S(text).replace(/^(?:あと|それと|それから|じゃあ|では|それなら|また|一方(?:で)?|反対に)[、,\s]*/,'');
+  }
+  function siteClauseFeatureLead(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(/^(?:前者|後者|最初の方|最初のほう|二つ目|2つ目|もう片方)(?:は|って|だと|なら|も)?[？?。！!]*$/.test(t))return true;
+    return /^(?:それ|そっち|こっち|その方|この方|前者|後者)?(?:は|って|だと|なら|も)?[、,\s]*(?:何個|いくつ|最大|保存|画像|スクショ|並べ替|ソート|優先|反映|入れられ|入れれる|使える|共有|URL|リンク|拡大|縮小|ズーム|リセット|初期化|入力|何を入力|何人|人数|日程|日時|履歴|音|紙吹雪|シャッフル|抽選|種類|形式|どこに|どこへ|戻り先|ダウンロード)/.test(t);
+  }
+  // 読点で区切られた文を無条件には分割しない。
+  // 右側に別ページ名、または明確な別機能質問がある時だけ節境界として採用する。
+  function splitSiteFeatureClauses(text){
+    var raw=normalizeInput(text);if(!raw||raw.length<8||raw.length>420)return [];
+    var re=/[、,；;。]|(?:けれども|けれど|だけど|ですが|けど|一方で)/g,m,last=0,parts=[];
+    while((m=re.exec(raw))){
+      var right=siteClauseLead(raw.slice(re.lastIndex));
+      if(!right)continue;
+      var rightItems=mentionedItems(right);
+      if(!rightItems.length&&!siteClauseFeatureLead(right))continue;
+      var left=S(raw.slice(last,m.index));
+      if(left)parts.push(left);
+      last=re.lastIndex;
+    }
+    var tail=S(raw.slice(last));if(tail)parts.push(tail);
+    parts=parts.map(siteClauseLead).filter(Boolean);
+    return parts.length>=2&&parts.length<=5?parts:[];
+  }
+  function featureCuePhrase(intent){
+    var map={
+      selection_count:'何個まで選べる',types:'何種類ある',categories:'何が選べる',history:'履歴は使える',random:'シャッフルできる',entry:'何人登録できる',schedule:'日程を設定できる',filter:'絞り込みできる',reflect:'反映できる',share:'共有できる',save:'保存できる',zoom:'拡大できる',reset:'リセットできる',sort:'並べ替えできる',columns:'何が見られる',inputs:'何を入力する',back:'どこに戻る',related:'どこから行ける',advanced:'上級機能はある',download:'ダウンロードできる'
+    };
+    return map[intent]||'';
+  }
+  function commonRequestFeature(requests){
+    var keys=[];(requests||[]).forEach(function(req){(req.intents||[]).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);});});
+    return keys.length===1?keys[0]:'';
+  }
+  function siteClauseFeatureGroups(text,recent,cur,candidates){
+    var parts=splitSiteFeatureClauses(text);if(parts.length<2)return [];
+    var groups=[],carryItem=recent||cur||null,carryFeature='';
+    for(var i=0;i<parts.length;i++){
+      var originalPart=parts[i],target=correctionTail(originalPart)||originalPart;
+      target=siteClauseLead(target);
+      var explicit=mentionedItems(target),selected=selectFromCandidates(target,candidates||[]),requests=[];
+      if(selected){
+        var selectedIntents=featureIntents(target,selected);
+        if(!selectedIntents.length&&carryFeature){
+          var selectedCue=featureCuePhrase(carryFeature);
+          if(selectedCue)selectedIntents=featureIntents(target+' '+selectedCue,selected);
+        }
+        if(selectedIntents.length)requests=[{item:selected,intents:selectedIntents}];
+      }
+      if(!requests.length)requests=featureRequests(target,carryItem,cur);
+      // 「九十九は保存できるけど魔導は？」の後半は、直前節の観点を引き継ぐ。
+      if(!requests.length&&carryFeature&&explicit.length&&/(?:は|って|だと|なら|も|どう|同じ|一緒|だけ|のみ)[？?。！!]*$/.test(target)){
+        var cue=featureCuePhrase(carryFeature);
+        if(cue)requests=featureRequests(target+' '+cue,carryItem,cur);
+      }
+      if(!requests.length)return [];
+      groups.push({text:target,requests:requests});
+      carryFeature=commonRequestFeature(requests);
+      if(requests.length===1)carryItem=requests[0].item;
+      else if(explicit.length===1)carryItem=explicit[0];
+      else carryItem=null;
+    }
+    return groups.length>=2?groups:[];
+  }
+  function answerMixedSiteClauses(text,recent,cur,candidates){
+    var parts=splitSiteFeatureClauses(text);if(parts.length<2)return null;
+    var results=[],hasOpen=false,hasFeature=false;
+    for(var i=0;i<parts.length;i++){
+      var target=siteClauseLead(correctionTail(parts[i])||parts[i]);
+      var explicit=mentionedItems(target),selected=selectFromCandidates(target,candidates||[]),item=selected||(explicit.length===1?explicit[0]:null),r=null;
+      if(item){
+        var intents=featureIntents(target,item);
+        if(intents.length){r=answerFeatures(item,intents,true,target);hasFeature=true;}
+        else if(hasNavigationCue(target)||/(?:開いて|開けて|見せて|出して|行きたい|連れてって)/.test(target)){r=openItem(item);hasOpen=true;}
+      }
+      if(!r)return null;
+      results.push(r);
+    }
+    if(!hasOpen||!hasFeature)return null;
+    var answers=[],links=[],seenLink={},items=[];
+    results.forEach(function(r){
+      if(r.answer)answers.push(String(r.answer));
+      var d=r.data||{},id=String(d.siteItem||'');if(id&&items.indexOf(id)<0)items.push(id);
+      (r.links||[]).forEach(function(l){var k=String(l&&l.url||'');if(k&&!seenLink[k]){seenLink[k]=1;links.push(l);}});
+    });
+    return {handled:true,mode:'サイト総合案内',answer:answers.join('\n\n'),links:links,data:{siteItems:items,siteMixedClauses:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+  }
+
+  function answerClauseFeatureGroups(groups,withOpen){
+    groups=(groups||[]).filter(Boolean);if(groups.length<2)return null;
+    var entries=[],byId={},links=[],seenLink={},features=[];
+    groups.forEach(function(group){
+      (group.requests||[]).forEach(function(req){
+        if(!req||!req.item)return;
+        var id=req.item.id,entry=byId[id];
+        if(!entry){entry={item:req.item,bodies:[],seen:{}};byId[id]=entry;entries.push(entry);}
+        (req.intents||[]).forEach(function(intent){
+          if(features.indexOf(intent)<0)features.push(intent);
+          var bodies=intent==='reflect'?reflectBodies(req.item,group.text):[featureBody(req.item,intent,group.text)];
+          bodies.forEach(function(body){body=S(body);if(body&&!entry.seen[body]){entry.seen[body]=1;entry.bodies.push(body);}});
+        });
+      });
+    });
+    entries=entries.filter(function(x){return x.bodies.length;});if(!entries.length)return null;
+    if(withOpen!==false)entries.forEach(function(entry){
+      if(entry.item.id==='video')return;
+      var l=itemLink(entry.item),key=String(l.url||'');if(!seenLink[key]){seenLink[key]=1;links.push(l);}
+    });
+    var ids=entries.map(function(x){return x.item.id;}),answer='質問の対象ごとに分けると、こちらなのですよ。\n'+entries.map(function(entry){return '・'+entry.item.name+'：'+entry.bodies.join(' ');}).join('\n');
+    var data={siteItems:ids,siteFeatures:features,siteClauseBinding:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''};
+    if(ids.length===1)data.siteItem=ids[0];
+    if(features.length===1)data.siteFeature=features[0];
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:data};
+  }
+
   function answerFeatures(item,intents,withOpen,text){
     var list=[],seen={};(intents||[]).forEach(function(intent){
       var bodies=intent==='reflect'?reflectBodies(item,text):[featureBody(item,intent,text)];
@@ -428,7 +584,7 @@
     else answer+='\n'+list.map(function(x){return '・'+x.body;}).join('\n');
     var links=[];
     if(withOpen!==false&&!item.external&&item.id!=='video')links=[itemLink(item)];
-    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:{siteItem:item.id,siteFeature:list[0].intent,siteFeatures:list.map(function(x){return x.intent;}),verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:{siteItem:item.id,siteFeature:list[0].intent,siteFeatures:list.map(function(x){return x.intent;}),siteFeatureSubjects:featureSubjectIds(text),verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
   }
   function answerFeature(item,intent,withOpen,text){return answerFeatures(item,[intent],withOpen,text);}
   function answerFeatureRequests(requests,withOpen,text){
@@ -446,14 +602,33 @@
       if(withOpen!==false&&req.item.id!=='video'){var l=itemLink(req.item),k=String(l.url||'');if(!seenLink[k]){seenLink[k]=1;links.push(l);}}
     });
     if(!lines.length)return null;
-    return {handled:true,mode:'サイト総合案内',answer:'確認できる内容はこちらなのですよ。\n'+lines.join('\n'),links:links,data:{siteItems:items,siteFeatures:features,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    return {handled:true,mode:'サイト総合案内',answer:'確認できる内容はこちらなのですよ。\n'+lines.join('\n'),links:links,data:{siteItems:items,siteFeatures:features,siteFeatureSubjects:featureSubjectIds(text),verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
   }
 
+
+  function retainCandidateContext(result,candidates,selected,kind,sourceCandidates,conditions){
+    if(!result||!result.data||!selected)return result;
+    var ids=[],seen={};(candidates||[]).forEach(function(item){if(item&&!seen[item.id]){seen[item.id]=1;ids.push(item.id);}});
+    if(ids.length){
+      result.data.siteCandidates=ids;result.data.candidates=ids;
+      if(!Array.isArray(result.data.siteSourceCandidates)||!result.data.siteSourceCandidates.length){var src=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:candidates);result.data.siteSourceCandidates=src.map(function(x){return x.id;});}
+      if(kind==='comparison')result.data.siteComparison=ids.slice();
+      if(!Array.isArray(result.data.siteConditions)&&conditions&&conditions.length)result.data.siteConditions=conditionSnapshot(conditions);
+    }
+    result.data.selectedSiteItem=selected.id;
+    return result;
+  }
 
   function homeLink(){return link('トップページを開く','');}
   function itemLink(item){if(item.id==='video')return homeLink();return link(item.name+'を開く',item.path,item.external);}
   function sourcePage(item){return item&&SOURCE_PAGES[item.id]||null;}
   function usageOf(item){var page=sourcePage(item);return S(page&&page.usage||USAGE_BY_ID[item&&item.id]||item&&item.desc||'');}
+  function openItem(item){
+    if(!item)return null;
+    var answer=item.external?'「'+item.name+'」を別タブで開けるようにしました。':'「'+item.name+'」を開けるようにしました。';
+    if(item.id==='video')answer='トップページの動画再生ボタンから使えるのですよ。';
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:[itemLink(item)],data:{siteItem:item.id,siteOpen:true,verifiedSiteSource:!!sourcePage(item)}};
+  }
   function explainItem(item,withOpen){
     if(!item)return null;
     var answer='「'+item.name+'」ですね。'+item.desc;
@@ -465,10 +640,10 @@
     else if(withOpen!==false)answer+=' 下のボタンからページを開けます。';
     return {handled:true,mode:'サイト総合案内',answer:answer,links:withOpen===false?[]:[itemLink(item)],data:{siteItem:item.id,pageHelp:true,verifiedSiteSource:!!page}};
   }
-  function candidateClarification(candidates,lead){
+  function candidateClarification(candidates,lead,question){
     var unique=[],seen={};(candidates||[]).forEach(function(x){var item=x.item||x;if(item&&!seen[item.id]){seen[item.id]=1;unique.push(item);}});
     if(!unique.length)return null;
-    return {handled:true,mode:'サイト総合案内',answer:(lead||'近いページが複数あるのですよ。')+unique.map(function(x){return '「'+x.name+'」';}).join('、')+'のどれを開きたいですか？',links:unique.slice(0,8).map(itemLink),data:{needsClarification:true,candidates:unique.map(function(x){return x.id;}),siteCandidates:unique.map(function(x){return x.id;})}};
+    return {handled:true,mode:'サイト総合案内',answer:(lead||'近いページが複数あるのですよ。')+unique.map(function(x){return '「'+x.name+'」';}).join('、')+(question||'のどれを開きたいですか？'),links:unique.slice(0,8).map(itemLink),data:{needsClarification:true,candidates:unique.map(function(x){return x.id;}),siteCandidates:unique.map(function(x){return x.id;})}};
   }
   function compareItems(items){
     var unique=[],seen={};(items||[]).forEach(function(x){if(x&&!seen[x.id]){seen[x.id]=1;unique.push(x);}});if(unique.length<2)return null;
@@ -487,16 +662,33 @@
   }
 
   function historyGuideContext(history){
-    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastFeature='',lastIndex=-1,candidateIndex=-1;
+    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1;
     for(var i=h.length-1;i>=0;i--){
       var x=h[i];if(!x||x.role!=='assistant')continue;
       var meta=x.meta||{},data=meta.data||{};
       if(!lastFeature&&data.siteFeature)lastFeature=String(data.siteFeature||'');
+      if(!lastFeatureSubjects.length){
+        var subjectIds=Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects:[];
+        if(subjectIds.length)lastFeatureSubjects=subjectIds.filter(function(id){return !!featureSubjectLabel(id);}).slice(0,4);
+        if(!lastFeatureSubjects.length&&String(data.siteFeature||'')==='reflect')lastFeatureSubjects=featureSubjectIds(x.text);
+      }
+      if(!lastSelectedCandidate&&data.selectedSiteItem&&BY_ID[data.selectedSiteItem])lastSelectedCandidate=BY_ID[data.selectedSiteItem];
       if(!lastCandidates.length){
-        var ids=data.siteCandidates||data.candidates||data.siteComparison||data.siteItems||[];
-        if(Array.isArray(ids)&&ids.length)lastCandidates=ids.map(function(id){return BY_ID[id];}).filter(Boolean);
+        var comparisonIds=Array.isArray(data.siteComparison)?data.siteComparison:[];
+        var ids=data.siteCandidates||data.candidates||comparisonIds||data.siteItems||[];
+        if(Array.isArray(ids)&&ids.length){lastCandidates=ids.map(function(id){return BY_ID[id];}).filter(Boolean);lastCandidateKind=comparisonIds.length?'comparison':'choice';}
         if(!lastCandidates.length&&Array.isArray(meta.links)&&meta.links.length>1)lastCandidates=meta.links.map(function(l){return itemFromUrl(l&&l.url);}).filter(Boolean);
-        if(lastCandidates.length)candidateIndex=i;
+        if(lastCandidates.length){
+          candidateIndex=i;
+          var sourceIds=Array.isArray(data.siteSourceCandidates)?data.siteSourceCandidates:ids;
+          lastSourceCandidates=(sourceIds||[]).map(function(id){return BY_ID[id];}).filter(Boolean);
+          if(!lastSourceCandidates.length)lastSourceCandidates=lastCandidates.slice();
+          var openedIds=Array.isArray(data.siteOpenedItems)?data.siteOpenedItems:[];
+          lastOpenedItems=openedIds.map(function(id){return BY_ID[id];}).filter(Boolean);
+          var excludedIds=Array.isArray(data.siteExcludedItems)?data.siteExcludedItems:[];
+          lastExcludedItems=excludedIds.map(function(id){return BY_ID[id];}).filter(Boolean);
+          if(Array.isArray(data.siteConditions))lastConditions=data.siteConditions.map(function(x){return x&&typeof x==='object'?{intent:String(x.intent||''),target:String(x.target||''),positive:x.positive!==false,query:String(x.query||'')}:null;}).filter(function(x){return x&&x.intent;});
+        }
       }
       if(!lastItem){
         if(data.siteItem&&BY_ID[data.siteItem])lastItem=BY_ID[data.siteItem];
@@ -510,7 +702,21 @@
     }
     // 候補提示後に単一ページを選択済みなら、古い候補を次の質問へ持ち越さない。
     if(lastIndex>candidateIndex&&candidateIndex>=0)lastCandidates=[];
-    return {item:lastItem,candidates:lastCandidates,feature:lastFeature,index:lastIndex,candidateIndex:candidateIndex};
+    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex};
+  }
+  // 比較や候補提示の直後に「なるほど」「了解」などの短い相づちを一度だけ挟んでも、
+  // 次の「そっち」「後者」を候補参照として扱う。別の実質的な話題を挟んだ場合は保持しない。
+  function candidateContextFresh(history,ctx){
+    var h=Array.isArray(history)?history:[],c=ctx||{},idx=Number(c.candidateIndex);
+    if(!Array.isArray(c.candidates)||!c.candidates.length||idx<0)return false;
+    if(idx>=Math.max(0,h.length-3))return true;
+    if(idx<Math.max(0,h.length-5))return false;
+    var between=h.slice(idx+1,Math.max(idx+1,h.length-1));
+    if(between.length!==2||!between[0]||between[0].role!=='user'||!between[1]||between[1].role!=='assistant')return false;
+    var ack=S(between[0].text);
+    if(!/^(?:なるほど(?:ね)?|そうなんだ|そうか|了解|わかった|分かった|おけ|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう|なるほどです)[。！!？?～〜]*$/i.test(ack))return false;
+    var meta=between[1].meta||{};
+    return !meta.data||!meta.data.siteGuide;
   }
   function candidateKeys(item){
     var out=[],seen={},names=[item&&item.name].concat(item&&item.aliases||[]);
@@ -528,13 +734,20 @@
     });
     return out;
   }
-  function selectFromCandidates(text,candidates){
-    var t=normalizeInput(text),ct=compact(t),list=(candidates||[]).filter(Boolean);if(!list.length)return null;
-    var idx=-1;
-    if(/^(?:1|１|一)(?:番|番目)?|最初|一番上|上の|前者/.test(t))idx=0;
-    else if(/^(?:2|２|二)(?:番|番目)?|二番目|次の|下の|後者/.test(t))idx=1;
-    else if(/^(?:3|３|三)(?:番|番目)?|三番目/.test(t))idx=2;
-    else if(/^(?:4|４|四)(?:番|番目)?|四番目/.test(t))idx=3;
+  function selectFromCandidates(text,candidates,selectedCandidate){
+    var t=siteClauseLead(normalizeInput(text)),ct=compact(t),list=(candidates||[]).filter(Boolean);if(!list.length)return null;
+    var idx=-1,selectedIndex=-1;
+    if(selectedCandidate)for(var si=0;si<list.length;si++)if(list[si]&&list[si].id===selectedCandidate.id){selectedIndex=si;break;}
+    if(list.length===2){
+      if(/^(?:そっち|そちら|もう片方|もう一方|反対の方|反対のほう|上じゃない方|上じゃないほう|最初じゃない方|最初じゃないほう|前者じゃない方|前者じゃないほう)/.test(t))idx=selectedIndex>=0?(selectedIndex===0?1:0):1;
+      else if(/^(?:こっち|こちら|下じゃない方|下じゃないほう|後者じゃない方|後者じゃないほう)/.test(t))idx=selectedIndex>=0?selectedIndex:0;
+    }
+    if(idx<0&&/^(?:最後|一番最後|一番下|末尾|最後のやつ|下のやつ)/.test(t))idx=list.length-1;
+    else if(idx<0&&list.length%2===1&&/^(?:真ん中|中央|中のやつ|真ん中のやつ)/.test(t))idx=Math.floor(list.length/2);
+    else if(idx<0&&/^(?:1|１|一)(?:番|番目)?|最初|一番上|上の|前者/.test(t))idx=0;
+    else if(idx<0&&/^(?:2|２|二)(?:番|番目)?|二番目|次の|下の|後者/.test(t))idx=1;
+    else if(idx<0&&/^(?:3|３|三)(?:番|番目)?|三番目/.test(t))idx=2;
+    else if(idx<0&&/^(?:4|４|四)(?:番|番目)?|四番目/.test(t))idx=3;
     if(idx>=0&&idx<list.length)return list[idx];
 
     // 計算候補を出した後の「自分のやつ」「家臣の方」のような目的語だけの返答。
@@ -560,19 +773,463 @@
     if(ranked.length&&ranked[0].score>=85&&(ranked.length===1||ranked[0].score-ranked[1].score>=3))return ranked[0].item;
     return null;
   }
+  function excludedPageReference(text){
+    var t=normalizeInput(text),m=t.match(/^(.{1,40}?)(?:じゃない方|じゃないほう|ではない方|ではないほう|以外の方|以外のほう)(.*)$/);
+    if(!m)return null;
+    var item=findItem(m[1]);if(!item)return null;
+    return {item:item,tail:S(m[2]||'')};
+  }
+  function alternativeItems(text){
+    var t=normalizeInput(text),items=mentionedItems(t);
+    if(items.length<2)return [];
+    if(/(?:それとも|または|もしくは|どちらか|どっちか)/.test(t))return items;
+    // 「能力計算か家臣計算」のように、ページ名同士を助詞「か」で並べた二択。
+    if(/(?:計算|一覧|鬼神石|九十九|魔導結晶|魔導|鎮魂符|カウンター).{0,8}か.{0,8}(?:計算|一覧|鬼神石|九十九|魔導結晶|魔導|鎮魂符|カウンター)/.test(t))return items;
+    return [];
+  }
+  function explicitComparedOpen(text,items){
+    var t=normalizeInput(text),list=(items||[]).filter(Boolean),found=[];
+    function add(item){if(item&&found.indexOf(item)<0)found.push(item);}
+    list.forEach(function(item){
+      var names=[item.name].concat(item.aliases||[]);
+      for(var i=0;i<names.length;i++){
+        var n=S(names[i]);if(!n)continue;
+        var pos=t.lastIndexOf(n);if(pos<0)continue;
+        var tail=t.slice(pos+n.length,pos+n.length+24);
+        if(/^(?:の方|のほう|だけ|のみ)?(?:を)?[、,\s]*(?:開いて|開けて|見せて|出して)/.test(tail)){add(item);break;}
+      }
+    });
+    if(!found.length&&list.length>=2){
+      if(/(?:前者|最初の方|最初のほう).{0,8}(?:開いて|開けて|見せて|出して)/.test(t))add(list[0]);
+      if(/(?:後者|最後の方|最後のほう).{0,8}(?:開いて|開けて|見せて|出して)/.test(t))add(list[list.length-1]);
+    }
+    return found.length===1?found[0]:null;
+  }
+
   function allCandidatesCue(text){
     return /^(?:じゃあ|では|それなら|なら)?[、,\s]*(?:両方|どっちも|どれも|全部|まとめて)(?:のページ|ページ|を|も)?[、,\s]*(?:開いて|開けて|見せて|出して|行きたい|連れてって)[。！!？?]*$/.test(normalizeInput(text));
   }
-  function answerCandidateLinks(candidates){
+  function candidateOpenCue(text){
+    return /(?:開いて|開けて|見せて|出して|行きたい|連れてって|ページを?見たい|ページ見たい)/.test(normalizeInput(text));
+  }
+  function numberValue(v){
+    var s=S(v),map={一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+    if(map[s])return map[s];
+    var n=parseInt(s,10);return isFinite(n)?n:0;
+  }
+  function candidateSubset(text,candidates){
+    var t=normalizeInput(text),list=(candidates||[]).filter(Boolean),out=[],seen={};
+    if(list.length<2||!candidateOpenCue(t))return out;
+    function addIndex(i){if(i>=0&&i<list.length&&list[i]&&!seen[list[i].id]){seen[list[i].id]=1;out.push(list[i]);}}
+    function addItem(item){if(item&&!seen[item.id]){seen[item.id]=1;out.push(item);}}
+
+    // 「2番目以外」「真ん中以外」のような除外指定は、単一候補選択より先に扱う。
+    var ex=t.match(/([1-9１-９一二三四五六七八九])(?:個目|番目|番)?(?:のページ)?以外/);
+    if(ex){var exi=numberValue(ex[1])-1;for(var ei=0;ei<list.length;ei++)if(ei!==exi)addIndex(ei);return out;}
+    if(/(?:真ん中|中央|中のやつ)(?:のページ)?以外/.test(t)&&list.length%2===1){var mid=Math.floor(list.length/2);for(var mi=0;mi<list.length;mi++)if(mi!==mid)addIndex(mi);return out;}
+    if(/(?:最初|一番上|先頭)(?:のページ)?以外/.test(t)){for(var fi=1;fi<list.length;fi++)addIndex(fi);return out;}
+    if(/(?:最後|一番下|末尾)(?:のページ)?以外/.test(t)){for(var li=0;li<list.length-1;li++)addIndex(li);return out;}
+
+    if(/(?:前|最初)(?:の)?二つ/.test(t)){addIndex(0);addIndex(1);return out;}
+    if(/(?:後ろ|後半|最後)(?:の)?二つ/.test(t)){addIndex(list.length-2);addIndex(list.length-1);return out;}
+
+    // 候補全体を指す自然な表現。
+    if(allCandidatesCue(t)||/(?:この|その|あの)?(?:二つ|2つ|２つ|三つ|3つ|３つ|候補全部|ページ全部|それら全部|この候補|このページたち|この二つのページ|この3つのページ).*(?:開いて|開けて|見せて|出して)/.test(t))return list.slice();
+
+    // 「最初と最後」「1個目と3個目」のような複数位置指定。
+    if(/(?:最初|一番上|先頭).*(?:と|、|,|および).*(?:最後|一番下|末尾)|(?:最後|一番下|末尾).*(?:と|、|,|および).*(?:最初|一番上|先頭)/.test(t)){
+      addIndex(0);addIndex(list.length-1);return out;
+    }
+    var re=/([1-9１-９一二三四五六七八九])(?:個目|番目)/g,m;
+    while((m=re.exec(t)))addIndex(numberValue(m[1])-1);
+    if(out.length>=2)return out;
+    out=[];seen={};
+
+    // 候補名を複数明示して開く場合。
+    list.forEach(function(item){
+      var keys=candidateKeys(item),ct=compact(t);
+      for(var i=0;i<keys.length;i++)if(ct.indexOf(keys[i])>=0){addItem(item);break;}
+    });
+    if(out.length>=2)return out;
+    return [];
+  }
+  function explicitMultiOpenItems(text){
+    var t=normalizeInput(text),items=mentionedItems(t);if(items.length<2||!candidateOpenCue(t))return [];
+    // 比較説明と「片方だけ開いて」が同居する文は、既存の比較処理へ渡す。
+    if(/(?:違い|比較|どう違う)/.test(t)&&/(?:だけ|のみ).*(?:開いて|開けて|見せて|出して)/.test(t))return [];
+    var found=[],seen={};
+    function add(item){if(item&&!seen[item.id]){seen[item.id]=1;found.push(item);}}
+    items.forEach(function(item){
+      var names=[item.name].concat(item.aliases||[]),matched=false;
+      for(var i=0;i<names.length;i++){
+        var n=S(names[i]),pos=t.indexOf(n);if(pos<0)continue;
+        var tail=t.slice(pos+n.length,pos+n.length+34);
+        if(/^(?:の方|のほう|も|を|と|、|,|\s)*(?:そのあと|あと|続けて|一緒に|まとめて)?[、,\s]*(?:開いて|開けて|見せて|出して|見たい)/.test(tail)){matched=true;break;}
+      }
+      if(matched)add(item);
+    });
+    if(found.length>=2)return found;
+    if(!/(?:違い|比較|どう違う|どっちが|どちらが)/.test(t)&&/(?:両方|どっちも|全部|まとめて|一緒に|そのあと|続けて)/.test(t))return items;
+    return [];
+  }
+  function answerCandidateLinks(candidates,contextCandidates,sourceCandidates){
     var list=[],seen={};(candidates||[]).forEach(function(item){if(item&&!seen[item.id]){seen[item.id]=1;list.push(item);}});
     if(!list.length)return null;
-    return {handled:true,mode:'サイト総合案内',answer:list.map(function(x){return '「'+x.name+'」';}).join('と')+'をまとめて開けるようにしました。',links:list.slice(0,8).map(itemLink),data:{siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;})}};
+    var context=[],contextSeen={};(contextCandidates||list).forEach(function(item){if(item&&!contextSeen[item.id]){contextSeen[item.id]=1;context.push(item);}});
+    var source=[],sourceSeen={};(sourceCandidates||context).forEach(function(item){if(item&&!sourceSeen[item.id]){sourceSeen[item.id]=1;source.push(item);}});
+    return {handled:true,mode:'サイト総合案内',answer:list.map(function(x){return '「'+x.name+'」';}).join('と')+'をまとめて開けるようにしました。',links:list.slice(0,8).map(itemLink),data:{siteOpenedItems:list.map(function(x){return x.id;}),siteCandidates:context.map(function(x){return x.id;}),candidates:context.map(function(x){return x.id;}),siteSourceCandidates:source.map(function(x){return x.id;})}};
   }
   function candidateFeatureRequests(text,candidates){
     var out=[];(candidates||[]).forEach(function(item){
       var intents=featureIntents(text,item);if(intents.length)out.push({item:item,intents:intents});
     });
     return out;
+  }
+
+  function uniqueCandidateItems(items){
+    var out=[],seen={};(items||[]).forEach(function(item){if(item&&!seen[item.id]){seen[item.id]=1;out.push(item);}});return out;
+  }
+  function candidateNames(items){return uniqueCandidateItems(items).map(function(x){return '「'+x.name+'」';}).join('と');}
+  function conditionSnapshot(specs){
+    return (specs||[]).map(function(x){return x&&x.intent?{intent:String(x.intent||''),target:String(x.target||''),positive:x.positive!==false,query:String(x.query||'')}:null;}).filter(Boolean);
+  }
+  function conditionSpecKey(spec){return String(spec&&spec.intent||'')+'|'+String(spec&&spec.target||'');}
+  function mergeConditionSpecs(previous,current,replacePrevious){
+    var out=[],index={};
+    function add(spec){
+      if(!spec||!spec.intent)return;var copy={intent:String(spec.intent||''),target:String(spec.target||''),positive:spec.positive!==false,query:String(spec.query||'')},key=conditionSpecKey(copy);
+      if(index[key]===undefined){index[key]=out.length;out.push(copy);}else out[index[key]]=copy;
+    }
+    if(!replacePrevious)(previous||[]).forEach(add);
+    (current||[]).forEach(add);
+    return out;
+  }
+  function answerCandidateSet(items,sourceItems,opt){
+    opt=opt||{};var list=uniqueCandidateItems(items),source=uniqueCandidateItems(sourceItems&&sourceItems.length?sourceItems:list);if(!list.length)return null;
+    var open=!!opt.open,lead=S(opt.lead||''),answer=lead||(open?candidateNames(list)+'を開けるようにしました。':'該当する候補は '+candidateNames(list)+'です。');
+    var ids=list.map(function(x){return x.id;}),data={siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:source.map(function(x){return x.id;}),siteConditions:conditionSnapshot(opt.conditions||[])};
+    if(open)data.siteOpenedItems=ids.slice();
+    if(opt.excluded&&opt.excluded.length)data.siteExcludedItems=uniqueCandidateItems(opt.excluded).map(function(x){return x.id;});
+    if(ids.length===1){data.siteItem=ids[0];data.selectedSiteItem=ids[0];}
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:list.slice(0,8).map(itemLink),data:data};
+  }
+  function candidateRestoreCue(text){
+    var t=normalizeInput(text);
+    return /^(?:じゃあ|では|それなら|やっぱ(?:り)?|一回)?[、,\s]*(?:(?:元|最初)の(?:候補|一覧|組み合わせ|メンバー|ページ|三つ|3つ|３つ)(?:に)?戻(?:して|す)|絞り込み(?:を)?(?:解除|リセット|なしにして)|条件(?:を)?(?:全部|すべて)?(?:外して|解除して|消して|なしにして)|全部(?:の候補)?に戻(?:して|す))(?:ください|くれる|ほしい)?[。！!？?]*$/.test(t);
+  }
+
+  function candidateRemainderCue(text){
+    var t=normalizeInput(text);
+    return /(?:^|[、,\s])(?:残り|残った(?:方|ほう|やつ|もの|候補)?|それ以外|そのほか|その他|ほかの候補|他の候補|選んでない(?:方|ほう|やつ|もの)?|選ばなかった(?:方|ほう|やつ|もの)?|開いてない(?:方|ほう|やつ|もの)?|まだの(?:方|ほう|やつ|もの)?)(?:は|も|を|って|だけ|全部|どっち|どれ|何|開いて|見せて|出して|教えて|知りたい|[？?。！!]|$)/.test(t);
+  }
+  function candidateRemainderItems(candidates,sourceCandidates,selectedCandidate,openedItems){
+    var current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current),remove={},hasRemove=false;
+    var opened=uniqueCandidateItems(openedItems);
+    if(opened.length){opened.forEach(function(x){remove[x.id]=1;hasRemove=true;});}
+    else if(selectedCandidate){remove[selectedCandidate.id]=1;hasRemove=true;}
+    else if(source.length>current.length){current.forEach(function(x){remove[x.id]=1;hasRemove=true;});}
+    if(!hasRemove)return [];
+    return source.filter(function(x){return !remove[x.id];});
+  }
+  function answerCandidateRemainder(text,candidates,sourceCandidates,selectedCandidate,openedItems){
+    if(!candidateRemainderCue(text))return null;
+    var t=normalizeInput(text),current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current);
+    if(!selectedCandidate&&!uniqueCandidateItems(openedItems).length&&source.length>current.length&&/(?:残った|残ってる|残っている)/.test(t))return null;
+    var rest=candidateRemainderItems(current,source,selectedCandidate,openedItems);if(!rest.length)return null;
+    var open=candidateOpenCue(text),lead=open?candidateNames(rest)+'を開けるようにしました。':'残りは '+candidateNames(rest)+'です。';
+    return answerCandidateSet(rest,source,{open:open,lead:lead});
+  }
+  function answerCandidateExclusionOnly(text,candidates,sourceCandidates){
+    var t=normalizeInput(correctionTail(text)||text),list=uniqueCandidateItems(candidates);if(list.length<2)return null;
+    if(!/(?:以外で|以外を|を除いて|除いて|抜きで|なしで)/.test(t))return null;
+    var base=candidateConditionBase(t,list);if(!base.changed||!base.items.length)return null;
+    var source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:list),open=candidateOpenCue(t),lead=open?candidateNames(base.items)+'を開けるようにしました。':'除外後の候補は '+candidateNames(base.items)+'です。';
+    return answerCandidateSet(base.items,source,{open:open,lead:lead,excluded:base.excluded});
+  }
+  function conditionRemovalRequest(text){
+    var t=normalizeInput(text),all=/^(?:じゃあ|では|やっぱ(?:り)?|一回)?[、,\s]*(?:(?:条件|絞り込み)(?:を)?(?:全部|すべて)?(?:なし|無し|外して|解除|リセット|やめて|消して)|(?:全部|すべて)の条件(?:を)?(?:外して|解除|なし))/.test(t),remove=[];
+    function add(intent,target){var key=intent+'|'+(target||'');if(!remove.some(function(x){return x.key===key;}))remove.push({key:key,intent:intent,target:target||''});}
+    var suffix='(?:(?:の)?条件(?:は|を)?(?:なし|無し|外して|解除|やめて|消して)|(?:は)?(?:なしで|無しで))';
+    var rules=[
+      ['save','',new RegExp('(?:保存|画像保存)'+suffix)],['sort','',new RegExp('(?:並べ替え|ソート|優先順)'+suffix)],
+      ['share','',new RegExp('(?:共有|URL|リンク)'+suffix)],['zoom','',new RegExp('(?:拡大|縮小|ズーム)'+suffix)],
+      ['filter','',new RegExp('(?:絞り込み|フィルタ)'+suffix)],['reflect','stats',new RegExp('(?:能力計算(?:機)?)'+suffix)],
+      ['reflect','retainer',new RegExp('(?:家臣(?:計算(?:機)?)?)'+suffix)],['reflect','',new RegExp('(?:反映|取り込み)'+suffix)]
+    ];
+    rules.forEach(function(r){if(r[2].test(t))add(r[0],r[1]);});
+    return {all:all,remove:remove};
+  }
+  function removeConditionSpecs(previous,request){
+    var list=conditionSnapshot(previous||[]);if(request.all)return [];
+    return list.filter(function(spec){return !request.remove.some(function(r){return r.intent===spec.intent&&(!r.target||r.target===spec.target);});});
+  }
+  function conditionReplacementCue(text){
+    return !!correctionTail(text)||/^(?:じゃあ|では|やっぱ(?:り)?|今度は|代わりに|条件(?:を)?変えて|切り替えて)[、,\s]*/.test(normalizeInput(text));
+  }
+
+  function negativeCapabilityCue(text){
+    return /(?:できない|出来ない|無理|非対応|入らない|入れられない|入れれない|使えない|反映できない|保存できない|選べない|ないのは|ない方|ないほう)/.test(normalizeInput(text));
+  }
+  function choiceCapabilityCue(text){
+    var t=normalizeInput(text);
+    if(/(?:どっちも|どちらも|どれも|両方|全部|それぞれ)/.test(t))return false;
+    if(/(?:どれ|どっち|どちら|どのページ|どの方|どのほう|どれが|どっちが|ならどっち|ならどれ)/.test(t))return true;
+    return negativeCapabilityCue(t)&&/(?:方は|ほうは|のは|なのは)/.test(t);
+  }
+  function sentenceForTarget(body,target){
+    var parts=S(body).split(/[。\n]/).map(S).filter(Boolean),key=target==='stats'?'能力計算':target==='retainer'?'家臣計算':'';
+    if(!key)return parts;
+    return parts.filter(function(x){return x.indexOf(key)>=0;});
+  }
+  function capabilityStatus(item,intent,text){
+    var bodies=intent==='reflect'?reflectBodies(item,text):[featureBody(item,intent,text)],t=normalizeInput(text),target=/能力計算/.test(t)?'stats':/家臣/.test(t)?'retainer':'';
+    if(!target&&item&&(item.id==='stats'||item.id==='retainer'))target=item.id;
+    bodies=(bodies||[]).map(S).filter(Boolean);if(!bodies.length)return {status:0,bodies:[]};
+    var check=[];bodies.forEach(function(body){var p=sentenceForTarget(body,target);check=check.concat(p.length?p:[body]);});
+    var positive=false,negative=false;
+    check.forEach(function(body){
+      if(/(?:確認できません|ありません|できません|非対応|直接反映する欄はない|入力フォームはありません)/.test(body))negative=true;
+      if(/(?:できます|できる|選べます|使えます|反映できます|保存できます|対応しています|あります)/.test(body)&&!/(?:確認できません|できません|ありません)/.test(body))positive=true;
+    });
+    // 正本にその機能の専用記載があり、非対応表現がなければ、反映以外は対応済みと判定する。
+    // 「並べ替えられます」「戻せます」のような表現も安全に扱う。
+    if(!positive&&!negative&&intent!=='reflect'&&bodies.length)positive=true;
+    if(positive&&!negative)return {status:1,bodies:bodies};
+    if(negative&&!positive)return {status:-1,bodies:bodies};
+    if(positive&&negative){
+      // 対象先が明記されている場合は、その文だけで判定済み。一般質問では「どこかには使える」を優先する。
+      return {status:target?-1:1,bodies:bodies};
+    }
+    return {status:0,bodies:bodies};
+  }
+  function answerCandidateCapability(text,candidates){
+    var t=normalizeInput(text),list=(candidates||[]).filter(Boolean);if(list.length<2||!choiceCapabilityCue(t))return null;
+    var requests=candidateFeatureRequests(t,list),intent=commonRequestFeature(requests);if(!intent)return null;
+    var wantNegative=negativeCapabilityCue(t),matched=[],opposite=[],unknown=[];
+    list.forEach(function(item){
+      var ev=capabilityStatus(item,intent,t),entry={item:item,bodies:ev.bodies};
+      if(ev.status===0)unknown.push(entry);
+      else if((wantNegative&&ev.status<0)||(!wantNegative&&ev.status>0))matched.push(entry);
+      else opposite.push(entry);
+    });
+    var featureName=featureCuePhrase(intent)||'その機能',answer='';
+    if(matched.length){
+      if(matched.length===list.length)answer=wantNegative?'候補の中では、どれも'+featureName.replace(/できる$/,'できません')+'。':'候補はどれも'+featureName+'のですよ。';
+      else answer=(wantNegative?'該当するのは ':'使えるのは ')+matched.map(function(x){return '「'+x.item.name+'」';}).join('と')+'です。';
+      answer+='\n'+matched.map(function(x){return '・'+x.item.name+'：'+x.bodies.join(' ');}).join('\n');
+    }else if(!unknown.length){
+      answer=wantNegative?'候補の中に、'+featureName.replace(/できる$/,'できない')+'ものはありません。':'候補の中に、'+featureName+'ものはありません。';
+      if(opposite.length)answer+='\n'+opposite.map(function(x){return '・'+x.item.name+'：'+x.bodies.join(' ');}).join('\n');
+    }else{
+      answer='正本で確認できる範囲では、対象を一つに絞れないのですよ。\n'+unknown.map(function(x){return '・'+x.item.name+'：確認できる記載が不足しています。';}).join('\n');
+    }
+    var show=matched.length?matched:opposite,links=show.map(function(x){return itemLink(x.item);});
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:{siteItems:show.map(function(x){return x.item.id;}),siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;}),siteFeature:intent,siteFeatures:[intent],siteFeatureSubjects:featureSubjectIds(t),siteCapabilityFilter:true,siteCapabilityNegative:wantNegative,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+  }
+  function candidateConditionBase(text,candidates){
+    var t=normalizeInput(text),list=(candidates||[]).filter(Boolean),out=list.slice(),excluded=[],changed=false;
+    if(list.length<2)return {items:out,excluded:excluded,changed:false};
+    function removeIndex(idx){
+      if(idx<0||idx>=list.length)return;
+      var id=list[idx].id;out=out.filter(function(x){return x&&x.id!==id;});excluded.push(list[idx]);changed=true;
+    }
+    function removeItem(item){
+      if(!item)return;var before=out.length;out=out.filter(function(x){return x&&x.id!==item.id;});
+      if(out.length!==before){excluded.push(item);changed=true;}
+    }
+
+    // 「鬼神石以外で」「魔導を除いて」のように、候補を外してから条件を判定する。
+    list.forEach(function(item){
+      var keys=candidateKeys(item),ct=compact(t);
+      for(var i=0;i<keys.length;i++){
+        var key=keys[i],pos=ct.indexOf(key);if(pos<0)continue;
+        var tail=ct.slice(pos+key.length,pos+key.length+12);
+        if(/^(?:以外|を除いて|除いて|抜きで|なしで)/.test(tail)){removeItem(item);break;}
+      }
+    });
+
+    var m=t.match(/([1-9１-９一二三四五六七八九])(?:個目|番目|番)?(?:の候補|のページ)?以外/);
+    if(m)removeIndex(numberValue(m[1])-1);
+    if(/(?:最初|一番上|先頭|前者)(?:の候補|のページ)?以外/.test(t))removeIndex(0);
+    if(/(?:最後|一番下|末尾|後者)(?:の候補|のページ)?以外/.test(t))removeIndex(list.length-1);
+    if(/(?:真ん中|中央|中のやつ)(?:の候補|のページ)?以外/.test(t)&&list.length%2===1)removeIndex(Math.floor(list.length/2));
+    return {items:out,excluded:excluded,changed:changed};
+  }
+  function reflectConditionSpecs(text){
+    var t=normalizeInput(text),out=[],seen={};
+    var re=/(能力計算(?:機)?|家臣(?:計算(?:機)?)?)(?:に|へ|では|には|だと|なら|で)?[^、。！？?]{0,18}?(反映できない|直接反映できない|入らない|入れられない|入れれない|使えない|反映できる|直接反映できる|入る|入れられる|入れれる|使える)/g,m;
+    while((m=re.exec(t))){
+      var target=/能力/.test(m[1])?'stats':'retainer',positive=!/(?:ない|ません|無理|非対応)/.test(m[2]),key=target+':'+positive;
+      if(!seen[key]){seen[key]=1;out.push({intent:'reflect',target:target,positive:positive,query:(target==='stats'?'能力計算':'家臣計算')+'に反映できる'});}
+    }
+    return out;
+  }
+  function conditionCueForIntent(intent){
+    var map={
+      reflect:'(?:反映|入れられ|入れれる|入る|使える|取り込)',
+      save:'(?:保存|画像保存|スクショ|スクリーンショット)',
+      sort:'(?:並べ替|ソート|優先順)',
+      share:'(?:共有|URL|リンク)',
+      zoom:'(?:拡大|縮小|ズーム|倍率)',
+      reset:'(?:リセット|初期化|やり直|元に戻)',
+      filter:'(?:絞り込|フィルタ)',
+      download:'(?:ダウンロード)',
+      random:'(?:シャッフル|抽選|ランダム)',
+      history:'(?:履歴|候補に戻|全員戻)',
+      schedule:'(?:日程|日時|時間)',
+      entry:'(?:参加|エントリー|登録)'
+    };
+    return map[intent]||'';
+  }
+  function genericConditionSegment(intent,text){
+    var cue=conditionCueForIntent(intent),t=normalizeInput(text);if(!cue)return'';
+    var re=new RegExp(cue),m=re.exec(t);if(!m)return'';
+    var seg=t.slice(m.index,Math.min(t.length,m.index+42)),boundary=seg.search(/(?:けれども|けれど|だけど|ですが|だが|けど|一方で|、|。|；|;|かつ|なおかつ|そして|そのうえ)/);
+    if(boundary>0)seg=seg.slice(0,boundary);
+    // 別機能の語が続く場合は、現在機能の局所表現だけで肯否を判定する。
+    var intents=['reflect','save','sort','share','zoom','reset','filter','download','random','history','schedule','entry'];
+    intents.forEach(function(other){
+      if(other===intent)return;var oc=conditionCueForIntent(other);if(!oc)return;var om=new RegExp(oc).exec(seg);
+      if(om&&om.index>0)seg=seg.slice(0,om.index);
+    });
+    return seg;
+  }
+  function genericConditionNegative(intent,text){
+    var seg=genericConditionSegment(intent,text);if(!seg)return false;
+    return /(?:できない|出来ない|無理|非対応|使えない|入らない|入れられない|反映できない|保存できない|選べない|戻せない)/.test(seg);
+  }
+  function genericConditionDoubleNegative(intent,text){
+    var seg=genericConditionSegment(intent,text);if(!seg)return false;
+    return /(?:できない|使えない|入らない|入れられない|反映できない|保存できない|選べない|戻せない)(?:もの|の|やつ|方|ほう)?(?:以外|を除いて|除いて|抜き)/.test(seg);
+  }
+  function genericConditionSpecs(text,items,targetSpecs){
+    var t=normalizeInput(text),requests=candidateFeatureRequests(t,items),keys=[],supported={reflect:1,save:1,sort:1,share:1,zoom:1,reset:1,filter:1,download:1,random:1,history:1,schedule:1,entry:1};
+    requests.forEach(function(req){(req.intents||[]).forEach(function(k){if(supported[k]&&keys.indexOf(k)<0)keys.push(k);});});
+    var hasTargetReflect=(targetSpecs||[]).some(function(x){return x.intent==='reflect'&&x.target;});
+    if(hasTargetReflect)keys=keys.filter(function(k){return k!=='reflect';});
+    // 単独条件はそのまま、複数条件は「できて」「かつ」「けど」「も」などがある場合に集合条件として扱う。
+    if(keys.length>1&&!/(?:かつ|なおかつ|両方|どっちも|どれも|できて|できるし|できるけど|できるが|も.*(?:でき|可能)|そして|そのうえ)/.test(t))keys=keys.slice(0,1);
+    return keys.map(function(intent){
+      var negative=genericConditionNegative(intent,t);if(genericConditionDoubleNegative(intent,t))negative=false;
+      return {intent:intent,target:'',positive:!negative,query:t};
+    });
+  }
+  function candidateConditionalPlan(text,candidates){
+    var t=normalizeInput(correctionTail(text)||text),list=(candidates||[]).filter(Boolean);if(list.length<2)return null;
+    var base=candidateConditionBase(t,list),conditions=reflectConditionSpecs(t),open=candidateOpenCue(t);
+
+    var doubleNegative=/(?:できない|入らない|入れられない|使えない|反映できない|保存できない|選べない)(?:もの|の|やつ|方|ほう)?(?:以外|を除いて|除いて|抜き)/.test(t);
+    if(conditions.length&&doubleNegative)conditions.forEach(function(spec){if(spec.positive===false)spec.positive=true;});
+    conditions=conditions.concat(genericConditionSpecs(t,base.items,conditions));
+    var singleFilterCue=conditions.length===1&&/(?:だけ|のみ|のだけ|ものだけ|やつだけ|該当するもの|該当するやつ|合うもの|合うやつ)(?:を)?(?:教えて|知りたい|どれ|は)?[？?。！!]*$/.test(t);
+    var distinctive=base.changed||conditions.length>=2||singleFilterCue||open&&/(?:だけ|のみ|全部|すべて|のだけ|ものだけ|やつだけ|のうち|中から|条件|なら|合う|該当|以外|除いて|抜き)/.test(t);
+    if(!conditions.length||!distinctive)return null;
+    return {text:t,candidates:list,base:base,conditions:conditions,open:open};
+  }
+  function candidateConditionEvidence(item,spec){
+    var query=spec.query||'',ev=capabilityStatus(item,spec.intent,query);
+    return {item:item,spec:spec,status:ev.status,bodies:ev.bodies||[]};
+  }
+  function conditionLabel(spec){
+    if(spec.intent==='reflect'){
+      var target=spec.target==='stats'?'能力計算':'家臣計算';
+      return target+(spec.positive?'に反映できる':'に反映できない');
+    }
+    var name=featureCuePhrase(spec.intent)||'その機能を使える';
+    if(spec.positive)return name;
+    return name.replace(/できる$/,'できない').replace(/使える$/,'使えない');
+  }
+  function filteredPositionItems(text,items){
+    var t=normalizeInput(text),list=(items||[]).filter(Boolean);if(list.length<2)return list;
+    var out=[];
+    function add(i){if(i>=0&&i<list.length&&out.indexOf(list[i])<0)out.push(list[i]);}
+    if(!candidateOpenCue(t))return list;
+    if(/(?:のうち|中から|その中で|該当する中で).*(?:最後|一番下|末尾)/.test(t)){add(list.length-1);return out;}
+    if(/(?:のうち|中から|その中で|該当する中で).*(?:最初|一番上|先頭)/.test(t)){add(0);return out;}
+    if(list.length%2===1&&/(?:のうち|中から|その中で|該当する中で).*(?:真ん中|中央)/.test(t)){add(Math.floor(list.length/2));return out;}
+    var m=t.match(/(?:のうち|中から|その中で|該当する中で).*?([1-9１-９一二三四五六七八九])(?:個目|番目)/);
+    if(m){add(numberValue(m[1])-1);return out.length?out:list;}
+    if(/(?:のうち|中から|その中で|該当する中で).*(?:前|最初)(?:の)?二つ/.test(t)){add(0);add(1);return out;}
+    if(/(?:のうち|中から|その中で|該当する中で).*(?:後ろ|後半|最後)(?:の)?二つ/.test(t)){add(list.length-2);add(list.length-1);return out;}
+    return list;
+  }
+  function answerCandidateConditionalQuery(text,candidates,sourceCandidates,priorConditions){
+    var raw=normalizeInput(correctionTail(text)||text),current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current),prior=conditionSnapshot(priorConditions||[]),removal=conditionRemovalRequest(raw),hasRemoval=removal.all||removal.remove.length>0,removedCondition=false,plan=null;
+    if(hasRemoval&&prior.length){
+      var remaining=removeConditionSpecs(prior,removal);removedCondition=remaining.length!==prior.length||removal.all;
+      if(!removedCondition)return null;
+      if(!remaining.length){
+        var resetOpen=candidateOpenCue(raw),resetLead=resetOpen?candidateNames(source)+'を開けるようにしました。':'条件を外して、元の候補 '+candidateNames(source)+'に戻しました。';
+        return answerCandidateSet(source,source,{open:resetOpen,lead:resetLead,conditions:[]});
+      }
+      plan={text:raw,candidates:source,base:{items:source.slice(),excluded:[],changed:false},conditions:remaining,open:candidateOpenCue(raw)};
+    }else{
+      plan=candidateConditionalPlan(raw,current);if(!plan)return null;
+      var replacePrevious=conditionReplacementCue(text),combined=mergeConditionSpecs(prior,plan.conditions,replacePrevious);
+      if(prior.length||replacePrevious){
+        var evaluationBase=candidateConditionBase(raw,source);
+        plan={text:raw,candidates:source,base:evaluationBase,conditions:combined,open:plan.open};
+      }else plan.conditions=combined;
+    }
+    var matched=[],unknown=[],details=[];
+    plan.base.items.forEach(function(item){
+      var evidence=[],ok=true,uncertain=false;
+      plan.conditions.forEach(function(spec){
+        var ev=candidateConditionEvidence(item,spec);evidence.push(ev);
+        if(ev.status===0){ok=false;uncertain=true;}
+        else if(spec.positive?ev.status<0:ev.status>0)ok=false;
+      });
+      var entry={item:item,evidence:evidence};details.push(entry);
+      if(ok)matched.push(entry);else if(uncertain)unknown.push(entry);
+    });
+    var eligible=matched.slice(),selected=filteredPositionItems(plan.text,eligible.map(function(x){return x.item;}));
+    if(selected.length!==matched.length)matched=matched.filter(function(x){return selected.indexOf(x.item)>=0;});
+    var labels=plan.conditions.map(conditionLabel),conditionText=labels.join('、かつ');
+    var answer='',links=[];
+    if(matched.length){
+      answer=(removedCondition?'条件を外した結果、':'条件に合うのは ')+matched.map(function(x){return '「'+x.item.name+'」';}).join('と')+(removedCondition?'が残ります。':'です。');
+      if(plan.open)answer+=' 該当するページを開けるようにしました。';
+      var lines=matched.map(function(entry){
+        var bodies=[],seen={};entry.evidence.forEach(function(ev){ev.bodies.forEach(function(body){body=S(body);if(body&&!seen[body]){seen[body]=1;bodies.push(body);}});});
+        return bodies.length?'・'+entry.item.name+'：'+bodies.join(' '):'';
+      }).filter(Boolean);
+      if(lines.length)answer+='\n'+lines.join('\n');
+      links=matched.map(function(x){return itemLink(x.item);});
+    }else if(unknown.length){
+      answer='正本で確認できる範囲では、「'+conditionText+'」候補を確定できないのですよ。確認できる記載が不足しています。';
+    }else{
+      answer='候補の中に、「'+conditionText+'」条件をすべて満たすものはありません。';
+      var explain=details.map(function(entry){
+        var bodies=[],seen={};entry.evidence.forEach(function(ev){ev.bodies.forEach(function(body){body=S(body);if(body&&!seen[body]){seen[body]=1;bodies.push(body);}});});
+        return bodies.length?'・'+entry.item.name+'：'+bodies.join(' '):'';
+      }).filter(Boolean);
+      if(explain.length)answer+='\n'+explain.join('\n');
+    }
+    var ids=matched.map(function(x){return x.item.id;}),eligibleIds=eligible.map(function(x){return x.item.id;}),sourceIds=source.map(function(x){return x.id;}),contextIds=eligibleIds.length?eligibleIds:sourceIds,features=[];
+    plan.conditions.forEach(function(x){if(features.indexOf(x.intent)<0)features.push(x.intent);});
+    var data={siteItems:ids,siteCandidates:contextIds,candidates:contextIds,siteSourceCandidates:sourceIds,siteConditions:conditionSnapshot(plan.conditions),siteCapabilityFilter:true,siteConditionalFilter:true,siteConditionCount:plan.conditions.length,siteFeatures:features,siteFeatureSubjects:featureSubjectIds(plan.text),verifiedSiteSource:true,sourceVersion:SOURCE.version||''};
+    if(features.length===1)data.siteFeature=features[0];
+    if(ids.length===1){data.siteItem=ids[0];data.selectedSiteItem=ids[0];}
+    if(plan.open){data.siteConditionalOpen=true;data.siteOpenedItems=ids.slice();}
+    if(plan.base.excluded.length)data.siteExcludedItems=plan.base.excluded.map(function(x){return x.id;});
+    if(removedCondition)data.siteConditionRemoved=true;
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:data};
+  }
+
+  function comparisonRecommendationCue(text){
+    return /^(?:じゃあ|では|それなら|で|結局|つまり|要するに)?[、,\s]*(?:結局)?(?:どっち|どちら|どれ)(?:を|が)?(?:使えば|使うのが|選べば|選ぶのが|見れば|開けば)(?:いい|おすすめ|良い)[？?。！!]*$/.test(normalizeInput(text));
+  }
+  function answerComparisonRecommendation(candidates){
+    var list=(candidates||[]).filter(Boolean);if(list.length<2)return null;
+    var lines=list.map(function(item){var p=sourcePage(item),facts=p&&p.facts||{};return '・'+item.name+'：'+S(facts.compare||item.desc);});
+    return {handled:true,mode:'サイト総合案内',answer:'目的で選ぶのが確実なのですよ。\n'+lines.join('\n')+'\n使いたい対象や、計算したいものを教えてくれれば、さらに一つへ絞れます。',links:list.map(itemLink),data:{siteComparison:list.map(function(x){return x.id;}),siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;}),siteRecommendation:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+  }
+  function sameOrDifferentCue(text){
+    return /^(?:じゃあ|では|それなら|で)?[、,\s]*(?:どっちも|両方|全部)?(?:ほぼ|だいたい)?(?:同じ|一緒)(?:なの|ですか|なのかな|ってこと|で合ってる)?[？?。！!]*$/.test(normalizeInput(text));
+  }
+  function openToHelpCorrectionCue(text){
+    var t=normalizeInput(text);
+    return /(?:開く|開いて|開ける|見せる|出す)(?:ん)?(?:じゃなくて|ではなくて|じゃなく|ではなく)[、,\s]*(?:使い方|やり方|何ができる|できること|入力項目|見方|説明)(?:だけ|を|教えて|知りたい)?[。！!？?]*$/.test(t);
   }
 
   function hierarchicalSelection(text,recent){
@@ -595,22 +1252,56 @@
     return null;
   }
 
+  function roughFollowupItem(text){
+    var t=siteClauseLead(normalizeInput(text)),d=findItemDetailed(t),p=purposeScores(t),item=d.item||(p[0]&&p[0].item)||null;
+    if(!item&&/家臣(?:の)?(?:方|ほう)?/.test(t))item=BY_ID.retainer;
+    if(!item&&/(?:自分|自キャラ|キャラ|プレイヤー|能力計算)(?:の)?(?:方|ほう)?/.test(t))item=BY_ID.stats;
+    return item;
+  }
+  function featureCarryFollowup(text,ctx){
+    ctx=ctx||{};if(!ctx.feature)return null;
+    var t=siteClauseLead(normalizeInput(text)),item=roughFollowupItem(t),page=sourcePage(item),facts=page&&page.facts||{};
+    if(!item||!S(facts[ctx.feature]))return null;
+    if(!/^(?:.+?)(?:は|って|だと|なら|の方(?:は)?|のほう(?:は)?|はどう|だとどう|ならどう)[？?。！!]*$/.test(t))return null;
+    var query=t,subjects=featureSubjectIds(t),carried=Array.isArray(ctx.featureSubjects)?ctx.featureSubjects:[];
+    if(ctx.feature==='reflect'&&!subjects.length&&carried.length===1){
+      var label=featureSubjectLabel(carried[0]);if(label)query+=' '+label;
+    }
+    return {item:item,feature:ctx.feature,query:query};
+  }
+
   function shouldHandleBeforeKnowledge(text,opt){
     var original=S(opt&&opt.original||text),t=normalizeInput(original),ctx=historyGuideContext(opt&&opt.history),cur=currentItem();
+    var featureInput=correctionTail(original)||t;
     if(!t)return false;
     if(overviewCue(t))return true;
+    if(openToHelpCorrectionCue(original))return true;
+    if(explicitMultiOpenItems(original).length>=2)return true;
+    if(siteClauseFeatureGroups(original,ctx.item,cur,ctx.candidates).length)return true;
+    if(ctx.candidates.length&&candidateRestoreCue(original))return true;
+    if(ctx.candidates.length&&candidateRemainderCue(original))return true;
+    if(ctx.candidates.length&&(conditionRemovalRequest(original).all||conditionRemovalRequest(original).remove.length))return true;
+    if(ctx.candidates.length&&answerCandidateExclusionOnly(original,ctx.candidates,ctx.sourceCandidates))return true;
+    if(ctx.candidates.length&&candidateConditionalPlan(original,ctx.candidates))return true;
+    if(ctx.candidates.length&&candidateSubset(original,ctx.candidates).length)return true;
+    if(ctx.candidates.length&&sameOrDifferentCue(t))return true;
+    if(ctx.candidates.length&&comparisonRecommendationCue(t))return true;
+    if(ctx.candidates.length&&answerCandidateCapability(featureInput,ctx.candidates))return true;
     if(ctx.candidates.length&&allCandidatesCue(t))return true;
-    if(ctx.candidates.length&&candidateFeatureRequests(t,ctx.candidates).length)return true;
-    if(ctx.candidates.length&&selectFromCandidates(t,ctx.candidates))return true;
+    var selectedContextCandidate=ctx.candidates.length?selectFromCandidates(featureInput,ctx.candidates,ctx.selectedCandidate):null;
+    if(selectedContextCandidate&&featureIntents(featureInput,selectedContextCandidate).length)return true;
+    if(ctx.candidates.length&&candidateFeatureRequests(featureInput,ctx.candidates).length)return true;
+    if(selectedContextCandidate)return true;
     if(hierarchicalSelection(t,ctx.item))return true;
     if(ctx.item&&childrenOf(ctx.item).length&&hierarchyCue(t))return true;
+    if(featureCarryFollowup(featureInput,ctx))return true;
     var correctionText=correctionTail(original),resolveText=correctionText||t;
     var detailed=findItemDetailed(resolveText),purpose=purposeScores(resolveText),item=detailed.item||(purpose[0]&&purpose[0].item)||null;
-    var featureReqs=featureRequests(t,ctx.item,cur);if(featureReqs.length)return true;
+    var featureReqs=featureRequests(featureInput,ctx.item,cur);if(featureReqs.length)return true;
     // 人物・敵名を主語にした「○○のカウンター見たい」は、ページ移動ではなく
     // 正本の個別カウンター回答へ渡す。
     if(specificCounterSubjectCue(t,item))return false;
-    if(featureQuestionTarget(t,ctx.item,cur))return true;
+    if(featureQuestionTarget(featureInput,ctx.item,cur))return true;
     if(ctx.feature&&item&&sourcePage(item)&&sourcePage(item).facts&&sourcePage(item).facts[ctx.feature]&&/^(?:じゃあ|では|なら|それなら)?[、,\s]*.+?(?:は|だと|なら)[？?。！!]*$/.test(t))return true;
     if(correctionCue(original)&&item)return true;
     if(deicticOpenCue(t)&&ctx.item)return true;
@@ -627,6 +1318,7 @@
     opt=opt||{};
     var original=S(opt.original||text),t=normalizeInput(original);if(!t)return {handled:false};
     var mode=pageMode(),cur=currentItem(),intent=opt.intentInfo?String(opt.intentInfo.intent||''):'',hist=historyGuideContext(opt.history),recent=hist.item;
+    var featureInput=correctionTail(original)||t;
 
     if(overviewCue(t)){
       return {handled:true,mode:'サイト総合案内',answer:'たいらの野望は、信長の野望Online向けの検索・計算・一覧・集合・抽選・カウンター確認をまとめたサイトです。\n陣法検索、英傑一覧、能力計算、家臣計算、七星転生、食料、鬼神石、九十九、魔導結晶、星海の荒石、鎮魂符、御蔵番拡張・名物一覧、徒党登録、ルーレット、トーナメント、カウンターがあります。\nやりたいことをラフに言ってくれれば、該当ページと使い方を案内するのですよ。',links:[itemLink(BY_ID.jinpo),itemLink(BY_ID.heroes),itemLink(BY_ID.stats),itemLink(BY_ID.retainer),itemLink(BY_ID.kishin),itemLink(BY_ID.tsukumo),itemLink(BY_ID.mado),itemLink(BY_ID.counter)],data:{siteOverview:true,itemCount:ITEMS.length,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
@@ -638,41 +1330,121 @@
       return explainItem(cur,false);
     }
 
+    if(openToHelpCorrectionCue(original)){
+      if(hist.selectedCandidate)return retainCandidateContext(explainItem(hist.selectedCandidate,false),hist.candidates,hist.selectedCandidate,hist.candidateKind,hist.sourceCandidates,hist.conditions);
+      if(hist.candidates.length>1)return candidateClarification(hist.candidates,'使い方を知りたいのは、','のどれですか？');
+      if(recent)return explainItem(recent,false);
+    }
+
+    var directMultiOpen=explicitMultiOpenItems(original);
+    if(directMultiOpen.length>=2)return answerCandidateLinks(directMultiOpen,directMultiOpen);
+
+    if(hist.candidates.length){
+      if(candidateRestoreCue(original)&&hist.sourceCandidates.length){
+        var restored=answerCandidateSet(hist.sourceCandidates,hist.sourceCandidates,{open:candidateOpenCue(original),lead:candidateOpenCue(original)?candidateNames(hist.sourceCandidates)+'を開けるようにしました。':'元の候補 '+candidateNames(hist.sourceCandidates)+'に戻しました。'});if(restored)return restored;
+      }
+      var conditional=answerCandidateConditionalQuery(original,hist.candidates,hist.sourceCandidates,hist.conditions);
+      if(conditional)return conditional;
+      var exclusionOnly=answerCandidateExclusionOnly(original,hist.candidates,hist.sourceCandidates);
+      if(exclusionOnly)return exclusionOnly;
+      var remainder=answerCandidateRemainder(original,hist.candidates,hist.sourceCandidates,hist.selectedCandidate,hist.openedItems);
+      if(remainder)return remainder;
+      var subset=candidateSubset(original,hist.candidates);
+      if(subset.length)return answerCandidateLinks(subset,hist.candidates,hist.sourceCandidates);
+      if(sameOrDifferentCue(t)){
+        var sameAnswer=compareItems(hist.candidates);
+        if(sameAnswer)sameAnswer.answer='完全に同じではないのですよ。\n'+sameAnswer.answer;
+        if(sameAnswer)return sameAnswer;
+      }
+      if(comparisonRecommendationCue(t)){
+        var recommendation=answerComparisonRecommendation(hist.candidates);if(recommendation)return recommendation;
+      }
+      var capabilityAnswer=answerCandidateCapability(featureInput,hist.candidates);
+      if(capabilityAnswer)return capabilityAnswer;
+    }
+
+    var excluded=excludedPageReference(featureInput);
+    if(excluded){
+      var alternatives=(hist.candidates||[]).filter(function(x){return x&&x.id!==excluded.item.id;});
+      if(alternatives.length===1){
+        var excludedIntents=featureIntents(excluded.tail||featureInput,alternatives[0]);
+        if(excludedIntents.length)return retainCandidateContext(answerFeatures(alternatives[0],excludedIntents,true,excluded.tail||featureInput),hist.candidates,alternatives[0],hist.candidateKind,hist.sourceCandidates,hist.conditions);
+        var excludedPage=explainItem(alternatives[0],true);
+        if(hist.candidateKind==='comparison')excludedPage=retainCandidateContext(excludedPage,hist.candidates,alternatives[0],'comparison',hist.sourceCandidates,hist.conditions);
+        return excludedPage;
+      }
+      if(alternatives.length>1)return candidateClarification(alternatives,'「'+excluded.item.name+'」ではない候補は、');
+      return {handled:true,mode:'サイト総合案内',answer:'「'+excluded.item.name+'」ではない方だけでは、対象を一つに決められないのですよ。比較していた相手の名前を教えてください。',links:[],data:{needsClarification:true,excludedSiteItem:excluded.item.id}};
+    }
+
+    var mixedClauses=answerMixedSiteClauses(original,recent,cur,hist.candidates);
+    if(mixedClauses)return mixedClauses;
+
+    var clauseGroups=siteClauseFeatureGroups(original,recent,cur,hist.candidates);
+    if(clauseGroups.length){
+      var clauseAnswer=answerClauseFeatureGroups(clauseGroups,true);if(clauseAnswer)return clauseAnswer;
+    }
+
     if(hist.candidates.length&&allCandidatesCue(t)){
-      var allLinks=answerCandidateLinks(hist.candidates);if(allLinks)return allLinks;
+      var allLinks=answerCandidateLinks(hist.candidates,hist.candidates,hist.sourceCandidates);if(allLinks)return allLinks;
     }
     if(hist.candidates.length){
-      var contextualRequests=candidateFeatureRequests(t,hist.candidates);
+      var selectedContextCandidate=selectFromCandidates(featureInput,hist.candidates,hist.selectedCandidate);
+      if(selectedContextCandidate){
+        var selectedContextFeatures=featureIntents(featureInput,selectedContextCandidate);
+        if(selectedContextFeatures.length){
+          var selectedContextAnswer=retainCandidateContext(answerFeatures(selectedContextCandidate,selectedContextFeatures,true,featureInput),hist.candidates,selectedContextCandidate,hist.candidateKind,hist.sourceCandidates,hist.conditions);if(selectedContextAnswer)return selectedContextAnswer;
+        }
+      }
+      if(!selectedContextCandidate&&hist.selectedCandidate&&!/(?:両方|どっちも|どちらも|それぞれ|全部|全員)/.test(featureInput)){
+        var continuedSelectedFeatures=featureIntents(featureInput,hist.selectedCandidate);
+        if(continuedSelectedFeatures.length){
+          var continuedSelectedAnswer=retainCandidateContext(answerFeatures(hist.selectedCandidate,continuedSelectedFeatures,true,featureInput),hist.candidates,hist.selectedCandidate,hist.candidateKind,hist.sourceCandidates,hist.conditions);if(continuedSelectedAnswer)return continuedSelectedAnswer;
+        }
+      }
+      var contextualRequests=candidateFeatureRequests(featureInput,hist.candidates);
       if(contextualRequests.length){
-        var contextualAnswer=answerFeatureRequests(contextualRequests,true,t);if(contextualAnswer)return contextualAnswer;
+        var contextualAnswer=answerFeatureRequests(contextualRequests,true,featureInput);if(contextualAnswer)return contextualAnswer;
       }
     }
 
-    var requestedFeatures=featureRequests(t,recent,cur);
+    var requestedFeatures=featureRequests(featureInput,recent,cur);
     if(requestedFeatures.length){
-      var requestedAnswer=answerFeatureRequests(requestedFeatures,true,t);
+      var requestedAnswer=answerFeatureRequests(requestedFeatures,true,featureInput);
       if(requestedAnswer)return requestedAnswer;
     }
-    var featureTarget=featureQuestionTarget(t,recent,cur);
+    var featureTarget=featureQuestionTarget(featureInput,recent,cur);
     if(featureTarget){
-      var featureKeys=featureIntents(t,featureTarget),samePage=cur&&cur.id===featureTarget.id;
-      var featureAnswer=answerFeatures(featureTarget,featureKeys,!samePage,t);
+      var featureKeys=featureIntents(featureInput,featureTarget),samePage=cur&&cur.id===featureTarget.id;
+      var featureAnswer=answerFeatures(featureTarget,featureKeys,!samePage,featureInput);
       if(featureAnswer)return featureAnswer;
     }
     if(hist.feature){
+      var carriedFeature=featureCarryFollowup(t,hist);
+      if(carriedFeature){
+        var carriedSame=cur&&cur.id===carriedFeature.item.id;
+        var carriedAnswer=answerFeatures(carriedFeature.item,[carriedFeature.feature],!carriedSame,carriedFeature.query);
+        if(carriedAnswer)return carriedAnswer;
+      }
       var followDetailed=findItemDetailed(t),followPurpose=purposeScores(t),followItem=followDetailed.item||(followPurpose[0]&&followPurpose[0].item)||null;
       var followPage=sourcePage(followItem);
-      if(followItem&&followPage&&followPage.facts&&followPage.facts[hist.feature]&&/^(?:じゃあ|では|なら|それなら|あと|それと)?[、,\s]*.+?(?:は|だと|なら|も同じ|も一緒)[？?。！!]*$/.test(t)){
+      if(followItem&&followPage&&followPage.facts&&followPage.facts[hist.feature]&&/^(?:じゃあ|じゃ|では|なら|それなら|あと|それと|で|それで)?[、,\s]*.+?(?:は|だと|なら|も同じ|も一緒)[？?。！!]*$/.test(t)){
         var followSame=cur&&cur.id===followItem.id;
-        var followAnswer=answerFeatures(followItem,[hist.feature],!followSame,t);
+        var followQuery=t;
+        if(hist.feature==='reflect'&&!featureSubjectIds(t).length&&hist.featureSubjects.length===1){var followLabel=featureSubjectLabel(hist.featureSubjects[0]);if(followLabel)followQuery+=' '+followLabel;}
+        var followAnswer=answerFeatures(followItem,[hist.feature],!followSame,followQuery);
         if(followAnswer)return followAnswer;
       }
     }
 
     // 直前に候補を出した後の「家臣の方」「2番目」など。
     if(hist.candidates.length){
-      var selected=selectFromCandidates(t,hist.candidates);
-      if(selected)return explainItem(selected,true);
+      var selected=selectFromCandidates(featureInput,hist.candidates,hist.selectedCandidate);
+      if(selected){
+        var selectedPage=explainItem(selected,true);
+        if(hist.candidateKind==='comparison')selectedPage=retainCandidateContext(selectedPage,hist.candidates,selected,'comparison',hist.sourceCandidates,hist.conditions);
+        return selectedPage;
+      }
       if(/^(?:どれ|どっち|どちら|もう一回|候補見せて|何があった)[？?。！!]*$/.test(t))return candidateClarification(hist.candidates,'候補は ');
     }
 
@@ -682,7 +1454,7 @@
     if(recent&&childrenOf(recent).length&&hierarchyCue(t))return candidateClarification(childrenOf(recent),'「'+recent.name+'」の次は、');
 
     // 「そのページ何できる」「開いて」「どこ押す」などは直前案内へ接続する。
-    if(recent&&deicticOpenCue(t))return explainItem(recent,true);
+    if(recent&&deicticOpenCue(t))return openItem(recent);
     if(recent&&pageHelpCue(t,null,recent))return explainItem(recent,true);
 
     // TOPや一般ページで具体的な陣法操作を言われた場合だけ、操作できる陣法ページへ案内する。
@@ -697,7 +1469,18 @@
     if(correctionCue(original)&&!item){var od=findItemDetailed(targetText);if(od.item)item=od.item;}
 
     var compared=mentionedItems(t);
-    if(compared.length>=2&&/(?:どっち|どちら|違い|違う|どう違う|比較|使い分け|どれがいい)/.test(t))return compareItems(compared);
+    if(compared.length>=2&&/(?:どっち|どちら|違い|違う|どう違う|比較|使い分け|どれがいい)/.test(t)){
+      var comparedAnswer=compareItems(compared),openCompared=explicitComparedOpen(t,compared);
+      if(comparedAnswer&&openCompared){
+        comparedAnswer.links=[itemLink(openCompared)];
+        comparedAnswer.answer+='\n「'+openCompared.name+'」だけ開けるようにしました。';
+        comparedAnswer.data.selectedSiteItem=openCompared.id;
+      }
+      return comparedAnswer;
+    }
+
+    var alternatives=alternativeItems(t);
+    if(alternatives.length>=2)return candidateClarification(alternatives,'候補は ');
 
     if(item&&childrenOf(item).length&&hierarchyCue(t))return candidateClarification(childrenOf(item),'「'+item.name+'」の次は、');
 
@@ -729,7 +1512,8 @@
     version:VERSION,items:ITEMS.slice(),respond:respond,findItem:findItem,findItemDetailed:findItemDetailed,
     purposeItem:purposeItem,purposeScores:purposeScores,currentItem:currentItem,pageMode:pageMode,
     absoluteUrl:abs,normalizeInput:normalizeInput,hasNavigationCue:hasNavigationCue,
-    shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,
-    childrenOf:childrenOf,usageOf:usageOf,sourcePage:sourcePage,featureIntent:featureIntent,featureIntents:featureIntents,answerFeature:answerFeature,candidateFeatureRequests:candidateFeatureRequests,siteSourceVersion:SOURCE.version||''
+    shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,candidateContextFresh:candidateContextFresh,
+    childrenOf:childrenOf,usageOf:usageOf,sourcePage:sourcePage,featureIntent:featureIntent,featureIntents:featureIntents,answerFeature:answerFeature,candidateFeatureRequests:candidateFeatureRequests,
+    splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,siteSourceVersion:SOURCE.version||''
   };
 })();

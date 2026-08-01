@@ -542,6 +542,7 @@
                   siteItem:String(child.data.siteItem||''),
                   siteFeature:String(child.data.siteFeature||''),
                   siteFeatures:Array.isArray(child.data.siteFeatures)?child.data.siteFeatures.slice(0,8):[],
+                  siteFeatureSubjects:Array.isArray(child.data.siteFeatureSubjects)?child.data.siteFeatureSubjects.slice(0,8):[],
                   siteItems:Array.isArray(child.data.siteItems)?child.data.siteItems.slice(0,8):[],
                   siteComparison:Array.isArray(child.data.siteComparison)?child.data.siteComparison.slice(0,8):[],
                   candidates:Array.isArray(child.data.candidates)?child.data.candidates.slice(0,8):[],
@@ -640,6 +641,21 @@
         conversationControl=window.JINPO_BOT_CONVERSATION.control(originalMessage,history);
       }
     }catch(controlErr){}
+
+    // サイト案内で直前に複数候補を並べた直後だけ、
+    // 「前者は保存？」「後者を開いて」を一般の話題復帰ではなく候補参照として扱う。
+    // 古い候補や通常の「前の話に戻って」には適用しない。
+    try{
+      if(conversationControl&&conversationControl.control==='back'&&window.JINPO_BOT_SITE_GUIDE&&
+         typeof window.JINPO_BOT_SITE_GUIDE.historyGuideContext==='function'&&typeof window.JINPO_BOT_SITE_GUIDE.preflight==='function'){
+        var siteCandidateContext=window.JINPO_BOT_SITE_GUIDE.historyGuideContext(history)||{};
+        var candidateIndex=Number(siteCandidateContext.candidateIndex);
+        var candidateFresh=typeof window.JINPO_BOT_SITE_GUIDE.candidateContextFresh==='function'
+          ?window.JINPO_BOT_SITE_GUIDE.candidateContextFresh(history,siteCandidateContext)
+          :Array.isArray(siteCandidateContext.candidates)&&siteCandidateContext.candidates.length&&candidateIndex>=Math.max(0,(history||[]).length-3);
+        if(candidateFresh&&window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext}))conversationControl=null;
+      }
+    }catch(siteCandidateControlErr){}
 
     if(conversationControl){
       try{
@@ -833,7 +849,18 @@
     }catch(conversationErr){}
 
     if(intentInfo&&intentInfo.referenceClarification){
-      return {answer:String(intentInfo.referenceClarification),sources:[],links:[],mode:'会話文脈',data:{needsReferenceClarification:true}};
+      var siteReferenceHandled=false;
+      try{
+        siteReferenceHandled=!!(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.preflight==='function'&&
+          window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext}));
+      }catch(siteReferenceErr){}
+      if(!siteReferenceHandled){
+        return {answer:String(intentInfo.referenceClarification),sources:[],links:[],mode:'会話文脈',data:{needsReferenceClarification:true}};
+      }
+      // 直前のサイト候補だけで指示語を解決できる場合は、一般会話の曖昧確認よりサイト案内を優先する。
+      message=originalMessage;
+      intentInfo.message=originalMessage;
+      intentInfo.referenceClarification='';
     }
 
     var contextInfo={original:originalMessage,message:message,resolved:message!==originalMessage,reason:dialogInfo.reason||'',confidence:dialogInfo.handled?0.99:0};
