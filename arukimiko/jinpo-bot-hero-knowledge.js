@@ -6,7 +6,7 @@
   'use strict';
   if(window.JINPO_BOT_HERO_KNOWLEDGE)return;
 
-  var VERSION='1.8.0';
+  var VERSION='2.0.0';
   var STAT_ORDER=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
   var STAT_ALIASES=[
     {to:'生命',a:['生命力','生命','体力','HP','hp']},
@@ -204,6 +204,96 @@
     }
     return null;
   }
+  function cloneList(v){return Array.isArray(v)?v.slice():[];}
+  function emptyFilterState(){return {job:'',cost:0,factors:[],factorSlots:[],skill:'',excludedJobs:[],excludedCosts:[],excludedFactors:[],skillPresence:null,thresholds:[]};}
+  function cloneFilterState(v){
+    v=v||{};return {job:S(v.job),cost:Number(v.cost||0),factors:cloneList(v.factors),factorSlots:cloneList(v.factorSlots).map(function(x){return {slot:Number(x.slot),factor:S(x.factor)};}),skill:S(v.skill),excludedJobs:cloneList(v.excludedJobs),excludedCosts:cloneList(v.excludedCosts).map(Number),excludedFactors:cloneList(v.excludedFactors),skillPresence:v.skillPresence===true?true:(v.skillPresence===false?false:null),thresholds:cloneList(v.thresholds).map(function(x){return {stat:S(x.stat),value:Number(x.value),op:S(x.op)};})};
+  }
+  function uniqueList(v){var out=[];(v||[]).forEach(function(x){if(out.indexOf(x)<0)out.push(x);});return out;}
+  function mergeFilterState(base,add){
+    var out=cloneFilterState(base),a=cloneFilterState(add);
+    if(a.job)out.job=a.job;if(a.cost)out.cost=a.cost;if(a.skill)out.skill=a.skill;
+    out.factors=uniqueList(out.factors.concat(a.factors));
+    a.factorSlots.forEach(function(x){out.factorSlots=out.factorSlots.filter(function(y){return y.slot!==x.slot;});out.factorSlots.push(x);});
+    out.excludedJobs=uniqueList(out.excludedJobs.concat(a.excludedJobs));out.excludedCosts=uniqueList(out.excludedCosts.concat(a.excludedCosts));out.excludedFactors=uniqueList(out.excludedFactors.concat(a.excludedFactors));
+    if(a.skillPresence!==null)out.skillPresence=a.skillPresence;
+    a.thresholds.forEach(function(x){out.thresholds=out.thresholds.filter(function(y){return y.stat!==x.stat;});out.thresholds.push(x);});
+    return out;
+  }
+  function filterStateFromRowsFilter(f){return cloneFilterState({job:f.job,cost:f.cost,factors:f.factors,factorSlots:f.factorSlots,skill:f.skill,excludedJobs:f.excludedJobs,excludedCosts:f.excludedCosts,excludedFactors:f.excludedFactors,skillPresence:f.skillPresence,thresholds:f.thresholds});}
+  function applyFilterState(rows,state){
+    var s=cloneFilterState(state),out=(rows||[]).slice();
+    if(s.job)out=out.filter(function(r){return S(r['職業'])===s.job;});
+    if(s.cost)out=out.filter(function(r){return Number(r['コスト'])===s.cost;});
+    if(s.factors.length)out=out.filter(function(r){var rf=rowFactors(r);return s.factors.every(function(f){return rf.indexOf(f)>=0;});});
+    if(s.factorSlots.length)out=out.filter(function(r){return s.factorSlots.every(function(x){return S(r['因子'+x.slot])===x.factor;});});
+    if(s.skill)out=out.filter(function(r){return S(r['技能'])===s.skill;});
+    if(s.excludedJobs.length)out=out.filter(function(r){return s.excludedJobs.indexOf(S(r['職業']))<0;});
+    if(s.excludedCosts.length)out=out.filter(function(r){return s.excludedCosts.indexOf(Number(r['コスト']))<0;});
+    if(s.excludedFactors.length)out=out.filter(function(r){var rf=rowFactors(r);return s.excludedFactors.every(function(f){return rf.indexOf(f)<0;});});
+    if(s.skillPresence!==null)out=out.filter(function(r){return validSkill(r)===s.skillPresence;});
+    if(s.thresholds.length)out=out.filter(function(r){return matchesThreshold(r,s.thresholds);});
+    return out;
+  }
+  function cloneRefinementSnapshot(v){v=v||{};return {filters:cloneFilterState(v.filters),sortStats:cloneList(v.sortStats),sortLow:!!v.sortLow};}
+  function cloneRefinementStack(v){return cloneList(v).map(cloneRefinementSnapshot).slice(-8);}
+  function cleanSavedViewName(v){return nfkc(v).replace(/^[「『【"']+|[」』】"']+$/g,'').replace(/(?:として|という名前|という名|の結果|の候補)$/g,'').trim().slice(0,16);}
+  function cloneSavedView(v){v=v||{};var active=cloneList(v.activeCandidates),root=cloneList(v.rootCandidates);if(!root.length)root=active.slice();return {name:cleanSavedViewName(v.name),rootCandidates:root,snapshot:cloneRefinementSnapshot(v.snapshot),activeCandidates:active,displayFilters:cloneFilterState(v.displayFilters||v.snapshot&&v.snapshot.filters),displaySortStats:cloneList(v.displaySortStats||v.snapshot&&v.snapshot.sortStats),displaySortLow:v.displaySortLow===undefined?!!(v.snapshot&&v.snapshot.sortLow):!!v.displaySortLow,count:Number(v.count||active.length||0)};}
+  function cloneSavedViews(v){var out=[];cloneList(v).forEach(function(x){var c=cloneSavedView(x);if(!c.name||!c.rootCandidates.length)return;out=out.filter(function(y){return y.name!==c.name;});out.push(c);});return out.slice(-6);}
+  function refinementSnapshot(v){return cloneRefinementSnapshot(v);}
+  function sameRefinementSnapshot(a,b){return JSON.stringify(refinementSnapshot(a))===JSON.stringify(refinementSnapshot(b));}
+  function latestHeroRefinementContext(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-28;i--){
+      var m=h[i]||{},d=(m.meta||{}).data||{},x=d.heroRefinement;
+      if(m.role==='assistant'&&d.heroKnowledge&&x&&Array.isArray(x.rootCandidates)&&x.rootCandidates.length){return {rootCandidates:x.rootCandidates.slice(),activeCandidates:cloneList(x.activeCandidates),filters:cloneFilterState(x.filters),sortStats:cloneList(x.sortStats),sortLow:!!x.sortLow,undoStack:cloneRefinementStack(x.undoStack),redoStack:cloneRefinementStack(x.redoStack),savedViews:cloneSavedViews(x.savedViews)};}
+    }
+    return null;
+  }
+  function refinementDiff(before,after){
+    var b=cloneList(before),a=cloneList(after),bm=Object.create(null),am=Object.create(null);b.forEach(function(x){bm[x]=1;});a.forEach(function(x){am[x]=1;});
+    return {before:b,after:a,added:a.filter(function(x){return !bm[x];}),removed:b.filter(function(x){return !am[x];})};
+  }
+  function refinementData(rootNames,activeRows,filters,sortStats,sortLow,undoStack,redoStack,savedViews){return {rootCandidates:cloneList(rootNames),activeCandidates:(activeRows||[]).map(function(r){return r['英傑名'];}),filters:cloneFilterState(filters),sortStats:cloneList(sortStats),sortLow:!!sortLow,undoStack:cloneRefinementStack(undoStack),redoStack:cloneRefinementStack(redoStack),savedViews:cloneSavedViews(savedViews)};}
+  function attachRefinementMeta(meta,f,activeRows,sortStats,sortLow,prior){
+    meta=meta||{};var current=filterStateFromRowsFilter(f||{}),filters=prior?mergeFilterState(prior.filters,current):current,rootNames,undo=[],redo=[];
+    if(prior&&prior.rootCandidates&&prior.rootCandidates.length)rootNames=prior.rootCandidates.slice();
+    else if(f&&f.scopeNames&&f.scopeNames.length)rootNames=f.scopeNames.slice();
+    else rootNames=(activeRows||[]).map(function(r){return r['英傑名'];});
+    if(prior){undo=cloneRefinementStack(prior.undoStack);if(!sameRefinementSnapshot(prior,{filters:filters,sortStats:sortStats,sortLow:sortLow}))undo.push(refinementSnapshot(prior));undo=undo.slice(-8);}
+    meta.filters=cloneFilterState(filters);meta.heroRefinement=refinementData(rootNames,activeRows,filters,sortStats,sortLow,undo,redo,prior&&prior.savedViews);
+    if(prior){var diff=refinementDiff(prior.activeCandidates,meta.heroRefinement.activeCandidates);meta.heroRefinementChange=diff;meta.previousCandidates=diff.before;meta.addedCandidates=diff.added;meta.removedCandidates=diff.removed;}
+    return meta;
+  }
+
+  function latestHeroGroupContext(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-28;i--){
+      var m=h[i]||{},d=(m.meta||{}).data||{};
+      if(m.role!=='assistant'||!d.heroKnowledge||!Array.isArray(d.heroes)||d.heroes.length<3)continue;
+      return {heroes:d.heroes.slice(0,12),stats:Array.isArray(d.stats)?d.stats.slice():STAT_ORDER.slice(),perStatLeaders:!!d.perStatLeaders,leaderCounts:!!d.leaderCounts,commonRegistration:!!d.commonRegistration,factorComparison:!!d.factorComparison};
+    }
+    return null;
+  }
+  function replacementTargetIndex(text,names){
+    var t=nfkc(text),m=t.match(/([1-9])\s*(?:人目|番目)/);if(m){var i=Number(m[1])-1;if(i>=0&&i<names.length)return i;}
+    if(/前者|最初|一番上|上の人/.test(t))return 0;if(/後者/.test(t))return 1;if(/最後|一番下/.test(t))return names.length-1;
+    var exact=exactNamedRows(t);for(var j=0;j<exact.length;j++){var at=names.indexOf(exact[j]['英傑名']);if(at>=0)return at;}
+    return -1;
+  }
+  function detectGroupReplacement(text,history){
+    var t=nfkc(text),group=latestHeroGroupContext(history);if(!group||!/(?:変えて|替えて|入れ替えて|差し替えて|変更して|じゃなくて|ではなく)/.test(t))return null;
+    var target=replacementTargetIndex(t,group.heroes),exact=exactNamedRows(t),replacement=null,correction=null,ambiguous=null;
+    for(var i=exact.length-1;i>=0;i--)if(group.heroes.indexOf(exact[i]['英傑名'])<0){replacement=exact[i];break;}
+    if(!replacement){var frag=replacementFragment(t),fr=frag?fuzzyRowFromFragment(frag):null;if(fr&&fr.row){replacement=fr.row;if(fr.corrected)correction={query:fr.query,name:fr.row['英傑名']};}else if(fr&&fr.ambiguous)ambiguous=fr;}
+    if(target<0&&exact.length){for(var j=0;j<exact.length;j++){var idx=group.heroes.indexOf(exact[j]['英傑名']);if(idx>=0){target=idx;break;}}}
+    if(ambiguous)return {group:group,ambiguous:ambiguous};
+    if(target<0||!replacement)return {group:group,needsClarification:true};
+    if(group.heroes[target]===replacement['英傑名'])return {group:group,needsClarification:true,sameTarget:true,heroes:group.heroes.slice(),correction:correction};
+    var heroes=group.heroes.slice();heroes[target]=replacement['英傑名'];if(uniqueList(heroes).length!==heroes.length)return {group:group,needsClarification:true,sameHero:true,heroes:heroes};
+    return {group:group,target:target,row:replacement,heroes:heroes,correction:correction};
+  }
+
   function latestHeroPairContext(history){
     var h=Array.isArray(history)?history:[];
     for(var i=h.length-1;i>=0&&i>=h.length-24;i--){
@@ -514,6 +604,162 @@
     if(th.length)rows=rows.filter(function(r){return matchesThreshold(r,th);});
     return {rows:rows,job:job,cost:cost,factors:factors,factorSlots:factorSlots,skill:skill,excludedJobs:excludedJobs,excludedCosts:excludedCosts,excludedFactors:excludedFactors,skillPresence:skillPresence,stats:stats,thresholds:th,scopeNames:Array.isArray(scopeNames)?scopeNames.slice():[]};
   }
+  function filterStateLabel(s){
+    var f={job:s.job,cost:s.cost,factors:s.factors,factorSlots:s.factorSlots,skill:s.skill,excludedJobs:s.excludedJobs,excludedCosts:s.excludedCosts,excludedFactors:s.excludedFactors,skillPresence:s.skillPresence,thresholds:s.thresholds,scopeNames:[]};
+    var label=filterLabel(f);return label==='全英傑の'?'条件なし':label.replace(/の$/,'');
+  }
+  function lastStatInText(text){
+    var t=nfkc(text),best=null;STAT_ALIASES.forEach(function(row){row.a.forEach(function(a){var at=t.lastIndexOf(a);if(at>=0&&(!best||at>best.at||(at===best.at&&a.length>best.len)))best={stat:row.to,at:at,len:a.length};});});return best?best.stat:'';
+  }
+  function refinementRowsFor(context,snapshot){
+    var roots=rowsByNames(context.rootCandidates),state=cloneFilterState(snapshot.filters),sortStats=cloneList(snapshot.sortStats),sortLow=!!snapshot.sortLow,rows=applyFilterState(roots,state);
+    if(sortStats.length)rows.sort(function(a,b){var av=scoreOf(a,sortStats),bv=scoreOf(b,sortStats),d=sortLow?av-bv:bv-av;return d||context.rootCandidates.indexOf(a['英傑名'])-context.rootCandidates.indexOf(b['英傑名']);});
+    else rows.sort(function(a,b){return context.rootCandidates.indexOf(a['英傑名'])-context.rootCandidates.indexOf(b['英傑名']);});
+    return rows;
+  }
+  function refinementAnswer(head,rows,state,sortStats,sortLow){
+    var take=rows.slice(0,20),condition=filterStateLabel(state),sortLabel=sortStats.length?' / 並び：'+sortStats.join('＋')+(sortLow?'が低い順':'が高い順'):'';
+    var answer=head+'\n現在は '+condition+sortLabel+'、該当 '+rows.length+'人です。'+(take.length?'\n'+take.map(function(r,i){var vals=sortStats.length?'（'+sortStats.map(function(st){return st+':'+r._stats[st];}).join(' / ')+'）':'（'+r['職業']+'・コスト'+r['コスト']+'）';return (i+1)+'：'+r['英傑名']+vals;}).join('\n'):'\n該当する英傑はいません。');
+    if(rows.length>take.length)answer+='\nほか '+(rows.length-take.length)+'人います。';
+    return {answer:answer,take:take};
+  }
+  function savedViewByName(views,name){var n=cleanSavedViewName(name);return cloneSavedViews(views).find(function(v){return v.name===n;})||null;}
+  function savedViewRows(view){var roots=rowsByNames(view.activeCandidates&&view.activeCandidates.length?view.activeCandidates:view.rootCandidates),stats=cloneList(view.snapshot&&view.snapshot.sortStats),low=!!(view.snapshot&&view.snapshot.sortLow);if(stats.length)roots.sort(function(a,b){var av=scoreOf(a,stats),bv=scoreOf(b,stats),d=low?av-bv:bv-av;return d||String(a['英傑名']).localeCompare(String(b['英傑名']),'ja');});return roots;}
+  function extractSavedViewName(text){
+    var t=nfkc(text),m=t.match(/(?:この|今の|現在の)?(?:結果|候補|条件|状態)?\s*を\s*[「『【\"]?([^」』】\"\n]{1,20}?)[」』】\"]?\s*(?:として|という名前で|という名で)\s*(?:保存|覚えて|残して)/);
+    if(!m)m=t.match(/[「『【\"]?([^」』】\"\n]{1,20}?)[」』】\"]?\s*(?:として|という名前で|という名で)\s*(?:保存|覚えて|残して)/);
+    if(!m)m=t.match(/(?:保存名|名前|名)\s*(?:は|を|:|：)\s*[「『【\"]?([^」』】\"\n]{1,20})/);
+    var n=cleanSavedViewName(m?m[1]:'');
+    if(/^(?:この|今|現在|結果|候補|条件|状態|保存|覚えて|残して|元|最初)$/.test(n))return '';
+    return n;
+  }
+  function mentionedSavedViews(text,views){
+    var t=nfkc(text),hits=[];cloneSavedViews(views).forEach(function(v){var at=t.indexOf(v.name);if(at>=0)hits.push({view:v,at:at,end:at+v.name.length});});
+    hits.sort(function(a,b){return a.at-b.at||(b.end-b.at)-(a.end-a.at);});var out=[],ranges=[];hits.forEach(function(h){if(ranges.some(function(r){return h.at>=r.at&&h.end<=r.end;}))return;ranges.push({at:h.at,end:h.end});out.push(h.view);});return out;
+  }
+  function parseSavedViewCommand(text,history){
+    var ctx=latestHeroRefinementContext(history);if(!ctx)return null;
+    var t=nfkc(text),views=cloneSavedViews(ctx.savedViews),mentioned=mentionedSavedViews(t,views);
+    if(/(?:保存した|覚えた|残した)(?:結果|候補|条件|状態)?(?:の)?(?:一覧|リスト|名前)|(?:保存結果|保存候補|保存条件)(?:を)?(?:見せて|教えて|一覧)/.test(t))return {action:'list',context:ctx,views:views};
+    if(/(?:保存|覚えて|残して)/.test(t)&&/(?:結果|候補|条件|状態|として|という名前|という名)/.test(t)){
+      var name=extractSavedViewName(t);return {action:name?'save':'saveClarify',context:ctx,views:views,name:name};
+    }
+    if(mentioned.length>=2&&/(?:比べ|比較|違い|差|共通|同じ|増え|減っ)/.test(t))return {action:'compare',context:ctx,views:views,a:mentioned[0],b:mentioned[1]};
+    if(mentioned.length&&/(?:削除|消して|消す|忘れて|破棄)/.test(t))return {action:'delete',context:ctx,views:views,view:mentioned[0]};
+    if(mentioned.length&&/(?:戻して|戻る|復元|呼び出|切り替|切替|再開)/.test(t))return {action:'restore',context:ctx,views:views,view:mentioned[0]};
+    if(/(?:保存した|覚えた|残した)(?:結果|候補|条件|状態).*(?:比べ|比較)/.test(t))return {action:'compareClarify',context:ctx,views:views};
+    return null;
+  }
+  function savedViewSummary(v){var condition=filterStateLabel(v.displayFilters||v.snapshot.filters),sort=(v.displaySortStats||v.snapshot.sortStats).length?' / '+(v.displaySortStats||v.snapshot.sortStats).join('＋')+((v.displaySortLow===undefined?v.snapshot.sortLow:v.displaySortLow)?'が低い順':'が高い順'):'';return v.name+'：'+v.count+'人（'+condition+sort+'）';}
+  function renderSavedViewCommand(cmd){
+    var ctx=cmd.context,views=cloneSavedViews(cmd.views),currentRows=rowsByNames(ctx.activeCandidates),currentData=function(vs){return refinementData(ctx.rootCandidates,currentRows,ctx.filters,ctx.sortStats,ctx.sortLow,ctx.undoStack,ctx.redoStack,vs);};
+    if(cmd.action==='saveClarify')return result('英傑マスター確認','保存する名前を教えてください。例：「今の結果をAとして保存」のように指定できます。',{needsClarification:true,savedViewCommand:true,heroRefinement:currentData(views)});
+    if(cmd.action==='list')return result('英傑マスター実データ',views.length?'保存している英傑候補は '+views.length+'件です。\n'+views.map(savedViewSummary).join('\n'):'保存している英傑候補はありません。',{savedViewCommand:true,savedViewList:true,savedViews:views.map(function(v){return {name:v.name,count:v.count};}),heroRefinement:currentData(views)});
+    if(cmd.action==='save'){
+      var entry={name:cmd.name,rootCandidates:ctx.activeCandidates.slice(),snapshot:{filters:emptyFilterState(),sortStats:ctx.sortStats.slice(),sortLow:ctx.sortLow},activeCandidates:ctx.activeCandidates.slice(),displayFilters:cloneFilterState(ctx.filters),displaySortStats:ctx.sortStats.slice(),displaySortLow:ctx.sortLow,count:ctx.activeCandidates.length};
+      var replaced=!!savedViewByName(views,cmd.name);views=views.filter(function(v){return v.name!==cmd.name;});views.push(entry);views=cloneSavedViews(views);
+      return result('英傑マスター実データ','現在の英傑候補 '+entry.count+'人を「'+cmd.name+'」として'+(replaced?'上書き保存':'保存')+'しました。保存はこの会話内だけで、最大6件です。',{savedViewCommand:true,savedViewSaved:true,savedViewName:cmd.name,savedViewCount:entry.count,heroRefinement:currentData(views)});
+    }
+    if(cmd.action==='delete'){
+      views=views.filter(function(v){return v.name!==cmd.view.name;});
+      return result('英傑マスター実データ','保存した「'+cmd.view.name+'」を削除しました。',{savedViewCommand:true,savedViewDeleted:true,savedViewName:cmd.view.name,heroRefinement:currentData(views)});
+    }
+    if(cmd.action==='compareClarify')return result('英傑マスター確認',views.length>=2?'比較する保存名を2つ指定してください。保存中：'+views.map(function(v){return v.name;}).join(' / '):'比較するには、英傑候補を別名で2件以上保存してください。',{needsClarification:true,savedViewCommand:true,heroRefinement:currentData(views)});
+    if(cmd.action==='compare'){
+      var ar=savedViewRows(cmd.a).map(function(r){return r['英傑名'];}),br=savedViewRows(cmd.b).map(function(r){return r['英傑名'];}),diff=refinementDiff(ar,br),common=ar.filter(function(n){return br.indexOf(n)>=0;});
+      var answer='保存結果「'+cmd.a.name+'」と「'+cmd.b.name+'」を比較しました。\n'+cmd.a.name+'：'+ar.length+'人 / '+cmd.b.name+'：'+br.length+'人\n共通：'+common.length+'人'+(common.length?'（'+common.slice(0,20).join(' / ')+(common.length>20?' ほか'+(common.length-20)+'人':'')+'）':'')+'\n'+cmd.a.name+'だけ：'+diff.removed.length+'人'+(diff.removed.length?'（'+diff.removed.slice(0,20).join(' / ')+(diff.removed.length>20?' ほか'+(diff.removed.length-20)+'人':'')+'）':'')+'\n'+cmd.b.name+'だけ：'+diff.added.length+'人'+(diff.added.length?'（'+diff.added.slice(0,20).join(' / ')+(diff.added.length>20?' ほか'+(diff.added.length-20)+'人':'')+'）':'');
+      return result('英傑マスター実データ',answer+sourceSuffix(),{savedViewCommand:true,savedViewCompared:true,savedViewNames:[cmd.a.name,cmd.b.name],commonCandidates:common,onlyFirst:diff.removed,onlySecond:diff.added,heroRefinement:currentData(views)});
+    }
+    if(cmd.action==='restore'){
+      var rows=savedViewRows(cmd.view),snap=cmd.view.snapshot,diff2=refinementDiff(ctx.activeCandidates,rows.map(function(r){return r['英傑名'];})),savedCondition=filterStateLabel(cmd.view.displayFilters||snap.filters),shown=refinementAnswer('保存した「'+cmd.view.name+'」へ切り替えました。保存時の条件：'+savedCondition,rows,snap.filters,snap.sortStats,snap.sortLow);
+      return result('英傑マスター実データ',shown.answer+sourceSuffix(),{savedViewCommand:true,savedViewRestored:true,savedViewName:cmd.view.name,count:rows.length,heroes:shown.take.map(function(r){return r['英傑名'];}),candidates:cmd.view.rootCandidates.slice(),filters:cloneFilterState(snap.filters),stats:cloneList(snap.sortStats),low:!!snap.sortLow,heroRefinement:refinementData(cmd.view.rootCandidates,rows,snap.filters,snap.sortStats,snap.sortLow,[],[],views),heroRefinementChange:diff2,previousCandidates:diff2.before,addedCandidates:diff2.added,removedCandidates:diff2.removed});
+    }
+    return result('英傑マスター確認','保存した英傑候補の操作を確認できませんでした。',{needsClarification:true,savedViewCommand:true,heroRefinement:currentData(views)});
+  }
+
+  function parseRefinementHistoryCommand(text,history){
+    var ctx=latestHeroRefinementContext(history);if(!ctx)return null;
+    var t=nfkc(text),redo=/(?:取り消し|戻した|戻す前|一つ前に戻した|ひとつ前に戻した).*(?:やり直|元に戻|戻して)|(?:やっぱ|やはり).*(?:取り消す前|変更後|さっきの変更).*(?:戻)/.test(t);
+    var undo=/(?:直前|さっき|今の)(?:の)?(?:変更|絞り込み|条件変更|並べ替え).*(?:取り消|戻)|(?:条件|絞り込み|結果|並び順|候補).*(?:一つ|ひとつ|1つ|一個|1個)前.*(?:戻)|(?:一つ|ひとつ|1つ|一個|1個)前の(?:条件|絞り込み|結果|状態).*(?:戻)|(?:さっき外した|今外した)(?:条件|絞り込み).*(?:戻)|(?:外れた人|除外された人).*(?:戻)/.test(t);
+    if(!redo&&!undo)return null;
+    return {context:ctx,action:redo?'redo':'undo'};
+  }
+  function renderRefinementHistoryCommand(cmd){
+    var ctx=cmd.context,current=refinementSnapshot(ctx),undo=cloneRefinementStack(ctx.undoStack),redo=cloneRefinementStack(ctx.redoStack),target;
+    if(cmd.action==='undo'){
+      if(!undo.length)return result('英傑マスター確認','これ以上戻せる英傑の条件変更はありません。通常の話題へ戻る場合は「前の話に戻って」と言ってください。',{needsClarification:true,refinementHistory:true,heroRefinement:refinementData(ctx.rootCandidates,rowsByNames(ctx.activeCandidates),ctx.filters,ctx.sortStats,ctx.sortLow,undo,redo,ctx.savedViews)});
+      target=undo.pop();redo.push(current);redo=redo.slice(-8);
+    }else{
+      if(!redo.length)return result('英傑マスター確認','やり直せる英傑の条件変更はありません。',{needsClarification:true,refinementHistory:true,heroRefinement:refinementData(ctx.rootCandidates,rowsByNames(ctx.activeCandidates),ctx.filters,ctx.sortStats,ctx.sortLow,undo,redo,ctx.savedViews)});
+      target=redo.pop();undo.push(current);undo=undo.slice(-8);
+    }
+    var rows=refinementRowsFor(ctx,target),shown=refinementAnswer(cmd.action==='undo'?'直前の英傑条件変更を取り消しました。':'取り消した英傑条件変更をやり直しました。',rows,target.filters,target.sortStats,target.sortLow),diff=refinementDiff(ctx.activeCandidates,rows.map(function(r){return r['英傑名'];}));
+    return result('英傑マスター実データ',shown.answer+sourceSuffix(),{refinementHistoryEdited:true,refinementAction:cmd.action,count:rows.length,heroes:shown.take.map(function(r){return r['英傑名'];}),candidates:ctx.rootCandidates.slice(),filters:cloneFilterState(target.filters),stats:cloneList(target.sortStats),low:!!target.sortLow,heroRefinement:refinementData(ctx.rootCandidates,rows,target.filters,target.sortStats,target.sortLow,undo,redo,ctx.savedViews),heroRefinementChange:diff,previousCandidates:diff.before,addedCandidates:diff.added,removedCandidates:diff.removed});
+  }
+  function latestRefinementChange(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-16;i--){var m=h[i]||{},d=(m.meta||{}).data||{};if(m.role==='assistant'&&d.heroKnowledge)return d.heroRefinementChange?d.heroRefinementChange:null;}
+    return null;
+  }
+  function parseRefinementChangeQuestion(text,history){
+    var t=nfkc(text),change=latestRefinementChange(history);if(!change)return null;
+    if(/(?:誰|だれ|どの英傑).*(?:外れ|除外|消え|いなくな)|(?:外れ|除外|消え)た(?:人|英傑).*(?:誰|だれ)?/.test(t))return {kind:'removed',change:change};
+    if(/(?:誰|だれ|どの英傑).*(?:増え|追加|戻っ)|(?:増え|追加され|戻っ)た(?:人|英傑).*(?:誰|だれ)?/.test(t))return {kind:'added',change:change};
+    if(/(?:前|さっき|変更前).*(?:何人|どれくらい|差|違い|変わ)|(?:何人|どれくらい).*(?:増え|減っ|変わ)|(?:前の結果|変更前).*(?:比べ|比較)/.test(t))return {kind:'summary',change:change};
+    return null;
+  }
+  function renderRefinementChangeQuestion(q,history){
+    var c=q.change,ctx=latestHeroRefinementContext(history),list=q.kind==='removed'?c.removed:c.added,label=q.kind==='removed'?'外れた英傑':'増えた英傑',answer;
+    if(q.kind==='summary')answer='直前の変更前は '+c.before.length+'人、変更後は '+c.after.length+'人です。\n増えた英傑：'+c.added.length+'人'+(c.added.length?'（'+c.added.slice(0,20).join(' / ')+(c.added.length>20?' ほか'+(c.added.length-20)+'人':'')+'）':'')+'\n外れた英傑：'+c.removed.length+'人'+(c.removed.length?'（'+c.removed.slice(0,20).join(' / ')+(c.removed.length>20?' ほか'+(c.removed.length-20)+'人':'')+'）':'');
+    else answer=label+'は '+list.length+'人です。'+(list.length?'\n'+list.slice(0,20).join(' / ')+(list.length>20?'\nほか '+(list.length-20)+'人います。':''):'該当者はいません。');
+    var meta={refinementChangeAnswered:true,changeKind:q.kind,beforeCount:c.before.length,afterCount:c.after.length,addedCandidates:cloneList(c.added),removedCandidates:cloneList(c.removed),heroRefinementChange:{before:cloneList(c.before),after:cloneList(c.after),added:cloneList(c.added),removed:cloneList(c.removed)}};
+    if(ctx)meta.heroRefinement=refinementData(ctx.rootCandidates,rowsByNames(ctx.activeCandidates),ctx.filters,ctx.sortStats,ctx.sortLow,ctx.undoStack,ctx.redoStack,ctx.savedViews);
+    return result('英傑マスター実データ',answer+sourceSuffix(),meta);
+  }
+  function parseRefinementEdit(text,history){
+    var ctx=latestHeroRefinementContext(history);if(!ctx)return null;
+    var t=nfkc(text),stats=detectStats(t),state=cloneFilterState(ctx.filters),sortStats=ctx.sortStats.slice(),sortLow=ctx.sortLow,changed=[],kind='';
+    var resetAll=/(?:条件|絞り込み|フィルター).*(?:全部|すべて|全て).*(?:外|解除|なし|消)|(?:全部|すべて|全て)の(?:条件|絞り込み).*(?:外|解除|なし|消)|(?:元|最初)の(?:候補|一覧|メンバー|英傑|[0-9]+人).*(?:戻)/.test(t);
+    var resetSort=/(?:並び|並べ替え|順番|ランキング基準).*(?:元|解除|外|なし|戻)/.test(t);
+    var reverse=/(?:逆順|逆の順|並びを逆|順番を逆)/.test(t);
+    var lowOnly=/(?:低い順|小さい順|下から順|ワースト順)(?:に|で|へ)?(?:して|並べ|変更|戻)?/.test(t);
+    var highOnly=/(?:高い順|大きい順|上から順)(?:に|で|へ)?(?:して|並べ|変更|戻)?/.test(t);
+    var removeCue=/(?:条件|絞り込み|フィルター|基準)?(?:は|を|だけ)?\s*(?:外して|外す|解除して|解除|なしで|消して|取り消して|やめて)/.test(t);
+    var switchCue=/(?:じゃなくて|ではなく|から).*(?:順|基準|に変えて|にして|へ変更)/.test(t);
+    if(resetAll){state=emptyFilterState();sortStats=[];sortLow=false;kind='resetAll';changed.push('すべての条件と並び順を解除');}
+    else{
+      if(removeCue){
+        if(stats.length){
+          stats.forEach(function(st){var before=state.thresholds.length;state.thresholds=state.thresholds.filter(function(x){return x.stat!==st;});if(before!==state.thresholds.length){changed.push(st+'の数値条件を解除');kind='removeFilter';}if(sortStats.indexOf(st)>=0&&!state.thresholds.some(function(x){return x.stat===st;})){sortStats=sortStats.filter(function(x){return x!==st;});changed.push(st+'の並び順を解除');kind='removeSort';}});
+        }
+        var job=detectJob(t);if(job){if(state.job===job){state.job='';changed.push('職業「'+job+'」条件を解除');kind='removeFilter';}state.excludedJobs=state.excludedJobs.filter(function(x){return x!==job;});}
+        var cost=detectCost(t);if(cost){if(state.cost===cost){state.cost=0;changed.push('コスト'+cost+'条件を解除');kind='removeFilter';}state.excludedCosts=state.excludedCosts.filter(function(x){return x!==cost;});}
+        var factors=detectFactors(t);factors.forEach(function(f){var before=state.factors.length+state.excludedFactors.length;state.factors=state.factors.filter(function(x){return x!==f;});state.excludedFactors=state.excludedFactors.filter(function(x){return x!==f;});state.factorSlots=state.factorSlots.filter(function(x){return x.factor!==f;});if(before!==state.factors.length+state.excludedFactors.length){changed.push('因子「'+f+'」条件を解除');kind='removeFilter';}});
+        if(/技能|固有技能/.test(t)){state.skill='';state.skillPresence=null;changed.push('技能条件を解除');kind='removeFilter';}
+      }
+      if(resetSort){sortStats=[];sortLow=false;kind='removeSort';changed.push('並び順を解除');}
+      if(reverse){sortLow=!sortLow;kind='sort';changed.push('並び順を逆転');}
+      if(lowOnly){if(!sortStats.length&&stats.length)sortStats=[stats[stats.length-1]];sortLow=true;kind='sort';changed.push((sortStats.join('＋')||'現在の基準')+'を低い順へ変更');}
+      if(highOnly){if(!sortStats.length&&stats.length)sortStats=[stats[stats.length-1]];sortLow=false;kind='sort';changed.push((sortStats.join('＋')||'現在の基準')+'を高い順へ変更');}
+      if(switchCue&&stats.length){sortStats=[lastStatInText(t)||stats[stats.length-1]];sortLow=/低い順|下から|ワースト/.test(t);kind='sort';changed.push('並び基準を'+sortStats[0]+'へ変更');}
+    }
+    if(!kind&&!changed.length)return null;
+    return {context:ctx,state:state,sortStats:sortStats,sortLow:sortLow,kind:kind,changed:uniqueList(changed)};
+  }
+  function renderRefinementEdit(edit){
+    var rows=refinementRowsFor(edit.context,{filters:edit.state,sortStats:edit.sortStats,sortLow:edit.sortLow}),sortStats=edit.sortStats.slice(),head=edit.changed.length?edit.changed.join('・')+'しました。':'条件を更新しました。',shown=refinementAnswer(head,rows,edit.state,sortStats,edit.sortLow),undo=cloneRefinementStack(edit.context.undoStack),redo=[];
+    if(!sameRefinementSnapshot(edit.context,{filters:edit.state,sortStats:sortStats,sortLow:edit.sortLow}))undo.push(refinementSnapshot(edit.context));undo=undo.slice(-8);
+    var diff=refinementDiff(edit.context.activeCandidates,rows.map(function(r){return r['英傑名'];}));
+    return result('英傑マスター実データ',shown.answer+sourceSuffix(),{refinementEdited:true,refinementAction:edit.kind,count:rows.length,heroes:shown.take.map(function(r){return r['英傑名'];}),candidates:edit.context.rootCandidates.slice(),filters:cloneFilterState(edit.state),stats:sortStats,low:edit.sortLow,heroRefinement:refinementData(edit.context.rootCandidates,rows,edit.state,sortStats,edit.sortLow,undo,redo,edit.context.savedViews),heroRefinementChange:diff,previousCandidates:diff.before,addedCandidates:diff.added,removedCandidates:diff.removed});
+  }
+  function renderGroupReplacement(change){
+    var rows=rowsByNames(change.heroes),g=change.group,prefix=(change.correction?'「'+change.correction.query+'」は「'+change.correction.name+'」として見ています。\n':'')+'比較対象を '+g.heroes[change.target]+' から '+change.row['英傑名']+' に変更しました。\n';
+    if(g.perStatLeaders){var ls=perStatLeaders(rows,g.stats);return result('英傑マスター実データ',prefix+'更新後の'+rows.length+'人の能力別トップです。\n'+ls.map(function(x){return x.stat+'：'+x.leaders.map(function(r){return r['英傑名'];}).join(' / ')+'（'+x.value+'）';}).join('\n')+sourceSuffix(),{groupTargetReplaced:true,perStatLeaders:true,heroes:change.heroes.slice(),stats:g.stats.slice(),leaders:ls.map(function(x){return {stat:x.stat,value:x.value,heroes:x.leaders.map(function(r){return r['英傑名'];})};})});}
+    if(g.leaderCounts){var lc=leaderCounts(rows,g.stats),mx=lc.length?lc[0].count:0,w=lc.filter(function(x){return x.count===mx;});return result('英傑マスター実データ',prefix+'更新後、能力別1位を最も多く取るのは '+w.map(function(x){return x.row['英傑名'];}).join(' / ')+' です（'+mx+'能力）。\n'+lc.map(function(x){return x.row['英傑名']+'：'+x.count+'能力'+(x.stats.length?'（'+x.stats.join(' / ')+'）':'');}).join('\n')+sourceSuffix(),{groupTargetReplaced:true,leaderCounts:true,heroes:change.heroes.slice(),stats:g.stats.slice(),winners:w.map(function(x){return x.row['英傑名'];}),counts:lc.map(function(x){return {hero:x.row['英傑名'],count:x.count,stats:x.stats.slice()};})});}
+    if(g.commonRegistration||g.factorComparison){var shared=sharedRegistration(rows),parts=[];if(shared.job)parts.push('職業：'+shared.job);if(shared.cost!==null)parts.push('コスト：'+shared.cost);if(shared.factors.length)parts.push('共通因子：'+shared.factors.join(' / '));if(shared.skill)parts.push('技能：'+shared.skill);if(shared.equalStats.length)parts.push('同値能力：'+shared.equalStats.join(' / '));return result('英傑マスター実データ',prefix+'更新後の共通点です。\n'+(parts.length?parts.join('\n'):'全員共通の登録項目はありません。')+sourceSuffix(),{groupTargetReplaced:true,commonRegistration:true,heroes:change.heroes.slice(),common:shared});}
+    return result('英傑マスター確認',prefix+'更新後の '+change.heroes.join(' / ')+' について、能力別トップ・共通点・数値条件など、何を比べるか教えてください。',{groupTargetReplaced:true,needsClarification:true,heroes:change.heroes.slice()});
+  }
+
   function filterLabel(f){
     var p=[];if(f.job)p.push('職業「'+f.job+'」');if(f.cost)p.push('コスト'+f.cost);if(f.factors.length)p.push('因子「'+f.factors.join('・')+'」');
     (f.factorSlots||[]).forEach(function(x){p.push('因子'+x.slot+'「'+x.factor+'」');});if(f.skill)p.push('技能「'+f.skill+'」');
@@ -749,13 +995,15 @@
     var counts=Object.create(null);(Array.isArray(rows)?rows:data().rows).forEach(function(r){rowFactors(r).forEach(function(f){counts[f]=(counts[f]||0)+1;});});
     return Object.keys(counts).map(function(f){return {factor:f,count:counts[f]};}).sort(function(a,b){return b.count-a.count||a.factor.localeCompare(b.factor,'ja');});
   }
-  function listRanking(f,stats,text){
+  function listRanking(f,stats,text,priorRefinement){
     var low=/低い|低め|最低|最小|ワースト|下位/.test(nfkc(text)),n=parseTop(text),sum=stats.length>1;
     var sorted=f.rows.slice().sort(function(a,b){var av=scoreOf(a,stats),bv=scoreOf(b,stats),diff=low?av-bv:bv-av;return diff||String(a['英傑名']).localeCompare(String(b['英傑名']),'ja');});
     if(!sorted.length)return result('英傑マスター実データ',filterLabel(f)+'該当英傑は、現在の英傑マスターには見つかりませんでした。',{notFound:true});
     var top=sorted.slice(0,n),label=sum?stats.join('＋')+'合計':stats[0];
     var lines=top.map(function(r,i){var vals=sum?stats.map(function(st){return st+':'+r._stats[st];}).join(' / '):label+':'+r._stats[label];return (i+1)+'位：'+r['英傑名']+'（'+vals+(sum?' / 合計:'+scoreOf(r,stats):'')+'）';});
-    return result('英傑マスター実データ',filterLabel(f)+label+(low?'が低い':'が高い')+'順の上位'+top.length+'人です。\n'+lines.join('\n')+sourceSuffix(),scopeMeta(f.scopeNames,{ranking:true,stats:stats,low:low,count:top.length,heroes:top.map(function(r){return r['英傑名'];}),filters:{job:f.job,cost:f.cost,factors:f.factors,excludedJobs:f.excludedJobs||[],excludedCosts:f.excludedCosts||[],excludedFactors:f.excludedFactors||[],skillPresence:f.skillPresence,thresholds:f.thresholds}}));
+    var meta=scopeMeta(f.scopeNames,{ranking:true,stats:stats,low:low,count:top.length,heroes:top.map(function(r){return r['英傑名'];})});
+    attachRefinementMeta(meta,f,top,stats,low,priorRefinement);
+    return result('英傑マスター実データ',filterLabel(f)+label+(low?'が低い':'が高い')+'順の上位'+top.length+'人です。\n'+lines.join('\n')+sourceSuffix(),meta);
   }
   function heroSummary(r){
     return r['英傑名']+'は、職業 '+r['職業']+'・コスト'+r['コスト']+'です。\n'+
@@ -766,10 +1014,17 @@
 
   function respond(text,opt){
     opt=opt||{};
-    var routedText=nfkc(text),suppliedOriginal=nfkc(opt.original||text),pairGapContext=latestPairGapContext(opt.history),pairReplacement=detectPairReplacement(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
-    if(!original||isBlocked(original)||isSearchAction(original)||isNavigationOnly(original)||(!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement))return {handled:false};
+    var routedText=nfkc(text),suppliedOriginal=nfkc(opt.original||text),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),refinementHistoryCommand=savedViewCommand?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=savedViewCommand?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
+    if(!original||isBlocked(original)||isSearchAction(original)||isNavigationOnly(original)||(!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement&&!groupReplacement&&!refinementEdit&&!refinementHistoryCommand&&!refinementChangeQuestion&&!savedViewCommand))return {handled:false};
+    if(savedViewCommand)return renderSavedViewCommand(savedViewCommand);
+    if(refinementHistoryCommand)return renderRefinementHistoryCommand(refinementHistoryCommand);
+    if(refinementChangeQuestion)return renderRefinementChangeQuestion(refinementChangeQuestion,opt.history);
+    if(refinementEdit)return renderRefinementEdit(refinementEdit);
     if(scopeRequested&&!scope)return result('英傑マスター確認','「この中」「その順位」として参照できる直前の英傑一覧がありません。先に「腕力トップ10」のように候補を出すか、英傑名を指定してください。',{needsClarification:true,needsHeroScope:true});
     if(scopeRequested&&selection.invalid)return result('英傑マスター確認','直前の候補は '+scope.names.length+'人です。その範囲にない順位が指定されています。1位〜'+scope.names.length+'位の中から選んでください。',scopeMeta(scope.names,{needsClarification:true,invalidContextRank:true}));
+    if(groupReplacement&&groupReplacement.ambiguous)return result('英傑マスター確認','「'+groupReplacement.ambiguous.query+'」に近い英傑が複数います。\n'+groupReplacement.ambiguous.candidates.join(' / ')+'\n差し替える英傑名をもう少し詳しく教えてください。',{needsClarification:true,groupTargetReplacement:true,candidates:groupReplacement.ambiguous.candidates,query:groupReplacement.ambiguous.query});
+    if(groupReplacement&&groupReplacement.needsClarification)return result('英傑マスター確認',groupReplacement.sameTarget?'その位置はすでに '+groupReplacement.group.heroes[replacementTargetIndex(original,groupReplacement.group.heroes)]+' です。別の英傑へ変える場合は、新しい名前を指定してください。':(groupReplacement.sameHero?'比較対象に同じ英傑が重複します。別の英傑を指定してください。':'どの英傑を、誰に差し替えるか教えてください。例：「3人目を遠足娘まりに変えて」のように指定できます。'),{needsClarification:true,groupTargetReplacement:true,heroes:groupReplacement.heroes||groupReplacement.group.heroes.slice()});
+    if(groupReplacement&&groupReplacement.row)return renderGroupReplacement(groupReplacement);
     var named=exactNamedRows(original),fuzzy=null,comparisonAugment=augmentComparisonNames(original,named),comparisonCorrections=comparisonAugment.corrections||[];
     named=comparisonAugment.rows||named;
     if(comparisonAugment.ambiguous)return result('英傑マスター確認','「'+comparisonAugment.ambiguous.query+'」に近い英傑が複数います。\n'+comparisonAugment.ambiguous.candidates.join(' / ')+'\nどの英傑か、名前をもう少し詳しく教えてください。',{needsClarification:true,candidates:comparisonAugment.ambiguous.candidates,query:comparisonAugment.ambiguous.query});
@@ -1120,11 +1375,17 @@
       var useMedian=/(?:中央値|真ん中の値)/.test(original),agg=stats.map(function(st){var vals=f.rows.map(function(r){return r._stats[st];}),value=useMedian?median(vals):vals.reduce(function(a,b){return a+b;},0)/vals.length;return {stat:st,value:rounded(value)};});
       return result('英傑マスター実データ',filterLabel(f)+stats.join('・')+'の'+(useMedian?'中央値':'平均値')+'です。\n'+agg.map(function(x){return x.stat+'：'+x.value;}).join('\n')+'\n対象：'+f.rows.length+'人'+sourceSuffix(),scopeMeta(f.scopeNames,{aggregate:true,aggregateType:useMedian?'median':'average',stats:stats,values:agg,count:f.rows.length}));
     }
-    if(/何人|何名|何体|人数|件数|何件/.test(original))return result('英傑マスター実データ',filterLabel(f)+'英傑は '+f.rows.length+'人です。',scopeMeta(f.scopeNames,{count:true,value:f.rows.length,heroes:f.scopeNames&&f.scopeNames.length?f.rows.map(function(r){return r['英傑名'];}):[],filters:{job:f.job,cost:f.cost,factors:f.factors,excludedJobs:f.excludedJobs,excludedCosts:f.excludedCosts,excludedFactors:f.excludedFactors,skillPresence:f.skillPresence,thresholds:f.thresholds}}));
-    if(stats.length&&/誰|だれ|どれ|ランキング|トップ|上位|下位|高い|低い|一番|最も|最高|最低|最大|最小|順|教えて|知りたい/.test(original))return listRanking(f,stats,original);
+    if(/何人|何名|何体|人数|件数|何件/.test(original)){
+      var countMeta=scopeMeta(f.scopeNames,{count:true,value:f.rows.length,heroes:f.rows.slice(0,20).map(function(r){return r['英傑名'];})});
+      attachRefinementMeta(countMeta,f,f.rows,stats,false,refinementContext);
+      return result('英傑マスター実データ',filterLabel(f)+'英傑は '+f.rows.length+'人です。',countMeta);
+    }
+    if(stats.length&&/誰|だれ|どれ|ランキング|トップ|上位|下位|高い|低い|一番|最も|最高|最低|最大|最小|順|教えて|知りたい/.test(original))return listRanking(f,stats,original,refinementContext);
     if((f.job||f.cost||f.factors.length||f.factorSlots.length||f.skill||(f.excludedJobs||[]).length||(f.excludedCosts||[]).length||(f.excludedFactors||[]).length||f.skillPresence!==null||f.thresholds.length)&&/誰|だれ|一覧|教えて|見せて|いる|ある|ない|持ち|該当|だけ|のみ|以外|じゃない|除いて|除外|抜き|外して/.test(original)){
       var take=f.rows.slice(0,15),extra=f.rows.length>take.length?'\nほか '+(f.rows.length-take.length)+'人います。':'';
-      return result('英傑マスター実データ',filterLabel(f)+'英傑は '+f.rows.length+'人です。\n'+take.map(function(r){return r['英傑名']+'（'+r['職業']+'・コスト'+r['コスト']+'）';}).join('\n')+extra,scopeMeta(f.scopeNames,{list:true,count:f.rows.length,heroes:take.map(function(r){return r['英傑名'];})}));
+      var listMeta=scopeMeta(f.scopeNames,{list:true,count:f.rows.length,heroes:take.map(function(r){return r['英傑名'];})});
+      attachRefinementMeta(listMeta,f,f.rows,[],false,refinementContext);
+      return result('英傑マスター実データ',filterLabel(f)+'英傑は '+f.rows.length+'人です。\n'+take.map(function(r){return r['英傑名']+'（'+r['職業']+'・コスト'+r['コスト']+'）';}).join('\n')+extra,listMeta);
     }
     if(/英傑.*(?:何人|何名|何体)|全部で.*(?:何人|何名)/.test(original))return result('英傑マスター実データ','現在の英傑マスターには '+data().rows.length+'人が登録されています。',{count:true,value:data().rows.length});
     return {handled:false};
