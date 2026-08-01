@@ -57,5 +57,26 @@ check('known mixed typo tool lazy group',groups('魔導結品の能力').include
 check('known omission tool lazy group',groups('魔導結の入手').includes('tool'),groups('魔導結の入手'));
 check('ordinary ninety people remains blocked',!groups('九十人いる').includes('tool'),groups('九十人いる'));
 check('ordinary relative remains blocked after known typo layer',!groups('親戚の話').includes('tool'),groups('親戚の話'));
+check('hero ranking lazy group',groups('腕力が高い英傑は誰？').includes('hero'),groups('腕力が高い英傑は誰？'));
+check('hero exact name lazy group',groups('母里太兵衛について').includes('hero'),groups('母里太兵衛について'));
+check('hero typo name with stat lazy group',groups('母里太兵枝の腕力は？').includes('hero'),groups('母里太兵枝の腕力は？'));
+check('hero rough kana ranking lazy group',groups('えいけつでうでりょくたかいのだれ').includes('hero'),groups('えいけつでうでりょくたかいのだれ'));
+check('hero fuzzy name strength lazy group',groups('母里太兵枝のつよみなに').includes('hero'),groups('母里太兵枝のつよみなに'));
+check('hero skill detail lazy group',groups('追加行動するの誰？').includes('hero'),groups('追加行動するの誰？'));
+check('hero average lazy group',groups('侍の平均腕力は？').includes('hero'),groups('侍の平均腕力は？'));
+check('hero rough cost lazy group',groups('こすと7でちりょくたかいえいけつだれ').includes('hero'),groups('こすと7でちりょくたかいえいけつだれ'));
+check('hero numeric near lazy group',groups('腕力2500前後の英傑は？').includes('hero'),groups('腕力2500前後の英傑は？'));
+check('hero rough numeric near lazy group',groups('うでりょく2500ぜんごの英傑').includes('hero'),groups('うでりょく2500ぜんごの英傑'));
+check('hero rank range lazy group',groups('腕力6位から10位を教えて').includes('hero'),groups('腕力6位から10位を教えて'));
+check('hero percentile lazy group',groups('腕力上位10%は誰？').includes('hero'),groups('腕力上位10%は誰？'));
+check('hero tie lazy group',groups('腕力が同じ英傑はいる？').includes('hero'),groups('腕力が同じ英傑はいる？'));
+check('hero multi percentile rough lazy group',groups('えいけつでうでりょくとちりょくがりょうほうじょうい10ぱーせんと').includes('hero'),groups('えいけつでうでりょくとちりょくがりょうほうじょうい10ぱーせんと'));
+check('hero average threshold rough lazy group',groups('侍でうでりょくがへいきんいじょうのえいけつ').includes('hero'),groups('侍でうでりょくがへいきんいじょうのえいけつ'));
+check('hero multi nearest rough lazy group',groups('豊臣秀長とうでりょくとちりょくがにてるえいけつ').includes('hero'),groups('豊臣秀長とうでりょくとちりょくがにてるえいけつ'));
+check('hero top entry rough lazy group',groups('ぜんのうりょくでとっぷ10いりがおおいえいけつ').includes('hero'),groups('ぜんのうりょくでとっぷ10いりがおおいえいけつ'));
+check('bare jinpo stat does not load hero',!groups('腕力高いの').includes('hero'),groups('腕力高いの'));
+check('jinpo search does not load hero',!groups('腕力高いの検索して').includes('hero'),groups('腕力高いの検索して'));
+check('tool stat does not load hero',!groups('鬼神石の腕力トップ3').includes('hero'),groups('鬼神石の腕力トップ3'));
+
 console.log(`LOADER KANA ROUTING: ${pass} / ${pass+fail} PASS`);
 if(fail)process.exit(1);

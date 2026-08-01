@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.36.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.41.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.36.0';
+  var ASSET_VERSION='3.41.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.36.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.41.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.36.0',
+    version:'3.41.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -178,6 +178,10 @@
       'jinpo-bot-tool-data.js',
       'jinpo-bot-tool-knowledge.js'
     ],
+    hero:[
+      'jinpo-bot-hero-data.js',
+      'jinpo-bot-hero-knowledge.js'
+    ],
     tairano:[
       'jinpo-bot-tairano-data.js',
       'jinpo-bot-tairano-knowledge.js'
@@ -320,6 +324,10 @@
     return false;
   }
 
+
+  // 英傑マスター383名の氏名だけをlazy読込判定用の軽量ヒントとして保持。
+  var heroNameHints=["豊臣秀長","片倉景綱(右腕)","竹中半兵衛(右腕)","酒井忠次(通)","薄田兼相","島津日新斎","百地三太夫(野望)","風魔小太郎(野望)","毛利隆元","斎藤義龍(新春)","斎藤義龍","前田利家(雄材)","安国寺恵瓊","上杉憲政","武田晴信","三条の方","堀秀政","雫の者","伊達政宗(起源)","北条氏照(剛柔)","甲斐宗運","佐竹義重","片倉景綱","今川義元","平手政秀","島津家久","上杉謙信","長宗我部元親","本願寺顕如","吉川元春","黒百合(納涼)","黒百合","丹羽長秀(風雲)","直江兼続(王佐)","安宅冬康","稲葉一鉄","斎藤朝信","支倉常長","十河一存","北条氏邦","井伊直政","谷忠澄","伊奈忠次","唐沢玄蕃","御子神典膳","大熊朝秀","関口氏広","岡国高","鈴木元信","渡辺了","安藤良整","大沢正秀","下間頼竜","斎藤利三(神祇)","斎藤利三","織田信忠","大野治長","早川殿","武田信繁","庵原将監","林崎甚助","直江景綱","山上道及","雑賀孫市(道化)","望月千代女(道化)","鍋島直茂(乱雲)","鍋島直茂","島津義久","蜂須賀正勝","前田利家(兎忍)","納涼忍お綾","九鬼嘉隆","大谷吉継(西軍)","大谷吉継","島津豊久","伊賀崎道順","石川数正(臥薪)","石川数正","赤尾清綱","望月吉棟","陶晴賢","山中鹿之介","豊臣秀吉","高台院","愛姫(起源)","毛利勝永","香宗我部親泰","井伊直政(勇猛)","村上義清","渡辺守綱","豊臣秀次","細川忠興(山紫)","大内義隆","金森長近","柳生宗矩","大久保忠世","妙玖","義姫","明石全登","竹中重門","山県昌景(泰然)","真田信幸(泰然)","長野業正","霧隠才蔵","尼子経久","木下秀長","井伊直虎","名古屋山三郎","大祝鶴","下間頼廉(籠城)","北条綱成(籠城)","甲斐姫","宇喜多直家","細川藤孝(立役)","羽柴秀吉","小早川隆景","藤堂高虎(名臣)","宝蔵院胤栄","上泉信綱","朝倉宗滴","加藤段蔵","藤林正保","望月千代女","黒田官兵衛","竹中半兵衛","本多正信","浅井長政","朝倉義景","石田三成","蒲生氏郷","真柄直隆","伊達政宗","雑賀孫市","愛姫","鈴木重意","岡吉正","原田宗時","足利義輝","朝比奈泰朝","和田惟政","三淵晴員","瀬名氏俊","猿飛佐助","杉谷善住坊","室賀正武","植田光次","斎藤道三","武田勝頼","直江兼続","本願寺証如","七里頼周","本庄繁長","ねね(納涼)","羽柴秀吉(納涼)","前田慶次","筒井順慶","小西行長","北条氏康","風魔小太郎","服部半蔵","板部岡江雪斎","雑賀孫六","本願寺教如","三好長慶","太原雪斎","松永久秀","真田昌幸","真田幸村","遠山景任","浅井久政","足利義昭","北条幻庵","明智光安","織田信長","明智光秀(十七)","立花誾千代","徳川家康","森田浄雲","百地三太夫","本多忠勝","武田信玄","宇佐美定満","真田幸隆","お市(婚礼)","伊達政宗(新星)","今川義元(周年)","斎藤道三(巳)","雑賀孫市(陣羽織)","三好長慶(生殺)","上杉謙信(野望)","織田信長(周年)","織田信長(覇王)","真田幸村(新星)","真田昌幸(吸血)","浅井長政(婚礼)","足利義輝(野望)","大友宗麟","長宗我部元親(納涼)","長尾景虎","長尾虎","徳川家康(東軍)","武田信玄(野望)","北条氏康(獅子)","毛利元就","おまつ(奇譚)","お江","ガラシャ(聖)","ねね(和装)","まつ(兎忍)","もののふ小町","愛姫(特別)","梓","遠足娘まり","加藤清正","帰蝶","宮本武蔵(涼)","蛍(吸血)","後藤又兵衛","江里口信常","降神祈祷師","高橋紹運","黒田長政","黒猫ノア","佐々木小次郎(涼)","柴田勝家(風雲)","種子島時堯","出雲阿国(周年)","出雲阿国(神将)","出雲阿国(野望)","小松姫(航海)","小松姫(水練)","小早川隆景(羽織)","晶","松永久秀(野望)","城大工かんな","森長可","森蘭丸(凶禍)","真田幸村(水練)","真田信幸(航海)","石田三成(西軍)","仙桃院","前田慶次(神将)","前田慶次(野望)","滝川一益(風雲)","竹中半兵衛(知将)","島左近","道場娘まり","道場娘まり(和装)","鍋島直茂(人狼)","濃姫","濃姫(特別)","福島正則","北条氏政(獅子)","本多忠勝(盛夏)","魔女ルシア","魔女娘まり","明智光秀(闇)","明智光秀(初期)","立花宗茂","立花宗茂(盛夏)","立花誾千代(猫又)","お知恵","サンチョ","もの知り爺","愛弟子ノア","安藤守就","伊達成実","雨森弥兵衛","鵜殿長持","遠藤直経","岡部元信","岡部正綱","海北綱親","鎧鍛冶次郎","柿崎景家","関掃部","願証寺証恵","鬼庭綱元","鬼庭左月斎","京極高吉","興正寺顕尊","光教寺顕誓","高坂昌信","細川晴元","細川藤孝","榊原康政","三井遊雲軒","三好義賢","三好長逸","山県昌景","山中俊房","氏家卜全","柴田勝家","酒井忠次","出浦盛清","小松姫","色部勝長","伸介","森蘭丸","真田信幸","陣蔵","西光寺真敬","滝川一益","丹羽長秀","池田勝正","朝倉景紀","朝倉景鏡","朝倉景隆","朝倉景連","的場源四郎","藤岡屋伝助","道場忍お綾","内藤昌豊","馬場信春","伴長信","不破光治","片倉重長","北条高広","北条氏規","北条氏照","北条氏政","魔導士ルシア","明智光秀","矢沢頼綱","窯隠れの才蔵","鈴木重朝","粟津元隈","伊達実元","一宮宗是","果心居士","岩成友通","蛍","原虎胤","古田織部","甲山太郎次郎","荒木村重","高力清長","今川氏真","佐久間信盛","佐々成政","細川忠興","山本勘助","上杉景勝","新庄直頼","新発田長敦","真田信尹","石川昭光","朝倉景恒","鳥居景近","鳥居元忠","津田監物","福島勝広","北条綱成","本願寺実悟","来福寺左京","井伊直親","印牧能信","塩屋秋貞","下間頼廉","下津一通","可児才蔵","鬼小島弥太郎","小山田信茂","小雀","新開実綱","清水康英","石川五右衛門","泉田重光","内藤正成","脇坂安治","簗田新八","藤堂高虎","筧十蔵","母里太兵衛","甲斐姫(鷹爪)","尼子晴久","小田氏治","朝倉義景(八雷)","お市(八雷)","荒木村重(風雅)","真田幸村(神魔)","茶々","北条氏邦(獅子)"];
+
   var carpHintRows=null,tairanoHintRows=null;
   function ensureCarpHintRows(){
     if(carpHintRows)return carpHintRows;
@@ -382,6 +390,40 @@
     return false;
   }
 
+  function hasHeroNameHint(text){
+    var folded=compactHintFold(normalizeKanaForRouting(text));
+    if(!folded)return false;
+    for(var i=0;i<heroNameHints.length;i++){
+      var key=compactHintFold(heroNameHints[i]);
+      if(key&&folded.indexOf(key)>=0)return true;
+    }
+    return false;
+  }
+  function shortEditDistance(a,b,max){
+    a=String(a||'');b=String(b||'');if(Math.abs(a.length-b.length)>max)return max+1;
+    var prev=[],cur=[],i,j,rowMin;for(j=0;j<=b.length;j++)prev[j]=j;
+    for(i=1;i<=a.length;i++){
+      cur[0]=i;rowMin=cur[0];
+      for(j=1;j<=b.length;j++){cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));if(cur[j]<rowMin)rowMin=cur[j];}
+      if(rowMin>max)return max+1;
+      var tmp=prev;prev=cur;cur=tmp;
+    }
+    return prev[b.length];
+  }
+  function hasHeroFuzzyNameHint(text){
+    var t=normalizeKanaForRouting(text),m=t.match(/^(.{2,24}?)(?:の|って|は|について)?(?:強み|つよみ|強いところ|強いとこ|弱み|よわみ|弱いところ|弱いとこ|得意|とくい|苦手|にがて|順位|何位|どんな英傑|どんな人|どんなやつ)/);
+    if(!m)return false;
+    var q=compactHintFold(m[1].replace(/^(?:英傑|武将|キャラ)[の ]*/,''));
+    if(q.length<4)return false;
+    var found=0;
+    for(var i=0;i<heroNameHints.length;i++){
+      var key=compactHintFold(heroNameHints[i]),lim=Math.max(q.length,key.length)>=8?2:1;
+      if(Math.abs(q.length-key.length)>lim)continue;
+      if(shortEditDistance(q,key,lim)<=lim){found++;if(found>=1)return true;}
+    }
+    return false;
+  }
+
   function recentTairanoAmbiguity(history){
     var h=Array.isArray(history)?history:[];
     for(var i=h.length-1;i>=0&&i>=h.length-10;i--){
@@ -420,6 +462,21 @@
 
     if(/九十九|つくも|鬼神石|魔導結晶|まどう|不壊金剛|八幡神の武運/.test(t)){
       groups.push('tool');
+    }
+
+    if(
+      /英傑|英欠|英決|武将|固有技能|因子|職業|コスト|コスと|こすと/.test(t) ||
+      hasHeroNameHint(t) ||
+      hasHeroFuzzyNameHint(t) ||
+      (/(?:追加行動|再行動|武装解除|回復|蘇生|標的固定|行動不能|術耐性|物理耐性|全体攻撃|単体攻撃|継続回復)/.test(t)&&/(?:英傑|武将|キャラ|誰|だれ|何人|何名|技能|持つ|ある|できる|する)/.test(t)) ||
+      (/(?:平均|平均値|中央値|真ん中の値)/.test(t)&&/(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)) ||
+      (/(?:前後|ぜんご|付近|ふきん|近い|ちかい|近辺|[0-9]000台|[0-9]{3,5}\s*(?:から|〜|～|~|－|-)\s*[0-9]{3,5}|[0-9]{1,3}位(?:から|〜|～|~|－|-)[0-9]{1,3}位|上位\s*[0-9]{1,3}\s*(?:%|％|パーセント)|同じ(?:数値|値|英傑)?)/.test(t)&&/(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)) ||
+      (/(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t) &&
+       !/(?:陣法|編成|組み合わせ|因縁|陣形|検索|適用|差替|配置|除外|全MAX|九十九|鬼神石|魔導結晶|鎮魂符)/.test(t) &&
+       (/(?:誰|だれ|どれ|ランキング|トップ|上位|下位|一番|最高|最低)/.test(t) ||
+        /^.{2,24}の(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)))
+    ){
+      groups.push('hero');
     }
 
     if(
@@ -503,6 +560,7 @@
     recentTairanoAmbiguity:recentTairanoAmbiguity,
     counterCandidateSelector:counterCandidateSelector,
     hasCarpNameHint:hasCarpNameHint,
+    hasHeroNameHint:hasHeroNameHint,
     loadLightIdleOptional:loadLightIdleOptional,
     loadFirebaseIdle:loadFirebaseIdle
   };

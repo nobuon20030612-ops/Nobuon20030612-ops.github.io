@@ -639,6 +639,15 @@
           siteCandidates:Array.isArray(result.data.siteCandidates)?result.data.siteCandidates.slice(0,8):[],
           needsClarification:!!result.data.needsClarification
         };
+      }else if(result.data&&result.data.heroKnowledge){
+        historyData={
+          heroKnowledge:true,
+          hero:String(result.data.hero||''),
+          heroes:Array.isArray(result.data.heroes)?result.data.heroes.slice(0,20):[],
+          candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,8):[],
+          needsClarification:!!result.data.needsClarification,
+          stats:Array.isArray(result.data.stats)?result.data.stats.slice(0,4):[]
+        };
       }
       addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||'',data:historyData});
       setBrainStatus('案内・検索OK',String(result.mode||'歩き巫女'));

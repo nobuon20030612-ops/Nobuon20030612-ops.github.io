@@ -925,6 +925,23 @@
       }
     }catch(learningReplyErr){}
 
+    // 英傑マスターの実データ質問は、英傑一覧ページ案内より先に処理する。
+    // 例: 「腕力が高い英傑は誰？」「侍で知力トップ3」「豊臣秀長の因子は？」
+    try{
+      if(window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
+        var heroFact=window.JINPO_BOT_HERO_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo,pageContext:pageContext});
+        if(heroFact&&heroFact.handled){
+          return {
+            answer:String(heroFact.answer||''),
+            sources:Array.isArray(heroFact.sources)?heroFact.sources:[],
+            links:Array.isArray(heroFact.links)?heroFact.links:[],
+            mode:String(heroFact.mode||'英傑マスター実データ'),
+            data:Object.assign({heroKnowledge:true,context:contextInfo},heroFact.data||{})
+          };
+        }
+      }
+    }catch(heroKnowledgeErr){}
+
     // サイト実画面に関する質問は、カープの短い外国人名候補より先に処理する。
     // 「ルーレット」「トーナメント」「ダウンロード」などの一部分が
     // 選手名の別名へ誤一致しても、実画面案内を優先する。
