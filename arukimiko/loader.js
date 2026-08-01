@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.48.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.51.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.48.0';
+  var ASSET_VERSION='3.51.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.48.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.51.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.48.0',
+    version:'3.51.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -468,8 +468,9 @@
     var t=normalizeKanaForRouting(text);
     if(/(?:この|今の|現在の)?(?:結果|候補|条件|状態)?.*(?:として|という名前|という名).*(?:保存|覚えて|残して)|(?:保存した|覚えた|残した)(?:結果|候補|条件|状態)?.*(?:一覧|リスト|名前|見せて|教えて)/.test(t))return true;
     var mentioned=labels.filter(function(n){return t.indexOf(n)>=0;});
-    if(mentioned.length>=2&&/(?:比べ|比較|違い|差|共通|同じ|増え|減っ)/.test(t))return true;
-    if(mentioned.length&&/(?:戻して|戻る|復元|呼び出|切り替|切替|再開|削除|消して|消す|忘れて|破棄)/.test(t))return true;
+    if(mentioned.length>=2&&/(?:比べ|比較|違い|差|共通|きょうつう|同じ|増え|減っ|まとめ|合わせ|合体|統合|片方だけ|どちらか一方|どっちか一方|除いて|引いて|抜いて|外して|和集合|積集合|対称差|両方にいる|どちらかにいる|どっちかにいる|条件|絞り込み|フィルター|並び順|並び|順番|ソート|適用|かけて|使って|反映)/.test(t))return true;
+    if(mentioned.length&&/(?:戻して|戻る|復元|呼び出|切り替|切替|再開|削除|消して|消す|忘れて|破棄|どんな条件|何の条件|保存時の条件|条件は|何人|人数|並び順|中身|内容|先頭)/.test(t))return true;
+    if(mentioned.length===1&&/(?:今|現在|この)(?:の)?(?:結果|候補|一覧|メンバー).*(?:比べ|比較|違い|差|共通)|(?:比べ|比較|違い|差|共通).*(?:今|現在|この)(?:の)?(?:結果|候補|一覧|メンバー)/.test(t))return true;
     return false;
   }
 

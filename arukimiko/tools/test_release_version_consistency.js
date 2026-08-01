@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 const fs=require('fs'),path=require('path');
-const root=path.resolve(__dirname,'..'),release='3.48.0';
+const root=path.resolve(__dirname,'..'),release='3.51.0';
 let pass=0,fail=0;
 function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('FAIL:',name,detail||'');}
 function text(name){return fs.readFileSync(path.join(root,name),'utf8');}

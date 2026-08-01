@@ -103,6 +103,15 @@ check('hero save current result lazy group',groups('今の結果をBとして保
 check('hero saved view list lazy group',groups('保存した結果の一覧',heroHistory).includes('hero'),groups('保存した結果の一覧',heroHistory));
 check('hero saved view restore lazy group',groups('Aに戻して',heroSavedHistory).includes('hero'),groups('Aに戻して',heroSavedHistory));
 check('hero saved view compare lazy group',groups('Aと高腕力の違い',heroSavedHistory).includes('hero'),groups('Aと高腕力の違い',heroSavedHistory));
+check('hero current versus saved lazy group',groups('今の結果とAを比べて',heroSavedHistory).includes('hero'),groups('今の結果とAを比べて',heroSavedHistory));
+check('hero saved view detail lazy group',groups('Aはどんな条件で何人？',heroSavedHistory).includes('hero'),groups('Aはどんな条件で何人？',heroSavedHistory));
+check('hero saved filter transfer lazy group',groups('Aの条件を高腕力にかけて表示',heroSavedHistory).includes('hero'),groups('Aの条件を高腕力にかけて表示',heroSavedHistory));
+check('hero saved sort transfer lazy group',groups('Aの並び順を高腕力に使って表示',heroSavedHistory).includes('hero'),groups('Aの並び順を高腕力に使って表示',heroSavedHistory));
+check('hero saved view intersection lazy group',groups('Aと高腕力の共通だけ表示',heroSavedHistory).includes('hero'),groups('Aと高腕力の共通だけ表示',heroSavedHistory));
+check('hero saved view union lazy group',groups('Aと高腕力をまとめて表示',heroSavedHistory).includes('hero'),groups('Aと高腕力をまとめて表示',heroSavedHistory));
+check('hero saved view symmetric difference lazy group',groups('Aと高腕力の片方だけ表示',heroSavedHistory).includes('hero'),groups('Aと高腕力の片方だけ表示',heroSavedHistory));
+check('hero saved view directional difference lazy group',groups('Aから高腕力を除いて表示',heroSavedHistory).includes('hero'),groups('Aから高腕力を除いて表示',heroSavedHistory));
+check('hero saved view derived save lazy group',groups('Aと高腕力の共通をCとして保存',heroSavedHistory).includes('hero'),groups('Aと高腕力の共通をCとして保存',heroSavedHistory));
 check('hero saved view delete lazy group',groups('高腕力を削除して',heroSavedHistory).includes('hero'),groups('高腕力を削除して',heroSavedHistory));
 check('bare refinement undo without hero history blocked',!groups('条件を一つ前に戻して').includes('hero'),groups('条件を一つ前に戻して'));
 check('bare removed candidates without hero history blocked',!groups('誰が外れた？').includes('hero'),groups('誰が外れた？'));
