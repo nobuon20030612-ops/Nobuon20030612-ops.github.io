@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.44.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.45.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.44.0';
+  var ASSET_VERSION='3.45.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.44.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.45.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.44.0',
+    version:'3.45.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -466,7 +466,7 @@
     if(!recentHeroKnowledge(history))return false;
     var t=normalizeKanaForRouting(text);
     if(!t||t.length>42||/全英傑|英傑全体|全部の英傑/.test(t))return false;
-    return /^(?:じゃあ|では|なら|あと|次は|今度は|そこから|そのまま|さらに|続けて)?[、,\s　]*(?:(?:侍|さむらい|傾奇者|かぶきもの|僧|忍者|にんじゃ|神主|巫女|神職|薬師|くすし|鍛冶屋|かじや|陰陽師|おんみょうじ)(?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:コスト|コスと|こすと)\s*[4-8](?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性).*(?:順|ランキング|トップ|高い|低い|平均|中央値|以上|以下|未満)|(?:技能|固有技能).*(?:ある|あり|ない|なし|未登録|登録|だけ)|因子.*(?:だけ|のみ|以外|なし|持ち|持たない)|(?:一番|最も)?(?:差が大きい|差が小さい|差がない|能力ごと|各能力|能力別|1位を取|トップを取|共通点|同じところ)|(?:割合|比率|登録値|数値差)(?:だと|では|で|なら)?)/.test(t);
+    return /^(?:じゃあ|では|なら|あと|次は|今度は|そこから|そのまま|さらに|続けて)?[、,\s　]*(?:(?:この|その)?(?:[0-9]+|[一二三四五六七八九]+)人で)?(?:(?:侍|さむらい|傾奇者|かぶきもの|僧|忍者|にんじゃ|神主|巫女|神職|薬師|くすし|鍛冶屋|かじや|陰陽師|おんみょうじ)(?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:コスト|コスと|こすと)\s*[4-8](?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性).*(?:順|ランキング|トップ|高い|低い|平均|中央値|以上|以下|未満)|(?:技能|固有技能).*(?:ある|あり|ない|なし|未登録|登録|だけ)|因子.*(?:だけ|のみ|以外|なし|持ち|持たない)|(?:一番|最も)?(?:差が大きい|差が小さい|差がない|能力ごと|各能力|能力別|1位を取|トップを取|共通点|同じところ)|(?:割合|比率|登録値|数値差)(?:だと|では|で|なら)?|(?:前者|後者|1人目|2人目|一人目|二人目|[^、。]{2,20})(?:を|じゃなくて|ではなく).*(?:変えて|替えて|入れ替えて|差し替えて|変更して)|(?:全員|ぜんいん|みんな|誰か|だれか|1人でも|一人でも|ひとりでも).*[0-9]{3,5}(?:以上|いじょう|以下|いか|超|未満|みまん).*(?:能力|ステータス|ステ|項目))/.test(t);
   }
 
   function groupsForMessage(text,history){

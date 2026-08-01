@@ -85,6 +85,10 @@ check('hero short negative cost continuation lazy group',groups('コスト7を�
 check('hero comparison gap continuation lazy group',groups('一番差が大きい能力は？',heroHistory).includes('hero'),groups('一番差が大きい能力は？',heroHistory));
 check('hero ratio continuation lazy group',groups('割合だと？',heroHistory).includes('hero'),groups('割合だと？',heroHistory));
 check('hero per-stat leader continuation lazy group',groups('能力ごとのトップは？',heroHistory).includes('hero'),groups('能力ごとのトップは？',heroHistory));
+check('hero pair replacement continuation lazy group',groups('後者を母里太兵衛に変えて',heroHistory).includes('hero'),groups('後者を母里太兵衛に変えて',heroHistory));
+check('hero typo replacement continuation lazy group',groups('後者を母里太兵枝に変えて',heroHistory).includes('hero'),groups('後者を母里太兵枝に変えて',heroHistory));
+check('hero all threshold continuation lazy group',groups('この3人でぜんいん3000いじょうの能力は？',heroHistory).includes('hero'),groups('この3人でぜんいん3000いじょうの能力は？',heroHistory));
+check('hero any threshold continuation lazy group',groups('誰か1人でも3500以上の能力は？',heroHistory).includes('hero'),groups('誰か1人でも3500以上の能力は？',heroHistory));
 check('bare ratio without hero history blocked',!groups('割合だと？').includes('hero'),groups('割合だと？'));
 check('bare short job without hero history blocked',!groups('侍だけ').includes('hero'),groups('侍だけ'));
 check('bare jinpo stat does not load hero',!groups('腕力高いの').includes('hero'),groups('腕力高いの'));
