@@ -256,13 +256,13 @@
   }
   function refinementData(rootNames,activeRows,filters,sortStats,sortLow,undoStack,redoStack,savedViews){return {rootCandidates:cloneList(rootNames),activeCandidates:(activeRows||[]).map(function(r){return r['英傑名'];}),filters:cloneFilterState(filters),sortStats:cloneList(sortStats),sortLow:!!sortLow,undoStack:cloneRefinementStack(undoStack),redoStack:cloneRefinementStack(redoStack),savedViews:cloneSavedViews(savedViews)};}
   function attachRefinementMeta(meta,f,activeRows,sortStats,sortLow,prior){
-    meta=meta||{};var current=filterStateFromRowsFilter(f||{}),filters=prior?mergeFilterState(prior.filters,current):current,rootNames,undo=[],redo=[];
-    if(prior&&prior.rootCandidates&&prior.rootCandidates.length)rootNames=prior.rootCandidates.slice();
+    meta=meta||{};var resetRoot=!!(prior&&prior.resetRoot),current=filterStateFromRowsFilter(f||{}),filters=prior&&!resetRoot?mergeFilterState(prior.filters,current):current,rootNames,undo=[],redo=[];
+    if(prior&&!resetRoot&&prior.rootCandidates&&prior.rootCandidates.length)rootNames=prior.rootCandidates.slice();
     else if(f&&f.scopeNames&&f.scopeNames.length)rootNames=f.scopeNames.slice();
     else rootNames=(activeRows||[]).map(function(r){return r['英傑名'];});
-    if(prior){undo=cloneRefinementStack(prior.undoStack);if(!sameRefinementSnapshot(prior,{filters:filters,sortStats:sortStats,sortLow:sortLow}))undo.push(refinementSnapshot(prior));undo=undo.slice(-8);}
+    if(prior&&!resetRoot){undo=cloneRefinementStack(prior.undoStack);if(!sameRefinementSnapshot(prior,{filters:filters,sortStats:sortStats,sortLow:sortLow}))undo.push(refinementSnapshot(prior));undo=undo.slice(-8);}
     meta.filters=cloneFilterState(filters);meta.heroRefinement=refinementData(rootNames,activeRows,filters,sortStats,sortLow,undo,redo,prior&&prior.savedViews);
-    if(prior){var diff=refinementDiff(prior.activeCandidates,meta.heroRefinement.activeCandidates);meta.heroRefinementChange=diff;meta.previousCandidates=diff.before;meta.addedCandidates=diff.added;meta.removedCandidates=diff.removed;}
+    if(prior&&!resetRoot){var diff=refinementDiff(prior.activeCandidates,meta.heroRefinement.activeCandidates);meta.heroRefinementChange=diff;meta.previousCandidates=diff.before;meta.addedCandidates=diff.added;meta.removedCandidates=diff.removed;}
     return meta;
   }
 
@@ -675,6 +675,62 @@
   function savedViewDisplayFilters(view){return cloneFilterState(view&&view.displayFilters||view&&view.snapshot&&view.snapshot.filters);}
   function savedViewDisplaySort(view){return cloneList(view&&view.displaySortStats||view&&view.snapshot&&view.snapshot.sortStats);}
   function savedViewDisplaySortLow(view){return view&&view.displaySortLow!==undefined?!!view.displaySortLow:!!(view&&view.snapshot&&view.snapshot.sortLow);}
+  function filterConditionAtoms(state){
+    var s=cloneFilterState(state),out=[];
+    function add(key,label){out.push({key:key,label:label});}
+    if(s.job)add('job:'+s.job,'職業「'+s.job+'」');
+    if(s.cost)add('cost:'+s.cost,'コスト'+s.cost);
+    s.factors.forEach(function(v){add('factor:'+v,'因子「'+v+'」を持つ');});
+    s.factorSlots.forEach(function(v){add('factorSlot:'+v.slot+':'+v.factor,'因子'+v.slot+'が「'+v.factor+'」');});
+    if(s.skill)add('skill:'+s.skill,'技能「'+s.skill+'」');
+    s.excludedJobs.forEach(function(v){add('excludedJob:'+v,'職業「'+v+'」を除外');});
+    s.excludedCosts.forEach(function(v){add('excludedCost:'+v,'コスト'+v+'を除外');});
+    s.excludedFactors.forEach(function(v){add('excludedFactor:'+v,'因子「'+v+'」を除外');});
+    if(s.skillPresence===true)add('skillPresence:true','技能登録あり');
+    if(s.skillPresence===false)add('skillPresence:false','技能登録なし');
+    s.thresholds.forEach(function(v){add('threshold:'+v.stat+':'+v.op+':'+v.value,v.stat+v.value+v.op);});
+    return out;
+  }
+  function filterStateDelta(source,baseline){
+    var a=cloneFilterState(source),b=cloneFilterState(baseline),out=emptyFilterState();
+    if(a.job&&a.job!==b.job)out.job=a.job;
+    if(a.cost&&a.cost!==b.cost)out.cost=a.cost;
+    if(a.skill&&a.skill!==b.skill)out.skill=a.skill;
+    out.factors=a.factors.filter(function(v){return b.factors.indexOf(v)<0;});
+    out.factorSlots=a.factorSlots.filter(function(v){return !b.factorSlots.some(function(x){return x.slot===v.slot&&x.factor===v.factor;});});
+    out.excludedJobs=a.excludedJobs.filter(function(v){return b.excludedJobs.indexOf(v)<0;});
+    out.excludedCosts=a.excludedCosts.filter(function(v){return b.excludedCosts.indexOf(v)<0;});
+    out.excludedFactors=a.excludedFactors.filter(function(v){return b.excludedFactors.indexOf(v)<0;});
+    if(a.skillPresence!==null&&a.skillPresence!==b.skillPresence)out.skillPresence=a.skillPresence;
+    out.thresholds=a.thresholds.filter(function(v){return !b.thresholds.some(function(x){return x.stat===v.stat&&x.op===v.op&&x.value===v.value;});});
+    return out;
+  }
+  function compareFilterStates(first,second){
+    var aa=filterConditionAtoms(first),bb=filterConditionAtoms(second),am=Object.create(null),bm=Object.create(null);
+    aa.forEach(function(v){am[v.key]=v;});bb.forEach(function(v){bm[v.key]=v;});
+    return {common:aa.filter(function(v){return !!bm[v.key];}),onlyFirst:aa.filter(function(v){return !bm[v.key];}),onlySecond:bb.filter(function(v){return !am[v.key];})};
+  }
+  function savedViewSortLabel(view){var stats=savedViewDisplaySort(view);return stats.length?stats.join('＋')+(savedViewDisplaySortLow(view)?'が低い順':'が高い順'):'保存時の順番';}
+  function savedViewConfigComparisonSpec(text,mentioned){
+    if(!Array.isArray(mentioned)||mentioned.length<2)return null;
+    var t=nfkc(text),hasFilter=/(?:条件|絞り込み|フィルター)/.test(t),hasSort=/(?:並び順|並び|順番|ソート)/.test(t),compare=/(?:違い|差|比較|比べ|同じ|共通|一致)/.test(t);
+    if(/(?:適用|かけて|使って|反映|絞って|絞り込|表示して|出して|見せて|切り替|切替|保存|覚えて|残して)/.test(t))return null;
+    if(!compare||(!hasFilter&&!hasSort))return null;
+    return {a:mentioned[0],b:mentioned[1],mode:hasFilter&&hasSort?'both':(hasFilter?'filters':'sort')};
+  }
+  function savedViewDeltaTransferSpec(text,mentioned){
+    if(!Array.isArray(mentioned)||mentioned.length<3)return null;
+    var t=nfkc(text),source=null,baseline=null,target=null;
+    for(var i=0;i<mentioned.length&&!source;i++)for(var j=0;j<mentioned.length&&!source;j++)for(var k=0;k<mentioned.length&&!source;k++){
+      if(i===j||i===k||j===k)continue;
+      var a=mentioned[i],b=mentioned[j],c=mentioned[k],an=regexEscape(a.name),bn=regexEscape(b.name),cn=regexEscape(c.name);
+      var p1=new RegExp(an+'\\s*(?:にあって|にはあって|に含まれていて|が持っていて)\\s*'+bn+'\\s*(?:にない|にはない|に含まれない)\\s*(?:条件|絞り込み|フィルター)?\\s*(?:だけ)?\\s*(?:を)?\\s*'+cn+'\\s*(?:に|へ)');
+      var p2=new RegExp(bn+'\\s*(?:にない|にはない)\\s*'+an+'\\s*の?\\s*(?:条件|絞り込み|フィルター)\\s*(?:だけ)?\\s*(?:を)?\\s*'+cn+'\\s*(?:に|へ)');
+      if(p1.test(t)||p2.test(t)){source=a;baseline=b;target=c;}
+    }
+    if(!source||!baseline||!target||!/(?:適用|かけて|使って|反映|表示|出して|見せて|切り替|切替|保存|覚えて|残して)/.test(t))return null;
+    return {source:source,baseline:baseline,target:target,text:t,saveAs:/(?:保存|覚えて|残して)/.test(t)?transformedSaveName(t):''};
+  }
   function savedViewTransferSpec(text,mentioned){
     if(!Array.isArray(mentioned)||mentioned.length<2)return null;
     var t=nfkc(text),mode='',source=null,target=null;
@@ -706,9 +762,12 @@
   }
   function parseSavedViewCommand(text,history){
     var ctx=latestHeroRefinementContext(history);if(!ctx)return null;
-    var t=nfkc(text),views=cloneSavedViews(ctx.savedViews),mentioned=mentionedSavedViews(t,views),setOp=savedViewSetOperation(t,mentioned),transfer=savedViewTransferSpec(t,mentioned),currentCompare=currentSavedComparisonSpec(t,mentioned),detail=savedViewDetailSpec(t,mentioned),transform=savedViewTransformSpec(t,mentioned);
+    var t=nfkc(text),views=cloneSavedViews(ctx.savedViews),mentioned=mentionedSavedViews(t,views),setOp=savedViewSetOperation(t,mentioned),deltaTransfer=savedViewDeltaTransferSpec(t,mentioned),transfer=savedViewTransferSpec(t,mentioned),configCompare=savedViewConfigComparisonSpec(t,mentioned),currentCompare=currentSavedComparisonSpec(t,mentioned),detail=savedViewDetailSpec(t,mentioned),transform=savedViewTransformSpec(t,mentioned);
     if(/(?:保存した|覚えた|残した)(?:結果|候補|条件|状態)?(?:の)?(?:一覧|リスト|名前)|(?:保存結果|保存候補|保存条件)(?:を)?(?:見せて|教えて|一覧)/.test(t))return {action:'list',context:ctx,views:views};
+    if(deltaTransfer)return {action:'deltaTransfer',context:ctx,views:views,source:deltaTransfer.source,baseline:deltaTransfer.baseline,target:deltaTransfer.target,text:t,saveAs:deltaTransfer.saveAs};
+    if(mentioned.length>=3&&/(?:条件差|差分条件)/.test(t)&&/(?:適用|かけて|使って|反映)/.test(t))return {action:'deltaClarify',context:ctx,views:views};
     if(transfer)return {action:'transfer',context:ctx,views:views,source:transfer.source,target:transfer.target,mode:transfer.mode,text:t,saveAs:transfer.saveAs};
+    if(configCompare)return {action:'configCompare',context:ctx,views:views,a:configCompare.a,b:configCompare.b,mode:configCompare.mode};
     if(currentCompare)return {action:'compareCurrent',context:ctx,views:views,view:currentCompare.view};
     if(detail)return {action:'detail',context:ctx,views:views,view:detail.view};
     if(setOp&&/(?:表示|出して|見せて|候補に|残して|絞って|切り替|切替|使って|保存|覚えて)/.test(t)){
@@ -742,6 +801,27 @@
     }
     if(cmd.action==='compareClarify')return result('英傑マスター確認',views.length>=2?'比較する保存名を2つ指定してください。保存中：'+views.map(function(v){return v.name;}).join(' / '):'比較するには、英傑候補を別名で2件以上保存してください。',{needsClarification:true,savedViewCommand:true,heroRefinement:currentData(views)});
     if(cmd.action==='transformClarify')return result('英傑マスター確認','保存候補へ適用する条件を教えてください。例：「AとBに知力2500以上をかけて比較」のように指定できます。',{needsClarification:true,savedViewCommand:true,savedViewTransform:true,heroRefinement:currentData(views)});
+    if(cmd.action==='deltaClarify')return result('英傑マスター確認','どちら側だけにある条件を、どの保存候補へ適用するか教えてください。例：「AにあってBにない条件をCに適用」のように方向を指定してください。',{needsClarification:true,savedViewCommand:true,savedViewDeltaTransfer:true,heroRefinement:currentData(views)});
+    if(cmd.action==='configCompare'){
+      var firstFilters=savedViewDisplayFilters(cmd.a),secondFilters=savedViewDisplayFilters(cmd.b),cmp=compareFilterStates(firstFilters,secondFilters),firstSort=savedViewSortLabel(cmd.a),secondSort=savedViewSortLabel(cmd.b),sameSort=firstSort===secondSort;
+      var lines=['保存結果「'+cmd.a.name+'」と「'+cmd.b.name+'」の設定を比較しました。'];
+      if(cmd.mode!=='sort'){lines.push('共通条件：'+(cmp.common.length?cmp.common.map(function(v){return v.label;}).join(' / '):'なし'));lines.push(cmd.a.name+'だけの条件：'+(cmp.onlyFirst.length?cmp.onlyFirst.map(function(v){return v.label;}).join(' / '):'なし'));lines.push(cmd.b.name+'だけの条件：'+(cmp.onlySecond.length?cmp.onlySecond.map(function(v){return v.label;}).join(' / '):'なし'));}
+      if(cmd.mode!=='filters')lines.push('並び順：'+cmd.a.name+'＝'+firstSort+' / '+cmd.b.name+'＝'+secondSort+(sameSort?'（同じ）':'（異なります）'));
+      if(cmd.mode==='both'&&!cmp.onlyFirst.length&&!cmp.onlySecond.length&&sameSort)lines.push('条件と並び順は同じです。');
+      return result('英傑マスター実データ',lines.join('\n')+sourceSuffix(),{savedViewCommand:true,savedViewConfigCompared:true,savedViewNames:[cmd.a.name,cmd.b.name],comparisonMode:cmd.mode,commonConditions:cmp.common.map(function(v){return v.label;}),onlyFirstConditions:cmp.onlyFirst.map(function(v){return v.label;}),onlySecondConditions:cmp.onlySecond.map(function(v){return v.label;}),firstSort:firstSort,secondSort:secondSort,sameSort:sameSort,heroRefinement:currentData(views)});
+    }
+    if(cmd.action==='deltaTransfer'){
+      var sourceFilters=savedViewDisplayFilters(cmd.source),baselineFilters=savedViewDisplayFilters(cmd.baseline),deltaFilters=filterStateDelta(sourceFilters,baselineFilters),deltaAtoms=filterConditionAtoms(deltaFilters);
+      if(!deltaAtoms.length)return result('英傑マスター実データ','保存結果「'+cmd.source.name+'」にあって「'+cmd.baseline.name+'」にない条件はありません。現在候補と保存内容は変更していません。'+sourceSuffix(),{savedViewCommand:true,savedViewDeltaTransfer:true,savedViewSource:cmd.source.name,savedViewBaseline:cmd.baseline.name,savedViewTarget:cmd.target.name,count:0,heroRefinement:currentData(views)});
+      var targetRows=savedViewRows(cmd.target),targetNames=targetRows.map(function(r){return r['英傑名'];}),rows=applyFilterState(targetRows,deltaFilters),targetFilters=savedViewDisplayFilters(cmd.target),combinedFilters=mergeFilterState(targetFilters,deltaFilters),sortStats=savedViewDisplaySort(cmd.target),sortLow=savedViewDisplaySortLow(cmd.target);
+      if(sortStats.length)rows.sort(function(a,b){var av=scoreOf(a,sortStats),bv=scoreOf(b,sortStats),d=sortLow?av-bv:bv-av;return d||targetNames.indexOf(a['英傑名'])-targetNames.indexOf(b['英傑名']);});
+      if(!rows.length)return result('英傑マスター実データ','「'+cmd.source.name+'」にあって「'+cmd.baseline.name+'」にない条件（'+deltaAtoms.map(function(v){return v.label;}).join(' / ')+'）を「'+cmd.target.name+'」へ適用すると0人でした。現在候補と保存内容は変更していません。'+sourceSuffix(),{savedViewCommand:true,savedViewDeltaTransfer:true,savedViewSource:cmd.source.name,savedViewBaseline:cmd.baseline.name,savedViewTarget:cmd.target.name,count:0,deltaConditions:deltaAtoms.map(function(v){return v.label;}),heroRefinement:currentData(views)});
+      var saveRequested=/(?:保存|覚えて|残して)/.test(nfkc(cmd.text||'')),saveName=cleanSavedViewName(cmd.saveAs),saved=false,replaced=false,names=rows.map(function(r){return r['英傑名'];});
+      if(saveRequested&&!saveName)return result('英傑マスター確認','差分条件を適用した結果を保存する名前を教えてください。例：「AにあってBにない条件をCへ適用してDとして保存」のように指定できます。',{needsClarification:true,savedViewCommand:true,savedViewDeltaTransfer:true,heroRefinement:currentData(views)});
+      if(saveName){var deltaEntry={name:saveName,rootCandidates:names.slice(),snapshot:{filters:emptyFilterState(),sortStats:sortStats.slice(),sortLow:sortLow},activeCandidates:names.slice(),displayFilters:cloneFilterState(combinedFilters),displaySortStats:sortStats.slice(),displaySortLow:sortLow,count:names.length};replaced=!!savedViewByName(views,saveName);views=views.filter(function(v){return v.name!==saveName;});views.push(deltaEntry);views=cloneSavedViews(views);saved=true;}
+      var deltaLabel=deltaAtoms.map(function(v){return v.label;}).join(' / '),shown=refinementAnswer('「'+cmd.source.name+'」にあって「'+cmd.baseline.name+'」にない条件（'+deltaLabel+'）を「'+cmd.target.name+'」へ適用'+(saved?'し、「'+saveName+'」として'+(replaced?'上書き保存':'保存'):'')+'しました。',rows,combinedFilters,sortStats,sortLow),diff=refinementDiff(ctx.activeCandidates,names);
+      return result('英傑マスター実データ',shown.answer+sourceSuffix(),{savedViewCommand:true,savedViewDeltaTransfer:true,savedViewSource:cmd.source.name,savedViewBaseline:cmd.baseline.name,savedViewTarget:cmd.target.name,savedViewSaved:saved,savedViewName:saveName||'',savedViewCount:saved?names.length:undefined,count:names.length,deltaConditions:deltaAtoms.map(function(v){return v.label;}),heroes:shown.take.map(function(r){return r['英傑名'];}),candidates:targetNames.slice(),filters:cloneFilterState(combinedFilters),stats:sortStats,low:sortLow,heroRefinement:refinementData(targetNames,rows,combinedFilters,sortStats,sortLow,[],[],views),heroRefinementChange:diff,previousCandidates:diff.before,addedCandidates:diff.added,removedCandidates:diff.removed});
+    }
     if(cmd.action==='detail'){
       var detailRows=savedViewRows(cmd.view),detailFilters=savedViewDisplayFilters(cmd.view),detailStats=savedViewDisplaySort(cmd.view),detailLow=savedViewDisplaySortLow(cmd.view),detailSort=detailStats.length?detailStats.join('＋')+(detailLow?'が低い順':'が高い順'):'保存時の順番';
       var detailAnswer='保存結果「'+cmd.view.name+'」の内容です。\n確定候補：'+detailRows.length+'人\n保存時の絞り込み：'+filterStateLabel(detailFilters)+'\n並び：'+detailSort+(detailRows.length?'\n先頭：'+detailRows.slice(0,5).map(function(r){return r['英傑名'];}).join(' / '):'');
@@ -1146,6 +1226,7 @@
   function respond(text,opt){
     opt=opt||{};
     var routedText=nfkc(text),suppliedOriginal=nfkc(opt.original||text),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),refinementHistoryCommand=savedViewCommand?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=savedViewCommand?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
+    if(/(?:全英傑|英傑全体|全体の英傑|全部の英傑)/.test(suppliedOriginal)&&refinementContext)refinementContext={resetRoot:true,rootCandidates:[],activeCandidates:[],filters:emptyFilterState(),sortStats:[],sortLow:false,undoStack:[],redoStack:[],savedViews:cloneSavedViews(refinementContext.savedViews)};
     if(!original||isBlocked(original)||(!savedViewCommand&&isSearchAction(original))||isNavigationOnly(original)||(!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement&&!groupReplacement&&!refinementEdit&&!refinementHistoryCommand&&!refinementChangeQuestion&&!savedViewCommand))return {handled:false};
     if(savedViewCommand)return renderSavedViewCommand(savedViewCommand);
     if(refinementHistoryCommand)return renderRefinementHistoryCommand(refinementHistoryCommand);

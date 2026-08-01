@@ -98,7 +98,7 @@ check('hero refinement undo lazy group',groups('条件を一つ前に戻して',
 check('hero refinement redo lazy group',groups('取り消しをやり直して',heroHistory).includes('hero'),groups('取り消しをやり直して',heroHistory));
 check('hero removed candidates question lazy group',groups('誰が外れた？',heroHistory).includes('hero'),groups('誰が外れた？',heroHistory));
 check('hero refinement change summary lazy group',groups('前の結果と何人変わった？',heroHistory).includes('hero'),groups('前の結果と何人変わった？',heroHistory));
-const heroSavedHistory=[{role:'assistant',meta:{data:{heroKnowledge:true,heroRefinement:{savedViews:[{name:'A'},{name:'高腕力'}]}}}}];
+const heroSavedHistory=[{role:'assistant',meta:{data:{heroKnowledge:true,heroRefinement:{savedViews:[{name:'A'},{name:'B'},{name:'C'},{name:'高腕力'}]}}}}];
 check('hero save current result lazy group',groups('今の結果をBとして保存',heroHistory).includes('hero'),groups('今の結果をBとして保存',heroHistory));
 check('hero saved view list lazy group',groups('保存した結果の一覧',heroHistory).includes('hero'),groups('保存した結果の一覧',heroHistory));
 check('hero saved view restore lazy group',groups('Aに戻して',heroSavedHistory).includes('hero'),groups('Aに戻して',heroSavedHistory));
@@ -107,6 +107,10 @@ check('hero current versus saved lazy group',groups('今の結果とAを比べ�
 check('hero saved view detail lazy group',groups('Aはどんな条件で何人？',heroSavedHistory).includes('hero'),groups('Aはどんな条件で何人？',heroSavedHistory));
 check('hero saved filter transfer lazy group',groups('Aの条件を高腕力にかけて表示',heroSavedHistory).includes('hero'),groups('Aの条件を高腕力にかけて表示',heroSavedHistory));
 check('hero saved sort transfer lazy group',groups('Aの並び順を高腕力に使って表示',heroSavedHistory).includes('hero'),groups('Aの並び順を高腕力に使って表示',heroSavedHistory));
+check('hero saved condition config compare lazy group',groups('AとBの条件の違い',heroSavedHistory).includes('hero'),groups('AとBの条件の違い',heroSavedHistory));
+check('hero saved sort config compare lazy group',groups('AとBの並び順は同じ？',heroSavedHistory).includes('hero'),groups('AとBの並び順は同じ？',heroSavedHistory));
+check('hero saved directional condition delta lazy group',groups('BにあってAにない条件をCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない条件をCに適用して表示',heroSavedHistory));
+check('hero saved ambiguous condition delta lazy group',groups('AとBの条件差をCに適用',heroSavedHistory).includes('hero'),groups('AとBの条件差をCに適用',heroSavedHistory));
 check('hero saved view intersection lazy group',groups('Aと高腕力の共通だけ表示',heroSavedHistory).includes('hero'),groups('Aと高腕力の共通だけ表示',heroSavedHistory));
 check('hero saved view union lazy group',groups('Aと高腕力をまとめて表示',heroSavedHistory).includes('hero'),groups('Aと高腕力をまとめて表示',heroSavedHistory));
 check('hero saved view symmetric difference lazy group',groups('Aと高腕力の片方だけ表示',heroSavedHistory).includes('hero'),groups('Aと高腕力の片方だけ表示',heroSavedHistory));
