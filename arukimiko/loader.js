@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.41.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.44.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.41.0';
+  var ASSET_VERSION='3.44.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.41.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.44.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.41.0',
+    version:'3.44.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -411,7 +411,7 @@
     return prev[b.length];
   }
   function hasHeroFuzzyNameHint(text){
-    var t=normalizeKanaForRouting(text),m=t.match(/^(.{2,24}?)(?:の|って|は|について)?(?:強み|つよみ|強いところ|強いとこ|弱み|よわみ|弱いところ|弱いとこ|得意|とくい|苦手|にがて|順位|何位|どんな英傑|どんな人|どんなやつ)/);
+    var t=normalizeKanaForRouting(text),m=t.match(/^(.{2,24}?)(?:の|って|は|について|よりも?|に比べて)?(?:強み|つよみ|強いところ|強いとこ|弱み|よわみ|弱いところ|弱いとこ|得意|とくい|苦手|にがて|順位|何位|どんな英傑|どんな人|どんなやつ|生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|上位互換|下位互換|完全上位|完全下位)/);
     if(!m)return false;
     var q=compactHintFold(m[1].replace(/^(?:英傑|武将|キャラ)[の ]*/,''));
     if(q.length<4)return false;
@@ -453,6 +453,22 @@
     return /桶狭間|富士地下洞穴|武技大会|大会天|大会地|京都|二条城|修羅の間|封印|今川義元|今川氏真|足利義輝|足利義昭|義元|氏真|義輝|義昭/.test(t);
   }
 
+  function recentHeroKnowledge(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0&&i>=h.length-12;i--){
+      var m=h[i]||{},meta=m.meta||{},d=meta.data||{};
+      if(m.role==='assistant'&&d.heroKnowledge)return true;
+      if(m.role==='user'&&/カープ|カウンター|鬼神石|九十九|魔導結晶|陣法検索|家臣計算/.test(String(m.text||'')))break;
+    }
+    return false;
+  }
+  function heroContinuationHint(text,history){
+    if(!recentHeroKnowledge(history))return false;
+    var t=normalizeKanaForRouting(text);
+    if(!t||t.length>42||/全英傑|英傑全体|全部の英傑/.test(t))return false;
+    return /^(?:じゃあ|では|なら|あと|次は|今度は|そこから|そのまま|さらに|続けて)?[、,\s　]*(?:(?:侍|さむらい|傾奇者|かぶきもの|僧|忍者|にんじゃ|神主|巫女|神職|薬師|くすし|鍛冶屋|かじや|陰陽師|おんみょうじ)(?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:コスト|コスと|こすと)\s*[4-8](?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性).*(?:順|ランキング|トップ|高い|低い|平均|中央値|以上|以下|未満)|(?:技能|固有技能).*(?:ある|あり|ない|なし|未登録|登録|だけ)|因子.*(?:だけ|のみ|以外|なし|持ち|持たない)|(?:一番|最も)?(?:差が大きい|差が小さい|差がない|能力ごと|各能力|能力別|1位を取|トップを取|共通点|同じところ)|(?:割合|比率|登録値|数値差)(?:だと|では|で|なら)?)/.test(t);
+  }
+
   function groupsForMessage(text,history){
     var t=normalizeKanaForRouting(text);
     var groups=[];
@@ -471,10 +487,12 @@
       (/(?:追加行動|再行動|武装解除|回復|蘇生|標的固定|行動不能|術耐性|物理耐性|全体攻撃|単体攻撃|継続回復)/.test(t)&&/(?:英傑|武将|キャラ|誰|だれ|何人|何名|技能|持つ|ある|できる|する)/.test(t)) ||
       (/(?:平均|平均値|中央値|真ん中の値)/.test(t)&&/(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)) ||
       (/(?:前後|ぜんご|付近|ふきん|近い|ちかい|近辺|[0-9]000台|[0-9]{3,5}\s*(?:から|〜|～|~|－|-)\s*[0-9]{3,5}|[0-9]{1,3}位(?:から|〜|～|~|－|-)[0-9]{1,3}位|上位\s*[0-9]{1,3}\s*(?:%|％|パーセント)|同じ(?:数値|値|英傑)?)/.test(t)&&/(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)) ||
+      (/(?:より|上回|下回|超え|勝って|勝る|上位互換|下位互換)/.test(t)&&/(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|全能力|全ステ)/.test(t)) ||
       (/(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t) &&
        !/(?:陣法|編成|組み合わせ|因縁|陣形|検索|適用|差替|配置|除外|全MAX|九十九|鬼神石|魔導結晶|鎮魂符)/.test(t) &&
        (/(?:誰|だれ|どれ|ランキング|トップ|上位|下位|一番|最高|最低)/.test(t) ||
-        /^.{2,24}の(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t)))
+        /^.{2,24}の(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/.test(t))) ||
+      heroContinuationHint(t,history)
     ){
       groups.push('hero');
     }

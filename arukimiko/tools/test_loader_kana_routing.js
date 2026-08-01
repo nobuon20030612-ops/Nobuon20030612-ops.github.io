@@ -25,7 +25,7 @@ load('loader.js');
 const L=global.ARUKIMIKO_LAZY;
 let pass=0,fail=0;
 function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('FAIL:',name,detail===undefined?'':detail);}
-function groups(q){return L.groupsForMessage(q,[]);}
+function groups(q,history){return L.groupsForMessage(q,history||[]);}
 check('loader exports lazy router',!!L&&typeof L.groupsForMessage==='function',L);
 check('katakana tool lazy group',groups('キシンセキノツカイカタ').includes('tool'),groups('キシンセキノツカイカタ'));
 check('hiragana tool lazy group',groups('まどうけっしょうのつかいかた').includes('tool'),groups('まどうけっしょうのつかいかた'));
@@ -74,6 +74,19 @@ check('hero multi percentile rough lazy group',groups('えいけつでうでり�
 check('hero average threshold rough lazy group',groups('侍でうでりょくがへいきんいじょうのえいけつ').includes('hero'),groups('侍でうでりょくがへいきんいじょうのえいけつ'));
 check('hero multi nearest rough lazy group',groups('豊臣秀長とうでりょくとちりょくがにてるえいけつ').includes('hero'),groups('豊臣秀長とうでりょくとちりょくがにてるえいけつ'));
 check('hero top entry rough lazy group',groups('ぜんのうりょくでとっぷ10いりがおおいえいけつ').includes('hero'),groups('ぜんのうりょくでとっぷ10いりがおおいえいけつ'));
+check('hero relative exact name lazy group',groups('豊臣秀長より腕力も知力も高い英傑').includes('hero'),groups('豊臣秀長より腕力も知力も高い英傑'));
+check('hero relative typo name lazy group',groups('母里太兵枝よりうでりょくが高い英傑').includes('hero'),groups('母里太兵枝よりうでりょくが高い英傑'));
+check('hero pairwise wins lazy group',groups('豊臣秀長と竹中半兵衛(右腕)はどっちが何項目高い').includes('hero'),groups('豊臣秀長と竹中半兵衛(右腕)はどっちが何項目高い'));
+check('hero upgrade wording lazy group',groups('豊臣秀長の上位互換は？').includes('hero'),groups('豊臣秀長の上位互換は？'));
+const heroHistory=[{role:'assistant',meta:{data:{heroKnowledge:true}}}];
+check('hero short job continuation lazy group',groups('侍だけ',heroHistory).includes('hero'),groups('侍だけ',heroHistory));
+check('hero short rerank continuation lazy group',groups('じゃあ知力順',heroHistory).includes('hero'),groups('じゃあ知力順',heroHistory));
+check('hero short negative cost continuation lazy group',groups('コスト7を除いて',heroHistory).includes('hero'),groups('コスト7を除いて',heroHistory));
+check('hero comparison gap continuation lazy group',groups('一番差が大きい能力は？',heroHistory).includes('hero'),groups('一番差が大きい能力は？',heroHistory));
+check('hero ratio continuation lazy group',groups('割合だと？',heroHistory).includes('hero'),groups('割合だと？',heroHistory));
+check('hero per-stat leader continuation lazy group',groups('能力ごとのトップは？',heroHistory).includes('hero'),groups('能力ごとのトップは？',heroHistory));
+check('bare ratio without hero history blocked',!groups('割合だと？').includes('hero'),groups('割合だと？'));
+check('bare short job without hero history blocked',!groups('侍だけ').includes('hero'),groups('侍だけ'));
 check('bare jinpo stat does not load hero',!groups('腕力高いの').includes('hero'),groups('腕力高いの'));
 check('jinpo search does not load hero',!groups('腕力高いの検索して').includes('hero'),groups('腕力高いの検索して'));
 check('tool stat does not load hero',!groups('鬼神石の腕力トップ3').includes('hero'),groups('鬼神石の腕力トップ3'));
