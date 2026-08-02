@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 英傑マスター質問応答 v1.0.0
+ * 歩き巫女 英傑マスター質問応答 v2.5.0
  * jinpo_eiketsu_master.csv由来の参照専用データだけで回答する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_HERO_KNOWLEDGE)return;
 
-  var VERSION='2.3.0';
+  var VERSION='2.5.0';
   var STAT_ORDER=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
   var STAT_ALIASES=[
     {to:'生命',a:['生命力','生命','体力','HP','hp']},
@@ -510,26 +510,117 @@
       .trim()
       .slice(0,24);
   }
+  function heroNamePatternListCue(text){
+    var t=nfkc(text);
+    return /(?:すべて|全て|全部|全員|一覧|列挙|挙げて|あげて|出して|見せて|教えて|おしえて|欲しえて|教しえて|教ええて|知りたい|しりたい|いる|誰|だれ|何人|何名|何体|どんな|該当|ランキング|トップ|上位|下位|一番|最も|最高|最低|高い|低い|順)/.test(t);
+  }
+  function exactHeroNameExists(name){
+    var q=S(name);if(!q)return false;
+    return data().rows.some(function(r){return S(r['英傑名'])===q;});
+  }
+  function invalidHeroNamePatternQuery(value){
+    var q=S(value);if(!q)return true;
+    if(/^(?:どんな|何|なに|誰|だれ|英傑|武将|キャラ|全部|全て|すべて|全員)$/.test(q))return true;
+    if(detectStats(q).length||detectJob(q)||detectCost(q)||detectFactors(q).length||detectSkill(q))return true;
+    return /(?:因子|職業|コスト|技能|能力|ステータス|ランキング|トップ|上位|下位|高い|低い|おすすめ|配置|除外|陣法|陣形|因縁|全MAX|見聞録|鬼神石|九十九|魔導結晶|鎮魂符)/.test(q);
+  }
   function parseHeroNamePattern(text){
-    var t=nfkc(text),m,q='',mode='prefix',label='苗字';
+    var t=nfkc(text),m,q='',mode='prefix',label='苗字',listCue=heroNamePatternListCue(t),exactPerson=false;
+    if(/(?:じゃない|ではない|でない|違う|ちがう)/.test(t))return null;
+    function set(hit,nextMode,nextLabel,avoidExact){
+      if(!hit||!hit[1])return false;
+      var value=cleanHeroNamePatternValue(hit[1]);
+      if(!value||invalidHeroNamePatternQuery(value))return false;
+      if(avoidExact&&exactHeroNameExists(value)){exactPerson=true;q='__exact_person__';return false;}
+      q=value;mode=nextMode||'prefix';label=nextLabel||'名前';return true;
+    }
+
+    // 明示的な「苗字・姓」は最優先する。
     m=t.match(/(?:^|[、。！？!?\s　])(?:苗字|名字|姓)(?:が|は)?\s*(.+?)(?=\s*の?(?:英傑|英欠|英決|武将|キャラ)(?:は|を|が|で|の|って|[？?。！!]|$))/);
     if(m){q=cleanHeroNamePatternValue(m[1]);mode='prefix';label='苗字';}
     if(!q){m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)姓(?:の)?(?:英傑|英欠|英決|武将|キャラ)/);if(m){q=cleanHeroNamePatternValue(m[1]);mode='prefix';label='苗字';}}
-    if(!q){m=t.match(/(?:名前|英傑名)(?:に|の中に)?\s*(.+?)\s*(?:が入る|がはいっている|が入っている|を含む|をふくむ|が付く|がつく)(?=[^。！？!?]{0,12}(?:英傑|英欠|英決|武将|キャラ)|[？?。！!]|$)/);if(m){q=cleanHeroNamePatternValue(m[1]);mode='contains';label='名前';}}
-    if(!q){m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)\s*(?:から始まる|ではじまる|で始まる|が先頭の|が最初の)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);if(m){q=cleanHeroNamePatternValue(m[1]);mode='prefix';label='名前';}}
-    if(!q){m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)\s*(?:が入る|を含む|が付く)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);if(m){q=cleanHeroNamePatternValue(m[1]);mode='contains';label='名前';}}
-    if(!q||/^(?:どんな|何|なに|誰|だれ|英傑|武将|キャラ)$/.test(q))return null;
+
+    if(!q){
+      // 「英傑で前田って名前の人」「英傑の中で前田という名前を全員」の語順。
+      m=t.match(/(?:英傑|英欠|英決|武将|キャラ)(?:の中)?で\s*(.{1,16}?)(?:と(?:いう|言う)|って(?:いう|言う)?)(?:名前)?(?:の)?(?:人|英傑|英欠|英決|武将|キャラ)?(?=(?:を|は|が|で|の|って|全部|全て|すべて|全員|一覧|誰|だれ|何人|何名|何体|[？?。！!]|\s|$))/);
+      set(m,'prefix','名前',true);
+    }
+    if(!q){
+      m=t.match(/(?:英傑|英欠|英決|武将|キャラ)(?:の中)?で\s*(.{1,16}?)(?:と(?:いう|言う)|って(?:いう|言う)?)名前(?=(?:を|は|が|の|って|全部|全て|すべて|全員|一覧|誰|だれ|何人|何名|何体|[？?。！!]|\s|$))/);
+      set(m,'prefix','名前',true);
+    }
+
+    if(!q){
+      // 「前田って名前がついてる英傑」「前田という名前が入っている武将」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:と(?:いう|言う)|って(?:いう|言う)?)(?:名前|名)(?:が)?(?:付いている|ついている|付いてる|ついてる|入っている|はいっている|入ってる|はいってる)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'contains','名前',true);
+    }
+    if(!q){
+      // 「前田の名前が入ってる英傑」「前田の名が付いている武将」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)の(?:名前|名)(?:が)?(?:入っている|はいっている|入ってる|はいってる|付いている|ついている|付いてる|ついてる)(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'contains','名前',false);
+    }
+    if(!q){
+      // 「名前に前田が入ってる英傑」。
+      m=t.match(/(?:名前|英傑名)(?:に|の中に)?\s*(.+?)\s*(?:が入る|がはいっている|が入っている|がはいってる|が入ってる|を含む|をふくむ|が付く|がつく|が付いている|がついている|が付いてる|がついてる)(?=[^。！？!?]{0,12}(?:英傑|英欠|英決|武将|キャラ)|[？?。！!]|$)/);
+      set(m,'contains','名前',false);
+    }
+    if(!q){
+      // 「前田が名前につく英傑」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:が)?名前に(?:付く|つく|付いている|ついている|付いてる|ついてる|入る|入っている|入ってる)(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'contains','名前',false);
+    }
+    if(!q){
+      // 「前田みたいな名前の英傑」「前田のような名前の武将」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:みたいな|のような)名前の(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'contains','名前',false);
+    }
+    if(!q){
+      // 「前田系の英傑」「前田一族の武将」「武田家の英傑」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:系|一族|家)の(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'prefix','名前',false);
+    }
+
+    if(!q){m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)\s*(?:から始まる|ではじまる|で始まる|が先頭の|が最初の)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);set(m,'prefix','名前',false);}
+    if(!q){m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)\s*(?:が入る|が入っている|が入ってる|を含む|が付く|がつく|が付いている|がついている|が付いてる|がついてる)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);set(m,'contains','名前',false);}
+
+    if(!q&&listCue){
+      // 「前田という英傑」「前田っていう武将」。完全な登録名なら人物詳細を優先する。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:と(?:いう|言う)|って(?:いう|言う)?)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)(?=(?:を|は|が|の|って|で|全部|全て|すべて|全員|一覧|誰|だれ|何人|何名|何体|、|。|！|!|？|\?|\s|$))/);
+      set(m,'prefix','名前',true);
+    }
+    if(!q&&listCue){
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:と名の付く|と名のつく|の名が付く|の名がつく|の名が入る|の名が入っている|の名が入ってる|の付く|のつく)(?:名前の)?(?:英傑|英欠|英決|武将|キャラ)/);
+      set(m,'contains','名前',false);
+    }
+    if(!q&&listCue){
+      // 「前田って英傑誰がいる」。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,16}?)(?:と(?:いう|言う)|って(?:いう|言う)?)(?:英傑|英欠|英決|武将|キャラ)(?=(?:誰|だれ|何人|何名|何体|は|を|が|で|の|って|全部|全て|すべて|全員|一覧|[？?。！!]|\s|$))/);
+      set(m,'prefix','名前',true);
+    }
+    if(!q&&listCue){
+      // 最後に「前田の英傑」を受ける。上の具体表現を先に処理して過剰取得を防ぐ。
+      m=t.match(/(?:^|[、。！？!?\s　])(.{1,12}?)の(?:英傑|英欠|英決|武将|キャラ)(?=(?:を|は|が|で|の|って|全部|全て|すべて|全員|一覧|誰|だれ|何人|何名|何体|、|。|！|!|？|\?|\s|$))/);
+      set(m,'prefix','名前',true);
+    }
+
+    if(exactPerson||!q||invalidHeroNamePatternQuery(q))return null;
     return {query:q,mode:mode,label:label};
   }
   function renderHeroNamePattern(pattern,text,priorRefinement){
     var query=S(pattern.query),rows=data().rows.filter(function(r){var name=S(r['英傑名']);return pattern.mode==='contains'?name.indexOf(query)>=0:name.indexOf(query)===0;}),stats=detectStats(text),low=/低い|低め|最低|最小|ワースト|下位/.test(nfkc(text)),wantsRank=stats.length&&/(?:高い|低い|ランキング|トップ|上位|下位|一番|最も|最高|最低|順)/.test(nfkc(text));
     if(!rows.length)return result('英傑名検索','「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑は見つかりませんでした。',{namePattern:true,query:query,matchMode:pattern.mode,notFound:true});
+    var lead=pattern.label==='苗字'?'苗字が「'+query+'」の英傑':'「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑';
     if(wantsRank){
       var f={rows:rows,job:'',cost:0,factors:[],factorSlots:[],skill:'',excludedJobs:[],excludedCosts:[],excludedFactors:[],skillPresence:null,stats:stats,thresholds:[],scopeNames:[]};
-      var r=listRanking(f,stats,text,priorRefinement);r.answer='「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑の中では、'+r.answer.replace(/^全英傑の/,'');return r;
+      var r=listRanking(f,stats,text,priorRefinement);r.answer=lead+'の中では、'+r.answer.replace(/^全英傑の/,'');return r;
     }
-    if(/何人|何名|何体|人数/.test(nfkc(text)))return result('英傑名検索','「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑は '+rows.length+'人です。',{namePattern:true,query:query,matchMode:pattern.mode,count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})});
-    var take=rows.slice(0,20),lead=pattern.label==='苗字'?'苗字が「'+query+'」の英傑':'「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑';
+    if(stats.length){
+      var statTake=rows.slice(0,20);
+      return result('英傑名検索',lead+'は '+rows.length+'人います。登録値は次の通りです。\n'+statTake.map(function(r){return '・'+r['英傑名']+'：'+stats.map(function(st){return st+' '+r._stats[st];}).join(' / ');}).join('\n')+(rows.length>statTake.length?'\nほか '+(rows.length-statTake.length)+'人います。':'')+sourceSuffix(),{namePattern:true,query:query,matchMode:pattern.mode,count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),stats:stats.slice(),namePatternStats:true});
+    }
+    if(/何人|何名|何体|人数/.test(nfkc(text)))return result('英傑名検索',lead+'は '+rows.length+'人です。',{namePattern:true,query:query,matchMode:pattern.mode,count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})});
+    var take=rows.slice(0,20);
     return result('英傑名検索',lead+'は '+rows.length+'人います。\n'+take.map(function(r){return '・'+r['英傑名'];}).join('\n')+(rows.length>take.length?'\nほか '+(rows.length-take.length)+'人います。':''),{namePattern:true,query:query,matchMode:pattern.mode,count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})});
   }
 
@@ -1362,7 +1453,11 @@
 
   function respond(text,opt){
     opt=opt||{};
-    var routedText=nfkc(text),suppliedOriginal=nfkc(opt.original||text),namePattern=parseHeroNamePattern(suppliedOriginal),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),candidateReasonQuestion=savedViewCommand?null:parseCandidateReasonQuestion(suppliedOriginal,opt.history),refinementHistoryCommand=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||candidateReasonQuestion||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
+    var routedText=nfkc(text),suppliedOriginal=nfkc(opt.original||text),patternNormalized=routedText;
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.normalizeKanaInput==='function')patternNormalized=nfkc(window.JINPO_BOT_CONVERSATION.normalizeKanaInput(suppliedOriginal).text||routedText);
+    }catch(patternNormalizeErr){}
+    var namePattern=parseHeroNamePattern(patternNormalized)||parseHeroNamePattern(suppliedOriginal)||parseHeroNamePattern(routedText),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),candidateReasonQuestion=savedViewCommand?null:parseCandidateReasonQuestion(suppliedOriginal,opt.history),refinementHistoryCommand=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||candidateReasonQuestion||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
     if(/(?:全英傑|英傑全体|全体の英傑|全部の英傑)/.test(suppliedOriginal)&&refinementContext)refinementContext={resetRoot:true,rootCandidates:[],activeCandidates:[],filters:emptyFilterState(),sortStats:[],sortLow:false,undoStack:[],redoStack:[],savedViews:cloneSavedViews(refinementContext.savedViews)};
     if(!original||isBlocked(original)||(!savedViewCommand&&!candidateReasonQuestion&&!namePattern&&isSearchAction(original))||isNavigationOnly(original)||(!namePattern&&!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement&&!groupReplacement&&!refinementEdit&&!refinementHistoryCommand&&!refinementChangeQuestion&&!savedViewCommand&&!candidateReasonQuestion))return {handled:false};
     if(savedViewCommand)return renderSavedViewCommand(savedViewCommand);

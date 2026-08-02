@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.6-local-only
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.9-local-only
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -681,6 +681,17 @@
           topicSwitch:!!result.data.topicSwitch,
           lastMode:String(result.data.lastMode||'')
         };
+      }else if(result.data&&result.data.knownTermClarification){
+        // 配置・除外の安全確認へユーザーが答えた次の1ターンだけ、
+        // 聞き直しの種類と対象英傑を保持する。回答全文や検索状態は保存しない。
+        historyData={
+          knownTermClarification:true,
+          clarificationReason:String(result.data.clarificationReason||result.data.reason||''),
+          siteItem:String(result.data.siteItem||'jinpo'),
+          termKey:String(result.data.termKey||'placement'),
+          normalizedTerm:String(result.data.normalizedTerm||''),
+          pendingHero:String(result.data.pendingHero||'')
+        };
       }else if(result.data&&result.data.siteGuide){
         historyData={
           siteGuide:true,
@@ -828,7 +839,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.8-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.9-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

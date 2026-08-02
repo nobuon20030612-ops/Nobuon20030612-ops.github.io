@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.28.0';
+  var VERSION='3.29.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -511,7 +511,7 @@
       }
     }catch(preRepairKnownTermErr){preRepairKnownTermFollowup=null;}
     if(preRepairKnownTermFollowup&&preRepairKnownTermFollowup.clarification){
-      return {answer:String(preRepairKnownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(preRepairKnownTermFollowup.reason||''),siteItem:String(preRepairKnownTermFollowup.siteItem||''),context:{original:userMessage,message:userMessage,resolved:false,reason:'',confidence:0,history:history}}};
+      return {answer:String(preRepairKnownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(preRepairKnownTermFollowup.reason||''),clarificationReason:String(preRepairKnownTermFollowup.reason||''),siteItem:String(preRepairKnownTermFollowup.siteItem||''),termKey:String(preRepairKnownTermFollowup.termKey||''),normalizedTerm:String(preRepairKnownTermFollowup.normalizedTerm||''),pendingHero:String(preRepairKnownTermFollowup.pendingHero||''),context:{original:userMessage,message:userMessage,resolved:false,reason:'',confidence:0,history:history}}};
     }
 
     // ユーザーの訂正・否定・話題指定は、各専門ルーターより先に処理する。
@@ -996,7 +996,7 @@
       if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup==='function'){
         var knownTermFollowup=preRepairKnownTermFollowup||window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(originalMessage,history);
         if(knownTermFollowup&&knownTermFollowup.clarification){
-          return {answer:String(knownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(knownTermFollowup.reason||''),siteItem:String(knownTermFollowup.siteItem||''),context:contextInfo}};
+          return {answer:String(knownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(knownTermFollowup.reason||''),clarificationReason:String(knownTermFollowup.reason||''),siteItem:String(knownTermFollowup.siteItem||''),termKey:String(knownTermFollowup.termKey||''),normalizedTerm:String(knownTermFollowup.normalizedTerm||''),pendingHero:String(knownTermFollowup.pendingHero||''),context:contextInfo}};
         }
         if(knownTermFollowup&&knownTermFollowup.message){
           message=String(knownTermFollowup.message);
@@ -1015,7 +1015,7 @@
     // 英傑マスターの実データ質問は、英傑一覧ページ案内より先に処理する。
     // 例: 「腕力が高い英傑は誰？」「侍で知力トップ3」「豊臣秀長の因子は？」
     try{
-      if(!bareSiteTermBeforeHero&&!(knownTermFollowup&&knownTermFollowup.jinpoOperation&&String(pageContext&&pageContext.mode||'')==='jinpo')&&window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
+      if(!bareSiteTermBeforeHero&&!(knownTermFollowup&&knownTermFollowup.jinpoOperation)&&window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
         var heroFact=window.JINPO_BOT_HERO_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo,pageContext:pageContext});
         if(heroFact&&heroFact.handled){
           return {
@@ -1038,7 +1038,8 @@
          typeof window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge==='function'&&
          typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&
          !(knownTermFollowup&&knownTermFollowup.preferKnowledge)&&
-         window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(proactiveGuideInput,{original:proactiveGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo})){
+         ((knownTermFollowup&&knownTermFollowup.jinpoOperation&&String(pageContext&&pageContext.mode||'')!=='jinpo')||
+          window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(proactiveGuideInput,{original:proactiveGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo}))){
         var proactiveGuide=window.JINPO_BOT_SITE_GUIDE.respond(proactiveGuideInput,{original:proactiveGuideInput,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
         if(proactiveGuide&&proactiveGuide.handled){
           return {

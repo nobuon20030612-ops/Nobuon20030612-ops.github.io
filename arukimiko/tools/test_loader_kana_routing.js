@@ -59,6 +59,7 @@ check('ordinary ninety people remains blocked',!groups('九十人いる').includ
 check('ordinary relative remains blocked after known typo layer',!groups('親戚の話').includes('tool'),groups('親戚の話'));
 check('hero ranking lazy group',groups('腕力が高い英傑は誰？').includes('hero'),groups('腕力が高い英傑は誰？'));
 check('hero surname query lazy group',groups('苗字が前田の英傑').includes('hero'),groups('苗字が前田の英傑'));
+check('hero natural surname wording lazy group',groups('前田と言う英傑をすべて欲しえて').includes('hero'),groups('前田と言う英傑をすべて欲しえて'));
 check('hero exact name lazy group',groups('母里太兵衛について').includes('hero'),groups('母里太兵衛について'));
 check('hero typo name with stat lazy group',groups('母里太兵枝の腕力は？').includes('hero'),groups('母里太兵枝の腕力は？'));
 check('hero rough kana ranking lazy group',groups('えいけつでうでりょくたかいのだれ').includes('hero'),groups('えいけつでうでりょくたかいのだれ'));

@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト総合案内 v3.13.0
+ * 歩き巫女 サイト総合案内 v3.16.0
  *
  * - たいらの野望トップページと、カウンター配下の現行ページを案内する。
  * - ページ名の誤字・脱字・かな入力・ラフな目的表現を会話側の共通正規化と連携して扱う。
@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.15.0';
+  var VERSION='3.16.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -350,12 +350,125 @@
     if(!hit)return '';
     return S(hit[1]).replace(/^(?:じゃあ|では|次は|今度は|追加で|もう一人は|もう1人は)[、,\s]*/,'');
   }
+  function latestKnownTermClarification(history){
+    var h=Array.isArray(history)?history:[],i=h.length-2;
+    if(i<0||!h[i]||h[i].role!=='assistant')return null;
+    var data=h[i].meta&&h[i].meta.data||{};
+    if(!data.knownTermClarification)return null;
+    return {
+      reason:S(data.clarificationReason||data.reason||''),
+      siteItem:S(data.siteItem||'jinpo'),
+      termKey:S(data.termKey||'placement'),
+      normalizedTerm:S(data.normalizedTerm||''),
+      pendingHero:S(data.pendingHero||''),
+      index:i
+    };
+  }
+  function clarificationHeroName(text){
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim();
+    t=t.replace(/^(?:じゃあ|では|それなら|なら|次は|今度は|追加で|もう一人は|もう1人は|先に|まず|最初は|最初に)[、,\s]*/,'');
+    t=t.replace(/(?:も|を|は)?(?:入れて探して|使って探して|必ず入れて|入れて|加えて|配置して|除外して|外して|抜いて|候補から外して|除外から戻して|除外を解除して|除外を解除|戻して|取り消して)$/,'');
+    t=t.replace(/(?:は)?(?:使う|使いたい)$/,'');
+    t=t.replace(/(?:を先に|から|でお願いします|をお願いします|お願いします|お願い|にして|でいい|がいい|で)$/,'').trim();
+    if(!t||/^(?:それ|その人|その英傑|こっち|そっち|配置|除外|英傑)$/.test(t))return '';
+    var rows=window.JINPO_BOT_HERO_DATA&&Array.isArray(window.JINPO_BOT_HERO_DATA.rows)?window.JINPO_BOT_HERO_DATA.rows:[];
+    for(var i=0;i<rows.length;i++)if(S(rows[i]&&rows[i][1])===t)return t;
+    return '';
+  }
+  function clarificationResult(pending,message,reason){
+    return {message:String(message||''),siteItem:String(pending.siteItem||'jinpo'),reason:String(reason||pending.reason||'known_term_clarification_followup'),preferKnowledge:false,jinpoOperation:true,termKey:String(pending.termKey||'placement'),normalizedTerm:String(pending.normalizedTerm||'')};
+  }
+  function repeatClarification(pending,answer,reason,hero){
+    return {clarification:String(answer||''),siteItem:String(pending.siteItem||'jinpo'),reason:String(reason||pending.reason||''),termKey:String(pending.termKey||'placement'),normalizedTerm:String(pending.normalizedTerm||''),pendingHero:String(hero||pending.pendingHero||'')};
+  }
+  function latestImmediateJinpoContinuation(history){
+    var h=Array.isArray(history)?history:[];
+    function fromAssistant(index){
+      if(index<0||!h[index]||h[index].role!=='assistant')return null;
+      var data=h[index].meta&&h[index].meta.data||{};
+      if(data.conversationRepair||data.contextBoundary||data.topicSwitch)return null;
+      var reason=S(data.resolutionReason||''),message=S(data.contextMessage||'');
+      if((data.jinpoContinuation||data.siteItem==='jinpo')&&reason&&message)return {reason:reason,message:message,index:index};
+      return null;
+    }
+    var direct=fromAssistant(h.length-2);if(direct)return direct;
+    if(h.length>=4&&h[h.length-3]&&h[h.length-3].role==='user'&&acknowledgementOnly(h[h.length-3].text)){
+      var ackAssistant=h[h.length-2],ackData=ackAssistant&&ackAssistant.meta&&ackAssistant.meta.data||{};
+      if(ackAssistant&&ackAssistant.role==='assistant'&&(!ackData||!ackData.siteGuide&&!ackData.heroKnowledge&&!ackData.jinpoContinuation))return fromAssistant(h.length-4);
+    }
+    return null;
+  }
+  function resolveImmediateJinpoContinuation(text,continuation){
+    if(!continuation||!continuation.reason||!continuation.message)return null;
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim();
+    var hasCue=/^(?:じゃあ|では|それなら|次は|今度は|追加で|もう一人は|もう1人は)[、,\s]*/.test(t);
+    var hero=clarificationHeroName(t);if(!hero)return null;
+    if(continuation.reason==='placement_context'&&/を(?:入れて探して|使って探して|必ず入れて)$/.test(continuation.message)){
+      if(hasCue||/(?:入れて|加えて|配置して)$/.test(t))return clarificationResult({siteItem:'jinpo',termKey:'placement',normalizedTerm:'配置英傑'},hero+'を入れて探して','placement_context');
+    }
+    if(continuation.reason==='exclusion_context'&&/を除外して$/.test(continuation.message)){
+      if(hasCue||/(?:除外して|外して|抜いて)$/.test(t))return clarificationResult({siteItem:'jinpo',termKey:'placement',normalizedTerm:'除外英傑'},hero+'を除外して','exclusion_context');
+    }
+    if(continuation.reason==='exclusion_context'&&/の除外を解除$/.test(continuation.message)){
+      if(hasCue||/(?:戻して|解除して|使う|使いたい)$/.test(t))return clarificationResult({siteItem:'jinpo',termKey:'placement',normalizedTerm:'除外英傑'},hero+'の除外を解除','exclusion_context');
+    }
+    return null;
+  }
+  function resolveKnownTermClarification(text,pending){
+    if(!pending||!pending.reason)return null;
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim(),hero='';
+    if(!t||acknowledgementOnly(t))return null;
+
+    if(pending.reason==='placement_multiple_clarification'){
+      if(/(?:と|、|,).*(?:入れて|加えて|配置)/.test(t))return repeatClarification(pending,'配置英傑は1人ずつ追加します。先に配置する英傑を1人だけ教えてください。');
+      hero=clarificationHeroName(t);
+      if(hero)return clarificationResult(pending,hero+'を入れて探して','placement_context');
+      return null;
+    }
+    if(pending.reason==='exclusion_multiple_clarification'){
+      if(/(?:と|、|,).*(?:外して|抜いて|除外)/.test(t))return repeatClarification(pending,'除外英傑は1人ずつ追加します。先に除外する英傑を1人だけ教えてください。');
+      hero=clarificationHeroName(t);
+      if(hero)return clarificationResult(pending,hero+'を除外して','exclusion_context');
+      return null;
+    }
+    if(pending.reason==='exclusion_restore_clarification'){
+      hero=clarificationHeroName(t);
+      if(hero)return clarificationResult(pending,hero+'の除外を解除','exclusion_context');
+      return null;
+    }
+    if(pending.reason==='placement_remove_clarification'){
+      var slot=t.match(/^(?:じゃあ|では|それなら|配置(?:英傑)?|枠)?[、,\s]*([1-3１-３])(?:番|番目|枠)?(?:を)?(?:解除|外して|戻して|取り消して)?$/);
+      if(slot)return clarificationResult(pending,'配置英傑'+numberValue(slot[1])+'を解除','placement_context');
+      if(/(?:除外|候補から外|検索候補から外)/.test(t)){
+        hero=clarificationHeroName(t)||pending.pendingHero;
+        if(hero)return clarificationResult(pending,hero+'を除外して','exclusion_context');
+        return repeatClarification(pending,'候補から除外する英傑の名前を教えてください。','exclusion_multiple_clarification','');
+      }
+      if(/(?:配置|固定).*(?:外|解除|戻|取り消)|^(?:配置から外して|配置だけ外して|配置を解除|配置条件から外して)$/.test(t)){
+        return repeatClarification(pending,'配置英傑1〜3のどの枠を解除するか教えてください。たとえば「配置英傑1を解除」のように指定してください。','placement_remove_clarification',pending.pendingHero);
+      }
+      return null;
+    }
+    return null;
+  }
   function expandKnownTermFollowup(text,history){
     var h=Array.isArray(history)?history:[],ctx=historyGuideContext(h),recentItem=ctx.item,item=ctx.knownTermItem||recentItem,t=normalizeInput(text);
     var key=String(ctx.termKey||'item'),term=S(ctx.normalizedTerm||item&&item.name||'');
     var recentContinuation=latestContinuationData(h,ctx.knownTermIndex),recentHeroKnowledge=latestHeroKnowledgeData(h,ctx.knownTermIndex);
     if(!t)return null;
     if(acknowledgementOnly(t))return null;
+
+    // 歩き巫女が聞き直した直後の回答は、元の配置・除外操作へ1回だけ戻す。
+    // 聞き直し以外の会話へは持ち越さず、無関係な人物質問や日常会話を拘束しない。
+    var pendingClarification=latestKnownTermClarification(h);
+    var clarificationFollowup=resolveKnownTermClarification(t,pendingClarification);
+    if(clarificationFollowup)return clarificationFollowup;
+
+    // 直前の配置・除外実行後に「次は」「もう一人は」と続けた場合だけ、
+    // 同じ操作をもう1人へ引き継ぐ。裸の人物名は英傑紹介との区別がつかないため補完しない。
+    var immediateContinuation=latestImmediateJinpoContinuation(h);
+    var immediateFollowup=resolveImmediateJinpoContinuation(t,immediateContinuation);
+    if(immediateFollowup)return immediateFollowup;
 
     function reply(message,reason,preferKnowledge){
       var jinpoOperation=/^(?:formation|bond|kenbun|bunkyoku|allmax|placement)$/.test(key);
@@ -417,17 +530,17 @@
         var previousExcluded=recentContinuation&&recentContinuation.reason==='exclusion_context'?continuationHero(recentContinuation.message,recentContinuation.reason):'';
         if(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:戻して|取り消して|解除して|使う|使いたい)[。！!？?]*$/.test(exclusionText)){
           if(previousExcluded)return reply(previousExcluded+'の除外を解除','exclusion_context');
-          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term};
+          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term,pendingHero:''};
         }
         var restoreExplicit=exclusionText.match(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(.+?)(?:は|を|の除外を)?(?:使う|使いたい|候補に戻して|除外から戻して|除外を解除|戻して|取り消して)$/);
         if(restoreExplicit){
           var restoreHero=S(restoreExplicit[1]).replace(/^(?:それ|その人|その英傑)$/,'');
           if(!restoreHero)restoreHero=previousExcluded;
           if(restoreHero)return reply(restoreHero+'の除外を解除','exclusion_context');
-          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term};
+          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term,pendingHero:''};
         }
         exclusionText=exclusionText.replace(/^(?:じゃあ|では|次は|今度は|追加で)[、,\s]*/,'').replace(/^(?:もう一人は|もう1人は)[、,\s]*/,'');
-        if(/(?:と|、|,).*(?:外して|抜いて|除外)/.test(exclusionText))return {clarification:'除外英傑は間違いを防ぐため1人ずつ追加します。先に除外する英傑を1人だけ教えてください。',siteItem:item.id,reason:'exclusion_multiple_clarification',termKey:key,normalizedTerm:term};
+        if(/(?:と|、|,).*(?:外して|抜いて|除外)/.test(exclusionText))return {clarification:'除外英傑は間違いを防ぐため1人ずつ追加します。先に除外する英傑を1人だけ教えてください。',siteItem:item.id,reason:'exclusion_multiple_clarification',termKey:key,normalizedTerm:term,pendingHero:''};
         if(!/除外/.test(exclusionText)&&/(?:を|も)?(?:外して|抜いて|外す|抜く)$/.test(exclusionText))exclusionText=exclusionText.replace(/(?:を|も)?(?:外して|抜いて|外す|抜く)$/,'を除外して');
         else if(!/除外/.test(exclusionText))exclusionText+='を除外して';
         return reply(exclusionText,'exclusion_context');
@@ -437,10 +550,10 @@
         var previousPlaced=recentContinuation&&recentContinuation.reason==='placement_context'?continuationHero(recentContinuation.message,recentContinuation.reason):'';
         if(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:全部|全て|すべて)?(?:を)?(?:外して|抜いて|解除して|やめて|取り消して|戻して)$/.test(placementText)||/(?:を|は)?(?:外して|抜いて|解除して|やめて|取り消して|戻して)$/.test(placementText)){
           var targetLabel=previousPlaced?'「'+previousPlaced+'」の配置条件を外す意味か、候補から除外する意味か':'配置条件を外す意味か、英傑を候補から除外する意味か';
-          return {clarification:targetLabel+'を確認したいです。配置だけを戻すなら「配置英傑1を解除」のように枠番号を、候補から外すなら英傑名と「除外して」を教えてください。',siteItem:item.id,reason:'placement_remove_clarification',termKey:key,normalizedTerm:term};
+          return {clarification:targetLabel+'を確認したいです。配置だけを戻すなら「配置英傑1を解除」のように枠番号を、候補から外すなら英傑名と「除外して」を教えてください。',siteItem:item.id,reason:'placement_remove_clarification',termKey:key,normalizedTerm:term,pendingHero:previousPlaced};
         }
         placementText=placementText.replace(/^(?:じゃあ|では|次は|今度は|追加で)[、,\s]*/,'').replace(/^(?:もう一人は|もう1人は)[、,\s]*/,'');
-        if(/(?:と|、|,).*(?:入れて|加えて|配置)/.test(placementText))return {clarification:'配置英傑は間違いを防ぐため1人ずつ追加します。先に配置する英傑を1人だけ教えてください。',siteItem:item.id,reason:'placement_multiple_clarification',termKey:key,normalizedTerm:term};
+        if(/(?:と|、|,).*(?:入れて|加えて|配置)/.test(placementText))return {clarification:'配置英傑は間違いを防ぐため1人ずつ追加します。先に配置する英傑を1人だけ教えてください。',siteItem:item.id,reason:'placement_multiple_clarification',termKey:key,normalizedTerm:term,pendingHero:''};
         if(/入れて探して|使って探して|必ず入れて/.test(placementText))return reply(placementText,'placement_context');
         if(/(?:を|も)?(?:入れて|加えて|配置して)$/.test(placementText))placementText=placementText.replace(/(?:を|も)?(?:入れて|加えて|配置して)$/,'を入れて探して');
         else placementText+='を入れて探して';
@@ -585,7 +698,7 @@
   function hasNavigationCue(text){return explicitNavigationCue(text)||taskNavigationCue(text);}
   function hasJinpoOperation(text){
     var t=normalizeInput(text);
-    return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|文曲|配置英傑|除外英傑|英傑.*(?:差替|固定|除外|配置)|(?:配置|除外).*(?:して|したい)|(?:入れて|使って).*(?:探して|検索)|差替|込み合計|全MAX|検索結果|鶴翼|方円|魚鱗|衡軛/.test(t)||/(?:鬼神石|見聞録|転生).*(?:MAX|マックス|設定|解除|数値)/.test(t)||/(?:MAX|マックス).*(?:鬼神石|見聞録|転生)/.test(t);
+    return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|文曲|配置英傑|除外英傑|英傑.*(?:差替|固定|除外|配置)|(?:配置|除外).*(?:して|したい)|(?:配置英傑|配置条件|除外).*(?:解除|戻|取り消|使う)|(?:入れて|使って).*(?:探して|検索)|差替|込み合計|全MAX|検索結果|鶴翼|方円|魚鱗|衡軛/.test(t)||/(?:鬼神石|見聞録|転生).*(?:MAX|マックス|設定|解除|数値)/.test(t)||/(?:MAX|マックス).*(?:鬼神石|見聞録|転生)/.test(t);
   }
   function overviewCue(text){
     var t=normalizeInput(text);

@@ -14,6 +14,9 @@ check('known term guidance marker stored',/knownTermGuidance\s*:\s*!!result\.dat
 check('known term key stored',/termKey\s*:\s*String\(result\.data\.termKey/.test(src));
 check('known term normalized value stored',/normalizedTerm\s*:\s*String\(result\.data\.normalizedTerm/.test(src));
 check('known term approximate marker stored',/approximateTerm\s*:\s*!!result\.data\.approximateTerm/.test(src));
+check('known term clarification marker stored',/knownTermClarification\s*:\s*true/.test(src));
+check('known term clarification reason stored',/clarificationReason\s*:\s*String\(result\.data\.clarificationReason\|\|result\.data\.reason/.test(src));
+check('known term clarification pending hero stored',/pendingHero\s*:\s*String\(result\.data\.pendingHero/.test(src));
 check('jinpo continuation marker stored',/jinpoContinuation\s*:\s*true/.test(src));
 check('jinpo continuation site item stored',/siteItem\s*:\s*['"]jinpo['"]/.test(src));
 check('jinpo continuation resolution reason stored',/resolutionReason\s*:\s*String\(result\.data\.context\.reason/.test(src));

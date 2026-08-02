@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v3.9.0
+ * 歩き巫女 共通会話ルーター v3.11.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.9.0';
+  var VERSION='3.11.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -100,7 +100,10 @@
       [/わからん/g,'分からない'],
       [/分からん/g,'分からない'],
       [/どっから/g,'どこから'],
-      [/なんこれ/g,'これ何']
+      [/なんこれ/g,'これ何'],
+      // 音声入力・IME誤変換で起きる要求動詞の崩れ。
+      // 対象語の意味判定を変えず、明らかに不自然な誤記だけを戻す。
+      [/(?:欲しえて|教しえて|教ええて)/g,'教えて']
     ];
     for(var i=0;i<rules.length;i++)t=t.replace(rules[i][0],rules[i][1]);
     return {text:t,changed:t!==original,original:original};
@@ -446,7 +449,7 @@
       foldVariants.sort(function(a,b){return b.length-a.length;});
       if(!variants.length)return null;
       var prefix='(^|[\\s、。,.!！?？「」『』（）()・はがをにでとのもへハガヲニデトノモヘ])';
-      var suffix='(?=$|[\\s、。,.!！?？「」『』（）()・]|(?:は|ハ|って|ッテ|の|ノ|について|ニツイテ|を|ヲ|が|ガ|も|モ|さん|サン|選手|センシュ|監督|カントク|投手|トウシュ|家族|カゾク|親族|シンゾク|奥さん|オクサン|妻|ツマ|成績|セイセキ|経歴|ケイレキ|逸話|イツワ|現役|ゲンエキ|引退|インタイ|年齢|ネンレイ|何歳|ナンサイ|カウンター|カウンタア))';
+      var suffix='(?=$|[\\s、。,.!！?？「」『』（）()・]|(?:は|ハ|って|ッテ|っていう|ッテイウ|という|とゆう|と言う|の|ノ|について|ニツイテ|を|ヲ|が|ガ|も|モ|さん|サン|英傑|英欠|英決|武将|キャラ|選手|センシュ|監督|カントク|投手|トウシュ|家族|カゾク|親族|シンゾク|奥さん|オクサン|妻|ツマ|成績|セイセキ|経歴|ケイレキ|逸話|イツワ|現役|ゲンエキ|引退|インタイ|年齢|ネンレイ|何歳|ナンサイ|カウンター|カウンタア))';
       return {
         canonical:canonical,
         regex:new RegExp(prefix+'('+variants.map(escKanaRe).join('|')+')'+suffix,'g'),
@@ -723,7 +726,7 @@
     if(cached!==null)return {text:cached,changed:cached!==original,original:original};
     var text=collapseKanaSpacing(original);
     var h=hiraText(text);
-    var personContext=/(?:かーぷ|かあぷ|ひろしま|せんしゅ|かぞく|しんぞく|おくさん|せいせき|けいれき|いつわ|げんえき|いんたい|なんさい|ねんれい|かうんた|てんか|しゅら|にじょう|おけはざま|ふういん)/.test(h) ||
+    var personContext=/(?:かーぷ|かあぷ|ひろしま|せんしゅ|かぞく|しんぞく|おくさん|せいせき|けいれき|いつわ|げんえき|いんたい|なんさい|ねんれい|かうんた|てんか|しゅら|にじょう|おけはざま|ふういん|えいけつ|ぶしょう|きゃら|英傑|英欠|英決|武将|キャラ)/.test(h) ||
       /^[ぁ-ゖァ-ヶー]{2,24}(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か|[？?！!。])*$/.test(text);
 
     // 人物・敵名の長い読みを先に確定する。
