@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+'use strict';
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=path.resolve(__dirname,'..'),store={};
+global.window=global;
+global.localStorage={getItem:k=>store['l:'+k]||null,setItem:(k,v)=>store['l:'+k]=String(v),removeItem:k=>delete store['l:'+k]};
+global.sessionStorage={getItem:k=>store['s:'+k]||null,setItem:(k,v)=>store['s:'+k]=String(v),removeItem:k=>delete store['s:'+k]};
+global.document={readyState:'complete',addEventListener:()=>{},title:'',location:{},querySelector:()=>null};global.addEventListener=()=>{};
+global.location={href:'https://example.test/陣法/jinpo.html',pathname:'/陣法/jinpo.html',origin:'https://example.test'};global.fetch=async()=>({ok:false,status:503,text:async()=>''});global.JINPO_BOT_PAGE_MODE='jinpo';
+function load(name){vm.runInThisContext(fs.readFileSync(path.join(root,name),'utf8'),{filename:name});}
+['jinpo-bot-carp-knowledge-data.js','jinpo-bot-conversation.js','jinpo-bot-context.js','jinpo-bot-dialog.js','jinpo-bot-page-context.js','jinpo-bot-smalltalk.js','jinpo-bot-carp-knowledge.js','jinpo-bot-carp.js','jinpo-bot-kashin-name.js','jinpo-bot-tool-data.js','jinpo-bot-tool-knowledge.js','jinpo-bot-tairano-data.js','jinpo-bot-tairano-knowledge.js','jinpo-bot-site-source-data.js','jinpo-bot-site-guide.js','jinpo-bot-hero-data.js','jinpo-bot-hero-knowledge.js','jinpo-bot-parser.js','jinpo-bot-nlu.js','jinpo-bot-interpret.js','jinpo-bot-state.js'].forEach(load);
+let site={formation:'方円',count:0,searchBasis:'base',priority1:'',priority2:'',grade3:false,factor4Exclude:0,sumSort:false,owned:[],excluded:[],recommendActive:false,allMax:false},actionLog=[];
+global.JINPO_BOT_ACTIONS={readSiteState:()=>JSON.parse(JSON.stringify(site)),captureSnapshot:()=>JSON.parse(JSON.stringify(site)),execute:async(name,args)=>{actionLog.push({name,args:args||{}});if(name==='apply_search')Object.assign(site,args||{});return {ok:true,message:name+' done',data:{hero:args&&args.hero,excluded:args&&args.excluded}};}};global.JINPO_BOT_HELP={respond:()=>null,get:()=>''};load('jinpo-bot.js');
+const B=global.JINPO_BOT;let pass=0,fail=0;function check(n,c,d){if(c){pass++;return;}fail++;console.error('FAIL:',n,d===undefined?'':d);}function meta(r){const d=r&&r.data||{},c=d.context||{};let data={};if(d.siteGuide)data={siteGuide:true,siteItem:String(d.siteItem||''),knownTermGuidance:!!d.knownTermGuidance,termKey:String(d.termKey||''),normalizedTerm:String(d.normalizedTerm||''),resolutionReason:String(c.reason||''),contextMessage:String(c.message||'')};else if(c.resolved&&String(c.siteItem||'')==='jinpo')data={jinpoContinuation:true,siteItem:'jinpo',resolutionReason:String(c.reason||''),contextMessage:String(c.message||'')};else if(d.heroKnowledge)data={heroKnowledge:true,cost:Number(d.cost||d.filters&&d.filters.cost)||0,list:!!d.list,ranking:!!d.ranking,low:!!d.low,stats:Array.isArray(d.stats)?d.stats.slice():[]};return {mode:r&&r.mode||'',data};}
+async function sequence(messages){const h=[],steps=[];for(const text of messages){h.push({role:'user',text});actionLog=[];const response=await B.handle({message:text,history:h.slice()});steps.push({response,actions:actionLog.slice()});h.push({role:'assistant',text:String(response.answer||''),meta:meta(response)});}return steps;}function acts(s,n){return s.actions.filter(x=>x.name===n);}function first(s,n){return acts(s,n)[0];}
+(async()=>{
+ let x=await sequence(['因縁','7因縁で探して','了解','やっぱり6']);check('bare bond executes 6 once',acts(x[3],'apply_search').length===1&&first(x[3],'apply_search').args.count===6,x[3]);
+ x=await sequence(['文曲','2人除外','了解','0にして']);check('zero bunkyoku executes clear once',acts(x[3],'set_factor4_exclude').length===1&&first(x[3],'set_factor4_exclude').args.count===0,x[3]);check('zero bunkyoku never excludes hero',acts(x[3],'set_excluded_hero').length===0,x[3]);
+ x=await sequence(['除外英傑','前田慶次を外して','了解','やっぱり戻して']);check('restore exclusion executes once',acts(x[3],'set_excluded_hero').length===1&&first(x[3],'set_excluded_hero').args.hero==='前田慶次'&&first(x[3],'set_excluded_hero').args.excluded===false,x[3]);check('restore exclusion reruns once',acts(x[3],'rerun_search').length===1,x[3]);
+ x=await sequence(['配置英傑','前田慶次を入れて','了解','やっぱり外して']);check('ambiguous placement removal executes nothing',x[3].actions.length===0&&x[3].response.mode==='会話確認',x[3]);
+ x=await sequence(['配置英傑','前田慶次と真田幸村を入れて']);check('multiple placement executes nothing',x[1].actions.length===0&&x[1].response.mode==='会話確認',x[1]);
+ console.log(`KNOWN TERM COMPACT JINPO: ${pass} / ${pass+fail} PASS`);if(fail)process.exit(1);process.exit(0);
+})().catch(e=>{console.error(e);process.exit(1);});

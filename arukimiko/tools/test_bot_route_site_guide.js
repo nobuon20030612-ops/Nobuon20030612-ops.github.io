@@ -42,7 +42,7 @@ function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('F
   check('bot explicit tool usage uses verified page guide',r&&r.mode==='サイト総合案内'&&r.data&&r.data.siteItem==='kishin'&&/最大8個/.test(r.answer||''),r);
   r=await ask('親戚の話');
   check('bot ordinary word not typo-routed',r&&!(r.data&&r.data.siteGuide)&&r.mode!=='たいらの野望ツール実データ',r);
-  check('bot release version updated',B&&B.version==='3.26.0',B&&B.version);
+  check('bot release version updated',B&&B.version==='3.28.0',B&&B.version);
   console.log(`BOT ROUTE SITE GUIDE: ${pass} / ${pass+fail} PASS`);
   if(fail)process.exit(1);
 })().catch(e=>{console.error(e);process.exit(1);});

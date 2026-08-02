@@ -702,13 +702,40 @@
           termKey:String(result.data.termKey||''),
           normalizedTerm:String(result.data.normalizedTerm||''),
           approximateTerm:!!result.data.approximateTerm,
-          needsClarification:!!result.data.needsClarification
+          needsClarification:!!result.data.needsClarification,
+          // サイト案内経由で陣法操作へ進んだ場合も、直前の操作対象だけを軽量保存する。
+          resolutionReason:String(result.data.context&&result.data.context.reason||''),
+          contextMessage:String(result.data.context&&result.data.context.message||'')
+        };
+      }else if(result.data&&result.data.context&&result.data.context.resolved&&String(result.data.context.siteItem||'')==='jinpo'){
+        // 用語案内から実際の陣法操作へ進んだことを、次の短い変更まで保持する。
+        // 回答全文やサイト状態は保存せず、会話接続に必要な最小情報だけを残す。
+        historyData={
+          jinpoContinuation:true,
+          siteItem:'jinpo',
+          resolutionReason:String(result.data.context.reason||''),
+          contextMessage:String(result.data.context.message||'')
+        };
+      }else if(result.data&&result.data.needsSpecifiedSearchCondition){
+        // 「7因縁で探して」→「陣形だけ教えて」のような途中状態も、
+        // 相づち後の「8にして」へ主語を引き継げるようにする。
+        historyData={
+          jinpoContinuation:true,
+          siteItem:'jinpo',
+          resolutionReason:'specified_search_partial'
         };
       }else if(result.data&&result.data.heroKnowledge){
         historyData={
           heroKnowledge:true,
           hero:String(result.data.hero||''),
           heroes:Array.isArray(result.data.heroes)?result.data.heroes.slice(0,24):[],
+          // 「コスト7」→「じゃあ8」、「腕力順」→「じゃあ知力」のような
+          // 同種の短い変更だけを次ターンへ接続するための軽量種別。
+          cost:Number(result.data.cost||result.data.filters&&result.data.filters.cost)||0,
+          list:!!result.data.list,
+          costEdge:!!result.data.costEdge,
+          ranking:!!result.data.ranking,
+          low:!!result.data.low,
           candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,12):[],
           needsClarification:!!result.data.needsClarification,
           stats:Array.isArray(result.data.stats)?result.data.stats.slice(0,12):[],
@@ -801,7 +828,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.6-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.8-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },

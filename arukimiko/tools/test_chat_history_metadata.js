@@ -14,6 +14,14 @@ check('known term guidance marker stored',/knownTermGuidance\s*:\s*!!result\.dat
 check('known term key stored',/termKey\s*:\s*String\(result\.data\.termKey/.test(src));
 check('known term normalized value stored',/normalizedTerm\s*:\s*String\(result\.data\.normalizedTerm/.test(src));
 check('known term approximate marker stored',/approximateTerm\s*:\s*!!result\.data\.approximateTerm/.test(src));
+check('jinpo continuation marker stored',/jinpoContinuation\s*:\s*true/.test(src));
+check('jinpo continuation site item stored',/siteItem\s*:\s*['"]jinpo['"]/.test(src));
+check('jinpo continuation resolution reason stored',/resolutionReason\s*:\s*String\(result\.data\.context\.reason/.test(src));
+check('jinpo continuation context message stored',/contextMessage\s*:\s*String\(result\.data\.context\.message/.test(src));
+check('site guide continuation context message stored',/contextMessage\s*:\s*String\(result\.data\.context&&result\.data\.context\.message/.test(src));
+check('hero cost continuation metadata stored',/cost\s*:\s*Number\(result\.data\.cost\|\|result\.data\.filters&&result\.data\.filters\.cost\)/.test(src));
+check('hero ranking continuation metadata stored',/ranking\s*:\s*!!result\.data\.ranking/.test(src)&&/low\s*:\s*!!result\.data\.low/.test(src));
+check('partial specified search continuation stored',/specified_search_partial/.test(src));
 check('large history metadata is pruned',/function pruneHistoryMetadata\s*\(/.test(src)&&/heroRefinement/.test(src)&&/3500000/.test(src));
 console.log(`CHAT HISTORY METADATA: ${pass} / ${pass+fail} PASS`);
 if(fail)process.exit(1);

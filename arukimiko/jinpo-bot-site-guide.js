@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.13.0';
+  var VERSION='3.15.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -260,11 +260,47 @@
     var t=normalizeInput(text);
     return /^(?:なるほど(?:ね|です)?|そうなんだ|そうか|了解(?:です|しました)?|わかった|分かった|わかりました|分かりました|おけ|オッケー|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう)[。！!？?～〜]*$/i.test(t);
   }
+  function relevantKnownTermContinuation(ctx,entry){
+    var c=ctx||{},x=entry||{},meta=x.meta||{},data=meta.data||{},mode=S(meta.mode||''),item=c.knownTermItem||null,key=String(c.termKey||'item');
+    if(x.role!=='assistant')return false;
+    if(data.conversationRepair||data.contextBoundary||data.topicSwitch)return false;
+    if(/^(?:formation|bond|kenbun|bunkyoku|allmax|placement)$/.test(key)){
+      return !!data.jinpoContinuation||data.siteItem==='jinpo'||/陣法|検索/.test(mode)||/「陣法検索」で扱えます/.test(S(x.text));
+    }
+    if(item&&item.id==='heroes')return !!data.heroKnowledge||/^英傑/.test(mode);
+    if(item&&(item.id==='tsukumo'||item.id==='mado'||item.id==='kishin')){
+      return !!data.toolKnowledge||/たいらの野望ツール実データ/.test(mode)||S(x.text).indexOf(item.name)>=0;
+    }
+    if(item){
+      if(data.siteItem===item.id)return true;
+      var children=CHILDREN_BY_ID[item.id]||[];
+      if(children.indexOf(String(data.siteItem||''))>=0)return true;
+    }
+    return false;
+  }
   function knownTermContextFresh(history,ctx){
     var h=Array.isArray(history)?history:[],c=ctx||{},idx=Number(c.knownTermIndex);
     if(!c.knownTermGuidance||idx<0)return false;
     if(idx>=Math.max(0,h.length-3))return true;
-    if(idx<Math.max(0,h.length-5))return false;
+    var between=h.slice(idx+1,Math.max(idx+1,h.length-1));
+    if(between.length===2&&between[0]&&between[0].role==='user'&&between[1]&&between[1].role==='assistant'){
+      if(!acknowledgementOnly(between[0].text))return false;
+      var ackMeta=between[1].meta||{};
+      return !ackMeta.data||!ackMeta.data.siteGuide;
+    }
+    // 用語案内→実質的な質問→回答→相づち→相づち回答→次の変更、までを1回だけ保持する。
+    // 回答が元の用語に対応した専門回答であることを確認し、別話題を挟んだ場合は保持しない。
+    if(between.length===4&&between[0]&&between[0].role==='user'&&between[1]&&between[1].role==='assistant'&&between[2]&&between[2].role==='user'&&between[3]&&between[3].role==='assistant'){
+      if(!relevantKnownTermContinuation(c,between[1])||!acknowledgementOnly(between[2].text))return false;
+      var followAckMeta=between[3].meta||{};
+      return !followAckMeta.data||!followAckMeta.data.siteGuide;
+    }
+    return false;
+  }
+  function pageContextFresh(history,ctx){
+    var h=Array.isArray(history)?history:[],c=ctx||{},idx=Number(c.index);
+    if(!c.item||idx<0)return false;
+    if(idx>=Math.max(0,h.length-3))return true;
     var between=h.slice(idx+1,Math.max(idx+1,h.length-1));
     if(between.length!==2||!between[0]||between[0].role!=='user'||!between[1]||between[1].role!=='assistant')return false;
     if(!acknowledgementOnly(between[0].text))return false;
@@ -275,19 +311,49 @@
     var t=normalizeInput(text);if(!item||!t)return null;
     if(item.id==='seikai'){
       var stoneCorrection=t.match(/(?:武曲|禄存|破軍|文曲|廉貞|巨門|貪狼).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)/);
-      var stone=stoneCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正)?[、,\s]*(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)(?:の方|のほう|を|がいい|を見たい|を見せて|を開いて|を選びたい|にして)?[。！!？?]*$/);
+      var stone=stoneCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正|それじゃなくて|それではなくて|そっちじゃなくて|そちらではなくて)?[、,\s]*(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)(?:の方|のほう|を|がいい|を見たい|を見せて|を開いて|を選びたい|にして|について)?[。！!？?]*$/);
       if(stone)return {message:'星海の荒石 '+stone[1]+'を見たい',reason:'seikai_selection'};
     }
     if(item.id==='chinkon'){
       var partCorrection=t.match(/(?:頭|胴|左|腕|首|腰|右|足).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(頭|胴|左|腕|首|腰|右|足)/);
-      var part=partCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正)?[、,\s]*(頭|胴|左|腕|首|腰|右|足)(?:の枠|の部位|を|がいい|を設定したい|を登録したい|を選びたい|を見たい|にして)?[。！!？?]*$/);
+      var part=partCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正|それじゃなくて|それではなくて|そっちじゃなくて|そちらではなくて)?[、,\s]*(頭|胴|左|腕|首|腰|右|足)(?:の枠|の部位|を|がいい|を設定したい|を登録したい|を選びたい|を見たい|にして|について)?[。！!？?]*$/);
       if(part)return {message:'鎮魂符 '+part[1]+'を設定したい',reason:'chinkon_part'};
     }
     return null;
   }
+  function latestContinuationData(history,afterIndex){
+    var h=Array.isArray(history)?history:[],min=Number(afterIndex)||-1;
+    for(var i=h.length-1;i>min;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=x.meta&&x.meta.data||{};
+      if(data.conversationRepair||data.contextBoundary||data.topicSwitch)return null;
+      if(data.contextMessage||data.resolutionReason||data.jinpoContinuation){
+        return {message:S(data.contextMessage||''),reason:S(data.resolutionReason||''),index:i};
+      }
+    }
+    return null;
+  }
+  function latestHeroKnowledgeData(history,afterIndex){
+    var h=Array.isArray(history)?history:[],min=Number(afterIndex)||-1;
+    for(var i=h.length-1;i>min;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=x.meta&&x.meta.data||{};
+      if(data.conversationRepair||data.contextBoundary||data.topicSwitch)return null;
+      if(data.heroKnowledge)return data;
+    }
+    return null;
+  }
+  function continuationHero(contextMessage,reason){
+    var m=S(contextMessage),r=S(reason),hit=null;
+    if(r==='placement_context')hit=m.match(/^(.+?)を(?:入れて探して|使って探して|必ず入れて)$/);
+    else if(r==='exclusion_context')hit=m.match(/^(.+?)(?:を除外して|の除外を解除)$/);
+    if(!hit)return '';
+    return S(hit[1]).replace(/^(?:じゃあ|では|次は|今度は|追加で|もう一人は|もう1人は)[、,\s]*/,'');
+  }
   function expandKnownTermFollowup(text,history){
     var h=Array.isArray(history)?history:[],ctx=historyGuideContext(h),recentItem=ctx.item,item=ctx.knownTermItem||recentItem,t=normalizeInput(text);
     var key=String(ctx.termKey||'item'),term=S(ctx.normalizedTerm||item&&item.name||'');
+    var recentContinuation=latestContinuationData(h,ctx.knownTermIndex),recentHeroKnowledge=latestHeroKnowledgeData(h,ctx.knownTermIndex);
     if(!t)return null;
     if(acknowledgementOnly(t))return null;
 
@@ -301,7 +367,7 @@
     function firstNumber(){var m=t.match(/([0-9０-９一二三四五六七八九十]+)/);return m?S(m[1]):'';}
 
     // 直前のページ内案内から続く選択・言い直しは、古い用語案内より最新ページを優先する。
-    var recentIndex=Number(ctx.index),recentChoice=recentItem&&recentIndex>=Math.max(0,h.length-3)?pageInternalChoice(recentItem,t):null;
+    var recentChoice=recentItem&&pageContextFresh(h,ctx)?pageInternalChoice(recentItem,t):null;
     if(recentChoice)return internalReply(recentItem,recentChoice);
 
     if(!ctx.knownTermGuidance||!item||!knownTermContextFresh(h,ctx))return null;
@@ -318,8 +384,9 @@
       return reply('陣形 '+t,'formation_context');
     }
     if(key==='bond'){
-      var bondNo=firstNumber();
-      if(bondNo&&/(?:探|検索|指定|で|因縁)/.test(t))return reply(bondNo+'因縁で探して','bond_context');
+      var bondNo=firstNumber(),bondValue=numberValue(bondNo);
+      var bareBondChange=/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*[5-9５-９](?:因縁)?(?:で|にして|へ変更|に変更)?[。！!？?]*$/.test(t);
+      if(bondNo&&bondValue>=5&&bondValue<=9&&(bareBondChange||/(?:探|検索|指定|で|因縁|にして|へ変更|に変更|へ変)/.test(t)))return reply(bondValue+'因縁で探して','bond_context');
       if(/発動|今の|現在|見せ|表示/.test(t))return reply('発動因縁を見せて','bond_context');
       if(/一覧|種類|何がある/.test(t))return reply('因縁一覧を見せて','bond_context');
       return reply('因縁 '+t,'bond_context');
@@ -331,7 +398,8 @@
     }
     if(key==='bunkyoku'){
       var people=firstNumber();
-      if(people&&/(?:人|除外|外)/.test(t))return reply('文曲を'+people+'人除外','bunkyoku_context');
+      if(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:0|０|ゼロ|なし|無し)(?:人)?(?:にして|で|へ変更|に変更|解除|外して|に戻して)?[。！!？?]*$/.test(t))return reply('文曲除外0人','bunkyoku_context');
+      if(people&&/(?:人|除外|外)/.test(t))return reply('文曲を'+numberValue(people)+'人除外','bunkyoku_context');
       if(/意味|説明|って何|何のため|使い方|転生.*MAX|MAX.*転生/i.test(t))return reply('文曲除外人数の意味を説明して','bunkyoku_context',true);
       return reply('文曲 '+t,'bunkyoku_context');
     }
@@ -346,14 +414,35 @@
       if(/差替|差し替/.test(placementTerm)||/候補/.test(t))return reply('差替候補を見せて','replacement_context');
       if(/除外/.test(placementTerm)){
         var exclusionText=t.replace(/[？?。！!]+$/g,'');
-        if(!/除外/.test(exclusionText)&&/(?:を)?(?:外して|抜いて|外す|抜く)$/.test(exclusionText))exclusionText=exclusionText.replace(/(?:を)?(?:外して|抜いて|外す|抜く)$/,'を除外して');
+        var previousExcluded=recentContinuation&&recentContinuation.reason==='exclusion_context'?continuationHero(recentContinuation.message,recentContinuation.reason):'';
+        if(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:戻して|取り消して|解除して|使う|使いたい)[。！!？?]*$/.test(exclusionText)){
+          if(previousExcluded)return reply(previousExcluded+'の除外を解除','exclusion_context');
+          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term};
+        }
+        var restoreExplicit=exclusionText.match(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(.+?)(?:は|を|の除外を)?(?:使う|使いたい|候補に戻して|除外から戻して|除外を解除|戻して|取り消して)$/);
+        if(restoreExplicit){
+          var restoreHero=S(restoreExplicit[1]).replace(/^(?:それ|その人|その英傑)$/,'');
+          if(!restoreHero)restoreHero=previousExcluded;
+          if(restoreHero)return reply(restoreHero+'の除外を解除','exclusion_context');
+          return {clarification:'どの英傑を除外から戻すか、名前を教えてください。',siteItem:item.id,reason:'exclusion_restore_clarification',termKey:key,normalizedTerm:term};
+        }
+        exclusionText=exclusionText.replace(/^(?:じゃあ|では|次は|今度は|追加で)[、,\s]*/,'').replace(/^(?:もう一人は|もう1人は)[、,\s]*/,'');
+        if(/(?:と|、|,).*(?:外して|抜いて|除外)/.test(exclusionText))return {clarification:'除外英傑は間違いを防ぐため1人ずつ追加します。先に除外する英傑を1人だけ教えてください。',siteItem:item.id,reason:'exclusion_multiple_clarification',termKey:key,normalizedTerm:term};
+        if(!/除外/.test(exclusionText)&&/(?:を|も)?(?:外して|抜いて|外す|抜く)$/.test(exclusionText))exclusionText=exclusionText.replace(/(?:を|も)?(?:外して|抜いて|外す|抜く)$/,'を除外して');
         else if(!/除外/.test(exclusionText))exclusionText+='を除外して';
         return reply(exclusionText,'exclusion_context');
       }
       if(/配置/.test(placementTerm)){
         var placementText=t.replace(/[？?。！!]+$/g,'');
+        var previousPlaced=recentContinuation&&recentContinuation.reason==='placement_context'?continuationHero(recentContinuation.message,recentContinuation.reason):'';
+        if(/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:全部|全て|すべて)?(?:を)?(?:外して|抜いて|解除して|やめて|取り消して|戻して)$/.test(placementText)||/(?:を|は)?(?:外して|抜いて|解除して|やめて|取り消して|戻して)$/.test(placementText)){
+          var targetLabel=previousPlaced?'「'+previousPlaced+'」の配置条件を外す意味か、候補から除外する意味か':'配置条件を外す意味か、英傑を候補から除外する意味か';
+          return {clarification:targetLabel+'を確認したいです。配置だけを戻すなら「配置英傑1を解除」のように枠番号を、候補から外すなら英傑名と「除外して」を教えてください。',siteItem:item.id,reason:'placement_remove_clarification',termKey:key,normalizedTerm:term};
+        }
+        placementText=placementText.replace(/^(?:じゃあ|では|次は|今度は|追加で)[、,\s]*/,'').replace(/^(?:もう一人は|もう1人は)[、,\s]*/,'');
+        if(/(?:と|、|,).*(?:入れて|加えて|配置)/.test(placementText))return {clarification:'配置英傑は間違いを防ぐため1人ずつ追加します。先に配置する英傑を1人だけ教えてください。',siteItem:item.id,reason:'placement_multiple_clarification',termKey:key,normalizedTerm:term};
         if(/入れて探して|使って探して|必ず入れて/.test(placementText))return reply(placementText,'placement_context');
-        if(/(?:を)?(?:入れて|加えて|配置して)$/.test(placementText))placementText=placementText.replace(/(?:を)?(?:入れて|加えて|配置して)$/,'を入れて探して');
+        if(/(?:を|も)?(?:入れて|加えて|配置して)$/.test(placementText))placementText=placementText.replace(/(?:を|も)?(?:入れて|加えて|配置して)$/,'を入れて探して');
         else placementText+='を入れて探して';
         return reply(placementText,'placement_context');
       }
@@ -366,10 +455,16 @@
 
     if(item.id==='heroes'){
       if(/(?:編成|陣法|陣形|因縁|6人|六人)/.test(t))return null;
-      var cost=firstNumber();
-      if(/コスト/.test(t)&&cost)return reply('コスト'+cost+'の英傑を一覧で見せて','hero_term_followup',true);
+      var cost=firstNumber(),costValue=numberValue(cost);
+      var priorCost=recentHeroKnowledge&&Number(recentHeroKnowledge.cost)>=4&&Number(recentHeroKnowledge.cost)<=8&&(recentHeroKnowledge.list||recentHeroKnowledge.costEdge);
+      var bareCostChange=priorCost&&/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*[4-8４-８](?:は|で|にして|の方|のほう)?[。！!？?]*$/.test(t);
+      if(costValue>=4&&costValue<=8&&(/コスト/.test(t)||bareCostChange))return reply('コスト'+costValue+'の英傑を一覧で見せて','hero_term_followup',true);
       if(/一覧.*(?:使い方|見方|操作)|(?:使い方|見方|操作).*一覧/.test(t))return reply('英傑一覧の使い方','hero_page_followup');
-      var heroStat=/(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|ステータス|能力)/.test(t)&&/(?:高|低|一番|トップ|順位|順|誰|どれ|何人|比較)/.test(t);
+      var heroStatName=(t.match(/(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)/)||[])[0]||'';
+      var heroStat=!!heroStatName&&/(?:高|低|一番|トップ|順位|順|誰|どれ|何人|比較)/.test(t);
+      var priorRanking=recentHeroKnowledge&&recentHeroKnowledge.ranking&&Array.isArray(recentHeroKnowledge.stats)&&recentHeroKnowledge.stats.length;
+      var bareStatChange=priorRanking&&!!heroStatName&&/^(?:じゃあ|では|次は|今度は|やっぱり|やはり|いや|訂正)?[、,\s]*(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性)(?:は|で|にして|の方|のほう)?[。！!？?]*$/.test(t);
+      if(bareStatChange)return reply('英傑 '+heroStatName+(recentHeroKnowledge.low?'が低い順':'が高い順'),'hero_term_followup',true);
       var heroData=/(?:因子|職業|コスト|固有技能|育成技能)/.test(t);
       if(heroStat||heroData)return reply('英傑 '+t,'hero_term_followup',true);
     }
@@ -1782,6 +1877,6 @@
     absoluteUrl:abs,normalizeInput:normalizeInput,hasNavigationCue:hasNavigationCue,
     shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,candidateContextFresh:candidateContextFresh,
     childrenOf:childrenOf,usageOf:usageOf,sourcePage:sourcePage,featureIntent:featureIntent,featureIntents:featureIntents,answerFeature:answerFeature,candidateFeatureRequests:candidateFeatureRequests,
-    splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,bareKnownTerm:bareKnownTerm,knownTermGuidance:knownTermGuidance,expandKnownTermFollowup:expandKnownTermFollowup,knownTermContextFresh:knownTermContextFresh,pageInternalChoice:pageInternalChoice,siteSourceVersion:SOURCE.version||''
+    splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,bareKnownTerm:bareKnownTerm,knownTermGuidance:knownTermGuidance,expandKnownTermFollowup:expandKnownTermFollowup,knownTermContextFresh:knownTermContextFresh,pageContextFresh:pageContextFresh,pageInternalChoice:pageInternalChoice,siteSourceVersion:SOURCE.version||''
   };
 })();

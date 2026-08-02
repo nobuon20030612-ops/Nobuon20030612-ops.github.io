@@ -6,7 +6,7 @@
   'use strict';
   if(window.JINPO_BOT_HERO_KNOWLEDGE)return;
 
-  var VERSION='2.2.0';
+  var VERSION='2.3.0';
   var STAT_ORDER=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
   var STAT_ALIASES=[
     {to:'生命',a:['生命力','生命','体力','HP','hp']},
@@ -1668,6 +1668,18 @@
     }
 
     var f=filteredRows(original,scopeRows.length?scopeRows:null,scopeNames),rankSet=parseTopRankSet(original,stats),topEntryN=parseTopEntry(original),statPercentConditions=parseStatPercentConditions(original,stats),averageConditions=parseAverageConditions(original,stats);
+    // 「コスト6は？」「コスト8の英傑」のような短い質問は、外国人選手名の部分一致へ流さず
+    // 英傑マスターのコスト条件として扱う。
+    var directCostOnly=!named.length&&!stats.length&&!!f.cost&&/^(?:英傑|武将|キャラ)?[、,\s]*(?:の)?(?:コスト|コスと|こすと)\s*[4-8](?:の英傑|の武将|のキャラ|は|って|を一覧|一覧)?[。！!？?]*$/.test(original);
+    if(directCostOnly){
+      var directCostTake=f.rows.slice(0,15),directCostExtra=f.rows.length>directCostTake.length?'\nほか '+(f.rows.length-directCostTake.length)+'人います。':'';
+      return result('英傑マスター実データ','コスト'+f.cost+'の英傑は '+f.rows.length+'人です。'+(directCostTake.length?'\n'+directCostTake.map(function(r){return r['英傑名']+'（'+r['職業']+'・コスト'+r['コスト']+'）';}).join('\n'):'')+directCostExtra,{list:true,cost:f.cost,count:f.rows.length,heroes:directCostTake.map(function(r){return r['英傑名'];})});
+    }
+    var costEdgeQuestion=/(?:コスト|コスと|こすと).*(?:一番|いちばん|最も|最高|最大|最低|最小|高い|低い)|(?:一番|いちばん|最も|最高|最大|最低|最小|高い|低い).*(?:コスト|コスと|こすと)/.test(original);
+    if(!named.length&&!stats.length&&costEdgeQuestion){
+      var costs=data().rows.map(function(r){return Number(r['コスト'])||0;}).filter(function(v){return v>0;}),lowCostQuestion=/(?:最低|最小|一番低い|いちばん低い|最も低い|低い.*(?:コスト|コスと|こすと))/.test(original),edgeCost=costs.length?(lowCostQuestion?Math.min.apply(null,costs):Math.max.apply(null,costs)):0,edgeRows=data().rows.filter(function(r){return Number(r['コスト'])===edgeCost;}),edgeTake=edgeRows.slice(0,15),edgeExtra=edgeRows.length>edgeTake.length?'\nほか '+(edgeRows.length-edgeTake.length)+'人います。':'';
+      return result('英傑マスター実データ','英傑マスターで'+(lowCostQuestion?'最も低い':'最も高い')+'登録コストは コスト'+edgeCost+' で、該当は '+edgeRows.length+'人です。'+(edgeTake.length?'\n'+edgeTake.map(function(r){return r['英傑名']+'（'+r['職業']+'・コスト'+r['コスト']+'）';}).join('\n'):'')+edgeExtra,{costEdge:true,low:lowCostQuestion,cost:edgeCost,count:edgeRows.length,heroes:edgeTake.map(function(r){return r['英傑名'];})});
+    }
     if(rankSet){
       var rankRows=f.rows,rankMaps=rankSet.entries.map(function(e){var list=sortedByStat(rankRows,e.stat,false),map=Object.create(null);list.slice(0,e.topN).forEach(function(r,i){map[r['英傑名']]={rank:i+1,row:r};});return {entry:e,map:map,list:list};}),positive=rankMaps.filter(function(x){return !x.entry.negative;}),negative=rankMaps.filter(function(x){return x.entry.negative;}),matches=rankRows.filter(function(r){var name=r['英傑名'],posOk=rankSet.operation==='union'?positive.some(function(x){return !!x.map[name];}):positive.every(function(x){return !!x.map[name];}),negOk=negative.every(function(x){return !x.map[name];});return posOk&&negOk;});
       matches.sort(function(a,b){function rs(r){return rankMaps.reduce(function(sum,x){var hit=x.map[r['英傑名']];return sum+(hit?hit.rank:x.entry.topN+rankRows.length);},0);}return rs(a)-rs(b)||String(a['英傑名']).localeCompare(String(b['英傑名']),'ja');});

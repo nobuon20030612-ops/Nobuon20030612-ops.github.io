@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.26.0';
+  var VERSION='3.28.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -501,12 +501,25 @@
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
 
+    // ページ内選択や既知用語の短い言い直しは、一般の会話訂正で履歴を切る前に判定する。
+    // 例: 「星海の荒石」→「文曲」→「それじゃなくて武曲」。
+    // この場合は話題変更ではなく同じページ内の選び直しなので、元のページ文脈を維持する。
+    var preRepairKnownTermFollowup=null;
+    try{
+      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup==='function'){
+        preRepairKnownTermFollowup=window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(userMessage,history);
+      }
+    }catch(preRepairKnownTermErr){preRepairKnownTermFollowup=null;}
+    if(preRepairKnownTermFollowup&&preRepairKnownTermFollowup.clarification){
+      return {answer:String(preRepairKnownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(preRepairKnownTermFollowup.reason||''),siteItem:String(preRepairKnownTermFollowup.siteItem||''),context:{original:userMessage,message:userMessage,resolved:false,reason:'',confidence:0,history:history}}};
+    }
+
     // ユーザーの訂正・否定・話題指定は、各専門ルーターより先に処理する。
     // 「英傑じゃない」「違う、カープの前田」「カープの話へ変えて」などで、
     // 古い人物・分野・pendingを押し通さず、現在の指示を最優先する。
     var repairInfo=null;
     try{
-      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.repairDirective==='function'){
+      if(!preRepairKnownTermFollowup&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.repairDirective==='function'){
         repairInfo=window.JINPO_BOT_CONVERSATION.repairDirective(userMessage,history);
       }
     }catch(repairDetectErr){repairInfo=null;}
@@ -981,7 +994,10 @@
     // 例: 「英傑」→「腕力高いのは？」、「九十九」→「1番の能力」。
     try{
       if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup==='function'){
-        var knownTermFollowup=window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(originalMessage,history);
+        var knownTermFollowup=preRepairKnownTermFollowup||window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(originalMessage,history);
+        if(knownTermFollowup&&knownTermFollowup.clarification){
+          return {answer:String(knownTermFollowup.clarification),sources:[],links:[],mode:'会話確認',data:{needsClarification:true,knownTermClarification:true,reason:String(knownTermFollowup.reason||''),siteItem:String(knownTermFollowup.siteItem||''),context:contextInfo}};
+        }
         if(knownTermFollowup&&knownTermFollowup.message){
           message=String(knownTermFollowup.message);
           contextInfo=Object.assign({},contextInfo,{message:message,resolved:true,reason:String(knownTermFollowup.reason||'known_term_followup'),confidence:0.99,siteItem:String(knownTermFollowup.siteItem||'')});
@@ -999,7 +1015,7 @@
     // 英傑マスターの実データ質問は、英傑一覧ページ案内より先に処理する。
     // 例: 「腕力が高い英傑は誰？」「侍で知力トップ3」「豊臣秀長の因子は？」
     try{
-      if(!bareSiteTermBeforeHero&&window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
+      if(!bareSiteTermBeforeHero&&!(knownTermFollowup&&knownTermFollowup.jinpoOperation&&String(pageContext&&pageContext.mode||'')==='jinpo')&&window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
         var heroFact=window.JINPO_BOT_HERO_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo,pageContext:pageContext});
         if(heroFact&&heroFact.handled){
           return {
