@@ -25,11 +25,11 @@ function meta(r){return {links:r.links||[],mode:r.mode||'',data:{siteGuide:!!(r.
 function session(){const history=[];return{history,async ask(q){history.push({role:'user',text:q});const r=await B.handle({message:q,history:history.slice()});history.push({role:'assistant',text:String(r.answer||''),meta:meta(r)});return r;}};}
 function guide(r,id,feature){return !!(r&&r.mode==='サイト総合案内'&&r.data&&r.data.siteGuide&&(!id||r.data.siteItem===id)&&(!feature||r.data.siteFeature===feature));}
 (async()=>{
-  check('source version',D&&D.version==='1.2.0',D&&D.version);
+  check('source version',D&&D.version==='1.3.0',D&&D.version);
   check('source hash',D&&D.sourceSha256==='75cb2d4772528e876857ccb645fa572fb32401c4dc17017af3fb5db941b67af3',D&&D.sourceSha256);
   check('source archive count',D&&D.archiveFileCount===744,D&&D.archiveFileCount);
   check('source html count',D&&D.htmlFileCount===34,D&&D.htmlFileCount);
-  check('guide source linked',G&&G.siteSourceVersion==='1.2.0',G&&G.siteSourceVersion);
+  check('guide source linked',G&&G.siteSourceVersion==='1.3.0',G&&G.siteSourceVersion);
   check('guide catalog includes meibutsu',G.items.some(x=>x.id==='meibutsu'&&x.path==='meibutsu.html'),G.items.map(x=>x.id));
   check('guide catalog count',G.items.length===34,G.items.length);
 

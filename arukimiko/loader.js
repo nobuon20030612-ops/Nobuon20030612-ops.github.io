@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト共通ローダー v3.52.0-local-only
+ * 歩き巫女 サイト共通ローダー v3.60.0-local-only
  * すべてのページで同じ /arukimiko/ 配下の仕様・知識・会話エンジンを共有する。
  * 陣法ページだけ陣法操作モジュールを追加読み込みし、TOP/一般ページには陣法専用メニューを出さない。
  */
@@ -12,7 +12,7 @@
   var base='';
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
-  var ASSET_VERSION='3.52.0';
+  var ASSET_VERSION='3.60.0';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -27,11 +27,11 @@
   var mode=detectMode();
   window.JINPO_BOT_PAGE_MODE=mode;
   window.JINPO_BOT_DISABLE_JINPO_GUIDE=mode!=='jinpo';
-  window.ARUKIMIKO_SHARED={version:'3.52.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
+  window.ARUKIMIKO_SHARED={version:'3.60.0-local-only',baseUrl:base,pageMode:mode,loading:true,ready:false};
 
   var loadT0=(window.performance&&typeof performance.now==='function')?performance.now():Date.now();
   window.ARUKIMIKO_LOAD_METRICS={
-    version:'3.52.0',
+    version:'3.60.0',
     mode:mode,
     startedAt:Date.now(),
     scriptCount:0,
@@ -411,7 +411,7 @@
     return prev[b.length];
   }
   function hasHeroFuzzyNameHint(text){
-    var t=normalizeKanaForRouting(text),m=t.match(/^(.{2,24}?)(?:の|って|は|について|よりも?|に比べて)?(?:強み|つよみ|強いところ|強いとこ|弱み|よわみ|弱いところ|弱いとこ|得意|とくい|苦手|にがて|順位|何位|どんな英傑|どんな人|どんなやつ|生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|上位互換|下位互換|完全上位|完全下位)/);
+    var t=normalizeKanaForRouting(text),m=t.match(/^(.{2,24}?)(?:の|って|は|について|よりも?|に比べて)?(?:強み|つよみ|強いところ|強いとこ|弱み|よわみ|弱いところ|弱いとこ|得意|とくい|苦手|にがて|順位|何位|どんな英傑|どんな人|どんなやつ|候補に入っている理由|候補にはいってるりゆう|候補から外れた理由|こうほからはずれたりゆう|この中にいない理由|生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|上位互換|下位互換|完全上位|完全下位)/);
     if(!m)return false;
     var q=compactHintFold(m[1].replace(/^(?:英傑|武将|キャラ)[の ]*/,''));
     if(q.length<4)return false;
@@ -457,7 +457,7 @@
     var h=Array.isArray(history)?history:[];
     for(var i=h.length-1;i>=0&&i>=h.length-12;i--){
       var m=h[i]||{},meta=m.meta||{},d=meta.data||{};
-      if(m.role==='assistant'&&d.heroKnowledge)return true;
+      if(m.role==='assistant'&&(d.heroKnowledge||d.repairTargetDomain==='hero'))return true;
       if(m.role==='user'&&/カープ|カウンター|鬼神石|九十九|魔導結晶|陣法検索|家臣計算/.test(String(m.text||'')))break;
     }
     return false;
@@ -479,7 +479,7 @@
     var t=normalizeKanaForRouting(text);
     if(heroSavedViewHint(t,history))return true;
     if(!t||t.length>42||/全英傑|英傑全体|全部の英傑/.test(t))return false;
-    if(/(?:直前|さっき|今の)(?:の)?(?:変更|絞り込み|条件変更|並べ替え).*(?:取り消|戻)|(?:条件|絞り込み|結果|並び順|候補).*(?:一つ|ひとつ|1つ|一個|1個)前.*(?:戻)|(?:取り消し|戻した|戻す前).*(?:やり直|元に戻|戻して)|(?:誰|だれ|どの英傑).*(?:外れ|除外|消え|増え|追加|戻っ)|(?:前の結果|変更前).*(?:比べ|比較|何人|差|違い|変わ)/.test(t))return true;
+    if(/(?:直前|さっき|今の)(?:の)?(?:変更|絞り込み|条件変更|並べ替え).*(?:取り消|戻)|(?:条件|絞り込み|結果|並び順|候補).*(?:一つ|ひとつ|1つ|一個|1個)前.*(?:戻)|(?:取り消し|戻した|戻す前).*(?:やり直|元に戻|戻して)|(?:誰|だれ|どの英傑).*(?:外れ|除外|消え|増え|追加|戻っ)|(?:前の結果|変更前).*(?:比べ|比較|何人|差|違い|変わ)|(?:候補|こうほ|結果|この中|その中|残って|のこって|入って|はいって|外れ|はずれ|いない).*(?:なぜ|なんで|どうして|理由|りゆう)|(?:なぜ|なんで|どうして|理由|りゆう).*(?:候補|こうほ|結果|この中|その中|残って|のこって|入って|はいって|外れ|はずれ|いない)/.test(t))return true;
     return /^(?:じゃあ|では|なら|あと|次は|今度は|そこから|そのまま|さらに|続けて)?[、,\s　]*(?:(?:この|その)?(?:[0-9]+|[一二三四五六七八九]+)人で)?(?:(?:侍|さむらい|傾奇者|かぶきもの|僧|忍者|にんじゃ|神主|巫女|神職|薬師|くすし|鍛冶屋|かじや|陰陽師|おんみょうじ)(?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:コスト|コスと|こすと)\s*[4-8](?:だけ|のみ|以外|じゃない|ではない|除いて|抜き)|(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性).*(?:順|ランキング|トップ|高い|低い|平均|中央値|以上|以下|未満)|(?:技能|固有技能).*(?:ある|あり|ない|なし|未登録|登録|だけ)|因子.*(?:だけ|のみ|以外|なし|持ち|持たない)|(?:一番|最も)?(?:差が大きい|差が小さい|差がない|能力ごと|各能力|能力別|1位を取|トップを取|共通点|同じところ)|(?:割合|比率|登録値|数値差)(?:だと|では|で|なら)?|(?:前者|後者|[1-9]人目|[1-9]番目|一人目|二人目|三人目|[^、。]{2,20})(?:を|じゃなくて|ではなく).*(?:変えて|替えて|入れ替えて|差し替えて|変更して)|(?:全員|ぜんいん|みんな|誰か|だれか|1人でも|一人でも|ひとりでも).*[0-9]{3,5}(?:以上|いじょう|以下|いか|超|未満|みまん).*(?:能力|ステータス|ステ|項目)|(?:生命|気合|腕力|腕りょく|うでりょく|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性).*(?:条件|絞り込み|並び順|基準).*(?:外して|解除|なし|消して|変えて|変更)|(?:条件|絞り込み|フィルター).*(?:全部|すべて|全て).*(?:外して|解除|なし|消して)|(?:元|最初)の(?:候補|一覧|メンバー|英傑|[0-9]+人).*(?:戻して|戻す)|(?:逆順|逆の順|並びを逆|順番を逆|高い順|低い順))/.test(t);
   }
 

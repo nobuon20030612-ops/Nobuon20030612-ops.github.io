@@ -17,16 +17,16 @@ function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('F
 (async()=>{
   let r=await C.respond('黒田博樹について教えて',{history:[]});
   check('overview starts player profile',r&&r.handled&&String(r.answer||'').indexOf('【人物:黒田博樹】')>=0&&String(r.answer||'').indexOf('【人物:黒田博樹】')<String(r.answer||'').indexOf('【2015年:黒田博樹の広島復帰】'),r&&r.answer);
-  check('overview does not start family',!/専用資料ではこう整理されています。\n【アスリート同士・野球一家/.test(r&&r.answer||''),r&&r.answer);
+  check('overview does not start family',!/黒田博樹について分かっていることをまとめます。\n【アスリート同士・野球一家/.test(r&&r.answer||''),r&&r.answer);
 
   r=await C.respond('新井貴浩について教えて',{history:[]});
-  check('arai overview starts player profile',r&&r.handled&&/専用資料ではこう整理されています。\n【人物:新井貴浩】/.test(r.answer||''),r&&r.answer);
+  check('arai overview starts player profile',r&&r.handled&&/新井貴浩について分かっていることをまとめます。\n【人物:新井貴浩】/.test(r.answer||''),r&&r.answer);
   check('arai overview avoids duplicate manager category',((String(r&&r.answer||'').match(/【2023-2026:新井貴浩監督時代】/g)||[]).length===1),r&&r.answer);
 
   r=await C.respond('黒田博樹について、どう思う？',{history:[]});
   check('carp person opinion handled',r&&r.handled===true,r);
   check('carp person opinion grounded',r&&r.data&&r.data.groundedOpinion===true,r);
-  check('carp person opinion says source basis',/正本で確認できる内容/.test(r.answer||''),r&&r.answer);
+  check('carp person opinion says source basis',/確認できる出来事を踏まえると/.test(r.answer||''),r&&r.answer);
   check('carp person opinion concrete headings',/黒田博樹の広島復帰/.test(r.answer||''),r&&r.answer);
 
   r=await C.respond('黒田博樹の家族について、どう思う？',{history:[]});

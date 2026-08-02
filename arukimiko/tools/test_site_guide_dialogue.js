@@ -91,7 +91,7 @@ function isGuide(r,id){return !!(r&&r.mode==='サイト総合案内'&&r.data&&r.
   check('counter location correction',isGuide(r,'fuuin'),r);
 
   r=await session().ask('鬼神石の使い方教えて');
-  check('tool fact is not hijacked',r&&r.mode==='たいらの野望ツール実データ'&&!(r.data&&r.data.siteGuide),r);
+  check('explicit tool usage uses verified page guide',r&&r.mode==='サイト総合案内'&&r.data&&r.data.siteItem==='kishin'&&/最大8個/.test(r.answer||''),r);
   r=await session().ask('魔導結晶の入手は？');
   check('tool missing target asks naturally',r&&r.mode==='たいらの野望ツール実データ'&&/番号または名称/.test(r.answer||''),r);
   r=await session().ask('足利義昭のカウンター見たい');

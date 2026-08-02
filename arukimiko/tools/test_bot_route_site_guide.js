@@ -39,10 +39,10 @@ function check(name,cond,detail){if(cond){pass++;return;}fail++;console.error('F
   r=await ask('計算したい');
   check('bot ambiguous calculator asks instead of guessing',r&&r.mode==='サイト総合案内'&&r.data&&r.data.needsClarification===true&&/能力計算/.test(r.answer||'')&&/家臣計算機/.test(r.answer||''),r);
   r=await ask('鬼神石の使い方教えて');
-  check('bot factual wording not hijacked by page guide',r&&!(r.data&&r.data.siteGuide),r);
+  check('bot explicit tool usage uses verified page guide',r&&r.mode==='サイト総合案内'&&r.data&&r.data.siteItem==='kishin'&&/最大8個/.test(r.answer||''),r);
   r=await ask('親戚の話');
   check('bot ordinary word not typo-routed',r&&!(r.data&&r.data.siteGuide)&&r.mode!=='たいらの野望ツール実データ',r);
-  check('bot release version updated',B&&B.version==='3.23.0',B&&B.version);
+  check('bot release version updated',B&&B.version==='3.26.0',B&&B.version);
   console.log(`BOT ROUTE SITE GUIDE: ${pass} / ${pass+fail} PASS`);
   if(fail)process.exit(1);
 })().catch(e=>{console.error(e);process.exit(1);});

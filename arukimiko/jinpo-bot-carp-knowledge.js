@@ -420,7 +420,7 @@
     if(!list.length){
       return {
         handled:true,
-        answer:name+'について、今のカープ正本資料では追加の人物別エピソードを確認できなかったのですよ。資料にない話を推測では足しません。',
+        answer:name+'について、追加の人物別エピソードは確認できませんでした。分からない話は推測で足しません。',
         kind:'player_more',
         player:name
       };
@@ -451,7 +451,7 @@
     if(cur){
       return {
         handled:true,
-        answer:name+'は、資料基準日（'+D.sourceDate+'）ではカープの'+cur.position+'で、背番号'+cur.number+'、'+cur.status+'なのですよ。',
+        answer:name+'は、'+D.sourceDate+'時点ではカープの'+cur.position+'で、背番号'+cur.number+'、'+cur.status+'です。',
         kind:'membership',
         player:name
       };
@@ -499,7 +499,7 @@
     if(attr==='age'||attr==='birth'){
       return {
         handled:true,
-        answer:name+'の'+(attr==='age'?'年齢':'生年月日・生年')+'については、今のカープ正本資料では確認できないのですよ。資料にない数字は推測で補いません。',
+        answer:name+'の'+(attr==='age'?'年齢':'生年月日・生年')+'は確認できませんでした。分からない数字は推測で補いません。',
         kind:'player_attribute_unknown',player:name,attribute:attr
       };
     }
@@ -515,7 +515,7 @@
       if(!family.length){
         return {
           handled:true,
-          answer:name+'の'+rel.label+'については、今のカープ正本資料では確認できないのですよ。家族資料にない私生活情報は推測で補いません。',
+          answer:name+'の'+rel.label+'について、公表されている情報は確認できませんでした。私生活のことは推測で補いません。',
           kind:'player_family_relation_unknown',player:name,attribute:rel.key
         };
       }
@@ -526,16 +526,16 @@
       }
       return {
         handled:true,
-        answer:name+'の'+rel.label+'について、カープ正本ではこう確認できます。\n'+familyLines.join('\n\n'),
+        answer:name+'の'+rel.label+'について、確認できる内容はこちらです。\n'+familyLines.join('\n\n'),
         kind:'player_family_relation',player:name,attribute:rel.key
       };
     }
 
     if(attr==='retirement'){
-      var tail=profile?' 正本の人物記録では「'+snippet(profile,260)+'」までは確認できます。':'';
+      var tail=profile?' 人物紹介では「'+snippet(profile,260)+'」までは確認できます。':'';
       return {
         handled:true,
-        answer:name+'の引退年については、今のカープ正本資料では「引退年」として明記された記録を確認できないのですよ。'+tail+' 引退年は推測で断定しません。',
+        answer:name+'の引退年は、はっきり確認できませんでした。'+tail+' 分からない年を推測で断定しません。',
         kind:'player_retirement',player:name,attribute:'retirement'
       };
     }
@@ -544,14 +544,14 @@
       if(cur){
         return {
           handled:true,
-          answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの現役選手名簿に載っていて、'+cur.position+'・背番号'+cur.number+'・'+cur.status+'なのですよ。',
+          answer:D.sourceDate+'時点では、'+name+'はカープの現役選手名簿に載っていて、'+cur.position+'・背番号'+cur.number+'・'+cur.status+'です。',
           kind:'player_active',player:name,attribute:'active'
         };
       }
-      var hist=profile?' 正本の人物記録では「'+snippet(profile,260)+'」と確認できます。':'';
+      var hist=profile?' 人物紹介では「'+snippet(profile,260)+'」と確認できます。':'';
       return {
         handled:true,
-        answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの現役選手名簿には載っていません。'+hist+' 他球団を含む現在の現役状況は、この正本だけでは推測で断定しません。',
+        answer:D.sourceDate+'時点では、'+name+'はカープの現役選手名簿には載っていません。'+hist+' 他球団を含む現在の現役状況は、分からないまま推測で断定しません。',
         kind:'player_active',player:name,attribute:'active'
       };
     }
@@ -560,7 +560,7 @@
       if(cur){
         return {
           handled:true,
-          answer:'資料基準日（'+D.sourceDate+'）では、'+name+'はカープの'+cur.position+'で、背番号'+cur.number+'、'+cur.status+'なのですよ。',
+          answer:D.sourceDate+'時点では、'+name+'はカープの'+cur.position+'で、背番号'+cur.number+'、'+cur.status+'です。',
           kind:'player_current_activity',player:name,attribute:'current_activity'
         };
       }
@@ -586,13 +586,13 @@
         var cr=currentRecords[0];
         return {
           handled:true,
-          answer:name+'の現在の活動について、カープ正本ではこう確認できます。\n【'+cleanText(cr.title)+'】\n'+snippet(cr,560),
+          answer:name+'の現在の活動について、確認できる内容はこちらです。\n【'+cleanText(cr.title)+'】\n'+snippet(cr,560),
           kind:'player_current_activity',player:name,attribute:'current_activity'
         };
       }
       return {
         handled:true,
-        answer:name+'の現在の所属・活動については、今のカープ正本資料では確認できないのですよ。最新状況を正本にない内容で推測はしません。',
+        answer:name+'の現在の所属・活動は確認できませんでした。分からない最新状況は推測で補いません。',
         kind:'player_current_activity_unknown',player:name,attribute:'current_activity'
       };
     }
@@ -607,7 +607,7 @@
     if(!p)return null;
     return {
       handled:true,
-      answer:'資料基準日（'+D.sourceDate+'）では、カープの背番号'+p.number+'は'+p.name+'（'+p.position+'・'+p.status+'）なのですよ。現在の登録は変わる可能性があるので、最新確認が必要な時はNPB情報を優先します。',
+      answer:D.sourceDate+'時点では、カープの背番号'+p.number+'は'+p.name+'（'+p.position+'・'+p.status+'）です。現在の登録は変わる可能性があるため、最新確認が必要な時はNPB情報を優先します。',
       kind:'roster_number',
       player:p.name
     };
@@ -661,7 +661,7 @@
 
     return {
       handled:true,
-      answer:year+'年の主力を見るなら、カープ正本ではこの構成が近いのですよ。\n'+lines.join('\n\n'),
+      answer:year+'年の主力としては、この構成が近いです。\n'+lines.join('\n\n'),
       kind:'year_main_players',
       year:String(year)
     };
@@ -896,7 +896,7 @@
     }else if(familyCue&&names.length){
       return {
         handled:true,
-        answer:names[0]+'の家族・親族について、今のカープ正本資料で公表済みとして確認できる記載は見つからなかったのですよ。非公表情報は推測で補いません。',
+        answer:names[0]+'の家族・親族について、公表されている情報は確認できませんでした。非公表情報は推測で補いません。',
         kind:'family_not_found',
         player:names[0]
       };
@@ -912,8 +912,8 @@
     if(!lines.length)return null;
 
     var lead=names.length
-      ? names[0]+'について、カープ専用資料ではこう整理されています。'
-      : 'カープ専用資料では、こう整理されています。';
+      ? names[0]+'について分かっていることをまとめます。'
+      : 'カープについて分かっていることをまとめます。';
 
     return {
       handled:true,

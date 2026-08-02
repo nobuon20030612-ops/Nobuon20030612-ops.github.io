@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト総合案内 v3.9.0
+ * 歩き巫女 サイト総合案内 v3.13.0
  *
  * - たいらの野望トップページと、カウンター配下の現行ページを案内する。
  * - ページ名の誤字・脱字・かな入力・ラフな目的表現を会話側の共通正規化と連携して扱う。
@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.9.0';
+  var VERSION='3.13.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -190,6 +190,239 @@
     return {item:near.length&&best.score<100?null:best.item,score:best.score,matched:best.matched,candidates:[best].concat(near)};
   }
   function findItem(text){return findItemDetailed(text).item;}
+
+  // 機能名だけ・用語だけを送られた時に、汎用の理解不能へ落とさず、
+  // その用語の範囲内で次に必要な情報を聞き返す。
+  // 個別の数値・人物・条件が書かれている質問は従来の専門ルーターへ渡す。
+  function bareTermCore(text){
+    var t=S(text);
+    if(!t||t.length>48)return'';
+    t=t.replace(/^(?:ねえ|ねぇ|あの|えっと|じゃあ|では|それじゃ|それなら)[、,\s]*/,'')
+      .replace(/[？?！!。．.]+$/g,'').trim();
+    var prev='';
+    while(prev!==t){
+      prev=t;
+      t=t.replace(/(?:を)?(?:教えて|おしえて|知りたい|説明して|説明してほしい|お願い|おねがい)$/,'').trim();
+      t=t.replace(/(?:について|のこと)$/,'').trim();
+      t=t.replace(/(?:って何|ってなに|とは何|とはなに|って|とは|は)$/,'').trim();
+    }
+    return t;
+  }
+  function bareTermKey(v){
+    var t=S(v).toLowerCase().replace(/[ぁ-ゖ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)+96);});
+    return t.replace(/[\s、。,.!！?？「」『』【】（）()・―〜~:：;；\[\]［］]/g,'');
+  }
+  function bareVirtualTerm(core){
+    var raw=bareTermKey(core),normalized=bareTermKey(normalizeInput(core)),keys=[raw];
+    if(normalized&&keys.indexOf(normalized)<0)keys.push(normalized);
+    var rows=[
+      {key:'site',terms:['たいらの野望','たいらのサイト'],item:'home'},
+      {key:'hero',terms:['英傑'],item:'heroes'},
+      {key:'formation',terms:['陣形'],item:'jinpo'},
+      {key:'bond',terms:['因縁','発動因縁'],item:'jinpo'},
+      {key:'kenbun',terms:['見聞録'],item:'jinpo'},
+      {key:'bunkyoku',terms:['文曲','文曲除外'],item:'jinpo'},
+      {key:'allmax',terms:['全max','フルmax','全部max'],item:'jinpo'},
+      {key:'placement',terms:['配置英傑','除外英傑','差替候補','差し替え候補'],item:'jinpo'}
+    ];
+    for(var i=0;i<rows.length;i++){
+      for(var j=0;j<rows[i].terms.length;j++){
+        if(keys.indexOf(bareTermKey(rows[i].terms[j]))>=0)return {key:rows[i].key,item:BY_ID[rows[i].item],term:rows[i].terms[j],inputTerm:core,virtual:true};
+      }
+    }
+    return null;
+  }
+  function wholeTermMatch(core,item){
+    var rawKey=bareTermKey(core),normalized=normalizeInput(core),normalizedKey=bareTermKey(normalized);
+    var aliases=[item.name].concat(item.aliases||[]),best=null;
+    for(var i=0;i<aliases.length;i++){
+      var alias=aliases[i],key=bareTermKey(alias);if(!key)continue;
+      if(rawKey===key||normalizedKey===key)return {exact:true,alias:alias,distance:0};
+      var source=rawKey.length<=normalizedKey.length?rawKey:normalizedKey;
+      var d=distance(source,key),maxDist=key.length>=8?2:1,ratio=1-d/Math.max(source.length,key.length);
+      if(d<=maxDist&&ratio>=0.78&&(!best||d<best.distance||d===best.distance&&ratio>best.ratio))best={exact:false,alias:alias,distance:d,ratio:ratio};
+    }
+    return best;
+  }
+  function bareKnownTerm(text){
+    var core=bareTermCore(text);if(!core)return null;
+    var virtual=bareVirtualTerm(core);if(virtual)return virtual;
+    var best=null;
+    for(var i=0;i<ITEMS.length;i++){
+      var match=wholeTermMatch(core,ITEMS[i]);if(!match)continue;
+      if(match.exact)return {key:'item',item:ITEMS[i],term:core,matched:match.alias||'',virtual:false,approximate:false};
+      if(!best||match.distance<best.match.distance||match.distance===best.match.distance&&match.ratio>best.match.ratio)best={item:ITEMS[i],match:match};
+    }
+    if(!best)return null;
+    return {key:'item',item:best.item,term:core,matched:best.match.alias||'',virtual:false,approximate:true};
+  }
+  function acknowledgementOnly(text){
+    var t=normalizeInput(text);
+    return /^(?:なるほど(?:ね|です)?|そうなんだ|そうか|了解(?:です|しました)?|わかった|分かった|わかりました|分かりました|おけ|オッケー|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう)[。！!？?～〜]*$/i.test(t);
+  }
+  function knownTermContextFresh(history,ctx){
+    var h=Array.isArray(history)?history:[],c=ctx||{},idx=Number(c.knownTermIndex);
+    if(!c.knownTermGuidance||idx<0)return false;
+    if(idx>=Math.max(0,h.length-3))return true;
+    if(idx<Math.max(0,h.length-5))return false;
+    var between=h.slice(idx+1,Math.max(idx+1,h.length-1));
+    if(between.length!==2||!between[0]||between[0].role!=='user'||!between[1]||between[1].role!=='assistant')return false;
+    if(!acknowledgementOnly(between[0].text))return false;
+    var meta=between[1].meta||{};
+    return !meta.data||!meta.data.siteGuide;
+  }
+  function pageInternalChoice(item,text){
+    var t=normalizeInput(text);if(!item||!t)return null;
+    if(item.id==='seikai'){
+      var stoneCorrection=t.match(/(?:武曲|禄存|破軍|文曲|廉貞|巨門|貪狼).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)/);
+      var stone=stoneCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正)?[、,\s]*(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)(?:の方|のほう|を|がいい|を見たい|を見せて|を開いて|を選びたい|にして)?[。！!？?]*$/);
+      if(stone)return {message:'星海の荒石 '+stone[1]+'を見たい',reason:'seikai_selection'};
+    }
+    if(item.id==='chinkon'){
+      var partCorrection=t.match(/(?:頭|胴|左|腕|首|腰|右|足).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(頭|胴|左|腕|首|腰|右|足)/);
+      var part=partCorrection||t.match(/^(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正)?[、,\s]*(頭|胴|左|腕|首|腰|右|足)(?:の枠|の部位|を|がいい|を設定したい|を登録したい|を選びたい|を見たい|にして)?[。！!？?]*$/);
+      if(part)return {message:'鎮魂符 '+part[1]+'を設定したい',reason:'chinkon_part'};
+    }
+    return null;
+  }
+  function expandKnownTermFollowup(text,history){
+    var h=Array.isArray(history)?history:[],ctx=historyGuideContext(h),recentItem=ctx.item,item=ctx.knownTermItem||recentItem,t=normalizeInput(text);
+    var key=String(ctx.termKey||'item'),term=S(ctx.normalizedTerm||item&&item.name||'');
+    if(!t)return null;
+    if(acknowledgementOnly(t))return null;
+
+    function reply(message,reason,preferKnowledge){
+      var jinpoOperation=/^(?:formation|bond|kenbun|bunkyoku|allmax|placement)$/.test(key);
+      return {message:String(message||''),siteItem:item.id,reason:String(reason||'known_term_followup'),preferKnowledge:!!preferKnowledge,jinpoOperation:jinpoOperation,termKey:key,normalizedTerm:term};
+    }
+    function internalReply(target,choice){
+      return {message:String(choice.message||''),siteItem:target.id,reason:String(choice.reason||'page_internal_selection'),preferKnowledge:false,jinpoOperation:false,termKey:'item',normalizedTerm:target.name};
+    }
+    function firstNumber(){var m=t.match(/([0-9０-９一二三四五六七八九十]+)/);return m?S(m[1]):'';}
+
+    // 直前のページ内案内から続く選択・言い直しは、古い用語案内より最新ページを優先する。
+    var recentIndex=Number(ctx.index),recentChoice=recentItem&&recentIndex>=Math.max(0,h.length-3)?pageInternalChoice(recentItem,t):null;
+    if(recentChoice)return internalReply(recentItem,recentChoice);
+
+    if(!ctx.knownTermGuidance||!item||!knownTermContextFresh(h,ctx))return null;
+
+    // 同じページ内の選択肢が別機能名と重なる場合は、直前ページの文脈を優先する。
+    // 例: 「星海の荒石」→「文曲」は陣法の文曲除外ではなく、荒石の画像選択。
+    var internalChoice=pageInternalChoice(item,t);
+    if(internalChoice)return internalReply(item,internalChoice);
+
+    if(bareKnownTerm(text)||mentionedItems(t).length)return null;
+
+    if(key==='formation'){
+      if(/^(?:今|現在|いま).*(?:は|どれ|何)|^(?:今の|現在の)?(?:は|どれ|何)[？?。！!]*$/.test(t))return reply('今の陣形は？','formation_context');
+      return reply('陣形 '+t,'formation_context');
+    }
+    if(key==='bond'){
+      var bondNo=firstNumber();
+      if(bondNo&&/(?:探|検索|指定|で|因縁)/.test(t))return reply(bondNo+'因縁で探して','bond_context');
+      if(/発動|今の|現在|見せ|表示/.test(t))return reply('発動因縁を見せて','bond_context');
+      if(/一覧|種類|何がある/.test(t))return reply('因縁一覧を見せて','bond_context');
+      return reply('因縁 '+t,'bond_context');
+    }
+    if(key==='kenbun'){
+      if(/max|マックス|最大/i.test(t))return reply('見聞録MAXにして','kenbun_context');
+      if(/数値|いくつ|どれくらい|意味|説明|って何/.test(t))return reply('見聞録の数値は？','kenbun_context');
+      return reply('見聞録 '+t,'kenbun_context');
+    }
+    if(key==='bunkyoku'){
+      var people=firstNumber();
+      if(people&&/(?:人|除外|外)/.test(t))return reply('文曲を'+people+'人除外','bunkyoku_context');
+      if(/意味|説明|って何|何のため|使い方|転生.*MAX|MAX.*転生/i.test(t))return reply('文曲除外人数の意味を説明して','bunkyoku_context',true);
+      return reply('文曲 '+t,'bunkyoku_context');
+    }
+    if(key==='allmax'){
+      if(/解除|外|戻|やめ|オフ|off/i.test(t))return reply('全MAX解除','allmax_context');
+      if(/設定|入れ|して|オン|on/i.test(t)&&!/検索|込み/.test(t))return reply('全MAXにして','allmax_context');
+      if(/意味|説明|って何|何なの|どんな/.test(t))return reply('全MAXの意味を説明して','allmax_context',true);
+      return reply('全MAX '+t,'allmax_context');
+    }
+    if(key==='placement'){
+      var placementTerm=bareTermKey(term);
+      if(/差替|差し替/.test(placementTerm)||/候補/.test(t))return reply('差替候補を見せて','replacement_context');
+      if(/除外/.test(placementTerm)){
+        var exclusionText=t.replace(/[？?。！!]+$/g,'');
+        if(!/除外/.test(exclusionText)&&/(?:を)?(?:外して|抜いて|外す|抜く)$/.test(exclusionText))exclusionText=exclusionText.replace(/(?:を)?(?:外して|抜いて|外す|抜く)$/,'を除外して');
+        else if(!/除外/.test(exclusionText))exclusionText+='を除外して';
+        return reply(exclusionText,'exclusion_context');
+      }
+      if(/配置/.test(placementTerm)){
+        var placementText=t.replace(/[？?。！!]+$/g,'');
+        if(/入れて探して|使って探して|必ず入れて/.test(placementText))return reply(placementText,'placement_context');
+        if(/(?:を)?(?:入れて|加えて|配置して)$/.test(placementText))placementText=placementText.replace(/(?:を)?(?:入れて|加えて|配置して)$/,'を入れて探して');
+        else placementText+='を入れて探して';
+        return reply(placementText,'placement_context');
+      }
+      return reply('配置英傑 '+t,'placement_context');
+    }
+
+    if(item.id==='video'){
+      if(/(?:再生|見る|見方|使い方|やり方|方法|どう使|どう見)/.test(t))return reply('動画再生の使い方','video_followup');
+    }
+
+    if(item.id==='heroes'){
+      if(/(?:編成|陣法|陣形|因縁|6人|六人)/.test(t))return null;
+      var cost=firstNumber();
+      if(/コスト/.test(t)&&cost)return reply('コスト'+cost+'の英傑を一覧で見せて','hero_term_followup',true);
+      if(/一覧.*(?:使い方|見方|操作)|(?:使い方|見方|操作).*一覧/.test(t))return reply('英傑一覧の使い方','hero_page_followup');
+      var heroStat=/(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|ステータス|能力)/.test(t)&&/(?:高|低|一番|トップ|順位|順|誰|どれ|何人|比較)/.test(t);
+      var heroData=/(?:因子|職業|コスト|固有技能|育成技能)/.test(t);
+      if(heroStat||heroData)return reply('英傑 '+t,'hero_term_followup',true);
+    }
+
+    if(item.id==='tsukumo'||item.id==='mado'||item.id==='kishin'){
+      var toolSpecific=/^(?:第?[0-9０-９一二三四五六七八九十]+番|番号|名前|名称|能力|ステータス|生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風|入手)/.test(t);
+      var toolRanking=/(?:生命|気合|腕力|耐久|器用|知力|魅力|土|水|火|風).*(?:高い順|低い順|ランキング|トップ|上位|下位)/.test(t);
+      if(toolSpecific||toolRanking)return reply(item.name+' '+t,'tool_term_followup',true);
+    }
+
+    // ページ固有の短い質問は主語を補い、英傑・カープなど別分野への誤振り分けを防ぐ。
+    if(featureIntents(t,item).length){var subject=ctx.approximateTerm?item.name:(term||item.name);return reply(subject+' '+t,'site_feature_followup');}
+    if(deicticOpenCue(t)||pageHelpCue(t,null,item)||hasNavigationCue(t))return null;
+    return null;
+  }
+  function knownTermGuidance(info){
+    if(!info||!info.item)return null;
+    var item=info.item,key=info.key||'item',options='',example='';
+
+    if(key==='site'){
+      return {handled:true,mode:'サイト総合案内',answer:'たいらの野望の話ですね。陣法検索、英傑、能力計算、家臣計算、鬼神石、九十九、魔導結晶、カウンターなどの中から、知りたい機能名か「何をしたいか」を一言で教えてください。\nたとえば「腕力が高い編成を探したい」「九十九の入手方法」「桶狭間のカウンター」のように言えば、その話へ進めます。',links:[],data:{siteGuide:true,siteItem:'home',knownTermGuidance:true,needsClarification:true,termKey:key}};
+    }
+    if(key==='formation'){options='陣形の選択、陣形を指定した検索、現在の陣形、陣形についての説明';example='「方円で探して」「今の陣形は？」「陣形の使い方」';}
+    else if(key==='bond'){options='因縁数を指定した検索、発動中の因縁、因縁一覧、因縁についての説明';example='「7因縁で探して」「発動因縁を見せて」「因縁一覧」';}
+    else if(key==='kenbun'){options='見聞録MAX、個別の数値設定、全MAXとの関係、検索結果への反映';example='「見聞録MAXにして」「見聞録の数値」「全MAXとの違い」';}
+    else if(key==='bunkyoku'){options='文曲を使う条件、転生MAXでの扱い、文曲除外人数の設定';example='「文曲を2人除外」「転生MAXではどうなる？」「文曲って何？」';}
+    else if(key==='allmax'){options='全MAXの意味、設定・解除、全MAX込み検索、見聞録・鬼神石・転生の個別設定';example='「全MAXって何？」「全MAXにして」「全MAX込みで検索」';}
+    else if(key==='placement'){options='使いたい英傑の配置、除外する英傑、差替候補、現在の6人';example='「前田慶次を入れて」「この英傑を除外」「差替候補を見せて」';}
+    else if(item.id==='jinpo'){options='編成検索、検索条件の指定、検索結果の適用、使い方、ページを開く';example='「腕力が高い編成」「方円7因縁で」「陣法の使い方」「ページを開いて」';}
+    else if(item.id==='heroes'){options='特定英傑の能力・因子、ランキングや比較、一覧の使い方、ページを開く';example='「前田慶次の因子」「腕力トップ3」「英傑一覧の使い方」';}
+    else if(item.id==='tenka_story'){options='桶狭間・富士地下洞穴・京都・賤ヶ岳・比叡山・二条城・封印の選択、場所一覧、表の見方、ページを開く';example='「桶狭間を見たい」「封印の方」「どの場所がある？」「ページを開いて」';}
+    else if(item.id==='tenka_taikai'){options='「天」「地」の選択、各カウンター表の見方、ページを開く';example='「天を見たい」「地の方」「天の表の見方」「ページを開いて」';}
+    else if(item.category==='counter_detail'){options='敵名を指定したカウンター値、表の見方、ページを開く';example='「今川義元のカウンター」「表の見方」「ページを開いて」';}
+    else if(item.category==='counter'){options='敵のカウンター値、場所別の一覧、表の見方、ページを開く';example='「足利義昭のカウンター」「桶狭間を見たい」「どの場所がある？」';}
+    else if(item.id==='tsukumo'||item.id==='mado'){options='番号・名前の登録データ、能力、入手方法、合計や比較、ページの使い方';example='「1番の能力」「入手方法」「知力が高い順」「ページを開いて」';}
+    else if(item.id==='kishin'){options='番号・名前の登録データ、能力や合計、比較・並べ替え、ページの使い方';example='「1番の能力」「腕力が高い順」「合計の出し方」「ページを開いて」';}
+    else if(item.id==='shichisei'){options='説明画像で確認できる内容、ページの見方、ページを開く';example='「何が分かる？」「見方」「ページを開いて」';}
+    else if(item.category==='calculator'){options='入力する内容、計算方法、確認できる結果、ページを開く';example='「何を入力する？」「使い方」「ページを開いて」';}
+    else if(item.id==='party'){options='登録方法、参加方法、日程の決め方、ページを開く';example='「登録方法」「参加するには？」「ページを開いて」';}
+    else if(item.id==='roulette'){options='使い方、参加者名の登録、抽選、当選履歴や演出設定、ページを開く';example='「参加者の登録方法」「抽選の使い方」「履歴を戻す方法」「ページを開いて」';}
+    else if(item.id==='tournament'){options='大会形式、参加者登録、組み合わせ、勝敗の入力、日程、ページを開く';example='「参加者の登録方法」「勝敗の付け方」「開催日時の設定」「ページを開いて」';}
+    else if(item.external){
+      return {handled:true,mode:'サイト総合案内',answer:'「'+item.name+'」ですね。'+item.desc+' こちらから開けます。',links:[itemLink(item)],data:{siteGuide:true,siteItem:item.id,knownTermGuidance:true}};
+    }else{options='確認できる内容、使い方、ページを開く';example='「何が分かる？」「使い方」「ページを開いて」';}
+
+    var prefix=info.approximate?'「'+S(info.term)+'」は「'+item.name+'」のことだと思います。':'「'+(key==='item'?item.name:S(info.term))+'」の話ですね。';
+    return {
+      handled:true,mode:'サイト総合案内',
+      answer:prefix+' '+item.desc+'\n知りたいのは、'+options+'のどれですか？\nたとえば '+example+' のように続けてください。',
+      links:[],
+      data:{siteGuide:true,siteItem:item.id,knownTermGuidance:true,needsClarification:true,termKey:key,normalizedTerm:S(info.term),approximateTerm:!!info.approximate}
+    };
+  }
   function mentionedItems(text){
     var t=normalizeInput(text),out=[],seen={};
     ITEMS.forEach(function(item){
@@ -257,7 +490,7 @@
   function hasNavigationCue(text){return explicitNavigationCue(text)||taskNavigationCue(text);}
   function hasJinpoOperation(text){
     var t=normalizeInput(text);
-    return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|英傑.*(?:差替|固定|除外|配置)|差替|込み合計|全MAX|検索結果|鶴翼|方円|魚鱗|衡軛/.test(t)||/(?:鬼神石|見聞録|転生).*(?:MAX|マックス|設定|解除|数値)/.test(t)||/(?:MAX|マックス).*(?:鬼神石|見聞録|転生)/.test(t);
+    return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|文曲|配置英傑|除外英傑|英傑.*(?:差替|固定|除外|配置)|(?:配置|除外).*(?:して|したい)|(?:入れて|使って).*(?:探して|検索)|差替|込み合計|全MAX|検索結果|鶴翼|方円|魚鱗|衡軛/.test(t)||/(?:鬼神石|見聞録|転生).*(?:MAX|マックス|設定|解除|数値)/.test(t)||/(?:MAX|マックス).*(?:鬼神石|見聞録|転生)/.test(t);
   }
   function overviewCue(text){
     var t=normalizeInput(text);
@@ -266,7 +499,7 @@
   function pageHelpCue(text,item,recent){
     var t=normalizeInput(text),hasTarget=!!item||!!recent;
     if(/(?:ページ|画面|ツール).*(?:使い方|やり方|見方|操作|何ができる|何する|どこを押す|どれを押す|分からない)|(?:使い方|やり方|見方|操作|何ができる|何する|どこを押す|どれを押す).*(?:ページ|画面|ツール)/.test(t))return true;
-    if(hasTarget&&/(?:何ができる|何できる|何をする|何するやつ|どう使う|どう見る|見方|どこを押す|どれを押す|何を押す|操作方法|使い方が?分からない|見方が?分からない)/.test(t))return true;
+    if(hasTarget&&/(?:何ができる|何できる|何が分かる|何を確認できる|何をする|何するやつ|どう使う|どう見る|見方|使い方|やり方|付け方|進め方|どこを押す|どれを押す|何を押す|操作方法|使い方が?分からない|見方が?分からない)/.test(t))return true;
     if(recent&&/^(?:それ|そのページ|そこ|これ|このページ)?(?:って|は|の)?[、,\s]*(?:何ができる|何をする|何するやつ|どう使う|見方|どこを押す|使い方|操作方法)(?:なの|ですか|の)?[？?。！!]*$/.test(t))return true;
     return false;
   }
@@ -307,7 +540,7 @@
   }
   function deicticOpenCue(text){
     var t=normalizeInput(text);
-    return /^(?:(?:うん|はい|じゃあ|じゃ|では|それで|で|あと|それと|よし|なら)[、,\s]*)*(?:それ|そこ|そのページ|そっち|これ|このページ|あれ|あそこ|あのページ|あっち)?[、,\s]*(?:を)?(?:開いて|開けて|見せて|出して|行きたい|連れてって)[。！!？?]*$/.test(t);
+    return /^(?:(?:うん|はい|じゃあ|じゃ|では|それで|で|あと|それと|よし|なら)[、,\s]*)*(?:それ|そこ|ページ|そのページ|そっち|これ|このページ|あれ|あそこ|あのページ|あっち)?[、,\s]*(?:を)?(?:開いて|開けて|見せて|出して|行きたい|連れてって)[。！!？?]*$/.test(t);
   }
 
   function featureIntents(text,item){
@@ -316,7 +549,8 @@
     function has(key){return !!S(facts[key]);}
     function add(key,cond){if(cond&&has(key)&&out.indexOf(key)<0)out.push(key);}
 
-    add('selection_count',/(?:何個(?:まで)?|いくつ(?:まで)?|最大(?:で)?何個|上限(?:は)?何個).*(?:選|入れ|登録|まで|可能|でき)|(?:選|入れ|登録).*(?:何個|いくつ|最大|上限)|選択数|最大選択|何個まで[？?。！!]*$|(?:どっちも|両方|どれも).*(?:何個|[0-9]+個|同じ|一緒)|[0-9]+個(?:まで)?(?:なの|ですか|で合って|でいい|も同じ|も一緒)?[？?。！!]*$/.test(t));
+    var materialTotalCue=!!(item&&(item.id==='tsukumo'||item.id==='mado'||item.id==='kishin')&&/合計(?:は|って|を|の見方|どう見る|どう出す|出し方|の出し方|を出す方法)?[？?。！!]*$/.test(t));
+    add('selection_count',/(?:何個(?:まで)?|いくつ(?:まで)?|最大(?:で)?何個|上限(?:は)?何個).*(?:選|入れ|登録|まで|可能|でき)|(?:選|入れ|登録).*(?:何個|いくつ|最大|上限)|選択数|最大選択|何個まで[？?。！!]*$|(?:どっちも|両方|どれも).*(?:何個|[0-9]+個|同じ|一緒)|[0-9]+個(?:まで)?(?:なの|ですか|で合って|でいい|も同じ|も一緒)?[？?。！!]*$/.test(t)||materialTotalCue);
     add('types',/(?:シングル|ダブル|個人|団体|形式|何種類|種類.*(?:ある|選)|どんな種類)/.test(t));
     // 演出設定やシャッフルは「参加」「ルーレット」という一般語より先に判定する。
     add('categories',/(?:音|効果音|紙吹雪|演出).*(?:消|切|止|OFF|オフ|入|ON|オン)|(?:消|切|止|OFF|オフ).*(?:音|効果音|紙吹雪|演出)/i.test(t));
@@ -327,6 +561,7 @@
     add('random',randomCue.test(t));
     add('entry',/(?:参加|エントリー|メンバー登録|徒党登録|登録方法|何人|人数)/.test(t));
     add('schedule',/(?:日程|日時|時間|時刻|候補日|開催日|複数.*(?:日|候補)|何日)/.test(t));
+    add('progress',/(?:勝敗|勝ち負け|勝者|敗者).*(?:付け|入力|決め|進め|登録)|(?:大会|トーナメント).*(?:進め方|進行)/.test(t));
     add('filter',/(?:絞り込|絞れ|絞れる|フィルタ|地域|町.*(?:選|解除|絞)|検索条件)/.test(t));
     var shortReflectQuestion=!!(item&&(item.id==='stats'||item.id==='retainer')&&/(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石)(?:だけ|のみ|しか)?(?:は|って|だと|なら|も)?[？?。！!]*$/.test(t));
     add('reflect',/(?:反映|連携|取り込|取り込みたい|入れられ|入れれる|入れたい|いれたい|入らない|入れられない|いれられない|使える|使えない|使いたい|表に入|合計を入|能力計算.*(?:九十九|魔導|鎮魂|鬼神石)|家臣.*(?:九十九|魔導|鎮魂|鬼神石)|(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石).*(?:能力計算|家臣).*(?:に|へ)?入る|(?:能力計算|家臣計算).*(?:に|へ)?入る|(?:九十九|魔導結晶|魔導|鎮魂符|鬼神石).*(?:入れる|いれる).*(?:なら|場合|どっち|どれ))/.test(t)||shortReflectQuestion);
@@ -336,9 +571,11 @@
     add('reset',/(?:リセット|初期化|やり直|元に戻|全部消|解除方法|消し方)/.test(t));
     add('sort',/(?:並べ替|ソート|優先|高い順|安い|安い順|値段|必要個数|個数が少|種類が少|少ない順|最安|最小個数|ベスト10|順番|ランキング)/.test(t));
     var columnWords=(t.match(/(?:因子|職業|コスト|能力|ステータス|育成技能|武器|固有技能|入手|番号)/g)||[]);
-    add('columns',/(?:何が載|何が見|表示項目|項目|列|一覧.*内容|どんな情報)/.test(t)||(columnWords.length>=2&&/(?:見られ|見れる|載って|確認|分かる|全部)/.test(t)));
-    add('inputs',/(?:何を入力|入力項目|どこに入力|どこへ入|入力するもの|何入れる|設定項目|入力.*(?:計算|する)|計算.*入力)/.test(t));
-    add('categories',/(?:何種類|種類|カテゴリ|分類|系統|何がある|選択肢|どれがある|何を選|部位|何か所|何箇所|いくつ.*(?:場所|章|地域)|何因縁|因縁.*(?:何個|いくつ|まで))/.test(t));
+    var specialColumns=!!(item&&((item.id==='meibutsu'&&/(?:合計|種類)/.test(t))||(item.id==='chinkon'&&/(?:技能一覧|鎮魂符一覧|解放内容)/.test(t))));
+    add('columns',specialColumns||/(?:何が載|何が見|表示項目|項目|列|一覧.*内容|どんな情報)/.test(t)||(columnWords.length>=2&&/(?:見られ|見れる|載って|確認|分かる|全部)/.test(t)));
+    var pageInternalInput=!!(item&&((item.id==='seikai'&&/(?:武曲|禄存|破軍|文曲|廉貞|巨門|貪狼).*(?:見たい|見せて|開いて|選びたい|にして)/.test(t))||(item.id==='chinkon'&&/(?:頭|胴|左|腕|首|腰|右|足).*(?:設定|登録|選びたい|見たい)/.test(t))));
+    add('inputs',pageInternalInput||/(?:何を入力|入力項目|どこに入力|どこへ入|入力するもの|何入れる|何を設定|設定するもの|どこを設定|設定項目|入力.*(?:計算|する)|計算.*入力)/.test(t));
+    add('categories',/(?:何種類|種類|カテゴリ|分類|系統|何がある|選択肢|どれがある|何を選|部位|何か所|何箇所|どの場所|場所(?:は|一覧|どれ|何)|いくつ.*(?:場所|章|地域)|何因縁|因縁.*(?:何個|いくつ|まで))/.test(t));
     add('back',/(?:戻る|戻り先|トップへ|前のページ|どこに戻)/.test(t));
     add('related',/(?:関連|どこから行|つなが|移動でき|行ける|御蔵番.*名物|名物.*(?:どこから|開ける|見られる|見れる))/.test(t));
     add('advanced',/(?:マスター|差し替|上級|formations|CSV|ファイル)/i.test(t));
@@ -347,7 +584,15 @@
   }
   function featureIntent(text,item){var a=featureIntents(text,item);return a.length?a[0]:'';}
   function featureBody(item,intent,text){
-    var page=sourcePage(item),facts=page&&page.facts||{};
+    var page=sourcePage(item),facts=page&&page.facts||{},t=normalizeInput(text);
+    if(intent==='inputs'&&item&&item.id==='seikai'){
+      var stone=t.match(/(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)/);
+      if(stone)return '「'+stone[1]+'」のボタンを押すと、対応する説明画像へ切り替わります。';
+    }
+    if(intent==='inputs'&&item&&item.id==='chinkon'){
+      var part=t.match(/(?:^|[\s、])(頭|胴|左|腕|首|腰|右|足)(?:[\s、]|を|の|$)/);
+      if(part)return '「'+part[1]+'」の枠を押し、メイン選択と2枠目選択を行って、+25〜+200の解放内容を確認して登録します。';
+    }
     if(intent==='reflect'){
       var t=normalizeInput(text);
       if(item&&(item.id==='stats'||item.id==='retainer')){
@@ -663,9 +908,14 @@
 
   function historyGuideContext(history){
     var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1;
+    var knownTermGuidance=false,knownTermKey='',knownTermValue='',knownTermApproximate=false,knownTermItem=null,knownTermIndex=-1;
     for(var i=h.length-1;i>=0;i--){
       var x=h[i];if(!x||x.role!=='assistant')continue;
       var meta=x.meta||{},data=meta.data||{};
+      if(!knownTermGuidance&&data.knownTermGuidance){
+        knownTermGuidance=true;knownTermKey=String(data.termKey||'item');knownTermValue=String(data.normalizedTerm||'');knownTermApproximate=!!data.approximateTerm;knownTermIndex=i;
+        if(data.siteItem&&BY_ID[data.siteItem])knownTermItem=BY_ID[data.siteItem];
+      }
       if(!lastFeature&&data.siteFeature)lastFeature=String(data.siteFeature||'');
       if(!lastFeatureSubjects.length){
         var subjectIds=Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects:[];
@@ -702,7 +952,7 @@
     }
     // 候補提示後に単一ページを選択済みなら、古い候補を次の質問へ持ち越さない。
     if(lastIndex>candidateIndex&&candidateIndex>=0)lastCandidates=[];
-    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex};
+    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex,knownTermGuidance:knownTermGuidance,termKey:knownTermKey,normalizedTerm:knownTermValue,approximateTerm:knownTermApproximate,knownTermItem:knownTermItem,knownTermIndex:knownTermIndex};
   }
   // 比較や候補提示の直後に「なるほど」「了解」などの短い相づちを一度だけ挟んでも、
   // 次の「そっち」「後者」を候補参照として扱う。別の実質的な話題を挟んだ場合は保持しない。
@@ -1021,7 +1271,7 @@
       answer=wantNegative?'候補の中に、'+featureName.replace(/できる$/,'できない')+'ものはありません。':'候補の中に、'+featureName+'ものはありません。';
       if(opposite.length)answer+='\n'+opposite.map(function(x){return '・'+x.item.name+'：'+x.bodies.join(' ');}).join('\n');
     }else{
-      answer='正本で確認できる範囲では、対象を一つに絞れないのですよ。\n'+unknown.map(function(x){return '・'+x.item.name+'：確認できる記載が不足しています。';}).join('\n');
+      answer='確認できる情報だけでは、対象を一つに絞れません。\n'+unknown.map(function(x){return '・'+x.item.name+'：確認できる記載が不足しています。';}).join('\n');
     }
     var show=matched.length?matched:opposite,links=show.map(function(x){return itemLink(x.item);});
     return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:{siteItems:show.map(function(x){return x.item.id;}),siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;}),siteFeature:intent,siteFeatures:[intent],siteFeatureSubjects:featureSubjectIds(t),siteCapabilityFilter:true,siteCapabilityNegative:wantNegative,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
@@ -1196,7 +1446,7 @@
       if(lines.length)answer+='\n'+lines.join('\n');
       links=matched.map(function(x){return itemLink(x.item);});
     }else if(unknown.length){
-      answer='正本で確認できる範囲では、「'+conditionText+'」候補を確定できないのですよ。確認できる記載が不足しています。';
+      answer='確認できる情報だけでは、「'+conditionText+'」候補を確定できません。判断に必要な情報が不足しています。';
     }else{
       answer='候補の中に、「'+conditionText+'」条件をすべて満たすものはありません。';
       var explain=details.map(function(entry){
@@ -1232,21 +1482,28 @@
     return /(?:開く|開いて|開ける|見せる|出す)(?:ん)?(?:じゃなくて|ではなくて|じゃなく|ではなく)[、,\s]*(?:使い方|やり方|何ができる|できること|入力項目|見方|説明)(?:だけ|を|教えて|知りたい)?[。！!？?]*$/.test(t);
   }
 
+  function tenkaTournamentBranch(text){
+    var t=normalizeInput(text);
+    if(/(?:天|上).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(?:地|下)/.test(t))return BY_ID.chi_mode;
+    if(/(?:地|下).*(?:じゃなくて|ではなくて|じゃなく|ではなく|違って)[、,\s]*(?:天|上)/.test(t))return BY_ID.ten_mode;
+    var lead='(?:(?:じゃあ|では|それなら|やっぱり|やはり|いや|違う|訂正)[、,\s]*)?',tail='(?:の方|のほう|で|を|がいい|を見たい|を見せて|を開いて|へ行きたい|にして|に変えて|へ変えて|に変更|でお願い|の表の見方|の見方|のカウンター(?:表)?の見方)?[。！!？?]*';
+    if(new RegExp('^'+lead+'(?:天|上)'+tail+'$').test(t))return BY_ID.ten_mode;
+    if(new RegExp('^'+lead+'(?:地|下)'+tail+'$').test(t))return BY_ID.chi_mode;
+    return null;
+  }
   function hierarchicalSelection(text,recent){
     if(!recent)return null;var t=normalizeInput(text),base=recent;
     var children=childrenOf(base),parent=parentOf(base);
     if(children.length){
       var c=selectFromCandidates(t,children);if(c)return c;
       if(base.id==='tenka_taikai'){
-        if(/^(?:じゃあ|では|それなら)?[、,\s]*(?:天|上)(?:の方|のほう|で|を|がいい)?[。！!？?]*$/.test(t))return BY_ID.ten_mode;
-        if(/^(?:じゃあ|では|それなら)?[、,\s]*(?:地|下)(?:の方|のほう|で|を|がいい)?[。！!？?]*$/.test(t))return BY_ID.chi_mode;
+        var branch=tenkaTournamentBranch(t);if(branch)return branch;
       }
     }
     if(parent){
       var siblings=childrenOf(parent),s=selectFromCandidates(t,siblings);if(s)return s;
       if(parent.id==='tenka_taikai'){
-        if(/^(?:じゃあ|では|それなら)?[、,\s]*(?:天|上)(?:の方|のほう|で|を|がいい)?[。！!？?]*$/.test(t))return BY_ID.ten_mode;
-        if(/^(?:じゃあ|では|それなら)?[、,\s]*(?:地|下)(?:の方|のほう|で|を|がいい)?[。！!？?]*$/.test(t))return BY_ID.chi_mode;
+        var siblingBranch=tenkaTournamentBranch(t);if(siblingBranch)return siblingBranch;
       }
     }
     return null;
@@ -1275,6 +1532,7 @@
     var featureInput=correctionTail(original)||t;
     if(!t)return false;
     if(overviewCue(t))return true;
+    if(bareKnownTerm(original))return true;
     if(openToHelpCorrectionCue(original))return true;
     if(explicitMultiOpenItems(original).length>=2)return true;
     if(siteClauseFeatureGroups(original,ctx.item,cur,ctx.candidates).length)return true;
@@ -1322,6 +1580,16 @@
 
     if(overviewCue(t)){
       return {handled:true,mode:'サイト総合案内',answer:'たいらの野望は、信長の野望Online向けの検索・計算・一覧・集合・抽選・カウンター確認をまとめたサイトです。\n陣法検索、英傑一覧、能力計算、家臣計算、七星転生、食料、鬼神石、九十九、魔導結晶、星海の荒石、鎮魂符、御蔵番拡張・名物一覧、徒党登録、ルーレット、トーナメント、カウンターがあります。\nやりたいことをラフに言ってくれれば、該当ページと使い方を案内するのですよ。',links:[itemLink(BY_ID.jinpo),itemLink(BY_ID.heroes),itemLink(BY_ID.stats),itemLink(BY_ID.retainer),itemLink(BY_ID.kishin),itemLink(BY_ID.tsukumo),itemLink(BY_ID.mado),itemLink(BY_ID.counter)],data:{siteOverview:true,itemCount:ITEMS.length,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+
+    // 直前の機能質問を別ページへ引き継ぐ短い返答は、用語単独の案内より優先する。
+    // 例: 「九十九は何個？」→「じゃあ鬼神石は？」は同じ選択数を答える。
+    var carryBeforeBare=featureCarryFollowup(featureInput,hist);
+    var bareInfo=carryBeforeBare?null:bareKnownTerm(original);
+    if(bareInfo&&featureIntents(featureInput,bareInfo.item).length)bareInfo=null;
+    if(bareInfo){
+      var bareAnswer=knownTermGuidance(bareInfo);
+      if(bareAnswer)return bareAnswer;
     }
 
     if(/(?:トップ|ホーム|最初のページ)(?:へ|に)?(?:戻|行|移動|開)|トップページ(?:どこ|開いて|へ)|トップ(?:に)?戻りたい/.test(t))return {handled:true,mode:'サイト総合案内',answer:'トップページはこちらなのですよ。',links:[homeLink()],data:{siteItem:'home'}};
@@ -1514,6 +1782,6 @@
     absoluteUrl:abs,normalizeInput:normalizeInput,hasNavigationCue:hasNavigationCue,
     shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,candidateContextFresh:candidateContextFresh,
     childrenOf:childrenOf,usageOf:usageOf,sourcePage:sourcePage,featureIntent:featureIntent,featureIntents:featureIntents,answerFeature:answerFeature,candidateFeatureRequests:candidateFeatureRequests,
-    splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,siteSourceVersion:SOURCE.version||''
+    splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,bareKnownTerm:bareKnownTerm,knownTermGuidance:knownTermGuidance,expandKnownTermFollowup:expandKnownTermFollowup,knownTermContextFresh:knownTermContextFresh,pageInternalChoice:pageInternalChoice,siteSourceVersion:SOURCE.version||''
   };
 })();

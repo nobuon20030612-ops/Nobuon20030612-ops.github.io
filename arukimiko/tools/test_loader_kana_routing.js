@@ -58,6 +58,7 @@ check('known omission tool lazy group',groups('魔導結の入手').includes('to
 check('ordinary ninety people remains blocked',!groups('九十人いる').includes('tool'),groups('九十人いる'));
 check('ordinary relative remains blocked after known typo layer',!groups('親戚の話').includes('tool'),groups('親戚の話'));
 check('hero ranking lazy group',groups('腕力が高い英傑は誰？').includes('hero'),groups('腕力が高い英傑は誰？'));
+check('hero surname query lazy group',groups('苗字が前田の英傑').includes('hero'),groups('苗字が前田の英傑'));
 check('hero exact name lazy group',groups('母里太兵衛について').includes('hero'),groups('母里太兵衛について'));
 check('hero typo name with stat lazy group',groups('母里太兵枝の腕力は？').includes('hero'),groups('母里太兵枝の腕力は？'));
 check('hero rough kana ranking lazy group',groups('えいけつでうでりょくたかいのだれ').includes('hero'),groups('えいけつでうでりょくたかいのだれ'));
@@ -98,6 +99,8 @@ check('hero refinement undo lazy group',groups('条件を一つ前に戻して',
 check('hero refinement redo lazy group',groups('取り消しをやり直して',heroHistory).includes('hero'),groups('取り消しをやり直して',heroHistory));
 check('hero removed candidates question lazy group',groups('誰が外れた？',heroHistory).includes('hero'),groups('誰が外れた？',heroHistory));
 check('hero refinement change summary lazy group',groups('前の結果と何人変わった？',heroHistory).includes('hero'),groups('前の結果と何人変わった？',heroHistory));
+check('hero candidate reason continuation lazy group',groups('林崎甚助が候補に入っている理由は？',heroHistory).includes('hero'),groups('林崎甚助が候補に入っている理由は？',heroHistory));
+check('hero candidate reason kana continuation lazy group',groups('林崎甚介がこうほにはいってるりゆうは？',heroHistory).includes('hero'),groups('林崎甚介がこうほにはいってるりゆうは？',heroHistory));
 const heroSavedHistory=[{role:'assistant',meta:{data:{heroKnowledge:true,heroRefinement:{savedViews:[{name:'A'},{name:'B'},{name:'C'},{name:'高腕力'}]}}}}];
 check('hero save current result lazy group',groups('今の結果をBとして保存',heroHistory).includes('hero'),groups('今の結果をBとして保存',heroHistory));
 check('hero saved view list lazy group',groups('保存した結果の一覧',heroHistory).includes('hero'),groups('保存した結果の一覧',heroHistory));
@@ -110,6 +113,11 @@ check('hero saved sort transfer lazy group',groups('Aの並び順を高腕力に
 check('hero saved condition config compare lazy group',groups('AとBの条件の違い',heroSavedHistory).includes('hero'),groups('AとBの条件の違い',heroSavedHistory));
 check('hero saved sort config compare lazy group',groups('AとBの並び順は同じ？',heroSavedHistory).includes('hero'),groups('AとBの並び順は同じ？',heroSavedHistory));
 check('hero saved directional condition delta lazy group',groups('BにあってAにない条件をCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない条件をCに適用して表示',heroSavedHistory));
+check('hero saved partial job delta lazy group',groups('BにあってAにない条件のうち職業条件だけをCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない条件のうち職業条件だけをCに適用して表示',heroSavedHistory));
+check('hero saved partial stat delta lazy group',groups('BにあってAにない知力条件だけをCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない知力条件だけをCに適用して表示',heroSavedHistory));
+check('hero saved inverted delta lazy group',groups('BにあってAにない職業条件を反転してCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない職業条件を反転してCに適用して表示',heroSavedHistory));
+check('hero saved rough kana partial delta lazy group',groups('BにあってAにない条件のうちしょくぎょうじょうけんだけをCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにない条件のうちしょくぎょうじょうけんだけをCに適用して表示',heroSavedHistory));
+check('hero saved rough kana inverted delta lazy group',groups('BにあってAにないしょくぎょう条件をはんてんしてCに適用して表示',heroSavedHistory).includes('hero'),groups('BにあってAにないしょくぎょう条件をはんてんしてCに適用して表示',heroSavedHistory));
 check('hero saved ambiguous condition delta lazy group',groups('AとBの条件差をCに適用',heroSavedHistory).includes('hero'),groups('AとBの条件差をCに適用',heroSavedHistory));
 check('hero saved view intersection lazy group',groups('Aと高腕力の共通だけ表示',heroSavedHistory).includes('hero'),groups('Aと高腕力の共通だけ表示',heroSavedHistory));
 check('hero saved view union lazy group',groups('Aと高腕力をまとめて表示',heroSavedHistory).includes('hero'),groups('Aと高腕力をまとめて表示',heroSavedHistory));

@@ -38,13 +38,13 @@ function candidateCount(answer){return (String(answer||'').match(/^\d+\. /gm)||[
   }
   r=await say('黒田博樹について教えて');
   check('route kuroda intro',r&&/黒田博樹/.test(r.answer||''),r);
-  check('route kuroda intro profile first',r&&/専用資料ではこう整理されています。\n【人物:黒田博樹】/.test(r.answer||''),r&&r.answer);
+  check('route kuroda intro profile first',r&&/黒田博樹について分かっていることをまとめます。\n【人物:黒田博樹】/.test(r.answer||''),r&&r.answer);
   r=await say('家族は？');
   check('route family stays kuroda',r&&/黒田博樹/.test(r.answer||'')&&/父/.test(r.answer||''),r&&r.answer);
   check('route family no unrelated comeback',!/2015年:黒田博樹の広島復帰/.test(r&&r.answer||''),r&&r.answer);
 
   r=await say('何歳だったっけ？');
-  check('route kuroda age stays subject',r&&/黒田博樹/.test(r.answer||'')&&/確認できない/.test(r.answer||''),r&&r.answer);
+  check('route kuroda age stays subject',r&&/黒田博樹/.test(r.answer||'')&&/確認でき(?:ない|ません)/.test(r.answer||''),r&&r.answer);
   check('route kuroda age no secondary person',!/新井貴浩/.test(r&&r.answer||''),r&&r.answer);
   r=await say('奥さんは？');
   check('route kuroda spouse stays subject',r&&/黒田博樹/.test(r.answer||'')&&/妻・配偶者/.test(r.answer||''),r&&r.answer);
@@ -54,11 +54,11 @@ function candidateCount(answer){return (String(answer||'').match(/^\d+\. /gm)||[
   r=await say('現役だったっけ？');
   check('route kuroda active uses canonical',r&&r.mode==='カープ専用正本知識'&&/黒田博樹/.test(r.answer||'')&&/現役選手名簿/.test(r.answer||''),r);
   r=await say('今何してる？');
-  check('route kuroda current stays subject',r&&r.mode==='カープ専用正本知識'&&/黒田博樹/.test(r.answer||'')&&/確認できない/.test(r.answer||''),r);
+  check('route kuroda current stays subject',r&&r.mode==='カープ専用正本知識'&&/黒田博樹/.test(r.answer||'')&&/確認でき(?:ない|ません)/.test(r.answer||''),r);
 
   r=await say('新井貴浩について教えて');
   check('route arai intro',r&&/新井貴浩/.test(r.answer||''),r);
-  check('route arai intro profile first',r&&/専用資料ではこう整理されています。\n【人物:新井貴浩】/.test(r.answer||''),r&&r.answer);
+  check('route arai intro profile first',r&&/新井貴浩について分かっていることをまとめます。\n【人物:新井貴浩】/.test(r.answer||''),r&&r.answer);
   r=await say('成績は？');
   check('route arai stats concrete',r&&/2000安打/.test(r.answer||'')&&/300本塁打/.test(r.answer||''),r&&r.answer);
   check('route arai stats no family',!/兄弟でプロ野球/.test(r&&r.answer||''),r&&r.answer);
@@ -141,7 +141,7 @@ function candidateCount(answer){return (String(answer||'').match(/^\d+\. /gm)||[
   r=await say('やっぱりいいや');
   check('route fragment cancel',r&&r.data&&r.data.fragmentCancelled===true&&r.data.conversationControl==='fragment_cancel',r);
   r=await say('新井について教えて');
-  check('route fragment cancel clears old subject',r&&/新井貴浩/.test(r.answer||'')&&!/黒田博樹について、カープ専用資料/.test(r.answer||''),r&&r.answer);
+  check('route fragment cancel clears old subject',r&&/新井貴浩/.test(r.answer||'')&&!/黒田博樹について分かっていることをまとめます/.test(r.answer||''),r&&r.answer);
 
   // 「カープの話に戻って」は直近の具体的なカープ枝へ戻り、次ターンにも主役を維持する。
   h=[];
@@ -419,7 +419,7 @@ function candidateCount(answer){return (String(answer||'').match(/^\d+\. /gm)||[
   await say('黒田博樹について教えて');
   await say('家族は？');
   r=await say('それは違うと思う');
-  check('route disagreement with think not uncertainty',r&&r.mode==='日常会話'&&/違う|見直/.test(r.answer||'')&&!/断定ではない|かもしれない/.test(r.answer||''),r);
+  check('route disagreement with think not uncertainty',r&&r.mode==='日常会話'&&/違う|見直|捉え直/.test(r.answer||'')&&!/断定ではない|かもしれない/.test(r.answer||''),r);
 
 
   // 「前のは／その前のは」も日常相槌へ横取りせず、談話参照として復帰し続ける。

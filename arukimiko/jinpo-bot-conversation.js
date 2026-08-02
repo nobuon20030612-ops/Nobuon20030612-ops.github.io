@@ -29,8 +29,18 @@
   function filterHistory(history){
     var h=Array.isArray(history)?history:[];
     var cut=resetAt();
-    if(!cut)return h.slice();
-    return h.filter(function(x){return x&&Number(x.at||0)>=cut;});
+    var out=cut?h.filter(function(x){return x&&Number(x.at||0)>=cut;}):h.slice();
+
+    // ユーザーが「違う」「その話ではない」と明示した後は、
+    // それ以前の主題・候補・pendingを次の発言へ自動復活させない。
+    // 画面ログは残したまま、会話解釈だけを最新の修正境界以降へ限定する。
+    for(var i=out.length-1;i>=0;i--){
+      var item=out[i]||{},meta=item.meta||{},data=meta.data||{};
+      if(item.role==='assistant'&&data.conversationRepair&&data.contextBoundary){
+        return out.slice(i);
+      }
+    }
+    return out;
   }
 
 
@@ -2104,9 +2114,9 @@
         'そういうことなのです。天気はこのまま地域や日付を変えて続けられるのですよ。'
       ],
       kashin_name:['そうなんですよ。名前は候補を見ながら少しずつ好みに寄せていくと選びやすいのです。'],
-      tsukumo:['そうなんですよ。九十九は正本の数値を見ながら、そのまま条件を変えて比べられるのです。'],
-      kishin:['そうなんですよ。鬼神石は正本の数値を基準に、そのまま比較していけるのです。'],
-      madou:['そうなんですよ。魔導結晶は正本の数値を基準に、そのまま比較していけるのです。']
+      tsukumo:['そうなんですよ。九十九は登録されている数値を見ながら、そのまま条件を変えて比べられるのです。'],
+      kishin:['そうなんですよ。鬼神石は登録されている数値を基準に、そのまま比較していけるのです。'],
+      madou:['そうなんですよ。魔導結晶は登録されている数値を基準に、そのまま比較していけるのです。']
     };
     var domainPositive={
       carp:['ですよね。カープは逸話や選手同士のつながりまで入ると、さらに面白くなるのです。'],
@@ -2299,6 +2309,14 @@
 
   function domainFromHistoryItem(item){
     if(!item)return'';
+    var repairData=item.meta&&item.meta.data||{};
+    if(repairData.repairTargetDomain){
+      var repairDomain=S(repairData.repairTargetDomain);
+      if(repairDomain==='hero')return'jinpo';
+      if(repairDomain==='site')return'tairano';
+      if(repairDomain==='casual')return'';
+      return repairDomain;
+    }
     // assistantのmodeは実際に通ったルーターを示すため、本文中の語より優先する。
     // 例: 家臣名候補「時雨」で天気、「黒田」でカープへ誤分類しない。
     // 「たいらの野望ツール実データ」を先にcounter扱いすると、
@@ -2334,6 +2352,255 @@
       if(d)return d;
     }
     return'';
+  }
+
+  // 回答ルーターの種類を、表示文ではなくmode/dataから判定する。
+  // ユーザーが「英傑じゃない」「カープの話へ変えて」と訂正した時に、
+  // 直前に何として解釈したかを明示的に取り消すために使う。
+  function repairRouteFromHistoryItem(item){
+    if(!item)return'';
+    var meta=item.meta||{},data=meta.data||{},mode=S(meta.mode||'');
+    if(data.repairTargetDomain)return S(data.repairTargetDomain);
+    if(data.heroKnowledge||/英傑/.test(mode))return'hero';
+    if(data.carp||/カープ/.test(mode))return'carp';
+    if(data.siteGuide||/サイト総合案内|サイト案内/.test(mode))return'site';
+    if(data.toolKnowledge){
+      var td=domainFromText(item.text||'');
+      if(td==='tsukumo'||td==='kishin'||td==='madou')return td;
+    }
+    if(/九十九/.test(mode))return'tsukumo';
+    if(/鬼神石/.test(mode))return'kishin';
+    if(/魔導/.test(mode))return'madou';
+    if(/カウンター|たいらの野望専用知識/.test(mode))return'counter';
+    if(/陣法|検索結果|おすすめ陣法/.test(mode))return'jinpo';
+    if(/天気/.test(mode))return'weather';
+    if(/家臣.*(?:名前|名付)/.test(mode))return'kashin_name';
+    return'';
+  }
+
+  function routeLabel(route){
+    var labels={hero:'英傑',carp:'カープ',site:'サイト案内',jinpo:'陣法',counter:'カウンター',tsukumo:'九十九',kishin:'鬼神石',madou:'魔導結晶',weather:'天気',kashin_name:'家臣名付け',casual:'雑談'};
+    return labels[route]||'今の話題';
+  }
+
+  function routeFromRepairText(text){
+    var t=S(text);
+    if(/カープ|かーぷ|広島東洋|野球|(?:カープの)?選手/.test(t))return'carp';
+    if(/英傑|英欠|武将/.test(t))return'hero';
+    if(/サイト案内|ページ案内|サイトの案内|たいらの野望のサイト|たいらの野望.*案内/.test(t))return'site';
+    if(/カウンター|天下統一奇譚|修羅の間|天下武技大会/.test(t))return'counter';
+    if(/九十九|つくも/.test(t))return'tsukumo';
+    if(/鬼神石|きしん/.test(t))return'kishin';
+    if(/魔導結晶|魔導|まどう/.test(t))return'madou';
+    if(/陣法|陣形|編成|因縁/.test(t))return'jinpo';
+    if(/家臣.*(?:名前|名付|命名)/.test(t))return'kashin_name';
+    if(/天気|気温|予報/.test(t))return'weather';
+    if(/雑談|普通の話|日常会話|別の話/.test(t))return'casual';
+    return'';
+  }
+
+  function explicitRejectedRoute(text){
+    var t=S(text);
+    if(/英傑(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'hero';
+    if(/カープ(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'carp';
+    if(/(?:サイト案内|ページ案内|サイトの話)(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'site';
+    if(/陣法(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'jinpo';
+    if(/カウンター(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'counter';
+    if(/九十九(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'tsukumo';
+    if(/鬼神石(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'kishin';
+    if(/魔導結晶?(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'madou';
+    if(/天気(?:の話)?(?:じゃ|では)?(?:ない|なくて|なく|違う)/.test(t))return'weather';
+    return'';
+  }
+
+  function recentAssistantInterpretation(history){
+    var h=filterHistory(history);
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i]||{};
+      if(x.role!=='assistant')continue;
+      var meta=x.meta||{},data=meta.data||{};
+      if(data.conversationRepair)continue;
+      var route=repairRouteFromHistoryItem(x);
+      if(!route)continue;
+      var prev='';
+      for(var j=i-1;j>=0;j--){if(h[j]&&h[j].role==='user'&&S(h[j].text)){prev=S(h[j].text);break;}}
+      return {route:route,mode:S(meta.mode||''),answer:S(x.text||''),userText:prev,index:i};
+    }
+    return null;
+  }
+
+  function repairQueryKernel(text,rejectedRoute){
+    var t=S(text);if(!t)return'';
+    var remove={hero:/英傑|英欠|武将/g,carp:/カープ|かーぷ|広島東洋カープ|広島東洋|野球選手/g,site:/サイト案内|ページ案内|たいらの野望のサイト|サイト/g,jinpo:/陣法|陣形|編成|因縁/g,counter:/カウンター/g,tsukumo:/九十九|つくも/g,kishin:/鬼神石/g,madou:/魔導結晶|魔導/g,weather:/天気|気温|予報/g};
+    if(remove[rejectedRoute])t=t.replace(remove[rejectedRoute],' ');
+    t=t.replace(/(?:について)?(?:教えて|知りたい|調べて|検索して|探して|見せて|説明して|答えて|お願い)(?:ください)?/g,' ')
+      .replace(/(?:は|って)?(?:誰|だれ|どれ|何人|何名|何|なに)[？?。！!]*$/,' ')
+      .replace(/[「」『』【】？?！!。]/g,' ')
+      .replace(/\s+/g,' ').trim()
+      .replace(/(?:の|について)$/,'').trim();
+    return t.length<=48?t:'';
+  }
+
+  function repairSubjectHint(text){
+    var t=S(text),m;
+    m=t.match(/(?:苗字|名字|姓)(?:が|は|の)?[「『]?([^「」『』、。！？?\s]{1,16}?)(?:」|』)?(?:の)?(?:英傑|武将|選手|人物|人|$)/);
+    if(m&&S(m[1]))return S(m[1]);
+    m=t.match(/名前(?:に|へ)([^、。！？?\s]{1,16})(?:が)?(?:入る|含む)/);
+    if(m&&S(m[1]))return S(m[1]);
+    m=t.match(/^([^、。！？?\s]{2,20})(?:について|の話|を教えて|は[？?])/);
+    return m&&S(m[1])?S(m[1]):'';
+  }
+
+  function latestRepairState(history){
+    var h=Array.isArray(history)?history:[];
+    // 次の発言へ効かせるのは、直前のassistantが出した修正・話題変更だけ。
+    // それ以降に別の回答がある場合は、古い修正指示を再利用しない。
+    for(var i=h.length-1;i>=0&&i>=h.length-8;i--){
+      var x=h[i]||{},d=(x.meta||{}).data||{};
+      if(x.role==='user')continue;
+      if(x.role==='assistant')return d.conversationRepair?d:null;
+    }
+    return null;
+  }
+
+  function latestRepairPending(history){
+    var d=latestRepairState(history);
+    return d&&d.pendingRepair?d:null;
+  }
+
+  function routedRepairText(route,text,forceRoute){
+    var t=S(text);if(!t)return'';
+    if(route==='hero'){
+      var m=t.match(/^英傑(?:の|で)[「『]?([^「」『』、。！？?]{1,24})[」』]?(?:の話)?[。！!？?]*$/);
+      if(m&&S(m[1])&&!/(?:腕力|耐久|器用|知力|魅力|生命|気合|土|水|火|風|高い|低い|順位|トップ|平均|因子|技能|職業|コスト)/.test(m[1]))return'名前に'+S(m[1])+'が入る英傑';
+      if(forceRoute&&!/(?:英傑|英欠|武将)/.test(t))return'英傑で'+t;
+    }
+    if(route==='carp'&&forceRoute&&!/(?:カープ|広島東洋|野球|選手)/.test(t))return'カープで'+t;
+    if(route==='site'&&forceRoute&&!/(?:サイト|ページ|たいらの野望)/.test(t))return'たいらの野望のサイトで'+t;
+    if(route==='jinpo'&&forceRoute&&!/(?:陣法|陣形|編成|因縁)/.test(t))return'陣法で'+t;
+    if(route==='counter'&&forceRoute&&!/カウンター/.test(t))return t+'のカウンター';
+    if(route==='tsukumo'&&forceRoute&&!/九十九|つくも/.test(t))return'九十九で'+t;
+    if(route==='kishin'&&forceRoute&&!/鬼神石|きしん/.test(t))return'鬼神石で'+t;
+    if(route==='madou'&&forceRoute&&!/魔導結晶|魔導|まどう/.test(t))return'魔導結晶で'+t;
+    return t;
+  }
+
+  function routeMessageFromRepair(route,kernel,hint,currentText,forceRoute){
+    var t=routedRepairText(route,currentText,!!forceRoute),k=S(kernel),h=S(hint);
+    if(t&&t.length>2&&!/^(?:そっち|こっち|それ|その方|そっちの方|選手の方|英傑の方|サイトの方|陣法の方|カープ|英傑|サイト|陣法|カウンター)[。！!？?]*$/.test(t))return t;
+    if(route==='carp')return h?'カープの'+h:(k?'カープで'+k+'の選手':'カープについて');
+    if(route==='hero')return k?(k+'の英傑'):(h?h+'の英傑':'英傑について');
+    if(route==='site')return h?'たいらの野望のサイトで'+h+'を案内して':'たいらの野望のサイト案内';
+    if(route==='jinpo')return k?(k+'の陣法について'):'陣法について';
+    if(route==='counter')return h?h+'のカウンター':'カウンターについて';
+    if(route==='tsukumo')return'九十九について';
+    if(route==='kishin')return'鬼神石について';
+    if(route==='madou')return'魔導結晶について';
+    if(route==='weather')return'天気について';
+    if(route==='kashin_name')return'家臣の名前を付けたい';
+    return t||k||'';
+  }
+
+  function repairSwitchTarget(text){
+    var t=S(text);if(!t||/戻/.test(t))return null;
+    var m=t.match(/^(?:話題|話|内容)(?:を)?[、,\s]*(.{1,40}?)(?:に|へ)?(?:変えて|切り替えて|切替えて|移して|して)(?:ください|ほしい|欲しい)?[。！!？?]*$/);
+    if(!m)m=t.match(/^(.{1,40}?)(?:の話)?(?:に|へ)(?:変えて|切り替えて|切替えて|移して)(?:ください|ほしい|欲しい)?[。！!？?]*$/);
+    if(!m)m=t.match(/^(?:次は|今度は|これからは)[、,\s]*(.{1,40}?)(?:の話)?(?:にして|でお願い|を話したい)?[。！!？?]*$/);
+    if(!m)return null;
+    var target=S(m[1]),route=routeFromRepairText(target);
+    return route?{route:route,target:target}:null;
+  }
+
+  function repairTail(text){
+    var t=S(text),m=t.match(/^(?:話題|話)(?:を)?(?:変えて|切り替えて|切替えて|変える)[、,\s]+(.+)$/);
+    if(m&&S(m[1]))return S(m[1]);
+    m=t.match(/^(?:別の話にして|話を変えるね|話を変えます)[、,\s]+(.+)$/);
+    if(m&&S(m[1]))return S(m[1]);
+    m=t.match(/(?:じゃなくて|ではなくて|でなくて|そうじゃなくて|そうじゃなく|じゃなく|ではなく)[、,\s]*(.+)$/);
+    if(m&&S(m[1]))return S(m[1]);
+    m=t.match(/^(?:(?:それ|それも|今の|その答え|さっきの答え)(?:は|も)?[、,\s]*)?(?:違う|ちがう|そうじゃない|それじゃない|そっちじゃない|そこじゃない|話が違う|噛み合ってない|かみ合ってない)[、,\s]+(.+)$/);
+    if(m&&S(m[1]))return S(m[1]);
+    return'';
+  }
+
+  function repairDirective(text,history){
+    var t=S(text);if(!t)return null;
+
+    // 「違う、前の方」「前者じゃなくて後者」などは、既存の
+    // 前者・後者・両方の選択訂正へ任せる。ここで履歴境界を作ると、
+    // 比較対象そのものを失ってしまうため、全体修正として扱わない。
+    try{if(parallelSelectionCorrection(t,history))return null;}catch(parallelRepairErr){}
+
+    // 能力・条件・順位・配置などの訂正は、英傑/陣法/サイト各モジュールが
+    // 現在候補を保持したまま処理する。全体会話修正で履歴を切ると、
+    // 「腕力じゃなくて知力順」「1位じゃなくて2位」が効かなくなる。
+    if(!/^(?:話題|話)(?:を)?(?:変えて|切り替えて|切替えて|変える)/.test(t)&&
+       /(?:じゃなくて|ではなくて|でなくて|じゃなく|ではなく)/.test(t)&&
+       /(?:生命|気合|腕力|耐久|器用|知力|魅力|土属性|水属性|火属性|風属性|能力|ステータス|高い|低い|順|順位|トップ|\d+位|\d+人目|以上|以下|未満|超える|条件|職業|コスト|因子|技能|候補|保存|並び|検索|適用|解除|配置|除外|差し替|差替|入れ替|陣形|鶴翼|方円|魚鱗|鴻鵠|前者|後者)/.test(t))return null;
+
+    // 直前に「何として扱えばよいか」を確認した後の短い選択。
+    var pending=latestRepairPending(history);
+    if(pending&&!/(?:違う|ちがう|じゃない|ではない|話題|話を変|切り替)/.test(t)){
+      var selected=routeFromRepairText(t);
+      if(!selected&&/^(?:選手|選手の方|野球の方)[。！!？?]*$/.test(t))selected='carp';
+      if(selected){
+        return {handled:true,rewrite:true,message:routeMessageFromRepair(selected,pending.preservedQuery,pending.subjectHint,t,true),contextBoundary:true,targetRoute:selected,rejectedRoute:S(pending.rejectedRoute||''),preservedQuery:S(pending.preservedQuery||''),subjectHint:S(pending.subjectHint||''),fromPending:true};
+      }
+    }
+
+    // 話題変更を受けた直後の短い質問は、その指定分野を補って解釈する。
+    // 例: 「英傑の話へ変えて」→「腕力高いのは？」を陣法検索へ流さない。
+    var activeRepair=latestRepairState(history);
+    if(activeRepair&&activeRepair.topicSwitch&&activeRepair.repairTargetDomain&&!/(?:違う|ちがう|じゃない|ではない|話題|話を変|切り替)/.test(t)){
+      var activeRoute=S(activeRepair.repairTargetDomain),explicitRoute=routeFromRepairText(t);
+      if(!explicitRoute||explicitRoute===activeRoute){
+        return {handled:true,rewrite:true,message:routeMessageFromRepair(activeRoute,'','',t,true),contextBoundary:true,targetRoute:activeRoute,rejectedRoute:S(activeRepair.rejectedRoute||''),preservedQuery:'',subjectHint:'',fromTopicSwitch:true};
+      }
+    }
+
+    var tail=repairTail(t),switchInfo=repairSwitchTarget(t),explicitRejected=explicitRejectedRoute(t);
+    var correctionCue=!!tail||!!explicitRejected||/^(?:いや[、,\s]*)?(?:違う|ちがう|そうじゃない|それじゃない|そっちじゃない|そこじゃない|そういう意味じゃない|話が違う|噛み合ってない|かみ合ってない|勘違いしてる|誤解してる)(?:よ|です)?[。！!？?\s]*$/.test(t);
+    if(!correctionCue&&!switchInfo)return null;
+
+    var recent=recentAssistantInterpretation(history),rejected=explicitRejected||(recent&&recent.route)||'';
+    var kernel=repairQueryKernel(recent&&recent.userText||'',rejected),hint=repairSubjectHint(recent&&recent.userText||'');
+    var tailRoute=tail?routeFromRepairText(tail):'';
+    var prefixTopicSwitch=!!switchInfo||/^(?:話題|話)(?:を)?(?:変えて|切り替えて|切替えて|変える)[、,\s]+/.test(t)||/^(?:別の話にして|話を変えるね|話を変えます)[、,\s]+/.test(t);
+    var selectorNegation=/(?:じゃ|では)ない方|(?:じゃ|では)ないほう|以外/.test(t);
+    var siteFamily={site:1,jinpo:1,counter:1,tsukumo:1,kishin:1,madou:1};
+
+    // 「九十九じゃない方」「それじゃなくて魔導」「ページじゃなくて入手方法」など、
+    // 同じサイト/ツール内の候補選択・機能訂正は既存の専用会話へ任せる。
+    // 全体修正で履歴を切ると、直前候補や「開く」意図が消えてしまう。
+    if(!prefixTopicSwitch){
+      if(selectorNegation)return null;
+      if(tail&&recent&&siteFamily[recent.route]&&(!tailRoute||siteFamily[tailRoute]))return null;
+      if(tail&&tailRoute&&recent&&tailRoute===recent.route)return null;
+      // 分野が明示されていない「AじゃなくてB」は、人物・条件・ページの
+      // 専用訂正である可能性が高い。新しい話題を明示した場合だけ全体修正する。
+      if(tail&&!tailRoute&&!/(?:について|の話)$/.test(tail))return null;
+    }
+
+    if(tail){
+      return {handled:true,rewrite:true,message:routeMessageFromRepair(tailRoute,kernel,hint,tail,!!tailRoute),contextBoundary:true,targetRoute:tailRoute,rejectedRoute:rejected,preservedQuery:kernel,subjectHint:hint,correctionTail:tail};
+    }
+
+    if(switchInfo){
+      var switchRoute=switchInfo.route,target=S(switchInfo.target),specific=target
+        .replace(/(?:の話|について)$/,'').replace(/^(?:カープ|英傑|サイト案内|ページ案内|陣法|カウンター)[、,\s]*(?:の)?/,'').trim();
+      if(specific&&specific!==routeLabel(switchRoute)&&specific.length>=2){
+        return {handled:true,rewrite:true,message:routeMessageFromRepair(switchRoute,'',specific,target),contextBoundary:true,targetRoute:switchRoute,rejectedRoute:rejected,preservedQuery:'',subjectHint:specific,topicSwitch:true};
+      }
+      return {handled:true,direct:true,answer:routeLabel(switchRoute)+'の話へ切り替えました。前の解釈はいったん置いて、ここからその話として受け取ります。続けて聞きたいことをそのまま送ってください。',contextBoundary:true,targetRoute:switchRoute,rejectedRoute:rejected,preservedQuery:'',subjectHint:'',topicSwitch:true,pendingRepair:false};
+    }
+
+    var label=routeLabel(rejected),base='分かりました。'+label+'として受け取ったのが違いました。今の解釈は取り消します。';
+    var ask='正しい分野か、探している対象を一言で教えてください。';
+    if(kernel)ask='「'+kernel+'」という条件は残します。何を探しているかだけ教えてください。';
+    var examples=rejected==='hero'?' たとえば「カープの選手」「サイト内の別項目」「一般の人物」です。':
+      rejected==='carp'?' たとえば「英傑の方」「サイト案内」「別の人物」です。':
+      rejected==='site'?' たとえば「数値を知りたい」「英傑を探したい」「カープの話」です。':'';
+    return {handled:true,direct:true,answer:base+'\n'+ask+examples,contextBoundary:true,targetRoute:'',rejectedRoute:rejected,preservedQuery:kernel,subjectHint:hint,pendingRepair:true,lastMode:recent&&recent.mode||''};
   }
 
 
@@ -4810,6 +5077,8 @@
     factCue:factCue,
     domainFromText:domainFromText,
     recentDomain:recentDomain,
+    repairDirective:repairDirective,
+    repairRouteFromHistoryItem:repairRouteFromHistoryItem,
     immediateReactionContext:immediateReactionContext,
     stripCorrection:stripCorrection,
     contrastiveFollowupTail:contrastiveFollowupTail,

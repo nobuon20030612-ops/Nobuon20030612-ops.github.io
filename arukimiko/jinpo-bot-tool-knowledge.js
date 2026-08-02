@@ -360,7 +360,7 @@
       if(acquisition){
         return {
           handled:true,
-          answer:d.name+' '+row['番号']+'番「'+itemName(row,d)+'」の入手は、'+(row['入手']||'正本に入手情報がありません')+' なのですよ。',
+          answer:d.name+' '+row['番号']+'番「'+itemName(row,d)+'」の入手は、'+(row['入手']||'入手情報が登録されていません')+' なのですよ。',
           mode:'たいらの野望ツール実データ',
           sources:[],links:[],
           data:{dataset:ds.key,number:row['番号'],name:itemName(row,d),acquisition:true}
@@ -387,7 +387,7 @@
     if(num){
       return {
         handled:true,
-        answer:d.name+'の'+num+'番は、現在の正本データには見つからなかったのですよ。',
+        answer:d.name+'の'+num+'番は、現在登録されている情報には見つからなかったのですよ。',
         mode:'たいらの野望ツール実データ',
         sources:[],links:[],
         data:{dataset:ds.key,number:num,notFound:true}
@@ -415,7 +415,7 @@
     if(acquisition){
       return {
         handled:true,
-        answer:d.name+'の入手についてですね。どの番号または名称を調べるか教えてください。たとえば「'+d.name+'1番の入手」「名称の入手」のように言えば、正本データから答えるのですよ。',
+        answer:d.name+'の入手についてですね。どの番号または名称を調べるか教えてください。たとえば「'+d.name+'1番の入手」「名称の入手」のように言えば、登録されている情報から答えるのですよ。',
         mode:'たいらの野望ツール実データ',
         sources:[],links:[],
         data:{dataset:ds.key,needsItem:true,acquisition:true}
@@ -424,7 +424,7 @@
     if(/何|なに|どんな|詳細|詳しく|教えて|おしえて|全部|全能力|ステータス/.test(original)){
       return {
         handled:true,
-        answer:d.name+'についてですね。番号または名称を指定すると、能力値と入手情報を正本データから確認できます。「'+d.name+'1番は？」「名称の耐久は？」「'+d.name+'で知力トップ3」のようにも聞けるのですよ。',
+        answer:d.name+'についてですね。番号または名称を指定すると、能力値と入手情報を登録されている情報から確認できます。「'+d.name+'1番は？」「名称の耐久は？」「'+d.name+'で知力トップ3」のようにも聞けるのですよ。',
         mode:'たいらの野望ツール実データ',
         sources:[],links:[],
         data:{dataset:ds.key,needsItemOrQuestion:true}

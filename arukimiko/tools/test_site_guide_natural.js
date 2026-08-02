@@ -59,8 +59,10 @@ const rough=[
  ['魔導結のページ開いて','mado']
 ];
 rough.forEach(([q,id])=>{const r=route(q);check('rough '+q,r.handled&&r.data&&r.data.siteItem===id,{got:r.data&&r.data.siteItem,answer:r.answer});});
-const factual=['鬼神石の使い方教えて','魔導結晶の入手は？','九十九1番の能力','黒田の成績','カウンター何番？','家臣の名前つけて'];
+const factual=['魔導結晶の入手は？','九十九1番の能力','黒田の成績','カウンター何番？','家臣の名前つけて'];
 factual.forEach(q=>{const r=route(q);check('fact not hijacked '+q,!r.handled,r);});
+const kishinUsage=route('鬼神石の使い方教えて');
+check('explicit tool page usage is guided',kishinUsage.handled&&kishinUsage.data&&kishinUsage.data.siteItem==='kishin'&&/最大8個/.test(kishinUsage.answer||''),kishinUsage);
 const ambiguous=route('計算したい');
 check('ambiguous calculator asks',ambiguous.handled&&ambiguous.data&&ambiguous.data.needsClarification===true,ambiguous);
 const overview=route('このサイト何ができるの');

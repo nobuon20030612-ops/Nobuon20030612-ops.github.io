@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.23.0';
+  var VERSION='3.26.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -501,6 +501,50 @@
       if(window.JINPO_BOT_PAGE_CONTEXT&&typeof window.JINPO_BOT_PAGE_CONTEXT.snapshot==='function')pageContext=window.JINPO_BOT_PAGE_CONTEXT.snapshot()||pageContext;
     }catch(pageContextErr){}
 
+    // ユーザーの訂正・否定・話題指定は、各専門ルーターより先に処理する。
+    // 「英傑じゃない」「違う、カープの前田」「カープの話へ変えて」などで、
+    // 古い人物・分野・pendingを押し通さず、現在の指示を最優先する。
+    var repairInfo=null;
+    try{
+      if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.repairDirective==='function'){
+        repairInfo=window.JINPO_BOT_CONVERSATION.repairDirective(userMessage,history);
+      }
+    }catch(repairDetectErr){repairInfo=null;}
+
+    if(repairInfo&&repairInfo.handled){
+      resetTransientConversationState();
+      if(repairInfo.direct){
+        return {
+          answer:String(repairInfo.answer||'分かりました。今の解釈はいったん取り消します。'),
+          sources:[],links:[],mode:'会話修正',
+          data:{
+            conversationRepair:true,
+            contextBoundary:repairInfo.contextBoundary!==false,
+            pendingRepair:!!repairInfo.pendingRepair,
+            rejectedRoute:String(repairInfo.rejectedRoute||''),
+            repairTargetDomain:String(repairInfo.targetRoute||''),
+            preservedQuery:String(repairInfo.preservedQuery||''),
+            subjectHint:String(repairInfo.subjectHint||''),
+            topicSwitch:!!repairInfo.topicSwitch,
+            lastMode:String(repairInfo.lastMode||'')
+          }
+        };
+      }
+      if(repairInfo.rewrite&&repairInfo.message){
+        message=String(repairInfo.message);
+        originalMessage=message;
+        userMessage=message;
+        // 訂正前の履歴から主語・分野を再注入しない。復帰命令ではないため、
+        // このターンは訂正後の文だけを新しい会話として処理する。
+        if(repairInfo.contextBoundary)history=[];
+        try{
+          if(window.ARUKIMIKO_LAZY&&typeof window.ARUKIMIKO_LAZY.ensureForMessage==='function'){
+            await window.ARUKIMIKO_LAZY.ensureForMessage(message,history);
+          }
+        }catch(repairLazyErr){}
+      }
+    }
+
     // 1つの発言に複数の独立した質問・依頼がある場合は、順番を保ったまま個別処理する。
     // 子処理では再分割しないため、再帰ループにはならない。
     if(!compoundChild&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.splitCompoundIntents==='function'){
@@ -777,6 +821,14 @@
         }
       }catch(pendingCheckErr){}
 
+      // 用語案内直後の短い続きは、先に一般雑談へ取らせない。
+      // 例: 「じんけい」→「魚鱗で」、「はいちえいけつ」→「前田慶次を入れて」。
+      try{
+        if(!blockEarlySmalltalk&&window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup==='function'){
+          if(window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(originalMessage,history))blockEarlySmalltalk=true;
+        }
+      }catch(knownTermSmalltalkGuardErr){}
+
       // サイト案内として明確な入力は、一般雑談より先に受け取る。
       // 「陣法で何できんの」「桶狭間見たいんだけど」などが
       // 日常会話へ流れて案内文脈を失うのを防ぐ。
@@ -925,10 +977,29 @@
       }
     }catch(learningReplyErr){}
 
+    // 用語だけを受けた直後の短い続きは、直前のたいらの野望用語を補って専門正本へ渡す。
+    // 例: 「英傑」→「腕力高いのは？」、「九十九」→「1番の能力」。
+    try{
+      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup==='function'){
+        var knownTermFollowup=window.JINPO_BOT_SITE_GUIDE.expandKnownTermFollowup(originalMessage,history);
+        if(knownTermFollowup&&knownTermFollowup.message){
+          message=String(knownTermFollowup.message);
+          contextInfo=Object.assign({},contextInfo,{message:message,resolved:true,reason:String(knownTermFollowup.reason||'known_term_followup'),confidence:0.99,siteItem:String(knownTermFollowup.siteItem||'')});
+        }
+      }
+    }catch(knownTermFollowupErr){}
+
+    // ページ名・内部用語だけの発言は、人物名の部分一致よりサイト用語を優先する。
+    // 例: 「家臣ステータス」を英傑名「家臣」の検索へ流さない。
+    var bareSiteTermBeforeHero=null;
+    try{
+      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.bareKnownTerm==='function')bareSiteTermBeforeHero=window.JINPO_BOT_SITE_GUIDE.bareKnownTerm(originalMessage);
+    }catch(bareSiteTermBeforeHeroErr){}
+
     // 英傑マスターの実データ質問は、英傑一覧ページ案内より先に処理する。
     // 例: 「腕力が高い英傑は誰？」「侍で知力トップ3」「豊臣秀長の因子は？」
     try{
-      if(window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
+      if(!bareSiteTermBeforeHero&&window.JINPO_BOT_HERO_KNOWLEDGE&&typeof window.JINPO_BOT_HERO_KNOWLEDGE.respond==='function'){
         var heroFact=window.JINPO_BOT_HERO_KNOWLEDGE.respond(message,{original:originalMessage,history:history,context:contextInfo,pageContext:pageContext});
         if(heroFact&&heroFact.handled){
           return {
@@ -946,10 +1017,11 @@
     // 「ルーレット」「トーナメント」「ダウンロード」などの一部分が
     // 選手名の別名へ誤一致しても、実画面案内を優先する。
     try{
-      var proactiveGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)?String(message):String(userMessage);
+      var proactiveGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)||knownTermFollowup&&knownTermFollowup.message?String(message):String(userMessage);
       if(window.JINPO_BOT_SITE_GUIDE&&
          typeof window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge==='function'&&
          typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&
+         !(knownTermFollowup&&knownTermFollowup.preferKnowledge)&&
          window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(proactiveGuideInput,{original:proactiveGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo})){
         var proactiveGuide=window.JINPO_BOT_SITE_GUIDE.respond(proactiveGuideInput,{original:proactiveGuideInput,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
         if(proactiveGuide&&proactiveGuide.handled){
@@ -967,7 +1039,7 @@
     // カープ専用会話を直接使う。
     // これが無いと「カープ」を一般Webや別の途中タスクへ流してしまう。
     try{
-      if(window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'){
+      if(!(knownTermFollowup&&knownTermFollowup.jinpoOperation)&&window.JINPO_BOT_CARP&&typeof window.JINPO_BOT_CARP.respond==='function'){
         var carpReply=await window.JINPO_BOT_CARP.respond(message,{history:history,context:contextInfo,pageContext:pageContext});
         if(carpReply&&carpReply.handled){
           return {
@@ -994,7 +1066,7 @@
 
     // 話題復帰でサイト案内を復元した場合は、ユーザーが今送った「戻って」ではなく、
     // 会話制御が復元した元の案内質問をSITE_GUIDEへ渡す。
-    var siteGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)?String(message):String(userMessage);
+    var siteGuideInput=(conversationControl&&conversationControl.control==='back'&&conversationControl.restoreMessage)||knownTermFollowup&&knownTermFollowup.message?String(message):String(userMessage);
 
     // 明確なページ移動・使い方案内・候補選択は、専門データ回答より先に処理する。
     // ただし「鬼神石1番の入手」「足利義昭のカウンター」のような
@@ -1003,6 +1075,7 @@
       if(window.JINPO_BOT_SITE_GUIDE&&
          typeof window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge==='function'&&
          typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&
+         !(knownTermFollowup&&knownTermFollowup.preferKnowledge)&&
          window.JINPO_BOT_SITE_GUIDE.shouldHandleBeforeKnowledge(siteGuideInput,{original:siteGuideInput,history:history,pageContext:pageContext,context:contextInfo,intentInfo:intentInfo})){
         var earlyGuide=window.JINPO_BOT_SITE_GUIDE.respond(siteGuideInput,{original:siteGuideInput,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
         if(earlyGuide&&earlyGuide.handled){
@@ -1057,7 +1130,7 @@
     // サイト案内は陣法操作やWeb検索より先に判定する。
     // TOPではこの経路が主機能になり、陣法ページでは明示的な「ページ案内」の時だけ反応する。
     try{
-      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'){
+      if(window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.respond==='function'&&!(knownTermFollowup&&knownTermFollowup.jinpoOperation&&String(pageContext&&pageContext.mode||'')==='jinpo')){
         var guide=window.JINPO_BOT_SITE_GUIDE.respond(message,{original:siteGuideInput||message,history:history,context:contextInfo,intentInfo:intentInfo,pageContext:pageContext});
         if(guide&&guide.handled){
           return {answer:String(guide.answer||''),sources:Array.isArray(guide.sources)?guide.sources:[],links:Array.isArray(guide.links)?guide.links:[],mode:String(guide.mode||'サイト総合案内'),data:Object.assign({siteGuide:true,context:contextInfo},guide.data||{})};

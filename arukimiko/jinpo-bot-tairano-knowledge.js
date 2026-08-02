@@ -583,7 +583,7 @@
       if(missingTarget){
         return {
           handled:true,
-          answer:'「'+S(missingTarget)+'」のカウンター値を聞いているのですね。今の歩き巫女の正本には、その名前のカウンター値がまだ登録されていないのですよ。\nカウンターページの案内ではなく、値そのものを答える質問として扱っています。確認できた値だけ数字で答えるのです。',
+          answer:'「'+S(missingTarget)+'」のカウンター値を聞いているのですね。今確認できる情報には、その名前のカウンター値がまだ登録されていないのですよ。\nカウンターページの案内ではなく、値そのものを答える質問として扱っています。確認できた値だけ数字で答えるのです。',
           mode:'たいらの野望専用知識',
           sources:[],links:[],
           data:{counterQuestion:true,missingKnowledge:true,target:S(missingTarget),authoritative:false}

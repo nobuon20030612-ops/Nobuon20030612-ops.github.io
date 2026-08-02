@@ -47,9 +47,48 @@
     if(!Array.isArray(list)) return [];
     return list.filter(function(x){ return x && (x.role === 'user' || x.role === 'assistant' || x.role === 'system') && typeof x.text === 'string'; }).slice(-MAX_HISTORY);
   }
+  function pruneHistoryMetadata(list,heavyLimit,maxItems){
+    var out=(list||[]).slice(-(maxItems||MAX_HISTORY)).map(function(item){
+      if(!item||typeof item!=='object')return item;
+      var copy=Object.assign({},item);
+      if(item.meta&&typeof item.meta==='object'){
+        copy.meta=Object.assign({},item.meta);
+        if(item.meta.data&&typeof item.meta.data==='object')copy.meta.data=Object.assign({},item.meta.data);
+      }
+      return copy;
+    });
+    var heavy=0;
+    for(var i=out.length-1;i>=0;i--){
+      var x=out[i]||{},meta=x.meta||{},data=meta.data||{};
+      if(!data.heroRefinement)continue;
+      heavy++;
+      if(heavy>(heavyLimit||12)){
+        delete data.heroRefinement;
+        delete data.heroRefinementChange;
+        delete data.previousCandidates;
+        delete data.addedCandidates;
+        delete data.removedCandidates;
+      }
+    }
+    return out;
+  }
   function saveHistory(list){
-    memoryHistory = (list || []).slice(-MAX_HISTORY);
-    try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(memoryHistory)); }catch(e){}
+    // 英傑の候補状態は会話継続に必要だが、全100件へ重複保存すると
+    // localStorage上限で履歴保存そのものが止まる。直近12状態だけ完全保持する。
+    memoryHistory = pruneHistoryMetadata(list,12,MAX_HISTORY);
+    try{
+      var raw=JSON.stringify(memoryHistory);
+      // 一般的なlocalStorage上限へ近づく前に、古い重い状態をさらに縮める。
+      if(raw.length>3500000){
+        memoryHistory=pruneHistoryMetadata(memoryHistory,4,70);
+        raw=JSON.stringify(memoryHistory);
+      }
+      localStorage.setItem(HISTORY_KEY,raw);
+    }catch(e){
+      // 容量超過時も会話履歴を完全に失わず、直近中心へ縮めて一度だけ再試行する。
+      memoryHistory=pruneHistoryMetadata(memoryHistory,2,50);
+      try{localStorage.setItem(HISTORY_KEY,JSON.stringify(memoryHistory));}catch(_e){}
+    }
   }
 
   function el(tag, cls, attrs){
@@ -609,7 +648,7 @@
         pendingHistoryClear=false;
         clearHistoryStorage();
         renderHistory();
-        addBubble('assistant','この端末の会話履歴を削除しました。たいらの野望の正本知識やFirebaseの共有知識は消していないのですよ。',{ephemeral:true});
+        addBubble('assistant','この端末の会話履歴を削除しました。たいらの野望の案内情報やFirebaseの共有内容は消していないのですよ。',{ephemeral:true});
         input.focus();return;
       }
       if(isCancel(text)){
@@ -623,30 +662,75 @@
     if(isHistoryClearRequest(text)){
       addBubble('user',text);
       pendingHistoryClear=true;
-      addBubble('assistant','この端末に保存されている会話履歴を削除しますか？\n削除する場合は「削除する」、やめる場合は「やめる」と送ってください。\n他の利用者の履歴や、たいらの野望の正本知識は対象外なのですよ。');
+      addBubble('assistant','この端末に保存されている会話履歴を削除しますか？\n削除する場合は「削除する」、やめる場合は「やめる」と送ってください。\n他の利用者の履歴や、たいらの野望の案内情報は対象外なのですよ。');
       input.focus();return;
     }
     addBubble('user',text); setBusy(true); var typing=addTyping();
     try{
       var result=await requestAi(text,currentHistory()); if(typing&&typing.parentNode)typing.remove();
       var historyData=null;
-      if(result.data&&result.data.siteGuide){
+      if(result.data&&result.data.conversationRepair){
+        historyData={
+          conversationRepair:true,
+          contextBoundary:result.data.contextBoundary!==false,
+          pendingRepair:!!result.data.pendingRepair,
+          rejectedRoute:String(result.data.rejectedRoute||''),
+          repairTargetDomain:String(result.data.repairTargetDomain||''),
+          preservedQuery:String(result.data.preservedQuery||''),
+          subjectHint:String(result.data.subjectHint||''),
+          topicSwitch:!!result.data.topicSwitch,
+          lastMode:String(result.data.lastMode||'')
+        };
+      }else if(result.data&&result.data.siteGuide){
         historyData={
           siteGuide:true,
           siteItem:String(result.data.siteItem||''),
           siteFeature:String(result.data.siteFeature||''),
+          siteFeatureSubjects:Array.isArray(result.data.siteFeatureSubjects)?result.data.siteFeatureSubjects.slice(0,8):[],
+          siteItems:Array.isArray(result.data.siteItems)?result.data.siteItems.slice(0,8):[],
+          siteComparison:Array.isArray(result.data.siteComparison)?result.data.siteComparison.slice(0,8):[],
           candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,8):[],
           siteCandidates:Array.isArray(result.data.siteCandidates)?result.data.siteCandidates.slice(0,8):[],
+          siteSourceCandidates:Array.isArray(result.data.siteSourceCandidates)?result.data.siteSourceCandidates.slice(0,8):[],
+          siteOpenedItems:Array.isArray(result.data.siteOpenedItems)?result.data.siteOpenedItems.slice(0,8):[],
+          siteExcludedItems:Array.isArray(result.data.siteExcludedItems)?result.data.siteExcludedItems.slice(0,8):[],
+          siteConditions:Array.isArray(result.data.siteConditions)?result.data.siteConditions.slice(0,12):[],
+          selectedSiteItem:String(result.data.selectedSiteItem||''),
+          siteConditionalOpen:!!result.data.siteConditionalOpen,
+          siteConditionRemoved:!!result.data.siteConditionRemoved,
+          knownTermGuidance:!!result.data.knownTermGuidance,
+          termKey:String(result.data.termKey||''),
+          normalizedTerm:String(result.data.normalizedTerm||''),
+          approximateTerm:!!result.data.approximateTerm,
           needsClarification:!!result.data.needsClarification
         };
       }else if(result.data&&result.data.heroKnowledge){
         historyData={
           heroKnowledge:true,
           hero:String(result.data.hero||''),
-          heroes:Array.isArray(result.data.heroes)?result.data.heroes.slice(0,20):[],
-          candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,8):[],
+          heroes:Array.isArray(result.data.heroes)?result.data.heroes.slice(0,24):[],
+          candidates:Array.isArray(result.data.candidates)?result.data.candidates.slice(0,12):[],
           needsClarification:!!result.data.needsClarification,
-          stats:Array.isArray(result.data.stats)?result.data.stats.slice(0,4):[]
+          stats:Array.isArray(result.data.stats)?result.data.stats.slice(0,12):[],
+          factors:Array.isArray(result.data.factors)?result.data.factors.slice(0,12):[],
+          names:Array.isArray(result.data.names)?result.data.names.slice(0,24):[],
+          pairGap:!!result.data.pairGap,
+          percentage:!!result.data.percentage,
+          smallest:!!result.data.smallest,
+          sameOnly:!!result.data.sameOnly,
+          perStatLeaders:!!result.data.perStatLeaders,
+          leaderCounts:!!result.data.leaderCounts,
+          commonRegistration:!!result.data.commonRegistration,
+          factorComparison:!!result.data.factorComparison,
+          pairwiseWins:!!result.data.pairwiseWins,
+          fullComparison:!!result.data.fullComparison,
+          comparison:!!result.data.comparison,
+          gaps:Array.isArray(result.data.gaps)?result.data.gaps.slice(0,12):[],
+          heroRefinement:result.data.heroRefinement||null,
+          heroRefinementChange:result.data.heroRefinementChange||null,
+          previousCandidates:Array.isArray(result.data.previousCandidates)?result.data.previousCandidates.slice():[],
+          addedCandidates:Array.isArray(result.data.addedCandidates)?result.data.addedCandidates.slice():[],
+          removedCandidates:Array.isArray(result.data.removedCandidates)?result.data.removedCandidates.slice():[]
         };
       }
       addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||'',data:historyData});
@@ -696,8 +780,18 @@
   }
 
   function normalizeResponse(data){
-    if(typeof data==='string') return {answer:data,sources:[],mode:''};
-    data=data||{}; return {answer:String(data.answer||data.message||''),sources:Array.isArray(data.sources)?data.sources:[],links:Array.isArray(data.links)?data.links:[],mode:String(data.mode||'')};
+    if(typeof data==='string') return {answer:data,sources:[],links:[],mode:'',data:null};
+    data=data||{};
+    return {
+      answer:String(data.answer||data.message||''),
+      sources:Array.isArray(data.sources)?data.sources:[],
+      links:Array.isArray(data.links)?data.links:[],
+      mode:String(data.mode||''),
+      // 会話継続用の構造化dataを落とさない。
+      // 以前はここで破棄していたため、英傑候補・サイト候補・訂正状態が
+      // 実ブラウザの次ターンへ渡らず、テスト上の修正が画面で効かない原因になっていた。
+      data:data.data&&typeof data.data==='object'?data.data:null
+    };
   }
 
   function clearHistory(){ pendingHistoryClear=false; clearHistoryStorage(); renderHistory(); }

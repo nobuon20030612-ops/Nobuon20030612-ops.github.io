@@ -608,10 +608,10 @@
     var reason=chosen.map(function(h){return '「'+h+'」';}).join('や');
     var tone=notable.length
       ?'成績だけでなく、カープ史の節目と結びついて語られる存在感の大きい人物'
-      :'正本の中でも複数の角度から話が残っている、印象の強い人物';
+      :'複数の角度から記録が残っている、印象の強い人物';
     return {
       handled:true,
-      answer:'正本で確認できる内容を踏まえると、私は'+player+'は'+tone+'だと思います。'+reason+'のような記録が残っているからです。\n好き嫌いを事実みたいに決めるのではなく、こういう確認できる出来事を土台にした印象です。',
+      answer:'確認できる出来事を踏まえると、私は'+player+'は'+tone+'だと思います。'+reason+'のような記録が残っているからです。\n好き嫌いを事実みたいに決めるのではなく、こういう確認できる出来事を土台にした印象です。',
       sources:[],
       mode:'カープ正本ベース会話',
       data:{carpKnowledge:true,groundedOpinion:true,player:player,hits:kr.hits||[]}
@@ -621,6 +621,10 @@
   async function respond(text,opt){
     opt=opt||{};
     var t=S(text);
+
+    // 「前田」のようにカープ選手と英傑名が重なる場合でも、
+    // ユーザーが英傑・武将を明示した質問はカープ側で奪わない。
+    if(/(?:英傑|英欠|英決|武将|キャラ)/.test(t)&&!/(?:カープ|広島東洋|広島カープ)/.test(t))return {handled:false};
 
     // 会話ルーターで補完できなかった場合の安全網。
     if(!isCarp(t)&&/^(?:もっと|他にも|ほかにも|他には|ほかには|別の|もう一つ|もう1つ|続き)[？?！!。]*$/.test(t)&&recentAnecdoteContext(opt.history||[])){

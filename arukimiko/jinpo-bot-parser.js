@@ -333,7 +333,7 @@
     var owned=t.match(/配置英傑\s*([1-3])[^\S\r\n]*(?:を|は|に)?\s*(.+?)(?:にして|指定|登録|$)/);if(owned&&!/解除|クリア|未選択|選択画面|一覧|開いて|表示/.test(t)){plan.actions.push({name:'set_owned_hero',args:{slot:Number(owned[1]),hero:owned[2].trim()}});plan.recognized=true;}
     if(/除外英傑.*(?:全部|全て|すべて).*(?:解除|クリア)|除外.*全解除/.test(t)){plan.actions.push({name:'clear_excluded_heroes'});plan.recognized=true;}
     var exOff=t.match(/(.+?)(?:の)?(?:除外|候補外)(?:を)?(?:解除|取り消|やめ|戻して|戻す)/);if(exOff&&!/全部|全て|すべて/.test(exOff[1])){plan.actions.push({name:'set_excluded_hero',args:{hero:cleanHeroText(exOff[1].replace(/英傑$/,'')),excluded:false}});plan.actions.push({name:'rerun_search'});plan.recognized=true;}
-    else {var exOn=t.match(/^(.+?)(?:を|は)?\s*(?:除外(?:して|する)?|外して|外したい|抜いて|抜きで|なしで|無しで|使わない|いらない|候補から外して|候補に出さない)(?:な|ね|です|よ|。|！|!)*$/);if(exOn&&!/除外英傑/.test(exOn[1])){plan.actions.push({name:'set_excluded_hero',args:{hero:cleanHeroText(exOn[1]),excluded:true}});plan.actions.push({name:'rerun_search'});plan.recognized=true;}}
+    else {var exOn=t.match(/^(.+?)(?:を|は)?\s*(?:除外(?:して|する)?|外して|外したい|抜いて|抜きで|なしで|無しで|使わない|いらない|候補から外して|候補に出さない)(?:な|ね|です|よ|。|！|!)*$/);if(exOn&&!/除外英傑/.test(exOn[1])&&!/(?:文曲|因子4)/.test(exOn[1])){plan.actions.push({name:'set_excluded_hero',args:{hero:cleanHeroText(exOn[1]),excluded:true}});plan.actions.push({name:'rerun_search'});plan.recognized=true;}}
 
     if(/差替候補.*(?:見せ|一覧|教えて)|(?:UP|FLAT|DOWN|アップ|フラット|ダウン|減らない).*差替候補/i.test(t)){
       var levels=null;if(/(?:減らない|維持以上|FLAT以上|フラット以上)/i.test(t))levels=['up','flat'];else if(/UP|アップだけ/i.test(t))levels=['up'];else if(/FLAT|フラットだけ/i.test(t))levels=['flat'];else if(/DOWN|ダウンだけ/i.test(t))levels=['down'];
