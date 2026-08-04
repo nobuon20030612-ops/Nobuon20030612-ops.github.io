@@ -225,6 +225,7 @@
     showLauncher(false);
     syncMinimizeButton();
     win.classList.add('isOpen'); launcher.setAttribute('aria-expanded','true'); saveUi({open:true,hidden:false});
+    syncResponsiveWindowClasses();
     keepInViewport();
     if(focus !== false) setTimeout(function(){ if(!win.classList.contains('isMinimized')) input.focus(); },0);
   }
@@ -313,7 +314,11 @@
     var on = win.classList.toggle('isMinimized');
     syncMinimizeButton();
     saveUi({minimized:on});
-    if(!on){ keepInViewport(); setTimeout(function(){ input.focus(); },0); }
+    if(!on){
+      syncResponsiveWindowClasses();
+      keepInViewport();
+      setTimeout(function(){ syncResponsiveWindowClasses(); input.focus(); },0);
+    }
   }
 
   function viewportMetrics(){

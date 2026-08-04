@@ -9678,18 +9678,24 @@ body{padding-top:0 !important;}
 }
 #dbCountBrowserCard .dbFormationSelectTop #formationSelect{
   box-sizing:border-box !important;
-  flex:0 0 260px !important;
-  width:260px !important;
-  min-width:260px !important;
-  max-width:260px !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  flex:0 0 300px !important;
+  width:300px !important;
+  min-width:300px !important;
+  max-width:300px !important;
   min-height:58px !important;
-  padding:8px 54px 8px 16px !important;
+  padding:8px 52px 8px 18px !important;
   border:3px solid #ffe88c !important;
   border-radius:14px !important;
-  background:#090806 !important;
+  background:
+    linear-gradient(45deg,transparent 50%,#fff8da 50%) calc(100% - 24px) calc(50% - 4px)/8px 8px no-repeat,
+    linear-gradient(135deg,#fff8da 50%,transparent 50%) calc(100% - 16px) calc(50% - 4px)/8px 8px no-repeat,
+    #090806 !important;
   color:#fff8da !important;
   font-size:22px !important;
   font-weight:1000 !important;
+  text-overflow:clip !important;
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.05),
     0 0 14px rgba(255,213,76,.48) !important;
@@ -10265,6 +10271,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 
 <script src="jinpo-fast-search.js"></script>
 <script src="jinpo-bond-list.js"></script>
-<script src="/arukimiko/bootstrap-v304.js?v=304-stage13ZK"></script>
+<script src="/arukimiko/bootstrap-v304.js?v=304-stage13ZL"></script>
 </body>
 </html>
