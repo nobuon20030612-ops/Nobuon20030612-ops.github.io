@@ -13,7 +13,7 @@
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
   var ASSET_VERSION='3.69.0';
-  var ASSET_CACHE_VERSION=ASSET_VERSION+'-stage13ZJ';
+  var ASSET_CACHE_VERSION=ASSET_VERSION+'-stage13ZK';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
