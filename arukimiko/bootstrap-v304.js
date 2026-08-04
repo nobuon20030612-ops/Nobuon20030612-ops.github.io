@@ -10,7 +10,7 @@
 
   var BASE='/arukimiko/';
   var VERSION='3.69.0';
-  var CACHE_VERSION=VERSION+'-stage13ZL';
+  var CACHE_VERSION=VERSION+'-stage13ZM';
 
   function abs(name){
     return new URL(name,location.origin+BASE).href;

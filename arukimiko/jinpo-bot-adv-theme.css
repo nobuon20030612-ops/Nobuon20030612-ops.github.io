@@ -1206,7 +1206,7 @@
 #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.isMinimized,
 #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.hasJinpoBotGuide.isMinimized{
   left:auto!important;
-  right:92px!important;
+  right:126px!important;
   top:auto!important;
   bottom:16px!important;
 
@@ -1327,7 +1327,7 @@
   #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.isMinimized,
   #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.hasJinpoBotGuide.isMinimized{
     right:10px!important;
-    bottom:92px!important;
+    bottom:126px!important;
     width:min(310px,calc(100vw - 20px))!important;
     max-width:calc(100vw - 20px)!important;
   }
@@ -1411,11 +1411,13 @@
 
 /* 最小化バーの上に全身画像が隠れず見える位置へ置く。 */
 #jinpoAiRoot.jinpoAdvTheme.jinpoWindowMinimized #jinpoAiLauncher{
-  bottom:74px!important;
+  right:0!important;
+  bottom:0!important;
 }
 @media(max-width:760px){
   #jinpoAiRoot.jinpoAdvTheme.jinpoWindowMinimized #jinpoAiLauncher{
-    bottom:150px!important;
+    right:0!important;
+    bottom:0!important;
   }
 }
 

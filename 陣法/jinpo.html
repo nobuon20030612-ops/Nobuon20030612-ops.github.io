@@ -9646,8 +9646,12 @@ body{padding-top:0 !important;}
   position:relative !important;
   display:flex !important;
   align-items:center !important;
-  gap:16px !important;
-  padding:44px 18px 18px !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  gap:12px !important;
+  padding:44px 14px 18px !important;
   border:3px solid #ffd75c !important;
   border-radius:18px !important;
   background:
@@ -9660,7 +9664,7 @@ body{padding-top:0 !important;}
   font-size:22px !important;
   font-weight:900 !important;
   letter-spacing:.02em !important;
-  overflow:visible !important;
+  overflow:hidden !important;
 }
 #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect)::before{
   content:"最初に陣形を選択してください";
@@ -9680,9 +9684,9 @@ body{padding-top:0 !important;}
   box-sizing:border-box !important;
   -webkit-appearance:none !important;
   appearance:none !important;
-  flex:0 0 300px !important;
-  width:300px !important;
-  min-width:300px !important;
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
   max-width:300px !important;
   min-height:58px !important;
   padding:8px 52px 8px 18px !important;
@@ -9732,6 +9736,22 @@ body:not(.jinpoFormationSelected) #ownedHeroControl .ownedHeroSlotBtn{
 body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   opacity:1 !important;
   filter:none !important;
+}
+@media(min-width:1101px){
+  #dbCountBrowserCard .dbFormationSelectTop > .row{
+    min-width:0 !important;
+    max-width:100% !important;
+    overflow:hidden !important;
+  }
+}
+@media(min-width:761px){
+  body.jinpo-recommend-active #dbCountBrowserCard .dbFormationSelectTop > .formationMiniPanel{
+    position:relative !important;
+    left:-18px !important;
+    width:calc(100% - 64px) !important;
+    max-width:calc(100% - 64px) !important;
+    justify-self:start !important;
+  }
 }
 @media(max-width:900px){
   #dbCountBrowserCard .dbFormationSelectTop > .row > label:has(#formationSelect){
@@ -10271,6 +10291,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 
 <script src="jinpo-fast-search.js"></script>
 <script src="jinpo-bond-list.js"></script>
-<script src="/arukimiko/bootstrap-v304.js?v=304-stage13ZL"></script>
+<script src="/arukimiko/bootstrap-v304.js?v=304-stage13ZM"></script>
 </body>
 </html>
