@@ -81,10 +81,19 @@
     statusEl = el('div','jinpoAiStatus',{text:(window.JINPO_AI_TRANSPORT&&typeof window.JINPO_AI_TRANSPORT==='function')?'準備OK':'準備中…'});
     htext.appendChild(statusEl); header.appendChild(htext);
 
+    var trainingBadge = el('div','jinpoAiTrainingBadge',{
+      title:'歩き巫女はただいま育成中です'
+    });
+    trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
+    trainingBadge.appendChild(el('span','jinpoAiTrainingText',{text:'育成中につき\nまだおばかです'}));
+    trainingBadge.appendChild(el('span','jinpoAiTrainingSpark',{text:'✦'}));
+
     var actions = el('div','jinpoAiHeaderActions');
     minBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderMinBtn',{type:'button','aria-label':'画面最小化',title:'画面最小化',text:'画面最小化'});
     var hideBtn = el('button','jinpoAiHeaderBtn jinpoAiHeaderHideBtn',{type:'button','aria-label':'歩き巫女を非表示',title:'歩き巫女を非表示',text:'非表示'});
-    actions.appendChild(minBtn); actions.appendChild(hideBtn); header.appendChild(actions);
+    actions.appendChild(minBtn); actions.appendChild(hideBtn);
+    header.appendChild(trainingBadge);
+    header.appendChild(actions);
 
     messages = el('div','jinpoAiMessages',{role:'log','aria-label':'会話履歴'});
     var composer = el('div','jinpoAiComposer');

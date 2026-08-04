@@ -1603,6 +1603,18 @@
     var t=casualText(text),c=compact(t),userStyle=conversationStyle(opt.history||[],t);
     if(!t)return null;
     var nicknameReply=specialNicknameReply(t);if(nicknameReply)return nicknameReply;
+
+    // 「腕力高いの」「器用と腕力高いの」のように、陣法条件として
+    // 述語まで成立している発言は、末尾が助詞「の」でも入力途中にしない。
+    // かな入力・音声入力は正規化してから、完成した陣法指示だけを専門パーサーへ渡す。
+    try{
+      var siteConv=window.JINPO_BOT_CONVERSATION,siteIntentText=t;
+      if(siteConv&&typeof siteConv.normalizeCasualInput==='function'){var siteCasual=siteConv.normalizeCasualInput(siteIntentText);siteIntentText=siteCasual&&siteCasual.text||siteIntentText;}
+      if(siteConv&&typeof siteConv.normalizeKanaInput==='function'){var siteKana=siteConv.normalizeKanaInput(siteIntentText);siteIntentText=siteKana&&siteKana.text||siteIntentText;}
+      if(siteConv&&typeof siteConv.normalizeKnownInput==='function'){var siteKnown=siteConv.normalizeKnownInput(siteIntentText);siteIntentText=siteKnown&&siteKnown.text||siteIntentText;}
+      if(hasSiteIntent(siteIntentText)&&/(?:高いの|高め|強いの|強め|重視(?:したい)?|優先(?:したい)?|伸ばしたい|検索(?:して|したい)?|探して|おすすめ|適用|解除|並べ替え|ソート)/.test(siteIntentText))return null;
+    }catch(siteIntentErr){}
+
     // 入力途中の短い断片は、専門語を含んでいても勝手に検索・操作へ進めず続きを待つ。
     // 次の発言は conversation.js 側で直前断片と安全に連結する。
     try{

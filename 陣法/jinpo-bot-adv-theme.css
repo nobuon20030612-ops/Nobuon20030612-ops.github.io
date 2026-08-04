@@ -785,3 +785,77 @@
   #jinpoAiRoot.jinpoAdvTheme #jinpoBotGuide .jinpoBotGuideBtn{font-size:14px!important}
   #jinpoAiRoot.jinpoAdvTheme .jinpoAiHeaderBtn{font-size:13px!important}
 }
+
+/* ===== 歩き巫女 育成中表示の復元 ===== */
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingBadge{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  flex:0 0 auto!important;
+  min-width:168px!important;
+  min-height:50px!important;
+  padding:7px 12px!important;
+  margin-left:2px!important;
+  margin-right:18px!important;
+  transform:translateX(-10px)!important;
+  border:3px solid #ffd95d!important;
+  border-radius:17px!important;
+  background:
+    radial-gradient(circle at 24% 18%,rgba(255,255,255,.30),transparent 30%),
+    linear-gradient(135deg,#ff69a3 0%,#ef3d85 54%,#bd2f79 100%)!important;
+  color:#fff9d8!important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.10) inset,
+    0 4px 0 rgba(111,22,68,.52),
+    0 0 14px rgba(255,86,149,.64),
+    0 0 28px rgba(255,214,77,.24)!important;
+  font-weight:950!important;
+  cursor:default!important;
+  user-select:none!important;
+  transform-origin:center bottom!important;
+  animation:arukimikoTrainingBigPop 2.05s ease-in-out infinite!important;
+}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingText{
+  display:block!important;
+  white-space:pre-line!important;
+  text-align:center!important;
+  font-size:14px!important;
+  line-height:1.08!important;
+  letter-spacing:.035em!important;
+  font-weight:950!important;
+  text-shadow:0 1px 1px rgba(68,10,40,.62),0 0 5px rgba(255,113,168,.26)!important;
+}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingSpark{
+  display:inline-block!important;
+  color:#fff06e!important;
+  font-size:15px!important;
+  line-height:1!important;
+  filter:drop-shadow(0 0 6px rgba(255,234,95,.88))!important;
+  animation:arukimikoTrainingBigSpark 1.25s ease-in-out infinite alternate!important;
+}
+#jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingSpark:last-child{animation-delay:.38s!important;}
+@keyframes arukimikoTrainingBigPop{
+  0%,100%{transform:translateX(-10px) translateY(0) rotate(-1deg) scale(1);}
+  50%{transform:translateX(-10px) translateY(-3px) rotate(1deg) scale(1.025);}
+}
+@keyframes arukimikoTrainingBigSpark{
+  0%{transform:scale(.82) rotate(-12deg);opacity:.72;}
+  100%{transform:scale(1.28) rotate(12deg);opacity:1;}
+}
+#jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized .jinpoAiTrainingBadge{display:none!important;}
+@media(min-width:761px) and (max-width:900px){
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingBadge{
+    min-width:148px!important;
+    min-height:46px!important;
+    padding:6px 9px!important;
+    margin-right:10px!important;
+    transform:translateX(-5px)!important;
+  }
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingText{font-size:12.5px!important;}
+}
+@media(max-width:760px){
+  #jinpoAiRoot.jinpoAdvTheme .jinpoAiTrainingBadge{display:none!important;}
+}
+

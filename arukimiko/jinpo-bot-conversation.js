@@ -725,6 +725,12 @@
     var cached=cachedKanaResult(cacheKey);
     if(cached!==null)return {text:cached,changed:cached!==original,original:original};
     var text=collapseKanaSpacing(original);
+
+    // 陣法の2項目指定で「きょうと腕力」のように続く場合だけ、
+    // 地名の「京都」ではなく能力の「器用」と助詞「と」として扱う。
+    // 単独の「きょう」「きょうと」や一般会話には適用しない。
+    text=text.replace(/(^|[\s、,])(?:きょう|キョウ|きよう|キヨウ)(?=(?:と|ト)(?:わんりょく|ワンリョク|たいきゅう|タイキュウ|ちりょく|チリョク|みりょく|ミリョク|せいめい|セイメイ|きあい|キアイ|つちぞくせい|みずぞくせい|ひぞくせい|かぜぞくせい))/g,function(_,pre){return pre+'器用';});
+
     var h=hiraText(text);
     var personContext=/(?:かーぷ|かあぷ|ひろしま|せんしゅ|かぞく|しんぞく|おくさん|せいせき|けいれき|いつわ|げんえき|いんたい|なんさい|ねんれい|かうんた|てんか|しゅら|にじょう|おけはざま|ふういん|えいけつ|ぶしょう|きゃら|英傑|英欠|英決|武将|キャラ)/.test(h) ||
       /^[ぁ-ゖァ-ヶー]{2,24}(?:は|って|の|について|をおしえて|おしえて|です|だよ|かな|か|[？?！!。])*$/.test(text);
