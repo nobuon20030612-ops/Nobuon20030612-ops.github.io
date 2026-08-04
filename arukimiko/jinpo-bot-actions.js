@@ -627,7 +627,15 @@
     reset_all:resetAll
   };
 
-  async function execute(name,args){var fn=registry[name];if(!fn)return fail('未登録のBot操作です: '+name);try{return await fn(args||{});}catch(e){console.error('JINPO_BOT_ACTION error',name,e);return fail('操作中にエラーが発生しました。',{error:String(e&&e.message||e)});}}
+  var AUTO_MINIMIZE_AFTER_SEARCH={apply_search:1,rerun_search:1,run_current_search:1,run_recommended:1,run_specified_simple:1,run_best:1,update_recommended:1};
+  function minimizeChatAndScrollToResults(){
+    try{if(window.JINPO_AI_CHAT&&typeof window.JINPO_AI_CHAT.minimize==='function')window.JINPO_AI_CHAT.minimize();}catch(e){}
+    var el=q('dbFormationList')||q('summary');
+    if(!el||typeof el.scrollIntoView!=='function')return;
+    var run=function(){try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}};
+    try{if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(run);else setTimeout(run,0);}catch(e){run();}
+  }
+  async function execute(name,args){var fn=registry[name];if(!fn)return fail('未登録のBot操作です: '+name);try{var result=await fn(args||{});if(result&&result.ok&&AUTO_MINIMIZE_AFTER_SEARCH[name])minimizeChatAndScrollToResults();return result;}catch(e){console.error('JINPO_BOT_ACTION error',name,e);return fail('操作中にエラーが発生しました。',{error:String(e&&e.message||e)});}}
 
   window.JINPO_BOT_ACTIONS={
     version:'2.2.0',STATS:STATS.slice(),canonicalStat:canonicalStat,canonicalFormation:canonicalFormation,
