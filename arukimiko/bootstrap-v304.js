@@ -9,7 +9,8 @@
   window.ARUKIMIKO_BOOT_VERSION='3.0.5-fast';
 
   var BASE='/arukimiko/';
-  var VERSION='3.69.0-stage13ZG';
+  var VERSION='3.69.0';
+  var CACHE_VERSION=VERSION+'-stage13ZJ';
 
   function abs(name){
     return new URL(name,location.origin+BASE).href;
@@ -36,7 +37,7 @@
 
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href=abs(name)+'?v='+encodeURIComponent(VERSION);
+      link.href=abs(name)+'?v='+encodeURIComponent(CACHE_VERSION);
       link.setAttribute('data-arukimiko-css',name);
       link.setAttribute('data-arukimiko-hardboot','3.0.5-fast');
       link.onload=function(){resolve({ok:true,name:name,url:link.href});};
@@ -65,7 +66,7 @@
 
       var sc=document.createElement('script');
       sc.async=false;
-      sc.src=abs(name)+'?v='+encodeURIComponent(VERSION);
+      sc.src=abs(name)+'?v='+encodeURIComponent(CACHE_VERSION);
       sc.setAttribute('data-arukimiko-loader','hard-v305-fast');
       sc.onload=function(){
         sc.setAttribute('data-arukimiko-loaded','1');

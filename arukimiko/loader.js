@@ -13,6 +13,7 @@
   try{base=new URL('.',src||location.href).href;}catch(e){base='/arukimiko/';}
   window.JINPO_BOT_BASE_URL=base;
   var ASSET_VERSION='3.69.0';
+  var ASSET_CACHE_VERSION=ASSET_VERSION+'-stage13ZJ';
 
   function decodedPath(){
     try{return decodeURIComponent(location.pathname||'');}catch(e){return String(location.pathname||'');}
@@ -70,7 +71,7 @@
           if(!retry){
             // GitHub Pages / browser cache race recovery.
             var retryUrl=new URL(name,location.origin+'/arukimiko/').href+
-              '?v='+encodeURIComponent(ASSET_VERSION)+'&retry='+Date.now();
+              '?v='+encodeURIComponent(ASSET_CACHE_VERSION)+'&retry='+Date.now();
             append(retryUrl,1);
           }else{
             console.error('歩き巫女 CSS load failed:',name,url);
@@ -80,7 +81,7 @@
         document.head.appendChild(l);
       }
 
-      append(new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION),0);
+      append(new URL(name,base).href+'?v='+encodeURIComponent(ASSET_CACHE_VERSION),0);
     });
   }
   function load(name){
@@ -96,7 +97,7 @@
       var s=document.createElement('script');
       // async=falseで実行順を維持しつつ、全scriptを先にappendして取得だけ並列化。
       s.async=false;
-      s.src=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_VERSION);
+      s.src=new URL(name,base).href+'?v='+encodeURIComponent(ASSET_CACHE_VERSION);
       s.setAttribute('data-arukimiko-script',name);
       if(name==='jinpo-ai-chat.js')s.setAttribute('fetchpriority','high');
       s.onload=function(){

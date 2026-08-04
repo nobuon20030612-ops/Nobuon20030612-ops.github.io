@@ -249,7 +249,7 @@
   }
 
   function diagnostics(){
-    var portrait=q('#jinpoAiWindowCharacterImg'),mascot=q('.jinpoAiMascot'),st=q('.jinpoAiStatus');
+    var root=q('#jinpoAiRoot'),portrait=q('#jinpoAiWindowCharacterImg'),mascot=q('.jinpoAiMascot'),st=q('.jinpoAiStatus');
     var actionCount=window.JINPO_BOT_ACTIONS&&Array.isArray(window.JINPO_BOT_ACTIONS.registry)?window.JINPO_BOT_ACTIONS.registry.length:0;
     var bridge=window.JINPO_BOT_ACTIONS&&typeof window.JINPO_BOT_ACTIONS.verifySearchBridge==='function'?window.JINPO_BOT_ACTIONS.verifySearchBridge():{ok:false,missing:['verifySearchBridge']};
     // v3.3.8:
