@@ -1,12 +1,12 @@
 /*
- * 歩き巫女 英傑マスター質問応答 v2.8.0
+ * 歩き巫女 英傑マスター質問応答 v2.9.0
  * jinpo_eiketsu_master.csv由来の参照専用データだけで回答する。
  */
 (function(){
   'use strict';
   if(window.JINPO_BOT_HERO_KNOWLEDGE)return;
 
-  var VERSION='2.8.0';
+  var VERSION='2.9.0';
   var STAT_ORDER=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
   var STAT_ALIASES=[
     {to:'生命',a:['生命力','生命','体力','HP','hp']},
@@ -542,6 +542,83 @@
     var q=nfkc(value);if(!q||/\([^()]*\)$/.test(q))return [];
     return (data().families[q]||[]).slice();
   }
+  function heroNameFamilyGroups(){
+    return Object.keys(data().families).map(function(base){return {base:base,rows:data().families[base].slice()};}).filter(function(g){return g.rows.length>=2;}).sort(function(a,b){return b.rows.length-a.rows.length||a.base.localeCompare(b.base,'ja');});
+  }
+  function heroVariantLabel(name){
+    var m=nfkc(name).match(/\(([^()]*)\)$/);return m?S(m[1]):'';
+  }
+  function familyByMention(text){
+    var t=nfkc(text),groups=heroNameFamilyGroups().slice().sort(function(a,b){return b.base.length-a.base.length;});
+    for(var i=0;i<groups.length;i++)if(t.indexOf(groups[i].base)>=0)return groups[i];
+    return null;
+  }
+  function familyHasExplicitVariant(text,group){
+    var t=nfkc(text);return group&&group.rows.some(function(r){return heroVariantLabel(r['英傑名'])&&t.indexOf(S(r['英傑名']))>=0;});
+  }
+  function requestedFamilyVariant(text,group){
+    if(!group)return null;
+    var t=nfkc(text),rows=group.rows.slice().sort(function(a,b){return heroVariantLabel(b['英傑名']).length-heroVariantLabel(a['英傑名']).length;});
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i],name=S(row['英傑名']),label=heroVariantLabel(name);if(!label)continue;
+      if(t.indexOf(name)>=0)return row;
+      var re=new RegExp('(?:^|[の\\s　、,「『【])'+esc(label)+'(?:版)?(?=(?:だけ|のみ|について|を|は|って|詳しく|教えて|見せて|知りたい|[？?。！!]|$))');
+      if(re.test(t))return row;
+    }
+    return null;
+  }
+  function parseHeroFamilyOverview(text){
+    var t=nfkc(text),group=familyByMention(t);
+    if(group)return null;
+    var generic=/(?:同じ名前|同名)(?:で|の|が|を|として|のもの)?[^。！？!?]{0,20}(?:英傑|英欠|英決|武将|キャラ)|(?:英傑|英欠|英決|武将|キャラ)[^。！？!?]{0,20}(?:同じ名前|同名)/.test(t)||
+      /(?:名前|英傑名)(?:が|の)?同じ[^。！？!?]{0,16}(?:英傑|英欠|英決|武将|キャラ|もの|物|やつ)|(?:英傑|英欠|英決|武将|キャラ)[^。！？!?]{0,12}(?:名前|英傑名)(?:が|の)?同じ/.test(t)||
+      /(?:別版|別衣装|別姿|派生版|別バージョン|別ばーじょん|別ver(?:sion)?)(?:が|の)?(?:ある|いる|存在する|複数ある)?[^。！？!?]{0,16}(?:英傑|英欠|英決|武将|キャラ)|(?:複数種類|複数版|複数いる|何種類もいる)[^。！？!?]{0,16}(?:英傑|英欠|英決|武将|キャラ)/i.test(t)||
+      /同じ(?:英傑|英欠|英決|武将|キャラ)(?:が|で|として)?[^。！？!?]{0,10}(?:複数|何人も|何名も|何体も|何種類も)(?:いる|ある|存在する)/.test(t);
+    if(!generic)return null;
+    return {sameNameOverview:true,countOnly:/(?:何組|何グループ|何種類の名前)/.test(t),heroCountOnly:/(?:何人|何名|何体)(?!も)/.test(t),text:t};
+  }
+  function latestHeroFamilyContext(history){
+    var h=Array.isArray(history)?history:[],passedAcknowledgement=false;
+    for(var i=h.length-1;i>=0&&i>=h.length-20;i--){
+      var m=h[i]||{},d=(m.meta&&m.meta.data)||{};if(m.role!=='assistant')continue;
+      if(d.contextBoundary||d.topicSwitch||d.conversationRepair)return null;
+      if(!d.heroKnowledge){
+        var before=i>0?h[i-1]||{}:{},bt=nfkc(before.text||before.content||before.message||'').replace(/[。！!？?]+$/,'').trim();
+        if(!passedAcknowledgement&&before.role==='user'&&/^(?:なるほど|了解|わかった|分かった|おっけー|オッケー|OK|ありがとう|ありがと)$/.test(bt)){passedAcknowledgement=true;continue;}
+        return null;
+      }
+      if(d.nameFamily&&S(d.query))return {base:S(d.query),rows:heroNameFamilyRows(d.query)};
+      if(d.nameFamilySelection&&S(d.familyBase))return {base:S(d.familyBase),rows:heroNameFamilyRows(d.familyBase)};
+      if(d.familyContext&&S(d.familyBase))return {base:S(d.familyBase),rows:heroNameFamilyRows(d.familyBase)};
+      if(d.hero)return null;
+    }
+    return null;
+  }
+  function parseHeroFamilyRequest(text,history){
+    var t=nfkc(text),group=familyByMention(t),fromContext=false;
+    // 2人以上の具体名を並べた比較は、文中の「全部比較」を同名一覧の「全部」と誤認しない。
+    if(group&&exactNamedRows(t).length>=2&&/(?:比較|比べ|違い|どっち|どちら)/.test(t))return null;
+    if(group&&familyHasExplicitVariant(t,group)&&!/(?:同じ名前|同名|全種類|何種類|別版|別衣装|別姿)/.test(t))return null;
+    if(!group){var ctx=latestHeroFamilyContext(history);if(ctx){group={base:ctx.base,rows:ctx.rows};fromContext=true;}}
+    if(!group)return null;
+    var base=group.base,variant=requestedFamilyVariant(t,group),hasBase=t.indexOf(base)>=0;
+    if(variant&&(!hasBase||/(?:だけ|のみ|について|詳しく|教えて|見せて|知りたい)/.test(t))){
+      return {query:base,mode:'family',label:'同名',familyVariantName:S(variant['英傑名']),familyVariantLabel:heroVariantLabel(variant['英傑名']),followup:fromContext};
+    }
+    if(/(?:通常版|通常|無印|括弧なし|かっこなし)\s*(?:以外|を除いて|除いて|抜き)/.test(t))return {query:base,mode:'family',label:'同名',familyVariantsOnly:true,followup:fromContext};
+    if(/(?:別版|別衣装|別姿|派生版)/.test(t))return {query:base,mode:'family',label:'同名',familyVariantsOnly:true,followup:fromContext};
+    if(/(?:通常版|無印|括弧なし|かっこなし)/.test(t))return {query:base,mode:'family',label:'同名',familyBaseOnly:true,followup:fromContext};
+    var directCue=/(?:すべて|全て|全部|全員|全種類|一覧|列挙|挙げて|あげて|出して|見せて|何人|何名|何体|何種類|種類|パターン|同名|同じ名前|各|それぞれ|ランキング|トップ|上位|下位|一番|最も|最高|最低|高い|低い|順)/.test(t);
+    var sameNameCue=new RegExp(esc(base)+'(?:と|の)?同じ名前|'+esc(base)+'[^。！？!?]{0,8}同名').test(t);
+    if((hasBase&&(directCue||sameNameCue))||(fromContext&&/(?:全種類|全部|全て|すべて|一覧|何人|何名|何体|何種類)/.test(t)))return {query:base,mode:'family',label:'同名',followup:fromContext};
+    return null;
+  }
+  function renderHeroFamilyOverview(req){
+    var groups=heroNameFamilyGroups(),heroCount=groups.reduce(function(sum,g){return sum+g.rows.length;},0),meta={sameNameGroupOverview:true,groupCount:groups.length,heroCount:heroCount,groups:groups.map(function(g){return {base:g.base,count:g.rows.length,heroes:g.rows.map(function(r){return r['英傑名'];})};})};
+    if(req.countOnly)return result('英傑名検索','同じ基本名で複数登録されている英傑は '+groups.length+'組です。該当する登録英傑は合計 '+heroCount+'人です。',meta);
+    if(req.heroCountOnly)return result('英傑名検索','同じ基本名を持つ英傑は、'+groups.length+'組・合計 '+heroCount+'人です。',meta);
+    return result('英傑名検索','同じ基本名で複数登録されている英傑は '+groups.length+'組です。\n'+groups.map(function(g){return '・'+g.base+'：'+g.rows.length+'人（'+g.rows.map(function(r){return r['英傑名'];}).join(' / ')+'）';}).join('\n'),meta);
+  }
   function heroNameFamilyCue(text){
     var t=nfkc(text);
     return /(?:すべて|全て|全部|全員|一覧|列挙|挙げて|あげて|出して|見せて|いる|誰|だれ|何人|何名|何体|何種類|種類|パターン|同名|同じ名前|別(?:版|衣装|姿)|各|それぞれ|ランキング|トップ|上位|下位|一番|最も|最高|最低|高い|低い|順)/.test(t);
@@ -771,26 +848,52 @@
     return {query:q,mode:mode,label:label};
   }
   function renderHeroNamePattern(pattern,text,priorRefinement){
-    var query=S(pattern.query),rows=heroNamePatternRows(query,pattern.mode),stats=detectStats(text),low=/低い|低め|最低|最小|ワースト|下位/.test(nfkc(text)),wantsRank=stats.length&&/(?:高い|低い|ランキング|トップ|上位|下位|一番|最も|最高|最低|順)/.test(nfkc(text));
-    if(!rows.length)return result('英傑名検索','「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑は見つかりませんでした。',{namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',notFound:true});
-    var lead=pattern.mode==='family'?'「'+query+'」の同名英傑':(pattern.label==='苗字'?'苗字が「'+query+'」の英傑':'「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑');
+    var query=S(pattern.query),allRows=heroNamePatternRows(query,pattern.mode),rows=allRows.slice(),t=nfkc(text),stats=detectStats(text),low=/低い|低め|最低|最小|ワースト|下位/.test(t),wantsRank=stats.length&&/(?:高い|低い|ランキング|トップ|上位|下位|一番|最も|最高|最低|順)/.test(t);
+    function familyMeta(extra,usedRows){
+      var meta={namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前'};
+      if(pattern.mode==='family'){
+        meta.familyContext=true;meta.familyBase=query;meta.familyHeroes=(usedRows||rows).map(function(r){return r['英傑名'];});
+        if(pattern.familyVariantsOnly)meta.familyVariantsOnly=true;
+        if(pattern.familyBaseOnly)meta.familyBaseOnly=true;
+      }
+      return Object.assign(meta,extra||{});
+    }
+    if(pattern.familyVariantName){
+      var selected=allRows.filter(function(r){return S(r['英傑名'])===S(pattern.familyVariantName);})[0];
+      if(!selected)return result('英傑名検索','「'+query+'」の「'+S(pattern.familyVariantLabel)+'」版は、現在の英傑マスターに見つかりませんでした。',familyMeta({notFound:true,familyVariantLabel:S(pattern.familyVariantLabel)},allRows));
+      return result('英傑マスター実データ',heroSummary(selected),{hero:selected['英傑名'],aspect:'summary',corrected:false,nameFamilySelection:true,familyBase:query,familyHeroes:allRows.map(function(r){return r['英傑名'];}),familyVariantLabel:S(pattern.familyVariantLabel)});
+    }
+    if(pattern.familyBaseOnly){
+      var baseRow=allRows.filter(function(r){return S(r['英傑名'])===query;})[0];
+      if(!baseRow)return result('英傑名検索','「'+query+'」には、括弧の付かない通常版は登録されていません。登録されているのは次の '+allRows.length+'人です。\n'+allRows.map(function(r){return '・'+r['英傑名'];}).join('\n'),familyMeta({familyBaseMissing:true,count:allRows.length,heroes:allRows.map(function(r){return r['英傑名'];})},allRows));
+      return result('英傑マスター実データ',heroSummary(baseRow),{hero:baseRow['英傑名'],aspect:'summary',corrected:false,nameFamilySelection:true,familyBase:query,familyHeroes:allRows.map(function(r){return r['英傑名'];}),familyBaseOnly:true});
+    }
+    if(pattern.familyVariantsOnly)rows=allRows.filter(function(r){return S(r['英傑名'])!==query;});
+    if(!rows.length){
+      if(pattern.familyVariantsOnly)return result('英傑名検索','「'+query+'」には、通常版以外の別版は登録されていません。',familyMeta({familyVariantsOnly:true,count:0,heroes:[]},rows));
+      return result('英傑名検索','「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑は見つかりませんでした。',familyMeta({notFound:true},rows));
+    }
+    var lead=pattern.mode==='family'?(pattern.familyVariantsOnly?'「'+query+'」の通常版以外の英傑':'「'+query+'」の同名英傑'):(pattern.label==='苗字'?'苗字が「'+query+'」の英傑':'「'+query+'」'+(pattern.mode==='contains'?'を名前に含む':'で始まる')+'英傑');
     if(pattern.excludeScope){
       var excludedNames=Object.create(null);rows.forEach(function(r){excludedNames[r['英傑名']]=1;});
       var remaining=data().rows.filter(function(r){return !excludedNames[r['英傑名']];}),remainingTake=remaining.slice(0,15);
-      return result('英傑名検索','全英傑から '+lead+' '+rows.length+'人を除くと、'+remaining.length+'人です。\n'+remainingTake.map(function(r){return '・'+r['英傑名'];}).join('\n')+(remaining.length>remainingTake.length?'\nほか '+(remaining.length-remainingTake.length)+'人います。':''),{namePatternExclusion:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',excludedHeroes:rows.map(function(r){return r['英傑名'];}),count:remaining.length,heroes:remainingTake.map(function(r){return r['英傑名'];})});
+      return result('英傑名検索','全英傑から '+lead+' '+rows.length+'人を除くと、'+remaining.length+'人です。\n'+remainingTake.map(function(r){return '・'+r['英傑名'];}).join('\n')+(remaining.length>remainingTake.length?'\nほか '+(remaining.length-remainingTake.length)+'人います。':''),familyMeta({namePatternExclusion:true,excludedHeroes:rows.map(function(r){return r['英傑名'];}),count:remaining.length,heroes:remainingTake.map(function(r){return r['英傑名'];})},rows));
     }
-    if(pattern.exhaustedFollowup)return result('英傑名検索',lead+'として登録されているのは、この '+rows.length+'人です。ほかにはいません。',{namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),exhaustedFollowup:true});
+    if(pattern.exhaustedFollowup)return result('英傑名検索',lead+'として登録されているのは、この '+rows.length+'人です。ほかにはいません。',familyMeta({count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),exhaustedFollowup:true},rows));
     if(wantsRank){
       var f={rows:rows,job:'',cost:0,factors:[],factorSlots:[],skill:'',excludedJobs:[],excludedCosts:[],excludedFactors:[],skillPresence:null,stats:stats,thresholds:[],scopeNames:[]};
-      var r=listRanking(f,stats,text,priorRefinement);r.answer=lead+'の中では、'+r.answer.replace(/^全英傑の/,'');return r;
+      var rankResult=listRanking(f,stats,text,priorRefinement);rankResult.answer=lead+'の中では、'+rankResult.answer.replace(/^全英傑の/,'');
+      if(pattern.mode==='family'){rankResult.data.familyContext=true;rankResult.data.familyBase=query;rankResult.data.familyHeroes=rows.map(function(r){return r['英傑名'];});rankResult.data.nameFamily=true;rankResult.data.query=query;if(pattern.familyVariantsOnly)rankResult.data.familyVariantsOnly=true;}
+      return rankResult;
     }
     if(stats.length){
       var statTake=rows.slice(0,20);
-      return result('英傑名検索',lead+'は '+rows.length+'人います。登録値は次の通りです。\n'+statTake.map(function(r){return '・'+r['英傑名']+'：'+stats.map(function(st){return st+' '+r._stats[st];}).join(' / ');}).join('\n')+(rows.length>statTake.length?'\nほか '+(rows.length-statTake.length)+'人います。':'')+sourceSuffix(),{namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),stats:stats.slice(),namePatternStats:true});
+      return result('英傑名検索',lead+'は '+rows.length+'人います。登録値は次の通りです。\n'+statTake.map(function(r){return '・'+r['英傑名']+'：'+stats.map(function(st){return st+' '+r._stats[st];}).join(' / ');}).join('\n')+(rows.length>statTake.length?'\nほか '+(rows.length-statTake.length)+'人います。':'')+sourceSuffix(),familyMeta({count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),stats:stats.slice(),namePatternStats:true},rows));
     }
-    if(/何人|何名|何体|人数/.test(nfkc(text)))return result('英傑名検索',lead+'は '+rows.length+'人です。',{namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})});
+    if(/(?:何種類|何パターン|いくつ(?:の)?種類|種類(?:は|が)?(?:いくつ|何個))/.test(t)&&pattern.mode==='family')return result('英傑名検索',lead+'は '+rows.length+'種類です。',familyMeta({count:rows.length,heroes:rows.map(function(r){return r['英傑名'];}),familyCountKind:'種類'},rows));
+    if(/何人|何名|何体|人数/.test(t))return result('英傑名検索',lead+'は '+rows.length+'人です。',familyMeta({count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})},rows));
     var take=rows.slice(0,20);
-    return result('英傑名検索',lead+'は '+rows.length+'人います。\n'+take.map(function(r){return '・'+r['英傑名'];}).join('\n')+(rows.length>take.length?'\nほか '+(rows.length-take.length)+'人います。':''),{namePattern:true,nameFamily:pattern.mode==='family',query:query,matchMode:pattern.mode,namePatternLabel:pattern.label||'名前',count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})});
+    return result('英傑名検索',lead+'は '+rows.length+'人います。\n'+take.map(function(r){return '・'+r['英傑名'];}).join('\n')+(rows.length>take.length?'\nほか '+(rows.length-take.length)+'人います。':''),familyMeta({count:rows.length,heroes:rows.map(function(r){return r['英傑名'];})},rows));
   }
 
   function isBlocked(text){return /九十九|鬼神石|魔導結晶|鎮魂符|星海の荒石|カープ|広島|カウンター|家臣計算|能力計算|ルーレット|トーナメント|徒党登録|七星転生|食料(?:計算機)?|御蔵番|名物|天下統一奇譚|天下武技大会|修羅の間|桶狭間|富士地下洞穴|賤ヶ岳|比叡山|二条城|封印/.test(nfkc(text));}
@@ -1626,10 +1729,11 @@
     try{
       if(window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.normalizeKanaInput==='function')patternNormalized=nfkc(window.JINPO_BOT_CONVERSATION.normalizeKanaInput(suppliedOriginal).text||routedText);
     }catch(patternNormalizeErr){}
-    var namePattern=parseHeroNamePattern(patternNormalized)||parseHeroNamePattern(suppliedOriginal)||parseHeroNamePattern(routedText)||parseHeroNamePatternFollowup(patternNormalized,opt.history)||parseHeroNamePatternFollowup(suppliedOriginal,opt.history),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),candidateReasonQuestion=savedViewCommand?null:parseCandidateReasonQuestion(suppliedOriginal,opt.history),refinementHistoryCommand=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||candidateReasonQuestion||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
+    var familyOverview=parseHeroFamilyOverview(patternNormalized)||parseHeroFamilyOverview(suppliedOriginal)||parseHeroFamilyOverview(routedText),familyRequest=parseHeroFamilyRequest(patternNormalized,opt.history)||parseHeroFamilyRequest(suppliedOriginal,opt.history)||parseHeroFamilyRequest(routedText,opt.history),namePattern=familyRequest||parseHeroNamePattern(patternNormalized)||parseHeroNamePattern(suppliedOriginal)||parseHeroNamePattern(routedText)||parseHeroNamePatternFollowup(patternNormalized,opt.history)||parseHeroNamePatternFollowup(suppliedOriginal,opt.history),pairGapContext=latestPairGapContext(opt.history),groupReplacement=detectGroupReplacement(suppliedOriginal,opt.history),pairReplacement=groupReplacement?null:detectPairReplacement(suppliedOriginal,opt.history),refinementContext=latestHeroRefinementContext(opt.history),savedViewCommand=parseSavedViewCommand(suppliedOriginal,opt.history),candidateReasonQuestion=savedViewCommand?null:parseCandidateReasonQuestion(suppliedOriginal,opt.history),refinementHistoryCommand=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementHistoryCommand(suppliedOriginal,opt.history),refinementChangeQuestion=(savedViewCommand||candidateReasonQuestion)?null:parseRefinementChangeQuestion(suppliedOriginal,opt.history),refinementEdit=(savedViewCommand||candidateReasonQuestion||refinementHistoryCommand)?null:parseRefinementEdit(suppliedOriginal,opt.history),rootScope=latestHeroScope(opt.history),activeScope=latestHeroActiveScope(opt.history),implicitScopeRequested=!!activeScope&&!contextScopeCue(suppliedOriginal)&&implicitContextScopeCue(suppliedOriginal,activeScope),original=(contextScopeCue(suppliedOriginal)||implicitScopeRequested)?suppliedOriginal:routedText,earlyStats=detectStats(original),globalRankRef=parseGlobalRankReference(original,earlyStats),scope=implicitScopeRequested?activeScope:rootScope,scopeRequested=(implicitScopeRequested||explicitContextScopeCue(original)||!!scope&&contextScopeCue(original))&&!globalRankRef,selection=scope?selectContextNames(original,scope.names):{names:[],label:'',invalid:false},contextName=contextHeroName(original,opt.history),contextNames=selection.names.length?selection.names:contextHeroNames(original,opt.history),earlySkillConcepts=detectSkillConcepts(original),earlyFactorCount=detectFactorCount(original),scopeRows=scope&&scopeRequested?rowsByNames(scope.names):[],scopeNames=scope&&scopeRequested?scope.names.slice():[];
     if(/(?:全英傑|英傑全体|全体の英傑|全部の英傑)/.test(suppliedOriginal)&&refinementContext)refinementContext={resetRoot:true,rootCandidates:[],activeCandidates:[],filters:emptyFilterState(),sortStats:[],sortLow:false,undoStack:[],redoStack:[],savedViews:cloneSavedViews(refinementContext.savedViews)};
-    if(!original||isBlocked(original)||(!savedViewCommand&&!candidateReasonQuestion&&!namePattern&&isSearchAction(original))||isNavigationOnly(original)||(!namePattern&&!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement&&!groupReplacement&&!refinementEdit&&!refinementHistoryCommand&&!refinementChangeQuestion&&!savedViewCommand&&!candidateReasonQuestion))return {handled:false};
+    if(!original||isBlocked(original)||(!savedViewCommand&&!candidateReasonQuestion&&!namePattern&&!familyOverview&&isSearchAction(original))||isNavigationOnly(original)||(!familyOverview&&!namePattern&&!hasHeroFactCue(original)&&!contextName&&!contextNames.length&&!scopeRequested&&!pairReplacement&&!groupReplacement&&!refinementEdit&&!refinementHistoryCommand&&!refinementChangeQuestion&&!savedViewCommand&&!candidateReasonQuestion))return {handled:false};
     if(savedViewCommand)return renderSavedViewCommand(savedViewCommand);
+    if(familyOverview)return renderHeroFamilyOverview(familyOverview);
     if(candidateReasonQuestion)return renderCandidateReasonQuestion(candidateReasonQuestion);
     if(namePattern)return renderHeroNamePattern(namePattern,suppliedOriginal,refinementContext);
     if(refinementHistoryCommand)return renderRefinementHistoryCommand(refinementHistoryCommand);

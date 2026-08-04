@@ -1,0 +1,121 @@
+{
+  "stage": "13ZD",
+  "title": "初期最小化・復帰ボタン文言修正",
+  "base_archive": "歩き巫女_v3.69.0_実Bot演出適合統合候補_stage13Z9_ローカル確認版(1).zip",
+  "base_archive_sha256": "3385dd4214ea4fbf82f6ec2442fd725b008f0a694feef7001f02fd17d05ba1d1",
+  "base_file_count": 154,
+  "requirements": {
+    "startup_state": "過去のopen/hidden/minimized保存値に関係なく、表示中かつ最小化で開始",
+    "minimized_button_label": "会話",
+    "preserve": [
+      "会話履歴",
+      "位置・サイズ情報",
+      "Bot会話処理",
+      "陣法処理",
+      "Firebase処理",
+      "Stage13Z9演出ファイル"
+    ]
+  },
+  "modified_files": {
+    "arukimiko/jinpo-ai-chat.js": {
+      "before_sha256": "4d80000942a36cc48371d86da7a118822eadc3d1a20942ab47b55e42df11f253",
+      "after_sha256": "61d6fbd05403df52d9bab3d26c53b0b233cc38c1c3a00b9e3a1d1b9e8812974e"
+    },
+    "arukimiko/jinpo-bot-adv-theme.css": {
+      "before_sha256": "05d393d903feded0e32f7a5c5d4d8ef1d093b92440ec13f73fd509d21757f239",
+      "after_sha256": "4114b0c336f2d4ac96afcc0e1fbefd62fee9b2510abc4b985dcedb153a3a7a83"
+    }
+  },
+  "added_files": [
+    "README_工程13ZD_初期最小化修正.txt",
+    "stage13zd-preview.html",
+    "工程13ZD_初期最小化修正_完了報告.txt",
+    "reports/stage13zd_initial_minimized_audit.json"
+  ],
+  "removed_files": [],
+  "verification": {
+    "javascript_syntax": {
+      "result": "PASS",
+      "checked_files": 111
+    },
+    "existing_node_tests": {
+      "result": "PASS",
+      "passed": 68,
+      "total": 68
+    },
+    "browser_ui": {
+      "result": "PASS",
+      "cases": [
+        {
+          "viewport": "desktop",
+          "initial_saved_state": {
+            "open": false,
+            "hidden": true,
+            "minimized": false
+          },
+          "startup_result": {
+            "open": true,
+            "hidden": false,
+            "minimized": true,
+            "button_text": "会話",
+            "button_aria": "会話",
+            "button_title": "会話",
+            "display": "grid"
+          },
+          "after_click_conversation": {
+            "open": true,
+            "hidden": false,
+            "minimized": false,
+            "button_text": "画面最小化",
+            "display": "grid"
+          },
+          "after_hide_and_new_start": {
+            "open": true,
+            "hidden": false,
+            "minimized": true,
+            "button_text": "会話",
+            "display": "grid"
+          }
+        },
+        {
+          "viewport": "mobile",
+          "initial_saved_state": {
+            "open": false,
+            "hidden": true,
+            "minimized": false
+          },
+          "startup_result": {
+            "open": true,
+            "hidden": false,
+            "minimized": true,
+            "button_text": "会話",
+            "button_aria": "会話",
+            "button_title": "会話",
+            "display": "grid"
+          },
+          "after_click_conversation": {
+            "open": true,
+            "hidden": false,
+            "minimized": false,
+            "button_text": "画面最小化",
+            "display": "grid"
+          },
+          "after_hide_and_new_start": {
+            "open": true,
+            "hidden": false,
+            "minimized": true,
+            "button_text": "会話",
+            "display": "grid"
+          }
+        }
+      ]
+    },
+    "static_checks": {
+      "old_label_absent_in_runtime_js": true,
+      "new_label_present": true,
+      "startup_forces_minimized": true,
+      "startup_forces_visible": true
+    }
+  },
+  "publication": "未実施（ローカル確認版）"
+}

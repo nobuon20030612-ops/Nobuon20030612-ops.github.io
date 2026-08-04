@@ -1206,7 +1206,7 @@
 
 /* ===== v3.2.4 最小化表示の再設計 =====
    最小化時は大型の育成札・会話リセットを残さず、
-   「歩き巫女 / 元に戻す / 非表示」だけのコンパクトバーにする。
+   「歩き巫女 / 会話 / 非表示」だけのコンパクトバーにする。
 */
 #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.isMinimized,
 #jinpoAiRoot.jinpoAdvTheme #jinpoAiWindow.hasJinpoAdvHero.isMinimized,

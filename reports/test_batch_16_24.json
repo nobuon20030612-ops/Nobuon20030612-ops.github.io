@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tools/test_hero_master_refinement_edits.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 14.18,
+    "passed_assertions": 18,
+    "total_assertions": 18,
+    "output": "HERO MASTER REFINEMENT EDITS: 18 / 18 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_refinement_history.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 14.175,
+    "passed_assertions": 21,
+    "total_assertions": 21,
+    "output": "HERO MASTER REFINEMENT HISTORY: 21 / 21 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_relative_comparison.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 12.128,
+    "passed_assertions": 17,
+    "total_assertions": 17,
+    "output": "HERO MASTER RELATIVE COMPARISON: 17 / 17 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_replacement_threshold.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 14.255,
+    "passed_assertions": 18,
+    "total_assertions": 18,
+    "output": "HERO MASTER REPLACEMENT THRESHOLD: 18 / 18 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_saved_view_config_diff.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.901,
+    "passed_assertions": 25,
+    "total_assertions": 25,
+    "output": "HERO MASTER SAVED VIEW CONFIG DIFF: 25 / 25 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_saved_view_partial_delta.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 15.172,
+    "passed_assertions": 24,
+    "total_assertions": 24,
+    "output": "HERO MASTER SAVED VIEW PARTIAL DELTA: 24 / 24 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_saved_view_reuse.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.408,
+    "passed_assertions": 22,
+    "total_assertions": 22,
+    "output": "HERO MASTER SAVED VIEW REUSE: 22 / 22 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_saved_view_sets.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.036,
+    "passed_assertions": 14,
+    "total_assertions": 14,
+    "output": "HERO MASTER SAVED VIEW SETS: 14 / 14 PASS"
+  }
+]

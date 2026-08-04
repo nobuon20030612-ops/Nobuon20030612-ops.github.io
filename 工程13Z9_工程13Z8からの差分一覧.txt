@@ -1,0 +1,13 @@
+工程13Z9 工程13Z8からの差分一覧
+- v3.69.0現物ZIPを受領し、SHA・容量・122ファイル・正式画像を実測。
+- Stage13Z8監査ツールのディレクトリエントリ誤カウントを修正。
+- v3.69.0正本122ファイルを変更せず分離コピーへ展開。
+- 追加: arukimiko-expression-runtime-stage13z9.css
+- 追加: arukimiko-expression-runtime-stage13z9.js
+- 追加: arukimiko-expression-adapter-stage13z9.js
+- 追加: stage13z9-preview.html
+- 追加: start_stage13z9_preview.py / .bat
+- 追加: v3.69.0原本122ファイルハッシュ一覧
+- 追加: exact conflict audit / browser integration audit
+- Bot既存ファイル変更: 0
+- 公開反映: なし

@@ -185,7 +185,7 @@
   function syncMinimizeButton(){
     if(!minBtn || !win) return;
     var minimized = win.classList.contains('isMinimized');
-    var label = minimized ? '元に戻す' : '画面最小化';
+    var label = minimized ? '会話' : '画面最小化';
     minBtn.textContent = label;
     minBtn.setAttribute('aria-label', label);
     minBtn.title = label;
@@ -193,28 +193,31 @@
 
   function restore(){
     var s = loadUi();
-    if(s.hidden){
-      root.classList.add('isBotHidden');
-      restoreBtn.hidden=false;
-      scheduleRestorePosition();
+
+    /*
+     * v1.0.10:
+     * サイトを新しく開いた時の表示状態は、過去の open / hidden / minimized
+     * 保存値を復元しない。位置・サイズなどの設定だけは従来どおり利用し、
+     * チャット欄は必ず「表示中かつ最小化」で開始する。
+     */
+    root.classList.remove('isBotHidden');
+    if(restoreBtn) restoreBtn.hidden=true;
+
+    if(!window.matchMedia('(max-width:760px)').matches){
+      if(s.userMoved){
+        if(Number.isFinite(s.left)) win.style.left = s.left + 'px';
+        if(Number.isFinite(s.top)) win.style.top = s.top + 'px';
+        if(Number.isFinite(s.left) || Number.isFinite(s.top)){ win.style.right='auto'; win.style.bottom='auto'; }
+      }
+      applyResponsiveWindowSize(s);
+      applyResponsiveWindowPosition(s);
+      if(s.userMoved&&(Number.isFinite(s.left)||Number.isFinite(s.top))) keepInViewport();
     }
-    if(window.matchMedia('(max-width:760px)').matches){
-      if(s.minimized) win.classList.add('isMinimized');
-      syncMinimizeButton();
-      if(s.open&&!s.hidden) open(false);
-      return;
-    }
-    if(s.userMoved){
-      if(Number.isFinite(s.left)) win.style.left = s.left + 'px';
-      if(Number.isFinite(s.top)) win.style.top = s.top + 'px';
-      if(Number.isFinite(s.left) || Number.isFinite(s.top)){ win.style.right='auto'; win.style.bottom='auto'; }
-    }
-    applyResponsiveWindowSize(s);
-    applyResponsiveWindowPosition(s);
-    if(s.userMoved&&(Number.isFinite(s.left)||Number.isFinite(s.top))) keepInViewport();
-    if(s.minimized) win.classList.add('isMinimized');
+
+    win.classList.add('isMinimized');
     syncMinimizeButton();
-    if(s.open&&!s.hidden) open(false);
+    open(false);
+    saveUi({open:true,hidden:false,minimized:true});
   }
 
   function clamp(v,min,max){ return Math.min(max,Math.max(min,Number(v)||0)); }

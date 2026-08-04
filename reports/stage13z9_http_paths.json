@@ -1,0 +1,42 @@
+{
+  "paths": [
+    {
+      "path": "stage13z9-preview.html",
+      "status": 200,
+      "bytes": 4664
+    },
+    {
+      "path": "arukimiko/bootstrap.js",
+      "status": 200,
+      "bytes": 1565
+    },
+    {
+      "path": "arukimiko/loader.js",
+      "status": 200,
+      "bytes": 59232
+    },
+    {
+      "path": "arukimiko/arukimiko-expression-runtime-stage13z9.css",
+      "status": 200,
+      "bytes": 5756
+    },
+    {
+      "path": "arukimiko/arukimiko-expression-runtime-stage13z9.js",
+      "status": 200,
+      "bytes": 9935
+    },
+    {
+      "path": "arukimiko/arukimiko-expression-adapter-stage13z9.js",
+      "status": 200,
+      "bytes": 19301
+    },
+    {
+      "path": "arukimiko/assets/arukimiko-chat-top.png",
+      "status": 200,
+      "bytes": 1116738
+    }
+  ],
+  "passed": 7,
+  "total": 7,
+  "all_passed": true
+}

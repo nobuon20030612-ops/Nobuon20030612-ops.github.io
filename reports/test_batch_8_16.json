@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tools/test_hero_master_candidate_reason.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 12.518,
+    "passed_assertions": 19,
+    "total_assertions": 19,
+    "output": "HERO MASTER CANDIDATE REASON: 19 / 19 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_comparison_drilldown.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.611,
+    "passed_assertions": 15,
+    "total_assertions": 15,
+    "output": "HERO MASTER COMPARISON DRILLDOWN: 15 / 15 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_context_scope.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.814,
+    "passed_assertions": 25,
+    "total_assertions": 25,
+    "output": "HERO MASTER CONTEXT SCOPE: 25 / 25 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_direct_cost.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 4.397,
+    "passed_assertions": 12,
+    "total_assertions": 12,
+    "output": "HERO MASTER DIRECT COST: 12 / 12 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_knowledge.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.874,
+    "passed_assertions": 43,
+    "total_assertions": 43,
+    "output": "HERO MASTER KNOWLEDGE: 43 / 43 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_multiview.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.976,
+    "passed_assertions": 37,
+    "total_assertions": 37,
+    "output": "HERO MASTER MULTIVIEW: 37 / 37 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_ranges.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.625,
+    "passed_assertions": 27,
+    "total_assertions": 27,
+    "output": "HERO MASTER RANGES: 27 / 27 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_refinement.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.275,
+    "passed_assertions": 19,
+    "total_assertions": 19,
+    "output": "HERO MASTER REFINEMENT: 19 / 19 PASS"
+  }
+]

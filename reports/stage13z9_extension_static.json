@@ -1,0 +1,15 @@
+{
+  "checks": {
+    "no_localStorage": true,
+    "no_sessionStorage": true,
+    "no_indexedDB": true,
+    "no_firebase": true,
+    "no_fetch": true,
+    "no_websocket": true,
+    "exact_adapter_flag": true,
+    "no_permanent_polling": true
+  },
+  "passed": 8,
+  "total": 8,
+  "all_passed": true
+}

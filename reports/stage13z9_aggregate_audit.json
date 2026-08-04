@@ -1,0 +1,38 @@
+{
+  "stage": "13Z9",
+  "target": "v3.69.0 exact",
+  "target_zip_sha256": "c2763b849e6ad7a58bb4f5755b2025b39b2a38e08a8e0a809db79f01192d4d67",
+  "decision": "LOCAL_INTEGRATION_CANDIDATE_READY_FOR_USER_VISUAL_REVIEW",
+  "ready_for_public_publish": false,
+  "ready_to_overwrite_bot": false,
+  "checks": {
+    "exact_target_identity": true,
+    "original_122_files_unchanged": true,
+    "added_expression_files": [
+      "arukimiko-expression-adapter-stage13z9.js",
+      "arukimiko-expression-runtime-stage13z9.css",
+      "arukimiko-expression-runtime-stage13z9.js"
+    ],
+    "js_syntax": "111/111 PASS",
+    "extension_static": "8/8 PASS",
+    "browser_integration": "25/25 PASS",
+    "unexpected_browser_errors": 0,
+    "known_preexisting_root_errors": 166,
+    "verified_regression_files": "46/68",
+    "verified_regression_assertions": 2344,
+    "local_only_check": "PASS"
+  },
+  "fixed_during_stage": [
+    "ZIP directory entries were excluded from the 122-file identity count.",
+    "Bot automatic focus after Transport result no longer cancels the live answer animation.",
+    "v3.69.0 same-name multi-candidate wording is classified as cannot/clarification.",
+    "Search state is rendered before synchronous local computation begins.",
+    "Transport reassignment is recovered with bounded verification, not permanent polling.",
+    "Hydrated or non-live assistant rows are ignored."
+  ],
+  "limitations": [
+    "Chromium localhost navigation is blocked by the environment; the browser audit used exact source files in an isolated inline page.",
+    "The pre-existing ADV diagnostic error \"root is not defined\" remains unchanged and is excluded from unexpected errors.",
+    "22 of 68 existing test files were not verified as PASS in this environment: 2 timed out without result and 20 were not completed."
+  ]
+}

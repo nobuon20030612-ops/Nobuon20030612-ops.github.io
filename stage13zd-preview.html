@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>歩き巫女 v3.69.0 初期最小化修正 Stage13ZD ローカル確認</title>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#10131a;color:#f6edf2;min-height:100vh}.panel{position:fixed;left:14px;top:14px;z-index:999999;width:min(410px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;background:rgba(17,20,29,.96);border:1px solid #3d465c;border-radius:16px;padding:14px;box-shadow:0 16px 48px rgba(0,0,0,.45)}h1{font-size:18px;margin:0 0 8px}.sub{font-size:13px;line-height:1.55;color:#d9cbd4}.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}button{border:0;border-radius:999px;padding:8px 12px;font-weight:700;background:#ff89b6;color:#1b1015;cursor:pointer}button.secondary{background:#343b4d;color:#fff}pre{font-size:11px;white-space:pre-wrap;background:#0b0d12;border-radius:10px;padding:10px;max-height:240px;overflow:auto}.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#273047;color:#dbe8ff;font-size:12px}.note{font-size:12px;color:#f7d4df;line-height:1.5}</style>
+<link rel="stylesheet" href="./arukimiko/arukimiko-expression-runtime-stage13z9.css">
+</head><body>
+<div class="panel"><h1>v3.69.0 初期最小化修正 Stage13ZD</h1><div class="sub">Stage13Z9統合候補を基準に、チャットUIの初期表示と復帰ボタン文言だけを修正したローカル確認版です。</div><div class="row"><span id="botBadge" class="badge">Bot読込中</span><span id="fxBadge" class="badge">演出待機中</span></div>
+<div class="row"><button id="openBtn">歩き巫女を開く</button><button id="diagBtn" class="secondary">診断更新</button><button id="historyBtn" class="secondary">履歴行テスト</button></div>
+<div class="row"><button data-state="reply" class="secondary">通常</button><button data-state="success" class="secondary">成功</button><button data-state="warning" class="secondary">注意</button><button data-state="cannot" class="secondary">返答不能</button><button data-state="sleep" class="secondary">居眠り</button><button data-state="wake" class="secondary">起床</button></div>
+<div class="note">通常の入力欄から会話すると、入力検知・思考・検索・回答・文区切り・結果表情・待機・居眠りへ自動接続します。</div><pre id="diag">準備中…</pre></div>
+<script src="./arukimiko/bootstrap.js"></script>
+<script>
+(function(){
+ var loaded=false;
+ function loadScript(src){return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
+ function loadFx(){if(loaded)return;loaded=true;loadScript('./arukimiko/arukimiko-expression-runtime-stage13z9.js').then(function(){return loadScript('./arukimiko/arukimiko-expression-adapter-stage13z9.js');}).then(function(){document.getElementById('fxBadge').textContent='演出接続済み';setTimeout(update,200);}).catch(function(e){document.getElementById('fxBadge').textContent='演出読込失敗';document.getElementById('diag').textContent=String(e);});}
+ function ready(){return window.ARUKIMIKO_SHARED&&window.ARUKIMIKO_SHARED.ready;}
+ function update(){var d={shared:window.ARUKIMIKO_SHARED||null,load:window.ARUKIMIKO_LOAD_METRICS||null,runtime:window.ARUKIMIKO_EXPRESSION_RUNTIME&&window.ARUKIMIKO_EXPRESSION_RUNTIME.diagnostics(),adapter:window.ARUKIMIKO_EXPRESSION_ADAPTER&&window.ARUKIMIKO_EXPRESSION_ADAPTER.diagnostics()};document.getElementById('diag').textContent=JSON.stringify(d,null,2);if(ready())document.getElementById('botBadge').textContent='Bot v3.69.0準備OK';}
+ window.addEventListener('arukimiko-ready',function(){document.getElementById('botBadge').textContent='Bot v3.69.0準備OK';loadFx();});
+ window.addEventListener('load',function(){if(ready())loadFx();setTimeout(function(){if(!loaded)loadFx();},3500);});
+ document.getElementById('openBtn').onclick=function(){if(window.JINPO_AI_CHAT)window.JINPO_AI_CHAT.open();setTimeout(update,100);};
+ document.getElementById('diagBtn').onclick=update;
+ document.getElementById('historyBtn').onclick=function(){if(window.JINPO_AI_CHAT)window.JINPO_AI_CHAT.addMessage('assistant','これは起動後に追加した履歴復元テスト行です。');setTimeout(update,100);};
+ Array.prototype.forEach.call(document.querySelectorAll('[data-state]'),function(b){b.onclick=function(){if(window.ARUKIMIKO_EXPRESSION_ADAPTER)window.ARUKIMIKO_EXPRESSION_ADAPTER.notify(b.dataset.state);setTimeout(update,100);};});
+ setInterval(update,1500);
+})();
+</script></body></html>

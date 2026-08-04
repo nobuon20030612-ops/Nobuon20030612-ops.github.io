@@ -1,0 +1,28 @@
+工程13Z9 v3.69.0実Bot演出適合統合候補仕様
+
+基準正本:
+- arukimiko_v3.69.0_一括上書き用.zip
+- ZIP SHA-256: c2763b849e6ad7a58bb4f5755b2025b39b2a38e08a8e0a809db79f01192d4d67
+- ZIP容量: 7,347,653 bytes
+- Botファイル: 122件
+- 正式画像SHA-256: 821be60a03e77a46c28d77811e3edf1bfc663e92fbad80c4fd3d5bec7e8c4650
+
+統合方式:
+- v3.69.0の既存122ファイルは一切編集しない。
+- 演出コア3ファイルだけをarukimiko/へ追加する。
+  1. arukimiko-expression-runtime-stage13z9.css
+  2. arukimiko-expression-runtime-stage13z9.js
+  3. arukimiko-expression-adapter-stage13z9.js
+- ローカル確認ページからBot準備完了後に3ファイルを読み込む。
+- 公開サイト、Bot正本、陣法、Firebase、保存領域には反映しない。
+
+v3.69.0適合修正:
+- ZIP監査のファイル数はディレクトリエントリを除いた122件で判定。
+- Transport全引数をapplyで維持。
+- JINPO_AI_CHAT.setTransport経由でラップを反映。
+- arukimiko-readyとwindow load後に限定時間だけTransport再代入を監視。
+- 永久250ms監視は使用しない。
+- 起動済み履歴行とlive Transportに対応しない回答行は演出しない。
+- 同名候補・聞き直しは返答不能へ分類可能。
+- mode=searchだけでは成功にしない。
+- 実操作成功の明示証拠がある時だけ成功を優先する。

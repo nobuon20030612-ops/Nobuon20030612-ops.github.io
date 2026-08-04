@@ -1,0 +1,306 @@
+{
+  "total_test_files": 68,
+  "verified_pass_files": 46,
+  "verified_pass_assertions": 2344,
+  "timeout_files": [
+    "test_known_term_compact_jinpo_actions.js",
+    "test_known_term_jinpo_actions.js"
+  ],
+  "not_completed_files": [
+    "test_known_term_clarification_followup.js",
+    "test_known_term_jinpo_kana_actions.js",
+    "test_known_term_kana_followup.js",
+    "test_known_term_page_internal.js",
+    "test_known_term_post_action_ack.js",
+    "test_known_term_post_action_jinpo_actions.js",
+    "test_loader_kana_routing.js",
+    "test_local_specialist_conversation.js",
+    "test_long_mixed_conversation.js",
+    "test_site_guide_candidate_filtering.js",
+    "test_site_guide_clause_binding.js",
+    "test_site_guide_comparison_context.js",
+    "test_site_guide_conditional_sets.js",
+    "test_site_guide_deictic_candidates.js",
+    "test_site_guide_dialogue.js",
+    "test_site_guide_flexible_dialogue.js",
+    "test_site_guide_natural.js",
+    "test_site_guide_repair_flow.js",
+    "test_site_guide_set_memory.js",
+    "test_site_source_knowledge.js"
+  ],
+  "status": [
+    {
+      "file": "tools/test_bot_route_context.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_bot_route_mixed.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_bot_route_site_guide.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_bot_route_tairano_kana.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_chat_history_metadata.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_context_stress.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_conversation_repair_control.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_advanced.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_candidate_reason.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_comparison_drilldown.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_context_scope.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_direct_cost.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_knowledge.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_multiview.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_ranges.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_refinement.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_refinement_edits.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_refinement_history.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_relative_comparison.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_replacement_threshold.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_view_config_diff.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_view_partial_delta.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_view_reuse.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_view_sets.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_view_transforms.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_master_saved_views.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_name_colloquial_kana.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_name_natural_wording.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_name_pattern_routing.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_name_scope_followup.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_name_scope_natural_references.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_same_name_groups.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hero_same_name_natural_followups.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_hide_button.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_kana_normalization.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_known_term_ack_followup.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_known_term_clarification_followup.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_known_term_clarification_jinpo_actions.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_known_term_compact_changes.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_known_term_compact_jinpo_actions.js",
+      "status": "TIMEOUT_NO_RESULT"
+    },
+    {
+      "file": "tools/test_known_term_followup_context.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_known_term_jinpo_actions.js",
+      "status": "TIMEOUT_NO_RESULT"
+    },
+    {
+      "file": "tools/test_known_term_jinpo_kana_actions.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_known_term_kana_followup.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_known_term_page_internal.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_known_term_post_action_ack.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_known_term_post_action_jinpo_actions.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_loader_kana_routing.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_local_conversation.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_local_specialist_conversation.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_long_mixed_conversation.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_release_version_consistency.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_site_guide_candidate_filtering.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_clause_binding.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_comparison_context.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_conditional_sets.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_deictic_candidates.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_dialogue.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_flexible_dialogue.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_natural.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_repair_flow.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_guide_set_memory.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_site_source_knowledge.js",
+      "status": "NOT_COMPLETED_IN_ENVIRONMENT"
+    },
+    {
+      "file": "tools/test_special_nicknames.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_tairano_kana_coverage.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_tairano_kana_fuzzy_coverage.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_tairano_term_guidance.js",
+      "status": "PASS_VERIFIED"
+    },
+    {
+      "file": "tools/test_typo_prediction.js",
+      "status": "PASS_VERIFIED"
+    }
+  ],
+  "note": "Only completed test results are counted. Timeouts and uncompleted files are not treated as PASS."
+}

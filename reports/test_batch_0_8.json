@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tools/test_bot_route_context.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 18.878,
+    "passed_assertions": 139,
+    "total_assertions": 139,
+    "output": "BOT ROUTE CONTEXT: 139/139 PASS"
+  },
+  {
+    "file": "tools/test_bot_route_mixed.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 6.798,
+    "passed_assertions": 33,
+    "total_assertions": 33,
+    "output": "BOT ROUTE MIXED: 33/33 PASS"
+  },
+  {
+    "file": "tools/test_bot_route_site_guide.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 14.795,
+    "passed_assertions": 10,
+    "total_assertions": 10,
+    "output": "BOT ROUTE SITE GUIDE: 10 / 10 PASS"
+  },
+  {
+    "file": "tools/test_bot_route_tairano_kana.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 4.285,
+    "passed_assertions": 13,
+    "total_assertions": 13,
+    "output": "BOT ROUTE TAIRANO KANA: 13 / 13 PASS"
+  },
+  {
+    "file": "tools/test_chat_history_metadata.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 0.141,
+    "passed_assertions": 21,
+    "total_assertions": 21,
+    "output": "CHAT HISTORY METADATA: 21 / 21 PASS"
+  },
+  {
+    "file": "tools/test_context_stress.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 1.4,
+    "passed_assertions": 62,
+    "total_assertions": 62,
+    "output": "CONTEXT STRESS: 62/62 PASS"
+  },
+  {
+    "file": "tools/test_conversation_repair_control.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 16.692,
+    "passed_assertions": 16,
+    "total_assertions": 16,
+    "output": "CONVERSATION REPAIR CONTROL: 16 / 16 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_advanced.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.649,
+    "passed_assertions": 30,
+    "total_assertions": 30,
+    "output": "HERO MASTER ADVANCED: 30 / 30 PASS"
+  }
+]

@@ -1,0 +1,78 @@
+{
+  "file": "tools/test_known_term_clarification_jinpo_actions.js",
+  "cases": [
+    {
+      "case": 0,
+      "ok": true,
+      "pass": 2,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 1,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 2,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 3,
+      "ok": true,
+      "pass": 2,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 4,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 5,
+      "ok": true,
+      "pass": 2,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 6,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 7,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 8,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    },
+    {
+      "case": 9,
+      "ok": true,
+      "pass": 1,
+      "fail": 0,
+      "stderr": ""
+    }
+  ],
+  "ok": true,
+  "passed_assertions": 13,
+  "total_assertions": 13
+}

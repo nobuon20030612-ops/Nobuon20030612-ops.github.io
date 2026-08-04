@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tools/test_hero_master_saved_view_transforms.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.417,
+    "passed_assertions": 19,
+    "total_assertions": 19,
+    "output": "HERO MASTER SAVED VIEW TRANSFORMS: 19 / 19 PASS"
+  },
+  {
+    "file": "tools/test_hero_master_saved_views.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 14.685,
+    "passed_assertions": 27,
+    "total_assertions": 27,
+    "output": "HERO MASTER SAVED VIEWS: 27 / 27 PASS"
+  },
+  {
+    "file": "tools/test_hero_name_colloquial_kana.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 15.387,
+    "passed_assertions": 29,
+    "total_assertions": 29,
+    "output": "HERO NAME COLLOQUIAL KANA: 29 / 29 PASS"
+  },
+  {
+    "file": "tools/test_hero_name_natural_wording.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 15.044,
+    "passed_assertions": 20,
+    "total_assertions": 20,
+    "output": "HERO NAME NATURAL WORDING: 20 / 20 PASS"
+  },
+  {
+    "file": "tools/test_hero_name_pattern_routing.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 15.06,
+    "passed_assertions": 18,
+    "total_assertions": 18,
+    "output": "HERO NAME PATTERN ROUTING: 18 / 18 PASS"
+  },
+  {
+    "file": "tools/test_hero_name_scope_followup.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 16.552,
+    "passed_assertions": 31,
+    "total_assertions": 31,
+    "output": "HERO NAME SCOPE FOLLOWUP: 31 / 31 PASS"
+  },
+  {
+    "file": "tools/test_hero_name_scope_natural_references.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 18.008,
+    "passed_assertions": 24,
+    "total_assertions": 24,
+    "output": "HERO NAME SCOPE NATURAL REFERENCES: 24 / 24 PASS"
+  },
+  {
+    "file": "tools/test_hero_same_name_groups.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 11.53,
+    "passed_assertions": 137,
+    "total_assertions": 137,
+    "output": "HERO SAME NAME GROUPS: 137 / 137 PASS"
+  }
+]

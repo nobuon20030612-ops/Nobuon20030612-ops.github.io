@@ -1,0 +1,38 @@
+[
+  {
+    "file": "tools/test_hero_same_name_natural_followups.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 13.461,
+    "passed_assertions": 337,
+    "total_assertions": 337,
+    "output": "HERO SAME NAME NATURAL FOLLOWUPS: 337 / 337 PASS"
+  },
+  {
+    "file": "tools/test_hide_button.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 0.175,
+    "passed_assertions": 16,
+    "total_assertions": 16,
+    "output": "HIDE BUTTON: 16 / 16 PASS"
+  },
+  {
+    "file": "tools/test_kana_normalization.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 5.134,
+    "passed_assertions": 80,
+    "total_assertions": 80,
+    "output": "KANA NORMALIZATION: 80 / 80 PASS"
+  },
+  {
+    "file": "tools/test_known_term_ack_followup.js",
+    "ok": true,
+    "returncode": 0,
+    "seconds": 5.311,
+    "passed_assertions": 10,
+    "total_assertions": 10,
+    "output": "KNOWN TERM ACK FOLLOWUP: 10 / 10 PASS"
+  }
+]

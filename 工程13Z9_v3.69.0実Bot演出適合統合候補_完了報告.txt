@@ -1,0 +1,41 @@
+工程13Z9 v3.69.0実Bot演出適合統合候補 完了報告
+
+基準正本:
+- ZIP SHA-256: c2763b849e6ad7a58bb4f5755b2025b39b2a38e08a8e0a809db79f01192d4d67
+- 容量: 7,347,653 bytes
+- ファイル数: 122件（ディレクトリエントリ3件を除外）
+- 正式画像SHA-256: 821be60a03e77a46c28d77811e3edf1bfc663e92fbad80c4fd3d5bec7e8c4650
+
+統合結果:
+- v3.69.0の既存122ファイル: 変更0 / 欠落0
+- 追加した演出ファイル: 3件
+  1. arukimiko-expression-runtime-stage13z9.css
+  2. arukimiko-expression-runtime-stage13z9.js
+  3. arukimiko-expression-adapter-stage13z9.js
+- 公開反映: なし
+- Bot正本への上書き: なし
+
+v3.69.0現物で修正した接続問題:
+1. ZIP内ディレクトリエントリをファイル数へ含めていた監査誤判定を修正。
+2. 回答直後のBot自動フォーカスがlive回答トークンを消す問題を修正。
+3. 「複数候補」「名前で教えて」等の同名聞き直しを返答不能表情へ分類。
+4. v3.69.0の同期ローカル計算中にも検索表情が見えるよう、計算開始前に180msの描画機会を確保。
+5. Transport再代入を永久監視せず、最大6秒の限定検証で再ラップ。
+6. 起動時履歴・live Transportに対応しない回答行を演出対象外にした。
+
+実測:
+- exact conflict audit: READY_FOR_ADAPTER_PORT_ONLY
+- 元122ファイル保護: PASS
+- JavaScript構文: 111 / 111 PASS
+- 追加3ファイル静的監査: 8 / 8 PASS
+- Chromium実UI統合: 25 / 25 PASS
+- Chromium予期しないページエラー: 0
+- 既知のroot is not defined: 166回（v3.69.0既存ADV診断由来、未変更）
+- 既存テスト完走確認: 46 / 68ファイル、2344検証PASS
+- 時間切れで結果なし: 2ファイル
+- 環境内で未完了: 20ファイル
+
+判定:
+- ローカル統合候補として目視確認可能。
+- 公開・正本上書き・最終統合はまだ不可。
+- 既存テストの未完了分をPASSとして扱わない。

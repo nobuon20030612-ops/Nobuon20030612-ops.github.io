@@ -1,0 +1,1704 @@
+{
+  "source_sequence": [
+    "jinpo-ai-chat.js",
+    "jinpo-bot-adv-theme.js",
+    "arukimiko-local-only-guard.js",
+    "jinpo-bot-conversation.js",
+    "jinpo-bot-context.js",
+    "jinpo-bot-dialog.js",
+    "jinpo-bot-page-context.js",
+    "jinpo-bot-site-source-data.js",
+    "jinpo-bot-site-guide.js",
+    "jinpo-bot-memory.js",
+    "jinpo-bot-arukimiko.js",
+    "jinpo-bot-state.js",
+    "jinpo-bot-actions.js",
+    "jinpo-bot-casual.js",
+    "jinpo-bot-nlu.js",
+    "jinpo-bot-parser.js",
+    "jinpo-bot-interpret.js",
+    "jinpo-bot-learning.js",
+    "jinpo-bot-help.js",
+    "jinpo-bot-capabilities.js",
+    "jinpo-bot-smalltalk.js",
+    "jinpo-bot-tool-data.js",
+    "jinpo-bot-tool-knowledge.js",
+    "jinpo-bot-hero-data.js",
+    "jinpo-bot-hero-knowledge.js",
+    "jinpo-bot-tairano-data.js",
+    "jinpo-bot-tairano-knowledge.js",
+    "jinpo-bot-web.js",
+    "jinpo-bot-carp-knowledge-data.js",
+    "jinpo-bot-carp-knowledge.js",
+    "jinpo-bot-carp.js",
+    "jinpo-bot-kashin-name.js",
+    "jinpo-bot.js",
+    "jinpo-bot-persona.js"
+  ],
+  "checks": [
+    {
+      "name": "target-version",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "adapter-exact-flag",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "target-sha-flag",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "transport-wrapped",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ui-open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "single-face-layer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "normal-transport-start",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "normal-result-reply",
+      "ok": true,
+      "detail": [
+        {
+          "at": 1785662019494,
+          "time": "9:13:39",
+          "type": "install",
+          "detail": "ready"
+        },
+        {
+          "at": 1785662019773,
+          "time": "9:13:39",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662019787,
+          "time": "9:13:39",
+          "type": "transport-refresh",
+          "detail": "input-focus:wrapped"
+        },
+        {
+          "at": 1785662019788,
+          "time": "9:13:39",
+          "type": "state",
+          "detail": "input"
+        },
+        {
+          "at": 1785662019791,
+          "time": "9:13:39",
+          "type": "interrupt",
+          "detail": "direct:focus"
+        },
+        {
+          "at": 1785662020125,
+          "time": "9:13:40",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662020128,
+          "time": "9:13:40",
+          "type": "transport",
+          "detail": "start:2"
+        },
+        {
+          "at": 1785662020173,
+          "time": "9:13:40",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662020175,
+          "time": "9:13:40",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662020177,
+          "time": "9:13:40",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662021144,
+          "time": "9:13:41",
+          "type": "transport",
+          "detail": "result:reply:2"
+        },
+        {
+          "at": 1785662021155,
+          "time": "9:13:41",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662021156,
+          "time": "9:13:41",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662021158,
+          "time": "9:13:41",
+          "type": "dom",
+          "detail": "assistant-display:2"
+        },
+        {
+          "at": 1785662021519,
+          "time": "9:13:41",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662021522,
+          "time": "9:13:41",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662022039,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662022042,
+          "time": "9:13:42",
+          "type": "sentence",
+          "detail": "2"
+        }
+      ]
+    },
+    {
+      "name": "same-name-not-success",
+      "ok": true,
+      "detail": [
+        {
+          "at": 1785662020175,
+          "time": "9:13:40",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662020177,
+          "time": "9:13:40",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662021144,
+          "time": "9:13:41",
+          "type": "transport",
+          "detail": "result:reply:2"
+        },
+        {
+          "at": 1785662021155,
+          "time": "9:13:41",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662021156,
+          "time": "9:13:41",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662021158,
+          "time": "9:13:41",
+          "type": "dom",
+          "detail": "assistant-display:2"
+        },
+        {
+          "at": 1785662021519,
+          "time": "9:13:41",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662021522,
+          "time": "9:13:41",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662022039,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662022042,
+          "time": "9:13:42",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662022508,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662022510,
+          "time": "9:13:42",
+          "type": "transport",
+          "detail": "start:3"
+        },
+        {
+          "at": 1785662022514,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662022515,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662022517,
+          "time": "9:13:42",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662022738,
+          "time": "9:13:42",
+          "type": "transport",
+          "detail": "result:reply:3"
+        },
+        {
+          "at": 1785662022750,
+          "time": "9:13:42",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662022751,
+          "time": "9:13:42",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662022753,
+          "time": "9:13:42",
+          "type": "dom",
+          "detail": "assistant-display:3"
+        },
+        {
+          "at": 1785662023113,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023116,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662023633,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023636,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662024153,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024156,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "3"
+        },
+        {
+          "at": 1785662024291,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024293,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "start:4"
+        },
+        {
+          "at": 1785662024297,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662024298,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024300,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662024547,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "result:cannot:4"
+        },
+        {
+          "at": 1785662024555,
+          "time": "9:13:44",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662024556,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662024558,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "assistant-display:4"
+        },
+        {
+          "at": 1785662024918,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024920,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662025438,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662025441,
+          "time": "9:13:45",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662025958,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "cannot"
+        },
+        {
+          "at": 1785662025961,
+          "time": "9:13:45",
+          "type": "result-state",
+          "detail": "cannot"
+        }
+      ]
+    },
+    {
+      "name": "same-name-clarification-cannot",
+      "ok": true,
+      "detail": {
+        "answer": "「その人」が複数候補に当てはまるのですよ。真田幸村、真田幸村(新星)、真田幸村(水練)、真田幸村(神魔)のどれか、名前で教えてください。",
+        "logs": [
+          {
+            "at": 1785662020175,
+            "time": "9:13:40",
+            "type": "state",
+            "detail": "thinking"
+          },
+          {
+            "at": 1785662020177,
+            "time": "9:13:40",
+            "type": "dom",
+            "detail": "typing"
+          },
+          {
+            "at": 1785662021144,
+            "time": "9:13:41",
+            "type": "transport",
+            "detail": "result:reply:2"
+          },
+          {
+            "at": 1785662021155,
+            "time": "9:13:41",
+            "type": "focus",
+            "detail": "automatic-return-ignored"
+          },
+          {
+            "at": 1785662021156,
+            "time": "9:13:41",
+            "type": "state",
+            "detail": "reply"
+          },
+          {
+            "at": 1785662021158,
+            "time": "9:13:41",
+            "type": "dom",
+            "detail": "assistant-display:2"
+          },
+          {
+            "at": 1785662021519,
+            "time": "9:13:41",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662021522,
+            "time": "9:13:41",
+            "type": "sentence",
+            "detail": "1"
+          },
+          {
+            "at": 1785662022039,
+            "time": "9:13:42",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662022042,
+            "time": "9:13:42",
+            "type": "sentence",
+            "detail": "2"
+          },
+          {
+            "at": 1785662022508,
+            "time": "9:13:42",
+            "type": "state",
+            "detail": "thinking"
+          },
+          {
+            "at": 1785662022510,
+            "time": "9:13:42",
+            "type": "transport",
+            "detail": "start:3"
+          },
+          {
+            "at": 1785662022514,
+            "time": "9:13:42",
+            "type": "state",
+            "detail": "idle"
+          },
+          {
+            "at": 1785662022515,
+            "time": "9:13:42",
+            "type": "state",
+            "detail": "thinking"
+          },
+          {
+            "at": 1785662022517,
+            "time": "9:13:42",
+            "type": "dom",
+            "detail": "typing"
+          },
+          {
+            "at": 1785662022738,
+            "time": "9:13:42",
+            "type": "transport",
+            "detail": "result:reply:3"
+          },
+          {
+            "at": 1785662022750,
+            "time": "9:13:42",
+            "type": "focus",
+            "detail": "automatic-return-ignored"
+          },
+          {
+            "at": 1785662022751,
+            "time": "9:13:42",
+            "type": "state",
+            "detail": "reply"
+          },
+          {
+            "at": 1785662022753,
+            "time": "9:13:42",
+            "type": "dom",
+            "detail": "assistant-display:3"
+          },
+          {
+            "at": 1785662023113,
+            "time": "9:13:43",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662023116,
+            "time": "9:13:43",
+            "type": "sentence",
+            "detail": "1"
+          },
+          {
+            "at": 1785662023633,
+            "time": "9:13:43",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662023636,
+            "time": "9:13:43",
+            "type": "sentence",
+            "detail": "2"
+          },
+          {
+            "at": 1785662024153,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662024156,
+            "time": "9:13:44",
+            "type": "sentence",
+            "detail": "3"
+          },
+          {
+            "at": 1785662024291,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "thinking"
+          },
+          {
+            "at": 1785662024293,
+            "time": "9:13:44",
+            "type": "transport",
+            "detail": "start:4"
+          },
+          {
+            "at": 1785662024297,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "idle"
+          },
+          {
+            "at": 1785662024298,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "thinking"
+          },
+          {
+            "at": 1785662024300,
+            "time": "9:13:44",
+            "type": "dom",
+            "detail": "typing"
+          },
+          {
+            "at": 1785662024547,
+            "time": "9:13:44",
+            "type": "transport",
+            "detail": "result:cannot:4"
+          },
+          {
+            "at": 1785662024555,
+            "time": "9:13:44",
+            "type": "focus",
+            "detail": "automatic-return-ignored"
+          },
+          {
+            "at": 1785662024556,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "reply"
+          },
+          {
+            "at": 1785662024558,
+            "time": "9:13:44",
+            "type": "dom",
+            "detail": "assistant-display:4"
+          },
+          {
+            "at": 1785662024918,
+            "time": "9:13:44",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662024920,
+            "time": "9:13:44",
+            "type": "sentence",
+            "detail": "1"
+          },
+          {
+            "at": 1785662025438,
+            "time": "9:13:45",
+            "type": "state",
+            "detail": "sentence"
+          },
+          {
+            "at": 1785662025441,
+            "time": "9:13:45",
+            "type": "sentence",
+            "detail": "2"
+          },
+          {
+            "at": 1785662025958,
+            "time": "9:13:45",
+            "type": "state",
+            "detail": "cannot"
+          },
+          {
+            "at": 1785662025961,
+            "time": "9:13:45",
+            "type": "result-state",
+            "detail": "cannot"
+          }
+        ]
+      }
+    },
+    {
+      "name": "search-state-seen",
+      "ok": true,
+      "detail": [
+        {
+          "at": 1785662022753,
+          "time": "9:13:42",
+          "type": "dom",
+          "detail": "assistant-display:3"
+        },
+        {
+          "at": 1785662023113,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023116,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662023633,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023636,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662024153,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024156,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "3"
+        },
+        {
+          "at": 1785662024291,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024293,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "start:4"
+        },
+        {
+          "at": 1785662024297,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662024298,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024300,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662024547,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "result:cannot:4"
+        },
+        {
+          "at": 1785662024555,
+          "time": "9:13:44",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662024556,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662024558,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "assistant-display:4"
+        },
+        {
+          "at": 1785662024918,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024920,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662025438,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662025441,
+          "time": "9:13:45",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662025958,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "cannot"
+        },
+        {
+          "at": 1785662025961,
+          "time": "9:13:45",
+          "type": "result-state",
+          "detail": "cannot"
+        },
+        {
+          "at": 1785662026132,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662026135,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "start:5"
+        },
+        {
+          "at": 1785662026136,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "search-detected:5"
+        },
+        {
+          "at": 1785662026141,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662026143,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662026145,
+          "time": "9:13:46",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662026317,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "searching"
+        },
+        {
+          "at": 1785662026320,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "search-visible:5"
+        },
+        {
+          "at": 1785662030484,
+          "time": "9:13:50",
+          "type": "transport",
+          "detail": "result:reply:5"
+        },
+        {
+          "at": 1785662030512,
+          "time": "9:13:50",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662030513,
+          "time": "9:13:50",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662030516,
+          "time": "9:13:50",
+          "type": "dom",
+          "detail": "assistant-display:5"
+        },
+        {
+          "at": 1785662030877,
+          "time": "9:13:50",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662030879,
+          "time": "9:13:50",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662031397,
+          "time": "9:13:51",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662031399,
+          "time": "9:13:51",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662031917,
+          "time": "9:13:51",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662031920,
+          "time": "9:13:51",
+          "type": "sentence",
+          "detail": "3"
+        }
+      ]
+    },
+    {
+      "name": "search-not-success",
+      "ok": true,
+      "detail": [
+        {
+          "at": 1785662022753,
+          "time": "9:13:42",
+          "type": "dom",
+          "detail": "assistant-display:3"
+        },
+        {
+          "at": 1785662023113,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023116,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662023633,
+          "time": "9:13:43",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662023636,
+          "time": "9:13:43",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662024153,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024156,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "3"
+        },
+        {
+          "at": 1785662024291,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024293,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "start:4"
+        },
+        {
+          "at": 1785662024297,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662024298,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662024300,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662024547,
+          "time": "9:13:44",
+          "type": "transport",
+          "detail": "result:cannot:4"
+        },
+        {
+          "at": 1785662024555,
+          "time": "9:13:44",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662024556,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662024558,
+          "time": "9:13:44",
+          "type": "dom",
+          "detail": "assistant-display:4"
+        },
+        {
+          "at": 1785662024918,
+          "time": "9:13:44",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662024920,
+          "time": "9:13:44",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662025438,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662025441,
+          "time": "9:13:45",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662025958,
+          "time": "9:13:45",
+          "type": "state",
+          "detail": "cannot"
+        },
+        {
+          "at": 1785662025961,
+          "time": "9:13:45",
+          "type": "result-state",
+          "detail": "cannot"
+        },
+        {
+          "at": 1785662026132,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662026135,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "start:5"
+        },
+        {
+          "at": 1785662026136,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "search-detected:5"
+        },
+        {
+          "at": 1785662026141,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "idle"
+        },
+        {
+          "at": 1785662026143,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "thinking"
+        },
+        {
+          "at": 1785662026145,
+          "time": "9:13:46",
+          "type": "dom",
+          "detail": "typing"
+        },
+        {
+          "at": 1785662026317,
+          "time": "9:13:46",
+          "type": "state",
+          "detail": "searching"
+        },
+        {
+          "at": 1785662026320,
+          "time": "9:13:46",
+          "type": "transport",
+          "detail": "search-visible:5"
+        },
+        {
+          "at": 1785662030484,
+          "time": "9:13:50",
+          "type": "transport",
+          "detail": "result:reply:5"
+        },
+        {
+          "at": 1785662030512,
+          "time": "9:13:50",
+          "type": "focus",
+          "detail": "automatic-return-ignored"
+        },
+        {
+          "at": 1785662030513,
+          "time": "9:13:50",
+          "type": "state",
+          "detail": "reply"
+        },
+        {
+          "at": 1785662030516,
+          "time": "9:13:50",
+          "type": "dom",
+          "detail": "assistant-display:5"
+        },
+        {
+          "at": 1785662030877,
+          "time": "9:13:50",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662030879,
+          "time": "9:13:50",
+          "type": "sentence",
+          "detail": "1"
+        },
+        {
+          "at": 1785662031397,
+          "time": "9:13:51",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662031399,
+          "time": "9:13:51",
+          "type": "sentence",
+          "detail": "2"
+        },
+        {
+          "at": 1785662031917,
+          "time": "9:13:51",
+          "type": "state",
+          "detail": "sentence"
+        },
+        {
+          "at": 1785662031920,
+          "time": "9:13:51",
+          "type": "sentence",
+          "detail": "3"
+        }
+      ]
+    },
+    {
+      "name": "history-row-ignored",
+      "ok": true,
+      "detail": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    {
+      "name": "minimized",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "restored",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "transport-rewrapped",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "typing-input-notice",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "single-face-layer-after-flows",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "resize-320x568",
+      "ok": true,
+      "detail": {
+        "x": 8,
+        "y": 150,
+        "width": 304,
+        "height": 330
+      }
+    },
+    {
+      "name": "resize-375x667",
+      "ok": true,
+      "detail": {
+        "x": 8,
+        "y": 150,
+        "width": 359,
+        "height": 429
+      }
+    },
+    {
+      "name": "resize-768x1024",
+      "ok": true,
+      "detail": {
+        "x": 291.203125,
+        "y": 184,
+        "width": 460.796875,
+        "height": 737.265625
+      }
+    },
+    {
+      "name": "resize-1366x768",
+      "ok": true,
+      "detail": {
+        "x": 659,
+        "y": 154,
+        "width": 683,
+        "height": 552.953125
+      }
+    },
+    {
+      "name": "resize-1920x1080",
+      "ok": true,
+      "detail": {
+        "x": 1089.609375,
+        "y": 216,
+        "width": 806.390625,
+        "height": 777.59375
+      }
+    },
+    {
+      "name": "bounded-transport-verifier",
+      "ok": true,
+      "detail": {
+        "version": "13Z9.0-v3.69.0-exact",
+        "target": "3.69.0",
+        "verifiedAgainstExactTargetZip": true,
+        "targetZipSha256": "c2763b849e6ad7a58bb4f5755b2025b39b2a38e08a8e0a809db79f01192d4d67",
+        "installed": true,
+        "transportWrapped": true,
+        "state": "idle",
+        "idleMs": 8000,
+        "logCount": 97,
+        "storageAccess": false,
+        "ui": true,
+        "visible": true,
+        "busy": false,
+        "flowToken": 8,
+        "activeTransportToken": 0,
+        "pendingResult": "reply",
+        "pendingResultToken": 0,
+        "toggleLock": false,
+        "transportRetryCount": 0,
+        "transportVerifyCount": 0,
+        "timers": {
+          "idle": true,
+          "wakeIdle": false,
+          "inputNotice": false,
+          "minimize": false,
+          "sentence": 0,
+          "transportRetry": false,
+          "transportVerify": false
+        },
+        "observers": {
+          "messages": true,
+          "classes": true
+        },
+        "stats": {
+          "plays": 45,
+          "activities": 3,
+          "inputNotices": 3,
+          "minimizeRequests": 2,
+          "minimizeDebounced": 0,
+          "hiddenStops": 0,
+          "ignoredRows": 0,
+          "historyRowsIgnored": 1,
+          "transportStarts": 4,
+          "transportResults": 4,
+          "transportWrapAttempts": 5
+        }
+      }
+    },
+    {
+      "name": "no-storage-access-flag",
+      "ok": true,
+      "detail": {
+        "version": "13Z9.0-v3.69.0-exact",
+        "target": "3.69.0",
+        "verifiedAgainstExactTargetZip": true,
+        "targetZipSha256": "c2763b849e6ad7a58bb4f5755b2025b39b2a38e08a8e0a809db79f01192d4d67",
+        "installed": true,
+        "transportWrapped": true,
+        "state": "idle",
+        "idleMs": 8000,
+        "logCount": 97,
+        "storageAccess": false,
+        "ui": true,
+        "visible": true,
+        "busy": false,
+        "flowToken": 8,
+        "activeTransportToken": 0,
+        "pendingResult": "reply",
+        "pendingResultToken": 0,
+        "toggleLock": false,
+        "transportRetryCount": 0,
+        "transportVerifyCount": 0,
+        "timers": {
+          "idle": true,
+          "wakeIdle": false,
+          "inputNotice": false,
+          "minimize": false,
+          "sentence": 0,
+          "transportRetry": false,
+          "transportVerify": false
+        },
+        "observers": {
+          "messages": true,
+          "classes": true
+        },
+        "stats": {
+          "plays": 45,
+          "activities": 3,
+          "inputNotices": 3,
+          "minimizeRequests": 2,
+          "minimizeDebounced": 0,
+          "hiddenStops": 0,
+          "ignoredRows": 0,
+          "historyRowsIgnored": 1,
+          "transportStarts": 4,
+          "transportResults": 4,
+          "transportWrapAttempts": 5
+        }
+      }
+    }
+  ],
+  "passed": 25,
+  "total": 25,
+  "console": [],
+  "page_errors": [
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined"
+  ],
+  "known_preexisting_errors": [
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined",
+    "root is not defined"
+  ],
+  "unexpected_page_errors": [],
+  "all_passed": true
+}

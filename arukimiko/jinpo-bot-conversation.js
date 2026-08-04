@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 共通会話ルーター v3.12.0
+ * 歩き巫女 共通会話ルーター v3.13.0
  *
  * 目的:
  * - 「ページ案内」「事実質問」「会話の続き」を各モジュール任せにせず最初に一度だけ判定。
@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_CONVERSATION)return;
-  var VERSION='3.12.0';
+  var VERSION='3.13.0';
   var RESET_KEY='arukimikoConversationResetAt.v1';
 
   function resetContext(){
@@ -3639,6 +3639,39 @@
     return null;
   }
 
+  // 直近の英傑回答で実際に選ばれた人物を、回答メタデータから取得する。
+  // 一覧本文に通常版が先頭表示されていても、直後のランキングで1人に絞られた場合は
+  // その最新結果を「その人」の参照先として優先する。
+  function recentHeroResultReference(history){
+    var h=filterHistory(history),skippedAck=false;
+    for(var i=h.length-1;i>=0&&i>=h.length-16;i--){
+      var item=h[i];if(!item)continue;
+      if(item.role==='user'){
+        if(!skippedAck&&isResumeNoise(item.text)){skippedAck=true;continue;}
+        if(isFollowupOnlyUtterance(item.text))continue;
+        // 最新の実質的な別質問を越えて、古い英傑結果を復活させない。
+        if(i<h.length-1)return null;
+        continue;
+      }
+      if(item.role!=='assistant')continue;
+      var meta=item.meta||{},d=meta.data||{};
+      if(!d.heroKnowledge){
+        // 相槌への短い応答だけは1回越えてよいが、別分野の回答は越えない。
+        var before=i>0?h[i-1]||{}:{};
+        if(!skippedAck&&before.role==='user'&&isResumeNoise(before.text)){skippedAck=true;continue;}
+        return null;
+      }
+      var names=[];
+      if(d.hero)names=[S(d.hero)];
+      else if(Array.isArray(d.heroes))d.heroes.forEach(function(v){v=S(v);if(v&&names.indexOf(v)<0)names.push(v);});
+      if(!names.length&&Array.isArray(d.selectedHeroes))d.selectedHeroes.forEach(function(v){v=S(v);if(v&&names.indexOf(v)<0)names.push(v);});
+      if(names.length===1)return {value:names[0],type:'person',domain:'jinpo',source:'hero_result'};
+      if(names.length>1)return {ambiguous:true,candidates:names.slice(0,8),type:'person',domain:'jinpo',source:'hero_result'};
+      return null;
+    }
+    return null;
+  }
+
   function resolveEntityReference(text,history){
     var t=S(text);if(!t||t.length>64)return null;
     // 「それで？」は対象指示の「それ＋で」ではなく、会話を先へ進める短い追質問。
@@ -3652,7 +3685,7 @@
       if(!suffix||/^(?:は|って)?[？?]?$|^(?:の|は|って|について|を|が|も|以外|以外の).+/.test(suffix)){
         // 「その人」はBot回答本文にたまたま列挙された脇役ではなく、現在の会話枝の主役を優先する。
         // ただしユーザー自身が同一発話で複数人物を並べた直後だけは決め打ちしない。
-        var activePerson=activeRecentSubject(h,{personOnly:true}),personFrames=topicFrames(h,{limit:12}),personFrame=personFrames.length?personFrames[personFrames.length-1]:null;
+        var heroResultPerson=recentHeroResultReference(h),activePerson=activeRecentSubject(h,{personOnly:true}),personFrames=topicFrames(h,{limit:12}),personFrame=personFrames.length?personFrames[personFrames.length-1]:null;
         var explicitPeople=[];
         if(personFrame&&Array.isArray(personFrame.userEntities)){
           personFrame.userEntities.forEach(function(x){
@@ -3670,7 +3703,9 @@
           });
         }
         if(explicitPeople.length>1)return {ambiguous:true,candidates:explicitPeople.slice(0,6),kind:'person'};
-        if(activePerson&&activePerson.value)ref=activePerson;
+        if(heroResultPerson&&heroResultPerson.ambiguous)return {ambiguous:true,candidates:heroResultPerson.candidates||[],reference:heroResultPerson,kind:'person'};
+        if(heroResultPerson&&heroResultPerson.value)ref=heroResultPerson;
+        else if(activePerson&&activePerson.value)ref=activePerson;
         else ref=findRecentEntity(h,{personOnly:true});
         if(ref&&ref.ambiguous)return {ambiguous:true,candidates:ref.candidates||[],reference:ref,kind:'person'};
         if(ref&&ref.value)return {message:ref.value+(suffix||'について'),reference:ref,kind:'person'};
