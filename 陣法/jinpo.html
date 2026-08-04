@@ -9796,6 +9796,49 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 }
 </style>
 
+<script id="recommend-formation-shift-state-fix">
+(function(){
+  'use strict';
+  if(window.__recommendFormationShiftStateFix) return;
+  window.__recommendFormationShiftStateFix = true;
+
+  function getRecommendActive(detail){
+    if(detail && typeof detail.active === 'boolean') return detail.active;
+    try{
+      return !!(window.JINPO_FAST_SEARCH &&
+        typeof window.JINPO_FAST_SEARCH.isRecommendMode === 'function' &&
+        window.JINPO_FAST_SEARCH.isRecommendMode());
+    }catch(e){
+      return false;
+    }
+  }
+
+  function sync(detail){
+    if(!document.body) return;
+    document.body.classList.toggle('jinpo-recommend-active',getRecommendActive(detail));
+  }
+
+  window.addEventListener('jinpo:recommend-state',function(ev){
+    sync(ev && ev.detail ? ev.detail : null);
+  });
+  window.addEventListener('jinpo:recommend-priority-sync',function(){
+    sync(null);
+  });
+
+  function init(){
+    sync(null);
+    setTimeout(function(){sync(null);},0);
+    setTimeout(function(){sync(null);},120);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded',init,{once:true});
+  }else{
+    init();
+  }
+})();
+</script>
+
 <script id="formation-step1-emphasis-user-request">
 (function(){
   'use strict';
