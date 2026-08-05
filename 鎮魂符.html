@@ -18,7 +18,8 @@
   --shadow:0 0 18px rgba(120,255,60,.55), 0 0 34px rgba(57,255,167,.28);
 }
 * { box-sizing:border-box; }
-html,body { margin:0; min-height:100%; background:#050706; color:#eee; font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",Meiryo,serif; }
+html,body { margin:0; width:100%; min-height:100%; background:#050706; color:#eee; font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",Meiryo,serif; }
+body { overflow:auto; }
 body::before {
   content:""; position:fixed; inset:0; z-index:-3;
   background:
@@ -34,7 +35,7 @@ body::after {
   opacity:.45;
 }
 .app {
-  width:100vw; height:100vh; min-height:620px; margin:0 auto; position:relative; overflow:hidden;
+  width:100vw; height:100vh; min-height:620px; margin:0; position:relative; overflow:hidden; zoom:var(--app-fit-zoom, 1);
   border:1px solid rgba(220,220,200,.32); border-radius:4px;
   box-shadow: inset 0 0 60px rgba(0,0,0,.8), 0 0 24px rgba(0,0,0,.6);
 }
@@ -178,10 +179,7 @@ body::after {
 .grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; min-height:0; }
 .box { border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.25); border-radius:10px; padding:9px; }
 .box h3 { margin:0 0 6px; font-size:19px; color:#caff88; }
-.job-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-/* 光・闇は薬師・傾奇者の直下に配置 */
-.job-btn[data-job="光"] { grid-column:3; }
-.job-btn[data-job="闇"] { grid-column:4; }
+.job-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
 .job-btn {
   font-family:"Yu Mincho","Hiragino Mincho ProN",serif; font-size:clamp(18px, 2.1vh, 24px); font-weight:800; letter-spacing:.08em; color:#fff7d0; cursor:pointer;
   background:linear-gradient(180deg, rgba(52,72,49,.92), rgba(6,8,8,.92)); border:1px solid rgba(133,255,52,.35); border-radius:10px; padding:clamp(6px, .95vh, 10px) 6px;
@@ -589,8 +587,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
  .app { width:900px; height:720px; }
  .modal { width:96vw; }
  .grid { grid-template-columns:1fr; }
- .job-grid { grid-template-columns:repeat(2,1fr); }
- .job-btn[data-job="光"], .job-btn[data-job="闇"] { grid-column:auto; }
+ .job-grid { grid-template-columns:repeat(5,1fr); }
 }
 
 /* GitHub Pages表示時もローカル表示と同じ大きさに近づける：モーダルの表示サイズのみ調整 */
@@ -793,47 +790,91 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 
 
 
-/* 鎮魂符一覧モーダルのみ拡大（その他レイアウト・機能は変更なし） */
-.bonus-list-backdrop.open {
-  align-items:flex-start !important;
-  justify-content:center !important;
-  padding:4px !important;
+/* 画面内表示優先：通常は全体を縮小して収め、読めないほど小さい画面だけスクロールを許可 */
+.fit-surface {
+  zoom:var(--surface-fit-zoom, 1);
+  transform:none !important;
+  flex:0 0 auto !important;
 }
-.bonus-list-modal {
-  width:calc(100vw - 8px) !important;
+.modal.fit-surface {
+  width:1500px !important;
+  height:760px !important;
   max-width:none !important;
-  max-height:calc(100vh - 8px) !important;
-  padding:12px !important;
+  max-height:none !important;
 }
-.bonus-list-head {
-  padding-bottom:10px !important;
-  margin-bottom:2px !important;
+.fit-backdrop {
+  overflow:hidden !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 !important;
 }
-.bonus-list-title {
-  font-size:clamp(30px, 3.4vh, 42px) !important;
+.fit-backdrop.fit-scroll-needed {
+  overflow:auto !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
 }
-.bonus-list-modal .close {
-  font-size:clamp(22px, 2.45vh, 30px) !important;
-  padding:10px 18px !important;
+
+/* 鎮魂符一覧：10列を基準画面内へ収める。小画面時のみ表内スクロールを残す。 */
+.bonus-list-modal.fit-surface {
+  width:1500px !important;
+  height:860px !important;
+  max-width:none !important;
+  max-height:none !important;
+  padding:10px !important;
 }
+.bonus-list-head { flex:0 0 auto; padding-bottom:7px !important; margin-bottom:0 !important; }
+.bonus-list-title { font-size:32px !important; }
+.bonus-list-modal .close { font-size:20px !important; padding:8px 14px !important; }
 .bonus-table-wrap {
-  padding-top:10px !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  padding-top:7px !important;
+  display:block !important;
+  overflow:hidden !important;
 }
 .bonus-table {
-  font-size:clamp(16px, 1.9vh, 22px) !important;
-  line-height:1.24 !important;
+  width:100% !important;
+  height:100% !important;
+  table-layout:fixed !important;
+  font-size:15px !important;
+  line-height:1.12 !important;
 }
-.bonus-table th,
-.bonus-table td {
-  padding:6px 8px !important;
-  line-height:1.24 !important;
+.bonus-table th, .bonus-table td {
+  padding:3px 4px !important;
+  line-height:1.12 !important;
+  word-break:normal !important;
+  overflow-wrap:anywhere !important;
 }
-.bonus-table thead th {
-  font-size:clamp(17px, 2.05vh, 24px) !important;
+.bonus-table thead th { font-size:16px !important; }
+.bonus-table .level-col { width:5.4% !important; }
+.fit-scroll-needed .bonus-table-wrap { overflow:auto !important; }
+.fit-scroll-needed .bonus-table { min-width:1120px !important; min-height:720px !important; }
+
+/* 技能一覧：10件を2列×5段で通常画面内へ収める。 */
+.skill-list-modal.fit-surface {
+  width:1500px !important;
+  height:820px !important;
+  max-width:none !important;
+  max-height:none !important;
+  padding:10px !important;
 }
-.bonus-table .bonus-cell {
-  line-height:1.25 !important;
+.skill-list-head { flex:0 0 auto; }
+.skill-grid {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows:repeat(5, minmax(0, 1fr)) !important;
+  gap:4px !important;
+  overflow:hidden !important;
 }
+.skill-card {
+  min-height:0 !important;
+  height:auto !important;
+  grid-template-columns:58px 250px 1fr !important;
+  overflow:hidden !important;
+}
+.fit-scroll-needed .skill-list-modal { height:auto !important; min-height:820px !important; }
+.fit-scroll-needed .skill-grid { overflow:visible !important; min-width:1050px !important; }
 
 /* 鎮魂符についてモーダル（添付画像を原文のまま表示） */
 .requiem-about-backdrop { display:none; position:fixed; inset:0; z-index:37; background:rgba(0,0,0,.76); align-items:center; justify-content:center; padding:10px; }
@@ -854,6 +895,16 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .requiem-about-title { font-size:clamp(22px, 2.7vh, 32px); color:#f4d987; letter-spacing:.06em; text-shadow:0 2px #000, 0 0 12px rgba(244,217,135,.38); }
 .requiem-about-image-wrap { flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding-top:8px; overflow:auto; }
 .requiem-about-image { display:block; width:100%; height:auto; max-height:calc(100vh - 100px); object-fit:contain; }
+
+
+/* 説明画像も通常は画面内へ収め、極小画面のみスクロール可能 */
+.requiem-about-modal.fit-surface {
+  width:1600px !important;
+  height:900px !important;
+  max-width:none !important;
+  max-height:none !important;
+}
+.fit-scroll-needed .requiem-about-image-wrap { overflow:auto !important; }
 
 </style>
 </head>
@@ -1019,8 +1070,8 @@ const SKILL_LIST_DATA = [
   {job:'鍛冶屋', name:'陽動乱射', need:'最大気合の約２０％', desc:'敵全体に間接攻撃を行いつつ注意を引きつける。自身に防御力に応じてダメージが軽減する結界を張る。'},
   {job:'薬師', name:'上騰命癒', need:'最大気合の約１５％', desc:'選択した味方１人を大回復。味方全体の生命力を回復し、物理・術耐性と生命力の最大値を上昇させる。'},
   {job:'傾奇者', name:'龍驤麟振', need:'最大気合の約２５％', desc:'敵単体に間接攻撃と自身の最高属性の術攻撃を行う。自身の最高属性の四象を上昇させ、すべての生命力ダメージが増加する地勢を宿らせる。'},
-  {job:'光', name:'光明の祝福', need:'記載なし', item:'記載なし', desc:'味方全体の生命力を回復し、防御力・知力・魅力を上昇させる。'},
-  {job:'闇', name:'暗闇の加護', need:'記載なし', item:'記載なし', desc:'味方全体の気合を回復し、攻撃力と器用さを上昇させる。'}
+  {job:'光', name:'光明の祝福', need:'資料に記載なし', item:'資料に記載なし', desc:'技能効果の詳細は添付資料に記載されていません。'},
+  {job:'闇', name:'暗闇の加護', need:'資料に記載なし', item:'資料に記載なし', desc:'技能効果の詳細は添付資料に記載されていません。'}
 ];
 const STORAGE_KEY = 'chinkonfu-equips-v1';
 const POSITIONS = ['頭','胴','左','腕','足','右','腰','首'];
@@ -1705,40 +1756,71 @@ document.addEventListener('DOMContentLoaded', init);
 <script>
 (function(){
   'use strict';
-  function fitChinkonfuModal(){
-    var modal = document.querySelector('#modalBackdrop .modal');
-    var backdrop = document.getElementById('modalBackdrop');
-    if (!modal || !backdrop) return;
-    modal.classList.add('auto-fit-modal');
+  var MIN_ZOOM = 0.46;
 
-    var vw = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 0);
-    var vh = Math.max(320, window.innerHeight || document.documentElement.clientHeight || 0);
-    var isSmall = vw <= 900;
-    var baseW = isSmall ? 900 : 1500;
-    var baseH = isSmall ? 720 : 760;
-    var margin = isSmall ? 8 : 20;
-    var scale = Math.min(1, (vw - margin) / baseW, (vh - margin) / baseH);
-    if (!isFinite(scale) || scale <= 0) scale = 1;
-    scale = Math.max(scale, isSmall ? 0.36 : 0.68);
-
-    modal.style.setProperty('--modal-fit-width', baseW + 'px');
-    modal.style.setProperty('--modal-fit-height', baseH + 'px');
-    modal.style.setProperty('--modal-fit-scale', String(scale));
-
-    var needsScroll = scale < 0.999 || (baseH * scale) > (vh - margin) || (baseW * scale) > (vw - margin);
-    backdrop.classList.toggle('fit-scroll-needed', !!needsScroll);
+  function viewportSize(){
+    return {
+      w: Math.max(320, window.innerWidth || document.documentElement.clientWidth || 0),
+      h: Math.max(320, window.innerHeight || document.documentElement.clientHeight || 0)
+    };
   }
 
-  window.addEventListener('resize', fitChinkonfuModal, { passive:true });
-  window.addEventListener('orientationchange', function(){ setTimeout(fitChinkonfuModal, 120); }, { passive:true });
-  document.addEventListener('click', function(){ setTimeout(fitChinkonfuModal, 0); }, true);
-  document.addEventListener('DOMContentLoaded', function(){
-    fitChinkonfuModal();
-    var backdrop = document.getElementById('modalBackdrop');
-    if (backdrop && 'MutationObserver' in window) {
-      new MutationObserver(fitChinkonfuModal).observe(backdrop, { attributes:true, attributeFilter:['class'] });
-    }
-  });
+  function fitMainApp(){
+    var app = document.querySelector('.app');
+    if (!app) return false;
+    app.style.setProperty('--app-fit-zoom', '1');
+    app.style.removeProperty('width');
+    app.style.removeProperty('height');
+    var naturalW = Math.max(1180, app.offsetWidth || 900, app.scrollWidth || 0);
+    var naturalH = Math.max(app.offsetHeight || 720, app.scrollHeight || 0);
+    app.style.width = naturalW + 'px';
+    app.style.height = naturalH + 'px';
+    naturalW = Math.max(app.offsetWidth || naturalW, app.scrollWidth || naturalW);
+    naturalH = Math.max(app.offsetHeight || naturalH, app.scrollHeight || naturalH);
+    app.style.width = naturalW + 'px';
+    app.style.height = naturalH + 'px';
+    var vp = viewportSize();
+    var ideal = Math.min(1, vp.w / naturalW, vp.h / naturalH);
+    var zoom = Math.max(MIN_ZOOM, ideal);
+    app.style.setProperty('--app-fit-zoom', String(zoom));
+    var needsScroll = ideal < MIN_ZOOM;
+    document.documentElement.classList.toggle('app-fit-scroll-needed', needsScroll);
+    return needsScroll;
+  }
+
+  function fitSurface(backdropId, modalSelector, baseW, baseH, minZoom){
+    var backdrop = document.getElementById(backdropId);
+    var modal = backdrop && backdrop.querySelector(modalSelector);
+    if (!backdrop || !modal) return;
+    backdrop.classList.add('fit-backdrop');
+    modal.classList.add('fit-surface');
+    modal.style.setProperty('--surface-fit-zoom', '1');
+    var vp = viewportSize();
+    var margin = 12;
+    var ideal = Math.min(1, (vp.w - margin) / baseW, (vp.h - margin) / baseH);
+    if (!isFinite(ideal) || ideal <= 0) ideal = 1;
+    var zoom = Math.max(minZoom, ideal);
+    modal.style.setProperty('--surface-fit-zoom', String(zoom));
+    backdrop.classList.toggle('fit-scroll-needed', ideal < minZoom);
+  }
+
+  function fitAll(){
+    var mainNeedsScroll = fitMainApp();
+    fitSurface('modalBackdrop', '.modal', 1500, 760, MIN_ZOOM);
+    fitSurface('bonusListBackdrop', '.bonus-list-modal', 1500, 860, MIN_ZOOM);
+    fitSurface('skillListBackdrop', '.skill-list-modal', 1500, 820, MIN_ZOOM);
+    fitSurface('requiemAboutBackdrop', '.requiem-about-modal', 1600, 900, MIN_ZOOM);
+    var overlayOpen = ['modalBackdrop','bonusListBackdrop','skillListBackdrop','requiemAboutBackdrop'].some(function(id){
+      var el = document.getElementById(id);
+      return !!(el && el.classList.contains('open'));
+    });
+    document.body.style.overflow = overlayOpen ? 'hidden' : (mainNeedsScroll ? 'auto' : 'hidden');
+  }
+
+  window.addEventListener('resize', fitAll, { passive:true });
+  window.addEventListener('orientationchange', function(){ setTimeout(fitAll, 120); }, { passive:true });
+  document.addEventListener('click', function(){ setTimeout(fitAll, 0); }, true);
+  document.addEventListener('DOMContentLoaded', fitAll);
 })();
 </script>
 
