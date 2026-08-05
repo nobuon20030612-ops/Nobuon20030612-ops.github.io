@@ -2,6 +2,17 @@
   "schema": "jinpo-generation-history/v1",
   "generations": [
     {
+      "generation_id": "gen_edfc3cac11ceda2e4ecce068",
+      "file": "data/generation_history/gen_edfc3cac11ceda2e4ecce068.json",
+      "persisted_at_utc": "2026-08-05T08:14:20.626002+00:00",
+      "persisted_at_jst": "2026-08-05T17:14:20.626002+09:00",
+      "generation_mode": "full",
+      "heroes": 385,
+      "bonds": 91,
+      "full_records": 2079522,
+      "artifact_set_sha256": "463c1c752aa50e6fc5e92b7b9b0793de5c190b956bf37e5944d192723db56caf"
+    },
+    {
       "generation_id": "gen_0e32d1747e9dcfcbc0f732bd",
       "file": "data/generation_history/gen_0e32d1747e9dcfcbc0f732bd.json",
       "persisted_at_utc": "2026-07-31T14:03:15.968385+00:00",
