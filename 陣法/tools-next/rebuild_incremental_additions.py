@@ -302,6 +302,22 @@ def _new_ids_from_sync() -> tuple[set[int], dict]:
     return ids, sync
 
 
+def sync_manifest_display_tables(manifest: dict, heroes: dict, bonds: dict, bond_names: dict) -> None:
+    """Refresh manifest ID-to-display-name tables from the current masters."""
+    max_hid = max(heroes, default=0)
+    hero_names = [''] * (max_hid + 1)
+    for hid, hero in heroes.items():
+        hero_names[hid] = hero['name']
+    manifest['hero_names'] = hero_names
+
+    max_bid = max(bonds, default=0)
+    names = [''] * (max_bid + 1)
+    for bid, name in bond_names.items():
+        names[bid] = name
+    manifest['bond_names'] = names
+    manifest['record_size'] = REC
+
+
 def main() -> None:
     started = time.time()
     new_ids, sync = _new_ids_from_sync()
@@ -310,6 +326,10 @@ def main() -> None:
     missing = sorted(new_ids - set(heroes))
     if missing:
         raise RuntimeError(f'新規internal_idが英傑マスタにありません: {missing}')
+
+    # 増分生成でも、画面表示に使うID→名称表を現在のmasterから毎回作り直す。
+    # 全再生成経路と同じ規則に揃え、新規英傑の名前がmanifestへ欠落しないようにする。
+    sync_manifest_display_tables(manifest, heroes, bonds, bond_names)
 
     report = {
         'status': 'RUNNING',
