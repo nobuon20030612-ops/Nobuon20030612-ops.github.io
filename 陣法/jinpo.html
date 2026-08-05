@@ -9753,13 +9753,14 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   }
 }
 
-/* 左列が狭い時は、転生ボタン一式を左列内で折り返し、陣形図へはみ出させない。 */
+/* 左列が狭い時も「全MAX → 全MAX解除 → 矢印 → 転生」を一列で維持する。 */
 @media(max-width:1400px){
   #ownedHeroControl .eiketsuKishinsekiBtnWrap{
-    display:grid !important;
-    grid-template-columns:max-content max-content 30px !important;
+    display:flex !important;
+    flex-flow:row nowrap !important;
     align-items:center !important;
-    justify-content:start !important;
+    justify-content:flex-start !important;
+    gap:clamp(3px,.45vw,7px) !important;
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
@@ -9767,14 +9768,51 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
     box-sizing:border-box !important;
   }
   #ownedHeroControl .eiketsuKishinsekiBtnWrap > button{
+    width:auto !important;
     min-width:0 !important;
-    max-width:100% !important;
+    max-width:none !important;
+    min-height:34px !important;
     box-sizing:border-box !important;
+    line-height:1.1 !important;
+  }
+  #ownedHeroControl #eiketsuKishinsekiGlobalMaxBtn{
+    flex:0 1 auto !important;
+    padding:6px clamp(7px,.85vw,13px) !important;
+    font-size:clamp(12px,1.12vw,17px) !important;
+  }
+  #ownedHeroControl #eiketsuKishinsekiGlobalMaxClearBtn{
+    flex:0 1 auto !important;
+    padding:6px clamp(6px,.72vw,11px) !important;
+    font-size:clamp(11px,.98vw,14px) !important;
+  }
+  #ownedHeroControl .eiketsuKishinsekiGlobalMaxArrow{
+    flex:0 0 auto !important;
+    font-size:clamp(17px,1.55vw,24px) !important;
   }
   #ownedHeroControl #eiketsuKishinsekiOpenBtn{
-    grid-column:1 / -1 !important;
-    width:100% !important;
-    max-width:100% !important;
+    flex:1 1 auto !important;
+    width:auto !important;
+    max-width:none !important;
+    padding:6px clamp(5px,.75vw,11px) !important;
+    font-size:clamp(11px,1vw,15px) !important;
+  }
+}
+@media(max-width:500px){
+  #ownedHeroControl .eiketsuKishinsekiBtnWrap{
+    gap:3px !important;
+  }
+  #ownedHeroControl #eiketsuKishinsekiGlobalMaxBtn,
+  #ownedHeroControl #eiketsuKishinsekiGlobalMaxClearBtn{
+    padding:5px 5px !important;
+    font-size:11px !important;
+  }
+  #ownedHeroControl .eiketsuKishinsekiGlobalMaxArrow{
+    font-size:15px !important;
+  }
+  #ownedHeroControl #eiketsuKishinsekiOpenBtn{
+    padding:5px 4px !important;
+    font-size:10px !important;
+    letter-spacing:-.04em !important;
   }
 }
 @media(max-width:900px){
