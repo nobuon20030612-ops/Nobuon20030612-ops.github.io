@@ -9148,24 +9148,6 @@ body{padding-top:0 !important;}
     if(mode) mode.textContent='反映前';
     if(panel) panel.style.display='none';
   }
-  function fullmaxSearchStatsFromRow(row){
-    if(!row || row.search_stat_mode!=='fullmax' || !row.fullmax_stats || typeof row.fullmax_stats!=='object') return null;
-    var out={}, found=false;
-    getStatKeys().forEach(function(k){
-      var v=row.fullmax_stats[k];
-      if(v==null) v=row.fullmax_stats[String(k).replace('属性','')];
-      var n=Number(v);
-      if(Number.isFinite(n)){ out[k]=n; found=true; }
-      else out[k]=null;
-    });
-    return found?out:null;
-  }
-  function drawFullmaxSearchStats(row){
-    var stats=fullmaxSearchStatsFromRow(row);
-    if(!stats) return null;
-    drawBonusStats(stats,'転生＆見聞録＆鬼神石込み / 全MAX検索値');
-    return stats;
-  }
   function drawBonusStats(stats,modeText){
     var panel=document.getElementById('eiketsuKishinsekiCombinedPanel');
     var box=document.getElementById('eiketsuKishinsekiCombinedResult');
@@ -9200,35 +9182,21 @@ body{padding-top:0 !important;}
     wrappedRenderDbRow.__eiketsuKishinsekiWrapped=true;
     try{ renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; window.renderRealtimeTotalStatsFromReachDbRow=wrappedRenderDbRow; }catch(e){}
   }
-  function recalcBonusCombinedAfterPlacementChange(fullmaxFallbackRow){
+  function recalcBonusCombinedAfterPlacementChange(){
     try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('編成変更後の全MAX再同期失敗',e); }
     return Promise.resolve(loadBonusMultiplierMap()).then(function(){
-      var fallbackStats=fullmaxSearchStatsFromRow(fullmaxFallbackRow);
-      /* 全MAX込み検索は検索用の予測値を行データに保持している。
-         実際の見聞録・鬼神石・転生が未反映なら、その検索値を込み合計として表示する。 */
-      if(!hasBonus() && fallbackStats){
-        drawBonusStats(fallbackStats,'転生＆見聞録＆鬼神石込み / 全MAX検索値');
-        return fallbackStats;
-      }
       var stats=null;
       try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
       catch(e){ console.error('編成変更後の込み合計再計算失敗',e); }
-      if(!stats && fallbackStats){
-        drawBonusStats(fallbackStats,'転生＆見聞録＆鬼神石込み / 全MAX検索値');
-        return fallbackStats;
-      }
       var mode=globalAllMaxIndicatorActive?'転生＆見聞録＆鬼神石込み / 全MAX反映済み':'転生＆見聞録＆鬼神石込み / 未反映';
       drawBonusStats(stats, stats?mode:'転生＆見聞録＆鬼神石込み / 計算条件不足');
       return stats;
-    }).catch(function(e){
-      console.error('編成変更後の込み合計更新失敗',e);
-      return drawFullmaxSearchStats(fullmaxFallbackRow);
-    });
+    }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); return null; });
   }
-  function recalcBonusCombinedPair(fullmaxFallbackRow){
+  function recalcBonusCombinedPair(){
     function later(ms){
       return new Promise(function(resolve){
-        setTimeout(function(){ Promise.resolve(recalcBonusCombinedAfterPlacementChange(fullmaxFallbackRow)).then(resolve,resolve); },ms);
+        setTimeout(function(){ Promise.resolve(recalcBonusCombinedAfterPlacementChange()).then(resolve,resolve); },ms);
       });
     }
     return Promise.all([later(0),later(120)]);
@@ -9247,19 +9215,16 @@ body{padding-top:0 !important;}
   var oldApplyDbForBonus=(typeof window.applyDbFormationRow==='function')?window.applyDbFormationRow:null;
   if(oldApplyDbForBonus && !oldApplyDbForBonus.__eiketsuKishinsekiClearModeWrapped){
     window.applyDbFormationRow=function(){
-      var appliedRow=arguments[0] || null;
       var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを新しい編成へ反映中...'):0;
       setBonusAppliedMode(false);
       try{ clearBonusCombinedPanel(); }catch(e){}
-      try{ window.__jinpoBonusBaseDbRow = appliedRow; }catch(e){}
+      try{ window.__jinpoBonusBaseDbRow = arguments[0] || null; }catch(e){}
       var ret;
       try{ ret = oldApplyDbForBonus.apply(this, arguments); }
       catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
       try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('適用後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
-      /* 適用直後に検索行の全MAX値を表示し、後続再描画でも同じ行をフォールバックに使う。 */
-      try{ drawFullmaxSearchStats(appliedRow); }catch(e){ console.error('全MAX検索値の即時表示失敗',e); }
-      var refreshPromise=recalcBonusCombinedPair(appliedRow);
+      var refreshPromise=recalcBonusCombinedPair();
       if(loadingToken) refreshPromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
@@ -9779,13 +9744,37 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
     overflow:hidden !important;
   }
 }
-@media(min-width:761px){
-  body.jinpo-recommend-active #dbCountBrowserCard .dbFormationSelectTop > .formationMiniPanel{
-    position:relative !important;
-    left:-18px !important;
-    width:calc(100% - 64px) !important;
-    max-width:calc(100% - 64px) !important;
-    justify-self:start !important;
+/* 小さい画面のおすすめモード時は、外枠ではなく陣形図の描画物だけを左へ寄せる。 */
+@media(min-width:761px) and (max-width:1400px){
+  body.jinpo-recommend-active #formationView > .line,
+  body.jinpo-recommend-active #formationView > .fslot,
+  body.jinpo-recommend-active #formationView > .lineLabel{
+    margin-left:-36px !important;
+  }
+}
+
+/* 左列が狭い時は、転生ボタン一式を左列内で折り返し、陣形図へはみ出させない。 */
+@media(max-width:1400px){
+  #ownedHeroControl .eiketsuKishinsekiBtnWrap{
+    display:grid !important;
+    grid-template-columns:max-content max-content 30px !important;
+    align-items:center !important;
+    justify-content:start !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin-left:0 !important;
+    box-sizing:border-box !important;
+  }
+  #ownedHeroControl .eiketsuKishinsekiBtnWrap > button{
+    min-width:0 !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+  }
+  #ownedHeroControl #eiketsuKishinsekiOpenBtn{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+    max-width:100% !important;
   }
 }
 @media(max-width:900px){
@@ -9795,49 +9784,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   }
 }
 </style>
-
-<script id="recommend-formation-shift-state-fix">
-(function(){
-  'use strict';
-  if(window.__recommendFormationShiftStateFix) return;
-  window.__recommendFormationShiftStateFix = true;
-
-  function getRecommendActive(detail){
-    if(detail && typeof detail.active === 'boolean') return detail.active;
-    try{
-      return !!(window.JINPO_FAST_SEARCH &&
-        typeof window.JINPO_FAST_SEARCH.isRecommendMode === 'function' &&
-        window.JINPO_FAST_SEARCH.isRecommendMode());
-    }catch(e){
-      return false;
-    }
-  }
-
-  function sync(detail){
-    if(!document.body) return;
-    document.body.classList.toggle('jinpo-recommend-active',getRecommendActive(detail));
-  }
-
-  window.addEventListener('jinpo:recommend-state',function(ev){
-    sync(ev && ev.detail ? ev.detail : null);
-  });
-  window.addEventListener('jinpo:recommend-priority-sync',function(){
-    sync(null);
-  });
-
-  function init(){
-    sync(null);
-    setTimeout(function(){sync(null);},0);
-    setTimeout(function(){sync(null);},120);
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded',init,{once:true});
-  }else{
-    init();
-  }
-})();
-</script>
 
 <script id="formation-step1-emphasis-user-request">
 (function(){
