@@ -179,6 +179,9 @@ body::after {
 .box { border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.25); border-radius:10px; padding:9px; }
 .box h3 { margin:0 0 6px; font-size:19px; color:#caff88; }
 .job-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+/* 光・闇は薬師・傾奇者の直下に配置 */
+.job-btn[data-job="光"] { grid-column:3; }
+.job-btn[data-job="闇"] { grid-column:4; }
 .job-btn {
   font-family:"Yu Mincho","Hiragino Mincho ProN",serif; font-size:clamp(18px, 2.1vh, 24px); font-weight:800; letter-spacing:.08em; color:#fff7d0; cursor:pointer;
   background:linear-gradient(180deg, rgba(52,72,49,.92), rgba(6,8,8,.92)); border:1px solid rgba(133,255,52,.35); border-radius:10px; padding:clamp(6px, .95vh, 10px) 6px;
@@ -199,6 +202,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .effect-life, .status-effect-row .effect.effect-life, .unlock-table td.effect-life, .side-total-row.effect-life { color:#fff; text-shadow:0 0 8px rgba(255,255,255,.58); }
 .effect-ki, .status-effect-row .effect.effect-ki, .unlock-table td.effect-ki, .side-total-row.effect-ki { color:#72eaff; text-shadow:0 0 8px rgba(86,234,255,.6); }
 .effect-str, .status-effect-row .effect.effect-str, .unlock-table td.effect-str, .side-total-row.effect-str { color:#ff6b6b; text-shadow:0 0 8px rgba(255,70,70,.45); }
+.effect-atk, .status-effect-row .effect.effect-atk, .unlock-table td.effect-atk, .side-total-row.effect-atk { color:#ff8a5b; text-shadow:0 0 8px rgba(255,100,55,.48); }
 .effect-dur, .status-effect-row .effect.effect-dur, .unlock-table td.effect-dur, .side-total-row.effect-dur { color:#6fa8ff; text-shadow:0 0 8px rgba(70,115,255,.48); }
 .effect-dex, .status-effect-row .effect.effect-dex, .unlock-table td.effect-dex, .side-total-row.effect-dex { color:#66ff8f; text-shadow:0 0 8px rgba(70,255,115,.48); }
 .effect-int, .status-effect-row .effect.effect-int, .unlock-table td.effect-int, .side-total-row.effect-int { color:#fff176; text-shadow:0 0 8px rgba(255,240,70,.55); }
@@ -272,6 +276,8 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .bonus-table .job-col-鍛冶屋 { background:rgba(111,168,255,.055); }
 .bonus-table .job-col-薬師 { background:rgba(255,255,255,.045); }
 .bonus-table .job-col-傾奇者 { background:rgba(255,155,214,.055); }
+.bonus-table .job-col-光 { background:rgba(255,243,184,.075); }
+.bonus-table .job-col-闇 { background:rgba(120,105,155,.10); }
 .bonus-table .job-head.job-col-侍 { color:#fff; }
 .bonus-table .job-head.job-col-僧 { color:#72eaff; }
 .bonus-table .job-head.job-col-神職 { color:#fff176; }
@@ -280,6 +286,8 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .bonus-table .job-head.job-col-鍛冶屋 { color:#6fa8ff; }
 .bonus-table .job-head.job-col-薬師 { color:#fff; }
 .bonus-table .job-head.job-col-傾奇者 { color:#ff9bd6; }
+.bonus-table .job-head.job-col-光 { color:#fff3b8; }
+.bonus-table .job-head.job-col-闇 { color:#bda7ff; }
 
 .skill-list-backdrop { display:none; position:fixed; inset:0; z-index:36; background:rgba(0,0,0,.72); align-items:flex-start; justify-content:center; padding:10px; }
 .skill-list-backdrop.open { display:flex; }
@@ -314,6 +322,8 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 .skill-card.job-col-鍛冶屋 { background:linear-gradient(90deg, rgba(111,168,255,.055), rgba(16,16,22,.74)); }
 .skill-card.job-col-薬師 { background:linear-gradient(90deg, rgba(255,255,255,.045), rgba(16,16,22,.74)); }
 .skill-card.job-col-傾奇者 { background:linear-gradient(90deg, rgba(255,155,214,.055), rgba(16,16,22,.74)); }
+.skill-card.job-col-光 { background:linear-gradient(90deg, rgba(255,243,184,.075), rgba(16,16,22,.74)); }
+.skill-card.job-col-闇 { background:linear-gradient(90deg, rgba(120,105,155,.10), rgba(16,16,22,.74)); }
 @media (max-height:760px) {
   .skill-card { min-height:82px; grid-template-columns:50px 235px 1fr; gap:6px; padding:5px 7px; }
   .skill-icon { display:none; }
@@ -580,6 +590,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
  .modal { width:96vw; }
  .grid { grid-template-columns:1fr; }
  .job-grid { grid-template-columns:repeat(2,1fr); }
+ .job-btn[data-job="光"], .job-btn[data-job="闇"] { grid-column:auto; }
 }
 
 /* GitHub Pages表示時もローカル表示と同じ大きさに近づける：モーダルの表示サイズのみ調整 */
@@ -918,7 +929,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
             <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="primary" data-place="0.1"></div></div>
           </div>
         </div>
-        <p class="note">侍・僧・神職・陰陽師・忍者・鍛冶屋・薬師・傾奇者の8種類から選択します。</p>
+        <p class="note">侍・僧・神職・陰陽師・忍者・鍛冶屋・薬師・傾奇者・光・闇の10種類から選択します。</p>
       </div>
       <div class="box">
         <h3>2枠目選択</h3>
@@ -998,7 +1009,7 @@ select { background:#050606; color:#eaffd7; border:1px solid rgba(133,255,52,.36
 
 <script>
 'use strict';
-const CHINKONFU_DATA = {"jobs": ["侍", "僧", "神職", "陰陽師", "忍者", "鍛冶屋", "薬師", "傾奇者"], "unlocks": [{"level": 25, "侍": "生命1000", "僧": "気合1000", "神職": "気合1000", "陰陽師": "気合1000", "忍者": "生命1000", "鍛冶屋": "生命1000", "薬師": "気合1000", "傾奇者": "生命1000"}, {"level": 50, "侍": "気合1000", "僧": "生命1000", "神職": "生命1000", "陰陽師": "生命1000", "忍者": "気合1000", "鍛冶屋": "気合1000", "薬師": "生命1000", "傾奇者": "気合1000"}, {"level": 75, "侍": "腕力200", "僧": "知力200", "神職": "魅力200", "陰陽師": "知力200", "忍者": "腕力200", "鍛冶屋": "生命2000", "薬師": "知力200", "傾奇者": "四象200"}, {"level": 100, "侍": "怯防勇戦", "僧": "廻向功徳印", "神職": "天照神威", "陰陽師": "四荒方術", "忍者": "流星手裏剣", "鍛冶屋": "陽動乱射", "薬師": "上騰命癒", "傾奇者": "龍驤麟振"}, {"level": 125, "侍": "知力400", "僧": "腕力400", "神職": "知力400", "陰陽師": "知力400", "忍者": "腕力400", "鍛冶屋": "耐久力400", "薬師": "魅力400", "傾奇者": "腕力400"}, {"level": 150, "侍": "一部技能の沈黙成功率上昇", "僧": "一部の回復量上昇", "神職": "一部技能の気合消費軽減", "陰陽師": "一部技能の術威力上昇", "忍者": "技能の物理威力上昇", "鍛冶屋": "被ダメージ減少", "薬師": "一部技能の物理・術耐性上昇", "傾奇者": "一部技能の四象変化量上昇"}, {"level": 175, "侍": "一部技能の結界強度上昇", "僧": "一部技能の結界強度上昇", "神職": "一部技能の属性付与がLVが2に", "陰陽師": "四象800", "忍者": "器用さ800", "鍛冶屋": "耐久力800", "薬師": "知力800", "傾奇者": "生命力8000"}, {"level": 200, "侍": "物理・術威力が確率で上昇", "僧": "一部技能の結界枚数上昇", "神職": "魅力に応じて物理・術威力上昇", "陰陽師": "属性値に応じて物理・術威力上昇", "忍者": "器用さに応じて物理・術威力上昇", "鍛冶屋": "耐久力に応じて物理・術威力上昇", "薬師": "一部技能の回復量上昇", "傾奇者": "場の四象に応じて物理・術威力上昇"}]};
+const CHINKONFU_DATA = {"jobs": ["侍", "僧", "神職", "陰陽師", "忍者", "鍛冶屋", "薬師", "傾奇者", "光", "闇"], "unlocks": [{"level": 25, "侍": "生命1000", "僧": "気合1000", "神職": "気合1000", "陰陽師": "気合1000", "忍者": "生命1000", "鍛冶屋": "生命1000", "薬師": "気合1000", "傾奇者": "生命1000", "光": "生命力300", "闇": "気合300"}, {"level": 50, "侍": "気合1000", "僧": "生命1000", "神職": "生命1000", "陰陽師": "生命1000", "忍者": "気合1000", "鍛冶屋": "気合1000", "薬師": "生命1000", "傾奇者": "気合1000", "光": "気合300", "闇": "生命力300"}, {"level": 75, "侍": "腕力200", "僧": "知力200", "神職": "魅力200", "陰陽師": "知力200", "忍者": "腕力200", "鍛冶屋": "生命2000", "薬師": "知力200", "傾奇者": "四象200", "光": "知力60", "闇": "魅力60"}, {"level": 100, "侍": "怯防勇戦", "僧": "廻向功徳印", "神職": "天照神威", "陰陽師": "四荒方術", "忍者": "流星手裏剣", "鍛冶屋": "陽動乱射", "薬師": "上騰命癒", "傾奇者": "龍驤麟振", "光": "腕力100", "闇": "腕力100"}, {"level": 125, "侍": "知力400", "僧": "腕力400", "神職": "知力400", "陰陽師": "知力400", "忍者": "腕力400", "鍛冶屋": "耐久力400", "薬師": "魅力400", "傾奇者": "腕力400", "光": "耐久力150", "闇": "攻撃力150"}, {"level": 150, "侍": "一部技能の沈黙成功率上昇", "僧": "一部の回復量上昇", "神職": "一部技能の気合消費軽減", "陰陽師": "一部技能の術威力上昇", "忍者": "技能の物理威力上昇", "鍛冶屋": "被ダメージ減少", "薬師": "一部技能の物理・術耐性上昇", "傾奇者": "一部技能の四象変化量上昇", "光": "技能:光明の祝福", "闇": "技能:暗闇の加護"}, {"level": 175, "侍": "一部技能の結界強度上昇", "僧": "一部技能の結界強度上昇", "神職": "一部技能の属性付与がLVが2に", "陰陽師": "四象800", "忍者": "器用さ800", "鍛冶屋": "耐久力800", "薬師": "知力800", "傾奇者": "生命力8000", "光": "知力260", "闇": "魅力260"}, {"level": 200, "侍": "物理・術威力が確率で上昇", "僧": "一部技能の結界枚数上昇", "神職": "魅力に応じて物理・術威力上昇", "陰陽師": "属性値に応じて物理・術威力上昇", "忍者": "器用さに応じて物理・術威力上昇", "鍛冶屋": "耐久力に応じて物理・術威力上昇", "薬師": "一部技能の回復量上昇", "傾奇者": "場の四象に応じて物理・術威力上昇", "光": "耐久力300", "闇": "攻撃力300"}]};
 const SKILL_LIST_DATA = [
   {job:'侍', name:'怯防勇戦', need:'最大気合の約２０％', desc:'敵単体に近接物理攻撃を行いつつ注意を引きつけ、確率で沈黙状態にする。自身に物理・術被害軽減の結界を張る。'},
   {job:'僧', name:'廻向功徳印', need:'最大気合の約１６％', desc:'敵単体に妖術攻撃を行う。味方全体の生命力を回復し、被回復量を上昇させる。'},
@@ -1007,7 +1018,9 @@ const SKILL_LIST_DATA = [
   {job:'忍者', name:'流星手裏剣', need:'最大気合の約１４％', desc:'敵全体に疾風怒濤を増幅させた間接攻撃を行い、物理耐性と選択した属性を低下させる。'},
   {job:'鍛冶屋', name:'陽動乱射', need:'最大気合の約２０％', desc:'敵全体に間接攻撃を行いつつ注意を引きつける。自身に防御力に応じてダメージが軽減する結界を張る。'},
   {job:'薬師', name:'上騰命癒', need:'最大気合の約１５％', desc:'選択した味方１人を大回復。味方全体の生命力を回復し、物理・術耐性と生命力の最大値を上昇させる。'},
-  {job:'傾奇者', name:'龍驤麟振', need:'最大気合の約２５％', desc:'敵単体に間接攻撃と自身の最高属性の術攻撃を行う。自身の最高属性の四象を上昇させ、すべての生命力ダメージが増加する地勢を宿らせる。'}
+  {job:'傾奇者', name:'龍驤麟振', need:'最大気合の約２５％', desc:'敵単体に間接攻撃と自身の最高属性の術攻撃を行う。自身の最高属性の四象を上昇させ、すべての生命力ダメージが増加する地勢を宿らせる。'},
+  {job:'光', name:'光明の祝福', need:'記載なし', item:'記載なし', desc:'味方全体の生命力を回復し、防御力・知力・魅力を上昇させる。'},
+  {job:'闇', name:'暗闇の加護', need:'記載なし', item:'記載なし', desc:'味方全体の気合を回復し、攻撃力と器用さを上昇させる。'}
 ];
 const STORAGE_KEY = 'chinkonfu-equips-v1';
 const POSITIONS = ['頭','胴','左','腕','足','右','腰','首'];
@@ -1050,6 +1063,7 @@ function classifyEffect(text) {
   if (text.includes('生命')) return 'effect-life';
   if (text.includes('気合')) return 'effect-ki';
   if (text.includes('腕力')) return 'effect-str';
+  if (text.includes('攻撃力')) return 'effect-atk';
   if (text.includes('耐久')) return 'effect-dur';
   if (text.includes('器用')) return 'effect-dex';
   if (text.includes('知力')) return 'effect-int';
@@ -1063,7 +1077,7 @@ function normalizeEffectText(text) {
   if (!s) return '';
   const skill = s.match(/^技能[：:](.+)$/);
   if (skill) return `技能「${skill[1]}」解放`;
-  const stat = s.match(/^(生命力?|気合|腕力|耐久力|器用さ|知力|魅力|四象)(\d+)$/);
+  const stat = s.match(/^(生命力?|気合|腕力|攻撃力|耐久力|器用さ|知力|魅力|四象)(\d+)$/);
   if (stat) {
     const name = stat[1] === '生命' ? '生命力' : stat[1];
     return `${name}+${stat[2]}`;
@@ -1105,14 +1119,14 @@ function collectActiveEffects(jobLevels) {
       if (level < r.level) continue;
       const raw = String(r[job] || '').trim();
       if (!raw) continue;
-      const stat = raw.match(/^(生命力?|気合|腕力|耐久力|器用さ|知力|魅力|四象)(\d+)$/);
+      const stat = raw.match(/^(生命力?|気合|腕力|攻撃力|耐久力|器用さ|知力|魅力|四象)(\d+)$/);
       if (stat) {
         const name = statName(stat[1]);
         const current = stats.get(name) || { value:0, raw:name };
         current.value += Number(stat[2]) || 0;
         current.raw = raw;
         stats.set(name, current);
-      } else if (Number(r.level) === 100) {
+      } else if (/^技能[：:]/.test(raw) || Number(r.level) === 100) {
         skills.push({ job, text: normalizeEffectText(raw), raw });
       } else {
         effects.push({ job, text: normalizeEffectText(raw), raw });
@@ -1624,7 +1638,7 @@ function closeBonusList() {
 function renderSkillList() {
   const grid = $('#skillListGrid');
   if (!grid) return;
-  const order = ['僧','薬師','忍者','陰陽師','傾奇者','侍','鍛冶屋','神職'];
+  const order = ['僧','薬師','光','闇','忍者','陰陽師','傾奇者','侍','鍛冶屋','神職'];
   const ordered = order.map(job => SKILL_LIST_DATA.find(item => item.job === job)).filter(Boolean);
   grid.innerHTML = ordered.map(item => {
     const jobClass = jobColumnClass(item.job);
@@ -1633,7 +1647,7 @@ function renderSkillList() {
       <div class="skill-meta">
         <div class="skill-name">${escapeHtml(item.name)}</div>
         <div class="skill-need">必要気合　${escapeHtml(item.need)}</div>
-        <div class="skill-need">必要アイテム　なし</div>
+        <div class="skill-need">必要アイテム　${escapeHtml(item.item || 'なし')}</div>
         <div class="skill-tag">戦闘専用</div>
       </div>
       <div class="skill-desc">${escapeHtml(item.desc)}</div>
