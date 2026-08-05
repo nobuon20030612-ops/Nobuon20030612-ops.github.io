@@ -427,16 +427,25 @@
     try{ if(typeof heroName === 'function') return text(heroName(h)) || '未選択'; }catch(e){}
     return text(h['英傑名'] || h.name || h['名前']) || '未選択';
   }
-  function currentHeroFactors(slot){
+  function currentHeroFactorList(slot){
     var h = currentHero(slot);
-    if(!h) return '';
+    if(!h) return [];
     try{
       if(typeof heroFactors === 'function'){
         var fs = heroFactors(h);
-        if(Array.isArray(fs)) return fs.map(text).filter(Boolean).join('・');
+        if(Array.isArray(fs)) return fs.map(text).filter(Boolean);
       }
     }catch(e){}
-    return [h['因子1'],h['因子2'],h['因子3'],h['因子4']].map(text).filter(Boolean).join('・');
+    return [h['因子1'],h['因子2'],h['因子3'],h['因子4']].map(text).filter(Boolean);
+  }
+  function currentHeroFactors(slot){
+    return currentHeroFactorList(slot).join('・');
+  }
+  function renderCurrentHeroFactors(slot){
+    return currentHeroFactorList(slot).map(function(factor,index){
+      return (index ? '<span class="jinpoBondSlotFactorSep" aria-hidden="true">・</span>' : '')+
+        '<span class="jinpoBondSlotFactor" data-factor="'+esc(normalize(factor))+'">'+esc(factor)+'</span>';
+    }).join('');
   }
   function cssPositionPercent(raw,total){
     var v = text(raw);
@@ -569,6 +578,7 @@
       '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:14px;}',
       '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:9px;color:#cdbb96;line-height:1.2;max-height:22px;overflow:hidden;}',
+      '.jinpoBondDiagramSlot .jinpoBondSlotFactor.is-hover-factor{color:#ff5a5a;font-weight:900;text-shadow:0 0 5px rgba(255,0,0,.95),0 0 11px rgba(255,58,58,.72);}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramSlot{opacity:.42;filter:grayscale(.35);}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramSlot.is-hover{opacity:1;filter:none;border-color:#ffd75c;box-shadow:0 0 0 2px rgba(255,215,92,.22),0 0 24px rgba(255,194,61,.82),inset 0 0 14px rgba(255,204,70,.14);}',
       '.jinpoBondActiveCards{display:grid;gap:8px;padding:10px;max-height:470px;overflow:auto;}',
@@ -1001,17 +1011,20 @@
       if(!p) continue;
       slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+s+'" style="left:'+p.x+'%;top:'+p.y+'%;">'+
         '<strong>'+s+'</strong><div class="jinpoBondSlotHero">'+esc(currentHeroName(s))+'</div>'+
-        '<div class="jinpoBondSlotFactors">'+esc(currentHeroFactors(s))+'</div></div>';
+        '<div class="jinpoBondSlotFactors">'+renderCurrentHeroFactors(s)+'</div></div>';
     }
     return '<div id="jinpoBondFormationDiagram" class="jinpoBondFormationDiagram" data-formation="'+esc(formation)+'">'+
       '<svg class="jinpoBondFormationSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+svgLines.join('')+'</svg>'+slotHtml+'</div>';
   }
 
-  function setDiagramHighlight(lineIds,slots){
+  function setDiagramHighlight(lineIds,slots,factorMatches){
     var diagram = document.getElementById('jinpoBondFormationDiagram');
     if(!diagram) return;
     var wantedLines = new Set((lineIds || []).map(text).filter(Boolean));
     var wantedSlots = new Set((slots || []).map(Number).filter(Boolean));
+    var wantedFactors = new Set((factorMatches || []).map(function(item){
+      return Number(item && item.slot)+'|'+normalize(item && item.factor);
+    }).filter(function(key){ return !/^0\|$/.test(key) && !/\|$/.test(key); }));
     var on = wantedLines.size > 0 || wantedSlots.size > 0;
     diagram.classList.toggle('is-highlighting', on);
     Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondDiagramLine'),function(el){
@@ -1020,21 +1033,99 @@
     Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondDiagramSlot'),function(el){
       el.classList.toggle('is-hover', on && wantedSlots.has(Number(el.getAttribute('data-slot'))));
     });
+    Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondSlotFactor'),function(el){
+      var slotEl = el.closest ? el.closest('.jinpoBondDiagramSlot') : null;
+      var key = Number(slotEl && slotEl.getAttribute('data-slot'))+'|'+text(el.getAttribute('data-factor'));
+      el.classList.toggle('is-hover-factor', on && wantedFactors.has(key));
+    });
   }
 
   function clearDiagramHighlight(){
-    setDiagramHighlight([],[]);
+    setDiagramHighlight([],[],[]);
   }
 
   function cardHighlightData(card){
     var ids = text(card && card.getAttribute('data-line-ids')).split('|').map(text).filter(Boolean);
     var slots = text(card && card.getAttribute('data-slots')).split(',').map(Number).filter(Boolean);
-    return {ids:ids,slots:slots};
+    var factors = [];
+    try{
+      var raw = card && card.getAttribute('data-factor-matches');
+      var parsed = raw ? JSON.parse(raw) : [];
+      if(Array.isArray(parsed)) factors = parsed;
+    }catch(e){}
+    return {ids:ids,slots:slots,factors:factors};
   }
 
   function applyCardHighlight(card){
     var d = cardHighlightData(card);
-    setDiagramHighlight(d.ids,d.slots);
+    setDiagramHighlight(d.ids,d.slots,d.factors);
+  }
+
+  function calculatedActivationForRow(row){
+    var wanted = normalize(row && row['因縁名']);
+    var activated = activeCalculatedResult && Array.isArray(activeCalculatedResult.activated) ? activeCalculatedResult.activated : [];
+    for(var i=0;i<activated.length;i++){
+      if(normalize(activated[i] && activated[i].name) === wanted) return activated[i];
+    }
+    return null;
+  }
+
+  function occurrenceForLine(act,line){
+    if(!act || !Array.isArray(line)) return null;
+    var wanted = lineId(line);
+    var occurrences = Array.isArray(act.occurrences) && act.occurrences.length ? act.occurrences : [act];
+    for(var i=0;i<occurrences.length;i++){
+      if(lineId(occurrences[i] && occurrences[i].lineSlots) === wanted) return occurrences[i];
+    }
+    return null;
+  }
+
+  function assignmentsForOccurrence(act,occ){
+    if(!occ) return [];
+    if(act && act.selectedOccurrence === occ && Array.isArray(act.assignments) && act.assignments.length) return act.assignments;
+    return Array.isArray(occ.assignments) ? occ.assignments : [];
+  }
+
+  function orderedFactorsForRow(row,lines){
+    var act = calculatedActivationForRow(row);
+    var line = Array.isArray(lines) && lines.length ? lines[0] : null;
+    var occ = occurrenceForLine(act,line);
+    var assignments = assignmentsForOccurrence(act,occ);
+    if(line && assignments.length){
+      var byHero = new Map();
+      assignments.forEach(function(a){
+        var rel = Number(a && a.heroIndex);
+        var factor = text(a && a.requiredFactor);
+        if(Number.isInteger(rel) && factor && !byHero.has(rel)) byHero.set(rel,factor);
+      });
+      var ordered = line.map(function(slot,rel){ return byHero.get(rel) || ''; }).filter(Boolean);
+      if(ordered.length) return ordered;
+    }
+    return [row && row['因子1'],row && row['因子2'],row && row['因子3']].map(text).filter(Boolean);
+  }
+
+  function factorMatchesForRow(row,lines){
+    var act = calculatedActivationForRow(row);
+    if(!act) return [];
+    var allowed = new Set((lines || []).map(lineId));
+    var occurrences = Array.isArray(act.occurrences) && act.occurrences.length ? act.occurrences : [act];
+    var out = [];
+    var seen = new Set();
+    occurrences.forEach(function(occ){
+      var line = Array.isArray(occ && occ.lineSlots) ? occ.lineSlots.map(Number).filter(Boolean) : [];
+      if(!line.length || (allowed.size && !allowed.has(lineId(line)))) return;
+      assignmentsForOccurrence(act,occ).forEach(function(a){
+        var rel = Number(a && a.heroIndex);
+        var slot = Number.isInteger(rel) ? Number(line[rel]) : 0;
+        var factor = text(a && a.requiredFactor);
+        var key = slot+'|'+normalize(factor);
+        if(slot && factor && !seen.has(key)){
+          seen.add(key);
+          out.push({slot:slot,factor:factor});
+        }
+      });
+    });
+    return out;
   }
 
   function bindActiveCardHighlight(){
@@ -1050,12 +1141,13 @@
     var formation = currentFormationName();
     var detailMap = resultLineDetails();
     var cards = rows.map(function(row,index){
-      var factors = [row['因子1'],row['因子2'],row['因子3']].map(text).filter(Boolean);
       var lines = activeLineDataForRow(row, detailMap);
+      var factors = orderedFactorsForRow(row,lines);
+      var factorMatches = factorMatchesForRow(row,lines);
       var lineIds = unique(lines.map(lineId));
       var slots = unique([].concat.apply([],lines).map(function(n){return String(Number(n));})).map(Number);
       var lineText = lines.length ? lines.map(lineDisplay).join(' / ') : '成立位置を再計算できませんでした';
-      return '<article class="jinpoBondActiveCard" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'">'+
+      return '<article class="jinpoBondActiveCard" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'" data-factor-matches="'+esc(JSON.stringify(factorMatches))+'">'+
         '<div class="jinpoBondActiveCardHead"><div class="jinpoBondActiveCardTitle"><span class="jinpoBondActiveCardNo" aria-label="'+(index+1)+'番目">'+(index+1)+'</span><div class="jinpoBondActiveCardName">'+esc(row['因縁名'] || '')+'</div></div><div class="jinpoBondActiveCardKind">'+esc(row['因縁種類'] || '')+'</div></div>'+
         '<div class="jinpoBondActiveLine '+(lines.length?'':'jinpoBondActiveNoLine')+'">成立ライン '+esc(lineText)+'</div>'+
         '<div class="jinpoBondFactors">'+factors.map(function(f){ return '<span class="jinpoBondFactor">'+esc(f)+'</span>'; }).join('')+'</div>'+
