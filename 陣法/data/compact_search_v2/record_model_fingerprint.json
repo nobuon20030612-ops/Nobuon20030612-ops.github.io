@@ -1,12 +1,17 @@
 {
-  "schema": "jinpo-compact-record-model-v2",
-  "fingerprint": "52fa6626c5be0bacf13e7475179c72113162c70d17465fbff63b8c35be035477",
+  "schema": "jinpo-compact-record-model-v3",
+  "fingerprint": "06eee3f9e0f06ce8d0a848ae26a10e255ae3f3bbf8f6684f45069d513817dd45",
   "inputs": {
-    "data/jinpo_eiketsu_master.csv": "c65cfdc860f6d957f53519978208cb35f9701c1d7e1b019c0a534e07cd4b4b8b",
     "data/jinpo_inen_master.csv": "36ecd4fc695dadf28047c20886af1723c03176440774b2b6188f53ed814d5572",
     "data/91因縁_計算式_倍率展開.csv": "909ceae3cb839e2cd2b4646d147b55d014a20d9052683155eabcb249ff50feb0",
     "data/formation_bonus.csv": "567a44908c7794f51efee4c2105c78aca3d2d3405044ca593aacc1fbb1a44a99",
-    "tools-next/rebuild_all_compact.py": "99661d6c223b1c50878015a3fa60e4cb34ab92de692f44c3302de71ff8516d34",
-    "tools-next/factor4_optimizer.py": "8f54d2fd5be2454831d4b7003118628cd8756e85cf0cb47bac705473cf3fa0aa"
-  }
+    "tools-next/rebuild_all_compact.py": "3a8657e1e3c29f116c8feeb0cb69d51126f4b7de32055187274945a41507ff88",
+    "tools-next/factor4_optimizer.py": "8f54d2fd5be2454831d4b7003118628cd8756e85cf0cb47bac705473cf3fa0aa",
+    "tools-next/fullmax_model.py": "af65255249b59102c884e915d97b8643eb72895afdb679f91c47cfaadee8efe1",
+    "tools-next/rebuild_fullmax_search.py": "a6062fc0965e502ece7e68482b84ca5bf3e26ebe7fb4313c15953e771001ed97",
+    "tools-next/audit_fullmax_search.py": "adb5553087f3c88b77e96a2d965d3e082327d2b375b7495cc2d6e45c943f0855",
+    "tools-next/rebuild_incremental_additions.py": "a91f71774b53bd165f29aea374e4dd67741448ebcfd1e19c3550c75adca8f056",
+    "tools-next/audit_incremental_equivalence.py": "88bc80db2028c1dbfc006200c0eae9932c5934db8c685946236c4ef7154dedd0"
+  },
+  "master_sha256": "b2ee55ee9a4e0ad33488a6a08c14ac21ff899b0f41f5ee18a538cdcaed29d1dd"
 }
