@@ -1380,8 +1380,6 @@ try{ if(typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats
 try{
 if(dbRow && typeof renderRealtimeTotalStatsFromReachDbRow === "function"){
 renderRealtimeTotalStatsFromReachDbRow(dbRow);
-setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); }, 0);
-setTimeout(()=>{ renderRealtimeTotalStatsFromReachDbRow(dbRow); }, 80);
 }else{
 if(nextResult && typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats(nextResult);
 }
@@ -1621,14 +1619,10 @@ document.getElementById("masterStatus").innerHTML =
 s.loadedFiles.map(f=>`${esc(f.sourceName)}: ${f.added}件`).join("<br>");
 renderMasterResult();
 }
-let jinpoTotalResultScrollTimer = 0;
-function scrollToTotalStatResultOnce(delay=0){
-clearTimeout(jinpoTotalResultScrollTimer);
-jinpoTotalResultScrollTimer = setTimeout(()=>{
+function scrollToTotalStatResultOnce(){
 const el = document.getElementById("totalStatResult");
 if(!el || typeof el.scrollIntoView !== "function") return;
 el.scrollIntoView({behavior:"smooth", block:"center"});
-}, Math.max(0, Number(delay) || 0));
 }
 window.__jinpoScrollToTotalStatResultOnce = scrollToTotalStatResultOnce;
 
@@ -1666,11 +1660,8 @@ formationSelect.value = item.formationName;
 renderSlots();
 renderFormation(null);
 calculate();
-setTimeout(()=>{
-let refreshPromise = null;
-try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') refreshPromise = window.__jinpoRefreshCombinedAfterPlacementChange({source:'saved'}); }catch(e){}
-Promise.resolve(refreshPromise).finally(()=>{ scrollToTotalStatResultOnce(0); });
-},0);
+scrollToTotalStatResultOnce();
+setTimeout(()=>{ try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') window.__jinpoRefreshCombinedAfterPlacementChange({source:'saved'}); }catch(e){} },0);
 }));
 }
 function currentFormationState(){
@@ -1702,11 +1693,8 @@ if(hero) placement[idx+1] = hero;
 }
 renderSlots();
 calculate();
-setTimeout(()=>{
-let refreshPromise = null;
-try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') refreshPromise = window.__jinpoRefreshCombinedAfterPlacementChange({source:'share'}); }catch(e){}
-Promise.resolve(refreshPromise).finally(()=>{ scrollToTotalStatResultOnce(0); });
-},0);
+scrollToTotalStatResultOnce();
+setTimeout(()=>{ try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') window.__jinpoRefreshCombinedAfterPlacementChange({source:'share'}); }catch(e){} },0);
 }
 function loadShareFromUrl(){
 const p = new URLSearchParams(location.search);
@@ -5024,7 +5012,7 @@ function restoreRegisteredOut(){
 }
 
 document.addEventListener("click", function(ev){
-  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,button.reachApplyBtn") : null;
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn[data-result-id],button.applyBtn[data-generated-line-row],button.reachApplyBtn") : null;
   if(!btn) return;
 
   var isRegisteredOut = String(btn.textContent || "").indexOf("登録外") !== -1 ||
@@ -5247,9 +5235,7 @@ var prevApplyStable = window.applyDbFormationRow;
 if(typeof prevApplyStable === "function" && !prevApplyStable.__registeredHitTotalPreviewSyncWrapped){
   window.applyDbFormationRow = function(){
     var ret = prevApplyStable.apply(this, arguments);
-    setTimeout(syncRegisteredHitPreview, 0);
-    setTimeout(syncRegisteredHitPreview, 100);
-    setTimeout(syncRegisteredHitPreview, 250);
+    syncRegisteredHitPreview();
     return ret;
   };
   window.applyDbFormationRow.__registeredHitTotalPreviewSyncWrapped = true;
@@ -5259,14 +5245,9 @@ var prevReachStable = window.applyReachSwapCandidate;
 if(typeof prevReachStable === "function" && !prevReachStable.__registeredHitPreviewAfterSwapWrapped){
   window.applyReachSwapCandidate = function(){
     var ret = prevReachStable.apply(this, arguments);
-    setTimeout(syncRegisteredHitPreview, 0);
-    setTimeout(syncRegisteredHitPreview, 120);
-    setTimeout(syncRegisteredHitPreview, 320);
+    syncRegisteredHitPreview();
     if(ret && typeof ret.then === "function"){
-      ret.then(function(){
-        syncRegisteredHitPreview();
-        setTimeout(syncRegisteredHitPreview, 80);
-      }, function(e){ console.error("差替後の適用中候補更新失敗", e); });
+      ret.then(function(){ syncRegisteredHitPreview(); }, function(e){ console.error("差替後の適用中候補更新失敗", e); });
     }
     return ret;
   };
@@ -5274,7 +5255,7 @@ if(typeof prevReachStable === "function" && !prevReachStable.__registeredHitPrev
 }
 
 document.addEventListener("click", function(ev){
-  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn") : null;
+  var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn[data-result-id],button.applyBtn[data-generated-line-row]") : null;
   if(!btn) return;
   var isRegisteredOut = String(btn.textContent || "").indexOf("登録外") !== -1 ||
                         (btn.classList && btn.classList.contains("dbMissing"));
@@ -5617,7 +5598,7 @@ document.addEventListener("click", function(ev){
   }
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-generated-line-row],[data-result-id]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("[data-generated-line-row],[data-result-id]") : null;
     if(!btn) return;
     setTimeout(function(){
       try{
@@ -5806,12 +5787,12 @@ document.addEventListener("click", function(ev){
       if(mode) mode.textContent = "DB未登録 / 新式倍率CSV式で計算中";
       recalcOnceFix(30);
     }
-    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(120); }catch(e){}
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
     return true;
   };
 
   document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest("button.applyBtn,[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result]") : null;
+    var btn = ev.target && ev.target.closest ? ev.target.closest("[data-generated-line-row],[data-result-id],[data-grade3-precomputed-result]") : null;
     if(!btn) return;
     showOverlayFix();
     recalcOnceFix(220);
@@ -6272,10 +6253,8 @@ document.addEventListener("click", function(ev){
     var result = currentResult();
     try{ if(result && typeof renderFormation === "function") renderFormation(result); }catch(e){}
     try{ if(result && typeof renderResults === "function") renderResults(result); }catch(e){}
-    loadMultipliers().then(function(){
-      drawFixedFormula(result || currentResult());
-      try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
-    });
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
+    loadMultipliers().then(function(){ drawFixedFormula(result || currentResult()); });
     return true;
   }
 
@@ -8684,7 +8663,7 @@ body{padding-top:0 !important;}
     }
     try{renderTopBreakdown();}catch(e){}
     try{updateNote();}catch(e){}
-    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
     return true;
   };
   var lastActivationResultForBonus = null;
@@ -8924,11 +8903,11 @@ body{padding-top:0 !important;}
       console.warn('転生＆見聞録＆鬼神石 反映計算なし', {hasBonus:hasBonus(), multipliers:bonusMultiplierMap.size, result:currentActivationResultForBonus()});
     }
     closeModal();
-    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
     return stats;
   }
   function applyBonusSettings(){
     setApplyLoading(true);
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
     var run=function(){
       Promise.resolve().then(applyBonusSettingsCore).finally(function(){ setTimeout(function(){ setApplyLoading(false); }, 80); });
     };
@@ -8942,6 +8921,7 @@ body{padding-top:0 !important;}
     var btn=document.getElementById('eiketsuKishinsekiGlobalMaxBtn');
     if(btn && btn.disabled) return;
     if(btn){ btn.disabled=true; btn.textContent='全MAX反映中…'; }
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
     var loadingToken=showGlobalAllMaxLoading('全MAXを反映中...');
     setGlobalAllMaxChoices();
     globalAllMaxIndicatorActive=true;
@@ -9299,7 +9279,7 @@ body{padding-top:0 !important;}
   var oldApplyReachForBonus=(typeof window.applyReachSwapCandidate==='function')?window.applyReachSwapCandidate:null;
   if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiReachRefreshWrapped){
     window.applyReachSwapCandidate=function(){
-      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを差替後の編成へ反映中...'):0;
+      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを差替後の編成へ反映中...'):(isFullMaxSearchBasisActive()?showGlobalAllMaxLoading('全MAX込み合計を差替後の編成へ反映中...'):0);
       var ret;
       try{ ret = oldApplyReachForBonus.apply(this, arguments); }
       catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
@@ -9308,14 +9288,16 @@ body{padding-top:0 !important;}
       try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
       try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替後の全MAX同期失敗',e); }
       deferBonusPlacementRefresh();
-      var refreshPromise=recalcBonusCombinedPair();
-      window.__jinpoLastCombinedRefreshPromise=refreshPromise;
-      var swapDonePromise=Promise.all([Promise.resolve(ret),refreshPromise]);
-      swapDonePromise.then(function(){
-        try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
-      },function(){
-        try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
+      try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(); }catch(e){}
+      var swapDonePromise=Promise.resolve(ret).then(function(){
+        try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替確定後の全MAX同期失敗',e); }
+        deferBonusPlacementRefresh();
+        return recalcBonusCombinedAfterPlacementChange();
+      },function(e){
+        console.error('差替後の込み合計確定更新失敗',e);
+        return recalcBonusCombinedAfterPlacementChange();
       });
+      window.__jinpoLastCombinedRefreshPromise=swapDonePromise;
       if(loadingToken) swapDonePromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
