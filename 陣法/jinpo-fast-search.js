@@ -291,10 +291,10 @@
     return sharedSearchRequest(recommendKeyFor(query),'recommend',query);
   }
   function lookupExactState(opts){
-    opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||(gradeOn()?'grade3':'normal');
+    opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||(gradeOn()?'grade3':'normal'),statMode=String(opts.statMode||searchStatMode||'base')==='fullmax'?'fullmax':'base';
     var heroInternalIds=Array.isArray(opts.heroInternalIds)?opts.heroInternalIds:[],bondNames=Array.isArray(opts.bondNames)?opts.bondNames:[];
     if(c<5||c>9||!f||heroInternalIds.length!==6||bondNames.length!==c)return Promise.resolve({row:null,matched:0,reason:'invalid_lookup_state'});
-    return requestWorker('lookupExact',{mode:mode,count:c,formation:f,heroInternalIds:heroInternalIds,bondNames:bondNames},false);
+    return requestWorker('lookupExact',{mode:mode,count:c,formation:f,statMode:statMode,heroInternalIds:heroInternalIds,bondNames:bondNames},false);
   }
 
   function members(row){return String(row&&row.eiketsu_names||row&&row.eiketsu_ids||'').split('|').filter(Boolean);}
@@ -347,6 +347,17 @@
     return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th><th>因縁</th></tr><tr class="dbStatSortHeaderRow"><th colspan="5"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),internalIds=String(row&&row.eiketsu_internal_ids||'').split('|'),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){return '<span data-hero-internal-id="'+esc(internalIds[i]||'')+'">'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td><td class="dbListBondsCell"><div class="dbListBonds">'+bd.map(function(b){return '<span class="badge">'+esc(b)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="5"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   function rerenderList(count){var box=q('dbFormationList');if(!box)return;displayRows=sortedRows(activeRows);box.innerHTML=displayRows.length?table(displayRows,count||selectedCount()):'<div class="dbListNote">該当DBなし。陣形・配置英傑・除外英傑・優先条件・文曲除外人数を確認してください。</div>';syncPriorityStatHighlights();try{if(typeof window.applyFactor4BunkyokuGlow==='function')setTimeout(window.applyFactor4BunkyokuGlow,0);}catch(e){}}
+  var searchResultScrollTimer=0;
+  function scrollSearchResults(){
+    clearTimeout(searchResultScrollTimer);
+    searchResultScrollTimer=setTimeout(function(){
+      var el=q('dbFormationList')||q('summary');
+      if(!el||typeof el.scrollIntoView!=='function')return;
+      var run=function(){try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}};
+      try{if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(run);else run();}catch(e){run();}
+    },60);
+  }
+  window.__jinpoScrollSearchResults=scrollSearchResults;
 
   function ensureCancelButton(){var panel=q('dbSearchProgress');if(!panel)return null;var btn=q('dbSearchProgressCancel');if(!btn){btn=document.createElement('button');btn.id='dbSearchProgressCancel';btn.type='button';btn.textContent='検索を中止する';panel.appendChild(btn);}return btn;}
   function showProgress(msg,bytes){var cb=ensureCancelButton();if(cb)cb.style.display='block';var p=q('dbSearchProgress');if(p){p.style.display='block';p.classList.add('active');}var t=q('dbSearchProgressTitle');if(t)t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'検索中');var c=q('dbSearchProgressCount');if(c)c.textContent=bytes?((bytes/1024/1024).toFixed(1)+'MB'):'検索DB';var r=q('dbSearchProgressRemain');if(r)r.textContent='高速検索中';var b=q('dbSearchProgressBar');if(b){b.style.width='42%';if(b.parentElement)b.parentElement.classList.add('indeterminate');}}
@@ -371,7 +382,7 @@
     var loadingTarget=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)):(recommendLabel(target));
     var loadingSub=(secondary?(loadingTarget+'の合計値が高い組み合わせを検索しています'):(loadingTarget+'が高い組み合わせを検索しています'))+'（'+statModeLabel()+'基準）';
     box.innerHTML='<div class="jinpoRecommendLoading" role="status" aria-live="polite"><span class="dbSearchSpinner" aria-hidden="true"></span><div class="jinpoRecommendLoadingTitle">おすすめ陣法を検索中…</div><div class="jinpoRecommendLoadingSub">'+esc(loadingSub)+'</div></div>';
-    try{var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',basisText=' / 検索基準 '+statModeLabel(),rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順');if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+basisText;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text+basisText;}setSummary(r.matched||0,activeRows.length);rerenderList(null);return true;
+    try{var r=await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':'',f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',basisText=' / 検索基準 '+statModeLabel(),rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順');if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / 因縁数混在 / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+basisText;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text+basisText;}setSummary(r.matched||0,activeRows.length);rerenderList(null);scrollSearchResults();return true;
     }catch(err){
       if(myToken!==activeToken)return true;console.error('おすすめ陣法検索エラー',err);status.textContent='おすすめ陣法の検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">おすすめ陣法の検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;
     }finally{if(myToken===activeToken)hideProgress();}
@@ -395,6 +406,7 @@
       status.textContent=f+' / '+c+'因縁: 高速検索DB / 条件一致 '+Number(r.matched||0).toLocaleString()+'件 / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+basisText+sumText;
       setSummary(r.matched||0,activeRows.length);
       rerenderList(c);
+      scrollSearchResults();
     }
     try{
       var r=await search(query);

@@ -359,14 +359,16 @@
     var count=Number(q.count)||0;if(count<5||count>9)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_count_invalid'};
     if(normalFiveSixUnsupported(q))return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'normal_5_6_not_supported'};
     var bondIds=exactBondIds(q.bondNames,m);if(bondIds.length!==count)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_names_invalid'};
-    var dataQ={mode:q.mode==='grade3'?'grade3':'normal',count:count,formation:String(q.formation||''),sourceType:'full',sortStat:''};
-    var data=await loadData(dataQ,token,true),dv=data.dv,rec=data.recSize,base=16;
+    var useFullmax=String(q&&q.statMode||'base')==='fullmax';
+    var dataQ={mode:q.mode==='grade3'?'grade3':'normal',count:count,formation:String(q.formation||''),sourceType:'full',sortStat:'',statMode:useFullmax?'fullmax':'base'};
+    var data=await loadData(dataQ,token,true),fm=useFullmax?await loadFullmaxStats(dataQ,token,true):null,dv=data.dv,rec=data.recSize,base=16;
+    if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
     for(var idx=0;idx<data.rows;idx++,base+=rec){
       var heroOk=true;for(var h=0;h<heroIds.length&&heroOk;h++)if(!hasHero(dv,base,heroIds[h]))heroOk=false;
       if(!heroOk)continue;
       var bondOk=true;for(var w=0;w<bondIds.length&&bondOk;w++){var found=false;for(var b=0;b<count;b++){if(dv.getUint8(base+12+b)===bondIds[w]){found=true;break;}}if(!found)bondOk=false;}
       if(!bondOk)continue;
-      return {row:materialize(dv,base,dataQ,m,idx,data.info.file),matched:1,scanned:idx+1,ms:performance.now()-started};
+      return {row:materialize(dv,base,dataQ,m,idx,data.info.file,fm),matched:1,scanned:idx+1,ms:performance.now()-started};
     }
     return {row:null,matched:0,scanned:data.rows,ms:performance.now()-started};
   }
