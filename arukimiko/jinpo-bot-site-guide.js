@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト総合案内 v3.16.0
+ * 歩き巫女 サイト総合案内 v3.21.0
  *
  * - たいらの野望トップページと、カウンター配下の現行ページを案内する。
  * - ページ名の誤字・脱字・かな入力・ラフな目的表現を会話側の共通正規化と連携して扱う。
@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.16.0';
+  var VERSION='3.25.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -40,7 +40,7 @@
     {id:'retainer',name:'家臣計算機',path:'家臣計算機.html',category:'calculator',aliases:['家臣計算','家臣計算機','家臣能力計算','家臣ステータス','家臣ステ計算'],purposes:['家臣の能力を計算する','家臣のステータスを確認する'],desc:'家臣の能力・ステータスを計算するページです。'},
     {id:'shichisei',name:'七星転生',path:'shichiseitensei.html',category:'calculator',aliases:['七星転生','七星','転生計算','七星転生計算'],purposes:['七星転生を計算する','転生後を確認する'],desc:'七星転生に関する計算・確認用ページです。'},
     {id:'food',name:'食料',path:'shokuryou.html',category:'calculator',aliases:['食料','食料計算','食料計算機','兵糧'],purposes:['食料を計算する','必要な食料を確認する'],desc:'食料に関する計算・確認用ページです。'},
-    {id:'seikai',name:'星海の荒石',path:'seikai.html',category:'tool',aliases:['星海の荒石','荒石','星海','星海荒石'],purposes:['星海の荒石を確認する','荒石を見る'],desc:'星海の荒石に関する情報を確認するページです。'},
+    {id:'seikai',name:'星海の荒石',path:'seikai.html',category:'tool',aliases:['星海の荒石','荒石','星海','星海荒石','輝光','星光','微光','輝光合成'],purposes:['星海の荒石を確認する','荒石を見る','輝光の合成を見る'],desc:'星海の荒石に関する情報を確認するページです。'},
     {id:'kishin',name:'鬼神石',path:'鬼神石.html',category:'tool',aliases:['鬼神石','鬼神石計算','鬼神石ツール','鬼神石一覧'],purposes:['鬼神石を選ぶ','鬼神石を比較する','鬼神石の合計を出す','鬼神石の合成最低発現数を見る'],desc:'鬼神石を一覧から選び、能力合計・並べ替え・合成最低発現数などを確認するページです。'},
     {id:'tsukumo',name:'九十九',path:'九十九.html',category:'tool',aliases:['九十九','九十九ツール','九十九計算','九十九の力','つくも'],purposes:['九十九を選ぶ','九十九を比較する','九十九の合計を出す','九十九の入手を調べる'],desc:'九十九の力を一覧から選び、能力・入手・合計などを確認するページです。'},
     {id:'mado',name:'魔導結晶',path:'魔導結晶.html',category:'tool',aliases:['魔導結晶','魔導','魔導結晶計算','魔導結晶ツール'],purposes:['魔導結晶を選ぶ','魔導結晶を比較する','魔導結晶の合計を出す','魔導結晶の入手を調べる'],desc:'魔導結晶を一覧から選び、能力・入手・合計などを確認するページです。'},
@@ -255,6 +255,20 @@
     }
     if(!best)return null;
     return {key:'item',item:best.item,term:core,matched:best.match.alias||'',virtual:false,approximate:true};
+  }
+  function incompletePagePossessive(text){
+    var t=normalizeInput(text).replace(/[？?！!。．.]+$/g,'').trim();
+    if(!/の$/.test(t))return null;
+    var core=t.replace(/の$/,'').trim(),best=null;
+    for(var i=0;i<ITEMS.length;i++){
+      var item=ITEMS[i],aliases=[item.name].concat(item.aliases||[]);
+      for(var j=0;j<aliases.length;j++){
+        if(bareTermKey(core)===bareTermKey(aliases[j])){
+          if(!best||bareTermKey(aliases[j]).length>best.length)best={item:item,matched:aliases[j],length:bareTermKey(aliases[j]).length};
+        }
+      }
+    }
+    return best;
   }
   function acknowledgementOnly(text){
     var t=normalizeInput(text);
@@ -641,6 +655,20 @@
     });
     return out;
   }
+  function mentionedItemPosition(text,item){
+    var t=normalizeInput(text),aliases=[item&&item.name].concat(item&&item.aliases||[]),best=t.length+1;
+    aliases.forEach(function(alias){var a=normalizeInput(alias),pos=a?t.indexOf(a):-1;if(pos>=0&&pos<best)best=pos;});
+    return best;
+  }
+  function directComparisonPurposeItems(text){
+    var t=normalizeInput(text),items=mentionedItems(t);if(items.length<2)return[];
+    var materialIds={kishin:1,tsukumo:1,mado:1,chinkon:1,seikai:1},materials=items.filter(function(x){return !!materialIds[x.id];}),calculators=items.filter(function(x){return x.id==='stats'||x.id==='retainer';}),selected=[];
+    if(materials.length>=2)selected=materials;
+    else if(calculators.length===2)selected=calculators;
+    else if(items.length===2)selected=items;
+    else return[];
+    return selected.slice().sort(function(a,b){return mentionedItemPosition(t,a)-mentionedItemPosition(t,b);});
+  }
 
   function purposeScores(text){
     var t=normalizeInput(text),scores={};
@@ -685,6 +713,206 @@
     return Object.keys(scores).map(function(id){return {item:BY_ID[id],score:scores[id]};}).filter(function(x){return x.item;}).sort(function(a,b){return b.score-a.score;});
   }
   function purposeItem(text){var r=purposeScores(text);return r.length?r[0].item:null;}
+
+  function pageFreeGoal(text){
+    var t=normalizeInput(text),items=[],reason='';
+    function set(ids,why){items=ids.map(function(id){return BY_ID[id];}).filter(Boolean);reason=why;}
+    if(/8個.*(?:選|合計)|(?:選|合計).*8個/.test(t))set(['kishin','tsukumo','mado'],'eight_item_total');
+    else if(/保存.*(?:できる|可能).*(?:計算機|計算|どれ)|(?:計算機|計算).*(?:保存).*(?:どれ|できる)/.test(t))set(['stats','retainer'],'savable_calculator');
+    else if(/合成最低発現数/.test(t))set(['kishin'],'minimum_activation');
+    else if(/英傑.*(?:因子|職業|コスト|能力|技能).*(?:調べ|確認|見たい)|(?:因子|職業|コスト).*(?:英傑).*(?:調べ|確認|見たい)/.test(t))set(['heroes'],'hero_lookup');
+    else if(/(?:6人|六人).*(?:組み合わせ|編成|探)|(?:組み合わせ|編成).*(?:6人|六人)/.test(t))set(['jinpo'],'six_hero_formation');
+    else if(/(?:輝光|星光|微光).*(?:材料|合成|作り方|つくり方)|(?:材料|合成).*(?:輝光|星光|微光)/.test(t))set(['seikai'],'stone_recipe');
+    else if(/敵.*(?:数値|カウンター|表).*(?:見|確認|調べ)|(?:数値|カウンター).*(?:敵).*(?:見|確認|調べ)/.test(t))set(['counter'],'enemy_counter');
+    else if(/名物.*(?:合計|一覧|表).*(?:見|確認|調べ)|(?:合計|一覧).*(?:名物)/.test(t))set(['meibutsu'],'specialty_total');
+    if(!items.length)return null;
+    return {items:items,reason:reason};
+  }
+  function answerPageFreeGoal(goal){
+    if(!goal||!goal.items||!goal.items.length)return null;
+    if(goal.items.length>1){
+      var c=candidateClarification(goal.items,'その目的に使えるページは、','です。どれを使いたいですか？');
+      c.answer+=' 用途をもう一言足せば、さらに絞れます。';
+      c.data.pageFreeGoal=goal.reason;return c;
+    }
+    var item=goal.items[0],r=explainItem(item,true);
+    r.answer='目的から「'+item.name+'」が合っています。\n'+r.answer;
+    r.data=r.data||{};r.data.pageFreeGoal=goal.reason;return r;
+  }
+
+  function vagueSaveCapabilityCue(text){
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim();
+    if(!t||mentionedItems(t).length)return false;
+    return /^(?:(?:このサイト|ここ|これ|それ)(?:で|は|って)?[、,\s]*)?(?:画像|画面)?保存(?:は|って)?(?:できる|出来る|可能)(?:の|もの|やつ|ページ|ところ)?$/.test(t)||/^(?:どれ|何|なに)(?:が|を)?(?:画像|画面)?保存(?:できる|出来る|可能)(?:の|もの|やつ|ページ)?$/.test(t);
+  }
+  function answerVagueSaveCapability(){
+    var list=[BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado,BY_ID.stats,BY_ID.retainer,BY_ID.jinpo].filter(Boolean),ids=list.map(function(x){return x.id;});
+    return {
+      handled:true,
+      mode:'サイト総合案内',
+      answer:'保存はできます。何を残したいかで案内先が変わります。\n・鬼神石・九十九・魔導結晶：選んだ一覧画面を画像保存\n・能力計算・家臣計算：能力表を画像保存\n・陣法検索：編成をページ内へ保存し、共有URLやJSONでも受け渡し\n「一覧を8個選ぶやつ」「能力計算の結果」「編成」のように、保存したいものを一言だけ教えてください。',
+      links:list.map(itemLink),
+      data:{siteFeature:'save',siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteVagueCapability:'save',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}
+    };
+  }
+
+  function vagueSiteCapabilityKind(text){
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim();
+    if(!t||mentionedItems(t).length)return'';
+    t=t.replace(/^(?:このサイト|ここ|これ|それ)(?:で|は|って)?[、,\s]*/,'');
+    if(/^(?:何か|なにか)?(?:を)?(?:計算|シミュレーション)(?:は|って)?(?:できる|出来る|可能|ある)(?:の|もの|やつ|ページ|ところ)?$/.test(t)||/^(?:何|なに)(?:を|が)?計算できる(?:の)?$/.test(t))return'calculate';
+    if(/^(?:何か|なにか)?(?:の)?(?:一覧|リスト|表)(?:は|って)?(?:ある|見られる|見れる|出せる|見たい)(?:の|もの|やつ|ページ)?$/.test(t)||/^(?:何|なに)(?:の)?(?:一覧|リスト|表)(?:が)?ある(?:の)?$/.test(t))return'list';
+    if(/^(?:何か|なにか)?(?:を)?(?:比較|比べること)(?:は|って)?(?:できる|出来る|可能)(?:の|もの|やつ|ページ)?$/.test(t)||/^(?:何|なに)(?:を|が)?比較できる(?:の)?$/.test(t))return'compare';
+    if(/^(?:何か|なにか)?(?:を)?(?:共有|シェア|URL共有)(?:は|って)?(?:できる|出来る|可能)(?:の|もの|やつ|ページ)?$/.test(t)||/^(?:何|なに)(?:を|が)?共有できる(?:の)?$/.test(t))return'share';
+    if(/^(?:(?:何|なに)(?:が|を)?(?:検索|探せる)|(?:検索|探すこと)(?:は|って)?(?:できる|出来る|可能))(?:の|もの|やつ|ページ)?$/.test(t))return'search';
+    if(/^(?:使い方(?:を)?教えて|どう使う(?:の|もの)?|どこから(?:開く|始める)(?:の|もの)?|何から(?:始める|見ればいい)(?:の)?)$/.test(t))return'use';
+    return'';
+  }
+  function answerVagueSiteCapability(kind){
+    var list=[],ids=[];
+    if(kind==='calculate'){
+      list=[BY_ID.stats,BY_ID.retainer,BY_ID.shichisei,BY_ID.food,BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado].filter(Boolean);ids=list.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'計算できます。何を計算したいですか？\n・自分の能力：能力計算\n・家臣の能力：家臣計算\n・転生後：七星転生\n・必要な食料：食料\n・一覧から8個選んだ合計：鬼神石・九十九・魔導結晶\n「家臣の」「自分の」「8個の合計」のような短い返事で大丈夫です。',links:list.map(itemLink),data:{siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteVagueCapability:'calculate',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    if(kind==='list'){
+      list=[BY_ID.heroes,BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado,BY_ID.counter,BY_ID.meibutsu].filter(Boolean);ids=list.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'一覧はあります。何の一覧を見たいですか？\n・英傑：能力・因子・職業・コストなど\n・鬼神石・九十九・魔導結晶：能力・入手・合計など\n・カウンター：場所ごとの敵の数値\n・名物：御蔵番に関連する名物一覧\n「英傑の」「九十九の」「カウンター」のように一言で続けてください。',links:list.map(itemLink),data:{siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteVagueCapability:'list',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    if(kind==='compare'){
+      return {handled:true,mode:'サイト総合案内',answer:'比較できます。何と何を比べたいですか？\nたとえば「九十九と鬼神石」「能力計算と家臣計算」のように、二つの名前だけ続けてください。違いを説明して、目的があれば合う方まで絞ります。',links:[],data:{siteVagueCapability:'compare',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    if(kind==='share'){
+      var jinpo=BY_ID.jinpo;
+      return {handled:true,mode:'サイト総合案内',answer:'陣法の編成なら共有できます。陣法検索には、編成保存・共有URL・JSON出力と読込があります。\n別のものを共有したい場合は、その名前を教えてください。',links:jinpo?[itemLink(jinpo)]:[],data:{siteItem:'jinpo',siteFeature:'share',siteVagueCapability:'share',siteVagueCapabilityAnswer:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    if(kind==='search'){
+      list=[BY_ID.jinpo,BY_ID.heroes,BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado,BY_ID.counter].filter(Boolean);ids=list.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'探せます。探したいものによって入口が変わります。\n・6人編成：陣法検索で条件を指定して検索\n・英傑：英傑一覧で能力・因子・職業・コストを確認\n・鬼神石・九十九・魔導結晶：各一覧で能力や入手を確認\n・敵の数値：カウンターから場所を選択\n「編成の」「英傑の」「九十九の」「カウンター」のように一言で続けてください。',links:list.map(itemLink),data:{siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteVagueCapability:'search',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    if(kind==='use'){
+      list=[BY_ID.jinpo,BY_ID.heroes,BY_ID.stats,BY_ID.retainer,BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado,BY_ID.counter].filter(Boolean);ids=list.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'もちろんです。やりたいことを一言もらえれば、使うページと最初の操作まで案内します。\n・6人編成を探す：陣法検索\n・英傑を調べる：英傑一覧\n・自分／家臣の能力を見る：能力計算／家臣計算\n・鬼神石・九十九・魔導結晶を見る：各一覧\n・敵の数値を見る：カウンター\n「家臣の」「編成の」「九十九の」のような短い返事で大丈夫です。',links:list.map(itemLink),data:{siteItems:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteVagueCapability:'use',siteVagueCapabilityClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+    return null;
+  }
+  function latestVagueCapabilityContext(history){
+    var h=Array.isArray(history)?history:[];
+    function fromAssistant(index){
+      if(index<0||!h[index]||h[index].role!=='assistant')return null;
+      var data=h[index].meta&&h[index].meta.data||{},kind=String(data.siteVagueCapability||'');
+      if(!data.siteVagueCapabilityClarification||!kind||data.siteGuideContextCleared)return null;
+      var ids=data.siteCandidates||data.candidates||data.siteItems||[],sourceIds=data.siteSourceCandidates||ids;
+      return {kind:kind,candidates:Array.isArray(ids)?ids.map(function(id){return BY_ID[id];}).filter(Boolean):[],sourceCandidates:Array.isArray(sourceIds)?sourceIds.map(function(id){return BY_ID[id];}).filter(Boolean):[],firstComparisonItem:String(data.firstComparisonItem||''),index:index};
+    }
+    var direct=fromAssistant(h.length-2);if(direct)return direct;
+    if(h.length>=4&&h[h.length-3]&&h[h.length-3].role==='user'&&acknowledgementOnly(h[h.length-3].text)){
+      var ackAssistant=h[h.length-2],ackData=ackAssistant&&ackAssistant.meta&&ackAssistant.meta.data||{};
+      if(ackAssistant&&ackAssistant.role==='assistant'&&!ackData.siteGuide)return fromAssistant(h.length-4);
+    }
+    return null;
+  }
+  function markVagueCapabilityFollowup(result,kind){
+    if(!result)return null;result.data=result.data||{};result.data.siteVagueCapability=kind;result.data.siteVagueCapabilityFollowup=true;return result;
+  }
+  function vagueCapabilitySingleAnswer(item,kind,feature,text,sourceCandidates){
+    if(!item)return null;
+    var result=feature?answerFeatures(item,[feature],true,text):explainItem(item,true);
+    result=markVagueCapabilityFollowup(result,kind);result.data.selectedSiteItem=item.id;
+    var source=(sourceCandidates||[]).filter(Boolean);if(source.length)result.data.siteSourceCandidates=source.map(function(x){return x.id;});
+    return result;
+  }
+  function vagueCapabilityChoiceItem(kind,text,candidates){
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim().replace(/^(?:じゃあ|では|それなら|なら|えっと|えーと|やっぱり|やっぱ|やはり|いや|ううん|違う|ちがう|訂正)[、,\s]*/,'').replace(/(?:の|やつ|ほう|方|について)$/,'').trim();
+    var list=(candidates||[]).filter(Boolean);
+    function listed(id){for(var i=0;i<list.length;i++)if(list[i]&&list[i].id===id)return list[i];return null;}
+    if((kind==='calculate'||kind==='save'||kind==='use')&&/^(?:自分|自分の能力|能力|能力値|能力計算|能力表|ステ|ステータス|キャラ)$/.test(t))return listed('stats');
+    if((kind==='calculate'||kind==='save'||kind==='use')&&/^(?:家臣|家臣計算|家臣の能力|家臣能力表|家臣ステ)$/.test(t))return listed('retainer');
+    if(kind==='calculate'&&/^(?:七星|七星転生|転生|転生後)$/.test(t))return listed('shichisei');
+    if(kind==='calculate'&&/^(?:食料|兵糧|必要な食料)$/.test(t))return listed('food');
+    if((kind==='save'||kind==='search'||kind==='use')&&/^(?:編成|陣法|陣法編成|編成検索|6人編成|六人編成|検索条件)$/.test(t))return listed('jinpo');
+    if((kind==='list'||kind==='search'||kind==='use')&&/^(?:英傑|英傑一覧|英傑データ|人物|因子|職業|コスト)$/.test(t))return listed('heroes');
+    if((kind==='list'||kind==='search'||kind==='use')&&/^(?:鬼神石|鬼神)$/.test(t))return listed('kishin');
+    if((kind==='list'||kind==='search'||kind==='use')&&/^(?:九十九|九十九の力)$/.test(t))return listed('tsukumo');
+    if((kind==='list'||kind==='search'||kind==='use')&&/^(?:魔導|魔導結晶)$/.test(t))return listed('mado');
+    if((kind==='list'||kind==='search'||kind==='use')&&/^(?:カウンター|敵|敵の数値)$/.test(t))return listed('counter');
+    if(kind==='list'&&/^(?:名物|名物一覧)$/.test(t))return listed('meibutsu');
+    return selectFromCandidates(t,list);
+  }
+  function answerVagueCapabilityFollowup(text,history){
+    var ctx=latestVagueCapabilityContext(history);if(!ctx)return null;
+    var t=normalizeInput(text).replace(/[？?。！!]+$/g,'').trim().replace(/^(?:じゃあ|では|それなら|なら|えっと|えーと)[、,\s]*/,'').replace(/(?:の|やつ|ほう|方|について)$/,'').trim();
+    if(!t||acknowledgementOnly(t))return null;
+    var item=null;
+    if(ctx.kind==='save'){
+      if(/^(?:一覧|一覧画面|8個|8個の一覧|選ぶ一覧)$/.test(t)){
+        var saveLists=[BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado].filter(Boolean),saveChoice=candidateClarification(saveLists,'一覧画面を画像保存できるのは、','です。どの一覧ですか？');
+        saveChoice.data.siteVagueCapability='save';saveChoice.data.siteVagueCapabilityClarification=true;saveChoice.data.siteVagueCapabilityFollowup=true;saveChoice.data.siteSourceCandidates=(ctx.sourceCandidates.length?ctx.sourceCandidates:ctx.candidates).map(function(x){return x.id;});return saveChoice;
+      }
+      var saveNamed=vagueCapabilityChoiceItem('save',t,ctx.candidates);if(saveNamed)return vagueCapabilitySingleAnswer(saveNamed,'save','save',text,ctx.sourceCandidates);
+    }
+    if(ctx.kind==='calculate'){
+      if(/^(?:8個|8個の合計|一覧の合計|選んだ合計)$/.test(t)){
+        var totalLists=[BY_ID.kishin,BY_ID.tsukumo,BY_ID.mado].filter(Boolean),totalChoice=candidateClarification(totalLists,'8個を選んで合計を見られるのは、','です。どれを計算しますか？');
+        totalChoice.data.siteVagueCapability='calculate';totalChoice.data.siteVagueCapabilityClarification=true;totalChoice.data.siteVagueCapabilityFollowup=true;totalChoice.data.siteSourceCandidates=(ctx.sourceCandidates.length?ctx.sourceCandidates:ctx.candidates).map(function(x){return x.id;});return totalChoice;
+      }
+      var calculateNamed=vagueCapabilityChoiceItem('calculate',t,ctx.candidates);if(calculateNamed)return vagueCapabilitySingleAnswer(calculateNamed,'calculate','',text,ctx.sourceCandidates);
+    }
+    if(ctx.kind==='list'){
+      item=vagueCapabilityChoiceItem('list',t,ctx.candidates);
+      if(item)return vagueCapabilitySingleAnswer(item,'list','',text,ctx.sourceCandidates);
+    }
+    if(ctx.kind==='search'||ctx.kind==='use'){
+      item=vagueCapabilityChoiceItem(ctx.kind,t,ctx.candidates);
+      if(item)return vagueCapabilitySingleAnswer(item,ctx.kind,'',text,ctx.sourceCandidates);
+    }
+    if(ctx.kind==='compare'){
+      var pair=mentionedItems(t);
+      if(pair.length===1&&ctx.firstComparisonItem&&BY_ID[ctx.firstComparisonItem]&&ctx.firstComparisonItem!==pair[0].id)pair=[BY_ID[ctx.firstComparisonItem],pair[0]];
+      if(pair.length>=2)return markVagueCapabilityFollowup(compareItems(pair),'compare');
+      if(pair.length===1)return {handled:true,mode:'サイト総合案内',answer:'「'+pair[0].name+'」と、もう一つは何を比べたいですか？ 名前を一つだけ教えてください。',links:[itemLink(pair[0])],data:{siteVagueCapability:'compare',siteVagueCapabilityClarification:true,siteVagueCapabilityFollowup:true,firstComparisonItem:pair[0].id,needsClarification:true}};
+    }
+    return null;
+  }
+
+  function latestVagueCapabilityDecisionContext(history){
+    var h=Array.isArray(history)?history:[];
+    function fromAssistant(index){
+      if(index<0||!h[index]||h[index].role!=='assistant')return null;
+      var data=h[index].meta&&h[index].meta.data||{},kind=String(data.siteVagueCapability||''),item=BY_ID[String(data.siteItem||'')];
+      if(!data.siteVagueCapabilityFollowup||!kind||!item||data.siteGuideContextCleared)return null;
+      var ids=data.siteSourceCandidates||[],source=Array.isArray(ids)?ids.map(function(id){return BY_ID[id];}).filter(Boolean):[];
+      if(source.length<2)return null;
+      return {kind:kind,item:item,sourceCandidates:source,index:index};
+    }
+    var direct=fromAssistant(h.length-2);if(direct)return direct;
+    if(h.length>=4&&h[h.length-3]&&h[h.length-3].role==='user'&&acknowledgementOnly(h[h.length-3].text)){
+      var ackAssistant=h[h.length-2],ackData=ackAssistant&&ackAssistant.meta&&ackAssistant.meta.data||{};
+      if(ackAssistant&&ackAssistant.role==='assistant'&&!ackData.siteGuide)return fromAssistant(h.length-4);
+    }
+    return null;
+  }
+  function vagueCapabilityRevisionCue(text){
+    var t=normalizeInput(text);
+    return /^(?:いや|ううん|違う|ちがう|訂正|やっぱり|やっぱ|やはり)[、,\s]*.+/.test(t)||/^(?:それじゃない|それではない|今のじゃない|別の(?:は|がいい|にして)?|ほかの(?:は|がいい|にして)?|他の(?:は|がいい|にして)?|どれでもない|どれも違う|全部違う)[。！!？?]*$/.test(t);
+  }
+  function answerVagueCapabilityRevision(text,history){
+    var ctx=latestVagueCapabilityDecisionContext(history);if(!ctx||!vagueCapabilityRevisionCue(text))return null;
+    var t=normalizeInput(text),source=ctx.sourceCandidates,ids=source.map(function(x){return x.id;});
+    if(/(?:どれでもない|どれも違う|全部違う)/.test(t)){
+      return {handled:true,mode:'サイト総合案内',answer:'わかりました。今の候補はいったん外します。探したいものを「何をしたいか」で言い直してくれれば、そこから案内し直します。',links:[],data:{siteItem:'__site_guide_context_cleared__',siteGuideContextCleared:true,siteVagueCapability:ctx.kind,siteVagueCapabilityFollowup:true,siteVagueCapabilityCancelled:true,rejectedSiteCandidates:ids,needsClarification:true}};
+    }
+    var target=vagueCapabilityChoiceItem(ctx.kind,text,source);
+    if(target){
+      var revised=vagueCapabilitySingleAnswer(target,ctx.kind,ctx.kind==='save'?'save':'',text,source);
+      revised.data.siteVagueCapabilityRevision=true;revised.data.previousSelectedSiteItem=ctx.item.id;return revised;
+    }
+    if(/(?:それじゃない|それではない|今のじゃない|別の|ほかの|他の)/.test(t)){
+      var remaining=source.filter(function(x){return x.id!==ctx.item.id;}),choice=candidateClarification(remaining,'わかりました。「'+ctx.item.name+'」以外なら、','です。どれにしますか？');
+      if(!choice)return null;
+      choice.data.siteVagueCapability=ctx.kind;choice.data.siteVagueCapabilityClarification=true;choice.data.siteVagueCapabilityFollowup=true;choice.data.siteVagueCapabilityRevision=true;choice.data.siteSourceCandidates=ids;choice.data.previousSelectedSiteItem=ctx.item.id;return choice;
+    }
+    return null;
+  }
 
   function explicitNavigationCue(text){
     var t=normalizeInput(text);
@@ -742,9 +970,41 @@
     var tail=info.tail,tailItems=mentionedItems(tail);
     if(!tailItems.length){
       var leftItems=mentionedItems(info.left);
-      if(leftItems.length===1&&featureIntents(tail,leftItems[0]).length)tail=leftItems[0].name+' '+tail;
+      if(leftItems.length===1&&(featureIntents(tail,leftItems[0]).length||pageHelpCue(tail,leftItems[0],leftItems[0])))tail=leftItems[0].name+' '+tail;
     }
     return S(tail);
+  }
+  function inlineSiteGoalRevision(text){
+    var info=siteCorrectionParts(text);if(!info||!S(info.left))return null;
+    if(/[、,]\s*(?:でも|ただ|ただし|一方で)[、,\s]*.+(?:も|についても)(?:知りたい|教えて|見たい|確認したい)/.test(info.tail))return null;
+    var leftItems=mentionedItems(info.left),leftPurpose=purposeScores(info.left),tail=correctionTail(text);
+    if(!tail||(!leftItems.length&&!leftPurpose.length))return null;
+    if(!mentionedItems(tail).length&&!purposeScores(tail).length&&factSpecificCue(tail))return null;
+    return {left:info.left,tail:tail,leftItems:leftItems};
+  }
+  function answerInlineSiteGoalRevision(text,opt){
+    var revision=inlineSiteGoalRevision(text);if(!revision||opt&&opt._inlineSiteGoalRevision)return null;
+    var nested={};Object.keys(opt||{}).forEach(function(key){nested[key]=opt[key];});
+    nested.original=revision.tail;nested._inlineSiteGoalRevision=true;
+    var result=respond(revision.tail,nested),specific=!!(result&&result.handled&&result.data&&(result.data.siteItem&&result.data.siteItem!=='__site_guide_context_cleared__'||Array.isArray(result.data.siteComparison)&&result.data.siteComparison.length>=2||result.data.stoneName));
+    if(!specific){
+      var stoneRequest=seikaiStoneRequest(revision.tail,null,currentItem());
+      if(stoneRequest)result=seikaiStoneAnswer(stoneRequest);
+      else{
+        var pair=mentionedItems(revision.tail);
+        if(pair.length>=2&&/(?:どっち|どちら|違い|違う|どう違う|比較|使い分け|どれがいい)/.test(normalizeInput(revision.tail)))result=compareItems(pair);
+        else{
+          var detailed=findItemDetailed(revision.tail),purpose=purposeScores(revision.tail),item=detailed.item||(purpose[0]&&purpose[0].item)||roughFollowupItem(revision.tail);
+          if(item){var intents=featureIntents(revision.tail,item);result=intents.length?answerFeatures(item,intents,true,revision.tail):explainItem(item,true);}
+        }
+      }
+    }
+    if(!result||!result.handled)return null;
+    result.data=result.data||{};result.data.siteInlineGoalRevision=true;
+    result.data.replacedSiteItems=revision.leftItems.map(function(x){return x.id;});
+    var selected=result.data.siteItem&&BY_ID[result.data.siteItem],prefix=selected?'わかりました。「'+selected.name+'」の方ですね。':'わかりました。言い直した後の内容を優先します。';
+    result.answer=prefix+'\n'+String(result.answer||'');
+    return result;
   }
   function deicticOpenCue(text){
     var t=normalizeInput(text);
@@ -1058,6 +1318,27 @@
     return {handled:true,mode:'サイト総合案内',answer:'確認できる内容はこちらなのですよ。\n'+lines.join('\n'),links:links,data:{siteItems:items,siteFeatures:features,siteFeatureSubjects:featureSubjectIds(text),verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
   }
 
+  // 一つのページを明示して「開いて、保存方法も教えて」のように二段で頼まれた時は、
+  // 後半だけに縮めず、ページを開く案内と機能説明を一つの回答へまとめる。
+  function answerExplicitOpenAndFeature(text,ctx){
+    var t=normalizeInput(text);if(!/(?:開いて|開けて|見せて|出して)/.test(t))return null;
+    // 比較候補がある状態の「能力計算に入るやつだけ開いて」は、
+    // 能力計算ページを開いて説明する依頼ではなく、候補を条件で絞る依頼。
+    // 単一ページの二段要求より、候補集合の条件判定を優先する。
+    if(ctx&&(ctx.candidates||[]).length>1&&candidateConditionalPlan(t,ctx.candidates))return null;
+    var explicit=mentionedItems(t);if(explicit.length!==1)return null;
+    var item=explicit[0],intents=featureIntents(t,item),help=pageHelpCue(t,item,item),result=null;
+    if(!intents.length&&!help)return null;
+    if(intents.length)result=answerFeatures(item,intents,true,t);
+    else result=explainItem(item,true);
+    if(!result)return null;
+    result.answer='「'+item.name+'」を開けるようにしました。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteOpenAndFeature=true;result.data.siteOpen=true;
+    ctx=ctx||{};
+    if((ctx.candidates||[]).some(function(x){return x&&x.id===item.id;}))result=retainCandidateContext(result,ctx.candidates,item,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+    return result;
+  }
+
 
   function retainCandidateContext(result,candidates,selected,kind,sourceCandidates,conditions){
     if(!result||!result.data||!selected)return result;
@@ -1074,6 +1355,469 @@
 
   function homeLink(){return link('トップページを開く','');}
   function itemLink(item){if(item.id==='video')return homeLink();return link(item.name+'を開く',item.path,item.external);}
+  function repeatGuideLinkCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:さっき|直前|今|その|この|前)(?:の)?[、,\s]*)?(?:リンク|URL)(?:を)?(?:だけ|もう一回|もう一度|再掲|また|貼って|張って|ちょうだい|ください|見せて|出して|開いて)?[。！!？?]*$/i.test(t);
+  }
+  function latestImmediateGuideLinkContext(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var meta=x.meta||{},data=meta.data||{},raw=Array.isArray(meta.links)?meta.links:[];
+      if(!data.siteGuide||data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__'||!raw.length)return null;
+      var links=[];raw.slice(0,8).forEach(function(v){
+        if(typeof v==='string'){if(v)links.push({label:'リンクを開く',url:v});return;}
+        if(!v||typeof v!=='object')return;var url=String(v.url||v.href||'');if(!url)return;
+        var copy={};Object.keys(v).forEach(function(k){copy[k]=v[k];});copy.url=url;if(!copy.label)copy.label=String(v.title||'リンクを開く');links.push(copy);
+      });
+      return links.length?{links:links,data:data}:null;
+    }
+    return null;
+  }
+  function copyGuideLinkContextData(source,seed){
+    source=source||{};var data=seed||{},keys=['siteItem','siteFeature','siteFeatureSubjects','siteItems','siteComparison','candidates','siteCandidates','siteSourceCandidates','siteOpenedItems','siteExcludedItems','siteConditions','selectedSiteItem','previousSelectedSiteItem','siteLinkMissRejectedItem','needsClarification','siteVagueCapability','siteVagueCapabilityClarification','siteVagueCapabilityFollowup','siteVagueCapabilityAnswer','stoneName','stoneId'];
+    keys.forEach(function(key){
+      var value=source[key];
+      if(Array.isArray(value))data[key]=value.slice(0,12);
+      else if(value!==undefined&&value!==null&&value!=='')data[key]=value;
+    });
+    return data;
+  }
+  function repeatGuideLinks(history){
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var data=copyGuideLinkContextData(prior.data,{siteRepeatedLinks:true,siteExactLinkRecall:true});
+    return {handled:true,mode:'サイト総合案内',answer:prior.links.length===1?'直前のリンクはこちらです。':'直前に案内したリンクはこちらです。',links:prior.links,data:data};
+  }
+  function guideConversationReturnCue(text){
+    var t=normalizeInput(text);
+    if(/^(?:(?:さっき|直前|前|今まで)(?:の)?[、,\s]*)?(?:(?:サイト|ページ|リンク)(?:の)?|たいらの野望の)?案内(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?比較(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:案内|サイト|ページ|比較)(?:の話)?(?:の)?続き(?:を)?(?:お願い|続けて|見せて|再開して)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:サイト|ページ|リンク)(?:の)?(?:案内|話|続き|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?案内して(?:いた|た)(?:やつ|もの|ページ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:じゃあ|では|そろそろ|また)[、,\s]*)?(?:さっきの)?続き(?:を)?(?:やろう|やろ|続けよう|続けよ|再開しよう|再開しよ)[。！!？?]*$/.test(t)||/^(?:また|そろそろ)[、,\s]*(?:始めよう|始めよ|再開しよう|再開しよ)[。！!？?]*$/.test(t))return true;
+    return /^(?:さっき|直前|前)(?:の)?(?:やつ|ところ|続き)(?:を)?(?:続けて|お願い|見せて|再開して)[。！!？?]*$/.test(t);
+  }
+  function guideConversationReturnTail(text){
+    var t=normalizeInput(text),patterns=[
+      /^(?:(?:さっき|直前|前|今まで)(?:の)?[、,\s]*)?(?:(?:サイト|ページ|リンク)(?:の)?|たいらの野望の)?案内(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
+      /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?比較(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
+      /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:サイト|ページ|リンク)(?:の)?(?:案内|話|続き|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
+      /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?案内して(?:いた|た)(?:やつ|もの|ページ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/
+    ];
+    for(var i=0;i<patterns.length;i++){
+      var match=t.match(patterns[i]),tail=match&&S(match[1]||'');
+      if(tail&&!/^(?:ください|お願い|続けて)[。！!？?]*$/.test(tail))return tail;
+    }
+    return'';
+  }
+  function guidePauseTurns(entries){
+    var list=Array.isArray(entries)?entries:[];if(!list.length)return 0;
+    if(list.length%2!==0||list.length>6)return-1;
+    for(var i=0;i<list.length;i+=2){
+      var user=list[i],assistant=list[i+1];
+      if(!user||user.role!=='user'||!assistant||assistant.role!=='assistant')return-1;
+      var meta=assistant.meta||{},data=meta.data||{},mode=S(meta.mode||'');
+      if(data.siteGuide||data.siteGuideContextCleared||data.conversationRepair||data.contextBoundary||data.topicSwitch)return-1;
+      if(mode&&mode!=='日常会話')return-1;
+    }
+    return list.length/2;
+  }
+  function latestPausedGuideContext(history){
+    var h=Array.isArray(history)?history:[],end=Math.max(0,h.length-1),lower=Math.max(0,end-7);
+    for(var i=end-1;i>=lower;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var meta=x.meta||{},data=meta.data||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')return null;
+      if(!data.siteGuide)continue;
+      var between=h.slice(i+1,end),pauseTurns=guidePauseTurns(between);if(pauseTurns<0)return null;
+      var raw=Array.isArray(meta.links)?meta.links:[],links=[];
+      raw.slice(0,8).forEach(function(v){
+        if(typeof v==='string'){if(v)links.push({label:'リンクを開く',url:v});return;}
+        if(!v||typeof v!=='object')return;var url=String(v.url||v.href||'');if(!url)return;
+        var copy={};Object.keys(v).forEach(function(k){copy[k]=v[k];});copy.url=url;if(!copy.label)copy.label=String(v.title||'リンクを開く');links.push(copy);
+      });
+      var ids=Array.isArray(data.siteComparison)&&data.siteComparison.length?data.siteComparison:(data.siteCandidates||data.candidates||data.siteItems||[]),items=Array.isArray(ids)?ids.map(function(id){return BY_ID[id];}).filter(Boolean):[];
+      if(items.length>1&&links.length<2)links=items.slice(0,8).map(itemLink);
+      else if(!links.length&&items.length)links=items.slice(0,8).map(itemLink);
+      if(!links.length&&data.siteItem&&BY_ID[data.siteItem])links=[itemLink(BY_ID[data.siteItem])];
+      if(!links.length)return null;
+      return {links:links,data:data,items:items,pauseTurns:pauseTurns};
+    }
+    return null;
+  }
+  function answerGuideConversationReturn(history){
+    var prior=latestPausedGuideContext(history);if(!prior)return null;
+    var data=copyGuideLinkContextData(prior.data,{siteGuideConversationReturn:true,siteGuideReturnFromPause:prior.pauseTurns>0,siteGuidePauseTurns:prior.pauseTurns,siteExactLinkRecall:true}),answer='',items=uniqueCandidateItems(prior.items),returnLead=prior.pauseTurns>1?'世間話の前の案内へ戻りますね。':'さっきの案内に戻りました。';
+    var stoneName=prior.links.length===1?stoneNameFromGuideUrl(prior.links[0]&&prior.links[0].url):'';
+    if(stoneName){
+      answer=returnLead+' 星海の荒石の「'+stoneName+'」を開いた状態はこちらです。';
+      data.siteItem='seikai';data.stoneName=stoneName;
+    }else if(items.length>1){
+      var selected=data.selectedSiteItem&&BY_ID[data.selectedSiteItem];
+      answer=(prior.pauseTurns>1?'世間話の前の比較へ戻りますね。':'比較の続きに戻りました。')+' 候補は'+candidateNames(items)+'です。';
+      if(selected&&items.some(function(x){return x.id===selected.id;}))answer+=' 今選んでいるのは「'+selected.name+'」です。';
+      else answer+=' 何に使いたいか言ってくれれば、一つへ絞れます。';
+      data.siteComparison=items.map(function(x){return x.id;});data.siteCandidates=data.siteComparison.slice();data.candidates=data.siteComparison.slice();
+    }else{
+      var item=data.siteItem&&BY_ID[data.siteItem]||items[0]||itemFromUrl(prior.links[0]&&prior.links[0].url);
+      answer=item?returnLead+' 「'+item.name+'」はこちらから続けられます。':returnLead+' こちらから続けられます。';
+      if(item)data.siteItem=item.id;
+    }
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:prior.links,data:data};
+  }
+  function answerGuideConversationReturnWithGoal(text,history,opt){
+    if(opt&&opt._guideReturnWithGoal)return null;
+    var tail=guideConversationReturnTail(text);if(!tail)return null;
+    var goalTail=tail.replace(/^([1-9１-９一二三四五六七八九])(?:つ目|個目)/,'$1番目');
+    var prior=latestPausedGuideContext(history);if(!prior)return null;
+    var resumedData=copyGuideLinkContextData(prior.data,{siteGuide:true}),base=Array.isArray(history)?history.slice():[];
+    if(base.length&&base[base.length-1]&&base[base.length-1].role==='user')base.pop();
+    base.push({role:'assistant',text:'',meta:{mode:'サイト総合案内',links:prior.links,data:resumedData}});
+    base.push({role:'user',text:goalTail});
+    var nested={};Object.keys(opt||{}).forEach(function(key){nested[key]=opt[key];});
+    nested.original=goalTail;nested.history=base;nested._guideReturnWithGoal=true;
+    var result=respond(goalTail,nested);if(!result||!result.handled)return null;
+    result.data=result.data||{};result.data.siteGuideConversationReturn=true;result.data.siteGuideReturnFromPause=prior.pauseTurns>0;result.data.siteGuidePauseTurns=prior.pauseTurns;result.data.siteGuideReturnWithGoal=true;result.data.siteGuideReturnTarget=tail;
+    result.answer='案内へ戻って、そのままご希望の内容を案内します。\n'+String(result.answer||'');
+    return result;
+  }
+  function selectiveGuideLinkCue(text){
+    var t=normalizeInput(text);
+    if(!/(?:リンク|URL)/i.test(t)||repeatGuideLinkCue(t))return false;
+    return /(?:[1-9１-９一二三四五六七八九](?:番目|個目)|上から|下から|先頭|末尾|最後|一番上|一番下|真ん中|中央|と|、|,|だけ)/.test(t)||mentionedItems(t).length>0;
+  }
+  function selectedGuideLinks(text,prior){
+    var t=normalizeInput(text),list=prior&&Array.isArray(prior.links)?prior.links:[],out=[],seen={};if(list.length<2||!selectiveGuideLinkCue(t))return out;
+    function addIndex(index){if(index>=0&&index<list.length&&!seen[index]){seen[index]=1;out.push(list[index]);}}
+    if(/(?:上|先頭)から(?:の)?(?:2|２|二)(?:つ|個)(?:の)?(?:リンク|URL)/i.test(t)){addIndex(0);addIndex(1);return out;}
+    if(/(?:下|末尾|最後)から(?:の)?(?:2|２|二)(?:つ|個)(?:の)?(?:リンク|URL)/i.test(t)){addIndex(list.length-2);addIndex(list.length-1);return out;}
+    var fromTop=t.match(/(?:上|先頭)から([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:リンク|URL)/i);
+    var fromBottom=t.match(/(?:下|末尾|最後)から([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:リンク|URL)/i);
+    if(fromTop){addIndex(numberValue(fromTop[1])-1);return out;}
+    if(fromBottom){addIndex(list.length-numberValue(fromBottom[1]));return out;}
+    if(/(?:真ん中|中央)(?:の)?(?:リンク|URL)/i.test(t)&&list.length%2===1){addIndex(Math.floor(list.length/2));return out;}
+    if(/(?:最後|一番下|末尾)(?:の)?(?:リンク|URL)/i.test(t)){addIndex(list.length-1);return out;}
+    if(/(?:最初|一番上|先頭)(?:の)?(?:リンク|URL)/i.test(t)){addIndex(0);return out;}
+    var ordinal=t.match(/([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:リンク|URL)/i);
+    if(ordinal){addIndex(numberValue(ordinal[1])-1);return out;}
+
+    var ct=compact(t);
+    list.forEach(function(linkValue,index){
+      var item=itemFromUrl(linkValue&&linkValue.url),keys=item?candidateKeys(item):[],label=compact(linkValue&&linkValue.label||'').replace(/を開く$/,'');if(label)keys.push(label);
+      for(var i=0;i<keys.length;i++)if(keys[i]&&ct.indexOf(keys[i])>=0){addIndex(index);break;}
+    });
+    return out;
+  }
+  function selectGuideLinks(text,history){
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var chosen=selectedGuideLinks(text,prior);if(!chosen.length)return null;
+    var data=copyGuideLinkContextData(prior.data,{siteLinkSelection:true,siteLinkSelectionCount:chosen.length,siteExactLinkRecall:true});
+    if(chosen.length===1){
+      var item=itemFromUrl(chosen[0]&&chosen[0].url);if(item){data.siteItem=item.id;data.selectedSiteItem=item.id;}
+    }
+    return {handled:true,mode:'サイト総合案内',answer:chosen.length===1?'指定されたリンクはこちらです。':'指定されたリンクはこちらです。',links:chosen,data:data};
+  }
+  function guideLinkDestinationCue(text){
+    var t=normalizeInput(text);
+    if(/^(?:リンク|URL)(?:の)?先(?:は|って)?(?:どこ|何|どのページ|何のページ)?[。！!？?]*$/i.test(t))return true;
+    if(/^(?:これ|それ|このリンク|そのリンク|さっきのリンク|今のリンク)(?:は|って|を)?(?:押したら|開いたら)?[、,\s]*(?:どこ(?:に)?(?:飛ぶ|行く|いく|移動する|開く)?|何(?:が|を|の)?(?:開く|出る|ページ)?|どのページ|何のページ|リンク先)[。！!？?]*$/i.test(t))return true;
+    return /^(?:これ|それ)?(?:を)?押したら[、,\s]*(?:何が開く|どこに飛ぶ|どのページ)[。！!？?]*$/.test(t);
+  }
+  function stoneNameFromGuideUrl(url){
+    var s=String(url||'');
+    for(var name in SEIKAI_STONES){
+      if(!Object.prototype.hasOwnProperty.call(SEIKAI_STONES,name))continue;
+      var stone=SEIKAI_STONES[name];
+      if(new RegExp('(?:[?&]stone='+stone.id+'(?:[&#]|$)|#'+stone.key+'(?:$|[?&]))').test(s))return name;
+    }
+    return '';
+  }
+  function guideLinkDestination(linkValue){
+    var url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url);
+    if(stoneName)return '星海の荒石で'+stoneName+'が開いた状態';
+    var item=itemFromUrl(url);if(item)return '「'+item.name+'」ページ';
+    var label=String(linkValue&&linkValue.label||'リンク先').replace(/を開く$/,'');
+    return '「'+label+'」';
+  }
+  function explainGuideLinkDestinations(history){
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var lines=prior.links.map(function(linkValue){return '・'+String(linkValue.label||'リンク')+'：'+guideLinkDestination(linkValue);});
+    var answer=prior.links.length===1?'このリンクは、'+guideLinkDestination(prior.links[0])+'へ移動します。':'リンク先はこちらです。\n'+lines.join('\n');
+    var data=copyGuideLinkContextData(prior.data,{siteLinkDestinationExplanation:true,siteLinkDestinationCount:prior.links.length,siteExactLinkRecall:true});
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:prior.links,data:data};
+  }
+  function exactGuideLinkOpenCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:じゃあ|では|それなら|なら)[、,\s]*)?(?:それ|これ|そこ|そっち|そのページ|このページ|今の|さっきの)(?:を|に|へ)?(?:開いて|開けて|見せて|出して|行きたい|行って|いきたい|いって|飛びたい|お願い|でお願い)[。！!？?]*$/.test(t);
+  }
+  function openExactGuideLinks(history){
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var multiple=prior.links.length>1,data=copyGuideLinkContextData(prior.data,{siteExactLinkOpen:!multiple,siteLinkOpenNeedsSelection:multiple,siteExactLinkRecall:true});
+    if(multiple)data.needsClarification=true;
+    return {handled:true,mode:'サイト総合案内',answer:multiple?'リンクが複数あります。どのリンクを開くか、名前・順番・上や下で教えてください。':'では、このリンクから開けます。',links:prior.links,data:data};
+  }
+  function guideLinkMissCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:あれ|ごめん|ごめんね)[、,\s]*)?(?:ここ|そこ|このページ|そのページ|今のページ|開いたページ|リンク先)(?:は|が)?(?:じゃなかった|ではなかった|じゃない|ではない|違った|ちがった)(?:[、,。\s]+.+)?[。！!？?]*$/.test(t)||/^(?:(?:一つ|ひとつ|いったん|一旦)?(?:前|元|候補)(?:に|へ)?[、,\s]*)?戻って[、,\s]*(?:別|ほか|他)(?:の|のページ|の候補)?(?:にして|を見たい|を開いて|は)?(?:[、,。\s]+.+)?[。！!？?]*$/.test(t);
+  }
+  function guideLinkMissTail(text){
+    var t=normalizeInput(text),m=t.match(/(?:ここ|そこ|このページ|そのページ|今のページ|開いたページ|リンク先)(?:は|が)?(?:じゃなかった|ではなかった|じゃない|ではない|違った|ちがった)[、,。\s]+(.+)$/);
+    if(!m)m=t.match(/戻って[、,\s]*(?:別|ほか|他)(?:の|のページ|の候補)?(?:にして|を見たい|を開いて|は)?[、,。\s]+(.+)$/);
+    var tail=m&&S(m[1])||'';
+    if(/^(?:別|別の|ほか|ほかの|他|他の)(?:ページ|候補)?[。！!？?]*$/.test(tail))return'';
+    return tail;
+  }
+  function answerGuideLinkMiss(text,history,opt){
+    if(!guideLinkMissCue(text))return null;
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var explicit=guideLinkMissTail(text);
+    if(explicit&&!(opt&&opt._guideLinkMissRecovery)){
+      var nested={};Object.keys(opt||{}).forEach(function(key){nested[key]=opt[key];});
+      nested.original=explicit;nested._guideLinkMissRecovery=true;
+      var redirected=respond(explicit,nested);
+      if(redirected&&redirected.handled){
+        redirected.data=redirected.data||{};redirected.data.siteLinkMissRecovery=true;
+        var oldItem=prior.data&&prior.data.selectedSiteItem||prior.data&&prior.data.siteItem||'',oldLinkItem=prior.links.length===1&&itemFromUrl(prior.links[0]&&prior.links[0].url);
+        redirected.data.previousSelectedSiteItem=oldItem||(oldLinkItem&&oldLinkItem.id)||'';
+        redirected.answer='わかりました。今の案内先ではなく、こちらですね。\n'+String(redirected.answer||'');
+        return redirected;
+      }
+    }
+    if(prior.links.length===1&&stoneNameFromGuideUrl(prior.links[0]&&prior.links[0].url)){
+      var stoneChoices=answerStoneAlternatives('別の',history);
+      if(stoneChoices){stoneChoices.data.siteLinkMissRecovery=true;stoneChoices.answer='その荒石ではなかったのですね。\n'+stoneChoices.answer;return stoneChoices;}
+    }
+    var data=prior.data||{},rawIds=data.siteSourceCandidates||data.siteCandidates||data.candidates||data.siteComparison||data.siteItems||[],source=Array.isArray(rawIds)?rawIds.map(function(id){return BY_ID[id];}).filter(Boolean):[];
+    var selected=data.selectedSiteItem&&BY_ID[data.selectedSiteItem]||data.siteItem&&BY_ID[data.siteItem]||null;
+    if(!selected&&prior.links.length===1)selected=itemFromUrl(prior.links[0]&&prior.links[0].url);
+    if(source.length>1&&selected){
+      var remaining=uniqueCandidateItems(source).filter(function(x){return x.id!==selected.id;}),choice=candidateClarification(remaining,'「'+selected.name+'」ではなかったのですね。戻って選べるのは、','です。どれにしますか？');
+      if(choice){
+        choice.data.siteSourceCandidates=uniqueCandidateItems(source).map(function(x){return x.id;});choice.data.previousSelectedSiteItem=selected.id;choice.data.siteLinkMissRecovery=true;
+        if(data.siteVagueCapability){choice.data.siteVagueCapability=data.siteVagueCapability;choice.data.siteVagueCapabilityClarification=true;choice.data.siteVagueCapabilityFollowup=true;}
+        return choice;
+      }
+    }
+    if(prior.links.length>1&&!selected){
+      var multipleData=copyGuideLinkContextData(data,{siteLinkMissRecovery:true,siteLinkMissNeedsSelection:true,needsClarification:true});
+      multipleData.needsClarification=true;
+      return {handled:true,mode:'サイト総合案内',answer:'案内したリンクが複数あるので、どれを開いたかまでは分からないのですよ。違ったページの名前か順番を教えてください。',links:prior.links,data:multipleData};
+    }
+    return {handled:true,mode:'サイト総合案内',answer:'そこではなかったのですね。今の案内はいったん外しました。ページ名が分からなくても、「何をしたいか」をそのまま教えてください。',links:[],data:{siteItem:'__site_guide_context_cleared__',siteGuideContextCleared:true,siteLinkMissRecovery:true,previousSelectedSiteItem:selected&&selected.id||'',needsClarification:true}};
+  }
+  function guideLinkMissSelectionRequest(text,prior){
+    var data=prior&&prior.data||{};if(!data.siteLinkMissNeedsSelection)return null;
+    var items=[],seen={};(prior.links||[]).forEach(function(linkValue){
+      var item=itemFromUrl(linkValue&&linkValue.url);if(item&&!seen[item.id]){seen[item.id]=1;items.push(item);}
+    });
+    if(items.length<2)return null;
+    var t=normalizeInput(text),cleaned=t
+      .replace(/^(?:違った(?:の|ページ)(?:は)?|開いた(?:の|ページ)(?:は)?|間違えた(?:の|ページ)(?:は)?)[、,\s]*/,'')
+      .replace(/^(?:さっき|直前|今)(?:の)?[、,\s]*/,'')
+      .replace(/^(?:(?:開いた|案内した)(?:リンク|ページ|候補)|リンク|ページ|候補)(?:の)?[、,\s]*/,'')
+      .replace(/^([1-9１-９一二三四五六七八九])(?:つ目|個目)/,'$1番目');
+    var selected=selectFromCandidates(cleaned,items,null),requested=!!selected||/^(?:[1-9１-９一二三四五六七八九](?:番|番目)?|最初|一番上|先頭|上の|前者|最後|一番下|末尾|下の|後者|真ん中|中央|そっち|そちら|こっち|こちら|それ|そのページ|開いた方|開いたほう|どっち|どちら)/.test(cleaned);
+    return requested?{selected:selected,items:items,query:cleaned}:null;
+  }
+  function answerGuideLinkMissSelection(text,history){
+    var prior=latestImmediateGuideLinkContext(history),request=guideLinkMissSelectionRequest(text,prior);if(!request)return null;
+    var priorData=prior.data||{},source=uniqueCandidateItems(request.items),selected=request.selected;
+    if(!selected){
+      var unresolved=copyGuideLinkContextData(priorData,{siteLinkMissRecovery:true,siteLinkMissNeedsSelection:true,siteLinkMissSelectionUnresolved:true,needsClarification:true});
+      return {handled:true,mode:'サイト総合案内',answer:'どのページが違ったか、まだ一つに決められないのですよ。「上の方」「二つ目」「鬼神石の方」のように教えてください。',links:prior.links,data:unresolved};
+    }
+    var remaining=source.filter(function(item){return item.id!==selected.id;}),data=copyGuideLinkContextData(priorData,{});
+    data.siteComparison=[];data.siteItems=[];data.siteOpenedItems=[];data.siteExcludedItems=[selected.id];data.siteCandidates=remaining.map(function(item){return item.id;});data.candidates=data.siteCandidates.slice();data.siteSourceCandidates=source.map(function(item){return item.id;});
+    data.previousSelectedSiteItem=selected.id;data.siteLinkMissRejectedItem=selected.id;data.siteLinkMissRecovery=true;data.siteLinkMissNeedsSelection=false;data.siteLinkMissSelectionResolved=true;
+    if(remaining.length===1){
+      var target=remaining[0];data.siteItem=target.id;data.selectedSiteItem=target.id;data.needsClarification=false;
+      return {handled:true,mode:'サイト総合案内',answer:'違ったのは「'+selected.name+'」ですね。では、もう一つの「'+target.name+'」はこちらです。',links:[itemLink(target)],data:data};
+    }
+    data.siteItem='';data.selectedSiteItem='';data.needsClarification=true;
+    return {handled:true,mode:'サイト総合案内',answer:'違ったのは「'+selected.name+'」ですね。残りは'+candidateNames(remaining)+'です。どれを開きますか？',links:remaining.slice(0,8).map(itemLink),data:data};
+  }
+  function postOpenGuideCue(text){
+    var t=normalizeInput(text);
+    if(/^(?:次|次は|この次|このあと|この後|それから)(?:は|どうする|何する|何をする|どうすればいい|何をすればいい)?[。！!？?]*$/.test(t))return true;
+    return /^(?:(?:開いたら|開いたあと|開いた後|開いたけど|そこで|そこでは|そのページで|このページで|次に|まず)[、,\s]*)?(?:まず[、,\s]*)?(?:何をすればいい|何すればいい|何をする|何する|どう使う|どうすればいい|どこを見ればいい|どこを押せばいい)(?:の|ですか)?[。！!？?]*$/.test(t);
+  }
+  function postOpenGuideAnswer(history){
+    var prior=latestImmediateGuideLinkContext(history);if(!prior)return null;
+    var multiple=prior.links.length>1,data=copyGuideLinkContextData(prior.data,{sitePostOpenGuidance:!multiple,sitePostOpenNeedsSelection:multiple,siteExactLinkRecall:true,pageHelp:!multiple});
+    if(multiple){
+      data.needsClarification=true;
+      return {handled:true,mode:'サイト総合案内',answer:'ページごとに次の操作が違います。どれを使うか、名前・順番・上や下で教えてください。',links:prior.links,data:data};
+    }
+    var linkValue=prior.links[0],url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url),item=itemFromUrl(url),answer='';
+    if(stoneName){
+      answer=stoneName+'が開いた状態です。合成早見表で、'+stoneName+'の材料と完成能力を確認してください。';
+      if(stoneName==='文曲')answer+=' 文曲の輝光は、紺碧・山吹・濡羽・朽葉の星光（金）を合成します。完成時は生命1500、知力250です。';
+      data.siteItem='seikai';data.siteInternal='stone';data.stoneName=stoneName;
+    }else if(item){
+      var usage=usageOf(item);
+      answer='「'+item.name+'」を開いたら、'+(usage||item.desc);
+      data.siteItem=item.id;data.selectedSiteItem=data.selectedSiteItem||item.id;data.verifiedSiteSource=!!sourcePage(item);
+    }else{
+      answer='リンク先を開いたら、ページ内の案内に沿って進めてください。';
+    }
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:prior.links,data:data};
+  }
+  function continuedGuideDetailIntent(text){
+    var t=normalizeInput(text);
+    if(/^(?:(?:それ|これ|そこで|そこでは|そのページ|このページ)(?:で|では|は|って)?[、,\s]*)?(?:何を入力する|何入力する|何を入れる|何入れる|入力するのは何|入力項目は何)(?:の|ですか)?[。！!？?]*$/.test(t))return 'inputs';
+    if(/^(?:(?:それ|これ|そこで|そこでは|そのページ|このページ)(?:で|では|は|って)?[、,\s]*)?(?:どこを押す|何を押す|どれを押す|どう操作する|操作はどうする|どう進める)(?:の|ですか)?[。！!？?]*$/.test(t))return 'operation';
+    if(/^(?:(?:それ|これ|そこで|そこでは|そのページ|このページ)(?:で|では|は|って)?[、,\s]*)?(?:何が分かる|何がわかる|何を確認できる|どんな結果が出る|何が出る|何が表示される|何を見られる|何を見れる)(?:の|ですか)?[。！!？?]*$/.test(t))return 'result';
+    return '';
+  }
+  function continuedGuideResultBody(item){
+    if(!item)return'';
+    var map={
+      jinpo:'条件に合う6人編成と能力値、発動因縁、差替候補を確認できます。',
+      stats:'入力した基礎能力・装備・付与などを合わせた最終能力を確認できます。',
+      retainer:'入力した家臣能力・付与・九十九などを合わせた合計を確認できます。',
+      food:'必要な食料を、最安・最小個数・種類が少ない候補ごとに確認できます。',
+      kishin:'鬼神石の能力・入手先・選択中の8個合計・合成最低発現数を確認できます。',
+      tsukumo:'九十九の力の能力・入手先・選択中の8個合計を確認できます。',
+      mado:'魔導結晶の能力・入手先・選択中の8個合計を確認できます。'
+    };
+    return map[item.id]||item.desc;
+  }
+  function answerContinuedGuideDetailFromPrior(intent,prior){
+    if(!intent||!prior)return null;
+    var multiple=prior.links.length>1,data=copyGuideLinkContextData(prior.data,{siteContinuedDetail:!multiple,siteContinuedDetailNeedsSelection:multiple,siteContinuedDetailIntent:intent,siteExactLinkRecall:true,pageHelp:!multiple});
+    if(multiple){
+      data.needsClarification=true;
+      return {handled:true,mode:'サイト総合案内',answer:'ページごとに確認できる内容が違います。どのページについて知りたいか、名前・順番・上や下で教えてください。',links:prior.links,data:data};
+    }
+    var linkValue=prior.links[0],url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url),item=itemFromUrl(url),answer='';
+    if(stoneName){
+      if(intent==='inputs')answer='数値の入力はありません。'+stoneName+'が開いた状態なので、表示された説明画像で材料と完成能力を確認します。';
+      else if(intent==='operation')answer=stoneName+'がすでに開いています。そのまま説明画像を確認し、別の荒石を見る時だけ上の名前ボタンで切り替えます。';
+      else answer=stoneName+'の輝光に必要な材料と、完成時の能力が分かります。';
+      if(stoneName==='文曲'&&intent==='result')answer+=' 文曲は紺碧・山吹・濡羽・朽葉の星光（金）を合成し、完成時は生命1500、知力250です。';
+      data.siteItem='seikai';data.siteInternal='stone';data.stoneName=stoneName;data.siteFeature=intent==='inputs'?'inputs':intent;
+    }else if(item){
+      var page=sourcePage(item),facts=page&&page.facts||{};
+      if(intent==='inputs')answer='「'+item.name+'」では、'+(S(facts.inputs)||usageOf(item));
+      else if(intent==='operation')answer='「'+item.name+'」では、'+usageOf(item);
+      else answer='「'+item.name+'」では、'+continuedGuideResultBody(item);
+      data.siteItem=item.id;data.selectedSiteItem=data.selectedSiteItem||item.id;data.siteFeature=intent==='inputs'?'inputs':intent;data.verifiedSiteSource=!!page;
+    }else{
+      answer=intent==='inputs'?'リンク先の入力欄を確認してください。':intent==='operation'?'リンク先の案内に沿って操作してください。':'リンク先で確認できる内容を案内しています。';
+    }
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:prior.links,data:data};
+  }
+  function answerContinuedGuideDetail(text,history){
+    var intent=continuedGuideDetailIntent(text);if(!intent)return null;
+    return answerContinuedGuideDetailFromPrior(intent,latestImmediateGuideLinkContext(history));
+  }
+  function broadGuideDetailIntent(text){
+    var t=normalizeInput(text);
+    if(/(?:何を入力|何入力|何を入れ|何入れ|入力項目)/.test(t))return'inputs';
+    if(/(?:どこを押|何を押|どれを押|どう操作|操作はどう|どう進め)/.test(t))return'operation';
+    if(/(?:何が分か|何がわか|何を確認でき|どんな結果|何が出る|何が表示|何を見られ|何を見れ)/.test(t))return'result';
+    return'';
+  }
+  function latestGuideDetailIntent(history,prior){
+    var data=prior&&prior.data||{},intent=String(data.siteContinuedDetailIntent||data.siteFeature||'');
+    if(intent==='inputs'||intent==='operation'||intent==='result')return intent;
+    var h=Array.isArray(history)?history:[],seen=0;
+    for(var i=h.length-1;i>=0&&seen<4;i--){
+      var x=h[i];if(!x||x.role!=='user')continue;seen++;
+      intent=broadGuideDetailIntent(x.text);if(intent)return intent;
+    }
+    return'';
+  }
+  function detailTargetSwitchCue(text){
+    var t=normalizeInput(text);
+    return /(?:じゃあ|では|それなら|なら|やっぱ|比べ|こっちは|こちらは|の方は|のほうは|はどう|だとどう|ならどう)/.test(t)||/(?:は|って)[？?。！!]*$/.test(t);
+  }
+  function answerGuideDetailTargetSwitch(text,history){
+    if(!detailTargetSwitchCue(text))return null;
+    var prior=latestImmediateGuideLinkContext(history);if(!prior||prior.links.length!==1)return null;
+    var intent=latestGuideDetailIntent(history,prior);if(!intent)return null;
+    var targets=mentionedItems(text),current=itemFromUrl(prior.links[0]&&prior.links[0].url);if(targets.length!==1||current&&targets[0].id===current.id)return null;
+    var target=targets[0],seed=copyGuideLinkContextData(prior.data,{siteItem:target.id,selectedSiteItem:target.id});
+    var pair=current?[current,target]:[target],pairIds=pair.map(function(x){return x.id;});
+    if(current&&/(?:比べ|比較|違い|どう違)/.test(normalizeInput(text))){
+      var compared=compareItems(pair);if(!compared)return null;
+      compared.links=[itemLink(target)];
+      compared.data=compared.data||{};compared.data.siteItem=target.id;compared.data.selectedSiteItem=target.id;compared.data.siteFeature=intent;
+      compared.data.siteSourceCandidates=pairIds.slice();compared.data.siteDetailTargetSwitch=true;compared.data.siteDetailTargetComparison=true;compared.data.previousSiteItem=current.id;
+      return compared;
+    }
+    seed.candidates=pairIds.slice();seed.siteCandidates=pairIds.slice();seed.siteComparison=pairIds.slice();seed.siteSourceCandidates=pairIds.slice();
+    seed.siteOpenedItems=[];seed.siteExcludedItems=[];seed.siteConditions=[];seed.needsClarification=false;
+    var result=answerContinuedGuideDetailFromPrior(intent,{links:[itemLink(target)],data:seed});if(!result)return null;
+    result.data=result.data||{};result.data.siteDetailTargetSwitch=true;result.data.previousSiteItem=current&&current.id||'';
+    result.data.siteComparison=pairIds.slice();result.data.siteCandidates=pairIds.slice();result.data.candidates=pairIds.slice();result.data.siteSourceCandidates=pairIds.slice();result.data.selectedSiteItem=target.id;
+    return result;
+  }
+  var SEIKAI_STONES={
+    '武曲':{id:23,key:'bukyoku'},'禄存':{id:24,key:'rokuzon'},'破軍':{id:25,key:'hagun'},
+    '文曲':{id:26,key:'monkyoku'},'廉貞':{id:27,key:'rentei'},'巨門':{id:28,key:'kyomon'},'貪狼':{id:29,key:'tanrou'}
+  };
+  function seikaiStoneRequest(text,recent,cur){
+    var t=normalizeInput(text),m=t.match(/(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)/);if(!m)return null;
+    var contextual=!!((recent&&recent.id==='seikai')||(cur&&cur.id==='seikai'));
+    var explicit=/(?:星海|荒石|輝光|星光|微光|合成|作り方|つくり方|材料|レシピ)/.test(t);
+    var possessive=new RegExp('^'+m[1]+'(?:の|って|とは)[？?。！!]*$').test(t);
+    if(!contextual&&!explicit&&!possessive)return null;
+    return {name:m[1],stone:SEIKAI_STONES[m[1]]};
+  }
+  function seikaiStoneLink(request){
+    var x=request.stone;
+    return link(request.name+'の輝光を開く','seikai.html?stone='+x.id+'#'+x.key,false);
+  }
+  function stoneAlternativeCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:じゃあ|では|それなら)[、,\s]*)?(?:別|ほか|他)(?:の(?:荒石|輝光)?|には)?(?:は|も)?(?:を?見たい|見せて|ある|ありますか)?[。！!？?]*$/.test(t);
+  }
+  function stoneLinkSet(prior){
+    var links=prior&&Array.isArray(prior.links)?prior.links:[],out=[];
+    if(links.length<2)return out;
+    for(var i=0;i<links.length;i++){
+      var name=stoneNameFromGuideUrl(links[i]&&links[i].url);if(!name)return[];
+      out.push({name:name,link:links[i]});
+    }
+    return out;
+  }
+  function stoneAlternativeSelectionRequest(text,count){
+    var t=normalizeInput(text),m,index=-1,requested=false,ambiguous=false;
+    if(/^(?:真ん中|中央)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/.test(t)){requested=true;if(count%2===1)index=Math.floor(count/2);else ambiguous=true;}
+    else if(/^(?:最初|一番上|先頭)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/.test(t)){requested=true;index=0;}
+    else if(/^(?:最後|一番下|末尾)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/.test(t)){requested=true;index=count-1;}
+    else if((m=t.match(/^(?:上|先頭)から(?:の)?([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/))){requested=true;index=numberValue(m[1])-1;}
+    else if((m=t.match(/^(?:下|最後|末尾)から(?:の)?([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/))){requested=true;index=count-numberValue(m[1]);}
+    else if((m=t.match(/^([1-9１-９一二三四五六七八九])(?:番|番目|個目)(?:の)?(?:やつ|もの|荒石|輝光)?[。！!？?]*$/))){requested=true;index=numberValue(m[1])-1;}
+    if(index<0||index>=count){if(requested&&!ambiguous)ambiguous=true;index=-1;}
+    return {requested:requested,index:index,ambiguous:ambiguous};
+  }
+  function answerStoneAlternativeSelection(text,history){
+    var prior=latestImmediateGuideLinkContext(history),set=stoneLinkSet(prior);if(!set.length)return null;
+    var request=stoneAlternativeSelectionRequest(text,set.length);if(!request.requested)return null;
+    if(request.ambiguous){
+      var ambiguousData=copyGuideLinkContextData(prior.data,{siteItem:'seikai',siteStoneAlternativeSelectionAmbiguous:true,needsClarification:true});
+      return {handled:true,mode:'サイト総合案内',answer:'候補が偶数なので、真ん中は一つに決められません。名前か、上から何番目かで教えてください。',links:prior.links,data:ambiguousData};
+    }
+    var chosen=set[request.index],result=seikaiStoneAnswer({name:chosen.name,stone:SEIKAI_STONES[chosen.name]});
+    result.answer='「'+chosen.name+'」ですね。'+result.answer;result.data.siteStoneAlternativeSelection=true;result.data.selectedStoneName=chosen.name;
+    return result;
+  }
+  function answerStoneAlternatives(text,history){
+    if(!stoneAlternativeCue(text))return null;
+    var prior=latestImmediateGuideLinkContext(history);if(!prior||prior.links.length!==1)return null;
+    var currentName=stoneNameFromGuideUrl(prior.links[0]&&prior.links[0].url);if(!currentName)return null;
+    var names=[],links=[];
+    Object.keys(SEIKAI_STONES).forEach(function(name){if(name===currentName)return;names.push(name);links.push(seikaiStoneLink({name:name,stone:SEIKAI_STONES[name]}));});
+    return {handled:true,mode:'サイト総合案内',answer:currentName+'以外なら、'+names.join('・')+'があります。どれを見たいですか？',links:links,data:{siteItem:'seikai',siteFeature:'stone_alternatives',siteStoneAlternatives:true,currentStoneName:currentName,needsClarification:true}};
+  }
+  function seikaiStoneAnswer(request){
+    var name=request.name,answer=name+'の輝光ですね。従来は「'+name+'」のボタンを押して切り替えていましたが、今回は星海の荒石の合成早見表を、'+name+'が開いた状態で見られるようにしました。';
+    if(name==='文曲')answer+=' 文曲の輝光は、紺碧・山吹・濡羽・朽葉の星光（金）を合成します。完成時は生命1500、知力250です。';
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:[seikaiStoneLink(request)],data:{siteItem:'seikai',siteInternal:'stone',siteFeature:'inputs',siteFeatures:['inputs'],stoneName:name,stoneId:request.stone.id,siteOpen:true,verifiedSiteSource:true}};
+  }
   function sourcePage(item){return item&&SOURCE_PAGES[item.id]||null;}
   function usageOf(item){var page=sourcePage(item);return S(page&&page.usage||USAGE_BY_ID[item&&item.id]||item&&item.desc||'');}
   function openItem(item){
@@ -1115,11 +1859,16 @@
   }
 
   function historyGuideContext(history){
-    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1;
+    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1,contextCleared=false;
     var knownTermGuidance=false,knownTermKey='',knownTermValue='',knownTermApproximate=false,knownTermItem=null,knownTermIndex=-1;
     for(var i=h.length-1;i>=0;i--){
       var x=h[i];if(!x||x.role!=='assistant')continue;
       var meta=x.meta||{},data=meta.data||{};
+      // 候補拒否・候補選択中止の後は、それより前のページや候補を掘り起こさない。
+      // siteItem は既存の軽量履歴にも保存されるため、追加の保存領域を作らず確実に伝播できる。
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__'){
+        contextCleared=true;lastIndex=i;candidateIndex=i;break;
+      }
       if(!knownTermGuidance&&data.knownTermGuidance){
         knownTermGuidance=true;knownTermKey=String(data.termKey||'item');knownTermValue=String(data.normalizedTerm||'');knownTermApproximate=!!data.approximateTerm;knownTermIndex=i;
         if(data.siteItem&&BY_ID[data.siteItem])knownTermItem=BY_ID[data.siteItem];
@@ -1138,6 +1887,9 @@
         if(!lastCandidates.length&&Array.isArray(meta.links)&&meta.links.length>1)lastCandidates=meta.links.map(function(l){return itemFromUrl(l&&l.url);}).filter(Boolean);
         if(lastCandidates.length){
           candidateIndex=i;
+          // 古い履歴保存形式では selectedSiteItem が省かれることがあるため、
+          // 候補内の siteItem を「選択済み候補」として安全に復元する。
+          if(!lastSelectedCandidate&&data.siteItem&&BY_ID[data.siteItem]&&lastCandidates.some(function(x){return x.id===data.siteItem;}))lastSelectedCandidate=BY_ID[data.siteItem];
           var sourceIds=Array.isArray(data.siteSourceCandidates)?data.siteSourceCandidates:ids;
           lastSourceCandidates=(sourceIds||[]).map(function(id){return BY_ID[id];}).filter(Boolean);
           if(!lastSourceCandidates.length)lastSourceCandidates=lastCandidates.slice();
@@ -1160,7 +1912,7 @@
     }
     // 候補提示後に単一ページを選択済みなら、古い候補を次の質問へ持ち越さない。
     if(lastIndex>candidateIndex&&candidateIndex>=0)lastCandidates=[];
-    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex,knownTermGuidance:knownTermGuidance,termKey:knownTermKey,normalizedTerm:knownTermValue,approximateTerm:knownTermApproximate,knownTermItem:knownTermItem,knownTermIndex:knownTermIndex};
+    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex,contextCleared:contextCleared,knownTermGuidance:knownTermGuidance,termKey:knownTermKey,normalizedTerm:knownTermValue,approximateTerm:knownTermApproximate,knownTermItem:knownTermItem,knownTermIndex:knownTermIndex};
   }
   // 比較や候補提示の直後に「なるほど」「了解」などの短い相づちを一度だけ挟んでも、
   // 次の「そっち」「後者」を候補参照として扱う。別の実質的な話題を挟んだ場合は保持しない。
@@ -1175,6 +1927,11 @@
     if(!/^(?:なるほど(?:ね)?|そうなんだ|そうか|了解|わかった|分かった|おけ|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう|なるほどです)[。！!？?～〜]*$/i.test(ack))return false;
     var meta=between[1].meta||{};
     return !meta.data||!meta.data.siteGuide;
+  }
+  function discardStaleCandidateContext(history,ctx){
+    ctx=ctx||{};if(!ctx.candidates||!ctx.candidates.length||candidateContextFresh(history,ctx))return ctx;
+    ctx.candidates=[];ctx.sourceCandidates=[];ctx.openedItems=[];ctx.excludedItems=[];ctx.conditions=[];ctx.candidateKind='';ctx.selectedCandidate=null;ctx.candidateIndex=-1;
+    return ctx;
   }
   function candidateKeys(item){
     var out=[],seen={},names=[item&&item.name].concat(item&&item.aliases||[]);
@@ -1200,10 +1957,14 @@
       if(/^(?:そっち|そちら|もう片方|もう一方|反対の方|反対のほう|上じゃない方|上じゃないほう|最初じゃない方|最初じゃないほう|前者じゃない方|前者じゃないほう)/.test(t))idx=selectedIndex>=0?(selectedIndex===0?1:0):1;
       else if(/^(?:こっち|こちら|下じゃない方|下じゃないほう|後者じゃない方|後者じゃないほう)/.test(t))idx=selectedIndex>=0?selectedIndex:0;
     }
+    var fromTop=t.match(/^(?:上|先頭)から([1-9１-９一二三四五六七八九])(?:番|番目|個目)/);
+    var fromBottom=t.match(/^(?:下|末尾|最後)から([1-9１-９一二三四五六七八九])(?:番|番目|個目)/);
+    if(fromTop)idx=numberValue(fromTop[1])-1;
+    else if(fromBottom)idx=list.length-numberValue(fromBottom[1]);
     if(idx<0&&/^(?:最後|一番最後|一番下|末尾|最後のやつ|下のやつ)/.test(t))idx=list.length-1;
     else if(idx<0&&list.length%2===1&&/^(?:真ん中|中央|中のやつ|真ん中のやつ)/.test(t))idx=Math.floor(list.length/2);
-    else if(idx<0&&/^(?:1|１|一)(?:番|番目)?|最初|一番上|上の|前者/.test(t))idx=0;
-    else if(idx<0&&/^(?:2|２|二)(?:番|番目)?|二番目|次の|下の|後者/.test(t))idx=1;
+    else if(idx<0&&/^(?:1|１|一)(?:番|番目)?|最初|一番上|上の|前者|前の方|前のほう/.test(t))idx=0;
+    else if(idx<0&&/^(?:2|２|二)(?:番|番目)?|二番目|次の|下の|後者|後の方|後のほう/.test(t))idx=1;
     else if(idx<0&&/^(?:3|３|三)(?:番|番目)?|三番目/.test(t))idx=2;
     else if(idx<0&&/^(?:4|４|四)(?:番|番目)?|四番目/.test(t))idx=3;
     if(idx>=0&&idx<list.length)return list[idx];
@@ -1230,6 +1991,85 @@
     var ranked=list.map(function(item){var sc=itemScore(t,item);return {item:item,score:sc.score};}).sort(function(a,b){return b.score-a.score;});
     if(ranked.length&&ranked[0].score>=85&&(ranked.length===1||ranked[0].score-ranked[1].score>=3))return ranked[0].item;
     return null;
+  }
+  function candidateAlternativeCue(text){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text));
+    return /^(?:(?:じゃあ|では|それなら|やっぱ(?:り)?|やはり|いや|違う|訂正)[、,\s]*)?(?:別の|別の方|別のほう|ほかの|他の|違うの|違う方|違うほう|今のじゃない方|今のじゃないほう|選んだのじゃない方|選んだのじゃないほう|もう片方|もう一方)(?:にして|がいい|を見たい|を見せて|を開いて|開いて|見せて|はどう|ってどう)?[。！!？?]*$/.test(t);
+  }
+  function candidateRejectionCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:いや|ううん|違う|ちがう)[、,\s]*)?(?:どれでもない|どっちでもない|どちらでもない|どれも違う|どっちも違う|どちらも違う|全部違う|全部ちがう|その中にはない|その中にない|この中にはない|この中にない|候補にない|候補が違う|候補がちがう|そうじゃない|そういうことじゃない)[。！!？?]*$/.test(t);
+  }
+  function candidateCancelCue(text){
+    var t=normalizeInput(text);
+    return /^(?:もう|いったん|一旦)?[、,\s]*(?:候補選び|この候補|候補の話|この話)(?:は|を)?(?:やめる|やめて|終わり|終了|なしにして)|^(?:もう)?[、,\s]*候補(?:は|選びは)?(?:いい|いらない)[。！!？?]*$/.test(t);
+  }
+  function answerCandidateRejection(text,candidates){
+    var cancelled=candidateCancelCue(text);if(!cancelled&&!candidateRejectionCue(text))return null;
+    var ids=uniqueCandidateItems(candidates).map(function(x){return x.id;}),answer=cancelled?'わかりました。候補選びはいったん終了しますね。別のことを聞きたくなったら、そのまま話しかけてください。':'候補が違っていたのですね。いったんこの候補は外しました。探しているものを、ページ名ではなく「何をしたいか」で言い直しても大丈夫なのですよ。';
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:[],data:{siteItem:'__site_guide_context_cleared__',siteGuideContextCleared:true,siteCandidateRejected:!cancelled,siteCandidateCancelled:cancelled,rejectedSiteCandidates:ids,needsClarification:!cancelled}};
+  }
+  function previousCandidateCue(text){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text));
+    return /^(?:(?:じゃあ|では|それなら|やっぱ(?:り)?|やはり)[、,\s]*)?(?:さっき|前に選んだ|直前に選んだ)(?:の)?(?:方|ほう|やつ|もの|ページ|候補)?(?:に)?(?:戻して|して|開いて|見せて)?[。！!？?]*$/.test(t);
+  }
+  function candidateRelativeMove(text,candidates,selectedCandidate){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text)),list=uniqueCandidateItems(candidates),selectedIndex=-1,direction=0,step=0,m;
+    if(!selectedCandidate||list.length<2)return {requested:false,target:null,boundary:false};
+    for(var i=0;i<list.length;i++)if(list[i].id===selectedCandidate.id){selectedIndex=i;break;}
+    if(selectedIndex<0)return {requested:false,target:null,boundary:false};
+    m=t.match(/^([2-9２-９二三四五六七八九])(?:つ|個)?(?:先|下|後ろ|右)/);
+    if(m){direction=1;step=numberValue(m[1]);}
+    if(!step){m=t.match(/^([2-9２-９二三四五六七八九])(?:つ|個)?(?:前|上|左)/);if(m){direction=-1;step=numberValue(m[1]);}}
+    if(!step&&/^(?:(?:その)?次(?:の候補|のやつ|のページ)?|(?:一つ|ひとつ|1つ|１つ|一個|1個|１個)(?:先|下|後ろ|右))/.test(t)){direction=1;step=1;}
+    if(!step&&/^(?:(?:その)?前(?:の候補|のやつ|のページ)?|(?:一つ|ひとつ|1つ|１つ|一個|1個|１個)(?:前|上|左))/.test(t)){direction=-1;step=1;}
+    if(!step)return {requested:false,target:null,boundary:false};
+    var targetIndex=selectedIndex+(direction*step);
+    return {requested:true,target:targetIndex>=0&&targetIndex<list.length?list[targetIndex]:null,boundary:targetIndex<0||targetIndex>=list.length,direction:direction,step:step,index:selectedIndex,targetIndex:targetIndex};
+  }
+  function answerCandidateRelativeMove(text,ctx){
+    ctx=ctx||{};
+    // 選んだページの下に専用メニューがあり「その次どれ」と聞かれた場合は、
+    // 横並び候補の次ではなく従来どおり子ページ案内を優先する。
+    if(ctx.selectedCandidate&&childrenOf(ctx.selectedCandidate).length&&hierarchyCue(text))return null;
+    var move=candidateRelativeMove(text,ctx.candidates,ctx.selectedCandidate);if(!move.requested)return null;
+    if(move.boundary){
+      var edge=move.direction>0?'最後':'最初',boundary={handled:true,mode:'サイト総合案内',answer:'「'+ctx.selectedCandidate.name+'」が'+edge+'の候補です。これより'+(move.direction>0?'次':'前')+'の候補はないのですよ。',links:[],data:{siteItem:ctx.selectedCandidate.id,siteCandidateBoundary:true,siteCandidateDirection:move.direction>0?'next':'previous'}};
+      return retainCandidateContext(boundary,ctx.candidates,ctx.selectedCandidate,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+    }
+    var features=featureIntents(text,move.target),result=features.length?answerFeatures(move.target,features,true,text):explainItem(move.target,true);
+    if(!features.length)result.answer=(move.direction>0?'次':'前')+'の候補は「'+move.target.name+'」です。\n'+result.answer;
+    result.data=result.data||{};result.data.siteCandidateRelativeMove=true;result.data.siteCandidateDirection=move.direction>0?'next':'previous';result.data.siteCandidateStep=move.step;
+    return retainCandidateContext(result,ctx.candidates,move.target,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+  }
+  function previousSelectedCandidate(history,current,candidates){
+    var h=Array.isArray(history)?history:[],list=uniqueCandidateItems(candidates),allowed={},currentId=current&&current.id||'';
+    list.forEach(function(x){allowed[x.id]=1;});
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{},id=String(data.selectedSiteItem||'');
+      if(id&&allowed[id]&&id!==currentId)return BY_ID[id]||null;
+    }
+    return null;
+  }
+  function answerCandidateAlternative(text,history,ctx){
+    ctx=ctx||{};var list=uniqueCandidateItems(ctx.candidates),selected=ctx.selectedCandidate;
+    if(list.length<2||!selected||!candidateAlternativeCue(text))return null;
+    var alternatives=list.filter(function(x){return x.id!==selected.id;});if(!alternatives.length)return null;
+    if(alternatives.length>1){
+      var choice=answerCandidateSet(alternatives,ctx.sourceCandidates,{lead:'「'+selected.name+'」ではない候補は '+candidateNames(alternatives)+'です。どちらにしますか？',conditions:ctx.conditions});
+      if(choice){choice.data.needsClarification=true;choice.data.previousSelectedSiteItem=selected.id;}return choice;
+    }
+    var target=alternatives[0],result=explainItem(target,true);
+    result.answer='では「'+target.name+'」ですね。\n'+result.answer;
+    return retainCandidateContext(result,list,target,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+  }
+  function answerPreviousCandidate(text,history,ctx){
+    ctx=ctx||{};if(!previousCandidateCue(text)||!ctx.selectedCandidate)return null;
+    var previous=previousSelectedCandidate(history,ctx.selectedCandidate,ctx.candidates);if(!previous)return null;
+    var result=explainItem(previous,true);
+    result.answer='さっき選んだ「'+previous.name+'」に戻しますね。\n'+result.answer;
+    return retainCandidateContext(result,ctx.candidates,previous,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
   }
   function excludedPageReference(text){
     var t=normalizeInput(text),m=t.match(/^(.{1,40}?)(?:じゃない方|じゃないほう|ではない方|ではないほう|以外の方|以外のほう)(.*)$/);
@@ -1288,11 +2128,11 @@
     if(/(?:最初|一番上|先頭)(?:のページ)?以外/.test(t)){for(var fi=1;fi<list.length;fi++)addIndex(fi);return out;}
     if(/(?:最後|一番下|末尾)(?:のページ)?以外/.test(t)){for(var li=0;li<list.length-1;li++)addIndex(li);return out;}
 
-    if(/(?:前|最初)(?:の)?二つ/.test(t)){addIndex(0);addIndex(1);return out;}
-    if(/(?:後ろ|後半|最後)(?:の)?二つ/.test(t)){addIndex(list.length-2);addIndex(list.length-1);return out;}
+    if(/(?:前|最初|上から)(?:の)?(?:二つ|2つ|２つ)/.test(t)){addIndex(0);addIndex(1);return out;}
+    if(/(?:後ろ|後半|最後|下から)(?:の)?(?:二つ|2つ|２つ)/.test(t)){addIndex(list.length-2);addIndex(list.length-1);return out;}
 
     // 候補全体を指す自然な表現。
-    if(allCandidatesCue(t)||/(?:この|その|あの)?(?:二つ|2つ|２つ|三つ|3つ|３つ|候補全部|ページ全部|それら全部|この候補|このページたち|この二つのページ|この3つのページ).*(?:開いて|開けて|見せて|出して)/.test(t))return list.slice();
+    if(allCandidatesCue(t)||/(?:この|その|あの)?(?:二つ(?!目)|2つ(?!目)|２つ(?!目)|三つ(?!目)|3つ(?!目)|３つ(?!目)|候補全部|ページ全部|それら全部|この候補|このページたち|この二つのページ|この3つのページ).*(?:開いて|開けて|見せて|出して)/.test(t))return list.slice();
 
     // 「最初と最後」「1個目と3個目」のような複数位置指定。
     if(/(?:最初|一番上|先頭).*(?:と|、|,|および).*(?:最後|一番下|末尾)|(?:最後|一番下|末尾).*(?:と|、|,|および).*(?:最初|一番上|先頭)/.test(t)){
@@ -1378,7 +2218,7 @@
 
   function candidateRemainderCue(text){
     var t=normalizeInput(text);
-    return /(?:^|[、,\s])(?:残り|残った(?:方|ほう|やつ|もの|候補)?|それ以外|そのほか|その他|ほかの候補|他の候補|選んでない(?:方|ほう|やつ|もの)?|選ばなかった(?:方|ほう|やつ|もの)?|開いてない(?:方|ほう|やつ|もの)?|まだの(?:方|ほう|やつ|もの)?)(?:は|も|を|って|だけ|全部|どっち|どれ|何|開いて|見せて|出して|教えて|知りたい|[？?。！!]|$)/.test(t);
+    return /(?:^|[、,\s])(?:残り|残った(?:方|ほう|やつ|もの|候補)?|それ以外|そのほか|その他|ほかの候補|他の候補|選んでない(?:方|ほう|やつ|もの)?|選ばなかった(?:方|ほう|やつ|もの)?|開いてない(?:方|ほう|やつ|もの)?|まだの(?:方|ほう|やつ|もの)?)(?:は|も|を|って|だけ|全部|両方|まとめて|比べて|比較して|違い|どっち|どれ|何|開いて|見せて|出して|教えて|知りたい|[？?。！!]|$)/.test(t);
   }
   function candidateRemainderItems(candidates,sourceCandidates,selectedCandidate,openedItems){
     var current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current),remove={},hasRemove=false;
@@ -1389,9 +2229,22 @@
     if(!hasRemove)return [];
     return source.filter(function(x){return !remove[x.id];});
   }
-  function answerCandidateRemainder(text,candidates,sourceCandidates,selectedCandidate,openedItems){
+  function answerCandidateRemainder(text,candidates,sourceCandidates,selectedCandidate,openedItems,excludedItems){
     if(!candidateRemainderCue(text))return null;
-    var t=normalizeInput(text),current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current);
+    var t=normalizeInput(text),current=uniqueCandidateItems(candidates),source=uniqueCandidateItems(sourceCandidates&&sourceCandidates.length?sourceCandidates:current),excluded=uniqueCandidateItems(excludedItems);
+    var keptAfterExclusion=excluded.length&&source.length>current.length&&current.every(function(item){return !excluded.some(function(x){return x.id===item.id;});});
+    if(keptAfterExclusion){
+      var retainedResult;
+      if(current.length>=2&&comparisonDifferenceCue(t))retainedResult=compareItems(current);
+      else{
+        var retainedOpen=candidateOpenCue(t),retainedLead=retainedOpen?candidateNames(current)+'をまとめて開けるようにしました。':'間違っていたページを除いた残りは '+candidateNames(current)+'です。';
+        retainedResult=answerCandidateSet(current,source,{open:retainedOpen,lead:retainedLead,excluded:excluded});
+      }
+      if(retainedResult){
+        retainedResult.data=retainedResult.data||{};retainedResult.data.siteSourceCandidates=source.map(function(item){return item.id;});retainedResult.data.siteExcludedItems=excluded.map(function(item){return item.id;});retainedResult.data.siteLinkMissRecoveryContinuation=true;
+      }
+      return retainedResult;
+    }
     if(!selectedCandidate&&!uniqueCandidateItems(openedItems).length&&source.length>current.length&&/(?:残った|残ってる|残っている)/.test(t))return null;
     var rest=candidateRemainderItems(current,source,selectedCandidate,openedItems);if(!rest.length)return null;
     var open=candidateOpenCue(text),lead=open?candidateNames(rest)+'を開けるようにしました。':'残りは '+candidateNames(rest)+'です。';
@@ -1440,8 +2293,9 @@
     return parts.filter(function(x){return x.indexOf(key)>=0;});
   }
   function capabilityStatus(item,intent,text){
-    var bodies=intent==='reflect'?reflectBodies(item,text):[featureBody(item,intent,text)],t=normalizeInput(text),target=/能力計算/.test(t)?'stats':/家臣/.test(t)?'retainer':'';
-    if(!target&&item&&(item.id==='stats'||item.id==='retainer'))target=item.id;
+    var bodies=intent==='reflect'?reflectBodies(item,text):[featureBody(item,intent,text)],t=normalizeInput(text),target='';
+    if(item&&(item.id==='stats'||item.id==='retainer'))target=item.id;
+    else target=/能力計算/.test(t)?'stats':/家臣/.test(t)?'retainer':'';
     bodies=(bodies||[]).map(S).filter(Boolean);if(!bodies.length)return {status:0,bodies:[]};
     var check=[];bodies.forEach(function(body){var p=sentenceForTarget(body,target);check=check.concat(p.length?p:[body]);});
     var positive=false,negative=false;
@@ -1675,15 +2529,382 @@
   }
 
   function comparisonRecommendationCue(text){
-    return /^(?:じゃあ|では|それなら|で|結局|つまり|要するに)?[、,\s]*(?:結局)?(?:どっち|どちら|どれ)(?:を|が)?(?:使えば|使うのが|選べば|選ぶのが|見れば|開けば)(?:いい|おすすめ|良い)[？?。！!]*$/.test(normalizeInput(text));
+    return /^(?:じゃあ|では|それなら|で|結局|つまり|要するに)?[、,\s]*(?:結局)?(?:どっち|どちら|どれ)(?:(?:を|が)?(?:使えば|使うのが|選べば|選ぶのが|見れば|開けば)(?:いい|おすすめ|良い)|(?:が)?(?:いい|おすすめ|良い))(?:の|ですか)?[？?。！!]*$/.test(normalizeInput(text));
   }
   function answerComparisonRecommendation(candidates){
     var list=(candidates||[]).filter(Boolean);if(list.length<2)return null;
     var lines=list.map(function(item){var p=sourcePage(item),facts=p&&p.facts||{};return '・'+item.name+'：'+S(facts.compare||item.desc);});
     return {handled:true,mode:'サイト総合案内',answer:'目的で選ぶのが確実なのですよ。\n'+lines.join('\n')+'\n使いたい対象や、計算したいものを教えてくれれば、さらに一つへ絞れます。',links:list.map(itemLink),data:{siteComparison:list.map(function(x){return x.id;}),siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;}),siteRecommendation:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
   }
+  function comparisonIndecisionCue(text){
+    var t=normalizeInput(text);
+    return /(?:どっち|どちら|どれ)(?:に|を)?(?:したら|すれば|選べば)?(?:いい|良い)(?:か)?(?:分からない|わからない|迷う|迷ってる|迷っています|決められない)/.test(t)||/(?:選び方|決め方)(?:が|は)?(?:分からない|わからない)|^(?:迷ってる|迷っています|決められない|選べない)[。！!？?]*$/.test(t);
+  }
+  function answerComparisonIndecision(text,candidates){
+    var list=uniqueCandidateItems(candidates);if(list.length<2||!comparisonIndecisionCue(text))return null;
+    var ids=list.map(function(x){return x.id;});
+    return {
+      handled:true,
+      mode:'サイト総合案内',
+      answer:candidateNames(list)+'で迷っているのですね。目的で絞れます。\n「能力計算に使いたい」「合成最低発現数を見たい」「画像で保存したい」のように、何に使いたいかをそのまま教えてください。分かる範囲の一言で大丈夫です。',
+      links:list.map(itemLink),
+      data:{siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteRecommendation:true,siteComparisonPurposeClarification:true,needsClarification:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}
+    };
+  }
+  function comparisonPurposeCue(text){
+    var t=normalizeInput(text);
+    if(/(?:したい|してみたい|見たい|確認したい|使いたい|入れたい|選びたい|重視したい|が必要|を使う|が目的)/.test(t))return true;
+    if(/(?:能力計算|家臣計算|右手|左手|首|画像保存|画面保存|合成最低発現数|最低発現数)(?:に|で)?(?:なら|の場合|だと).*(?:どっち|どちら|どれ)/.test(t))return true;
+    if(/(?:反映する|入れる|保存する|確認する|見る|使う)(?:の)?(?:なら|場合).*(?:どっち|どちら|どれ)/.test(t))return true;
+    if(/(?:できる|使える|見られる|見れる|確認できる)(?:方|ほう|もの|やつ|ページ)(?:がいい|を開いて|を見たい)?/.test(t))return true;
+    return /(?:合成最低発現数|最低発現数|開運系|英雄系|上覧系)(?:は|を|が)?[？?。！!]*$/.test(t);
+  }
+  function comparisonPurposeExactSpecs(text){
+    var t=normalizeInput(text),out=[];
+    function add(key,needle){if(!out.some(function(x){return x.key===key;}))out.push({key:key,needle:needle});}
+    if(/(?:合成最低発現数|最低発現数|合成.*発現)/.test(t))add('minimum_activation',/合成最低発現数/);
+    if(/開運系/.test(t))add('kaiun',/開運系/);
+    if(/英雄系/.test(t))add('eiyu',/英雄系/);
+    if(/上覧系/.test(t))add('joran',/上覧系/);
+    if(/右手/.test(t))add('right_hand',/右手/);
+    if(/左手/.test(t))add('left_hand',/左手/);
+    if(/首(?:の欄)?/.test(t))add('neck',/首(?:の欄)?/);
+    return out;
+  }
+  function comparisonPurposeSearchText(item){
+    var page=sourcePage(item),facts=page&&page.facts||{},parts=[item&&item.desc,page&&page.desc,page&&page.usage].concat(page&&page.features||[]);
+    Object.keys(facts).forEach(function(key){parts.push(facts[key]);});
+    return S(parts.filter(Boolean).join(' '));
+  }
+  function comparisonPurposeSpecs(text,candidates){
+    var t=normalizeInput(text),list=(candidates||[]).filter(Boolean),intents=[];
+    list.forEach(function(item){featureIntents(t,item).forEach(function(intent){if(intents.indexOf(intent)<0)intents.push(intent);});});
+    if(/(?:能力計算|家臣計算)(?:に|で)?(?:なら|の場合|だと).*(?:どっち|どちら|どれ)/.test(t)&&intents.indexOf('reflect')<0)intents.push('reflect');
+    if(/(?:合計|何個まで|最大.*個)/.test(t)&&intents.indexOf('selection_count')<0)intents.push('selection_count');
+    if(/(?:入手|一覧の項目|何が載)/.test(t)&&intents.indexOf('columns')<0)intents.push('columns');
+    return intents.map(function(intent){return {intent:intent};}).concat(comparisonPurposeExactSpecs(t));
+  }
+  function comparisonPurposeEvidence(item,spec,text){
+    if(spec.intent)return capabilityStatus(item,spec.intent,text);
+    var hit=spec.needle&&spec.needle.test(comparisonPurposeSearchText(item)),page=sourcePage(item),facts=page&&page.facts||{};
+    return {status:hit?1:-1,bodies:hit?[S(facts.compare||item.desc)]:[]};
+  }
+  function answerComparisonPurposeRecommendation(text,candidates){
+    var t=normalizeInput(text),list=uniqueCandidateItems(candidates);if(list.length<2||!comparisonPurposeCue(t))return null;
+    var specs=comparisonPurposeSpecs(t,list);if(!specs.length)return null;
+    var matched=[],unknown=[];
+    list.forEach(function(item){
+      var bodies=[],seen={},ok=true,uncertain=false;
+      specs.forEach(function(spec){var ev=comparisonPurposeEvidence(item,spec,t);if(ev.status===0)uncertain=true;else if(ev.status<0)ok=false;(ev.bodies||[]).forEach(function(body){body=S(body);if(body&&!seen[body]){seen[body]=1;bodies.push(body);}});});
+      var entry={item:item,bodies:bodies};if(ok&&!uncertain)matched.push(entry);else if(uncertain)unknown.push(entry);
+    });
+    var ids=list.map(function(x){return x.id;}),data={siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteRecommendation:true,siteComparisonPurpose:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''},answer='',links=[];
+    if(matched.length===1&&!unknown.length){
+      var chosen=matched[0];answer='その目的なら「'+chosen.item.name+'」が合っています。';
+      if(chosen.bodies.length)answer+='\n・'+chosen.item.name+'：'+chosen.bodies.join(' ');
+      answer+='\nこのページから確認できます。';links=[itemLink(chosen.item)];data.siteItem=chosen.item.id;data.selectedSiteItem=chosen.item.id;data.siteItems=[chosen.item.id];data.siteComparisonPurposeSelected=true;
+    }else if(matched.length>=2&&!unknown.length){
+      answer='その目的なら、'+candidateNames(matched.map(function(x){return x.item;}))+(matched.length===2?'のどちらでも':'のいずれでも')+'できます。';
+      if(specs.length===1&&specs[0].intent)answer+='\n候補はどれも'+(featureCuePhrase(specs[0].intent)||'その機能を使える')+'のですよ。';
+      answer+='\n'+matched.map(function(x){return '・'+x.item.name+'：'+(x.bodies.join(' ')||'その目的に使えます。');}).join('\n');
+      answer+='\nもう一つ重視したいことを教えてくれれば、絞り込めます。';links=matched.map(function(x){return itemLink(x.item);});data.siteItems=matched.map(function(x){return x.item.id;});data.siteComparisonPurposeMultiple=true;data.needsClarification=true;
+    }else if(!matched.length&&!unknown.length){
+      answer='比べている'+candidateNames(list)+'の中には、その目的に合うものはありません。別の目的を教えてくれれば選び直せます。';links=list.map(itemLink);data.siteItems=[];data.siteComparisonPurposeNoMatch=true;
+    }else{
+      answer='確認できる情報だけでは、その目的で一つに絞れません。もう少し具体的に、何を確認・反映したいか教えてください。';links=list.map(itemLink);data.siteItems=matched.map(function(x){return x.item.id;});data.siteComparisonPurposeUnknown=true;data.needsClarification=true;
+    }
+    if(specs.length===1&&specs[0].intent){data.siteFeature=specs[0].intent;data.siteFeatures=[specs[0].intent];}
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:data};
+  }
+  function answerDirectComparisonPurpose(text){
+    var t=normalizeInput(text);if(/(?:それぞれ|各(?:ページ|対象|計算機)?|全部|すべて|どこに|どこへ).*(?:入る|入れる|反映|使う|使える)|(?:どこに|どこへ)(?:入る|入れる|反映)/.test(t))return null;
+    var mentioned=mentionedItems(t),choice=/(?:どっち|どちら|どれ|どの方|どのほう|おすすめ|選ぶなら|使うなら)/.test(t),materialIds={kishin:1,tsukumo:1,mado:1,chinkon:1,seikai:1},materialCount=mentioned.filter(function(x){return !!materialIds[x.id];}).length,calculatorCount=mentioned.filter(function(x){return x.id==='stats'||x.id==='retainer';}).length;
+    if(mentioned.length>2&&!choice)return null;
+    if(mentioned.length===2&&materialCount===1&&calculatorCount===1&&!choice)return null;
+    var items=directComparisonPurposeItems(t);if(items.length<2)return null;
+    var result=answerComparisonPurposeRecommendation(text,items);if(!result)return null;
+    result.data=result.data||{};result.data.siteDirectComparisonPurpose=true;
+    return result;
+  }
+  function comparisonPurposeShorthandText(text,candidates){
+    var t=normalizeInput(text),list=uniqueCandidateItems(candidates);if(list.length<2||comparisonPurposeCue(t)||t.length>32)return'';
+    var core=t.replace(/^(?:じゃあ|じゃ|では|それなら|ならば|次は|今度は|あと)[、,\s]*/,'').replace(/[？?。！!]+$/,'').replace(/(?:の場合|だったら|ならば|なら|だと|では|はどう|は)$/,'').trim();
+    if(!core)return'';
+    if(/^(?:能力計算(?:機)?|自分|自キャラ|キャラ|プレイヤー)$/.test(core))return'能力計算に反映したい';
+    if(/^(?:家臣|家臣計算(?:機)?)$/.test(core))return'家臣計算に反映したい';
+    if(/^(?:首|首の欄)$/.test(core))return'首に反映したい';
+    if(/^(?:右手|右手の欄)$/.test(core))return'右手に反映したい';
+    if(/^(?:左手|左手の欄)$/.test(core))return'左手に反映したい';
+    if(/^(?:合成最低発現数|最低発現数)$/.test(core))return'合成最低発現数を見たい';
+    if(/^(?:開運系|英雄系|上覧系)$/.test(core))return core+'を確認したい';
+    if(/^(?:画像保存|画面保存|保存|スクショ|スクリーンショット)$/.test(core))return'画像で保存したい';
+    if(/^(?:合計|合計値|能力合計|選択数)$/.test(core))return'合計を見たい';
+    if(/^(?:並べ替え|並び替え|ソート)$/.test(core))return'並べ替えを使いたい';
+    if(/^(?:共有|リンク共有|URL共有)$/.test(core))return'共有したい';
+    var found=findItemDetailed(core),item=found&&found.item,calculatorPair=list.every(function(x){return x.id==='stats'||x.id==='retainer';}),coreKey=compact(core);
+    if(calculatorPair&&item&&!list.some(function(x){return x.id===item.id;})&&candidateKeys(item).indexOf(coreKey)>=0)return item.name+'を入れたい';
+    return'';
+  }
+  function answerComparisonPurposeShorthand(text,candidates){
+    var expanded=comparisonPurposeShorthandText(text,candidates);if(!expanded)return null;
+    var result=answerComparisonPurposeRecommendation(expanded,candidates);if(!result)return null;
+    result.data=result.data||{};result.data.siteComparisonPurposeShorthand=true;
+    return result;
+  }
+  function comparisonSelectionRevisionCancelCue(text){
+    var t=normalizeInput(text);
+    return /^(?:(?:やっぱ(?:り)?|やはり|いったん|一旦|まだ|もう)[、,\s]*)?(?:決めるの|選ぶの|選択を|この選択を|どっちにするか|どちらにするか)(?:は|を)?(?:やめる|やめて|取り消す|取消す|保留にする)|^(?:(?:やっぱ(?:り)?|いったん|一旦|まだ)[、,\s]*)?(?:保留|決めない|選ばない)(?:にする|でいい|でお願い)?[。！!？?]*$/.test(t);
+  }
+  function comparisonSelectionRevisionTarget(text,candidates,selected){
+    var list=uniqueCandidateItems(candidates);if(!selected||list.length<2)return null;
+    if(comparisonSelectionConfirmationCue(text))return null;
+    if(candidateAlternativeCue(text)){
+      var alternatives=list.filter(function(x){return x.id!==selected.id;});return alternatives.length===1?alternatives[0]:null;
+    }
+    var t=normalizeInput(text),tail=correctionTail(text)||t;
+    if(!/(?:やっぱ|やはり|いや|訂正|変える|変えて|変更|切り替|にする|でお願い|じゃなく|ではなく|今のなし)/.test(t))return null;
+    var target=selectFromCandidates(tail,list,selected);return target&&target.id!==selected.id?target:null;
+  }
+  function comparisonSelectionRevisionCue(text,candidates,selected){
+    return comparisonSelectionRevisionCancelCue(text)||!!comparisonSelectionRevisionTarget(text,candidates,selected);
+  }
+  function comparisonAlternativeFeatureCue(text,candidates){
+    var t=normalizeInput(text),list=uniqueCandidateItems(candidates);if(list.length!==2||!/(?:もう片方|もう一方|反対の方|反対のほう|別の方|別のほう)/.test(t))return false;
+    return list.some(function(item){return featureIntents(t,item).length||pageHelpCue(t,item,item);});
+  }
+  function answerComparisonAlternativeFeature(text,history){
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));if(ctx.candidateKind!=='comparison'||ctx.candidates.length!==2||!comparisonAlternativeFeatureCue(text,ctx.candidates))return null;
+    var list=uniqueCandidateItems(ctx.candidates),selected=ctx.selectedCandidate&&list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+    if(!selected){
+      var unresolved=candidateClarification(list,'まだ基準になる一方を選んでいないので、','のどちらについて知りたいですか？');
+      if(unresolved&&unresolved.data)unresolved.data.siteComparisonAlternativeFeatureNeedsSelection=true;
+      return unresolved;
+    }
+    var target=list.filter(function(x){return x.id!==selected.id;})[0],intents=featureIntents(text,target),result=intents.length?answerFeatures(target,intents,true,text):explainItem(target,true);
+    if(!result)return null;
+    result.answer='「'+selected.name+'」ではなく、もう片方の「'+target.name+'」についてですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,list,target,'comparison',ctx.sourceCandidates,ctx.conditions);
+    result.data=result.data||{};result.data.siteComparisonAlternativeFeature=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=selected.id;
+    return result;
+  }
+  function answerComparisonSelectionRevision(text,history){
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));if(ctx.candidateKind!=='comparison'||ctx.candidates.length<2)return null;
+    var list=uniqueCandidateItems(ctx.candidates),selected=ctx.selectedCandidate;
+    if(comparisonSelectionRevisionCancelCue(text)){
+      return {handled:true,mode:'サイト総合案内',answer:'わかりました。比較の選択はいったん取り消します。必要になったら、比べたい二つと目的をそのまま言ってください。',links:[],data:{siteItem:'__site_guide_context_cleared__',siteGuideContextCleared:true,siteComparisonSelectionRevisionCancelled:true,siteCandidateCancelled:true,needsClarification:false}};
+    }
+    var target=comparisonSelectionRevisionTarget(text,list,selected);if(!target)return null;
+    var result=explainItem(target,true),previous=selected;
+    result.answer='「'+previous.name+'」から「'+target.name+'」へ変更します。\n'+result.answer;
+    result=retainCandidateContext(result,list,target,'comparison',ctx.sourceCandidates,ctx.conditions);
+    result.data=result.data||{};result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=previous.id;
+    return result;
+  }
+  function comparisonCandidateSetRecallCue(text){
+    var t=normalizeInput(text);if(!t)return false;
+    if(/^(?:(?:今|いま|さっき|先ほど)[、,\s]*)?(?:何と何|どれとどれ|何を|どれを)(?:を)?(?:比べてた|比べていた|比べてる|比べている|比較してた|比較していた|比較してる|比較している)(?:の|んだっけ|っけ)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:今|いま|さっき|先ほど)[の、,\s]*)?(?:(?:比較|比べていた|比べてた)(?:中)?の)?候補(?:は|って)?(?:何|どれ|何だった|どれだった|何だっけ|どれだっけ|何でしたっけ|どれでしたっけ)[。！!？?]*$/.test(t))return true;
+    return /^(?:比べてた|比べていた|比較してた|比較していた)(?:の|候補)(?:は|って)?(?:何|どれ)(?:だった|だっけ|でしたっけ)?[。！!？?]*$/.test(t);
+  }
+  function comparisonOtherCandidateRecallCue(text){
+    var t=normalizeInput(text);if(!t)return false;
+    return /^(?:(?:今|いま|さっき|先ほど)[、,\s]*)?(?:もう片方|もう一方|選ばなかった方|選ばなかったほう|選んでない方|選んでないほう|選んでいない方|選んでいないほう|反対の方|反対のほう|別の方|別のほう)(?:は|って)(?:何|どれ|どっち)?(?:だっけ|だった|でしたっけ|なの|ですか)?[。！!？?]*$/.test(t);
+  }
+  function comparisonCandidateRecallCue(text){return comparisonCandidateSetRecallCue(text)||comparisonOtherCandidateRecallCue(text);}
+  function comparisonViewedAlternativeRecord(entry){
+    if(!entry||entry.role!=='assistant')return null;
+    var meta=entry.meta||{},data=meta.data||{},ids=Array.isArray(data.siteComparison)?data.siteComparison:(data.siteCandidates||data.candidates||[]);
+    if(!Array.isArray(ids)||ids.length!==2)return null;
+    var list=ids.map(function(id){return BY_ID[id];}).filter(Boolean),selected=BY_ID[String(data.selectedSiteItem||'')],viewed=BY_ID[String(data.siteItem||'')],answer=S(entry.text);
+    if(list.length!==2||!selected||!viewed||selected.id===viewed.id||!list.some(function(x){return x.id===selected.id;})||!list.some(function(x){return x.id===viewed.id;}))return null;
+    if(!data.siteComparisonOtherCandidateRecall&&!/もう片方は「[^」]+」です。現在の選択は「[^」]+」のままです/.test(answer))return null;
+    var sourceIds=Array.isArray(data.siteSourceCandidates)?data.siteSourceCandidates:ids;
+    return {candidates:list,selected:selected,viewed:viewed,sourceCandidates:sourceIds.map(function(id){return BY_ID[id];}).filter(Boolean),feature:String(data.siteFeature||''),featureSubjects:Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects.slice(0,4):[],conditions:Array.isArray(data.siteConditions)?data.siteConditions.slice():[]};
+  }
+  function latestComparisonViewedAlternative(history){
+    var h=Array.isArray(history)?history:[],last=-1;
+    for(var i=h.length-1;i>=0;i--)if(h[i]&&h[i].role==='assistant'){last=i;break;}
+    if(last<0)return null;
+    var direct=comparisonViewedAlternativeRecord(h[last]);if(direct)return direct;
+    if(last<2||!h[last-1]||h[last-1].role!=='user'||!h[last-2]||h[last-2].role!=='assistant')return null;
+    if(!/^(?:なるほど(?:ね)?|そうなんだ|そうか|了解|わかった|分かった|おけ|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう|なるほどです)[。！!？?～〜]*$/i.test(S(h[last-1].text)))return null;
+    var meta=h[last].meta||{};if(meta.data&&meta.data.siteGuide)return null;
+    return comparisonViewedAlternativeRecord(h[last-2]);
+  }
+  function comparisonViewedAlternativeSelectionCue(text){
+    var t=normalizeInput(text),lead='(?:(?:じゃあ|じゃ|では|それなら|やっぱ(?:り)?|やはり|うん|はい)[、,\\s]*)?';
+    return new RegExp('^'+lead+'(?:それ|そっち|そちら|その方|そのほう)(?:に(?:する|決める|変える|変更する)|で(?:お願い|いい|頼む|進めて)|を(?:選ぶ|使う)|がいい)[。！!？?]*$').test(t);
+  }
+  function answerComparisonViewedAlternativeSelection(text,history){
+    if(!comparisonViewedAlternativeSelectionCue(text))return null;
+    var ref=latestComparisonViewedAlternative(history);if(!ref)return null;
+    var result=explainItem(ref.viewed,true);
+    result.answer='「'+ref.selected.name+'」から「'+ref.viewed.name+'」へ変更します。\n'+result.answer;
+    result=retainCandidateContext(result,ref.candidates,ref.viewed,'comparison',ref.sourceCandidates,ref.conditions);
+    result.data=result.data||{};result.data.siteComparisonViewedAlternativeSelected=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=ref.selected.id;
+    if(ref.feature){result.data.siteFeature=ref.feature;result.data.siteFeatures=[ref.feature];result.data.siteFeatureSubjects=ref.featureSubjects.slice();}
+    return result;
+  }
+  function answerComparisonCandidateRecall(text,history){
+    if(!comparisonCandidateRecallCue(text))return null;
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));if(ctx.candidateKind!=='comparison'||ctx.candidates.length<2)return null;
+    var list=uniqueCandidateItems(ctx.candidates),ids=list.map(function(x){return x.id;}),selected=ctx.selectedCandidate&&list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+    if(comparisonOtherCandidateRecallCue(text)&&list.length!==2)return null;
+    var data={siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:(ctx.sourceCandidates.length?ctx.sourceCandidates:list).map(function(x){return x.id;}),siteComparisonCandidateRecall:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''};
+    if(ctx.feature){data.siteFeature=ctx.feature;data.siteFeatures=[ctx.feature];data.siteFeatureSubjects=(ctx.featureSubjects||[]).slice(0,4);}
+    if(ctx.conditions.length)data.siteConditions=conditionSnapshot(ctx.conditions);
+    if(selected){data.siteItem=selected.id;data.selectedSiteItem=selected.id;}
+    if(comparisonCandidateSetRecallCue(text)){
+      data.siteItems=ids.slice();data.siteComparisonCandidateSetRecall=true;
+      return {handled:true,mode:'サイト総合案内',answer:'今比べているのは'+candidateNames(list)+'です。'+(selected?'現在選んでいるのは「'+selected.name+'」です。':'まだ一つには決めていません。'),links:list.map(itemLink),data:data};
+    }
+    data.siteComparisonOtherCandidateRecall=true;
+    if(!selected){
+      data.needsClarification=true;data.siteComparisonOtherRecallNeedsSelection=true;data.siteItems=ids.slice();
+      return {handled:true,mode:'サイト総合案内',answer:'まだ一つを選んでいないので、「もう片方」は決められません。今比べているのは'+candidateNames(list)+'です。',links:list.map(itemLink),data:data};
+    }
+    var others=list.filter(function(x){return x.id!==selected.id;});
+    if(others.length!==1){
+      data.needsClarification=true;data.siteComparisonOtherRecallNeedsSelection=true;data.siteItems=ids.slice();
+      return {handled:true,mode:'サイト総合案内',answer:'「'+selected.name+'」以外に候補が複数あります。どの候補か名前で教えてください。',links:list.map(itemLink),data:data};
+    }
+    var other=others[0];data.siteItem=other.id;data.siteItems=[other.id];data.siteViewedAlternative=other.id;data.selectedSiteItem=selected.id;
+    return {handled:true,mode:'サイト総合案内',answer:'「'+selected.name+'」のもう片方は「'+other.name+'」です。現在の選択は「'+selected.name+'」のままです。',links:[itemLink(other)],data:data};
+  }
+  function comparisonSelectionRecallCue(text){
+    var t=normalizeInput(text);if(!t)return false;
+    if(/^(?:(?:今|いま|現在|結局|さっき|先ほど)[、,\s]*)?(?:何|どれ|どっち|どちら)(?:を)?(?:選んでる|選んでいる|選んだ|決めた)(?:の|ん)?(?:だっけ|でしたっけ|か|は)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:(?:今|いま|現在|結局|さっき|先ほど)[、,\s]*)?(?:何|どれ|どっち|どちら)(?:に|を)(?:した|選んだ|決めた)(?:んだっけ|っけ|の|のか|か)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:今|いま|現在|さっき|先ほど|結局)(?:の)?(?:選択|決定)(?:は|って|どれ|何|どっち|どちら)?(?:だっけ|でしたっけ)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:さっき|先ほど|今)(?:に)?(?:選んだ|決めた|選択した)(?:の|方|ほう)(?:は|って|どれ|何)?(?:だっけ|でしたっけ)?[。！!？?]*$/.test(t))return true;
+    return /^(?:選んだ|決めた|選択した)(?:の|方|ほう)(?:は|って|どれ|何|どっち|どちら)(?:だっけ|でしたっけ)?[。！!？?]*$/.test(t);
+  }
+  function answerComparisonSelectionRecall(text,history){
+    if(!comparisonSelectionRecallCue(text))return null;
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));if(ctx.candidateKind!=='comparison'||ctx.candidates.length<2)return null;
+    var list=uniqueCandidateItems(ctx.candidates),ids=list.map(function(x){return x.id;}),selected=ctx.selectedCandidate&&list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+    var data={siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:(ctx.sourceCandidates.length?ctx.sourceCandidates:list).map(function(x){return x.id;}),siteComparisonSelectionRecall:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''};
+    if(ctx.feature){data.siteFeature=ctx.feature;data.siteFeatures=[ctx.feature];data.siteFeatureSubjects=(ctx.featureSubjects||[]).slice(0,4);}
+    if(ctx.conditions.length)data.siteConditions=conditionSnapshot(ctx.conditions);
+    if(!selected){
+      data.needsClarification=true;data.siteComparisonSelectionRecallUndecided=true;
+      return {handled:true,mode:'サイト総合案内',answer:'まだどちらにも決めていません。今比べているのは'+candidateNames(list)+'です。選ぶなら、名前か前・後で教えてください。',links:list.map(itemLink),data:data};
+    }
+    data.siteItem=selected.id;data.selectedSiteItem=selected.id;data.siteItems=[selected.id];
+    return {handled:true,mode:'サイト総合案内',answer:'現在選んでいるのは「'+selected.name+'」です。こちらから開けます。',links:[itemLink(selected)],data:data};
+  }
+  function comparisonSelectionConfirmationCue(text){
+    var t=normalizeInput(text),lead='(?:(?:じゃあ|じゃ|では|それなら|うん|はい)[、,\\s]*)?';
+    return new RegExp('^'+lead+'(?:それ(?:で(?:いい|お願い|頼む|進めて)?|に(?:する|決める)|を(?:使う|選ぶ)|がいい)|そっち(?:で(?:いい|お願い|頼む|進めて)?|に(?:する|決める)|を(?:使う|選ぶ)|がいい)|(?:おすすめ|選んだ|その)(?:の)?(?:方|ほう)(?:で(?:いい|お願い|頼む|進めて)?|に(?:する|決める)|がいい))[？?。！!]*$').test(t);
+  }
+  function comparisonDecisionBridgeCue(text){
+    var t=normalizeInput(text);
+    if(comparisonViewedAlternativeSelectionCue(t))return true;
+    if(comparisonSelectionConfirmationCue(t))return true;
+    if(comparisonCandidateRecallCue(t))return true;
+    if(comparisonSelectionRecallCue(t))return true;
+    if(comparisonSelectionRevisionCue(t,[],null)||/(?:やっぱ|やはり|いや|訂正|変える|変えて|変更|切り替|にする|でお願い|じゃなく|ではなく|今のなし)/.test(t))return true;
+    if(comparisonChoiceReasonCue(t))return true;
+    return /^(?:なるほど(?:ね)?|そうなんだ|そうか|了解|わかった|分かった|おけ|OK|ありがとう|ありがと|うん|はい|へえ|ふーん|ほう)[。！!？?～〜]*$/i.test(t);
+  }
+  function answerComparisonSelectionConfirmation(text,history){
+    if(!comparisonSelectionConfirmationCue(text))return null;
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));if(ctx.candidateKind!=='comparison'||ctx.candidates.length<2)return null;
+    var list=uniqueCandidateItems(ctx.candidates),ids=list.map(function(x){return x.id;}),selected=ctx.selectedCandidate&&list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+    var data={siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:(ctx.sourceCandidates.length?ctx.sourceCandidates:list).map(function(x){return x.id;}),siteComparisonSelectionConfirmation:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''};
+    if(!selected){
+      data.needsClarification=true;data.siteComparisonSelectionConfirmationNeedsChoice=true;
+      return {handled:true,mode:'サイト総合案内',answer:'まだ一つには決まっていないのですよ。'+candidateNames(list)+'のどちらにするか、名前か前・後で教えてください。',links:list.map(itemLink),data:data};
+    }
+    data.siteItem=selected.id;data.selectedSiteItem=selected.id;data.siteItems=[selected.id];data.siteComparisonSelectionConfirmed=true;
+    if(ctx.feature){data.siteFeature=ctx.feature;data.siteFeatures=[ctx.feature];data.siteFeatureSubjects=(ctx.featureSubjects||[]).slice(0,4);}
+    return {handled:true,mode:'サイト総合案内',answer:'では「'+selected.name+'」で進めます。こちらから開けます。',links:[itemLink(selected)],data:data};
+  }
+  function comparisonChoiceReasonCue(text){
+    var t=normalizeInput(text);
+    if(/(?:なんで|なぜ|どうして|理由|根拠)/.test(t))return true;
+    if(/^(?:じゃあ|では|それなら|でも|で|それで)?[、,\s]*(?:なんで|なぜ|どうして|理由(?:は|を教えて|教えて)?|根拠(?:は|を教えて|教えて)?|どういう理由|どういうこと)(?:なの|ですか|そうなるの|そう言えるの|そっちなの|そっちを選ぶの|一つに絞れないの|両方なの)?[？?。！!]*$/.test(t))return true;
+    return /(?:じゃ|では|だと|なら|は)(?:だめ|ダメ|駄目|違う|合わない)(?:なの|ですか)?|(?:じゃ|では)ないの[？?。！!]*$/.test(t)&&mentionedItems(t).length>0;
+  }
+  function comparisonPurposeDecisionContext(history){
+    var h=Array.isArray(history)?history:[],ctx=discardStaleCandidateContext(h,historyGuideContext(h));
+    if(ctx.candidateKind!=='comparison'||ctx.candidates.length<2||ctx.candidateIndex<0)return null;
+    var assistant=h[ctx.candidateIndex],data=assistant&&assistant.meta&&assistant.meta.data||{},query='',purposeQuery='',list=uniqueCandidateItems(ctx.candidates),min=Math.max(0,ctx.candidateIndex-12);
+    for(var i=ctx.candidateIndex-1;i>=min;i--){
+      if(!h[i]||h[i].role!=='user')continue;query=S(h[i].text);
+      purposeQuery=comparisonPurposeCue(query)?query:comparisonPurposeShorthandText(query,list);
+      if(purposeQuery)break;
+      if(comparisonDecisionBridgeCue(query))continue;
+      return null;
+    }
+    if(!purposeQuery)return null;
+    var specs=comparisonPurposeSpecs(purposeQuery,list);if(!specs.length)return null;
+    var matched=[],unknown=[];
+    list.forEach(function(item){
+      var bodies=[],seen={},ok=true,uncertain=false;
+      specs.forEach(function(spec){
+        var ev=comparisonPurposeEvidence(item,spec,purposeQuery);if(ev.status===0)uncertain=true;else if(ev.status<0)ok=false;
+        (ev.bodies||[]).forEach(function(body){body=S(body);if(body&&!seen[body]){seen[body]=1;bodies.push(body);}});
+      });
+      var entry={item:item,bodies:bodies};if(ok&&!uncertain)matched.push(entry);else if(uncertain)unknown.push(entry);
+    });
+    var selectedId=S(data.selectedSiteItem||data.siteItem||''),selected=list.filter(function(x){return x.id===selectedId;})[0]||null;
+    var selectedMatches=!!(selected&&matched.some(function(x){return x.item.id===selected.id;}));
+    return {items:list,specs:specs,query:purposeQuery,matched:matched,unknown:unknown,selected:selected,selectionOverrodePurpose:!!(selected&&matched.length&&!selectedMatches)};
+  }
+  function comparisonPurposeLabel(query,specs){
+    var t=normalizeInput(query),exact={minimum_activation:'合成最低発現数を見る',kaiun:'開運系を確認する',eiyu:'英雄系を確認する',joran:'上覧系を確認する',right_hand:'右手へ反映する',left_hand:'左手へ反映する',neck:'首へ反映する'};
+    if((specs||[]).some(function(x){return x.intent==='reflect';})){
+      if(/能力計算/.test(t))return '能力計算に反映する';
+      if(/家臣/.test(t))return '家臣計算に反映する';
+    }
+    for(var i=0;i<(specs||[]).length;i++){if(specs[i].key&&exact[specs[i].key])return exact[specs[i].key];}
+    for(var j=0;j<(specs||[]).length;j++){
+      if(!specs[j].intent)continue;var phrase=featureCuePhrase(specs[j].intent);
+      if(phrase)return phrase.replace(/できる$/,'する').replace(/使える$/,'使う');
+    }
+    return 'その目的に使う';
+  }
+  function comparisonReasonBody(entry,usePurposeEvidence){
+    var item=entry&&entry.item,page=sourcePage(item),facts=page&&page.facts||{},body=usePurposeEvidence&&(entry.bodies||[]).join(' ');
+    return S(body||facts.compare||item&&item.desc||'');
+  }
+  function answerComparisonChoiceReason(text,history){
+    if(!comparisonChoiceReasonCue(text))return null;
+    var ctx=comparisonPurposeDecisionContext(history);if(!ctx)return null;
+    var ids=ctx.items.map(function(x){return x.id;}),label=comparisonPurposeLabel(ctx.query,ctx.specs),data={siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,siteComparisonReason:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''},answer='',links=[];
+    var mentioned=mentionedItems(text).filter(function(x){return ids.indexOf(x.id)>=0;}),challenged=mentioned.length===1&&(!ctx.selected||mentioned[0].id!==ctx.selected.id)?mentioned[0]:null;
+    if(ctx.selected){
+      var chosen=ctx.matched.filter(function(x){return x.item.id===ctx.selected.id;})[0]||{item:ctx.selected,bodies:[]};
+      if(ctx.selectionOverrodePurpose){
+        answer='現在「'+ctx.selected.name+'」を選んでいるのは、直前の変更を優先したためです。\n元の「'+label+'」目的に合うのは '+candidateNames(ctx.matched.map(function(x){return x.item;}))+'です。\n・'+ctx.selected.name+'：'+comparisonReasonBody(chosen,false);
+        data.siteComparisonReasonOverride=true;
+      }else answer='「'+ctx.selected.name+'」を選んだのは、「'+label+'」目的に合うことを確認できるためです。\n・'+ctx.selected.name+'：'+comparisonReasonBody(chosen,true);
+      if(challenged){
+        var other=ctx.items.filter(function(x){return x.id===challenged.id;})[0],otherEntry={item:other,bodies:[]};
+        answer+='\n「'+other.name+'」が悪いのではなく、主な用途が違います。\n・'+other.name+'：'+comparisonReasonBody(otherEntry,false);
+        data.siteComparisonReasonChallenge=true;data.reasonChallengedSiteItem=other.id;
+      }
+      answer+='\n選んだページはこちらです。';links=[itemLink(ctx.selected)];data.siteItem=ctx.selected.id;data.selectedSiteItem=ctx.selected.id;data.siteItems=[ctx.selected.id];
+    }else if(ctx.matched.length>=2&&!ctx.unknown.length){
+      answer='一つに絞れないのは、「'+label+'」目的を'+candidateNames(ctx.matched.map(function(x){return x.item;}))+'のどちらも満たすためです。\n'+ctx.matched.map(function(x){return '・'+x.item.name+'：'+comparisonReasonBody(x,true);}).join('\n')+'\nもう一つ条件があれば、そこから絞り込めます。';
+      links=ctx.matched.map(function(x){return itemLink(x.item);});data.siteItems=ctx.matched.map(function(x){return x.item.id;});data.siteComparisonReasonShared=true;data.needsClarification=true;
+    }else if(!ctx.matched.length&&!ctx.unknown.length){
+      answer='理由は、比べている'+candidateNames(ctx.items)+'のどちらにも「'+label+'」ための対応を確認できないからです。別の目的なら選び直せます。';
+      links=ctx.items.map(itemLink);data.siteItems=[];data.siteComparisonReasonNoMatch=true;
+    }else{
+      answer='一つに決めなかったのは、「'+label+'」目的を判断する情報が不足しているためです。推測では選ばず、もう少し具体的な条件を確認しています。';
+      links=ctx.items.map(itemLink);data.siteItems=ctx.matched.map(function(x){return x.item.id;});data.siteComparisonReasonUnknown=true;data.needsClarification=true;
+    }
+    var intents=ctx.specs.filter(function(x){return !!x.intent;}).map(function(x){return x.intent;}),uniqueIntents=[];intents.forEach(function(x){if(uniqueIntents.indexOf(x)<0)uniqueIntents.push(x);});
+    if(uniqueIntents.length===1){data.siteFeature=uniqueIntents[0];data.siteFeatures=uniqueIntents.slice();data.siteFeatureSubjects=featureSubjectIds(ctx.query);}
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:links,data:data};
+  }
   function sameOrDifferentCue(text){
     return /^(?:じゃあ|では|それなら|で)?[、,\s]*(?:どっちも|両方|全部)?(?:ほぼ|だいたい)?(?:同じ|一緒)(?:なの|ですか|なのかな|ってこと|で合ってる)?[？?。！!]*$/.test(normalizeInput(text));
+  }
+  function comparisonDifferenceCue(text){
+    return /^(?:じゃあ|では|それなら|で)?[、,\s]*(?:もう一度|もう一回|改めて)?[、,\s]*(?:二つ|2つ|２つ|両方|それぞれ|残り)?(?:の|を)?(?:違い|差|どう違う|何が違う|比べて|比較して|比べたい)(?:だけ)?(?:(?:を)?(?:もう一度|もう一回|改めて))?(?:は|って|を教えて|教えて|ですか)?[？?。！!]*$/.test(normalizeInput(text));
   }
   function openToHelpCorrectionCue(text){
     var t=normalizeInput(text);
@@ -1736,13 +2957,43 @@
   }
 
   function shouldHandleBeforeKnowledge(text,opt){
-    var original=S(opt&&opt.original||text),t=normalizeInput(original),ctx=historyGuideContext(opt&&opt.history),cur=currentItem();
+    var original=S(opt&&opt.original||text),t=normalizeInput(original),ctx=discardStaleCandidateContext(opt&&opt.history,historyGuideContext(opt&&opt.history)),cur=currentItem();
     var featureInput=correctionTail(original)||t;
     if(!t)return false;
+    if(inlineSiteGoalRevision(original))return true;
+    if(guideLinkMissCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(guideLinkMissSelectionRequest(original,latestImmediateGuideLinkContext(opt&&opt.history)))return true;
+    if(guideConversationReturnTail(original)&&latestPausedGuideContext(opt&&opt.history))return true;
+    if(guideConversationReturnCue(original)&&latestPausedGuideContext(opt&&opt.history))return true;
+    if(answerVagueCapabilityRevision(original,opt&&opt.history))return true;
+    if(answerVagueCapabilityFollowup(original,opt&&opt.history))return true;
+    if(answerComparisonAlternativeFeature(original,opt&&opt.history))return true;
+    if(answerComparisonViewedAlternativeSelection(original,opt&&opt.history))return true;
+    if(answerComparisonSelectionRevision(original,opt&&opt.history))return true;
+    if(answerComparisonCandidateRecall(original,opt&&opt.history))return true;
+    if(answerComparisonSelectionRecall(original,opt&&opt.history))return true;
+    if(answerComparisonSelectionConfirmation(original,opt&&opt.history))return true;
+    if(exactGuideLinkOpenCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(postOpenGuideCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(continuedGuideDetailIntent(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(answerGuideDetailTargetSwitch(original,opt&&opt.history))return true;
+    if(guideLinkDestinationCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(selectiveGuideLinkCue(original)&&selectedGuideLinks(original,latestImmediateGuideLinkContext(opt&&opt.history)).length)return true;
+    if(repeatGuideLinkCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
+    if(answerStoneAlternativeSelection(original,opt&&opt.history))return true;
+    if(stoneAlternativeCue(original)&&answerStoneAlternatives(original,opt&&opt.history))return true;
+    if(answerComparisonChoiceReason(original,opt&&opt.history))return true;
+    if(answerDirectComparisonPurpose(featureInput))return true;
+    if(pageFreeGoal(original))return true;
+    if(vagueSaveCapabilityCue(original)&&!pageContextFresh(opt&&opt.history,ctx)&&!ctx.candidates.length)return true;
+    if(vagueSiteCapabilityKind(original)&&!pageContextFresh(opt&&opt.history,ctx)&&!ctx.candidates.length)return true;
     if(overviewCue(t))return true;
+    if(seikaiStoneRequest(original,ctx.item,cur))return true;
+    if(incompletePagePossessive(original))return true;
     if(bareKnownTerm(original))return true;
     if(openToHelpCorrectionCue(original))return true;
     if(explicitMultiOpenItems(original).length>=2)return true;
+    if(answerExplicitOpenAndFeature(featureInput,ctx))return true;
     if(siteClauseFeatureGroups(original,ctx.item,cur,ctx.candidates).length)return true;
     if(ctx.candidates.length&&candidateRestoreCue(original))return true;
     if(ctx.candidates.length&&candidateRemainderCue(original))return true;
@@ -1750,8 +3001,16 @@
     if(ctx.candidates.length&&answerCandidateExclusionOnly(original,ctx.candidates,ctx.sourceCandidates))return true;
     if(ctx.candidates.length&&candidateConditionalPlan(original,ctx.candidates))return true;
     if(ctx.candidates.length&&candidateSubset(original,ctx.candidates).length)return true;
+    if(ctx.candidates.length&&(candidateRejectionCue(original)||candidateCancelCue(original)))return true;
+    if(ctx.candidates.length&&ctx.selectedCandidate&&candidateRelativeMove(original,ctx.candidates,ctx.selectedCandidate).requested)return true;
+    if(ctx.candidates.length&&ctx.selectedCandidate&&candidateAlternativeCue(original))return true;
+    if(ctx.candidates.length&&ctx.selectedCandidate&&previousCandidateCue(original))return true;
+    if(ctx.candidates.length&&comparisonDifferenceCue(t))return true;
     if(ctx.candidates.length&&sameOrDifferentCue(t))return true;
     if(ctx.candidates.length&&comparisonRecommendationCue(t))return true;
+    if(ctx.candidateKind==='comparison'&&comparisonIndecisionCue(original))return true;
+    if(ctx.candidateKind==='comparison'&&answerComparisonPurposeShorthand(featureInput,ctx.candidates))return true;
+    if(ctx.candidateKind==='comparison'&&answerComparisonPurposeRecommendation(featureInput,ctx.candidates))return true;
     if(ctx.candidates.length&&answerCandidateCapability(featureInput,ctx.candidates))return true;
     if(ctx.candidates.length&&allCandidatesCue(t))return true;
     var selectedContextCandidate=ctx.candidates.length?selectFromCandidates(featureInput,ctx.candidates,ctx.selectedCandidate):null;
@@ -1783,11 +3042,102 @@
   function respond(text,opt){
     opt=opt||{};
     var original=S(opt.original||text),t=normalizeInput(original);if(!t)return {handled:false};
-    var mode=pageMode(),cur=currentItem(),intent=opt.intentInfo?String(opt.intentInfo.intent||''):'',hist=historyGuideContext(opt.history),recent=hist.item;
+    var mode=pageMode(),cur=currentItem(),intent=opt.intentInfo?String(opt.intentInfo.intent||''):'',hist=discardStaleCandidateContext(opt.history,historyGuideContext(opt.history)),recent=hist.item;
     var featureInput=correctionTail(original)||t;
 
-    if(overviewCue(t)){
+    var inlineGoalRevision=answerInlineSiteGoalRevision(original,opt);if(inlineGoalRevision)return inlineGoalRevision;
+
+    var linkMissRecovery=answerGuideLinkMiss(original,opt.history,opt);if(linkMissRecovery)return linkMissRecovery;
+
+    var linkMissSelection=answerGuideLinkMissSelection(original,opt.history);if(linkMissSelection)return linkMissSelection;
+
+    var guideReturnWithGoal=answerGuideConversationReturnWithGoal(original,opt.history,opt);if(guideReturnWithGoal)return guideReturnWithGoal;
+
+    if(guideConversationReturnCue(original)){
+      var guideReturn=answerGuideConversationReturn(opt.history);if(guideReturn)return guideReturn;
+    }
+
+    var vagueCapabilityRevision=answerVagueCapabilityRevision(original,opt.history);if(vagueCapabilityRevision)return vagueCapabilityRevision;
+
+    var vagueCapabilityFollowup=answerVagueCapabilityFollowup(original,opt.history);if(vagueCapabilityFollowup)return vagueCapabilityFollowup;
+
+    var comparisonAlternativeFeature=answerComparisonAlternativeFeature(original,opt.history);if(comparisonAlternativeFeature)return comparisonAlternativeFeature;
+
+    var viewedAlternativeSelection=answerComparisonViewedAlternativeSelection(original,opt.history);if(viewedAlternativeSelection)return viewedAlternativeSelection;
+
+    var comparisonSelectionRevision=answerComparisonSelectionRevision(original,opt.history);if(comparisonSelectionRevision)return comparisonSelectionRevision;
+
+    var comparisonCandidateRecall=answerComparisonCandidateRecall(original,opt.history);if(comparisonCandidateRecall)return comparisonCandidateRecall;
+
+    var comparisonSelectionRecall=answerComparisonSelectionRecall(original,opt.history);if(comparisonSelectionRecall)return comparisonSelectionRecall;
+
+    var comparisonSelectionConfirmation=answerComparisonSelectionConfirmation(original,opt.history);if(comparisonSelectionConfirmation)return comparisonSelectionConfirmation;
+
+    if(exactGuideLinkOpenCue(original)){
+      var exactOpen=openExactGuideLinks(opt.history);if(exactOpen)return exactOpen;
+    }
+
+    if(postOpenGuideCue(original)){
+      var postOpen=postOpenGuideAnswer(opt.history);if(postOpen)return postOpen;
+    }
+
+    var continuedDetail=answerContinuedGuideDetail(original,opt.history);if(continuedDetail)return continuedDetail;
+
+    var detailSwitch=answerGuideDetailTargetSwitch(original,opt.history);if(detailSwitch)return detailSwitch;
+
+    if(guideLinkDestinationCue(original)){
+      var linkDestinations=explainGuideLinkDestinations(opt.history);if(linkDestinations)return linkDestinations;
+    }
+
+    if(selectiveGuideLinkCue(original)){
+      var selectedLinks=selectGuideLinks(original,opt.history);if(selectedLinks)return selectedLinks;
+    }
+
+    if(repeatGuideLinkCue(original)){
+      var repeatedLinks=repeatGuideLinks(opt.history);if(repeatedLinks)return repeatedLinks;
+    }
+
+    var stoneAlternativeSelection=answerStoneAlternativeSelection(original,opt.history);if(stoneAlternativeSelection)return stoneAlternativeSelection;
+    var stoneAlternatives=answerStoneAlternatives(original,opt.history);if(stoneAlternatives)return stoneAlternatives;
+
+    var comparisonChoiceReason=answerComparisonChoiceReason(original,opt.history);if(comparisonChoiceReason)return comparisonChoiceReason;
+
+    var directPurposeRecommendation=answerDirectComparisonPurpose(featureInput);if(directPurposeRecommendation)return directPurposeRecommendation;
+
+    if(hist.candidateKind==='comparison'){
+      var comparisonIndecision=answerComparisonIndecision(original,hist.candidates);if(comparisonIndecision)return comparisonIndecision;
+      var shorthandPurposeRecommendation=answerComparisonPurposeShorthand(featureInput,hist.candidates);if(shorthandPurposeRecommendation)return shorthandPurposeRecommendation;
+      var earlyPurposeRecommendation=answerComparisonPurposeRecommendation(featureInput,hist.candidates);if(earlyPurposeRecommendation)return earlyPurposeRecommendation;
+    }
+
+    var freeGoal=pageFreeGoal(original);
+    if(freeGoal)return answerPageFreeGoal(freeGoal);
+
+    if(vagueSaveCapabilityCue(original)&&!pageContextFresh(opt.history,hist)&&!hist.candidates.length)return answerVagueSaveCapability();
+
+    var vagueCapabilityKind=vagueSiteCapabilityKind(original);
+    if(vagueCapabilityKind&&!pageContextFresh(opt.history,hist)&&!hist.candidates.length)return answerVagueSiteCapability(vagueCapabilityKind);
+
+    // 直前に一つのページを案内・再掲した直後の裸の「何ができる？」は、
+    // サイト全体ではなく、そのページについての質問として扱う。
+    // 「このサイトは何ができる？」のような明示的な全体質問は従来どおり概要へ進める。
+    if(overviewCue(t)&&!(recent&&!/(?:このサイト|たいらの野望|サイト案内|全ページ|ページ一覧|ツール一覧)/.test(t)&&pageHelpCue(t,null,recent))){
       return {handled:true,mode:'サイト総合案内',answer:'たいらの野望は、信長の野望Online向けの検索・計算・一覧・集合・抽選・カウンター確認をまとめたサイトです。\n陣法検索、英傑一覧、能力計算、家臣計算、七星転生、食料、鬼神石、九十九、魔導結晶、星海の荒石、鎮魂符、御蔵番拡張・名物一覧、徒党登録、ルーレット、トーナメント、カウンターがあります。\nやりたいことをラフに言ってくれれば、該当ページと使い方を案内するのですよ。',links:[itemLink(BY_ID.jinpo),itemLink(BY_ID.heroes),itemLink(BY_ID.stats),itemLink(BY_ID.retainer),itemLink(BY_ID.kishin),itemLink(BY_ID.tsukumo),itemLink(BY_ID.mado),itemLink(BY_ID.counter)],data:{siteOverview:true,itemCount:ITEMS.length,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    }
+
+    // 「文曲の輝光」「文曲の」「それじゃ武曲」のような自然な省略を、
+    // 陣法の文曲設定へ誤配せず、星海の荒石の該当表示へ直接つなぐ。
+    var directStone=seikaiStoneRequest(original,recent,cur);
+    if(directStone)return seikaiStoneAnswer(directStone);
+
+    var incompletePage=incompletePagePossessive(original);
+    if(incompletePage){
+      var incompleteAnswer=explainItem(incompletePage.item,true);
+      incompleteAnswer.answer='「'+incompletePage.item.name+'」のことですね。言葉が途中でも大丈夫なのですよ。\n'+incompleteAnswer.answer;
+      incompleteAnswer.data=incompleteAnswer.data||{};
+      incompleteAnswer.data.incompletePossessive=true;
+      incompleteAnswer.data.matched=incompletePage.matched;
+      return incompleteAnswer;
     }
 
     // 直前の機能質問を別ページへ引き継ぐ短い返答は、用語単独の案内より優先する。
@@ -1812,10 +3162,20 @@
       if(recent)return explainItem(recent,false);
     }
 
+    var explicitOpenFeature=answerExplicitOpenAndFeature(featureInput,hist);if(explicitOpenFeature)return explicitOpenFeature;
+
     var directMultiOpen=explicitMultiOpenItems(original);
     if(directMultiOpen.length>=2)return answerCandidateLinks(directMultiOpen,directMultiOpen);
 
     if(hist.candidates.length){
+      var rejectedCandidates=answerCandidateRejection(original,hist.candidates);
+      if(rejectedCandidates)return rejectedCandidates;
+      var relativeCandidate=answerCandidateRelativeMove(original,hist);
+      if(relativeCandidate)return relativeCandidate;
+      var previousCandidate=answerPreviousCandidate(original,opt.history,hist);
+      if(previousCandidate)return previousCandidate;
+      var alternativeCandidate=answerCandidateAlternative(original,opt.history,hist);
+      if(alternativeCandidate)return alternativeCandidate;
       if(candidateRestoreCue(original)&&hist.sourceCandidates.length){
         var restored=answerCandidateSet(hist.sourceCandidates,hist.sourceCandidates,{open:candidateOpenCue(original),lead:candidateOpenCue(original)?candidateNames(hist.sourceCandidates)+'を開けるようにしました。':'元の候補 '+candidateNames(hist.sourceCandidates)+'に戻しました。'});if(restored)return restored;
       }
@@ -1823,10 +3183,17 @@
       if(conditional)return conditional;
       var exclusionOnly=answerCandidateExclusionOnly(original,hist.candidates,hist.sourceCandidates);
       if(exclusionOnly)return exclusionOnly;
-      var remainder=answerCandidateRemainder(original,hist.candidates,hist.sourceCandidates,hist.selectedCandidate,hist.openedItems);
+      var remainder=answerCandidateRemainder(original,hist.candidates,hist.sourceCandidates,hist.selectedCandidate,hist.openedItems,hist.excludedItems);
       if(remainder)return remainder;
       var subset=candidateSubset(original,hist.candidates);
-      if(subset.length)return answerCandidateLinks(subset,hist.candidates,hist.sourceCandidates);
+      if(subset.length){
+        var subsetLinks=answerCandidateLinks(subset,hist.candidates,hist.sourceCandidates);
+        if(subsetLinks&&hist.excludedItems.length){subsetLinks.data.siteExcludedItems=hist.excludedItems.map(function(item){return item.id;});subsetLinks.data.siteLinkMissRecoveryContinuation=true;}
+        if(subsetLinks)return subsetLinks;
+      }
+      if(comparisonDifferenceCue(t)){
+        var differenceAnswer=compareItems(hist.candidates);if(differenceAnswer)return differenceAnswer;
+      }
       if(sameOrDifferentCue(t)){
         var sameAnswer=compareItems(hist.candidates);
         if(sameAnswer)sameAnswer.answer='完全に同じではないのですよ。\n'+sameAnswer.answer;
@@ -1846,7 +3213,7 @@
         var excludedIntents=featureIntents(excluded.tail||featureInput,alternatives[0]);
         if(excludedIntents.length)return retainCandidateContext(answerFeatures(alternatives[0],excludedIntents,true,excluded.tail||featureInput),hist.candidates,alternatives[0],hist.candidateKind,hist.sourceCandidates,hist.conditions);
         var excludedPage=explainItem(alternatives[0],true);
-        if(hist.candidateKind==='comparison')excludedPage=retainCandidateContext(excludedPage,hist.candidates,alternatives[0],'comparison',hist.sourceCandidates,hist.conditions);
+        excludedPage=retainCandidateContext(excludedPage,hist.candidates,alternatives[0],hist.candidateKind,hist.sourceCandidates,hist.conditions);
         return excludedPage;
       }
       if(alternatives.length>1)return candidateClarification(alternatives,'「'+excluded.item.name+'」ではない候補は、');
@@ -1862,7 +3229,9 @@
     }
 
     if(hist.candidates.length&&allCandidatesCue(t)){
-      var allLinks=answerCandidateLinks(hist.candidates,hist.candidates,hist.sourceCandidates);if(allLinks)return allLinks;
+      var allLinks=answerCandidateLinks(hist.candidates,hist.candidates,hist.sourceCandidates);
+      if(allLinks&&hist.excludedItems.length){allLinks.data.siteExcludedItems=hist.excludedItems.map(function(item){return item.id;});allLinks.data.siteLinkMissRecoveryContinuation=true;}
+      if(allLinks)return allLinks;
     }
     if(hist.candidates.length){
       var selectedContextCandidate=selectFromCandidates(featureInput,hist.candidates,hist.selectedCandidate);
@@ -1918,7 +3287,7 @@
       var selected=selectFromCandidates(featureInput,hist.candidates,hist.selectedCandidate);
       if(selected){
         var selectedPage=explainItem(selected,true);
-        if(hist.candidateKind==='comparison')selectedPage=retainCandidateContext(selectedPage,hist.candidates,selected,'comparison',hist.sourceCandidates,hist.conditions);
+        selectedPage=retainCandidateContext(selectedPage,hist.candidates,selected,hist.candidateKind,hist.sourceCandidates,hist.conditions);
         return selectedPage;
       }
       if(/^(?:どれ|どっち|どちら|もう一回|候補見せて|何があった)[？?。！!]*$/.test(t))return candidateClarification(hist.candidates,'候補は ');
@@ -1931,7 +3300,11 @@
 
     // 「そのページ何できる」「開いて」「どこ押す」などは直前案内へ接続する。
     if(recent&&deicticOpenCue(t))return openItem(recent);
-    if(recent&&pageHelpCue(t,null,recent))return explainItem(recent,true);
+    if(recent&&pageHelpCue(t,null,recent)&&!mentionedItems(t).length){
+      var contextualPageHelp=explainItem(recent,true);
+      if(contextualPageHelp&&contextualPageHelp.data)contextualPageHelp.data.siteContextualPageHelp=true;
+      return contextualPageHelp;
+    }
 
     // TOPや一般ページで具体的な陣法操作を言われた場合だけ、操作できる陣法ページへ案内する。
     if(mode!=='jinpo'&&hasJinpoOperation(t)){
@@ -1944,9 +3317,9 @@
     // 言い直しは後半の対象を優先する。履歴がなくても「家臣計算じゃなくて能力計算」で確定できる。
     if(correctionCue(original)&&!item){var od=findItemDetailed(targetText);if(od.item)item=od.item;}
 
-    var compared=mentionedItems(t);
-    if(compared.length>=2&&/(?:どっち|どちら|違い|違う|どう違う|比較|使い分け|どれがいい)/.test(t)){
-      var comparedAnswer=compareItems(compared),openCompared=explicitComparedOpen(t,compared);
+    var comparisonText=correctedTarget||t,compared=mentionedItems(comparisonText);
+    if(compared.length>=2&&/(?:どっち|どちら|違い|違う|どう違う|比較|使い分け|どれがいい)/.test(comparisonText)){
+      var comparedAnswer=compareItems(compared),openCompared=explicitComparedOpen(comparisonText,compared);
       if(comparedAnswer&&openCompared){
         comparedAnswer.links=[itemLink(openCompared)];
         comparedAnswer.answer+='\n「'+openCompared.name+'」だけ開けるようにしました。';
@@ -1955,7 +3328,7 @@
       return comparedAnswer;
     }
 
-    var alternatives=alternativeItems(t);
+    var alternatives=alternativeItems(correctedTarget||t);
     if(alternatives.length>=2)return candidateClarification(alternatives,'候補は ');
 
     if(item&&childrenOf(item).length&&hierarchyCue(t))return candidateClarification(childrenOf(item),'「'+item.name+'」の次は、');
@@ -1988,7 +3361,7 @@
     version:VERSION,items:ITEMS.slice(),respond:respond,findItem:findItem,findItemDetailed:findItemDetailed,
     purposeItem:purposeItem,purposeScores:purposeScores,currentItem:currentItem,pageMode:pageMode,
     absoluteUrl:abs,normalizeInput:normalizeInput,hasNavigationCue:hasNavigationCue,
-    shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,candidateContextFresh:candidateContextFresh,
+    shouldHandleBeforeKnowledge:shouldHandleBeforeKnowledge,preflight:preflight,historyGuideContext:historyGuideContext,candidateContextFresh:candidateContextFresh,guideConversationReturnCue:guideConversationReturnCue,latestPausedGuideContext:latestPausedGuideContext,
     childrenOf:childrenOf,usageOf:usageOf,sourcePage:sourcePage,featureIntent:featureIntent,featureIntents:featureIntents,answerFeature:answerFeature,candidateFeatureRequests:candidateFeatureRequests,
     splitSiteFeatureClauses:splitSiteFeatureClauses,siteClauseFeatureGroups:siteClauseFeatureGroups,answerClauseFeatureGroups:answerClauseFeatureGroups,answerMixedSiteClauses:answerMixedSiteClauses,bareKnownTerm:bareKnownTerm,knownTermGuidance:knownTermGuidance,expandKnownTermFollowup:expandKnownTermFollowup,knownTermContextFresh:knownTermContextFresh,pageContextFresh:pageContextFresh,pageInternalChoice:pageInternalChoice,siteSourceVersion:SOURCE.version||''
   };

@@ -2,7 +2,7 @@
   'use strict';
   if(window.__JINPO_LOCAL_BOT_INSTALLED__) return;
   window.__JINPO_LOCAL_BOT_INSTALLED__=true;
-  var VERSION='3.33.0';
+  var VERSION='3.34.0';
   var MODE='歩き巫女';
   var lastReference={type:'',items:[]};
 
@@ -517,9 +517,15 @@
     // ユーザーの訂正・否定・話題指定は、各専門ルーターより先に処理する。
     // 「英傑じゃない」「違う、カープの前田」「カープの話へ変えて」などで、
     // 古い人物・分野・pendingを押し通さず、現在の指示を最優先する。
+    var preRepairSiteGuide=false;
+    try{
+      if(!preRepairKnownTermFollowup&&window.JINPO_BOT_SITE_GUIDE&&typeof window.JINPO_BOT_SITE_GUIDE.preflight==='function'){
+        preRepairSiteGuide=!!window.JINPO_BOT_SITE_GUIDE.preflight(userMessage,{history:history,pageContext:pageContext});
+      }
+    }catch(preRepairSiteGuideErr){preRepairSiteGuide=false;}
     var repairInfo=null;
     try{
-      if(!preRepairKnownTermFollowup&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.repairDirective==='function'){
+      if(!preRepairKnownTermFollowup&&!preRepairSiteGuide&&window.JINPO_BOT_CONVERSATION&&typeof window.JINPO_BOT_CONVERSATION.repairDirective==='function'){
         repairInfo=window.JINPO_BOT_CONVERSATION.repairDirective(userMessage,history);
       }
     }catch(repairDetectErr){repairInfo=null;}
@@ -705,12 +711,17 @@
     try{
       if(conversationControl&&conversationControl.control==='back'&&window.JINPO_BOT_SITE_GUIDE&&
          typeof window.JINPO_BOT_SITE_GUIDE.historyGuideContext==='function'&&typeof window.JINPO_BOT_SITE_GUIDE.preflight==='function'){
+        if(typeof window.JINPO_BOT_SITE_GUIDE.guideConversationReturnCue==='function'&&
+           window.JINPO_BOT_SITE_GUIDE.guideConversationReturnCue(originalMessage)&&
+           window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext})){
+          conversationControl=null;
+        }
         var siteCandidateContext=window.JINPO_BOT_SITE_GUIDE.historyGuideContext(history)||{};
         var candidateIndex=Number(siteCandidateContext.candidateIndex);
         var candidateFresh=typeof window.JINPO_BOT_SITE_GUIDE.candidateContextFresh==='function'
           ?window.JINPO_BOT_SITE_GUIDE.candidateContextFresh(history,siteCandidateContext)
           :Array.isArray(siteCandidateContext.candidates)&&siteCandidateContext.candidates.length&&candidateIndex>=Math.max(0,(history||[]).length-3);
-        if(candidateFresh&&window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext}))conversationControl=null;
+        if(conversationControl&&candidateFresh&&window.JINPO_BOT_SITE_GUIDE.preflight(originalMessage,{history:history,pageContext:pageContext}))conversationControl=null;
       }
     }catch(siteCandidateControlErr){}
 

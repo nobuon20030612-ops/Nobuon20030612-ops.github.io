@@ -1,5 +1,5 @@
 /*
- * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.9-local-only
+ * たいらの野望 / 歩き巫女 共通フローティングチャット UI v1.0.13-local-only
  * Stage 1: UI / 移動 / リサイズ / 最小化 / 会話履歴 / 将来API接続口。
  * 既存の陣法検索ロジックには触れない。
  */
@@ -715,12 +715,30 @@
           siteExcludedItems:Array.isArray(result.data.siteExcludedItems)?result.data.siteExcludedItems.slice(0,8):[],
           siteConditions:Array.isArray(result.data.siteConditions)?result.data.siteConditions.slice(0,12):[],
           selectedSiteItem:String(result.data.selectedSiteItem||''),
+          previousSelectedSiteItem:String(result.data.previousSelectedSiteItem||''),
+          siteLinkMissRecovery:!!result.data.siteLinkMissRecovery,
+          siteLinkMissNeedsSelection:!!result.data.siteLinkMissNeedsSelection,
+          siteLinkMissRejectedItem:String(result.data.siteLinkMissRejectedItem||''),
+          siteLinkMissSelectionResolved:!!result.data.siteLinkMissSelectionResolved,
+          siteLinkMissRecoveryContinuation:!!result.data.siteLinkMissRecoveryContinuation,
+          siteGuidePauseTurns:Number(result.data.siteGuidePauseTurns||0),
+          siteGuideReturnWithGoal:!!result.data.siteGuideReturnWithGoal,
+          siteGuideReturnTarget:String(result.data.siteGuideReturnTarget||''),
+          siteInlineGoalRevision:!!result.data.siteInlineGoalRevision,
           siteConditionalOpen:!!result.data.siteConditionalOpen,
           siteConditionRemoved:!!result.data.siteConditionRemoved,
           knownTermGuidance:!!result.data.knownTermGuidance,
           termKey:String(result.data.termKey||''),
           normalizedTerm:String(result.data.normalizedTerm||''),
           approximateTerm:!!result.data.approximateTerm,
+          siteVagueCapability:String(result.data.siteVagueCapability||''),
+          siteVagueCapabilityClarification:!!result.data.siteVagueCapabilityClarification,
+          siteVagueCapabilityFollowup:!!result.data.siteVagueCapabilityFollowup,
+          siteVagueCapabilityAnswer:!!result.data.siteVagueCapabilityAnswer,
+          siteVagueCapabilityRevision:!!result.data.siteVagueCapabilityRevision,
+          siteVagueCapabilityCancelled:!!result.data.siteVagueCapabilityCancelled,
+          firstComparisonItem:String(result.data.firstComparisonItem||''),
+          siteGuideContextCleared:!!result.data.siteGuideContextCleared,
           needsClarification:!!result.data.needsClarification,
           // サイト案内経由で陣法操作へ進んだ場合も、直前の操作対象だけを軽量保存する。
           resolutionReason:String(result.data.context&&result.data.context.reason||''),
@@ -847,7 +865,7 @@
   }
 
   window.JINPO_AI_CHAT = {
-    version:'1.0.9-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
+    version:'1.0.13-local-only', open:open, close:close, hide:hideAll, show:showLauncher, minimize:function(){ if(!win.classList.contains('isMinimized'))toggleMinimize(); },
     restore:function(){ if(win.classList.contains('isMinimized'))toggleMinimize(); open(); }, clearHistory:clearHistory, setTransport:setTransport,
     send:function(text){ open(); input.value=String(text||''); autoGrow(); return submit(); },
     addMessage:function(role,text,meta){ open(false); return addBubble(role,text,meta||{}); },
