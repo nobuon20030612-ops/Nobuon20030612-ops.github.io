@@ -2664,6 +2664,7 @@ renderAppliedDbRowDisplay(row);
 renderSlots();
 
 calculate();
+document.getElementById("totalStatResult")?.scrollIntoView({behavior:"smooth", block:"center"});
 }
 function resetDbFilters(){
 dbQuickStatOrder = [];
@@ -6707,16 +6708,6 @@ document.addEventListener("click", function(ev){
   function ensureModal(){var m=document.getElementById('step66ReachModal');if(m)return m;m=document.createElement('div');m.id='step66ReachModal';m.innerHTML='<div class="step66Box" role="dialog" aria-modal="true"><div class="step66Head"><div class="step66Title">差し替え英傑を選択</div><button type="button" class="step66Close" data-step66-close="1">閉じる</button></div><div class="step66Body"></div></div>';document.body.appendChild(m);return m;}
   function closeModal(){var m=document.getElementById('step66ReachModal');if(m)m.classList.remove('step66Open');}
   var swapLoadingVisualSeq=0;
-  function ensureSwapBlocker(){
-    var el=document.getElementById('step66SwapBlocker');
-    if(el)return el;
-    el=document.createElement('div');el.id='step66SwapBlocker';
-    el.style.cssText='display:none;position:fixed;inset:0;z-index:49999;cursor:progress;touch-action:none;background:rgba(0,0,0,.001)';
-    var stop=function(ev){try{ev.preventDefault();ev.stopPropagation();}catch(e){}};
-    el.addEventListener('wheel',stop,{passive:false});el.addEventListener('touchmove',stop,{passive:false});
-    el.addEventListener('pointerdown',stop,true);el.addEventListener('click',stop,true);
-    document.body.appendChild(el);return el;
-  }
   function ensureSwapLoading(){
     var el=document.getElementById('step66SwapLoading');
     if(el)return el;
@@ -6729,12 +6720,12 @@ document.addEventListener("click", function(ev){
     document.body.appendChild(el);
     return el;
   }
-  function showSwapLoading(){var el=ensureSwapLoading(),blocker=ensureSwapBlocker(),token=++swapLoadingVisualSeq;el.dataset.loadingToken=String(token);el.dataset.shownAt=String(Date.now());blocker.style.display='block';el.classList.add('active');return token;}
+  function showSwapLoading(){var el=ensureSwapLoading(),token=++swapLoadingVisualSeq;el.dataset.loadingToken=String(token);el.dataset.shownAt=String(Date.now());el.classList.add('active');return token;}
   function hideSwapLoading(token){
-    var el=document.getElementById('step66SwapLoading'),blocker=document.getElementById('step66SwapBlocker');if(!el)return;
+    var el=document.getElementById('step66SwapLoading');if(!el)return;
     if(token&&String(el.dataset.loadingToken||'')!==String(token))return;
     var shown=Number(el.dataset.shownAt||0),wait=Math.max(0,650-(Date.now()-shown));
-    setTimeout(function(){if(token&&String(el.dataset.loadingToken||'')!==String(token))return;el.classList.remove('active');if(blocker)blocker.style.display='none';},wait);
+    setTimeout(function(){if(token&&String(el.dataset.loadingToken||'')!==String(token))return;el.classList.remove('active');},wait);
   }
   function openModal(slot){
     candidateMap=buildMap();
@@ -6768,7 +6759,8 @@ document.addEventListener("click", function(ev){
         console.error('差替適用失敗',e);
         ret=Promise.reject(e);
       }
-      Promise.resolve(ret).catch(function(e){ console.error('差替後処理失敗',e); }).then(function(){
+      var combinedPromise=null;try{combinedPromise=window.__jinpoLastCombinedRefreshPromise||null;}catch(e){}
+      Promise.resolve(ret).catch(function(e){ console.error('差替後処理失敗',e); }).then(function(){return Promise.resolve(combinedPromise).catch(function(e){console.error('差替後の込み合計更新失敗',e);});}).then(function(){
         /* 古い差替処理の完了で、新しい差替の読み込み表示を消さない。 */
         if(applySeq===swapApplySeq) hideSwapLoading(loadingToken);
         setTimeout(function(){schedule(0);},60);
@@ -8245,7 +8237,7 @@ body{padding-top:0 !important;}
   .eiketsuKishinsekiAllMaxIndicatorDetail{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.eiketsuKishinsekiAllMaxIndicator,.eiketsuKishinsekiGlobalMaxArrow{animation:none!important}}
-.jinpoGlobalAllMaxLoading{z-index:99990!important}.jinpoGlobalAllMaxLoading .dbSearchProgressMeta{grid-template-columns:1fr!important}
+.jinpoGlobalAllMaxLoading{z-index:99990!important;pointer-events:none}.jinpoGlobalAllMaxLoading .dbSearchProgressMeta{grid-template-columns:1fr!important}
 
 .eiketsuKishinsekiModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:1000000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow:auto}.eiketsuKishinsekiModalBackdrop.open{display:flex}
 .eiketsuKishinsekiModal{width:min(1180px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:hidden;background:#10140f;border:2px solid #596045;border-radius:4px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 0 2px rgba(200,180,80,.18),inset 0 0 0 1px rgba(255,255,255,.05);box-sizing:border-box;color:#f7f7f1;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;position:relative}.eiketsuKishinsekiModal:before,.eiketsuKishinsekiModal:after{content:"";position:absolute;left:8px;right:8px;height:1px;background:linear-gradient(90deg,transparent,#d1b95b,transparent);pointer-events:none}.eiketsuKishinsekiModal:before{top:6px}.eiketsuKishinsekiModal:after{bottom:6px}
@@ -9208,52 +9200,50 @@ body{padding-top:0 !important;}
   function isFullMaxSearchBasisActive(){
     try{return !!(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.getSearchStatMode==='function' && window.JINPO_FAST_SEARCH.getSearchStatMode()==='fullmax');}catch(e){return false;}
   }
-  function markBonusCombinedPending(text){
-    var panel=document.getElementById('eiketsuKishinsekiCombinedPanel'),mode=document.getElementById('eiketsuKishinsekiCombinedMode');
-    if(panel && panel.style.display!=='none' && mode) mode.textContent=text||'転生＆見聞録＆鬼神石込み / 再計算中...';
-  }
   function currentPlacementKeyForBonus(){
     var p=getPlacementRef(),ids=[];for(var i=1;i<=6;i++)ids.push(bonusHeroInternalId(p&&p[i]));return ids.join('|');
   }
   function lookupCurrentFullMaxRow(result){
     if(!isFullMaxSearchBasisActive()) return Promise.resolve(null);
     var before=currentPlacementKeyForBonus();if(!before || before.split('|').some(function(x){return !x;})) return Promise.resolve(null);
-    result=result||currentActivationResultForBonus();var bonds=result&&Array.isArray(result.activated)?result.activated.map(function(a){return String(a&&a.name||'').trim();}).filter(Boolean):[];
+    result=result||currentActivationResultForBonus();
+    var bonds=result&&Array.isArray(result.activated)?result.activated.map(function(a){return String(a&&a.name||'').trim();}).filter(Boolean):[];
     if(bonds.length<5||bonds.length>9) return Promise.resolve(null);
     var formation=String((document.getElementById('formationSelect')||{}).value||'').trim();if(!formation)return Promise.resolve(null);
-    var grade3=false;try{grade3=!!grade3Cost6OnlyEnabled;}catch(e){try{grade3=!!window.grade3Cost6OnlyEnabled;}catch(_){}}
+    var grade3=false;try{grade3=!!grade3Cost6OnlyEnabled;}catch(e){try{grade3=!!window.grade3Cost6OnlyEnabled;}catch(_) {}}
     if(!window.JINPO_FAST_SEARCH||typeof window.JINPO_FAST_SEARCH.lookupExactState!=='function')return Promise.resolve(null);
-    var ids=before.split('|');
-    return Promise.resolve(window.JINPO_FAST_SEARCH.lookupExactState({mode:grade3?'grade3':'normal',statMode:'fullmax',count:bonds.length,formation:formation,heroInternalIds:ids,bondNames:bonds})).then(function(r){
+    return Promise.resolve(window.JINPO_FAST_SEARCH.lookupExactState({mode:grade3?'grade3':'normal',statMode:'fullmax',count:bonds.length,formation:formation,heroInternalIds:before.split('|'),bondNames:bonds})).then(function(r){
       if(currentPlacementKeyForBonus()!==before)return null;
       var row=r&&r.row?r.row:null;if(row){try{window.__jinpoBonusBaseDbRow=row;}catch(e){}}return row;
     }).catch(function(e){console.error('全MAX込み検索値の完全照合失敗',e);return null;});
   }
   function recalcBonusCombinedAfterPlacementChange(preferredRow){
     try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('編成変更後の全MAX再同期失敗',e); }
-    if(hasBonus()){
-      return Promise.resolve(loadBonusMultiplierMap()).then(function(){
-        var stats=null;try{stats=calculateBonusFormulaStats(currentActivationResultForBonus());}catch(e){console.error('編成変更後の込み合計再計算失敗',e);}
-        var mode=globalAllMaxIndicatorActive?'転生＆見聞録＆鬼神石込み / 全MAX反映済み':'転生＆見聞録＆鬼神石込み / 反映済み';
-        if(stats)drawBonusStats(stats,mode);else drawBonusStats(null,'転生＆見聞録＆鬼神石込み / 計算条件不足');
-        return stats;
-      }).catch(function(e){console.error('編成変更後の込み合計更新失敗',e);return null;});
-    }
-    var row=preferredRow||bonusDbRowForPlacementFallback(),full=fullMaxStatsFromRow(row);
-    if(full){drawBonusStats(full,'全MAX込み検索値 / 適用中');return Promise.resolve(full);}
-    if(isFullMaxSearchBasisActive()){
-      markBonusCombinedPending('全MAX込み検索値 / 再計算中...');
-      return lookupCurrentFullMaxRow(currentActivationResultForBonus()).then(function(exact){
-        var stats=fullMaxStatsFromRow(exact);if(stats){drawBonusStats(stats,'全MAX込み検索値 / 適用中');return stats;}
-        clearBonusCombinedPanel();return null;
+    var full=fullMaxStatsFromRow(preferredRow||bonusDbRowForPlacementFallback());
+    if(!hasBonus() && full){drawBonusStats(full,'全MAX込み検索値 / 適用中');return Promise.resolve(full);}
+    if(!hasBonus() && isFullMaxSearchBasisActive()){
+      return lookupCurrentFullMaxRow(currentActivationResultForBonus()).then(function(row){
+        var stats=fullMaxStatsFromRow(row);
+        if(stats){drawBonusStats(stats,'全MAX込み検索値 / 適用中');return stats;}
+        drawBonusStats(null,'転生＆見聞録＆鬼神石込み / 計算条件不足');return null;
       });
     }
-    clearBonusCombinedPanel();return Promise.resolve(null);
+    return Promise.resolve(loadBonusMultiplierMap()).then(function(){
+      var stats=null;
+      try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
+      catch(e){ console.error('編成変更後の込み合計再計算失敗',e); }
+      var mode=globalAllMaxIndicatorActive?'転生＆見聞録＆鬼神石込み / 全MAX反映済み':'転生＆見聞録＆鬼神石込み / 未反映';
+      drawBonusStats(stats, stats?mode:'転生＆見聞録＆鬼神石込み / 計算条件不足');
+      return stats;
+    }).catch(function(e){ console.error('編成変更後の込み合計更新失敗',e); return null; });
   }
   window.__jinpoRefreshCombinedAfterPlacementChange=function(opts){opts=opts||{};return recalcBonusCombinedAfterPlacementChange(opts.row||null);};
+  function recalcBonusCombinedPair(preferredRow){
+    return Promise.resolve(recalcBonusCombinedAfterPlacementChange(preferredRow));
+  }
 
   function deferBonusPlacementRefresh(){
-    [0, 120, 300].forEach(function(ms){
+    [0, 40, 120, 300].forEach(function(ms){
       setTimeout(function(){
         try{ renderTopBreakdown(); }catch(e){}
         try{ updateNote(); }catch(e){}
@@ -9262,20 +9252,21 @@ body{padding-top:0 !important;}
       }, ms);
     });
   }
-  function combinedLoadingNeeded(row){return !!(globalAllMaxIndicatorActive||hasBonus()||fullMaxStatsFromRow(row)||isFullMaxSearchBasisActive());}
-  function swapUnifiedLoadingActive(){var el=document.getElementById('step66SwapLoading');return !!(el&&el.classList.contains('active'));}
   var oldApplyDbForBonus=(typeof window.applyDbFormationRow==='function')?window.applyDbFormationRow:null;
   if(oldApplyDbForBonus && !oldApplyDbForBonus.__eiketsuKishinsekiClearModeWrapped){
     window.applyDbFormationRow=function(){
-      var row=arguments[0]||null,loadingToken=combinedLoadingNeeded(row)?showGlobalAllMaxLoading(globalAllMaxIndicatorActive?'全MAXを新しい編成へ反映中...':(fullMaxStatsFromRow(row)?'全MAX込み合計を反映中...':'込み合計を再計算中...')):0;
+      var row=arguments[0]||null,full=fullMaxStatsFromRow(row);
+      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを新しい編成へ反映中...'):(full?showGlobalAllMaxLoading('全MAX込み合計を反映中...'):0);
       setBonusAppliedMode(false);
-      if(combinedLoadingNeeded(row)){
-        var preview=!hasBonus()?fullMaxStatsFromRow(row):null;if(preview)drawBonusStats(preview,'全MAX込み検索値 / 反映中...');else markBonusCombinedPending();
-      }else{try{clearBonusCombinedPanel();}catch(e){}}
+      try{ clearBonusCombinedPanel(); }catch(e){}
       try{ window.__jinpoBonusBaseDbRow = row; }catch(e){}
-      var ret;try{ret=oldApplyDbForBonus.apply(this,arguments);}catch(e){if(loadingToken)hideGlobalAllMaxLoading(loadingToken);throw e;}
-      try{syncGlobalAllMaxForCurrentPlacement();}catch(e){console.error('適用後の全MAX同期失敗',e);}deferBonusPlacementRefresh();
-      var refreshPromise=Promise.resolve(recalcBonusCombinedAfterPlacementChange(row));if(loadingToken)refreshPromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
+      var ret;
+      try{ ret = oldApplyDbForBonus.apply(this, arguments); }
+      catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
+      try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('適用後の全MAX同期失敗',e); }
+      deferBonusPlacementRefresh();
+      var refreshPromise=recalcBonusCombinedPair(row);
+      if(loadingToken) refreshPromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
     window.applyDbFormationRow.__eiketsuKishinsekiClearModeWrapped=true;
@@ -9283,14 +9274,19 @@ body{padding-top:0 !important;}
   var oldApplyReachForBonus=(typeof window.applyReachSwapCandidate==='function')?window.applyReachSwapCandidate:null;
   if(oldApplyReachForBonus && !oldApplyReachForBonus.__eiketsuKishinsekiReachRefreshWrapped){
     window.applyReachSwapCandidate=function(){
-      var needLoading=combinedLoadingNeeded(null),loadingToken=(needLoading&&!swapUnifiedLoadingActive())?showGlobalAllMaxLoading(globalAllMaxIndicatorActive?'全MAXを差替後の編成へ反映中...':'込み合計を再計算中...'):0;
-      var ret;try{ret=oldApplyReachForBonus.apply(this,arguments);}catch(e){if(loadingToken)hideGlobalAllMaxLoading(loadingToken);throw e;}
-      setBonusAppliedMode(false);markBonusCombinedPending('差し替え後の込み合計を再計算中...');try{window.__jinpoBonusBaseDbRow=null;}catch(e){}
-      try{syncGlobalAllMaxForCurrentPlacement();}catch(e){console.error('差替後の全MAX同期失敗',e);}deferBonusPlacementRefresh();
-      var basePromise=Promise.resolve(ret),settledValue=null;
-      var finalPromise=basePromise.then(function(value){settledValue=value;try{syncGlobalAllMaxForCurrentPlacement();}catch(e){console.error('差替確定後の全MAX同期失敗',e);}deferBonusPlacementRefresh();return recalcBonusCombinedAfterPlacementChange();},function(e){console.error('差替後の込み合計確定更新失敗',e);throw e;});
-      var wrapped=finalPromise.then(function(){return settledValue;});if(loadingToken)wrapped.then(function(){hideGlobalAllMaxLoading(loadingToken);},function(){hideGlobalAllMaxLoading(loadingToken);});
-      return wrapped;
+      var loadingToken=globalAllMaxIndicatorActive?showGlobalAllMaxLoading('全MAXを差替後の編成へ反映中...'):0;
+      var ret;
+      try{ ret = oldApplyReachForBonus.apply(this, arguments); }
+      catch(e){ if(loadingToken)hideGlobalAllMaxLoading(loadingToken); throw e; }
+      setBonusAppliedMode(false);
+      try{ clearBonusCombinedPanel(); }catch(e){}
+      try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
+      try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('差替後の全MAX同期失敗',e); }
+      deferBonusPlacementRefresh();
+      var refreshPromise=recalcBonusCombinedPair();
+      window.__jinpoLastCombinedRefreshPromise=refreshPromise;
+      if(loadingToken) Promise.all([Promise.resolve(ret),refreshPromise]).finally(function(){hideGlobalAllMaxLoading(loadingToken);});
+      return ret;
     };
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
   }
@@ -9300,7 +9296,7 @@ body{padding-top:0 !important;}
     updateBars();
     /* 反映ボタンを押すまで、上部合計・因縁計算は走らせない。 */
   }
-  function boot(){ ensureButton(); ensureModal(); renderTopBreakdown(); setTimeout(function(){try{recalcBonusCombinedAfterPlacementChange();}catch(e){}},0); }
+  function boot(){ ensureButton(); ensureModal(); renderTopBreakdown(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
