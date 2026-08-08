@@ -1,5 +1,5 @@
 /*
- * 歩き巫女 サイト総合案内 v3.21.0
+ * 歩き巫女 サイト総合案内 v3.30.0
  *
  * - たいらの野望トップページと、カウンター配下の現行ページを案内する。
  * - ページ名の誤字・脱字・かな入力・ラフな目的表現を会話側の共通正規化と連携して扱う。
@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   if(window.JINPO_BOT_SITE_GUIDE)return;
-  var VERSION='3.25.0';
+  var VERSION='3.30.0';
 
   function S(v){var s=String(v==null?'':v);try{s=s.normalize('NFKC');}catch(e){}return s.replace(/[\u3000\t]+/g,' ').replace(/\s+/g,' ').trim();}
   function normalizeInput(v){
@@ -1039,8 +1039,9 @@
     add('reset',/(?:リセット|初期化|やり直|元に戻|全部消|解除方法|消し方)/.test(t));
     add('sort',/(?:並べ替|ソート|優先|高い順|安い|安い順|値段|必要個数|個数が少|種類が少|少ない順|最安|最小個数|ベスト10|順番|ランキング)/.test(t));
     var columnWords=(t.match(/(?:因子|職業|コスト|能力|ステータス|育成技能|武器|固有技能|入手|番号)/g)||[]);
+    var materialAcquisitionCue=!!(item&&(item.id==='kishin'||item.id==='tsukumo'||item.id==='mado')&&/(?:入手(?:先|方法)?|どこで(?:取れる|とれる|手に入る)|どこから(?:取れる|とれる|入手)|取り方|とり方)/.test(t)&&/(?:開いて|開けて|見せて|出して|ページ|一覧|どこを見|どこで確認)/.test(t));
     var specialColumns=!!(item&&((item.id==='meibutsu'&&/(?:合計|種類)/.test(t))||(item.id==='chinkon'&&/(?:技能一覧|鎮魂符一覧|解放内容)/.test(t))));
-    add('columns',specialColumns||/(?:何が載|何が見|表示項目|項目|列|一覧.*内容|どんな情報)/.test(t)||(columnWords.length>=2&&/(?:見られ|見れる|載って|確認|分かる|全部)/.test(t)));
+    add('columns',materialAcquisitionCue||specialColumns||/(?:何が載|何が見|表示項目|項目|列|一覧.*内容|どんな情報)/.test(t)||(columnWords.length>=2&&/(?:見られ|見れる|載って|確認|分かる|全部)/.test(t)));
     var pageInternalInput=!!(item&&((item.id==='seikai'&&/(?:武曲|禄存|破軍|文曲|廉貞|巨門|貪狼).*(?:見たい|見せて|開いて|選びたい|にして)/.test(t))||(item.id==='chinkon'&&/(?:頭|胴|左|腕|首|腰|右|足).*(?:設定|登録|選びたい|見たい)/.test(t))));
     add('inputs',pageInternalInput||/(?:何を入力|入力項目|どこに入力|どこへ入|入力するもの|何入れる|何を設定|設定するもの|どこを設定|設定項目|入力.*(?:計算|する)|計算.*入力)/.test(t));
     add('categories',/(?:何種類|種類|カテゴリ|分類|系統|何がある|選択肢|どれがある|何を選|部位|何か所|何箇所|どの場所|場所(?:は|一覧|どれ|何)|いくつ.*(?:場所|章|地域)|何因縁|因縁.*(?:何個|いくつ|まで))/.test(t));
@@ -1053,6 +1054,9 @@
   function featureIntent(text,item){var a=featureIntents(text,item);return a.length?a[0]:'';}
   function featureBody(item,intent,text){
     var page=sourcePage(item),facts=page&&page.facts||{},t=normalizeInput(text);
+    if(intent==='columns'&&item&&(item.id==='kishin'||item.id==='tsukumo'||item.id==='mado')&&/(?:入手|どこで|取り方|とり方)/.test(t)){
+      return '一覧の「入手」列で入手先を確認できます。必要なら、見たいものの名前や番号を続けて教えてください。';
+    }
     if(intent==='inputs'&&item&&item.id==='seikai'){
       var stone=t.match(/(武曲|禄存|破軍|文曲|廉貞|巨門|貪狼)/);
       if(stone)return '「'+stone[1]+'」のボタンを押すと、対応する説明画像へ切り替わります。';
@@ -1170,7 +1174,7 @@
   }
 
   function siteClauseLead(text){
-    return S(text).replace(/^(?:あと|それと|それから|じゃあ|では|それなら|また|一方(?:で)?|反対に)[、,\s]*/,'');
+    return S(text).replace(/^(?:そのあと|その後|続いて|次に|あと|それと|それから|じゃあ|では|それなら|また|一方(?:で)?|反対に)[、,\s]*/,'');
   }
   function siteClauseFeatureLead(text){
     var t=siteClauseLead(normalizeInput(text));
@@ -1219,6 +1223,14 @@
           if(selectedCue)selectedIntents=featureIntents(target+' '+selectedCue,selected);
         }
         if(selectedIntents.length)requests=[{item:selected,intents:selectedIntents}];
+      }
+      // 複数節の中だけは「魔導結晶の入手も」のような短い節を、
+      // 単独のゲーム知識質問へ流さず「一覧の入手列を見る」という局所観点として束ねる。
+      // 単独の「魔導結晶の入手は？」は従来どおり実データ回答側へ残す。
+      if(explicit.length===1&&(explicit[0].id==='kishin'||explicit[0].id==='tsukumo'||explicit[0].id==='mado')&&/(?:入手(?:先|方法)?|取り方|とり方|どこで(?:取れる|とれる|手に入る))/.test(target)){
+        var acquisitionReq=requests.length&&requests[0].item&&requests[0].item.id===explicit[0].id?requests[0]:null;
+        if(!acquisitionReq){acquisitionReq={item:explicit[0],intents:[]};requests=[acquisitionReq];}
+        if(acquisitionReq.intents.indexOf('columns')<0)acquisitionReq.intents.push('columns');
       }
       if(!requests.length)requests=featureRequests(target,carryItem,cur);
       // 「九十九は保存できるけど魔導は？」の後半は、直前節の観点を引き継ぐ。
@@ -1393,6 +1405,7 @@
     if(/^(?:(?:さっき|直前|前|今まで)(?:の)?[、,\s]*)?(?:(?:サイト|ページ|リンク)(?:の)?|たいらの野望の)?案内(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
     if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?比較(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
     if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:案内|サイト|ページ|比較)(?:の話)?(?:の)?続き(?:を)?(?:お願い|続けて|見せて|再開して)?[。！!？?]*$/.test(t))return true;
+    if(/^(?:その|この|あの)(?:話|話題|やつ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[、,\s]*(?:続き(?:から|を)?(?:お願い|続けて|やろう|やって|再開して)?|続けよう)?[。！!？?]*$/.test(t))return true;
     if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:サイト|ページ|リンク)(?:の)?(?:案内|話|続き|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
     if(/^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?案内して(?:いた|た)(?:やつ|もの|ページ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)?[。！!？?]*$/.test(t))return true;
     if(/^(?:(?:じゃあ|では|そろそろ|また)[、,\s]*)?(?:さっきの)?続き(?:を)?(?:やろう|やろ|続けよう|続けよ|再開しよう|再開しよ)[。！!？?]*$/.test(t)||/^(?:また|そろそろ)[、,\s]*(?:始めよう|始めよ|再開しよう|再開しよ)[。！!？?]*$/.test(t))return true;
@@ -1403,7 +1416,12 @@
       /^(?:(?:さっき|直前|前|今まで)(?:の)?[、,\s]*)?(?:(?:サイト|ページ|リンク)(?:の)?|たいらの野望の)?案内(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
       /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?比較(?:の話|の続き|のところ)?(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
       /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?(?:サイト|ページ|リンク)(?:の)?(?:案内|話|続き|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
-      /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?案内して(?:いた|た)(?:やつ|もの|ページ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/
+      /^(?:その|この|あの)(?:話|話題|やつ|ところ)(?:に|へ)?戻(?:って|して)[、,\s]*(?:続き(?:から|を)?(?:やろう|やって|続けよう|再開して)?)[、,。\s]+(.+)$/,
+      /^(?:(?:さっき|直前|前)(?:の)?[、,\s]*)?案内して(?:いた|た)(?:やつ|もの|ページ|ところ)(?:に|へ)?戻(?:って|ろう|して|りたい|る)[、,。\s]+(.+)$/,
+      /^(?:(?:じゃあ|では|そろそろ|また)[、,\s]*)?(?:さっきの)?続き(?:を)?(?:やろう|やろ|続けよう|続けよ|再開しよう|再開しよ)[、,。\s]+(.+)$/,
+      /^(?:また|そろそろ)[、,\s]*(?:始めよう|始めよ|再開しよう|再開しよ)[、,。\s]+(.+)$/,
+      /^(?:作業を)?再開(?:しよう|しよ|して)[、,。\s]+(.+)$/,
+      /^(?:休憩(?:は)?終わり|休憩終わった|休憩おわり)[、,。\s]+(.+)$/
     ];
     for(var i=0;i<patterns.length;i++){
       var match=t.match(patterns[i]),tail=match&&S(match[1]||'');
@@ -1442,9 +1460,29 @@
       else if(!links.length&&items.length)links=items.slice(0,8).map(itemLink);
       if(!links.length&&data.siteItem&&BY_ID[data.siteItem])links=[itemLink(BY_ID[data.siteItem])];
       if(!links.length)return null;
-      return {links:links,data:data,items:items,pauseTurns:pauseTurns};
+      return {links:links,data:data,items:items,pauseTurns:pauseTurns,text:S(x.text)};
     }
     return null;
+  }
+  function pausedGuideFeatureFollowupCue(text){
+    var t=normalizeInput(text);
+    if(/^(?:(?:じゃあ|では|それなら|で|あと|それと)[、,\s]*)?(?:それ|その話|さっきの(?:話|説明)?|今の(?:話|説明)?)(?:って|は|を)?(?:どうやるの|どうするの|どう見るの|どう確認するの|やり方(?:は)?|見方(?:は)?|もう少し教えて|詳しく教えて|続き(?:は|教えて)?)[。！!？?]*$/.test(t))return true;
+    return /^(?:その|この|あの)(?:話|話題|やつ|ところ)(?:に|へ)?戻(?:って|して)[、,\s]*(?:続き(?:から|を)?(?:お願い|続けて|やろう|やって|再開して)?|続けよう)[。！!？?]*$/.test(t);
+  }
+  function answerPausedGuideFeatureFollowup(text,history){
+    if(!pausedGuideFeatureFollowupCue(text))return null;
+    var prior=latestPausedGuideContext(history);if(!prior)return null;
+    var data=prior.data||{},feature=String(data.siteFeature||''),item=data.siteItem&&BY_ID[data.siteItem]||data.selectedSiteItem&&BY_ID[data.selectedSiteItem]||prior.items[0]||itemFromUrl(prior.links[0]&&prior.links[0].url);
+    if(!feature||!item)return null;
+    var page=sourcePage(item),facts=page&&page.facts||{};if(!S(facts[feature]))return null;
+    var query=featureCuePhrase(feature);
+    if(feature==='columns'&&/入手/.test(prior.text||''))query='入手をどこで確認する';
+    var result=answerFeatures(item,[feature],true,query||text);if(!result)return null;
+    result.answer=(prior.pauseTurns>0?'さっきの「'+item.name+'」の話ですね。':'「'+item.name+'」の続きですね。')+'\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteGuideConversationReturn=true;result.data.siteGuideReturnFromPause=prior.pauseTurns>0;result.data.siteGuidePauseTurns=prior.pauseTurns;result.data.siteGuideFeatureContinuation=true;
+    var candidates=(data.siteCandidates||data.candidates||[]).map(function(id){return BY_ID[id];}).filter(Boolean);
+    if(candidates.length&&candidates.some(function(x){return x.id===item.id;}))result=retainCandidateContext(result,candidates,item,Array.isArray(data.siteComparison)&&data.siteComparison.length?'comparison':'choice',(data.siteSourceCandidates||[]).map(function(id){return BY_ID[id];}).filter(Boolean),data.siteConditions||[]);
+    return result;
   }
   function answerGuideConversationReturn(history){
     var prior=latestPausedGuideContext(history);if(!prior)return null;
@@ -1859,7 +1897,7 @@
   }
 
   function historyGuideContext(history){
-    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1,contextCleared=false;
+    var h=Array.isArray(history)?history:[],lastItem=null,lastCandidates=[],lastSourceCandidates=[],lastOpenedItems=[],lastExcludedItems=[],lastConditions=[],lastCandidateKind='',lastFeature='',lastFeatureDetail='',lastFeatureSubjects=[],lastSelectedCandidate=null,lastIndex=-1,candidateIndex=-1,contextCleared=false;
     var knownTermGuidance=false,knownTermKey='',knownTermValue='',knownTermApproximate=false,knownTermItem=null,knownTermIndex=-1;
     for(var i=h.length-1;i>=0;i--){
       var x=h[i];if(!x||x.role!=='assistant')continue;
@@ -1873,7 +1911,7 @@
         knownTermGuidance=true;knownTermKey=String(data.termKey||'item');knownTermValue=String(data.normalizedTerm||'');knownTermApproximate=!!data.approximateTerm;knownTermIndex=i;
         if(data.siteItem&&BY_ID[data.siteItem])knownTermItem=BY_ID[data.siteItem];
       }
-      if(!lastFeature&&data.siteFeature)lastFeature=String(data.siteFeature||'');
+      if(!lastFeature&&data.siteFeature){lastFeature=String(data.siteFeature||'');if(lastFeature==='columns'&&/入手/.test(S(x.text)))lastFeatureDetail='acquisition';}
       if(!lastFeatureSubjects.length){
         var subjectIds=Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects:[];
         if(subjectIds.length)lastFeatureSubjects=subjectIds.filter(function(id){return !!featureSubjectLabel(id);}).slice(0,4);
@@ -1912,7 +1950,7 @@
     }
     // 候補提示後に単一ページを選択済みなら、古い候補を次の質問へ持ち越さない。
     if(lastIndex>candidateIndex&&candidateIndex>=0)lastCandidates=[];
-    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex,contextCleared:contextCleared,knownTermGuidance:knownTermGuidance,termKey:knownTermKey,normalizedTerm:knownTermValue,approximateTerm:knownTermApproximate,knownTermItem:knownTermItem,knownTermIndex:knownTermIndex};
+    return {item:lastItem,candidates:lastCandidates,sourceCandidates:lastSourceCandidates.length?lastSourceCandidates:lastCandidates.slice(),openedItems:lastOpenedItems,excludedItems:lastExcludedItems,conditions:lastConditions,candidateKind:lastCandidateKind,feature:lastFeature,featureDetail:lastFeatureDetail,featureSubjects:lastFeatureSubjects,selectedCandidate:lastSelectedCandidate,index:lastIndex,candidateIndex:candidateIndex,contextCleared:contextCleared,knownTermGuidance:knownTermGuidance,termKey:knownTermKey,normalizedTerm:knownTermValue,approximateTerm:knownTermApproximate,knownTermItem:knownTermItem,knownTermIndex:knownTermIndex};
   }
   // 比較や候補提示の直後に「なるほど」「了解」などの短い相づちを一度だけ挟んでも、
   // 次の「そっち」「後者」を候補参照として扱う。別の実質的な話題を挟んだ場合は保持しない。
@@ -2011,9 +2049,40 @@
   }
   function previousCandidateCue(text){
     var t=siteClauseLead(normalizeInput(correctionTail(text)||text));
-    return /^(?:(?:じゃあ|では|それなら|やっぱ(?:り)?|やはり)[、,\s]*)?(?:さっき|前に選んだ|直前に選んだ)(?:の)?(?:方|ほう|やつ|もの|ページ|候補)?(?:に)?(?:戻して|して|開いて|見せて)?[。！!？?]*$/.test(t);
+    return /^(?:(?:じゃあ|では|それなら|やっぱ(?:り)?|やはり)[、,\s]*)?(?:(?:さっき|直前)(?:の)?|前に)(?:(?:選んだ|見ていた|見てた|開いていた|開いてた)(?:の)?)?(?:方|ほう|やつ|もの|ページ|候補)(?:の(?:使い方|やり方|保存(?:方法)?|画像保存|入手(?:方法|先)?|見方))?(?:は|って|を|に)?(?:戻して|して|開いて|見せて|教えて|知りたい)?[。！!？?]*$/.test(t);
+  }
+  function previousViewedCandidateCue(text){
+    var t=normalizeInput(text);
+    return /(?:(?:さっき|直前)(?:の)?|前に)(?:(?:選んだ|見ていた|見てた|開いていた|開いてた)(?:の)?)?(?:方|ほう|やつ|もの|ページ|候補)/.test(t)&&/(?:じゃなく|ではなく|戻|前に|さっき|直前)/.test(t);
+  }
+  function viewedHistoryStepCue(text){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text)),m=null,step=0;
+    // 「前の候補」は候補リスト上の位置指定として従来処理へ残す。
+    if(/(?:前|次)(?:の)?候補/.test(t)&&!/(?:見て|見た|開いて|開いた|選んで|選んだ)/.test(t))return {requested:false,step:0};
+    var historyWord=/(?:見ていた|見てた|見た|開いていた|開いてた|開いた|選んでいた|選んでた|選んだ)/.test(t);
+    var deicticHistory=/^(?:(?:じゃあ|では|それなら|やっぱ(?:り)?)[、,\s]*)?(?:その前|さっきの前)(?:の)?(?:方|ほう|やつ|もの|ページ)(?:の(?:使い方|やり方|保存(?:方法)?|画像保存|入手(?:方法|先)?|見方))?(?:は|って|を|に)?(?:戻して|して|開いて|見せて|教えて|知りたい)?[。！!？?]*$/.test(t);
+    if(!historyWord&&!deicticHistory)return {requested:false,step:0};
+    m=t.match(/([2-9２-９二三四五六七八九])(?:つ|個)?(?:前|まえ)/);
+    if(m)step=numberValue(m[1]);
+    if(!step&&/(?:一つ|ひとつ|1つ|１つ|一個|1個|１個)(?:前|まえ)/.test(t))step=1;
+    if(!step&&/(?:その前|さっきの前|前に|さっき|直前)/.test(t))step=1;
+    return {requested:step>0,step:step||0};
+  }
+  function candidateViewedHistory(history,current,candidates){
+    var h=Array.isArray(history)?history:[],list=uniqueCandidateItems(candidates),allowed={},out=[],seen={},currentId=current&&current.id||'';
+    list.forEach(function(x){allowed[x.id]=1;});
+    if(currentId)seen[currentId]=1;
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{},id=String(data.selectedSiteItem||'');
+      if(!id&&data.siteItem&&allowed[String(data.siteItem)])id=String(data.siteItem);
+      if(!id||!allowed[id]||seen[id])continue;
+      seen[id]=1;if(BY_ID[id])out.push(BY_ID[id]);
+    }
+    return out;
   }
   function candidateRelativeMove(text,candidates,selectedCandidate){
+    if(viewedHistoryStepCue(text).requested)return {requested:false,target:null,boundary:false};
     var t=siteClauseLead(normalizeInput(correctionTail(text)||text)),list=uniqueCandidateItems(candidates),selectedIndex=-1,direction=0,step=0,m;
     if(!selectedCandidate||list.length<2)return {requested:false,target:null,boundary:false};
     for(var i=0;i<list.length;i++)if(list[i].id===selectedCandidate.id){selectedIndex=i;break;}
@@ -2042,15 +2111,9 @@
     result.data=result.data||{};result.data.siteCandidateRelativeMove=true;result.data.siteCandidateDirection=move.direction>0?'next':'previous';result.data.siteCandidateStep=move.step;
     return retainCandidateContext(result,ctx.candidates,move.target,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
   }
-  function previousSelectedCandidate(history,current,candidates){
-    var h=Array.isArray(history)?history:[],list=uniqueCandidateItems(candidates),allowed={},currentId=current&&current.id||'';
-    list.forEach(function(x){allowed[x.id]=1;});
-    for(var i=h.length-1;i>=0;i--){
-      var x=h[i];if(!x||x.role!=='assistant')continue;
-      var data=(x.meta&&x.meta.data)||{},id=String(data.selectedSiteItem||'');
-      if(id&&allowed[id]&&id!==currentId)return BY_ID[id]||null;
-    }
-    return null;
+  function previousSelectedCandidate(history,current,candidates,step){
+    var timeline=candidateViewedHistory(history,current,candidates),index=Math.max(1,Number(step)||1)-1;
+    return timeline[index]||null;
   }
   function answerCandidateAlternative(text,history,ctx){
     ctx=ctx||{};var list=uniqueCandidateItems(ctx.candidates),selected=ctx.selectedCandidate;
@@ -2065,11 +2128,30 @@
     return retainCandidateContext(result,list,target,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
   }
   function answerPreviousCandidate(text,history,ctx){
-    ctx=ctx||{};if(!previousCandidateCue(text)||!ctx.selectedCandidate)return null;
-    var previous=previousSelectedCandidate(history,ctx.selectedCandidate,ctx.candidates);if(!previous)return null;
-    var result=explainItem(previous,true);
-    result.answer='さっき選んだ「'+previous.name+'」に戻しますね。\n'+result.answer;
-    return retainCandidateContext(result,ctx.candidates,previous,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+    ctx=ctx||{};var historyCue=viewedHistoryStepCue(text),genericCue=previousCandidateCue(text)||previousViewedCandidateCue(text);
+    if((!historyCue.requested&&!genericCue)||!ctx.selectedCandidate)return null;
+    var list=uniqueCandidateItems(ctx.candidates),step=historyCue.requested?historyCue.step:1,previous=previousSelectedCandidate(history,ctx.selectedCandidate,list,step);
+    if(!previous){
+      // 「二つ前」など明示的な履歴段数は、候補順から推測して埋めない。
+      if(historyCue.requested&&step>1){
+        var known=candidateViewedHistory(history,ctx.selectedCandidate,list),knownNames=known.length?candidateNames(known):'確認できる以前のページがありません';
+        var shortfall={handled:true,mode:'サイト総合案内',answer:'会話履歴では「'+step+'つ前に見ていたページ」まで一意にたどれませんでした。'+(known.length?'直前にたどれるのは '+knownNames+'です。':'')+' ページ名か「前に見ていた方」のように一段ずつ指定してもらえれば、勝手に決めずに戻れます。',links:known.slice(0,4).map(itemLink),data:{needsClarification:true,siteHistoryStepNeedsClarification:true,siteHistoryRequestedStep:step,siteCandidates:list.map(function(x){return x.id;}),candidates:list.map(function(x){return x.id;}),siteSourceCandidates:(ctx.sourceCandidates.length?ctx.sourceCandidates:list).map(function(x){return x.id;}),selectedSiteItem:ctx.selectedCandidate.id,siteItem:ctx.selectedCandidate.id}};
+        return shortfall;
+      }
+      var alternatives=list.filter(function(x){return x.id!==ctx.selectedCandidate.id;});
+      if(!alternatives.length)return null;
+      if(alternatives.length===1)previous=alternatives[0];
+      else{
+        var unresolved=answerCandidateSet(alternatives,ctx.sourceCandidates,{lead:'今の「'+ctx.selectedCandidate.name+'」ではないことは分かりました。ただ、「前に見ていた方」を履歴から一つに特定できないので、残りは '+candidateNames(alternatives)+'です。どれに戻しますか？',conditions:ctx.conditions});
+        if(unresolved&&unresolved.data){unresolved.data.needsClarification=true;unresolved.data.sitePreviousCandidateNeedsSelection=true;unresolved.data.previousSelectedSiteItem=ctx.selectedCandidate.id;}
+        return unresolved;
+      }
+    }
+    var intents=featureIntents(text,previous),result=intents.length?answerFeatures(previous,intents,true,text):explainItem(previous,true),label=step>1?step+'つ前に見ていた':'前に見ていた';
+    result.answer=label+'「'+previous.name+'」に戻しますね。\n'+result.answer;
+    result=retainCandidateContext(result,list,previous,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+    result.data=result.data||{};result.data.sitePreviousCandidateRestored=true;result.data.siteHistoryRelativeRestore=!!historyCue.requested;result.data.siteHistoryRequestedStep=step;result.data.previousSelectedSiteItem=ctx.selectedCandidate.id;
+    return result;
   }
   function excludedPageReference(text){
     var t=normalizeInput(text),m=t.match(/^(.{1,40}?)(?:じゃない方|じゃないほう|ではない方|ではないほう|以外の方|以外のほう)(.*)$/);
@@ -2950,20 +3032,828 @@
     if(!item||!S(facts[ctx.feature]))return null;
     if(!/^(?:.+?)(?:は|って|だと|なら|の方(?:は)?|のほう(?:は)?|はどう|だとどう|ならどう)[？?。！!]*$/.test(t))return null;
     var query=t,subjects=featureSubjectIds(t),carried=Array.isArray(ctx.featureSubjects)?ctx.featureSubjects:[];
+    if(ctx.feature==='columns'&&ctx.featureDetail==='acquisition'&&!/(?:入手|取り方|とり方|どこで)/.test(query))query+=' 入手をどこで確認';
     if(ctx.feature==='reflect'&&!subjects.length&&carried.length===1){
       var label=featureSubjectLabel(carried[0]);if(label)query+=' '+label;
     }
     return {item:item,feature:ctx.feature,query:query};
   }
 
+  function explicitContextFeatureIntents(text,item){
+    var t=normalizeInput(text),out=featureIntents(t,item),material=!!(item&&(item.id==='kishin'||item.id==='tsukumo'||item.id==='mado'));
+    function add(key){if(out.indexOf(key)<0)out.push(key);}
+    // 単独の「入手は？」は実データ回答へ残す一方、既にサイト案内の文脈がある
+    // 「保存じゃなく入手の方」のような観点訂正では、一覧の入手列を意味すると解釈する。
+    if(material&&/(?:入手(?:先|方法)?|取り方|とり方|どこで(?:取れる|とれる|手に入る)|入手の方|入手のほう)/.test(t))add('columns');
+    return out;
+  }
+  function contextFeatureLabel(intent,text){
+    var t=normalizeInput(text),map={save:'保存',sort:'並べ替え',selection_count:'選択数',reflect:'反映',share:'共有',zoom:'拡大・縮小',reset:'リセット',inputs:'入力',columns:'表示内容',types:'種類',categories:'選択肢',history:'履歴',random:'抽選',entry:'登録人数',schedule:'日程',filter:'絞り込み',back:'戻り先',related:'関連ページ',download:'ダウンロード'};
+    if(intent==='columns'&&/(?:入手|取り方|とり方|どこで)/.test(t))return'入手';
+    return map[intent]||featureCuePhrase(intent)||'その内容';
+  }
+  function featureRevisionCue(text){
+    var t=normalizeInput(text);
+    return /(?:じゃなくて|ではなくて|じゃなく|ではなく|違って|ちがって|訂正|やっぱ(?:り)?)[、,\s]*/.test(t)&&/(?:保存|画像|スクショ|入手|取り方|とり方|並べ替|ソート|共有|URL|リンク|拡大|縮小|リセット|入力|反映|何個|いくつ|種類|履歴)/.test(t);
+  }
+  function answerFeatureRevision(text,history){
+    if(!featureRevisionCue(text))return null;
+    // 「もう片方」「もう一方」は観点ではなく比較候補そのものの訂正。
+    // 既存の比較候補訂正を先に扱わせ、対象選択の意味を奪わない。
+    if(/(?:もう片方|もう一方|反対の方|反対のほう|選ばなかった方|選ばなかったほう|今のじゃない方|今のじゃないほう)/.test(normalizeInput(text)))return null;
+    var removal=conditionRemovalRequest(text);
+    if(removal&&(removal.all||(removal.remove||[]).length))return null;
+    var ctx=historyGuideContext(history);
+    // 観点だけの言い直しは、直前までサイト案内をしていた場合に限定する。
+    // 単独の「ページじゃなく入手方法」は正本の実データ質問なので横取りしない。
+    if(!ctx.item)return null;
+    var tail=correctionTail(text)||normalizeInput(text),explicit=mentionedItems(tail),parts=siteCorrectionParts(text),leftItems=parts?mentionedItems(parts.left):[],item=explicit.length===1?explicit[0]:(leftItems.length===1?leftItems[0]:ctx.item);
+    if(!item)return null;
+    var intents=explicitContextFeatureIntents(tail,item);if(!intents.length)return null;
+    var result=answerFeatures(item,intents,true,tail);if(!result)return null;
+    result.answer='わかりました。観点を「'+contextFeatureLabel(intents[0],tail)+'」の方へ切り替えますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteFeatureRevision=true;result.data.previousSiteFeature=String(ctx.feature||'');
+    if((ctx.candidates||[]).some(function(x){return x&&x.id===item.id;}))result=retainCandidateContext(result,ctx.candidates,item,ctx.candidateKind,ctx.sourceCandidates,ctx.conditions);
+    return result;
+  }
+  function sameFeatureTargetSwitchCue(text){
+    var t=normalizeInput(text),items=mentionedItems(t);
+    if(items.length!==1)return null;
+    if(!/(?:同じこと|同じの|同じ内容|同様に|同じように|それも同じ|同じで|同じやつ)/.test(t))return null;
+    return items[0];
+  }
+  function answerSameFeatureTargetSwitch(text,history){
+    var target=sameFeatureTargetSwitchCue(text);if(!target)return null;
+    var ctx=historyGuideContext(history),feature=String(ctx.feature||''),page=sourcePage(target),facts=page&&page.facts||{};
+    if(!feature||!S(facts[feature]))return null;
+    var query=normalizeInput(text);
+    if(feature==='columns'&&ctx.featureDetail==='acquisition'&&!/(?:入手|取り方|とり方|どこで)/.test(query))query+=' 入手をどこで確認';
+    if(feature==='reflect'&&!featureSubjectIds(query).length&&ctx.featureSubjects.length===1){var label=featureSubjectLabel(ctx.featureSubjects[0]);if(label)query+=' '+label;}
+    var result=answerFeatures(target,[feature],true,query);if(!result)return null;
+    result.answer='同じ内容を「'+target.name+'」に切り替えますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteSameFeatureTargetSwitch=true;result.data.previousSiteItem=ctx.item&&ctx.item.id||'';
+    return result;
+  }
+  function topicHistoryStepCue(text){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text)),m=null,step=0;
+    if(!/(?:話題|話)/.test(t)||!/(?:前|まえ)/.test(t))return {requested:false,step:0};
+    m=t.match(/([2-9２-９二三四五六七八九])(?:つ|個)?(?:前|まえ)(?:の)?(?:話題|話)/);if(m)step=numberValue(m[1]);
+    if(!step&&/(?:一つ|ひとつ|1つ|１つ|一個|1個|１個)(?:前|まえ)(?:の)?(?:話題|話)/.test(t))step=1;
+    if(!step&&/(?:その前|前の)(?:の)?(?:話題|話)/.test(t))step=1;
+    return {requested:step>0,step:step||0};
+  }
+  function siteGuideTopicHistory(history,current){
+    var h=Array.isArray(history)?history:[],out=[],lastId=current&&current.id||'';
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{};if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')break;
+      if(!data.siteGuide)continue;
+      var id=String(data.siteItem||'');
+      if(!id&&Array.isArray(data.siteItems)&&data.siteItems.length===1)id=String(data.siteItems[0]||'');
+      if(!BY_ID[id]||id===lastId)continue;
+      var feature=String(data.siteFeature||''),detail=feature==='columns'&&/入手/.test(S(x.text))?'acquisition':'';
+      out.push({item:BY_ID[id],feature:feature,featureDetail:detail,text:S(x.text),index:i});lastId=id;
+    }
+    return out;
+  }
+  function answerTopicHistoryReference(text,history){
+    var cue=topicHistoryStepCue(text);if(!cue.requested)return null;
+    var ctx=historyGuideContext(history),topics=siteGuideTopicHistory(history,ctx.item),step=cue.step;
+    if(topics.length<step){
+      var known=topics.slice(0,4),knownNames=known.map(function(x){return '「'+x.item.name+'」';}).join('、');
+      return {handled:true,mode:'サイト総合案内',answer:'会話履歴では「'+step+'つ前の話題」まで一意にたどれませんでした。'+(known.length?'戻れる直近の話題は '+knownNames+'です。':'')+' ページ名を言ってもらえれば、勝手に決めずに続けます。',links:known.map(function(x){return itemLink(x.item);}),data:{needsClarification:true,siteTopicHistoryNeedsClarification:true,siteTopicHistoryRequestedStep:step,siteItem:ctx.item&&ctx.item.id||''}};
+    }
+    var ref=topics[step-1],item=ref.item,intents=explicitContextFeatureIntents(text,item),same=/(?:同じこと|同じ内容|同じの)/.test(normalizeInput(text));
+    if(!intents.length&&same&&ctx.feature)intents=[ctx.feature];
+    var query=normalizeInput(text);
+    if(intents.length&&intents[0]==='columns'&&/(?:入手|取り方|とり方)/.test(query)===false&&((same&&ctx.featureDetail==='acquisition')||ref.featureDetail==='acquisition'))query+=' 入手をどこで確認';
+    var result=intents.length?answerFeatures(item,intents,true,query):explainItem(item,true);if(!result)return null;
+    result.answer=step+'つ前の話題だった「'+item.name+'」に戻りますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteTopicHistoryRestore=true;result.data.siteTopicHistoryRequestedStep=step;result.data.previousSiteItem=ctx.item&&ctx.item.id||'';
+    return result;
+  }
+
+  function siteGuideTopicSequence(history){
+    var h=Array.isArray(history)?history:[],start=0,out=[],lastId='';
+    for(var c=h.length-1;c>=0;c--){
+      var clear=(h[c]&&h[c].role==='assistant'&&h[c].meta&&h[c].meta.data)||{};
+      if(clear.siteGuideContextCleared||String(clear.siteItem||'')==='__site_guide_context_cleared__'){start=c+1;break;}
+    }
+    for(var i=start;i<h.length;i++){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{};if(!data.siteGuide)continue;
+      var id=String(data.siteItem||'');
+      if(!id&&Array.isArray(data.siteItems)&&data.siteItems.length===1)id=String(data.siteItems[0]||'');
+      if(!BY_ID[id]||id===lastId)continue;
+      var feature=String(data.siteFeature||''),detail=feature==='columns'&&/入手/.test(S(x.text))?'acquisition':'';
+      out.push({item:BY_ID[id],feature:feature,featureDetail:detail,text:S(x.text),index:i});lastId=id;
+    }
+    return out;
+  }
+  function absoluteTopicHistoryCue(text){
+    var t=siteClauseLead(normalizeInput(correctionTail(text)||text));
+    if(!/(?:最初|一番最初|いちばん最初|初め|はじめ)/.test(t))return false;
+    return /(?:見てた|見ていた|見た|話題|話|ページ|やつ|ところ)/.test(t);
+  }
+  function answerAbsoluteTopicReference(text,history){
+    if(!absoluteTopicHistoryCue(text))return null;
+    var ctx=historyGuideContext(history),seq=siteGuideTopicSequence(history);
+    if(!seq.length){
+      return {handled:true,mode:'サイト総合案内',answer:'この会話では、最初に見ていたサイト案内の話題をまだ特定できませんでした。ページ名を一つ言ってもらえれば、そこから続けます。',links:[],data:{needsClarification:true,siteAbsoluteTopicNeedsClarification:true}};
+    }
+    var ref=seq[0],item=ref.item,intents=explicitContextFeatureIntents(text,item),same=/(?:同じこと|同じ内容|同じの|同じように)/.test(normalizeInput(text));
+    if(!intents.length&&same&&ctx.feature)intents=[ctx.feature];
+    var query=normalizeInput(text);
+    if(intents.length&&intents[0]==='columns'&&!/(?:入手|取り方|とり方)/.test(query)&&((same&&ctx.featureDetail==='acquisition')||ref.featureDetail==='acquisition'))query+=' 入手をどこで確認';
+    var result=intents.length?answerFeatures(item,intents,true,query):explainItem(item,true);if(!result)return null;
+    result.answer='最初に見ていた「'+item.name+'」の話へ戻りますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteAbsoluteTopicRestore=true;result.data.siteTopicHistoryPosition='first';result.data.previousSiteItem=ctx.item&&ctx.item.id||'';
+    return result;
+  }
+  function featureEpisodeReferenceCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(!/(?:さっき|先ほど|前に|以前|この前)/.test(t))return null;
+    // 「前に見ていた方の保存」はページ履歴→新しい保存質問であり、
+    // 「前に保存を聞いた方」とは意味が違う。観点語と過去の質問/説明行為が
+    // 同じまとまりにある場合だけ、観点エピソード参照として扱う。
+    var episodeForward=/(?:保存|画像|スクショ|スクリーンショット|入手|取り方|とり方|並べ替|ソート|共有|URL|リンク)(?:について|のこと|の話|を|って|は)?[^。！？!?]{0,14}(?:聞いた|聞いてた|聞いていた|話した|話してた|話していた|案内して|説明して)/.test(t);
+    var episodeReverse=/(?:聞いた|聞いてた|聞いていた|話した|話してた|話していた|案内してた|説明してた)[^。！？!?]{0,10}(?:保存|入手|取り方|とり方|並べ替|ソート|共有)/.test(t);
+    if(!episodeForward&&!episodeReverse)return null;
+    if(/(?:入手|取り方|とり方|どこで手に入)/.test(t))return {feature:'columns',featureDetail:'acquisition',label:'入手'};
+    if(/(?:保存|画像|スクショ|スクリーンショット)/.test(t))return {feature:'save',featureDetail:'',label:'保存'};
+    if(/(?:並べ替|ソート|高い順|安い順|順番)/.test(t))return {feature:'sort',featureDetail:'',label:'並べ替え'};
+    if(/(?:共有|URL|リンク)/i.test(t))return {feature:'share',featureDetail:'',label:'共有'};
+    var intents=[];
+    return null;
+  }
+  function latestFeatureEpisode(history,cue){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')break;
+      if(!data.siteGuide)continue;
+      var id=String(data.siteItem||''),feature=String(data.siteFeature||'');if(!BY_ID[id]||feature!==cue.feature)continue;
+      var detail=feature==='columns'&&/入手/.test(S(x.text))?'acquisition':'';
+      if(cue.featureDetail&&detail!==cue.featureDetail)continue;
+      return {item:BY_ID[id],feature:feature,featureDetail:detail,text:S(x.text),index:i};
+    }
+    return null;
+  }
+  function answerFeatureEpisodeReference(text,history){
+    var cue=featureEpisodeReferenceCue(text);if(!cue)return null;
+    var ctx=historyGuideContext(history),ref=latestFeatureEpisode(history,cue);
+    if(!ref){
+      return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、前に「'+cue.label+'」を案内した対象を一つに特定できませんでした。ページ名を言ってもらえれば、その内容で続けます。',links:[],data:{needsClarification:true,siteFeatureEpisodeNeedsClarification:true,siteFeatureEpisodeRequested:cue.feature}};
+    }
+    var query=normalizeInput(text);if(cue.featureDetail==='acquisition'&&!/(?:入手|取り方|とり方)/.test(query))query+=' 入手をどこで確認';
+    var result=answerFeatures(ref.item,[ref.feature],true,query);if(!result)return null;
+    result.answer='前に「'+cue.label+'」を案内した「'+ref.item.name+'」の話へ戻りますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteFeatureEpisodeRestore=true;result.data.siteFeatureEpisodeRequested=cue.feature;result.data.previousSiteItem=ctx.item&&ctx.item.id||'';
+    return result;
+  }
+
+  function qualifiedHistoricalEpisodeCue(text){
+    var t=siteClauseLead(normalizeInput(text)),items=mentionedItems(t);if(items.length!==1)return null;
+    var historical=/(?:さっき|先ほど|前に|以前|この前|あの時|あのとき|その時|そのとき)/.test(t)||/(?:話(?:を)?して(?:た|いた)|聞い(?:た|てた|ていた)|案内して(?:た|いた)|説明して(?:た|いた))[^。！？!?]{0,10}(?:時|とき)|(?:時|とき)の/.test(t);
+    if(!historical)return null;
+    var item=items[0],intents=explicitContextFeatureIntents(t,item);if(intents.length!==1)return null;
+    var feature=intents[0],detail=feature==='columns'&&/(?:入手|取り方|とり方|どこで)/.test(t)?'acquisition':'',label=contextFeatureLabel(feature,t);
+    return {item:item,feature:feature,featureDetail:detail,label:label};
+  }
+  function latestQualifiedHistoricalEpisode(history,cue){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;
+      var data=(x.meta&&x.meta.data)||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')break;
+      if(!data.siteGuide||String(data.siteItem||'')!==cue.item.id||String(data.siteFeature||'')!==cue.feature)continue;
+      var detail=cue.feature==='columns'&&/入手/.test(S(x.text))?'acquisition':'';
+      if(cue.featureDetail&&detail!==cue.featureDetail)continue;
+      return {item:cue.item,feature:cue.feature,featureDetail:detail,text:S(x.text),index:i};
+    }
+    return null;
+  }
+  function answerQualifiedHistoricalEpisode(text,history){
+    var cue=qualifiedHistoricalEpisodeCue(text);if(!cue)return null;
+    var ctx=historyGuideContext(history),ref=latestQualifiedHistoricalEpisode(history,cue);
+    if(!ref){
+      return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、「'+cue.item.name+'」の「'+cue.label+'」を前に案内した場面を確認できませんでした。今の内容として聞きたい場合は「'+cue.item.name+'の'+cue.label+'を教えて」のように言ってもらえれば、以前の話と混同せず案内します。',links:[itemLink(cue.item)],data:{needsClarification:true,siteQualifiedEpisodeNeedsClarification:true,siteItem:cue.item.id,siteFeature:cue.feature}};
+    }
+    var query=normalizeInput(text);if(cue.featureDetail==='acquisition'&&!/(?:入手|取り方|とり方)/.test(query))query+=' 入手をどこで確認';
+    var result=answerFeatures(ref.item,[ref.feature],true,query);if(!result)return null;
+    result.answer='前に「'+ref.item.name+'」の「'+cue.label+'」を話していたところですね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteQualifiedEpisodeRestore=true;result.data.siteQualifiedEpisodeFeature=cue.feature;result.data.previousSiteItem=ctx.item&&ctx.item.id||'';
+    return result;
+  }
+  function pastMomentReferenceCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(mentionedItems(t).length)return false;
+    return /^(?:(?:じゃあ|では|それなら)[、,\s]*)?(?:あの時|あのとき|あの頃|あのころ)(?:の)?(?:やつ|もの|話|話題|ページ|ところ)(?:に|へ)?(?:戻って|戻して|戻りたい|して|開いて|見せて)?[。！!？?]*$/.test(t);
+  }
+  function uniqueTopicRefs(seq,excludeId){
+    var out=[],seen={};for(var i=seq.length-1;i>=0;i--){var ref=seq[i],id=ref&&ref.item&&ref.item.id||'';if(!id||id===excludeId||seen[id])continue;seen[id]=1;out.unshift(ref);}return out;
+  }
+  function answerPastMomentReference(text,history){
+    if(!pastMomentReferenceCue(text))return null;
+    var ctx=historyGuideContext(history),seq=siteGuideTopicSequence(history),older=uniqueTopicRefs(seq,ctx.item&&ctx.item.id||'');
+    if(!older.length&&ctx.item){
+      var only=seq.length?seq[seq.length-1]:{item:ctx.item,feature:ctx.feature,featureDetail:ctx.featureDetail},onlyResult=only.feature?answerFeatures(only.item,[only.feature],true,only.feature==='columns'&&only.featureDetail==='acquisition'?'入手をどこで確認':featureCuePhrase(only.feature)):explainItem(only.item,true);
+      if(!onlyResult)return null;onlyResult.answer='「あの時」の話として確認できるのは「'+only.item.name+'」です。\n'+String(onlyResult.answer||'');onlyResult.data=onlyResult.data||{};onlyResult.data.sitePastMomentRestore=true;return onlyResult;
+    }
+    if(older.length===1){
+      var ref=older[0],query=ref.feature==='columns'&&ref.featureDetail==='acquisition'?'入手をどこで確認':featureCuePhrase(ref.feature),result=ref.feature?answerFeatures(ref.item,[ref.feature],true,query):explainItem(ref.item,true);if(!result)return null;
+      result.answer='「あの時」の話なら、今の話題より前に見ていた「'+ref.item.name+'」ですね。\n'+String(result.answer||'');result.data=result.data||{};result.data.sitePastMomentRestore=true;result.data.previousSiteItem=ctx.item&&ctx.item.id||'';return result;
+    }
+    if(older.length>1){
+      var choices=older.slice(-4),ids=choices.map(function(x){return x.item.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'「あの時」だけだと、以前の話題が複数あります。'+candidateNames(choices.map(function(x){return x.item;}))+'のどれを指していますか？ 名前を一つ言ってもらえれば、その続きへ戻れます。',links:choices.map(function(x){return itemLink(x.item);}),data:{needsClarification:true,sitePastMomentNeedsClarification:true,siteItems:ids,siteCandidates:ids,candidates:ids}};
+    }
+    return {handled:true,mode:'サイト総合案内',answer:'この会話では、「あの時」と指せる以前のサイト案内をまだ確認できませんでした。ページ名か、何をしていた時かを一言もらえれば探せます。',links:[],data:{needsClarification:true,sitePastMomentNeedsClarification:true}};
+  }
+  function comparisonEpisodeSequence(history){
+    var h=Array.isArray(history)?history:[],out=[],lastSignature='';
+    for(var i=0;i<h.length;i++){
+      var x=h[i];if(!x||x.role!=='assistant')continue;var data=(x.meta&&x.meta.data)||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__'){out=[];lastSignature='';continue;}
+      var ids=Array.isArray(data.siteComparison)?data.siteComparison.map(String).filter(function(id){return !!BY_ID[id];}):[];
+      if(ids.length<2){
+        if(data.siteGuide&&String(data.siteItem||'')&&BY_ID[String(data.siteItem||'')])lastSignature='';
+        continue;
+      }
+      var signature=ids.join('|'),items=ids.map(function(id){return BY_ID[id];}).filter(Boolean);if(items.length<2)continue;
+      var selected=BY_ID[String(data.selectedSiteItem||'')];
+      if(!selected||!items.some(function(y){return y.id===selected.id;})){
+        var viewed=BY_ID[String(data.siteItem||'')];if(viewed&&items.some(function(y){return y.id===viewed.id;}))selected=viewed;else selected=null;
+      }
+      var feature=String(data.siteFeature||''),detail=feature==='columns'&&/入手/.test(S(x.text))?'acquisition':'';
+      var ep=null;
+      if(signature===lastSignature&&out.length)ep=out[out.length-1];
+      else {ep={items:items.slice(),selected:null,feature:'',featureDetail:'',features:[],featureSubjects:[],conditions:[],startIndex:i,index:i,signature:signature};out.push(ep);lastSignature=signature;}
+      ep.index=i;
+      if(selected)ep.selected=selected;
+      if(feature){ep.feature=feature;ep.featureDetail=detail;if(!ep.features.some(function(f){return f.feature===feature&&f.featureDetail===detail;}))ep.features.push({feature:feature,featureDetail:detail});}
+      if(Array.isArray(data.siteFeatureSubjects)&&data.siteFeatureSubjects.length)ep.featureSubjects=data.siteFeatureSubjects.slice(0,4);
+      if(Array.isArray(data.siteConditions)&&data.siteConditions.length)ep.conditions=data.siteConditions.slice();
+    }
+    return out;
+  }
+  function comparisonHistoryFeatureCue(text){
+    var t=normalizeInput(text);
+    if(/(?:入手|取り方|とり方|どこで手に入)/.test(t))return {feature:'columns',featureDetail:'acquisition',label:'入手'};
+    if(/(?:保存|画像|スクショ|スクリーンショット)/.test(t))return {feature:'save',featureDetail:'',label:'保存'};
+    if(/(?:並べ替|ソート|高い順|安い順|順番)/.test(t))return {feature:'sort',featureDetail:'',label:'並べ替え'};
+    if(/(?:共有|URL|リンク)/i.test(t))return {feature:'share',featureDetail:'',label:'共有'};
+    return null;
+  }
+  function comparisonRelativeStepCue(text){
+    var t=normalizeInput(text),step=0;
+    if(/(?:五つ前|いつつ前|五個前|5つ前|５つ前|5個前|５個前)/.test(t))step=5;
+    else if(/(?:四つ前|よっつ前|四個前|4つ前|４つ前|4個前|４個前)/.test(t))step=4;
+    else if(/(?:三つ前|みっつ前|三個前|3つ前|３つ前|3個前|３個前)/.test(t))step=3;
+    else if(/(?:その前|さらに前|もう一つ前|もうひとつ前|もう一個前|二つ前|ふたつ前|二個前|2つ前|２つ前|2個前|２個前)/.test(t))step=2;
+    else if(/(?:一つ前|ひとつ前|一個前|1つ前|１つ前|1個前|１個前)/.test(t))step=1;
+    return step;
+  }
+  function comparisonAbsoluteOrderCue(text){
+    var t=normalizeInput(text);
+    if(/(?:最後から(?:二|2|２)番目|後ろから(?:二|2|２)番目)/.test(t))return {from:'end',position:2,label:'最後から二番目'};
+    if(/(?:最後から(?:三|3|３)番目|後ろから(?:三|3|３)番目)/.test(t))return {from:'end',position:3,label:'最後から三番目'};
+    if(/(?:最初から(?:二|2|２)番目)/.test(t))return {from:'start',position:2,label:'最初から二番目'};
+    if(/(?:最初から(?:三|3|３)番目)/.test(t))return {from:'start',position:3,label:'最初から三番目'};
+    if(/(?:一番最初|いちばん最初|最初|はじめ|初め)(?:の)?$/.test(t)||/(?:一番最初|いちばん最初|最初|はじめ|初め)(?:の)?(?:過去)?$/.test(t))return {from:'start',position:1,label:'最初'};
+    if(/(?:一番最後|いちばん最後|最後|最新|直近)(?:の)?$/.test(t)||/(?:一番最後|いちばん最後|最後|最新|直近)(?:の)?(?:過去)?$/.test(t))return {from:'end',position:1,label:'最後'};
+    return null;
+  }
+  function comparisonOrdinalAlternativeCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(!/(?:比較|比べ)/.test(t)||!/(?:もう片方|もう一方|反対の方|反対のほう|選ばなかった方|選ばなかったほう|別の方|別のほう)/.test(t))return null;
+    var pos=t.search(/(?:比較|比べ)/),before=pos>=0?t.slice(0,pos):t,step=comparisonRelativeStepCue(before);
+    if(!step)return null;
+    return {step:step};
+  }
+  function historicalComparisonFeatureAlternativeCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(!/(?:比較|比べ)/.test(t)||!/(?:もう片方|もう一方|反対の方|反対のほう|選ばなかった方|選ばなかったほう|別の方|別のほう)/.test(t))return null;
+    var pos=t.search(/(?:比較|比べ)/);if(pos<0)return null;
+    var before=t.slice(0,pos),after=t.slice(pos),source=comparisonHistoryFeatureCue(before);
+    if(!source||!/(?:話|聞い|案内|説明|してた|していた|だった)/.test(before))return null;
+    var target=comparisonHistoryFeatureCue(after),anchors=mentionedItems(before),step=comparisonRelativeStepCue(before),absolute=comparisonAbsoluteOrderCue(before);
+    return {source:source,target:target,anchors:anchors,step:step,absolute:absolute};
+  }
+  function comparisonOutputFeatureIntents(text,item){
+    if(!item)return [];
+    var t=normalizeInput(text),pos=t.search(/(?:比較|比べ)/),tail=pos>=0?t.slice(pos):t,intents=featureIntents(tail,item),cue=comparisonHistoryFeatureCue(tail);
+    if(!intents.length&&cue&&sourcePage(item)&&S((sourcePage(item).facts||{})[cue.feature]))intents=[cue.feature];
+    return intents;
+  }
+  function sameFeatureCarryCue(text){
+    var t=normalizeInput(text);
+    return /(?:さっき|先ほど|前|今|いま)?(?:と)?同じ(?:こと|内容|の|ように|感じで)|同様に|同じように/.test(t);
+  }
+  function comparisonShortOppositeCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    return /^(?:(?:じゃあ|じゃ|では|それなら|なら|やっぱ(?:り)?|いや)[、,\s]*)?(?:反対|逆|反対の方|反対のほう|逆の方|逆のほう|もう片方|もう一方)(?:は|って|だと|なら|にして|で|お願い)?[。！!？?]*$/.test(t);
+  }
+  function answerComparisonShortOpposite(text,history){
+    if(!comparisonShortOppositeCue(text))return null;
+    var ctx=historyGuideContext(history);
+    if(ctx.candidateKind!=='comparison'||ctx.candidates.length!==2||!ctx.selectedCandidate)return null;
+    var list=uniqueCandidateItems(ctx.candidates),selected=list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0];
+    if(!selected)return null;
+    var target=list.filter(function(x){return x.id!==selected.id;})[0];if(!target)return null;
+    var result=explainItem(target,true);if(!result)return null;
+    result.answer='今の比較で「'+selected.name+'」の反対側なら「'+target.name+'」です。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,list,target,'comparison',ctx.sourceCandidates,ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonShortOpposite=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=selected.id;result.data.selectedSiteItem=target.id;
+    return result;
+  }
+  function comparisonDeicticFeatureCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(mentionedItems(t).length)return false;
+    if(/(?:もう片方|もう一方|反対の方|反対のほう|逆の方|逆のほう|別の方|別のほう|じゃなく|ではなく|違う|訂正)/.test(t))return false;
+    if(!/^(?:それ|そっち|その方|そのほう|今の|いまの|こっち|この方|このほう)(?:の|は|って|だと|なら|で|について)?/.test(t))return false;
+    return !!comparisonHistoryFeatureCue(t);
+  }
+  function answerComparisonDeicticFeature(text,history){
+    if(!comparisonDeicticFeatureCue(text))return null;
+    var ctx=discardStaleCandidateContext(history,historyGuideContext(history));
+    if(ctx.candidateKind!=='comparison'||!ctx.selectedCandidate||ctx.candidates.length<2)return null;
+    var list=uniqueCandidateItems(ctx.candidates),target=list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0];if(!target)return null;
+    var intents=featureIntents(text,target),featureCue=comparisonHistoryFeatureCue(text);
+    if(!intents.length&&featureCue&&sourcePage(target)&&S((sourcePage(target).facts||{})[featureCue.feature]))intents=[featureCue.feature];
+    if(!intents.length)return null;
+    var result=answerFeatures(target,intents,true,text);if(!result)return null;
+    result.answer='今選んでいる「'+target.name+'」についてですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,list,target,'comparison',ctx.sourceCandidates,ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonDeicticFeature=true;result.data.selectedSiteItem=target.id;
+    return result;
+  }
+  function currentComparisonSelectedContext(history,allowHistorical){
+    var raw=historyGuideContext(history),ctx=allowHistorical?raw:discardStaleCandidateContext(history,raw),list=[],selected=null,other=null;
+    if(ctx.candidateKind==='comparison'&&ctx.selectedCandidate&&ctx.candidates.length===2){
+      list=uniqueCandidateItems(ctx.candidates);selected=list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+      if(selected&&list.length===2){other=list.filter(function(x){return x.id!==selected.id;})[0]||null;if(other)return {ctx:ctx,list:list,selected:selected,other:other};}
+    }
+    if(!allowHistorical)return null;
+    var ref=latestHistoricalComparison(history);if(!ref||!ref.selected||ref.items.length!==2)return null;
+    list=uniqueCandidateItems(ref.items);selected=list.filter(function(x){return x.id===ref.selected.id;})[0]||null;if(!selected||list.length!==2)return null;other=list.filter(function(x){return x.id!==selected.id;})[0]||null;if(!other)return null;
+    return {ctx:{item:selected,candidates:list,sourceCandidates:list,conditions:ref.conditions||[],candidateKind:'comparison',feature:ref.feature||'',featureDetail:ref.featureDetail||'',featureSubjects:ref.featureSubjects||[],selectedCandidate:selected},list:list,selected:selected,other:other};
+  }
+  function currentComparisonNeedsBaseSelection(history){
+    var ctx=historyGuideContext(history),list=uniqueCandidateItems(ctx.candidates||[]);
+    if(ctx.candidateKind!=='comparison'||list.length!==2||ctx.selectedCandidate)return null;
+    var ids=list.map(function(x){return x.id;});
+    return {handled:true,mode:'サイト総合案内',answer:'「反対」の基準にする側がまだ決まっていません。'+candidateNames(list)+'のどちらを基準にするか先に教えてください。',links:list.map(itemLink),data:{needsClarification:true,siteComparisonOppositeNeedsSelection:true,siteComparison:ids,siteCandidates:ids,candidates:ids}};
+  }
+  function featureIntentsForComparisonFollowup(text,item){
+    var intents=explicitContextFeatureIntents(text,item),cue=comparisonHistoryFeatureCue(text),page=sourcePage(item),facts=page&&page.facts||{};
+    if(!intents.length&&cue&&S(facts[cue.feature]))intents=[cue.feature];
+    return {intents:intents,cue:cue};
+  }
+  function comparisonOppositeFeatureCue(text){
+    var t=normalizeInput(text);
+    if(/(?:じゃなく|ではなく|訂正|違って|ちがって)/.test(t))return null;
+    var m=t.match(/(?:^|そのあと|その後|続けて|次に|あと)[、,\s]*(?:じゃあ|では|なら)?[、,\s]*(?:反対(?:にした)?(?:の)?(?:方|ほう)?|逆(?:の)?(?:方|ほう)?)(?:にして|にしたら|なら|は|で|の)?[、,\s]*(.*)$/);
+    if(!m)return null;
+    var tail=String(m[1]||'');if(!tail)return null;
+    var cue=comparisonHistoryFeatureCue(tail);if(!cue)return null;
+    return {tail:tail,feature:cue};
+  }
+  function answerComparisonOppositeFeature(text,history){
+    var cue=comparisonOppositeFeatureCue(text);if(!cue)return null;
+    var ref=currentComparisonSelectedContext(history,true);if(!ref)return currentComparisonNeedsBaseSelection(history);
+    var parsed=featureIntentsForComparisonFollowup(cue.tail,ref.other),intents=parsed.intents;if(!intents.length)return null;
+    var result=answerFeatures(ref.other,intents,true,cue.tail);if(!result)return null;
+    result.answer='今選んでいる「'+ref.selected.name+'」の反対側、「'+ref.other.name+'」では「'+contextFeatureLabel(intents[0],cue.tail)+'」ですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.list,ref.other,'comparison',ref.ctx.sourceCandidates,ref.ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonOppositeFeature=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=ref.selected.id;result.data.selectedSiteItem=ref.other.id;
+    return result;
+  }
+  function comparisonOppositeSameFeatureCue(text){
+    var t=normalizeInput(text);
+    if(!/(?:反対|逆|もう片方|もう一方)/.test(t))return false;
+    if(comparisonHistoryFeatureCue(t))return false;
+    return /(?:続き|続け|同じこと|同じ内容|同じの|同様に|同じように|同じ感じ)/.test(t);
+  }
+  function answerComparisonOppositeSameFeature(text,history){
+    if(!comparisonOppositeSameFeatureCue(text))return null;
+    var ref=currentComparisonSelectedContext(history,true);if(!ref)return currentComparisonNeedsBaseSelection(history);
+    var feature=String(ref.ctx.feature||''),detail=String(ref.ctx.featureDetail||''),page=sourcePage(ref.other),facts=page&&page.facts||{};
+    if(!feature)return null;
+    if(!S(facts[feature]))return {handled:true,mode:'サイト総合案内',answer:'今選んでいる「'+ref.selected.name+'」の反対側は「'+ref.other.name+'」ですが、さっきと同じ案内項目はこのページでは確認できません。別の内容を指定してください。',links:[itemLink(ref.other)],data:{needsClarification:true,siteComparisonOppositeSameFeatureUnsupported:true,siteItem:ref.other.id,siteComparison:ref.list.map(function(x){return x.id;}),selectedSiteItem:ref.other.id,previousSelectedSiteItem:ref.selected.id}};
+    var query=feature==='columns'&&detail==='acquisition'?'入手をどこで確認':featureCuePhrase(feature),result=answerFeatures(ref.other,[feature],true,query||text);if(!result)return null;
+    result.answer='今選んでいる「'+ref.selected.name+'」の反対側、「'+ref.other.name+'」に切り替えて、さっきの続きですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.list,ref.other,'comparison',ref.ctx.sourceCandidates,ref.ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonOppositeSameFeatureCarry=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=ref.selected.id;result.data.selectedSiteItem=ref.other.id;
+    return result;
+  }
+  function comparisonRevisionOppositeBundleCue(text){
+    var t=normalizeInput(text),m=t.match(/^(.+?)(?:[、,。\s]*(?:そのあと|その後|続けて|次に|あと)[、,\s]*)(.+)$/);if(!m)return null;
+    var first=String(m[1]||''),second=String(m[2]||'');
+    if(!featureRevisionCue(first))return null;
+    var opposite=comparisonOppositeFeatureCue(second);if(!opposite)return null;
+    return {first:first,second:second,opposite:opposite};
+  }
+  function answerComparisonRevisionOppositeBundle(text,history){
+    var cue=comparisonRevisionOppositeBundleCue(text);if(!cue)return null;
+    var ref=currentComparisonSelectedContext(history,true);if(!ref)return currentComparisonNeedsBaseSelection(history);
+    var tail=correctionTail(cue.first)||cue.first,firstParsed=featureIntentsForComparisonFollowup(tail,ref.selected),secondParsed=featureIntentsForComparisonFollowup(cue.opposite.tail,ref.other);
+    if(!firstParsed.intents.length||!secondParsed.intents.length)return null;
+    var first=answerFeatures(ref.selected,firstParsed.intents,true,tail),second=answerFeatures(ref.other,secondParsed.intents,true,cue.opposite.tail);if(!first||!second)return null;
+    var links=[],seen={};(first.links||[]).concat(second.links||[]).forEach(function(l){var k=String(l&&l.url||'');if(k&&!seen[k]){seen[k]=1;links.push(l);}});
+    var ids=ref.list.map(function(x){return x.id;}),result={handled:true,mode:'サイト総合案内',answer:'まず今選んでいる「'+ref.selected.name+'」は「'+contextFeatureLabel(firstParsed.intents[0],tail)+'」へ訂正し、そのあと反対側の「'+ref.other.name+'」は「'+contextFeatureLabel(secondParsed.intents[0],cue.opposite.tail)+'」として案内します。\n'+String(first.answer||'')+'\n\n'+String(second.answer||''),links:links,data:{siteItem:ref.other.id,siteFeature:(second.data&&second.data.siteFeature)||secondParsed.intents[0],siteFeatures:(second.data&&second.data.siteFeatures)||secondParsed.intents.slice(),siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,selectedSiteItem:ref.other.id,previousSelectedSiteItem:ref.selected.id,siteComparisonRevisionOppositeBundle:true,siteComparisonSelectionRevised:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    return result;
+  }
+  function comparisonImplicitSelectionCommitted(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;var data=(x.meta&&x.meta.data)||{},ids=Array.isArray(data.siteComparison)?data.siteComparison:[];
+      if(ids.length<2)continue;
+      if(data.needsClarification)return false;
+      if(String(data.siteFeature||'')==='result')return false;
+      if(data.siteDetailTargetSwitch&&!data.siteComparisonSelectionConfirmed&&!data.siteComparisonPurposeSelected&&!data.siteComparisonSelectionRevised&&!data.siteHistoricalAbsoluteComparisonRestore)return false;
+      var prior=i>0&&h[i-1]&&h[i-1].role==='user'?normalizeInput(h[i-1].text):'';
+      if(prior&&mentionedItems(prior).length===1&&/(?:は|って|だと|なら)[？?。！!]*$/.test(prior)&&!/(?:にして|でお願い|それで|選ん|決め)/.test(prior))return false;
+      return !!data.selectedSiteItem;
+    }
+    return false;
+  }
+  function comparisonImplicitSelectedFeatureCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(mentionedItems(t).length)return false;
+    if(/(?:比較|比べ|反対|逆|もう片方|もう一方|前者|後者|元の方|元のほう|反対にした方|反対にしたほう|じゃなく|ではなく|訂正|違って|ちがって|それ|そっち|今の|いまの)/.test(t))return false;
+    if(!comparisonHistoryFeatureCue(t))return false;
+    return /(?:教えて|知りたい|確認|見たい|どこ|方法|やり方|は|って|について|お願い|？|\?)?[。！!？?]*$/.test(t);
+  }
+  function answerComparisonImplicitSelectedFeature(text,history){
+    if(!comparisonImplicitSelectedFeatureCue(text)||!comparisonImplicitSelectionCommitted(history))return null;
+    var ref=currentComparisonSelectedContext(history,false);if(!ref)return null;
+    var parsed=featureIntentsForComparisonFollowup(text,ref.selected);if(!parsed.intents.length)return null;
+    var result=answerFeatures(ref.selected,parsed.intents,true,text);if(!result)return null;
+    result.answer='今選んでいる「'+ref.selected.name+'」の「'+contextFeatureLabel(parsed.intents[0],text)+'」ですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.list,ref.selected,'comparison',ref.ctx.sourceCandidates,ref.ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonImplicitSelectedFeature=true;result.data.selectedSiteItem=ref.selected.id;
+    return result;
+  }
+  function currentComparisonPairContext(history,allowHistorical){
+    var raw=historyGuideContext(history),ctx=allowHistorical?raw:discardStaleCandidateContext(history,raw),list=uniqueCandidateItems(ctx.candidates||[]);
+    if(ctx.candidateKind==='comparison'&&list.length===2){
+      var selected=ctx.selectedCandidate&&list.filter(function(x){return x.id===ctx.selectedCandidate.id;})[0]||null;
+      return {ctx:ctx,list:list,selected:selected};
+    }
+    if(!allowHistorical)return null;
+    var ref=latestHistoricalComparison(history);if(!ref||ref.items.length!==2)return null;
+    list=uniqueCandidateItems(ref.items);if(list.length!==2)return null;
+    var sel=ref.selected&&list.filter(function(x){return x.id===ref.selected.id;})[0]||null;
+    return {ctx:{item:sel,candidates:list,sourceCandidates:list,conditions:ref.conditions||[],candidateKind:'comparison',feature:ref.feature||'',featureDetail:ref.featureDetail||'',featureSubjects:ref.featureSubjects||[],selectedCandidate:sel},list:list,selected:sel};
+  }
+  function latestComparisonTransition(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;var data=(x.meta&&x.meta.data)||{},ids=Array.isArray(data.siteComparison)?data.siteComparison:[];
+      if(ids.length!==2)continue;
+      var list=ids.map(function(id){return BY_ID[String(id||'')];}).filter(Boolean);if(list.length!==2)continue;
+      var current=BY_ID[String(data.selectedSiteItem||'')],previous=BY_ID[String(data.previousSelectedSiteItem||'')];
+      if(current&&previous&&current.id!==previous.id&&list.some(function(y){return y.id===current.id;})&&list.some(function(y){return y.id===previous.id;})){
+        return {list:list,current:current,previous:previous,feature:String(data.siteFeature||''),featureDetail:String(data.siteFeatureDetail||''),conditions:Array.isArray(data.siteConditions)?data.siteConditions.slice():[],data:data,index:i};
+      }
+    }
+    return null;
+  }
+  function comparisonOriginalSideFeatureCue(text){
+    var t=normalizeInput(text);
+    if(!/(?:元の方|元のほう|元の側|元に戻って|元へ戻って|元の方へ戻って|元のほうへ戻って)/.test(t))return null;
+    var cue=comparisonHistoryFeatureCue(t);if(!cue)return null;
+    return {feature:cue};
+  }
+  function answerComparisonOriginalSideFeature(text,history){
+    var cue=comparisonOriginalSideFeatureCue(text);if(!cue)return null;
+    var tr=latestComparisonTransition(history);if(!tr)return null;
+    var parsed=featureIntentsForComparisonFollowup(text,tr.previous);if(!parsed.intents.length)return null;
+    var result=answerFeatures(tr.previous,parsed.intents,true,text);if(!result)return null;
+    result.answer='さっき切り替える前の「'+tr.previous.name+'」へ戻って、「'+contextFeatureLabel(parsed.intents[0],text)+'」ですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,tr.list,tr.previous,'comparison',tr.list,tr.conditions);result.data=result.data||{};
+    result.data.siteComparisonOriginalSideFeature=true;result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=tr.current.id;result.data.selectedSiteItem=tr.previous.id;
+    return result;
+  }
+  function comparisonNamedSideFeatureCue(text){
+    var t=normalizeInput(text),side='';
+    if(/(?:さっき|先ほど)?(?:反対にした|反対へ変えた|逆にした)(?:方|ほう)/.test(t))side='transition-current';
+    else if(/(?:今|いま)(?:選んでいる|選択中の|の)(?:方|ほう)/.test(t))side='current';
+    else if(/(?:前者|最初の方|最初のほう|一つ目|1つ目|１つ目)/.test(t))side='first';
+    else if(/(?:後者|二つ目|2つ目|２つ目)/.test(t))side='second';
+    if(!side)return null;
+    var cue=comparisonHistoryFeatureCue(t);if(!cue)return null;
+    return {side:side,feature:cue};
+  }
+  function answerComparisonNamedSideFeature(text,history){
+    var cue=comparisonNamedSideFeatureCue(text);if(!cue)return null;
+    var pair=currentComparisonPairContext(history,true);if(!pair)return null;
+    var target=null,previous=pair.selected;
+    if(cue.side==='first')target=pair.list[0];
+    else if(cue.side==='second')target=pair.list[1];
+    else if(cue.side==='current')target=pair.selected;
+    else if(cue.side==='transition-current'){var tr=latestComparisonTransition(history);target=tr&&tr.current||pair.selected;}
+    if(!target)return {handled:true,mode:'サイト総合案内',answer:'比較している二つは確認できましたが、今どちらを選んでいるかまでは決まっていません。'+candidateNames(pair.list)+'のどちらかを指定してください。',links:pair.list.map(itemLink),data:{needsClarification:true,siteComparisonNamedSideNeedsSelection:true,siteComparison:pair.list.map(function(x){return x.id;}),siteCandidates:pair.list.map(function(x){return x.id;})}};
+    var parsed=featureIntentsForComparisonFollowup(text,target);if(!parsed.intents.length)return null;
+    var result=answerFeatures(target,parsed.intents,true,text);if(!result)return null;
+    var label=cue.side==='first'?'前者':cue.side==='second'?'後者':cue.side==='transition-current'?'さっき反対にした方':'今選んでいる方';
+    result.answer='比較中の'+label+'、「'+target.name+'」で「'+contextFeatureLabel(parsed.intents[0],text)+'」ですね。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,pair.list,target,'comparison',pair.ctx.sourceCandidates||pair.list,pair.ctx.conditions);result.data=result.data||{};
+    result.data.siteComparisonNamedSideFeature=true;result.data.selectedSiteItem=target.id;if(previous&&previous.id!==target.id){result.data.siteComparisonSelectionRevised=true;result.data.previousSelectedSiteItem=previous.id;}
+    return result;
+  }
+  function comparisonRoundTripBundleCue(text){
+    var t=normalizeInput(text),m=t.match(/^(.+?)(?:[、,。\s]*(?:そのあと|その後|続けて|次に|それから)[、,\s]*)(.+)$/);if(!m)return null;
+    var first=String(m[1]||''),second=String(m[2]||'');
+    if(!/(?:反対|逆|もう片方|もう一方)/.test(first))return null;
+    if(!/(?:元の方|元のほう|元の側|元に戻って|元へ戻って|元の方へ戻って|元のほうへ戻って)/.test(second))return null;
+    var secondFeature=comparisonHistoryFeatureCue(second);if(!secondFeature)return null;
+    var firstFeature=comparisonHistoryFeatureCue(first),carry=!firstFeature&&comparisonOppositeSameFeatureCue(first);
+    if(!firstFeature&&!carry)return null;
+    return {first:first,second:second,firstFeature:firstFeature,carry:carry,secondFeature:secondFeature};
+  }
+  function answerComparisonRoundTripBundle(text,history){
+    var cue=comparisonRoundTripBundleCue(text);if(!cue)return null;
+    var ref=currentComparisonSelectedContext(history,true);if(!ref)return currentComparisonNeedsBaseSelection(history);
+    var firstIntents=[],firstDetail='',firstQuery=cue.first;
+    if(cue.firstFeature){var fp=featureIntentsForComparisonFollowup(cue.first,ref.other);firstIntents=fp.intents;firstDetail=cue.firstFeature.featureDetail||'';}
+    else {var f=String(ref.ctx.feature||'');if(f&&sourcePage(ref.other)&&S((sourcePage(ref.other).facts||{})[f])){firstIntents=[f];firstDetail=String(ref.ctx.featureDetail||'');firstQuery=f==='columns'&&firstDetail==='acquisition'?'入手をどこで確認':featureCuePhrase(f);}}
+    var secondParsed=featureIntentsForComparisonFollowup(cue.second,ref.selected);if(!firstIntents.length||!secondParsed.intents.length)return null;
+    var first=answerFeatures(ref.other,firstIntents,true,firstQuery),second=answerFeatures(ref.selected,secondParsed.intents,true,cue.second);if(!first||!second)return null;
+    var links=[],seen={};(first.links||[]).concat(second.links||[]).forEach(function(l){var k=String(l&&l.url||'');if(k&&!seen[k]){seen[k]=1;links.push(l);}});
+    var ids=ref.list.map(function(x){return x.id;}),result={handled:true,mode:'サイト総合案内',answer:'まず「'+ref.selected.name+'」の反対側、「'+ref.other.name+'」で'+(cue.carry?'さっきの続き':'「'+contextFeatureLabel(firstIntents[0],cue.first)+'」')+'を確認し、そのあと元の「'+ref.selected.name+'」へ戻って「'+contextFeatureLabel(secondParsed.intents[0],cue.second)+'」を案内します。\n'+String(first.answer||'')+'\n\n'+String(second.answer||''),links:links,data:{siteItem:ref.selected.id,siteFeature:(second.data&&second.data.siteFeature)||secondParsed.intents[0],siteFeatures:(second.data&&second.data.siteFeatures)||secondParsed.intents.slice(),siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,selectedSiteItem:ref.selected.id,previousSelectedSiteItem:ref.other.id,siteComparisonRoundTripFeatureBundle:true,siteComparisonSelectionRevised:true,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    return result;
+  }
+  function comparisonAbsoluteDualSideFeatureCue(text){
+    var t=normalizeInput(text),pos=t.search(/(?:比較|比べ)/);if(pos<0)return null;
+    var order=comparisonAbsoluteOrderCue(t.slice(0,pos));if(!order)return null;
+    var after=t.slice(pos),selectedMatch=after.match(/(?:選んだ方|選んでいた方|選んでた方|決めた方|決めていた方|決めてた方)/);if(!selectedMatch)return null;
+    var altRe=/(?:もう片方|もう一方|反対の方|反対のほう|逆の方|逆のほう|選ばなかった方|選ばなかったほう|別の方|別のほう)/g,altMatch,altIndex=-1;
+    while((altMatch=altRe.exec(after))){if(altMatch.index>selectedMatch.index){altIndex=altMatch.index;break;}}
+    if(altIndex<0)return null;
+    var selectedPart=after.slice(0,altIndex),alternativePart=after.slice(altIndex);
+    if(!comparisonHistoryFeatureCue(selectedPart)||!comparisonHistoryFeatureCue(alternativePart))return null;
+    return {order:order,selectedPart:selectedPart,alternativePart:alternativePart};
+  }
+  function answerComparisonAbsoluteDualSideFeature(text,history){
+    var cue=comparisonAbsoluteDualSideFeatureCue(text);if(!cue)return null;
+    var ref=comparisonEpisodeByOrder(comparisonEpisodeSequence(history),cue.order),ids=ref&&ref.items?ref.items.map(function(x){return x.id;}):[];
+    if(!ref)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では「'+cue.order.label+'の比較」まで一意にたどれませんでした。比較していた対象を一つ言ってもらえれば、履歴と照合して続けます。',links:[],data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteHistoricalComparisonRequestedOrder:cue.order.label}};
+    if(ref.items.length!==2)return {handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」には候補が3つ以上あるので、「選んだ方」と「反対の方」だけでは二つへ分けられません。対象名を指定してください。',links:ref.items.slice(0,8).map(itemLink),data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteComparison:ids,siteHistoricalComparisonRequestedOrder:cue.order.label}};
+    if(!ref.selected||!ref.items.some(function(x){return x.id===ref.selected.id;}))return {handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」は確認できましたが、その時にどちらを選んだかまでは決まっていません。'+candidateNames(ref.items)+'のどちらかを指定してください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteComparison:ids,siteHistoricalComparisonRequestedOrder:cue.order.label}};
+    var other=ref.items.filter(function(x){return x.id!==ref.selected.id;})[0],selectedIntents=featureIntents(cue.selectedPart,ref.selected),otherIntents=featureIntents(cue.alternativePart,other),selectedFeatureCue=comparisonHistoryFeatureCue(cue.selectedPart),otherFeatureCue=comparisonHistoryFeatureCue(cue.alternativePart);
+    if(!selectedIntents.length&&selectedFeatureCue&&sourcePage(ref.selected)&&S((sourcePage(ref.selected).facts||{})[selectedFeatureCue.feature]))selectedIntents=[selectedFeatureCue.feature];
+    if(!otherIntents.length&&otherFeatureCue&&sourcePage(other)&&S((sourcePage(other).facts||{})[otherFeatureCue.feature]))otherIntents=[otherFeatureCue.feature];
+    if(!selectedIntents.length||!otherIntents.length)return null;
+    var first=answerFeatures(ref.selected,selectedIntents,true,cue.selectedPart),second=answerFeatures(other,otherIntents,true,cue.alternativePart);if(!first||!second)return null;
+    var links=[],seen={};(first.links||[]).concat(second.links||[]).forEach(function(l){var k=String(l&&l.url||'');if(k&&!seen[k]){seen[k]=1;links.push(l);}});
+    var result={handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」で選んでいた「'+ref.selected.name+'」と、その反対側の「'+other.name+'」を順番に案内します。\n'+String(first.answer||'')+'\n\n'+String(second.answer||''),links:links,data:{siteItem:other.id,siteFeature:(second.data&&second.data.siteFeature)||otherIntents[0],siteFeatures:(second.data&&second.data.siteFeatures)||otherIntents.slice(),siteComparison:ids,siteCandidates:ids,candidates:ids,siteSourceCandidates:ids,selectedSiteItem:other.id,previousSelectedSiteItem:ref.selected.id,siteHistoricalAbsoluteComparisonRestore:true,siteHistoricalComparisonDualFeature:true,siteHistoricalComparisonRequestedOrder:cue.order.label,verifiedSiteSource:true,sourceVersion:SOURCE.version||''}};
+    return result;
+  }
+  function comparisonAbsoluteReferenceCue(text){
+    var t=siteClauseLead(normalizeInput(text)),pos=t.search(/(?:比較|比べ)/);if(pos<0)return null;
+    var before=t.slice(0,pos),order=comparisonAbsoluteOrderCue(before);if(!order)return null;
+    var alternative=/(?:もう片方|もう一方|反対の方|反対のほう|選ばなかった方|選ばなかったほう|別の方|別のほう)/.test(t);
+    var selected=/(?:選んだ方|選んでいた方|選んでた方|決めた方|決めていた方|決めてた方)/.test(t);
+    return {order:order,alternative:alternative,selected:selected};
+  }
+  function comparisonEpisodeByOrder(list,order){
+    var seq=Array.isArray(list)?list:[];if(!seq.length||!order)return null;
+    var pos=Math.max(1,Number(order.position)||1),idx=order.from==='start'?pos-1:seq.length-pos;
+    return idx>=0&&idx<seq.length?seq[idx]:null;
+  }
+  function comparisonEpisodeMatchesFeature(ep,cue){
+    if(!ep||!cue)return false;
+    var list=Array.isArray(ep.features)&&ep.features.length?ep.features:[{feature:ep.feature,featureDetail:ep.featureDetail||''}];
+    return list.some(function(f){if(f.feature!==cue.feature)return false;if(cue.featureDetail&&f.featureDetail!==cue.featureDetail)return false;return true;});
+  }
+  function answerComparisonEpisodeAlternative(ref,text,history,opt){
+    opt=opt||{};
+    if(!ref)return null;
+    var ids=ref.items.map(function(x){return x.id;});
+    if(ref.items.length!==2)return {handled:true,mode:'サイト総合案内',answer:'指定された過去の比較には候補が3つ以上あるので、「もう片方」だけでは一つに決められません。'+candidateNames(ref.items)+'のどれかを指定してください。',links:ref.items.slice(0,8).map(itemLink),data:{needsClarification:true,siteHistoricalOrderedComparisonNeedsClarification:true,siteComparison:ids,siteCandidates:ids,candidates:ids}};
+    var base=ref.selected;
+    if(!base||!ref.items.some(function(x){return x.id===base.id;}))return {handled:true,mode:'サイト総合案内',answer:'指定された過去の比較は確認できましたが、どちらを選んだかまでは決まっていません。「もう片方」の基準にする方を教えてください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalOrderedComparisonNeedsClarification:true,siteComparison:ids,siteCandidates:ids,candidates:ids}};
+    var other=ref.items.filter(function(x){return x.id!==base.id;})[0];if(!other)return null;
+    var ctx=historyGuideContext(history),feature='',featureDetail='',query=normalizeInput(text),tail=query;
+    var comparePos=tail.search(/(?:比較|比べ)/);if(comparePos>=0)tail=tail.slice(comparePos);
+    var explicit=comparisonHistoryFeatureCue(tail);
+    if(explicit){feature=explicit.feature;featureDetail=explicit.featureDetail;}
+    else if(opt.outputFeature){feature=opt.outputFeature.feature;featureDetail=opt.outputFeature.featureDetail||'';}
+    else if(/(?:同じこと|同じ内容|同じの|同様に|同じように)/.test(query)&&ctx.feature&&sourcePage(other)&&S((sourcePage(other).facts||{})[ctx.feature])){feature=ctx.feature;featureDetail=ctx.featureDetail||'';}
+    else if(opt.sourceFeature&&sourcePage(other)&&S((sourcePage(other).facts||{})[opt.sourceFeature.feature])){feature=opt.sourceFeature.feature;featureDetail=opt.sourceFeature.featureDetail||'';}
+    else if(ref.feature&&sourcePage(other)&&S((sourcePage(other).facts||{})[ref.feature])){feature=ref.feature;featureDetail=ref.featureDetail||'';}
+    if(feature&&(!sourcePage(other)||!S(((sourcePage(other).facts||{})[feature]))))return {handled:true,mode:'サイト総合案内',answer:'過去の比較のもう片方は「'+other.name+'」ですが、そのページでは同じ案内項目を確認できません。別の内容を指定してください。',links:[itemLink(other)],data:{needsClarification:true,siteHistoricalOrderedComparisonNeedsClarification:true,siteItem:other.id,siteComparison:ids,selectedSiteItem:other.id}};
+    if(feature==='columns'&&featureDetail==='acquisition'&&!/(?:入手|取り方|とり方|どこで)/.test(query))query+=' 入手をどこで確認';
+    var result=feature?answerFeatures(other,[feature],true,query):explainItem(other,true);if(!result)return null;
+    var prefix=opt.prefix||('指定された過去の比較で選んでいた「'+base.name+'」のもう片方は「'+other.name+'」です。');
+    result.answer=prefix+'\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.items,other,'comparison',ref.items,ref.conditions);result.data=result.data||{};
+    result.data.siteHistoricalOrderedComparisonAlternativeRestore=true;result.data.previousSelectedSiteItem=base.id;result.data.siteComparison=ids;result.data.selectedSiteItem=other.id;
+    if(opt.step)result.data.siteHistoricalComparisonRequestedStep=opt.step;
+    if(opt.sourceFeature){result.data.siteHistoricalComparisonFeatureSource=opt.sourceFeature.feature;result.data.siteHistoricalComparisonFeatureSourceDetail=opt.sourceFeature.featureDetail||'';}
+    return result;
+  }
+  function answerComparisonOrdinalAlternative(text,history){
+    var cue=comparisonOrdinalAlternativeCue(text);if(!cue)return null;
+    var eps=comparisonEpisodeSequence(history);
+    if(eps.length<cue.step)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、'+cue.step+'つ前の比較まで一意にたどれませんでした。比較していた対象を一つ言ってもらえれば、勝手に過去を作らず続けます。',links:[],data:{needsClarification:true,siteHistoricalOrderedComparisonNeedsClarification:true,siteHistoricalComparisonRequestedStep:cue.step}};
+    var ref=eps[eps.length-cue.step];
+    return answerComparisonEpisodeAlternative(ref,text,history,{step:cue.step,prefix:cue.step+'つ前の比較で選んでいた「'+(ref.selected?ref.selected.name:'')+'」のもう片方へ戻ります。'});
+  }
+  function answerHistoricalComparisonFeatureAlternative(text,history){
+    var cue=historicalComparisonFeatureAlternativeCue(text);if(!cue)return null;
+    var eps=comparisonEpisodeSequence(history),matches=eps.filter(function(ep){
+      if(!comparisonEpisodeMatchesFeature(ep,cue.source))return false;
+      if(cue.anchors&&cue.anchors.length&&!cue.anchors.every(function(a){return ep.items.some(function(x){return x.id===a.id;});}))return false;
+      return true;
+    }),ref=null;
+    if(cue.absolute)ref=comparisonEpisodeByOrder(matches,cue.absolute);
+    else if(cue.step)ref=matches.length>=cue.step?matches[matches.length-cue.step]:null;
+    else ref=matches.length?matches[matches.length-1]:null;
+    if(!ref){
+      var qualifier=cue.absolute?cue.absolute.label+(cue.source.label?'で「'+cue.source.label+'」を扱った':''):(cue.step?cue.step+'つ前の「'+cue.source.label+'」を扱った':'「'+cue.source.label+'」の話をしていた');
+      return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、'+qualifier+'比較を一意に確認できませんでした。比較対象か時点をもう少し指定してもらえれば、履歴と照合して続けます。',links:[],data:{needsClarification:true,siteHistoricalComparisonFeatureNeedsClarification:true,siteHistoricalComparisonFeatureSource:cue.source.feature,siteHistoricalComparisonFeatureRequestedStep:cue.step||0,siteHistoricalComparisonFeatureRequestedOrder:cue.absolute?cue.absolute.label:''}};
+    }
+    var output=cue.target||cue.source,orderLabel=cue.absolute?cue.absolute.label:(cue.step?cue.step+'つ前':'前');
+    var result=answerComparisonEpisodeAlternative(ref,text,history,{sourceFeature:cue.source,outputFeature:output,prefix:orderLabel+'の「'+cue.source.label+'」を扱った比較で、選んでいた「'+(ref.selected?ref.selected.name:'')+'」のもう片方へ戻ります。'});
+    if(result&&result.data){
+      result.data.siteHistoricalComparisonFeatureAlternativeRestore=true;result.data.siteHistoricalComparisonFeatureSource=cue.source.feature;result.data.siteHistoricalComparisonFeatureTarget=output.feature;
+      if(cue.step)result.data.siteHistoricalComparisonFeatureRequestedStep=cue.step;
+      if(cue.absolute)result.data.siteHistoricalComparisonFeatureRequestedOrder=cue.absolute.label;
+      if(cue.anchors&&cue.anchors.length)result.data.siteHistoricalComparisonFeatureAnchors=cue.anchors.map(function(x){return x.id;});
+    }
+    return result;
+  }
+  function answerComparisonAbsoluteReference(text,history){
+    var cue=comparisonAbsoluteReferenceCue(text);if(!cue)return null;
+    var eps=comparisonEpisodeSequence(history),ref=comparisonEpisodeByOrder(eps,cue.order);
+    if(!ref)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では「'+cue.order.label+'の比較」まで一意にたどれませんでした。比較していた対象を一つ言ってもらえれば、履歴と照合して続けます。',links:[],data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteHistoricalComparisonRequestedOrder:cue.order.label}};
+    if(cue.alternative){
+      var alt=answerComparisonEpisodeAlternative(ref,text,history,{prefix:'「'+cue.order.label+'の比較」で選んでいた「'+(ref.selected?ref.selected.name:'')+'」のもう片方へ戻ります。'});
+      if(alt&&alt.data){alt.data.siteHistoricalAbsoluteComparisonRestore=true;alt.data.siteHistoricalComparisonRequestedOrder=cue.order.label;}
+      return alt;
+    }
+    if(cue.selected){
+      if(!ref.selected)return {handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」は確認できましたが、その時にどちらを選んだかまでは決まっていません。'+candidateNames(ref.items)+'のどちらかを指定してください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteComparison:ref.items.map(function(x){return x.id;}),siteHistoricalComparisonRequestedOrder:cue.order.label}};
+      var selectedIntents=comparisonOutputFeatureIntents(text,ref.selected),selectedResult=selectedIntents.length?answerFeatures(ref.selected,selectedIntents,true,text):explainItem(ref.selected,true);if(!selectedResult)return null;
+      selectedResult.answer='「'+cue.order.label+'の比較」で選んでいたのは「'+ref.selected.name+'」です。\n'+String(selectedResult.answer||'');
+      selectedResult=retainCandidateContext(selectedResult,ref.items,ref.selected,'comparison',ref.items,ref.conditions);selectedResult.data=selectedResult.data||{};
+      selectedResult.data.siteHistoricalAbsoluteComparisonRestore=true;selectedResult.data.siteHistoricalComparisonRequestedOrder=cue.order.label;selectedResult.data.selectedSiteItem=ref.selected.id;if(selectedIntents.length)selectedResult.data.siteHistoricalComparisonSelectedFeature=true;return selectedResult;
+    }
+    var carryCtx=historyGuideContext(history),carryFeature=sameFeatureCarryCue(text)&&carryCtx.feature?carryCtx.feature:'',carryDetail=carryCtx.featureDetail||'';
+    if(carryFeature){
+      if(!ref.selected)return {handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」には戻れますが、「同じこと」をどちらへ続けるかが決まっていません。'+candidateNames(ref.items)+'のどちらかを指定してください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalAbsoluteComparisonNeedsClarification:true,siteHistoricalComparisonSameFeatureNeedsSelection:true,siteComparison:ref.items.map(function(x){return x.id;}),siteHistoricalComparisonRequestedOrder:cue.order.label}};
+      var page=sourcePage(ref.selected),facts=page&&page.facts||{};
+      if(!S(facts[carryFeature]))return {handled:true,mode:'サイト総合案内',answer:'「'+cue.order.label+'の比較」で選んでいた「'+ref.selected.name+'」へは戻れますが、さっきと同じ案内項目はこのページでは確認できません。別の内容を指定してください。',links:[itemLink(ref.selected)],data:{needsClarification:true,siteHistoricalComparisonSameFeatureUnsupported:true,siteItem:ref.selected.id,siteComparison:ref.items.map(function(x){return x.id;}),siteHistoricalComparisonRequestedOrder:cue.order.label}};
+      var carryQuery=carryFeature==='columns'&&carryDetail==='acquisition'?'入手をどこで確認':featureCuePhrase(carryFeature),carryResult=answerFeatures(ref.selected,[carryFeature],true,carryQuery||text);if(!carryResult)return null;
+      carryResult.answer='「'+cue.order.label+'の比較」に戻って、選んでいた「'+ref.selected.name+'」でさっきと同じ内容を続けます。\n'+String(carryResult.answer||'');
+      carryResult=retainCandidateContext(carryResult,ref.items,ref.selected,'comparison',ref.items,ref.conditions);carryResult.data=carryResult.data||{};carryResult.data.siteHistoricalAbsoluteComparisonRestore=true;carryResult.data.siteHistoricalComparisonSameFeatureCarry=true;carryResult.data.siteHistoricalComparisonRequestedOrder=cue.order.label;carryResult.data.selectedSiteItem=ref.selected.id;return carryResult;
+    }
+    var compared=compareItems(ref.items);if(!compared)return null;
+    compared.answer='「'+cue.order.label+'の比較」は'+candidateNames(ref.items)+'です。\n'+String(compared.answer||'');
+    compared=retainCandidateContext(compared,ref.items,ref.selected||null,'comparison',ref.items,ref.conditions);compared.data=compared.data||{};
+    compared.data.siteHistoricalAbsoluteComparisonRestore=true;compared.data.siteHistoricalComparisonRequestedOrder=cue.order.label;if(ref.selected)compared.data.selectedSiteItem=ref.selected.id;return compared;
+  }
+
+  function historicalComparisonAlternativeCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    var historical=/(?:さっき|先ほど|前に|以前|この前|あの時|あのとき|その時|そのとき)/.test(t)||/(?:その|前の)(?:比較|比べ)/.test(t);
+    if(!historical||!/(?:比較|比べ)/.test(t))return null;
+    if(!/(?:もう片方|もう一方|反対の方|反対のほう|選ばなかった方|選ばなかったほう|別の方|別のほう)/.test(t))return null;
+    var anchors=mentionedItems(t);
+    return {anchor:anchors.length===1?anchors[0]:null,anchorCount:anchors.length};
+  }
+  function latestHistoricalComparisonMatching(history,anchor){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;var data=(x.meta&&x.meta.data)||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')break;
+      var ids=Array.isArray(data.siteComparison)?data.siteComparison:[];if(ids.length<2)continue;
+      var list=ids.map(function(id){return BY_ID[id];}).filter(Boolean);if(list.length<2)continue;
+      if(anchor&&!list.some(function(y){return y.id===anchor.id;}))continue;
+      var selected=BY_ID[String(data.selectedSiteItem||'')];
+      if(!selected||!list.some(function(y){return y.id===selected.id;})){
+        var viewed=BY_ID[String(data.siteItem||'')];if(viewed&&list.some(function(y){return y.id===viewed.id;}))selected=viewed;
+      }
+      return {items:list,selected:selected||null,feature:String(data.siteFeature||''),featureSubjects:Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects.slice(0,4):[],conditions:Array.isArray(data.siteConditions)?data.siteConditions.slice():[],index:i};
+    }
+    return null;
+  }
+  function answerHistoricalComparisonAlternative(text,history){
+    var cue=historicalComparisonAlternativeCue(text);if(!cue)return null;
+    if(cue.anchorCount>1)return {handled:true,mode:'サイト総合案内',answer:'「もう片方」の基準にする対象が複数入っています。どちらを基準にした比較か一つだけ言ってください。',links:[],data:{needsClarification:true,siteHistoricalComparisonAlternativeNeedsClarification:true}};
+    var ref=latestHistoricalComparisonMatching(history,cue.anchor);
+    if(!ref)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、その比較の「もう片方」を特定できませんでした。比較していた対象を一つ言ってもらえれば、履歴と照合して続けます。',links:[],data:{needsClarification:true,siteHistoricalComparisonAlternativeNeedsClarification:true}};
+    if(ref.items.length!==2){
+      var ids=ref.items.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'前の比較候補が3つ以上あるので、「もう片方」だけでは一つに決められません。'+candidateNames(ref.items)+'のどれかを指定してください。',links:ref.items.slice(0,8).map(itemLink),data:{needsClarification:true,siteHistoricalComparisonAlternativeNeedsClarification:true,siteComparison:ids,siteCandidates:ids,candidates:ids}};
+    }
+    var base=cue.anchor||ref.selected;
+    if(!base||!ref.items.some(function(x){return x.id===base.id;})){
+      var ids2=ref.items.map(function(x){return x.id;});
+      return {handled:true,mode:'サイト総合案内',answer:'前に比較していたのは'+candidateNames(ref.items)+'ですが、「もう片方」の基準になる方が決まっていません。どちらを基準にするか教えてください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalComparisonAlternativeNeedsClarification:true,siteComparison:ids2,siteCandidates:ids2,candidates:ids2}};
+    }
+    var other=ref.items.filter(function(x){return x.id!==base.id;})[0];if(!other)return null;
+    var ctx=historyGuideContext(history),intents=explicitContextFeatureIntents(text,other),same=/(?:同じこと|同じ内容|同じの|同様に|同じように)/.test(normalizeInput(text)),feature='';
+    if(intents.length)feature=intents[0];
+    else if(same&&ctx.feature&&sourcePage(other)&&S((sourcePage(other).facts||{})[ctx.feature]))feature=ctx.feature;
+    else if(ref.feature&&sourcePage(other)&&S((sourcePage(other).facts||{})[ref.feature]))feature=ref.feature;
+    var query=normalizeInput(text);
+    if(feature==='columns'&&!/(?:入手|取り方|とり方|どこで)/.test(query)&&((same&&ctx.featureDetail==='acquisition')||/入手/.test(query)))query+=' 入手をどこで確認';
+    var result=feature?answerFeatures(other,[feature],true,query):explainItem(other,true);if(!result)return null;
+    result.answer='前に比較していた「'+base.name+'」のもう片方は「'+other.name+'」です。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.items,other,'comparison',ref.items,ref.conditions);result.data=result.data||{};
+    result.data.siteHistoricalComparisonAlternativeRestore=true;result.data.previousSelectedSiteItem=base.id;result.data.siteComparison=ref.items.map(function(x){return x.id;});result.data.selectedSiteItem=other.id;
+    return result;
+  }
+
+  function historicalFeatureTransferCue(text){
+    var t=siteClauseLead(normalizeInput(text)),items=mentionedItems(t);if(items.length!==1)return null;
+    var transfer=/(?:同じこと|同じ内容|同じの|同様に|同じように|それを|今度は|今度|でも|にも)/.test(t);if(!transfer)return null;
+    var historical=/(?:さっき|先ほど|前に|前の|以前|この前)/.test(t)||/(?:話|ところ|内容)(?:に|へ|を)?(?:戻って|戻り|戻して|戻る)/.test(t);if(!historical)return null;
+    var cue=null;
+    if(/(?:入手|取り方|とり方|どこで手に入)/.test(t))cue={feature:'columns',featureDetail:'acquisition',label:'入手'};
+    else if(/(?:保存|画像|スクショ|スクリーンショット)/.test(t))cue={feature:'save',featureDetail:'',label:'保存'};
+    else if(/(?:並べ替|ソート|高い順|安い順|順番)/.test(t))cue={feature:'sort',featureDetail:'',label:'並べ替え'};
+    else if(/(?:共有|URL|リンク)/i.test(t))cue={feature:'share',featureDetail:'',label:'共有'};
+    if(!cue)return null;cue.target=items[0];return cue;
+  }
+  function answerHistoricalFeatureTransfer(text,history){
+    var cue=historicalFeatureTransferCue(text);if(!cue)return null;
+    var ref=latestFeatureEpisode(history,cue),page=sourcePage(cue.target),facts=page&&page.facts||{};
+    if(!ref)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、戻り元になる「'+cue.label+'」の案内を確認できませんでした。先に対象か内容を一つ指定してもらえれば、勝手に過去を作らず続けます。',links:[itemLink(cue.target)],data:{needsClarification:true,siteHistoricalFeatureTransferNeedsClarification:true,siteItem:cue.target.id,siteFeature:cue.feature}};
+    if(!S(facts[cue.feature]))return {handled:true,mode:'サイト総合案内',answer:'前の「'+cue.label+'」の話は確認できましたが、「'+cue.target.name+'」では同じ案内項目を確認できません。別の内容を指定してください。',links:[itemLink(cue.target)],data:{needsClarification:true,siteHistoricalFeatureTransferNeedsClarification:true,siteItem:cue.target.id,siteFeature:cue.feature}};
+    var query=normalizeInput(text);if(cue.featureDetail==='acquisition'&&!/(?:入手|取り方|とり方|どこで)/.test(query))query+=' 入手をどこで確認';
+    var result=answerFeatures(cue.target,[cue.feature],true,query);if(!result)return null;
+    result.answer='前に「'+ref.item.name+'」で話していた「'+cue.label+'」を引き継いで、今度は「'+cue.target.name+'」で案内しますね。\n'+String(result.answer||'');
+    result.data=result.data||{};result.data.siteHistoricalFeatureTransfer=true;result.data.siteHistoricalFeatureSourceItem=ref.item.id;result.data.previousSiteItem=ref.item.id;
+    return result;
+  }
+
+  function historicalComparisonReferenceCue(text){
+    var t=siteClauseLead(normalizeInput(text));
+    if(!/(?:さっき|先ほど|前に|以前|この前)/.test(t)||!/(?:比較|比べ)/.test(t)||!/(?:方|ほう|やつ|もの|ページ|選んだ|決めた)/.test(t))return false;
+    if(/(?:何と何|どれとどれ|候補|もう片方|もう一方)/.test(t))return false;
+    return true;
+  }
+  function latestHistoricalComparison(history){
+    var h=Array.isArray(history)?history:[];
+    for(var i=h.length-1;i>=0;i--){
+      var x=h[i];if(!x||x.role!=='assistant')continue;var data=(x.meta&&x.meta.data)||{};
+      if(data.siteGuideContextCleared||String(data.siteItem||'')==='__site_guide_context_cleared__')break;
+      var ids=Array.isArray(data.siteComparison)?data.siteComparison:[];if(ids.length<2)continue;
+      var list=ids.map(function(id){return BY_ID[id];}).filter(Boolean);if(list.length<2)continue;
+      var selected=BY_ID[String(data.selectedSiteItem||'')];if(!selected||!list.some(function(y){return y.id===selected.id;})){var viewed=BY_ID[String(data.siteItem||'')];if(viewed&&list.some(function(y){return y.id===viewed.id;}))selected=viewed;}
+      return {items:list,selected:selected||null,feature:String(data.siteFeature||''),featureSubjects:Array.isArray(data.siteFeatureSubjects)?data.siteFeatureSubjects.slice(0,4):[],conditions:Array.isArray(data.siteConditions)?data.siteConditions.slice():[],index:i};
+    }
+    return null;
+  }
+  function answerHistoricalComparisonReference(text,history){
+    if(!historicalComparisonReferenceCue(text))return null;
+    var ref=latestHistoricalComparison(history);if(!ref)return {handled:true,mode:'サイト総合案内',answer:'この会話履歴では、前に比較していた対象を確認できませんでした。比べたい二つを言ってもらえれば、そこから続けます。',links:[],data:{needsClarification:true,siteHistoricalComparisonNeedsClarification:true}};
+    if(!ref.selected){
+      var ids=ref.items.map(function(x){return x.id;});return {handled:true,mode:'サイト総合案内',answer:'前に比較していたのは'+candidateNames(ref.items)+'ですが、どちらを選んだかまでは決まっていません。どちらの方か教えてください。',links:ref.items.map(itemLink),data:{needsClarification:true,siteHistoricalComparisonNeedsClarification:true,siteComparison:ids,siteCandidates:ids,candidates:ids}};
+    }
+    var result=explainItem(ref.selected,true);if(ref.feature&&sourcePage(ref.selected)&&S((sourcePage(ref.selected).facts||{})[ref.feature])){var q=featureCuePhrase(ref.feature);result=answerFeatures(ref.selected,[ref.feature],true,q||text)||result;}
+    result.answer='さっき比較して選んでいた方は「'+ref.selected.name+'」です。\n'+String(result.answer||'');
+    result=retainCandidateContext(result,ref.items,ref.selected,'comparison',ref.items,ref.conditions);result.data=result.data||{};result.data.siteHistoricalComparisonRestore=true;result.data.siteComparison=ref.items.map(function(x){return x.id;});result.data.selectedSiteItem=ref.selected.id;return result;
+  }
+
   function shouldHandleBeforeKnowledge(text,opt){
-    var original=S(opt&&opt.original||text),t=normalizeInput(original),ctx=discardStaleCandidateContext(opt&&opt.history,historyGuideContext(opt&&opt.history)),cur=currentItem();
+    var original=S(opt&&opt.original||text),historyReferenceInput=S(opt&&opt.context&&opt.context.original||opt&&opt.intentInfo&&opt.intentInfo.original||original),t=normalizeInput(original),ctx=discardStaleCandidateContext(opt&&opt.history,historyGuideContext(opt&&opt.history)),cur=currentItem();
     var featureInput=correctionTail(original)||t;
     if(!t)return false;
     if(inlineSiteGoalRevision(original))return true;
+    if(answerComparisonOrdinalAlternative(historyReferenceInput,opt&&opt.history))return true;
+    if(answerHistoricalComparisonFeatureAlternative(historyReferenceInput,opt&&opt.history))return true;
+    if(answerComparisonAbsoluteDualSideFeature(historyReferenceInput,opt&&opt.history))return true;
+    if(answerComparisonAbsoluteReference(historyReferenceInput,opt&&opt.history))return true;
+    if(answerComparisonRoundTripBundle(original,opt&&opt.history))return true;
+    if(answerComparisonOriginalSideFeature(original,opt&&opt.history))return true;
+    if(answerComparisonNamedSideFeature(original,opt&&opt.history))return true;
+    if(answerComparisonRevisionOppositeBundle(original,opt&&opt.history))return true;
+    if(answerComparisonOppositeSameFeature(original,opt&&opt.history))return true;
+    if(answerComparisonOppositeFeature(original,opt&&opt.history))return true;
+    if(answerComparisonShortOpposite(historyReferenceInput,opt&&opt.history))return true;
+    if(answerComparisonDeicticFeature(historyReferenceInput,opt&&opt.history))return true;
+    if(answerComparisonImplicitSelectedFeature(original,opt&&opt.history))return true;
+    if(answerHistoricalComparisonAlternative(historyReferenceInput,opt&&opt.history))return true;
+    if(answerHistoricalFeatureTransfer(historyReferenceInput,opt&&opt.history))return true;
+    if(answerQualifiedHistoricalEpisode(historyReferenceInput,opt&&opt.history))return true;
+    if(answerHistoricalComparisonReference(historyReferenceInput,opt&&opt.history))return true;
+    if(answerPastMomentReference(historyReferenceInput,opt&&opt.history))return true;
+    if(answerAbsoluteTopicReference(historyReferenceInput,opt&&opt.history))return true;
+    if(answerFeatureEpisodeReference(historyReferenceInput,opt&&opt.history))return true;
+    if(answerFeatureRevision(original,opt&&opt.history))return true;
+    if(answerSameFeatureTargetSwitch(original,opt&&opt.history))return true;
+    if(answerTopicHistoryReference(original,opt&&opt.history))return true;
     if(guideLinkMissCue(original)&&latestImmediateGuideLinkContext(opt&&opt.history))return true;
     if(guideLinkMissSelectionRequest(original,latestImmediateGuideLinkContext(opt&&opt.history)))return true;
     if(guideConversationReturnTail(original)&&latestPausedGuideContext(opt&&opt.history))return true;
+    if(pausedGuideFeatureFollowupCue(original)&&latestPausedGuideContext(opt&&opt.history))return true;
     if(guideConversationReturnCue(original)&&latestPausedGuideContext(opt&&opt.history))return true;
     if(answerVagueCapabilityRevision(original,opt&&opt.history))return true;
     if(answerVagueCapabilityFollowup(original,opt&&opt.history))return true;
@@ -3004,7 +3894,7 @@
     if(ctx.candidates.length&&(candidateRejectionCue(original)||candidateCancelCue(original)))return true;
     if(ctx.candidates.length&&ctx.selectedCandidate&&candidateRelativeMove(original,ctx.candidates,ctx.selectedCandidate).requested)return true;
     if(ctx.candidates.length&&ctx.selectedCandidate&&candidateAlternativeCue(original))return true;
-    if(ctx.candidates.length&&ctx.selectedCandidate&&previousCandidateCue(original))return true;
+    if(ctx.candidates.length&&ctx.selectedCandidate&&(previousCandidateCue(original)||previousViewedCandidateCue(original)))return true;
     if(ctx.candidates.length&&comparisonDifferenceCue(t))return true;
     if(ctx.candidates.length&&sameOrDifferentCue(t))return true;
     if(ctx.candidates.length&&comparisonRecommendationCue(t))return true;
@@ -3041,17 +3931,65 @@
 
   function respond(text,opt){
     opt=opt||{};
-    var original=S(opt.original||text),t=normalizeInput(original);if(!t)return {handled:false};
+    var original=S(opt.original||text),historyReferenceInput=S(opt.context&&opt.context.original||opt.intentInfo&&opt.intentInfo.original||original),t=normalizeInput(original);if(!t)return {handled:false};
     var mode=pageMode(),cur=currentItem(),intent=opt.intentInfo?String(opt.intentInfo.intent||''):'',hist=discardStaleCandidateContext(opt.history,historyGuideContext(opt.history)),recent=hist.item;
     var featureInput=correctionTail(original)||t;
 
     var inlineGoalRevision=answerInlineSiteGoalRevision(original,opt);if(inlineGoalRevision)return inlineGoalRevision;
+
+    var historicalComparisonFeatureAlternative=answerHistoricalComparisonFeatureAlternative(historyReferenceInput,opt.history);if(historicalComparisonFeatureAlternative)return historicalComparisonFeatureAlternative;
+
+    var comparisonAbsoluteDualSideFeature=answerComparisonAbsoluteDualSideFeature(historyReferenceInput,opt.history);if(comparisonAbsoluteDualSideFeature)return comparisonAbsoluteDualSideFeature;
+
+    var comparisonAbsoluteReference=answerComparisonAbsoluteReference(historyReferenceInput,opt.history);if(comparisonAbsoluteReference)return comparisonAbsoluteReference;
+
+    var comparisonRoundTripBundle=answerComparisonRoundTripBundle(original,opt.history);if(comparisonRoundTripBundle)return comparisonRoundTripBundle;
+
+    var comparisonOriginalSideFeature=answerComparisonOriginalSideFeature(original,opt.history);if(comparisonOriginalSideFeature)return comparisonOriginalSideFeature;
+
+    var comparisonNamedSideFeature=answerComparisonNamedSideFeature(original,opt.history);if(comparisonNamedSideFeature)return comparisonNamedSideFeature;
+
+    var comparisonRevisionOppositeBundle=answerComparisonRevisionOppositeBundle(original,opt.history);if(comparisonRevisionOppositeBundle)return comparisonRevisionOppositeBundle;
+
+    var comparisonOppositeSameFeature=answerComparisonOppositeSameFeature(original,opt.history);if(comparisonOppositeSameFeature)return comparisonOppositeSameFeature;
+
+    var comparisonOppositeFeature=answerComparisonOppositeFeature(original,opt.history);if(comparisonOppositeFeature)return comparisonOppositeFeature;
+
+    var comparisonShortOpposite=answerComparisonShortOpposite(historyReferenceInput,opt.history);if(comparisonShortOpposite)return comparisonShortOpposite;
+
+    var comparisonDeicticFeature=answerComparisonDeicticFeature(historyReferenceInput,opt.history);if(comparisonDeicticFeature)return comparisonDeicticFeature;
+
+    var comparisonImplicitSelectedFeature=answerComparisonImplicitSelectedFeature(original,opt.history);if(comparisonImplicitSelectedFeature)return comparisonImplicitSelectedFeature;
+
+    var comparisonOrdinalAlternative=answerComparisonOrdinalAlternative(historyReferenceInput,opt.history);if(comparisonOrdinalAlternative)return comparisonOrdinalAlternative;
+
+    var historicalComparisonAlternative=answerHistoricalComparisonAlternative(historyReferenceInput,opt.history);if(historicalComparisonAlternative)return historicalComparisonAlternative;
+
+    var historicalFeatureTransfer=answerHistoricalFeatureTransfer(historyReferenceInput,opt.history);if(historicalFeatureTransfer)return historicalFeatureTransfer;
+
+    var qualifiedHistoricalEpisode=answerQualifiedHistoricalEpisode(historyReferenceInput,opt.history);if(qualifiedHistoricalEpisode)return qualifiedHistoricalEpisode;
+
+    var historicalComparisonReference=answerHistoricalComparisonReference(historyReferenceInput,opt.history);if(historicalComparisonReference)return historicalComparisonReference;
+
+    var pastMomentReference=answerPastMomentReference(historyReferenceInput,opt.history);if(pastMomentReference)return pastMomentReference;
+
+    var absoluteTopicReference=answerAbsoluteTopicReference(historyReferenceInput,opt.history);if(absoluteTopicReference)return absoluteTopicReference;
+
+    var featureEpisodeReference=answerFeatureEpisodeReference(historyReferenceInput,opt.history);if(featureEpisodeReference)return featureEpisodeReference;
+
+    var featureRevision=answerFeatureRevision(original,opt.history);if(featureRevision)return featureRevision;
+
+    var sameFeatureTargetSwitch=answerSameFeatureTargetSwitch(original,opt.history);if(sameFeatureTargetSwitch)return sameFeatureTargetSwitch;
+
+    var topicHistoryReference=answerTopicHistoryReference(original,opt.history);if(topicHistoryReference)return topicHistoryReference;
 
     var linkMissRecovery=answerGuideLinkMiss(original,opt.history,opt);if(linkMissRecovery)return linkMissRecovery;
 
     var linkMissSelection=answerGuideLinkMissSelection(original,opt.history);if(linkMissSelection)return linkMissSelection;
 
     var guideReturnWithGoal=answerGuideConversationReturnWithGoal(original,opt.history,opt);if(guideReturnWithGoal)return guideReturnWithGoal;
+
+    var pausedFeatureFollowup=answerPausedGuideFeatureFollowup(original,opt.history);if(pausedFeatureFollowup)return pausedFeatureFollowup;
 
     if(guideConversationReturnCue(original)){
       var guideReturn=answerGuideConversationReturn(opt.history);if(guideReturn)return guideReturn;

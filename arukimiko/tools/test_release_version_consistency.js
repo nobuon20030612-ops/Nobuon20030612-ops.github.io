@@ -11,7 +11,7 @@ check('loader public shared version',loader.includes("version:'"+release+"-local
 check('loader metrics version',loader.includes("version:'"+release+"'"));
 check('normal bootstrap version',bootstrap.includes("var VERSION='"+release+"';"));
 check('hard bootstrap version',hard.includes("var VERSION='"+release+"';"));
-check('site guide internal version',guide.includes("var VERSION='3.25.0';"));
+check('site guide internal version',guide.includes("var VERSION='3.30.0';"));
 check('bot internal version',bot.includes("var VERSION='3.34.0';"));
 check('conversation internal version',conversation.includes("var VERSION='3.13.0';"));
 check('smalltalk internal version',smalltalk.includes("var VERSION='3.12.0-dev';"));
