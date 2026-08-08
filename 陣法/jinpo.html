@@ -1621,6 +1621,17 @@ document.getElementById("masterStatus").innerHTML =
 s.loadedFiles.map(f=>`${esc(f.sourceName)}: ${f.added}件`).join("<br>");
 renderMasterResult();
 }
+let jinpoTotalResultScrollTimer = 0;
+function scrollToTotalStatResultOnce(delay=0){
+clearTimeout(jinpoTotalResultScrollTimer);
+jinpoTotalResultScrollTimer = setTimeout(()=>{
+const el = document.getElementById("totalStatResult");
+if(!el || typeof el.scrollIntoView !== "function") return;
+el.scrollIntoView({behavior:"smooth", block:"center"});
+}, Math.max(0, Number(delay) || 0));
+}
+window.__jinpoScrollToTotalStatResultOnce = scrollToTotalStatResultOnce;
+
 function renderSavedFormations(){
 const box = document.getElementById("savedFormations");
 if(!box || !window.JinpoInternalSave) return;
@@ -1655,7 +1666,11 @@ formationSelect.value = item.formationName;
 renderSlots();
 renderFormation(null);
 calculate();
-setTimeout(()=>{ try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') window.__jinpoRefreshCombinedAfterPlacementChange({source:'saved'}); }catch(e){} },0);
+setTimeout(()=>{
+let refreshPromise = null;
+try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') refreshPromise = window.__jinpoRefreshCombinedAfterPlacementChange({source:'saved'}); }catch(e){}
+Promise.resolve(refreshPromise).finally(()=>{ scrollToTotalStatResultOnce(0); });
+},0);
 }));
 }
 function currentFormationState(){
@@ -1687,7 +1702,11 @@ if(hero) placement[idx+1] = hero;
 }
 renderSlots();
 calculate();
-setTimeout(()=>{ try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') window.__jinpoRefreshCombinedAfterPlacementChange({source:'share'}); }catch(e){} },0);
+setTimeout(()=>{
+let refreshPromise = null;
+try{ if(typeof window.__jinpoRefreshCombinedAfterPlacementChange==='function') refreshPromise = window.__jinpoRefreshCombinedAfterPlacementChange({source:'share'}); }catch(e){}
+Promise.resolve(refreshPromise).finally(()=>{ scrollToTotalStatResultOnce(0); });
+},0);
 }
 function loadShareFromUrl(){
 const p = new URLSearchParams(location.search);
@@ -5787,6 +5806,7 @@ document.addEventListener("click", function(ev){
       if(mode) mode.textContent = "DB未登録 / 新式倍率CSV式で計算中";
       recalcOnceFix(30);
     }
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(120); }catch(e){}
     return true;
   };
 
@@ -6252,7 +6272,10 @@ document.addEventListener("click", function(ev){
     var result = currentResult();
     try{ if(result && typeof renderFormation === "function") renderFormation(result); }catch(e){}
     try{ if(result && typeof renderResults === "function") renderResults(result); }catch(e){}
-    loadMultipliers().then(function(){ drawFixedFormula(result || currentResult()); });
+    loadMultipliers().then(function(){
+      drawFixedFormula(result || currentResult());
+      try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === "function") window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
+    });
     return true;
   }
 
@@ -8661,6 +8684,7 @@ body{padding-top:0 !important;}
     }
     try{renderTopBreakdown();}catch(e){}
     try{updateNote();}catch(e){}
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
     return true;
   };
   var lastActivationResultForBonus = null;
@@ -8900,6 +8924,7 @@ body{padding-top:0 !important;}
       console.warn('転生＆見聞録＆鬼神石 反映計算なし', {hasBonus:hasBonus(), multipliers:bonusMultiplierMap.size, result:currentActivationResultForBonus()});
     }
     closeModal();
+    try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
     return stats;
   }
   function applyBonusSettings(){
@@ -9285,7 +9310,13 @@ body{padding-top:0 !important;}
       deferBonusPlacementRefresh();
       var refreshPromise=recalcBonusCombinedPair();
       window.__jinpoLastCombinedRefreshPromise=refreshPromise;
-      if(loadingToken) Promise.all([Promise.resolve(ret),refreshPromise]).finally(function(){hideGlobalAllMaxLoading(loadingToken);});
+      var swapDonePromise=Promise.all([Promise.resolve(ret),refreshPromise]);
+      swapDonePromise.then(function(){
+        try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
+      },function(){
+        try{ if(typeof window.__jinpoScrollToTotalStatResultOnce === 'function') window.__jinpoScrollToTotalStatResultOnce(0); }catch(e){}
+      });
+      if(loadingToken) swapDonePromise.finally(function(){hideGlobalAllMaxLoading(loadingToken);});
       return ret;
     };
     window.applyReachSwapCandidate.__eiketsuKishinsekiReachRefreshWrapped=true;
