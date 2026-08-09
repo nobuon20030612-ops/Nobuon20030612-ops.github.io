@@ -14,10 +14,10 @@ function session(){const h=[];return{async ask(q){h.push({role:'user',text:q});c
 function monkyoku(r){return !!(r&&r.links&&r.links.length===1&&/stone=26#monkyoku/.test(r.links[0].url||''));}
 (async()=>{
   let s=session(),r=await s.ask('文曲の輝光');await s.ask('じゃあそれ開いて');r=await s.ask('開いたらまず何をすればいい？');
-  check('monkyoku post-open guidance preserves deep link',r.data&&r.data.sitePostOpenGuidance&&r.data.stoneName==='文曲'&&/紺碧・山吹・濡羽・朽葉/.test(r.answer||'')&&monkyoku(r),r);
+  check('monkyoku post-open guidance preserves deep link',r.data&&r.data.sitePostOpenGuidance&&r.data.stoneName==='文曲'&&/リンクを開くと.*「文曲」合成早見表/.test(r.answer||'')&&monkyoku(r),r);
 
   s=session();await s.ask('文曲の輝光');await s.ask('じゃあそれ開いて');r=await s.ask('次は？');
-  check('short next follows monkyoku link context',r.data&&r.data.sitePostOpenGuidance&&/文曲が開いた状態/.test(r.answer||'')&&monkyoku(r),r);
+  check('short next follows monkyoku link context',r.data&&r.data.sitePostOpenGuidance&&/リンクを開くと.*「文曲」合成早見表/.test(r.answer||'')&&monkyoku(r),r);
 
   s=session();await s.ask('文曲の輝光');r=await s.ask('このあとどうする？');
   check('guidance works directly after initial link',r.data&&r.data.sitePostOpenGuidance&&monkyoku(r),r);

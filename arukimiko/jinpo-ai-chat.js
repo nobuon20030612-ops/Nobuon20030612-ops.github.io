@@ -576,6 +576,67 @@
     var b=el('div','jinpoAiBubble'); var t=el('span','jinpoAiTyping'); t.innerHTML='<i></i><i></i><i></i>'; b.appendChild(t); row.appendChild(b); messages.appendChild(row); scrollBottom(); return row;
   }
   function scrollBottom(){ requestAnimationFrame(function(){ messages.scrollTop=messages.scrollHeight; }); }
+
+  // サイト案内で移動先が一意に決まった場合も、勝手には移動しない。
+  // 会話内リンクは常に残し、実際の移動は既存の「はい／いいえ」確認モーダルでユーザーが選ぶ。
+  function guideNavigationTarget(result){
+    var data=result&&result.data&&typeof result.data==='object'?result.data:null;
+    if(!data||data.siteOpen!==true)return null;
+    var links=Array.isArray(result.links)?result.links:[];if(links.length!==1)return null;
+    try{
+      var raw=String(links[0]&&links[0].url||'').trim();if(!raw)return null;
+      var url=new URL(raw,location.href);if(!/^https?:$/i.test(url.protocol))return null;
+      var label=String(links[0]&&links[0].label||'ページ').trim()||'ページ';
+      var external=url.origin!==location.origin;
+      var message='';
+      if(data.siteInternal==='stone'&&data.stoneName){
+        message='星海の荒石の「'+String(data.stoneName)+'」合成早見表へ移動しますか？';
+      }else{
+        var name=label.replace(/(?:を別タブで開く|を開く|ページを開く|開く)$/,'').trim()||label;
+        message=external?'「'+name+'」を別タブで開きますか？':'「'+name+'」へ移動しますか？';
+      }
+      return {href:url.href,external:external,message:message};
+    }catch(e){return null;}
+  }
+  function ensureGuideNavigationConfirmFallback(){
+    var back=document.getElementById('arukimikoSiteNavConfirmBackdrop');if(back)return back;
+    if(!document.getElementById('arukimiko-site-nav-confirm-style')){
+      var st=document.createElement('style');st.id='arukimiko-site-nav-confirm-style';
+      st.textContent='#arukimikoSiteNavConfirmBackdrop{position:fixed;inset:0;z-index:2147483646;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;background:rgba(0,0,0,.76);backdrop-filter:blur(2px)}#arukimikoSiteNavConfirmBackdrop.isOpen{display:flex}.arukimikoSiteNavConfirmBox{width:min(620px,94vw);overflow:hidden;border:2px solid #e7bd5c;border-radius:18px;background:linear-gradient(180deg,#2b170d,#100b07 82%);box-shadow:0 24px 80px rgba(0,0,0,.72),0 0 30px rgba(231,189,92,.28)}.arukimikoSiteNavConfirmHead{padding:17px 20px;border-bottom:1px solid rgba(231,189,92,.42);background:linear-gradient(90deg,rgba(122,33,24,.92),rgba(42,22,9,.96));color:#ffe8a6;font-size:25px;font-weight:1000;text-align:center;letter-spacing:.03em}.arukimikoSiteNavConfirmMessage{padding:26px 24px 20px;color:#fff3d1;font-size:20px;font-weight:800;line-height:1.65;text-align:center;white-space:pre-line}.arukimikoSiteNavConfirmActions{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 22px 22px}.arukimikoSiteNavConfirmBtn{min-height:58px;border:2px solid #e7bd5c!important;border-radius:12px!important;font-size:21px!important;font-weight:1000!important;letter-spacing:.05em!important;cursor:pointer!important}.arukimikoSiteNavConfirmNo{background:linear-gradient(#3b3328,#17120d)!important;color:#f7e8c1!important}.arukimikoSiteNavConfirmYes{background:linear-gradient(#a83224,#63150f)!important;color:#fff4d5!important;box-shadow:0 0 16px rgba(255,67,43,.34)!important}.arukimikoSiteNavConfirmBtn:hover,.arukimikoSiteNavConfirmBtn:focus-visible{filter:brightness(1.18)!important;box-shadow:0 0 20px rgba(231,189,92,.54)!important;outline:none!important}@media(max-width:760px){.arukimikoSiteNavConfirmHead{font-size:21px}.arukimikoSiteNavConfirmMessage{font-size:17px;padding:20px 16px}.arukimikoSiteNavConfirmActions{gap:10px;padding:0 14px 16px}.arukimikoSiteNavConfirmBtn{min-height:54px;font-size:18px!important}}';
+      (document.head||document.documentElement).appendChild(st);
+    }
+    back=document.createElement('div');back.id='arukimikoSiteNavConfirmBackdrop';
+    back.innerHTML='<div class="arukimikoSiteNavConfirmBox" role="dialog" aria-modal="true" aria-labelledby="arukimikoSiteNavConfirmTitle" aria-describedby="arukimikoSiteNavConfirmMessage"><div id="arukimikoSiteNavConfirmTitle" class="arukimikoSiteNavConfirmHead">ページ移動の確認</div><div id="arukimikoSiteNavConfirmMessage" class="arukimikoSiteNavConfirmMessage"></div><div class="arukimikoSiteNavConfirmActions"><button type="button" class="arukimikoSiteNavConfirmBtn arukimikoSiteNavConfirmNo">いいえ</button><button type="button" class="arukimikoSiteNavConfirmBtn arukimikoSiteNavConfirmYes">はい</button></div></div>';
+    document.body.appendChild(back);return back;
+  }
+  function askGuideNavigationYesNo(message){
+    if(typeof window.__jinpoAskYesNo==='function'){
+      try{return Promise.resolve(window.__jinpoAskYesNo({title:'ページ移動の確認',message:String(message||'ページへ移動しますか？')})).then(function(ok){return !!ok;});}catch(e){}
+    }
+    var back=ensureGuideNavigationConfirmFallback(),msg=back.querySelector('#arukimikoSiteNavConfirmMessage');if(msg)msg.textContent=String(message||'ページへ移動しますか？');
+    back.classList.add('isOpen');var last=document.activeElement;
+    return new Promise(function(resolve){
+      var no=back.querySelector('.arukimikoSiteNavConfirmNo'),yes=back.querySelector('.arukimikoSiteNavConfirmYes'),done=false;
+      function finish(ok){if(done)return;done=true;back.classList.remove('isOpen');no.removeEventListener('click',onNo);yes.removeEventListener('click',onYes);back.removeEventListener('click',onBack);document.removeEventListener('keydown',onKey);try{if(last&&typeof last.focus==='function')last.focus();}catch(e){}resolve(!!ok);}
+      function onNo(){finish(false);}function onYes(){finish(true);}function onBack(ev){if(ev.target===back)finish(false);}function onKey(ev){if(ev.key==='Escape'){ev.preventDefault();finish(false);}}
+      no.addEventListener('click',onNo);yes.addEventListener('click',onYes);back.addEventListener('click',onBack);document.addEventListener('keydown',onKey);setTimeout(function(){try{no.focus();}catch(e){}},0);
+    });
+  }
+  function scheduleGuideNavigationConfirmation(result){
+    var target=guideNavigationTarget(result);if(!target)return false;
+    setTimeout(function(){
+      askGuideNavigationYesNo(target.message).then(function(ok){
+        if(!ok)return;
+        try{
+          if(target.external){var w=window.open(target.href,'_blank','noopener,noreferrer');if(w)try{w.opener=null;}catch(e){}}
+          else if(window.location&&typeof window.location.assign==='function')window.location.assign(target.href);
+          else window.location.href=target.href;
+        }catch(e){if(!target.external)try{window.location.href=target.href;}catch(ignore){}}
+      });
+    },80);
+    return true;
+  }
+
   function setBusy(v){
     busy=!!v;
     sendBtn.disabled=busy;
@@ -799,6 +860,7 @@
       }
       addBubble('assistant',result.answer||'回答を取得できませんでした。',{sources:result.sources||[],links:result.links||[],mode:result.mode||'',data:historyData});
       setBrainStatus('案内・検索OK',String(result.mode||'歩き巫女'));
+      scheduleGuideNavigationConfirmation(result);
     }catch(err){
       if(typing&&typing.parentNode)typing.remove();
       addBubble('assistant',humanError(err));

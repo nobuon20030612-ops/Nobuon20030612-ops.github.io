@@ -26,6 +26,7 @@ const ambiguous=route('文曲');
 check('bare 文曲 remains available to other domains',!ambiguous.handled||!(ambiguous.data&&ambiguous.data.siteInternal==='stone'),ambiguous);
 const contextual=route('じゃあ文曲は',{history:[{role:'assistant',text:'星海の荒石はこちらです。',meta:{data:{siteItem:'seikai'},links:[{url:'https://example.test/seikai.html'}]}}]});
 check('contextual 文曲',contextual.handled&&contextual.data&&contextual.data.stoneId===26,contextual);
-check('文曲 answer is helpful',/紺碧.*山吹.*濡羽.*朽葉/.test(route('文曲の輝光').answer||''),route('文曲の輝光'));
+check('bare 文曲 keeps selected-stone link without auto-navigation or over-explaining',/星海の荒石の「文曲」合成早見表はこちらです/.test(route('文曲の輝光').answer||'')&&route('文曲の輝光').data&&route('文曲の輝光').data.siteOpen===true&&!(route('文曲の輝光').data.siteAutoNavigate===true)&&!/紺碧.*山吹.*濡羽.*朽葉/.test(route('文曲の輝光').answer||''),route('文曲の輝光'));
+check('explicit recipe request includes details',/紺碧.*山吹.*濡羽.*朽葉/.test(route('文曲の作り方を見たい').answer||''),route('文曲の作り方を見たい'));
 console.log(`SEIKAI NATURAL LINKS: ${pass} / ${pass+fail} PASS`);
 if(fail)process.exit(1);

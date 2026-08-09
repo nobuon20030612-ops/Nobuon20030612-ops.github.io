@@ -1489,7 +1489,7 @@
     var data=copyGuideLinkContextData(prior.data,{siteGuideConversationReturn:true,siteGuideReturnFromPause:prior.pauseTurns>0,siteGuidePauseTurns:prior.pauseTurns,siteExactLinkRecall:true}),answer='',items=uniqueCandidateItems(prior.items),returnLead=prior.pauseTurns>1?'世間話の前の案内へ戻りますね。':'さっきの案内に戻りました。';
     var stoneName=prior.links.length===1?stoneNameFromGuideUrl(prior.links[0]&&prior.links[0].url):'';
     if(stoneName){
-      answer=returnLead+' 星海の荒石の「'+stoneName+'」を開いた状態はこちらです。';
+      answer=returnLead+' 星海の荒石の「'+stoneName+'」はこちらから開けます。';
       data.siteItem='seikai';data.stoneName=stoneName;
     }else if(items.length>1){
       var selected=data.selectedSiteItem&&BY_ID[data.selectedSiteItem];
@@ -1573,7 +1573,7 @@
   }
   function guideLinkDestination(linkValue){
     var url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url);
-    if(stoneName)return '星海の荒石で'+stoneName+'が開いた状態';
+    if(stoneName)return '星海の荒石の「'+stoneName+'」表示';
     var item=itemFromUrl(url);if(item)return '「'+item.name+'」ページ';
     var label=String(linkValue&&linkValue.label||'リンク先').replace(/を開く$/,'');
     return '「'+label+'」';
@@ -1689,8 +1689,7 @@
     }
     var linkValue=prior.links[0],url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url),item=itemFromUrl(url),answer='';
     if(stoneName){
-      answer=stoneName+'が開いた状態です。合成早見表で、'+stoneName+'の材料と完成能力を確認してください。';
-      if(stoneName==='文曲')answer+=' 文曲の輝光は、紺碧・山吹・濡羽・朽葉の星光（金）を合成します。完成時は生命1500、知力250です。';
+      answer='リンクを開くと、星海の荒石の「'+stoneName+'」合成早見表が表示されます。そこで材料と完成能力を確認できます。';
       data.siteItem='seikai';data.siteInternal='stone';data.stoneName=stoneName;
     }else if(item){
       var usage=usageOf(item);
@@ -1730,8 +1729,8 @@
     }
     var linkValue=prior.links[0],url=String(linkValue&&linkValue.url||''),stoneName=stoneNameFromGuideUrl(url),item=itemFromUrl(url),answer='';
     if(stoneName){
-      if(intent==='inputs')answer='数値の入力はありません。'+stoneName+'が開いた状態なので、表示された説明画像で材料と完成能力を確認します。';
-      else if(intent==='operation')answer=stoneName+'がすでに開いています。そのまま説明画像を確認し、別の荒石を見る時だけ上の名前ボタンで切り替えます。';
+      if(intent==='inputs')answer='数値の入力はありません。リンク先の「'+stoneName+'」合成早見表で材料と完成能力を確認します。';
+      else if(intent==='operation')answer='リンクを開くと「'+stoneName+'」の合成早見表が表示されます。別の荒石を見る時は、上の名前ボタンで切り替えます。';
       else answer=stoneName+'の輝光に必要な材料と、完成時の能力が分かります。';
       if(stoneName==='文曲'&&intent==='result')answer+=' 文曲は紺碧・山吹・濡羽・朽葉の星光（金）を合成し、完成時は生命1500、知力250です。';
       data.siteItem='seikai';data.siteInternal='stone';data.stoneName=stoneName;data.siteFeature=intent==='inputs'?'inputs':intent;
@@ -1802,7 +1801,7 @@
     var explicit=/(?:星海|荒石|輝光|星光|微光|合成|作り方|つくり方|材料|レシピ)/.test(t);
     var possessive=new RegExp('^'+m[1]+'(?:の|って|とは)[？?。！!]*$').test(t);
     if(!contextual&&!explicit&&!possessive)return null;
-    return {name:m[1],stone:SEIKAI_STONES[m[1]]};
+    return {name:m[1],stone:SEIKAI_STONES[m[1]],query:t};
   }
   function seikaiStoneLink(request){
     var x=request.stone;
@@ -1852,9 +1851,10 @@
     return {handled:true,mode:'サイト総合案内',answer:currentName+'以外なら、'+names.join('・')+'があります。どれを見たいですか？',links:links,data:{siteItem:'seikai',siteFeature:'stone_alternatives',siteStoneAlternatives:true,currentStoneName:currentName,needsClarification:true}};
   }
   function seikaiStoneAnswer(request){
-    var name=request.name,answer=name+'の輝光ですね。従来は「'+name+'」のボタンを押して切り替えていましたが、今回は星海の荒石の合成早見表を、'+name+'が開いた状態で見られるようにしました。';
-    if(name==='文曲')answer+=' 文曲の輝光は、紺碧・山吹・濡羽・朽葉の星光（金）を合成します。完成時は生命1500、知力250です。';
-    return {handled:true,mode:'サイト総合案内',answer:answer,links:[seikaiStoneLink(request)],data:{siteItem:'seikai',siteInternal:'stone',siteFeature:'inputs',siteFeatures:['inputs'],stoneName:name,stoneId:request.stone.id,siteOpen:true,verifiedSiteSource:true}};
+    var name=request.name,q=normalizeInput(request.query||''),detail=/(?:作り方|つくり方|材料|レシピ|合成|能力|数値|生命|知力|ステータス|何が必要|なにが必要)/.test(q);
+    var answer=name+'の輝光ですね。星海の荒石の「'+name+'」合成早見表はこちらです。';
+    if(detail&&name==='文曲')answer+=' 文曲の輝光は、紺碧・山吹・濡羽・朽葉の星光（金）を合成します。完成時は生命1500、知力250です。';
+    return {handled:true,mode:'サイト総合案内',answer:answer,links:[seikaiStoneLink(request)],data:{siteItem:'seikai',siteInternal:'stone',siteFeature:detail?'inputs':'',siteFeatures:detail?['inputs']:[],stoneName:name,stoneId:request.stone.id,siteOpen:true,verifiedSiteSource:true}};
   }
   function sourcePage(item){return item&&SOURCE_PAGES[item.id]||null;}
   function usageOf(item){var page=sourcePage(item);return S(page&&page.usage||USAGE_BY_ID[item&&item.id]||item&&item.desc||'');}
@@ -4088,7 +4088,7 @@
       if(bareAnswer)return bareAnswer;
     }
 
-    if(/(?:トップ|ホーム|最初のページ)(?:へ|に)?(?:戻|行|移動|開)|トップページ(?:どこ|開いて|へ)|トップ(?:に)?戻りたい/.test(t))return {handled:true,mode:'サイト総合案内',answer:'トップページはこちらなのですよ。',links:[homeLink()],data:{siteItem:'home'}};
+    if(/(?:トップ|ホーム|最初のページ)(?:へ|に)?(?:戻|行|移動|開)|トップページ(?:どこ|開いて|へ)|トップ(?:に)?戻りたい/.test(t))return {handled:true,mode:'サイト総合案内',answer:'トップページはこちらなのですよ。',links:[homeLink()],data:{siteItem:'home',siteOpen:true}};
 
     if(/(?:ここ|このページ|これ).*(?:何|なに|どんな|使い方|できる|ページ|何をする)/.test(t)&&cur){
       return explainItem(cur,false);
@@ -4262,6 +4262,7 @@
         comparedAnswer.links=[itemLink(openCompared)];
         comparedAnswer.answer+='\n「'+openCompared.name+'」だけ開けるようにしました。';
         comparedAnswer.data.selectedSiteItem=openCompared.id;
+        comparedAnswer.data.siteOpen=true;
       }
       return comparedAnswer;
     }
@@ -4271,7 +4272,11 @@
 
     if(item&&childrenOf(item).length&&hierarchyCue(t))return candidateClarification(childrenOf(item),'「'+item.name+'」の次は、');
 
-    if(item&&pageHelpCue(t,item,recent||cur))return explainItem(item,true);
+    if(item&&pageHelpCue(t,item,recent||cur)){
+      var pageHelpResult=explainItem(item,true);
+      if(pageHelpResult&&pageHelpResult.data&&(hasNavigationCue(t)||/(?:開いて|開けて|移動|行きたい|連れて|見せて|出して)/.test(t)))pageHelpResult.data.siteOpen=true;
+      return pageHelpResult;
+    }
 
     var desire=/(?:見たい|見せて|見せろ|見られる|使いたい|やりたい|したい|してみたい|探したい|作りたい|つくりたい|開いて|開けて|出して|行きたい|どこ|どこから|連れて|見たいんだけど|開きたいんだけど|のやつ|の方|のほう)/.test(t);
     var factSpecific=factSpecificCue(t);
@@ -4289,7 +4294,7 @@
     if(item){
       if(childrenOf(item).length&&/次|どれ|選/.test(t))return candidateClarification(childrenOf(item),'「'+item.name+'」の次は、');
       var suffix=item.external?'別タブで開けます。':item.id==='video'?'トップページの動画再生ボタンを押してください。':'こちらから開けます。';
-      return {handled:true,mode:'サイト総合案内',answer:'「'+item.name+'」ですね。'+item.desc+' '+suffix,links:[itemLink(item)],data:{siteItem:item.id,normalized:t,matched:detailed.matched||''}};
+      return {handled:true,mode:'サイト総合案内',answer:'「'+item.name+'」ですね。'+item.desc+' '+suffix,links:[itemLink(item)],data:{siteItem:item.id,siteOpen:true,normalized:t,matched:detailed.matched||''}};
     }
 
     return {handled:true,mode:'サイト総合案内',answer:'どのページへ行きたいか、目的をもう少しだけ教えてください。たとえば「6人編成を探したい」「家臣のステを計算したい」「桶狭間のカウンターを見たい」のように言えば案内できるのですよ。',links:[homeLink()],data:{needsClarification:true}};

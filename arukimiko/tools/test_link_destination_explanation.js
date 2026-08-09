@@ -13,8 +13,8 @@ function compact(r){const d=r.data||{};return{mode:r.mode||'',links:r.links||[],
 function session(){const h=[];return{async ask(q){h.push({role:'user',text:q});const r=await B.handle({message:q,history:h.slice()});h.push({role:'assistant',text:r.answer||'',meta:compact(r)});return r;}};}
 (async()=>{
   let s=session(),r=await s.ask('文曲の輝光');r=await s.ask('これどこに飛ぶ？');
-  check('monkyoku destination is exact',r.data&&r.data.siteLinkDestinationExplanation&&/星海の荒石で文曲が開いた状態/.test(r.answer||'')&&r.links.length===1&&/stone=26#monkyoku/.test(r.links[0].url||''),r);
-  r=await s.ask('リンク先は？');check('destination explanation can repeat',r.data&&r.data.siteLinkDestinationExplanation&&/文曲が開いた状態/.test(r.answer||''),r);
+  check('monkyoku destination is exact',r.data&&r.data.siteLinkDestinationExplanation&&/星海の荒石の「文曲」表示/.test(r.answer||'')&&r.links.length===1&&/stone=26#monkyoku/.test(r.links[0].url||''),r);
+  r=await s.ask('リンク先は？');check('destination explanation can repeat',r.data&&r.data.siteLinkDestinationExplanation&&/「文曲」表示/.test(r.answer||''),r);
 
   s=session();await s.ask('8個選んで合計を見たい');r=await s.ask('このリンク何？');
   check('multiple destinations are mapped',r.data&&r.data.siteLinkDestinationCount===3&&/鬼神石/.test(r.answer||'')&&/九十九/.test(r.answer||'')&&/魔導結晶/.test(r.answer||'')&&r.links.length===3,r);
