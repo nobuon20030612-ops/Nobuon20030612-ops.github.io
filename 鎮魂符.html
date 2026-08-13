@@ -1070,8 +1070,8 @@ const SKILL_LIST_DATA = [
   {job:'鍛冶屋', name:'陽動乱射', need:'最大気合の約２０％', desc:'敵全体に間接攻撃を行いつつ注意を引きつける。自身に防御力に応じてダメージが軽減する結界を張る。'},
   {job:'薬師', name:'上騰命癒', need:'最大気合の約１５％', desc:'選択した味方１人を大回復。味方全体の生命力を回復し、物理・術耐性と生命力の最大値を上昇させる。'},
   {job:'傾奇者', name:'龍驤麟振', need:'最大気合の約２５％', desc:'敵単体に間接攻撃と自身の最高属性の術攻撃を行う。自身の最高属性の四象を上昇させ、すべての生命力ダメージが増加する地勢を宿らせる。'},
-  {job:'光', name:'光明の祝福', need:'資料に記載なし', item:'資料に記載なし', desc:'技能効果の詳細は添付資料に記載されていません。'},
-  {job:'闇', name:'暗闇の加護', need:'資料に記載なし', item:'資料に記載なし', desc:'技能効果の詳細は添付資料に記載されていません。'}
+  {job:'光', name:'光明の祝福', need:'最大気合の約１６％', desc:'味方全体の生命力を回復し、防御力・知力・魅力を上昇させる。'},
+  {job:'闇', name:'暗闇の加護', need:'最大気合の約２０％', desc:'味方全体の気合を回復し、攻撃力と器用さを上昇させる。'}
 ];
 const STORAGE_KEY = 'chinkonfu-equips-v1';
 const POSITIONS = ['頭','胴','左','腕','足','右','腰','首'];
@@ -1689,7 +1689,7 @@ function closeBonusList() {
 function renderSkillList() {
   const grid = $('#skillListGrid');
   if (!grid) return;
-  const order = ['僧','薬師','光','闇','忍者','陰陽師','傾奇者','侍','鍛冶屋','神職'];
+  const order = ['僧','薬師','忍者','陰陽師','傾奇者','侍','鍛冶屋','神職','光','闇'];
   const ordered = order.map(job => SKILL_LIST_DATA.find(item => item.job === job)).filter(Boolean);
   grid.innerHTML = ordered.map(item => {
     const jobClass = jobColumnClass(item.job);
