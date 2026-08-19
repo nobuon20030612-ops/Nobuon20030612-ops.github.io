@@ -2397,7 +2397,7 @@ box.innerHTML = `
 <button class="dbCountBtn ${selectedDbListBondCount===7?"active":""}" data-count="7" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(7)">7因縁</button>
 <button class="dbCountBtn ${selectedDbListBondCount===8?"active":""}" data-count="8" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(8)">8因縁</button>
 <button class="dbCountBtn ${selectedDbListBondCount===9?"active":""}" data-count="9" type="button" onclick="window.handleDbCountButtonClick&&window.handleDbCountButtonClick(9)">9因縁</button>
-<button class="dbCountBtn jinpoTenBondPlaceholder" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button>`;
+<div class="jinpoTenBondVisual"><img class="jinpoTenBondGuideImage" src="assets/jinpo-ten-bond-guide.png" alt="" aria-hidden="true" draggable="false"><button class="dbCountBtn jinpoTenBondPlaceholder" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button></div>`;
 box.querySelector("[data-grade3-toggle]")?.addEventListener("click", ()=>{
 grade3Cost6OnlyEnabled = !grade3Cost6OnlyEnabled;
 renderDbCountButtons();
@@ -3018,7 +3018,7 @@ const g = !!grade3Cost6OnlyEnabled;
 box.innerHTML = `<button class="dbGradeToggleBtn ${g?"active":""}" data-grade3-toggle="1" type="button">等級3以下 ${g?"ON":"OFF"}</button>` + [5,6,7,8,9].map(n=>{
 const active = (typeof selectedDbListBondCount !== "undefined" && selectedDbListBondCount === n) ? "active" : "";
 return `<button class="dbCountBtn ${active}" data-count="${n}" type="button">${n}因縁</button>`;
-}).join("") + `<button class="dbCountBtn jinpoTenBondPlaceholder" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button>`;
+}).join("") + `<div class="jinpoTenBondVisual"><img class="jinpoTenBondGuideImage" src="assets/jinpo-ten-bond-guide.png" alt="" aria-hidden="true" draggable="false"><button class="dbCountBtn jinpoTenBondPlaceholder" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button></div>`;
 box.querySelectorAll("button[data-count]").forEach(btn=>{
 btn.addEventListener("click", ()=>{
 try{ selectedDbListBondCount = Number(btn.dataset.count) || null; }catch(e){}
@@ -3714,6 +3714,51 @@ setTimeout(boot,1000);
 }
 </style>
 
+
+<style id="jinpo-ten-bond-guide-image-style">
+#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar{
+  grid-auto-rows:auto !important;
+}
+#dbCountButtons .jinpoTenBondVisual{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:6px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  align-self:end !important;
+}
+#dbCountButtons .jinpoTenBondGuideImage{
+  display:block !important;
+  width:92px !important;
+  height:auto !important;
+  max-width:88% !important;
+  max-height:138px !important;
+  object-fit:contain !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-drag:none !important;
+}
+#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.jinpoTenBondPlaceholder{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  height:52px !important;
+  min-height:52px !important;
+  margin:0 !important;
+}
+#dbCountButtons button[data-count="8"],
+#dbCountButtons button[data-count="9"]{
+  align-self:end !important;
+}
+@media(max-width:900px){
+  #dbCountButtons .jinpoTenBondVisual{gap:4px !important;}
+  #dbCountButtons .jinpoTenBondGuideImage{width:76px !important;max-height:114px !important;}
+  #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.jinpoTenBondPlaceholder{height:52px !important;min-height:52px !important;}
+}
+</style>
 <style id="jinpo-final-stable-search-apply-fix-style">#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar{display:grid !important;grid-template-columns:repeat(3,1fr) !important;grid-auto-rows:52px !important;gap:10px !important;width:420px !important;min-width:420px !important;max-width:420px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>button{display:flex !important;align-items:center !important;justify-content:center !important;width:100% !important;min-width:0 !important;height:52px !important;white-space:nowrap !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbGradeToggleBtn.active{background:#31521f !important;border-color:#71e49a !important;color:#ecffe1 !important;box-shadow:0 0 14px rgba(113,228,154,.35) !important}</style>
 
 
