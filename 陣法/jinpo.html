@@ -3716,32 +3716,37 @@ setTimeout(boot,1000);
 
 
 <style id="jinpo-ten-bond-guide-image-style">
-#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar{
-  grid-auto-rows:auto !important;
-}
 #dbCountButtons .jinpoTenBondVisual{
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:flex-end !important;
-  gap:6px !important;
+  position:relative !important;
+  display:block !important;
   width:100% !important;
   min-width:0 !important;
   max-width:100% !important;
+  height:52px !important;
+  min-height:52px !important;
+  margin-top:50px !important;
   align-self:end !important;
+  overflow:visible !important;
 }
 #dbCountButtons .jinpoTenBondGuideImage{
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  z-index:3 !important;
   display:block !important;
-  width:92px !important;
+  width:68px !important;
   height:auto !important;
-  max-width:88% !important;
-  max-height:138px !important;
+  max-width:none !important;
+  max-height:none !important;
   object-fit:contain !important;
+  transform:translateX(-50%) !important;
   pointer-events:none !important;
   user-select:none !important;
   -webkit-user-drag:none !important;
 }
 #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.jinpoTenBondPlaceholder{
+  position:relative !important;
+  z-index:1 !important;
   width:100% !important;
   min-width:0 !important;
   max-width:100% !important;
@@ -3752,11 +3757,12 @@ setTimeout(boot,1000);
 #dbCountButtons button[data-count="8"],
 #dbCountButtons button[data-count="9"]{
   align-self:end !important;
+  margin-top:50px !important;
 }
 @media(max-width:900px){
-  #dbCountButtons .jinpoTenBondVisual{gap:4px !important;}
-  #dbCountButtons .jinpoTenBondGuideImage{width:76px !important;max-height:114px !important;}
-  #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.jinpoTenBondPlaceholder{height:52px !important;min-height:52px !important;}
+  #dbCountButtons .jinpoTenBondVisual{margin-top:42px !important;}
+  #dbCountButtons .jinpoTenBondGuideImage{width:60px !important;}
+  #dbCountButtons button[data-count="8"],#dbCountButtons button[data-count="9"]{margin-top:42px !important;}
 }
 </style>
 <style id="jinpo-final-stable-search-apply-fix-style">#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar{display:grid !important;grid-template-columns:repeat(3,1fr) !important;grid-auto-rows:52px !important;gap:10px !important;width:420px !important;min-width:420px !important;max-width:420px !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>button{display:flex !important;align-items:center !important;justify-content:center !important;width:100% !important;min-width:0 !important;height:52px !important;white-space:nowrap !important;box-sizing:border-box !important}#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbGradeToggleBtn.active{background:#31521f !important;border-color:#71e49a !important;color:#ecffe1 !important;box-shadow:0 0 14px rgba(113,228,154,.35) !important}</style>
