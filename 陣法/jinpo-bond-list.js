@@ -1282,7 +1282,7 @@
     setTimeout(correctOwnedHeroJobMeta,80);
   }
   document.addEventListener('click',function(ev){
-    var t = ev.target && ev.target.closest ? ev.target.closest('#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroReliableGrid,[data-owned-reliable-key]') : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest('#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroSlotBtn4,#ownedHeroSlotBtn5,#ownedHeroSlotBtn6,#ownedHeroReliableGrid,[data-owned-reliable-key]') : null;
     if(t) scheduleOwnedHeroJobMetaFix();
   },true);
   document.addEventListener('input',function(ev){
