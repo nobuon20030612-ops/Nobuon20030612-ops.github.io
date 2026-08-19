@@ -1,16 +1,16 @@
 {
   "schema": "jinpo-generation-history/v1",
-  "generation_id": "gen_edfc3cac11ceda2e4ecce068",
-  "file": "data/generation_history/gen_edfc3cac11ceda2e4ecce068.json",
-  "persisted_at_utc": "2026-08-05T08:14:20.626002+00:00",
-  "persisted_at_jst": "2026-08-05T17:14:20.626002+09:00",
+  "generation_id": "gen_0556cabe29f071738f75dd68",
+  "file": "data/generation_history/gen_0556cabe29f071738f75dd68.json",
+  "persisted_at_utc": "2026-08-19T07:23:06.498440+00:00",
+  "persisted_at_jst": "2026-08-19T16:23:06.498440+09:00",
   "generation_mode": "full",
-  "heroes": 385,
+  "heroes": 388,
   "bonds": 91,
-  "full_records": 2079522,
-  "source_fingerprint_sha256": "e67ec75ffe658bda05a5e3c796e22ffc9c3b03a7147495e2fa0c822fef9e7523",
-  "generator_fingerprint_sha256": "c70200fa306ef4f14bdaa4d1ed483727afd7da4ecdb629bf9d3d71ac1026f832",
-  "artifact_set_sha256": "463c1c752aa50e6fc5e92b7b9b0793de5c190b956bf37e5944d192723db56caf",
-  "manifest_sha256": "b5680a33aeec0c4344ab07260450381e83598d0774a0f728f604882708704adb",
-  "integrity_sha256": "c2c16c12aaeac8074259af9559e9ed56112ac2d97372718f44fa44c5c07e39d2"
+  "full_records": 2203158,
+  "source_fingerprint_sha256": "5790b8ffa4adf91f4a518a51cd4853397ad1bb46fbca4de63ffd6ed276ad81b1",
+  "generator_fingerprint_sha256": "a6ed5828c9ac92b46bc28418673254315e5bac2107a34ed20fbd92834853e452",
+  "artifact_set_sha256": "e1f4b00da2f58a36a9c2b44e0f6180aad99a2a6d9076f0c4d84c207bcd865170",
+  "manifest_sha256": "2037608efa425509dc3ed36dd1ef68ae2e554e042b80a5858b306dad4d96e476",
+  "integrity_sha256": "6d5991ed350a139e8b91a2b2db02f5c00947a0de5e2291be81fac72c5369d243"
 }
