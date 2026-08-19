@@ -108,7 +108,7 @@
       #dbFormationList .jinpoStatGrid{display:grid !important;grid-template-columns:repeat(11,minmax(0,1fr)) !important;gap:3px !important;min-width:0 !important;width:100% !important;box-sizing:border-box !important}
       #dbFormationList .jinpoStatSortButton{appearance:none !important;width:100% !important;min-width:0 !important;height:30px !important;padding:3px 2px !important;margin:0 !important;border:1px solid rgba(255,255,255,.18) !important;border-radius:7px !important;background:#17110b !important;font-size:12px !important;font-weight:950 !important;line-height:1 !important;cursor:pointer !important;box-sizing:border-box !important;box-shadow:none !important;white-space:nowrap !important}
       #dbFormationList .jinpoStatSortButton:hover{filter:brightness(1.28) !important;transform:none !important}
-      #dbFormationList .dbStatRow>td{padding:3px 5px !important;background:rgba(0,0,0,.15)}
+      #dbFormationList .dbStatRow>td{padding:3px 5px !important;background:rgba(0,0,0,.15);border-bottom:5px solid #c58a2a !important}
       #dbFormationList .jinpoStatCell{display:flex;align-items:center;justify-content:center;min-width:0;min-height:26px;padding:2px 3px;border:1px solid transparent;border-radius:6px;box-sizing:border-box;font-size:15px;font-weight:950;line-height:1.05;white-space:nowrap;font-variant-numeric:tabular-nums}
       #dbFormationList .jinpoStatCell .jinpoStatCellName{display:none}
       #dbFormationList .jinpoCompatSep{display:none !important}
