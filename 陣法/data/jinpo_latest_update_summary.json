@@ -1,27 +1,32 @@
 {
   "schema": "jinpo-next-phase2-auto-update/v2",
   "source_file": "source-next/英傑一覧.csv",
-  "updated_at": "2026-08-05",
-  "last_added_hero": "大祝鶴(納涼)",
+  "updated_at": "2026-08-19",
+  "last_added_hero": "蒲生氏郷(能弁)",
   "new_registration_only": true,
   "new_heroes": [
     {
-      "番号": 385,
-      "internal_id": "EIK_0393",
-      "英傑名": "村上武吉"
+      "番号": 387,
+      "internal_id": "EIK_0395",
+      "英傑名": "太原雪斎(能弁)"
     },
     {
-      "番号": 386,
-      "internal_id": "EIK_0394",
-      "英傑名": "大祝鶴(納涼)"
+      "番号": 388,
+      "internal_id": "EIK_0396",
+      "英傑名": "六角義賢"
+    },
+    {
+      "番号": 389,
+      "internal_id": "EIK_0397",
+      "英傑名": "蒲生氏郷(能弁)"
     }
   ],
   "changed_existing": [],
   "generation": {
-    "full_records": 2079522,
-    "added_records": 281264,
+    "full_records": 2203158,
+    "added_records": 123636,
     "removed_records": 0,
-    "seconds": 359.17,
+    "seconds": 390.857,
     "full_regeneration": true,
     "generation_mode": "full"
   },

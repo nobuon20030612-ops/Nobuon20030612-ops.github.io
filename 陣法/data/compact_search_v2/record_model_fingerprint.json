@@ -1,9 +1,9 @@
 {
   "schema": "jinpo-compact-record-model-v3",
-  "fingerprint": "06eee3f9e0f06ce8d0a848ae26a10e255ae3f3bbf8f6684f45069d513817dd45",
+  "fingerprint": "8b0a4512111fef95700eabfff0d80eccb0556d276f663b736b7a3d9e27543214",
   "inputs": {
-    "data/jinpo_inen_master.csv": "36ecd4fc695dadf28047c20886af1723c03176440774b2b6188f53ed814d5572",
-    "data/91因縁_計算式_倍率展開.csv": "909ceae3cb839e2cd2b4646d147b55d014a20d9052683155eabcb249ff50feb0",
+    "data/jinpo_inen_master.csv": "0f1448893ab82379eaacf847d8ec18111c326795479024a2959689243d09662d",
+    "data/91因縁_計算式_倍率展開.csv": "c8202b35c511f42642c8d88730a8b3697c243c5e281cf80c05a910c838b5977f",
     "data/formation_bonus.csv": "567a44908c7794f51efee4c2105c78aca3d2d3405044ca593aacc1fbb1a44a99",
     "tools-next/rebuild_all_compact.py": "3a8657e1e3c29f116c8feeb0cb69d51126f4b7de32055187274945a41507ff88",
     "tools-next/factor4_optimizer.py": "8f54d2fd5be2454831d4b7003118628cd8756e85cf0cb47bac705473cf3fa0aa",
@@ -13,5 +13,5 @@
     "tools-next/rebuild_incremental_additions.py": "a91f71774b53bd165f29aea374e4dd67741448ebcfd1e19c3550c75adca8f056",
     "tools-next/audit_incremental_equivalence.py": "88bc80db2028c1dbfc006200c0eae9932c5934db8c685946236c4ef7154dedd0"
   },
-  "master_sha256": "b2ee55ee9a4e0ad33488a6a08c14ac21ff899b0f41f5ee18a538cdcaed29d1dd"
+  "master_sha256": "4974f566efb288ed36a6d677fa4fbd57c16eface030d30e5561b7d4621f06af9"
 }
