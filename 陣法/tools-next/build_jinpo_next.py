@@ -456,9 +456,8 @@ def main():
             'function findHeroByInternalId', 'heroFactor4IdentityKey', 'data-hero-internal-id',
             'Number(a.heroIndex) === rel', 'function activatedLinesText(act)',
             'return lookupPromise;', 'swapApplySeq=0', 'Promise.resolve(ret).catch',
-            'if(applySeq===swapApplySeq) hideSwapLoading()',
             'function bonusHeroInternalId(hero)', 'function bonusRowInternalIds(row)',
-            'function bonusHeroByInternalId(id)', "if(ret && typeof ret.then==='function')",
+            'function bonusHeroByInternalId(id)',
             'id="jinpoGlobalResetBtn"', 'window.__jinpoAskYesNo=function(opts)',
             'window.__jinpoPerformGlobalReset=performGlobalReset', 'window.__jinpoClearExcludedHeroes = function(opts)',
             "jinpo_excluded_hero_internal_ids_v2", 'window.__jinpoGetExcludedHeroInternalIds = getList',
@@ -481,6 +480,78 @@ def main():
             "['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']",
         ],
     }
+    # 差替まわりは、過去のソース文字列そのものではなく安全条件を監査する。
+    # 空白・改行の変更では止めないが、世代/トークン/非同期完了待ちのいずれかが欠けたら停止する。
+    def guard_section(start_pattern: str, end_pattern: str, label: str) -> str:
+        start = re.search(start_pattern, index_text, re.S)
+        if not start:
+            fail(f'{label}: 開始位置が見つかりません', report)
+        end = re.search(end_pattern, index_text[start.end():], re.S)
+        if not end:
+            fail(f'{label}: 終了位置が見つかりません', report)
+        return index_text[start.start():start.end() + end.start()]
+
+    swap_loading_section = guard_section(
+        r'function\s+showSwapLoading\s*\(\s*\)',
+        r'function\s+openModal\s*\(\s*slot\s*\)',
+        '差替ローディング安全監査',
+    )
+    swap_apply_section = guard_section(
+        r'function\s+applyCandidate\s*\(\s*id\s*\)',
+        r'function\s+schedule\s*\(\s*delay\s*\)',
+        '差替適用安全監査',
+    )
+
+    loading_patterns = [
+        (r'token\s*=\s*\+\+swapLoadingVisualSeq\s*;', '表示トークンの世代更新'),
+        (r'loadingToken\s*=\s*String\s*\(\s*token\s*\)', '表示トークンの保存'),
+        (r'function\s+hideSwapLoading\s*\(\s*token\s*\)', 'トークン指定の解除関数'),
+    ]
+    for pattern, label in loading_patterns:
+        if not re.search(pattern, swap_loading_section, re.S):
+            fail(f'差替ローディング安全監査: {label}が欠落', report)
+
+    stale_token_pattern = re.compile(
+        r'if\s*\(\s*token\s*&&\s*String\s*\(\s*el\.dataset\.loadingToken\s*\|\|\s*[\"\']{2}\s*\)'
+        r'\s*!==\s*String\s*\(\s*token\s*\)\s*\)\s*return\s*;',
+        re.S,
+    )
+    if len(stale_token_pattern.findall(swap_loading_section)) < 2:
+        fail('差替ローディング安全監査: 古い表示トークンの即時/遅延拒否が不足', report)
+
+    apply_patterns = [
+        (r'applySeq\s*=\s*\+\+swapApplySeq\s*;', '差替世代の更新'),
+        (r'loadingToken\s*=\s*showSwapLoading\s*\(\s*\)\s*;', '表示トークンの取得'),
+        (r'combinedPromise\s*=\s*window\.__jinpoLastCombinedRefreshPromise\s*\|\|\s*null', '込み合計更新Promiseの取得'),
+        (r'Promise\.resolve\s*\(\s*ret\s*\)', '差替本体の完了待ち'),
+        (r'Promise\.resolve\s*\(\s*combinedPromise\s*\)', '込み合計更新の完了待ち'),
+        (r'if\s*\(\s*applySeq\s*===\s*swapApplySeq\s*\)\s*hideSwapLoading\s*\(\s*loadingToken\s*\)', '最新世代＋同一トークンでの解除'),
+    ]
+    apply_positions = []
+    for pattern, label in apply_patterns:
+        match = re.search(pattern, swap_apply_section, re.S)
+        if not match:
+            fail(f'差替適用安全監査: {label}が欠落', report)
+        apply_positions.append(match.start())
+    if apply_positions != sorted(apply_positions) or len(set(apply_positions)) != len(apply_positions):
+        fail('差替適用安全監査: 世代更新→差替完了→込み合計完了→表示解除の順序が崩れています', report)
+
+    preview_section = guard_section(
+        r'var\s+prevReachStable\s*=\s*window\.applyReachSwapCandidate\s*;',
+        r'document\.addEventListener\s*\(\s*[\"\']click[\"\']',
+        '差替後プレビュー同期監査',
+    )
+    preview_patterns = [
+        (r'prevReachStable\.apply\s*\(\s*this\s*,\s*arguments\s*\)', '元差替処理の実行'),
+        (r'syncRegisteredHitPreview\s*\(\s*\)', '即時同期'),
+        (r'if\s*\(\s*ret\s*&&\s*typeof\s+ret\.then\s*===\s*[\"\']function[\"\']\s*\)', 'Promise/thenable判定'),
+        (r'ret\.then\s*\(\s*function\s*\(\s*\)\s*\{\s*syncRegisteredHitPreview\s*\(\s*\)', '非同期完了後の再同期'),
+        (r'return\s+ret\s*;', '元の戻り値維持'),
+    ]
+    for pattern, label in preview_patterns:
+        if not re.search(pattern, preview_section, re.S):
+            fail(f'差替後プレビュー同期監査: {label}が欠落', report)
+
     for name, fragments in required_function_fragments.items():
         for frag in fragments:
             if frag not in texts[name]:
@@ -526,6 +597,8 @@ def main():
         'factor4_global_minimum_plan': True,
         'swap_loading_waits_for_exact_lookup': True,
         'swap_loading_stale_completion_guard': True,
+        'swap_loading_token_generation_guard': True,
+        'registered_preview_async_refresh_guard': True,
         'bonus_fallback_internal_id_first': True,
         'bonus_recalc_after_exact_lookup': True,
         'kenbun_job_uses_master_job_column_directly': True,
