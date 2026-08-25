@@ -2803,12 +2803,15 @@ if(autoFillBtn){ autoFillBtn.remove(); }
 document.getElementById("clearBtn").addEventListener("click", ()=>{
 placement = {}; renderSlots(); renderFormation(null); clearAppliedDbRowDisplay(); document.getElementById("summary").innerHTML=""; document.getElementById("activatedList").innerHTML=""; document.getElementById("reachList").innerHTML=""; document.getElementById("lineDetails").innerHTML=""; document.getElementById("masterResult").innerHTML=""; if(document.getElementById("statIncreaseResult")) document.getElementById("statIncreaseResult").innerHTML=""; document.getElementById("totalStatResult").innerHTML=""; if(document.getElementById("totalEffectMini")) document.getElementById("totalEffectMini").innerHTML=""; if(document.getElementById("bondValuePanel")) document.getElementById("bondValuePanel").innerHTML="";
 });
-function handleFormationSelectionChanged(){
+function handleFormationSelectionChanged(event){
 syncFormationSelectToCanonical();
-// 陣形だけを変更し、現在の検索条件・ソート・配置英傑・除外英傑を維持して再検索する。
+// 陣形だけを変更する。配置・除外・検索条件・因縁数・ソートは維持する。
 const activeBondCount = Number(selectedDbListBondCount || window.selectedDbListBondCount || 0);
 renderSlots();
 clearAppliedDbRowDisplay();
+// input は表示同期だけ。確定した change で1回だけ再計算・再検索する。
+if(event && event.type === "input") return;
+try{
 if([1,2,3,4,5,6].some(i=>placement[i])){
 calculate();
 }else{
@@ -2819,16 +2822,22 @@ document.getElementById("lineDetails").innerHTML = "";
 renderRealtimeTotalStats({activated:[]});
 renderFormation(null);
 }
-renderDbCountButtons();
+}catch(e){
+console.error("陣形変更時の配置再計算エラー", e);
+}
 if(activeBondCount >= 5 && activeBondCount <= 9){
 selectedDbListBondCount = activeBondCount;
 window.selectedDbListBondCount = activeBondCount;
-if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.renderCurrent === "function"){
-window.JINPO_FAST_SEARCH.renderCurrent({count:activeBondCount, preserveListSort:true, forceNormal:true});
+renderDbCountButtons();
+if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.rerunForFormationChange === "function"){
+window.JINPO_FAST_SEARCH.rerunForFormationChange(activeBondCount);
+}else if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.renderCurrent === "function"){
+Promise.resolve().then(()=>window.JINPO_FAST_SEARCH.renderCurrent({count:activeBondCount, preserveListSort:true, forceNormal:true}));
 }else{
 renderDbFormationList();
 }
 }else{
+renderDbCountButtons();
 renderDbFormationList();
 }
 }
@@ -3112,7 +3121,7 @@ root.appendChild(div);
 }
 }
 function cleanOnFormationChange(){
-// 陣形変更では現在の配置・検索条件を消さず、表示だけ選択陣形へ同期する。
+// 陣形変更では配置・検索状態を消さず、表示同期だけ行う。再検索は専用経路で1回だけ実行する。
 cleanRenderFormation();
 cleanRenderCounts();
 }

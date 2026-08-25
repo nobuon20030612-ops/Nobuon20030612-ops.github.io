@@ -2,7 +2,7 @@
   'use strict';
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
-  var LIMIT=500,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='';
+  var LIMIT=500,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,seq=0,activeToken=0,activeWorkerToken=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='',formationRerunSerial=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false,searchStatMode='base';
   var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
@@ -409,6 +409,17 @@
     }catch(err){if(myToken!==activeToken)return true;console.error('統一コンパクト検索エラー',err);status.textContent='検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;}finally{if(myToken===activeToken)hideProgress();}
   }
 
+  function rerunForFormationChange(count){
+    var serial=++formationRerunSerial,c=Number(count||selectedCount()||0);
+    if(c<5||c>9||!form())return Promise.resolve(true);
+    setCount(c);
+    // 同じ change にぶら下がる全同期処理が完了した後、新しい陣形で検索を1回だけ実行する。
+    return Promise.resolve().then(function(){
+      if(serial!==formationRerunSerial)return true;
+      return renderCurrent({count:c,preserveListSort:true,forceNormal:true});
+    });
+  }
+
   function renderUnifiedCountButtons(){
     var box=q('dbCountButtons');if(!box)return;var c=recommendState.active?0:selectedCount(),g=gradeOn();
     box.classList.add('dbCountButtonBar');
@@ -454,7 +465,7 @@
       return ret;
     };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,runRecommended:function(stat){return renderRecommended({targetStat:stat});},getSearchStatMode:function(){return searchStatMode;},setSearchStatMode:function(mode){mode=String(mode||'base');searchStatMode=mode==='fullmax'?'fullmax':'base';syncSearchStatModeUi();return searchStatMode;},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
+    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,rerunForFormationChange:rerunForFormationChange,runRecommended:function(stat){return renderRecommended({targetStat:stat});},getSearchStatMode:function(){return searchStatMode;},setSearchStatMode:function(mode){mode=String(mode||'base');searchStatMode=mode==='fullmax'?'fullmax':'base';syncSearchStatModeUi();return searchStatMode;},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
       exitRecommendMode();selectedExclude=0;searchStatMode='base';syncSearchStatModeUi();listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();try{if(typeof window.__jinpoResetSumPrioritySort==='function')window.__jinpoResetSumPrioritySort(false);}catch(e){}renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';
