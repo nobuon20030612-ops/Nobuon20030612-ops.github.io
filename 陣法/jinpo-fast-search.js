@@ -388,7 +388,7 @@
     if(recommendState.active&&!recommendState.applyingFormation&&!opts.forceNormal)return renderRecommended({targetStat:recommendState.targetStat});
     if(recommendState.applyingFormation)return true;
     ensureEnhancementUi();setSwapStale(false);var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
-    listSort={key:'',dir:'desc'};
+    if(!opts.preserveListSort)listSort={key:'',dir:'desc'};
     if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
     if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
     if((c===5||c===6)&&!gradeOn()){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='5・6因縁は「等級3以下 ON」の時だけ検索できます。';setSummary(0,0);box.innerHTML='<div class="dbListNote">5・6因縁を検索する場合は「等級3以下」をONにしてください。</div>';return true;}

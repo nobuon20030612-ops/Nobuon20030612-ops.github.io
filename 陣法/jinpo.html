@@ -2805,21 +2805,32 @@ placement = {}; renderSlots(); renderFormation(null); clearAppliedDbRowDisplay()
 });
 function handleFormationSelectionChanged(){
 syncFormationSelectToCanonical();
-// 陣形変更時は配置を全リセット
-for(let i=1;i<=6;i++){
-placement[i] = null;
-}
-selectedDbListBondCount = null;
+// 陣形だけを変更し、現在の検索条件・ソート・配置英傑・除外英傑を維持して再検索する。
+const activeBondCount = Number(selectedDbListBondCount || window.selectedDbListBondCount || 0);
 renderSlots();
+clearAppliedDbRowDisplay();
+if([1,2,3,4,5,6].some(i=>placement[i])){
+calculate();
+}else{
 document.getElementById("summary").innerHTML = "";
 document.getElementById("activatedList").innerHTML = "";
 document.getElementById("reachList").innerHTML = "";
 document.getElementById("lineDetails").innerHTML = "";
 renderRealtimeTotalStats({activated:[]});
-clearAppliedDbRowDisplay();
 renderFormation(null);
+}
 renderDbCountButtons();
+if(activeBondCount >= 5 && activeBondCount <= 9){
+selectedDbListBondCount = activeBondCount;
+window.selectedDbListBondCount = activeBondCount;
+if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.renderCurrent === "function"){
+window.JINPO_FAST_SEARCH.renderCurrent({count:activeBondCount, preserveListSort:true, forceNormal:true});
+}else{
 renderDbFormationList();
+}
+}else{
+renderDbFormationList();
+}
 }
 formationSelect.addEventListener("change", handleFormationSelectionChanged);
 formationSelect.addEventListener("input", handleFormationSelectionChanged);
@@ -3101,23 +3112,9 @@ root.appendChild(div);
 }
 }
 function cleanOnFormationChange(){
-try{
-if(typeof placement !== "undefined"){
-for(let i=1;i<=6;i++) placement[i] = null;
-}
-if(typeof selectedDbListBondCount !== "undefined") selectedDbListBondCount = null;
-if(typeof renderSlots === "function"){
-renderSlots();
-}
-["summary","activatedList","reachList","lineDetails"].forEach(id=>{
-const el=document.getElementById(id);
-if(el) el.innerHTML = "";
-});
-if(typeof renderRealtimeTotalStats === "function") renderRealtimeTotalStats({activated:[]});
-}catch(e){}
+// 陣形変更では現在の配置・検索条件を消さず、表示だけ選択陣形へ同期する。
 cleanRenderFormation();
 cleanRenderCounts();
-try{ if(typeof renderDbFormationList === "function") renderDbFormationList(); }catch(e){}
 }
 window.cleanRenderFormation = cleanRenderFormation;
 window.cleanRenderCounts = cleanRenderCounts;
