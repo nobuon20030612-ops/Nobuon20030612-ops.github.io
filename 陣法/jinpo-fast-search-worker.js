@@ -8,7 +8,7 @@
   var STAT_OFFSETS={'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41};
   var FULLMAX_STAT_OFFSETS={'生命':0,'気合':2,'腕力':4,'耐久力':6,'器用さ':8,'知力':10,'魅力':12,'土属性':14,'水属性':16,'火属性':18,'風属性':20};
   var FORM_CODE={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'};
-  function norm(v){return String(v==null?'':v).trim().replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
+  function norm(v){return String(v==null?'':v).trim().replace(/・/g,'').replace(/[\s　]+/g,'');}
   function eikInternalId(id){id=Number(id);return Number.isInteger(id)&&id>0?'EIK_'+String(id).padStart(4,'0'):'';}
   function numericHeroId(v){
     if(typeof v==='number'&&Number.isInteger(v)&&v>0)return v;
@@ -17,8 +17,6 @@
   }
   function clearDataBuffers(){buffers.clear();fullmaxBuffers.clear();recommendSumBuffers.clear();fullmaxRecommendBuffers.clear();}
   function prepareManifest(m){
-    m._heroNameToIds=Object.create(null);
-    (m.hero_names||[]).forEach(function(n,i){if(!n)return;var k=norm(n);if(!m._heroNameToIds[k])m._heroNameToIds[k]=[];m._heroNameToIds[k].push(i);});
     m._bondNameToId=Object.create(null);
     (m.bond_names||[]).forEach(function(n,i){if(n)m._bondNameToId[norm(n)]=i;});
     return m;
@@ -118,18 +116,9 @@
   function fullmaxTotalAt(fm,rowIndex){return !fm?0:fm.dv.getUint32(16+rowIndex*fm.recSize+22,true);}
   function metricStat(dv,base,stat,fm,recSize){if(!fm)return statAt(dv,base,stat);var rowIndex=Math.floor((base-16)/(recSize||52));return fullmaxStatAt(fm,rowIndex,stat);}
   function metricTotal(dv,base,fm,recSize){if(!fm)return totalAt(dv,base);var rowIndex=Math.floor((base-16)/(recSize||52));return fullmaxTotalAt(fm,rowIndex);}
-  function nameGroups(names,m){
-    var out=[];(Array.isArray(names)?names:[]).forEach(function(n){var ids=(m._heroNameToIds[norm(n)]||[]).map(Number).filter(function(x){return x>0;});out.push(ids);});return out;
-  }
   function exactIds(values){return (Array.isArray(values)?values:[]).map(numericHeroId).filter(function(x){return x>0;});}
-  function ownedGroups(q,m){
-    var exact=exactIds(q.ownedInternalIds);if(exact.length)return exact.map(function(id){return[id];});
-    return nameGroups(q.ownedNames,m);
-  }
-  function excludedIds(q,m){
-    var exact=exactIds(q.excludedInternalIds);if(exact.length)return exact;
-    var seen=Object.create(null),out=[];nameGroups(q.excludedNames,m).forEach(function(g){g.forEach(function(id){if(!seen[id]){seen[id]=1;out.push(id);}});});return out;
-  }
+  function ownedGroups(q){return exactIds(q.ownedInternalIds).map(function(id){return[id];});}
+  function excludedIds(q){return exactIds(q.excludedInternalIds);}
   function hasHero(dv,base,id){for(var i=0;i<6;i++)if(dv.getUint16(base+i*2,true)===id)return true;return false;}
   function hasAnyHero(dv,base,ids){for(var j=0;j<ids.length;j++)if(hasHero(dv,base,ids[j]))return true;return false;}
   function statAt(dv,base,stat){var o=STAT_OFFSETS[stat];return o==null?0:dv.getUint16(base+o,true);}
@@ -364,7 +353,9 @@
     var data=await loadData(dataQ,token,true),fm=useFullmax?await loadFullmaxStats(dataQ,token,true):null,dv=data.dv,rec=data.recSize,base=16;
     if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
     for(var idx=0;idx<data.rows;idx++,base+=rec){
-      var heroOk=true;for(var h=0;h<heroIds.length&&heroOk;h++)if(!hasHero(dv,base,heroIds[h]))heroOk=false;
+      /* exact lookupは同じ6人の集合ではなく、1〜6番の配置順まで完全一致させる。
+         文曲使用スロット/全MAX値は配置順で変わり得るため、集合一致は不可。 */
+      var heroOk=true;for(var h=0;h<heroIds.length&&heroOk;h++)if(dv.getUint16(base+h*2,true)!==heroIds[h])heroOk=false;
       if(!heroOk)continue;
       var bondOk=true;for(var w=0;w<bondIds.length&&bondOk;w++){var found=false;for(var b=0;b<count;b++){if(dv.getUint8(base+12+b)===bondIds[w]){found=true;break;}}if(!found)bondOk=false;}
       if(!bondOk)continue;

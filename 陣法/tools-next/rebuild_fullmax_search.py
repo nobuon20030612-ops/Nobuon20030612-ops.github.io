@@ -17,6 +17,7 @@ except Exception as e:
     raise SystemExit(f'numpy が必要です: {e}')
 
 from factor4_optimizer import minimal_factor4_mask
+from formation_spec import LINES
 from fullmax_model import STATS, calc_fullmax_stats
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,13 +39,6 @@ FORMS = ['衡軛','鶴翼','魚鱗','方円']
 FORM_CODES = {'衡軛':1,'鶴翼':2,'魚鱗':3,'方円':4}
 FORM_FILE_CODES = {'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}
 MODE_COUNTS = {'normal':[7,8,9], 'grade3':[5,6,7,8,9]}
-LINES = {
-    '衡軛': [(0,1,2),(3,4,5)],
-    '鶴翼': [(0,1,2),(3,4,5)],
-    '魚鱗': [(0,1,2),(2,3,4),(4,5,0)],
-    '方円': [(1,2,3),(3,4,5),(1,0,5)],
-}
-
 
 def csv_rows(path: Path):
     with path.open(encoding='utf-8-sig', newline='') as f:

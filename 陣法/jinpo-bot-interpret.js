@@ -21,7 +21,7 @@
     {to:'鶴翼',aliases:['かくよく','カクヨク']},
     {to:'方円',aliases:['ほうえん','ホウエン']},
     {to:'魚鱗',aliases:['ぎょりん','ギョリン','ぎよりん']},
-    {to:'衡軛',aliases:['こうやく','コウヤク','鴻鵠','衝軛']},
+    {to:'衡軛',aliases:['こうやく','コウヤク']},
     {to:'検索',aliases:['けんさく','ケンサク']},
     {to:'適用',aliases:['てきよう','テキヨウ']},
     {to:'差替',aliases:['差し替え','差替え','さしかえ','サシカエ']},
@@ -154,7 +154,7 @@
     (plan.actions||[]).forEach(function(a){var x=a.args||{};if(a.name==='apply_result')bits.push('検索結果の'+x.rank+'番目を適用');else if(a.name==='apply_swap')bits.push('差替候補の'+x.rank+'番目を適用');else if(a.name==='set_owned_hero')bits.push('配置英傑'+x.slot+'を'+x.hero+'に指定');else if(a.name==='set_owned_hero_auto')bits.push(x.hero+'を使う条件に追加');else if(a.name==='set_excluded_hero')bits.push(x.hero+'を'+(x.excluded===false?'除外解除':'除外'));else if(a.name==='all_max')bits.push('全MAXを実行');else if(a.name==='clear_all_max')bits.push('全MAXを解除');});
     return bits.join('、');
   }
-  function riskyPlan(plan){return !!(plan&&plan.actions&&plan.actions.some(function(a){return ['delete_saved','reset_all','clear_formation_master','import_json','apply_override_bond_master'].indexOf(a.name)>=0;}));}
+  function riskyPlan(plan){return !!(plan&&plan.actions&&plan.actions.some(function(a){return ['delete_saved','reset_all','import_json','apply_override_bond_master'].indexOf(a.name)>=0;}));}
   function planCoverage(plan){
     if(!plan)return 0;var n=plan.recognized?0.25:0,p=plan.searchPatch||{};
     if(p.formation)n+=1;if(p.count)n+=1;if(p.searchBasis)n+=1;if(p.priority1)n+=1;if(p.priority2)n+=1;

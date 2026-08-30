@@ -1,40 +1,37 @@
 /*
  * jinpo-bond-list.js
- * 因縁一覧 / 現在発動中因縁 モーダル。
- * 既存DB・検索・因縁判定処理は変更せず、既存の jinpo_inen_master.csv と適用中表示を参照する。
+ * 因縁一覧 / 現在発動中因縁。
+ * 現在発動中因縁は専用モーダル1経路のみ。
+ * 正規画面は「左: 現在の陣形図 / 右: 発動中因縁一覧」で、右カードのホバー中は対応ラインを左図で強調する。
  */
 (function(){
   'use strict';
-  // JINPO_REMAINING_BUGFIX_V1: live active-bond source / unregistered swap / legacy formation / duplicate DB guard
   if(window.__jinpoBondListInstalled) return;
   window.__jinpoBondListInstalled = true;
 
   var bondMasterCache = null;
   var bondMasterLoadingPromise = null;
   var modalOpenToken = 0;
-  var modalMode = 'all';
-  var activeBondNames = [];
+  var activeModalOpenToken = 0;
   var activeCalculatedResult = null;
 
-  // SAFE_ACTIVE_FORMATION_V1
+  /* 現在発動中因縁モーダルの表示座標。
+     判定ラインは JINPO_FORMATION_CONFIG の activeLines を正本とし、ここでは表示座標だけを保持する。 */
   var ACTIVE_FORMATION_VIEW = {
     '衡軛': {
-      slots:{1:{x:32,y:18},4:{x:68,y:18},2:{x:32,y:50},5:{x:68,y:50},3:{x:32,y:82},6:{x:68,y:82}},
-      lines:[[1,2,3],[4,5,6]]
+      slots:{1:{x:32,y:18},4:{x:68,y:18},2:{x:32,y:50},5:{x:68,y:50},3:{x:32,y:82},6:{x:68,y:82}}
     },
     '鶴翼': {
-      slots:{1:{x:18,y:18},4:{x:82,y:18},2:{x:30,y:50},5:{x:70,y:50},3:{x:24,y:82},6:{x:76,y:82}},
-      lines:[[1,2,3],[4,5,6]]
+      slots:{1:{x:18,y:18},4:{x:82,y:18},2:{x:30,y:50},5:{x:70,y:50},3:{x:24,y:82},6:{x:76,y:82}}
     },
     '魚鱗': {
-      slots:{1:{x:50,y:8},2:{x:30,y:48},6:{x:70,y:48},3:{x:16,y:86},4:{x:50,y:86},5:{x:84,y:86}},
-      lines:[[1,2,3],[3,4,5],[5,6,1]]
+      slots:{1:{x:50,y:8},6:{x:30,y:48},2:{x:70,y:48},5:{x:16,y:86},4:{x:50,y:86},3:{x:84,y:86}}
     },
     '方円': {
-      slots:{1:{x:50,y:10},2:{x:30,y:36},6:{x:70,y:36},3:{x:30,y:66},5:{x:70,y:66},4:{x:50,y:90}},
-      lines:[[2,3,4],[4,5,6],[2,1,6]]
+      slots:{2:{x:50,y:10},1:{x:30,y:36},3:{x:70,y:36},6:{x:30,y:66},4:{x:70,y:66},5:{x:50,y:90}}
     }
   };
+
 
   function text(v){ return String(v == null ? '' : v).trim(); }
   function esc(v){
@@ -65,10 +62,10 @@
   }
   function canonicalFormation(v){
     var s = text(v);
-    if(/衡軛|衝軛|kogaku|kougaku/i.test(s)) return '衡軛';
-    if(/鶴翼|kakuyoku/i.test(s)) return '鶴翼';
-    if(/魚鱗|gyorin/i.test(s)) return '魚鱗';
-    if(/方円|hoen/i.test(s)) return '方円';
+    if(/衡軛/i.test(s)) return '衡軛';
+    if(/鶴翼/i.test(s)) return '鶴翼';
+    if(/魚鱗/i.test(s)) return '魚鱗';
+    if(/方円/i.test(s)) return '方円';
     return '';
   }
   function currentFormationName(){
@@ -77,6 +74,88 @@
     var opt = sel.selectedOptions && sel.selectedOptions[0] ? text(sel.selectedOptions[0].textContent) : '';
     return canonicalFormation(sel.value) || canonicalFormation(opt);
   }
+  function currentHero(slot){
+    try{ if(typeof placement !== 'undefined' && placement) return placement[slot] || null; }catch(e){}
+    return null;
+  }
+  function currentHeroName(slot){
+    var h = currentHero(slot);
+    if(!h) return '未選択';
+    try{ if(typeof heroName === 'function') return text(heroName(h)) || '未選択'; }catch(e){}
+    return text(h['英傑名'] || h.name || h['名前']) || '未選択';
+  }
+  function currentHeroFactorList(slot){
+    var h = currentHero(slot);
+    if(!h) return [];
+    try{
+      if(typeof heroFactors === 'function'){
+        var fs = heroFactors(h);
+        if(Array.isArray(fs)) return fs.map(text).filter(Boolean);
+      }
+    }catch(e){}
+    return [h['因子1'],h['因子2'],h['因子3'],h['因子4']].map(text).filter(Boolean);
+  }
+  function renderCurrentHeroFactors(slot){
+    return currentHeroFactorList(slot).map(function(factor,index){
+      return (index ? '<span class="jinpoBondSlotFactorSep" aria-hidden="true">・</span>' : '')+
+        '<span class="jinpoBondSlotFactor" data-factor="'+esc(normalize(factor))+'">'+esc(factor)+'</span>';
+    }).join('');
+  }
+
+  function renderActiveFactorUseBadgeContents(useSet){
+    if(!useSet || !useSet.size) return '';
+    var html='';
+    if(useSet.has(1)) html+='<span class="jinpoBondUseBadge factor1">特化</span>';
+    if(useSet.has(2)) html+='<span class="jinpoBondUseBadge factor2">凸2</span>';
+    if(useSet.has(3)) html+='<span class="jinpoBondUseBadge factor3">LV20</span>';
+    if(useSet.has(4)) html+='<span class="jinpoBondUseBadge factor4">文曲</span>';
+    return html;
+  }
+  function renderActiveFactorUseBadges(useSet){
+    var html=renderActiveFactorUseBadgeContents(useSet);
+    return '<div class="jinpoBondUseBadges" aria-label="使用因子"'+(html?'':' hidden')+'>'+html+'</div>';
+  }
+  function cssPositionPercent(raw,total){
+    var v = text(raw);
+    if(!v) return null;
+    if(/%$/.test(v)){
+      var pct = parseFloat(v);
+      return Number.isFinite(pct) ? pct : null;
+    }
+    var px = parseFloat(v);
+    if(!Number.isFinite(px) || !Number.isFinite(total) || total <= 0) return null;
+    return px / total * 100;
+  }
+  function liveFormationSlotPositions(){
+    var root = document.getElementById('formationView');
+    if(!root) return null;
+    var rect = root.getBoundingClientRect ? root.getBoundingClientRect() : null;
+    var width = Number((rect && rect.width) || root.clientWidth || 0);
+    var height = Number((rect && rect.height) || root.clientHeight || 0);
+    if(width <= 0 || height <= 0) return null;
+    var slots = {};
+    Array.prototype.forEach.call(root.querySelectorAll('.fslot'),function(el){
+      var strong = el.querySelector('strong');
+      var slot = Number(text(strong && strong.textContent));
+      if(!slot || slot < 1 || slot > 6) return;
+      var x = cssPositionPercent(el.style.left,width);
+      var y = cssPositionPercent(el.style.top,height);
+      if(x == null || y == null) return;
+      slots[slot] = {x:x,y:y};
+    });
+    for(var i=1;i<=6;i++) if(!slots[i]) return null;
+    return slots;
+  }
+  function activeFormationConfig(){
+    var formation = currentFormationName();
+    var view = ACTIVE_FORMATION_VIEW[formation];
+    if(!view) return null;
+    var liveSlots = liveFormationSlotPositions();
+    var config = window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation];
+    var lines = config && Array.isArray(config.activeLines) ? config.activeLines : [];
+    return {slots:liveSlots || view.slots,lines:lines};
+  }
+
   function syncFormationUiState(){
     try{
       if(!document.body || !document.body.classList) return;
@@ -85,21 +164,19 @@
   }
   function clearAppliedDbVisualState(){
     try{ if(typeof clearAppliedDbRowDisplay === 'function') clearAppliedDbRowDisplay(); }catch(e){}
-    try{ if(typeof window.clearAppliedPreviewUnderFormation === 'function') window.clearAppliedPreviewUnderFormation(); }catch(e){}
     try{
       document.querySelectorAll('#dbFormationList tr.jinpoCurrentAppliedMainRow').forEach(function(row){ row.classList.remove('jinpoCurrentAppliedMainRow'); });
       document.querySelectorAll('#dbFormationList tr.jinpoCurrentAppliedStatRow').forEach(function(row){ row.classList.remove('jinpoCurrentAppliedStatRow'); });
     }catch(e){}
   }
   function clearTransientAppliedDbState(){
-    /* 編成・陣形・マスターの基準が変わった時、以前のDB適用状態を絶対に持ち越さない。
-       表示だけでなく、総合値・鬼神石等が参照する内部行も同時に破棄する。 */
+    /* 編成そのもの・マスター・保存読込など基準状態が変わった時だけDB適用状態を破棄する。
+       陣形変更は6英傑を維持するため、ここでは扱わない。 */
     try{ selectedDbResultId = ''; }catch(e){}
     try{ window.selectedDbResultId = ''; }catch(e){}
     /* 状態変更前に開始した差替後の非同期DB完全照合を必ず失効させる。 */
     try{ window.__jinpoReachExactLookupSeq = Number(window.__jinpoReachExactLookupSeq || 0) + 1; }catch(e){}
-    /* 旧ホットフィックスが暗黙グローバル currentAppliedDbRow も参照するため、
-       __付き4種だけでなくこちらも必ず破棄する。 */
+    /* 適用候補と能力加算が共有するDB行参照を同時に破棄し、古い編成情報を残さない。 */
     try{ currentAppliedDbRow = null; }catch(e){}
     try{ window.currentAppliedDbRow = null; }catch(e){}
     try{
@@ -110,52 +187,6 @@
     }catch(e){}
     clearAppliedDbVisualState();
   }
-  function placementIdentitySignature(){
-    var p=null;
-    try{ p=(typeof placement!=='undefined'&&placement)?placement:null; }catch(e){}
-    if(!p) try{ p=window.placement||null; }catch(e){}
-    if(!p) return '';
-    var out=[];
-    for(var i=1;i<=6;i++){
-      var h=p[i]||null;
-      out.push(text(h&&(h.internal_id||h.id||h.ID||h['internal_id']||h['英傑名']||h['名前']||h.name)));
-    }
-    return out.join('|');
-  }
-  function clearStaleAppliedRefsAfterReachSwap(){
-    /* 差替えで編成が変わった瞬間、前編成のDB行を補正元として残さない。
-       新しいselectedDbResultId / __lastReachAppliedDbRow と、新しいlookup sequenceは保持する。 */
-    try{ currentAppliedDbRow = null; }catch(e){}
-    try{ window.currentAppliedDbRow = null; }catch(e){}
-    try{ window.__currentAppliedDbRow = null; }catch(e){}
-    try{ window.__jinpoExactAppliedDbRow = null; }catch(e){}
-    try{ window.__jinpoBonusBaseDbRow = null; }catch(e){}
-    clearAppliedDbVisualState();
-  }
-  function installReachSwapAppliedStateGuard(){
-    var current=window.applyReachSwapCandidate;
-    if(typeof current!=='function' || current.__jinpoAppliedStateGuardWrapped) return;
-    function guardedApplyReachSwapCandidate(){
-      var before=placementIdentitySignature();
-      var ret=current.apply(this,arguments);
-      var after=placementIdentitySignature();
-      /* 本体は有効な差替えだけplacementを同期的に変更する。
-         無効/重複候補では既存の正しい適用状態を消さない。 */
-      if(after && after!==before) clearStaleAppliedRefsAfterReachSwap();
-      return ret;
-    }
-    guardedApplyReachSwapCandidate.__jinpoAppliedStateGuardWrapped=true;
-    guardedApplyReachSwapCandidate.__jinpoAppliedStateGuardOriginal=current;
-    window.applyReachSwapCandidate=guardedApplyReachSwapCandidate;
-    try{ applyReachSwapCandidate=guardedApplyReachSwapCandidate; }catch(e){}
-  }
-  function sameIdentitySet(a,b){
-    var aa=(Array.isArray(a)?a:[]).map(text).filter(Boolean).sort();
-    var bb=(Array.isArray(b)?b:[]).map(text).filter(Boolean).sort();
-    if(aa.length!==bb.length) return false;
-    for(var i=0;i<aa.length;i++) if(aa[i]!==bb[i]) return false;
-    return true;
-  }
   function currentPlacementObject(){
     try{ if(typeof placement!=='undefined' && placement) return placement; }catch(e){}
     try{ return window.placement||null; }catch(e){ return null; }
@@ -163,85 +194,28 @@
   function currentPlacementIds(source){
     var p=source||currentPlacementObject(),out=[];
     if(!p) return out;
-    for(var i=1;i<=6;i++) out.push(text(p[i]&&(p[i].internal_id||p[i].id||p[i].ID||p[i]['internal_id'])));
+    for(var i=1;i<=6;i++) out.push(text(p[i]&&p[i].internal_id));
     return out;
-  }
-  function currentPlacementNames(source){
-    var p=source||currentPlacementObject(),out=[];
-    if(!p) return out;
-    for(var i=1;i<=6;i++){
-      var h=p[i]||null,raw=text(h&&(h['英傑名']||h['名前']||h.name));
-      try{ out.push(typeof canonicalHeroName==='function'?text(canonicalHeroName(raw)):normalize(raw)); }
-      catch(e){ out.push(normalize(raw)); }
-    }
-    return out;
-  }
-  function rowFormationMatchesCurrentFallback(row,formation){
-    if(!row||!formation) return false;
-    try{
-      if(typeof dbRowFormations==='function'){
-        var forms=dbRowFormations(row).map(canonicalFormation).filter(Boolean);
-        if(forms.indexOf(formation)>=0) return true;
-      }
-    }catch(e){}
-    var raw=text(row.formation||row.form||row['陣形']);
-    if(!raw) return true;
-    if(formation==='衡軛') return /衡軛|衝軛|kogaku|kougaku/i.test(raw);
-    if(formation==='鶴翼') return /鶴翼|kakuyoku/i.test(raw);
-    if(formation==='魚鱗') return /魚鱗|gyorin/i.test(raw);
-    if(formation==='方円') return /方円|hoen/i.test(raw);
-    return false;
   }
   function dbRowMatchesCurrentRuntimeState(row){
-    if(!row) return false;
-    /* ランタイムマスター差替え中は事前生成DB値を一切描画しない。 */
-    if(currentRuntimeOverrideActive()) return false;
+    if(!row || currentRuntimeOverrideActive()) return false;
     var p=currentPlacementObject(),formation=currentFormationName();
     if(!p||!formation) return false;
     var ids=currentPlacementIds(p);
     if(ids.length!==6||ids.some(function(v){return !v;})||new Set(ids).size!==6) return false;
     var result=currentCalculatedResult();
-    if(!result) return false;
-    /* 本体の完全照合関数がある場合は、それを唯一の照合規則として優先する。 */
+    if(!result || typeof dbRowMatchesReachState!=='function') return false;
     try{
-      if(typeof dbRowMatchesReachState==='function'){
-        var sel=document.getElementById('formationSelect');
-        var rawFormation=text(sel&&sel.value)||formation;
-        return !!dbRowMatchesReachState(row,p,result,rawFormation);
-      }
-    }catch(e){ console.error('DB行の現在状態照合失敗',e); }
-    /* 旧版互換fallback。ID集合＋陣形＋因縁数を最低条件にする。 */
-    var rowIds=[];
-    try{ if(typeof dbRowInternalIds==='function') rowIds=dbRowInternalIds(row).map(text).filter(Boolean); }catch(e){}
-    if(!rowIds.length) rowIds=text(row.eiketsu_internal_ids).split('|').map(text).filter(Boolean);
-    if(rowIds.length===6){
-      if(!sameIdentitySet(rowIds,ids)) return false;
-    }else{
-      var currentNames=currentPlacementNames(p),rowNames=[];
-      try{
-        if(typeof dbRowMembers==='function') rowNames=dbRowMembers(row).map(function(v){
-          try{return typeof canonicalHeroName==='function'?text(canonicalHeroName(v)):normalize(v);}catch(e){return normalize(v);}
-        }).filter(Boolean);
-      }catch(e){}
-      if(!rowNames.length) rowNames=text(row.eiketsu_names||row.eiketsu_ids||row.members).split('|').map(normalize).filter(Boolean);
-      if(rowNames.length!==6||!sameIdentitySet(rowNames,currentNames)) return false;
-    }
-    if(!rowFormationMatchesCurrentFallback(row,formation)) return false;
-    var expected=(result.activated||[]).map(function(a){return text(a&&a.name);}).filter(Boolean);
-    var rowCountRaw=(row.bond_count!=null&&text(row.bond_count)!=='')?row.bond_count:row.ic;
-    if(rowCountRaw!=null&&text(rowCountRaw)!==''&&Number(rowCountRaw)!==expected.length) return false;
-    var rowNamesRaw=text(row.bond_names);
-    if(rowNamesRaw){
-      var rowBonds=rowNamesRaw.split('|').map(text).filter(Boolean);
-      if(!sameIdentitySet(rowBonds,expected)) return false;
-    }
-    return true;
+      var sel=document.getElementById('formationSelect');
+      var rawFormation=text(sel&&sel.value)||formation;
+      return !!dbRowMatchesReachState(row,p,result,rawFormation);
+    }catch(e){ console.error('DB行の現在状態照合失敗',e); return false; }
   }
   function installDbRowRenderStateGuard(){
     var current=window.renderRealtimeTotalStatsFromReachDbRow;
     if(typeof current!=='function'||current.__jinpoCurrentStateGuardWrapped) return;
     function guardedRenderRealtimeTotalStatsFromReachDbRow(row){
-      /* setTimeoutで残った旧DB行を、状態変更後の総合値へ再描画させない。 */
+      /* 状態変更前のDB行を現在の総合値へ再描画させない。 */
       if(!dbRowMatchesCurrentRuntimeState(row)) return false;
       return current.apply(this,arguments);
     }
@@ -292,8 +266,7 @@
   function searchModelRowSignature(rows, kind){
     if(!Array.isArray(rows)) return '';
     var fields = kind === 'inen'
-      /* 因子だけでなく効果対象/段階もcompactステータスへ影響する。
-         効果欄だけの差替えを「標準と同じ」と誤判定して旧DBを使わない。 */
+      /* 因子だけでなく効果対象/段階もcompactステータスへ影響する。 */
       ? ['No','因縁名','因子1','因子2','因子3','特大','大','中','小']
       : ['internal_id','英傑名','コスト','生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性','因子1','因子2','因子3','因子4'];
     var normalized = rows.map(function(row){
@@ -417,82 +390,15 @@
     var marks = {1:'①',2:'②',3:'③',4:'④',5:'⑤',6:'⑥'};
     return (Array.isArray(slots) ? slots : []).map(function(n){ return marks[Number(n)] || String(n); }).join('－');
   }
-  function currentHero(slot){
-    try{ if(typeof placement !== 'undefined' && placement) return placement[slot] || null; }catch(e){}
-    return null;
-  }
-  function currentHeroName(slot){
-    var h = currentHero(slot);
-    if(!h) return '未選択';
-    try{ if(typeof heroName === 'function') return text(heroName(h)) || '未選択'; }catch(e){}
-    return text(h['英傑名'] || h.name || h['名前']) || '未選択';
-  }
-  function currentHeroFactorList(slot){
-    var h = currentHero(slot);
-    if(!h) return [];
-    try{
-      if(typeof heroFactors === 'function'){
-        var fs = heroFactors(h);
-        if(Array.isArray(fs)) return fs.map(text).filter(Boolean);
-      }
-    }catch(e){}
-    return [h['因子1'],h['因子2'],h['因子3'],h['因子4']].map(text).filter(Boolean);
-  }
-  function currentHeroFactors(slot){
-    return currentHeroFactorList(slot).join('・');
-  }
-  function renderCurrentHeroFactors(slot){
-    return currentHeroFactorList(slot).map(function(factor,index){
-      return (index ? '<span class="jinpoBondSlotFactorSep" aria-hidden="true">・</span>' : '')+
-        '<span class="jinpoBondSlotFactor" data-factor="'+esc(normalize(factor))+'">'+esc(factor)+'</span>';
-    }).join('');
-  }
-  function cssPositionPercent(raw,total){
-    var v = text(raw);
-    if(!v) return null;
-    if(/%$/.test(v)){
-      var pct = parseFloat(v);
-      return Number.isFinite(pct) ? pct : null;
-    }
-    var px = parseFloat(v);
-    if(!Number.isFinite(px) || !Number.isFinite(total) || total <= 0) return null;
-    return px / total * 100;
-  }
-  function liveFormationSlotPositions(){
-    var root = document.getElementById('formationView');
-    if(!root) return null;
-    var rect = root.getBoundingClientRect ? root.getBoundingClientRect() : null;
-    var width = Number((rect && rect.width) || root.clientWidth || 0);
-    var height = Number((rect && rect.height) || root.clientHeight || 0);
-    if(width <= 0 || height <= 0) return null;
-    var slots = {};
-    Array.prototype.forEach.call(root.querySelectorAll('.fslot'),function(el){
-      var strong = el.querySelector('strong');
-      var slot = Number(text(strong && strong.textContent));
-      if(!slot || slot < 1 || slot > 6) return;
-      var x = cssPositionPercent(el.style.left,width);
-      var y = cssPositionPercent(el.style.top,height);
-      if(x == null || y == null) return;
-      slots[slot] = {x:x,y:y};
-    });
-    for(var i=1;i<=6;i++) if(!slots[i]) return null;
-    return slots;
-  }
-  function activeFormationConfig(){
-    var formation = currentFormationName();
-    var fallback = ACTIVE_FORMATION_VIEW[formation];
-    if(!fallback) return null;
-    var liveSlots = liveFormationSlotPositions();
-    return {slots:liveSlots || fallback.slots,lines:fallback.lines};
-  }
-
   function injectStyle(){
     if(document.getElementById('jinpoBondListStyle')) return;
     var style = document.createElement('style');
     style.id = 'jinpoBondListStyle';
     style.textContent = [
       '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
-      '#jinpoRecommendSearchOrderNote{flex:1 1 100%;width:100%;box-sizing:border-box;margin:0 0 2px 0;padding:8px 14px;color:#ffe27a;font-size:clamp(24px,2vw,34px);font-weight:1000;line-height:1.25;letter-spacing:.035em;text-align:center;text-shadow:0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.75);}',
+      '#jinpoRecommendSearchOrderRow{display:grid;grid-template-columns:132px minmax(0,1fr) 132px;align-items:center;gap:8px;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 8px 0;}',
+      '#jinpoRecommendSearchOrderNote{display:block;grid-column:2;min-width:0;width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:8px 14px 6px;color:#ffe27a;font-size:clamp(24px,2vw,34px);font-weight:1000;line-height:1.25;letter-spacing:.035em;text-align:center;white-space:nowrap;pointer-events:none;text-shadow:0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.75);}',
+      '#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:3;justify-self:end;margin:0 !important;}',
       '#jinpoRecommendNav{--jinpo-group-accent:#ffd463;--jinpo-group-glow:rgba(255,202,58,.52);--jinpo-group-soft:rgba(255,232,155,.14);position:relative;display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;padding:6px 7px;border:2px solid var(--jinpo-group-accent);border-radius:14px;background:linear-gradient(180deg,rgba(84,48,8,.38),rgba(24,13,4,.58));box-shadow:0 0 12px var(--jinpo-group-glow),0 0 24px rgba(255,184,39,.18),inset 0 0 0 1px rgba(255,239,183,.10),inset 0 0 12px var(--jinpo-group-soft);box-sizing:border-box;isolation:isolate;animation:jinpoRecommendGroupGlow 1.65s ease-in-out infinite alternate;}',
       'body.jinpo-recommend-active{--jinpo-rec-accent:#ffd463;--jinpo-rec-accent2:#e7bd5c;--jinpo-rec-bg1:#6f2419;--jinpo-rec-bg2:#26100a;--jinpo-rec-text:#fff5d4;--jinpo-rec-soft:rgba(231,189,92,.18);--jinpo-rec-glow:rgba(231,189,92,.46);}',
       'body.jinpo-recommend-active #jinpoRecommendNav{--jinpo-group-accent:var(--jinpo-rec-accent);--jinpo-group-glow:var(--jinpo-rec-glow);--jinpo-group-soft:var(--jinpo-rec-soft);background:linear-gradient(180deg,var(--jinpo-rec-soft),rgba(18,11,6,.68));}',
@@ -517,7 +423,7 @@
       '.jinpoRecommendBtn.active{outline:2px solid #fff4b8;outline-offset:1px;box-shadow:0 0 13px rgba(255,239,170,.72),inset 0 0 8px rgba(255,255,255,.12);}',
       '.jinpoRecommendBtn[data-stat="生命"]{background:#fff;color:#111;border-color:#cfcfcf}.jinpoRecommendBtn[data-stat="気合"]{background:#cfefff;color:#102633;border-color:#78b8da}.jinpoRecommendBtn[data-stat="腕力"]{background:#c93333;color:#fff;border-color:#ff7777}.jinpoRecommendBtn[data-stat="耐久力"]{background:#245fc7;color:#fff;border-color:#70a0ff}.jinpoRecommendBtn[data-stat="器用さ"]{background:#3a9b55;color:#fff;border-color:#75d28d}.jinpoRecommendBtn[data-stat="知力"]{background:#f2d93b;color:#241f00;border-color:#fff083}.jinpoRecommendBtn[data-stat="魅力"]{background:#8b4bb4;color:#fff;border-color:#c88fe8}.jinpoRecommendBtn[data-stat="土属性"]{background:#fff1a8;color:#332800;border-color:#d9c35d}.jinpoRecommendBtn[data-stat="水属性"]{background:#73d7f3;color:#073340;border-color:#b5efff}.jinpoRecommendBtn[data-stat="火属性"]{background:#f3a0a0;color:#4b1111;border-color:#ffd0d0}.jinpoRecommendBtn[data-stat="風属性"]{background:#a8e2a6;color:#173a16;border-color:#d2f4d0}',
       '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
-      '#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{margin:0 !important;}',
+      '@media(min-width:761px){body.jinpo-recommend-active #jinpoBondNavRight{padding-right:80px;box-sizing:border-box;}}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
       'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:none!important;display:none!important;}',
@@ -554,17 +460,19 @@
       '#jinpoBondSearch{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #87662f;border-radius:10px;background:#0d0906;color:#f6ecd8;font-size:16px;outline:none;}',
       '#jinpoBondSearch:focus{border-color:#e7bd5c;box-shadow:0 0 0 2px rgba(231,189,92,.16);}',
       '.jinpoBondModalBody{padding:0 16px 16px;overflow:auto;}',
-      '#jinpoBondModal.jinpoBondModalActiveMode{width:min(1180px,98vw);max-height:96vh;}',
-      '#jinpoBondModal.jinpoBondModalActiveMode .jinpoBondSearchWrap{display:none;}',
-      '#jinpoBondModal.jinpoBondModalActiveMode .jinpoBondModalBody{padding:12px 14px 14px;overflow-y:auto;overflow-x:hidden;}',
-      '.jinpoActiveBondGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;width:100%;}',
-      '.jinpoActiveBondCard{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"meta name" "factors factors";column-gap:9px;row-gap:5px;align-items:center;min-height:58px;padding:8px 10px;border:1px solid rgba(231,189,92,.24);border-radius:10px;background:linear-gradient(180deg,rgba(57,38,20,.86),rgba(31,21,12,.92));box-sizing:border-box;box-shadow:inset 0 0 0 1px rgba(255,255,255,.018);}',
-      '.jinpoActiveBondMeta{grid-area:meta;display:flex;align-items:center;gap:5px;white-space:nowrap;color:#cdbb96;font-size:11px;}',
-      '.jinpoActiveBondNo{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 5px;border:1px solid rgba(231,189,92,.28);border-radius:6px;background:rgba(0,0,0,.24);color:#e3cf9f;font-weight:800;}',
-      '.jinpoActiveBondName{grid-area:name;min-width:0;color:#fff0bd;font-size:15px;font-weight:950;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.jinpoActiveBondFactors{grid-area:factors;display:flex;flex-wrap:nowrap;gap:4px;min-width:0;overflow:hidden;}',
-      '.jinpoActiveBondFactors .jinpoBondFactor{padding:2px 6px;font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;max-width:33%;}',
-      '.jinpoBondActiveLayout{display:grid;grid-template-columns:minmax(540px,1.45fr) minmax(350px,.85fr);gap:14px;padding-top:14px;align-items:start;}',
+      '#jinpoActiveBondModalBackdrop{position:fixed;inset:0;z-index:10060;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
+      '#jinpoActiveBondModalBackdrop.is-open{display:flex;}',
+      '#jinpoActiveBondModal{width:min(1180px,98vw);max-height:96vh;display:flex;flex-direction:column;border:2px solid #c69a49;border-radius:16px;background:linear-gradient(180deg,#22170d,#100b07);color:#f4ead2;box-shadow:0 0 32px rgba(0,0,0,.75),0 0 22px rgba(231,189,92,.18);overflow:hidden;}',
+      '.jinpoActiveBondModalHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(231,189,92,.34);background:rgba(95,59,20,.30);}',
+      '.jinpoActiveBondModalHeader h3{margin:0;font-size:20px;color:#ffe0a0;}',
+      '.jinpoActiveBondModalCount{font-size:12px;color:#d8c59b;}',
+      '#jinpoActiveBondModalClose{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:104px;height:42px;padding:0 13px;border:2px solid #d4a442;border-radius:12px;background:linear-gradient(180deg,#5a3919,#2e1c0d);color:#fff3d0;font-family:inherit;font-size:14px;font-weight:900;line-height:1;letter-spacing:.02em;box-shadow:0 2px 0 rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08),0 0 10px rgba(231,189,92,.16);cursor:pointer;transition:transform .12s ease,filter .12s ease,border-color .12s ease,box-shadow .12s ease;}',
+      '#jinpoActiveBondModalClose .jinpoBondCloseIcon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid rgba(255,236,185,.72);border-radius:50%;font-size:20px;font-weight:700;line-height:20px;color:#fff0c9;}',
+      '#jinpoActiveBondModalClose:hover{filter:brightness(1.16);border-color:#f1c45c;box-shadow:0 2px 0 rgba(0,0,0,.42),0 0 16px rgba(241,196,92,.34);}',
+      '#jinpoActiveBondModalClose:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.38),0 0 9px rgba(241,196,92,.24);}',
+      '#jinpoActiveBondModalClose:focus-visible{outline:3px solid rgba(255,218,112,.50);outline-offset:3px;}',
+      '.jinpoActiveBondModalBody{padding:12px 14px 14px;overflow:hidden;flex:1;min-height:0;}',
+      '.jinpoBondActiveLayout{display:grid;grid-template-columns:minmax(540px,1.45fr) minmax(350px,.85fr);gap:14px;align-items:start;min-height:0;}',
       '.jinpoBondFormationPanel,.jinpoBondActiveListPanel{border:1px solid rgba(231,189,92,.30);border-radius:14px;background:rgba(10,7,4,.58);overflow:hidden;}',
       '.jinpoBondFormationHead,.jinpoBondActiveListHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(231,189,92,.24);background:rgba(90,55,19,.20);}',
       '.jinpoBondFormationHead strong,.jinpoBondActiveListHead strong{color:#ffe1a1;font-size:16px;}',
@@ -575,13 +483,21 @@
       '.jinpoBondDiagramLine.is-active{stroke:#e7bd5c;opacity:.72;filter:drop-shadow(0 0 4px rgba(231,189,92,.56));}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine{opacity:.10;filter:none;}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine.is-hover{stroke:#ffd75c;stroke-width:6;opacity:1;filter:drop-shadow(0 0 7px #ffcf45) drop-shadow(0 0 13px rgba(255,102,56,.70));}',
-      '.jinpoBondDiagramSlot{position:absolute;transform:translate(-50%,-50%);width:138px;min-height:66px;box-sizing:border-box;padding:7px 6px;border:1px solid #80602b;border-radius:11px;background:#18110b;color:#f4ead2;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
+      '.jinpoBondDiagramSlot{position:absolute;transform:translate(-50%,-50%);width:144px;min-height:80px;box-sizing:border-box;padding:7px 6px;border:1px solid #80602b;border-radius:11px;background:#18110b;color:#f4ead2;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
       '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:14px;}',
       '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
       '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:9px;color:#cdbb96;line-height:1.2;max-height:22px;overflow:hidden;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadges{display:flex;align-items:center;justify-content:center;gap:2px;min-height:14px;margin:2px 0 1px;white-space:nowrap;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadges[hidden]{display:none!important;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge{display:inline-flex;align-items:center;justify-content:center;min-height:13px;padding:1px 4px;border-radius:999px;border:1px solid rgba(231,189,92,.75);font-size:8px;line-height:1;font-weight:1000;box-sizing:border-box;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor1{color:#baf7b7;border-color:#70d878;background:#12351a;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor2{color:#ffe47a;border-color:#e7bd5c;background:#35250d;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor3{color:#9deaff;border-color:#63d8ff;background:#0c2630;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor4{color:#ffd6d6;border-color:#ff7272;background:#5a0000;box-shadow:0 0 7px rgba(255,60,60,.42);}',
       '.jinpoBondDiagramSlot .jinpoBondSlotFactor.is-hover-factor{color:#ff5a5a;font-weight:900;text-shadow:0 0 5px rgba(255,0,0,.95),0 0 11px rgba(255,58,58,.72);}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramSlot{opacity:.42;filter:grayscale(.35);}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramSlot.is-hover{opacity:1;filter:none;border-color:#ffd75c;box-shadow:0 0 0 2px rgba(255,215,92,.22),0 0 24px rgba(255,194,61,.82),inset 0 0 14px rgba(255,204,70,.14);}',
+      '.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;}',
       '.jinpoBondActiveCards{display:grid;gap:8px;padding:10px;max-height:470px;overflow:auto;}',
       '.jinpoBondActiveCard{border:1px solid rgba(231,189,92,.26);border-radius:11px;background:rgba(48,31,17,.74);padding:10px;cursor:default;outline:none;transition:border-color .14s ease,box-shadow .14s ease,background .14s ease,transform .14s ease;}',
       '.jinpoBondActiveCard:hover{border-color:#ffd75c;background:rgba(91,51,19,.74);box-shadow:0 0 18px rgba(255,203,70,.38);transform:translateY(-1px);}',
@@ -593,9 +509,9 @@
       '.jinpoBondActiveLine{margin:4px 0 7px;color:#ffd75c;font-size:14px;font-weight:900;letter-spacing:.02em;}',
       '.jinpoBondActiveNoLine{color:#bba985;font-weight:700;}',
       '.jinpoBondActiveCard .jinpoBondFactors{margin-top:4px;}',
-      '@media(max-width:980px){#jinpoBondModal.jinpoBondModalActiveMode{height:96vh}#jinpoBondModal.jinpoBondModalActiveMode .jinpoBondModalBody{flex:1;min-height:0;overflow:hidden}.jinpoBondActiveLayout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;box-sizing:border-box}.jinpoBondFormationDiagram{height:min(410px,40vh);min-height:min(410px,40vh)}.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;align-self:stretch}.jinpoBondActiveCards{flex:1;min-height:0;max-height:none;overflow:auto}}',
+      '@media(max-width:980px){#jinpoActiveBondModal{height:96vh}#jinpoActiveBondModal .jinpoActiveBondModalBody{flex:1;min-height:0;overflow:hidden}.jinpoBondActiveLayout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;box-sizing:border-box}.jinpoBondFormationDiagram{height:min(410px,40vh);min-height:min(410px,40vh)}.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;align-self:stretch}.jinpoBondActiveCards{flex:1;min-height:0;max-height:none;overflow:auto}}',
+      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:112px;min-height:70px;padding:5px 4px}.jinpoBondDiagramSlot strong{font-size:12px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:10px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;max-height:18px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
       '@media(max-width:560px){.jinpoBondModalHeader{padding:11px 10px}.jinpoBondModalHeader h3{font-size:18px}#jinpoBondModalClose{min-width:92px;height:40px;padding:0 10px;gap:6px;font-size:13px}#jinpoBondModalClose .jinpoBondCloseIcon{width:20px;height:20px;font-size:18px}}',
-      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px;padding-top:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:105px;min-height:56px;padding:5px 4px}.jinpoBondDiagramSlot strong{font-size:12px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:10px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;max-height:18px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
       '.jinpoBondTable{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:14px;}',
       '.jinpoBondTable th{position:sticky;top:0;z-index:2;padding:10px 8px;text-align:left;background:#171008;color:#d9bd82;border-bottom:1px solid #80602b;}',
       '.jinpoBondTable td{padding:10px 8px;background:rgba(47,31,17,.76);border-top:1px solid rgba(231,189,92,.17);border-bottom:1px solid rgba(231,189,92,.17);vertical-align:middle;}',
@@ -607,7 +523,8 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 10px}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoBondNavActions #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{right:8px;top:auto;bottom:8px;min-width:126px;max-width:none;min-height:46px;padding:8px 14px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:15px;letter-spacing:.02em;gap:8px}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}#jinpoBondModal.jinpoBondModalActiveMode{width:calc(100vw - 8px);max-height:98vh}.jinpoActiveBondGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.jinpoActiveBondCard{min-height:54px;padding:6px 7px;column-gap:5px;row-gap:4px}.jinpoActiveBondMeta{font-size:9px;gap:3px}.jinpoActiveBondNo{min-width:23px;padding:1px 3px}.jinpoActiveBondName{font-size:12px}.jinpoActiveBondFactors{gap:2px}.jinpoActiveBondFactors .jinpoBondFactor{padding:2px 3px;font-size:9px;max-width:33%}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}'
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{display:none!important}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
+      '@media(max-width:620px){#jinpoRecommendSearchOrderRow{grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center}#jinpoRecommendSearchOrderNote{grid-column:1 / -1;grid-row:1;font-size:16px;white-space:normal;line-height:1.25;padding:5px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:2;grid-row:2;justify-self:end;margin-top:2px !important}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -796,8 +713,15 @@
       searchOrderNote=document.createElement('div');
       searchOrderNote.id='jinpoRecommendSearchOrderNote';
       searchOrderNote.textContent='おすすめ検索は全因縁数で高い順検索になります';
-      wrap.insertBefore(searchOrderNote,recommend||wrap.firstChild);
     }
+    var searchOrderRow=document.getElementById('jinpoRecommendSearchOrderRow');
+    if(!searchOrderRow){
+      searchOrderRow=document.createElement('div');
+      searchOrderRow.id='jinpoRecommendSearchOrderRow';
+    }
+    if(wrap.parentNode && searchOrderRow.parentNode!==wrap.parentNode) wrap.parentNode.insertBefore(searchOrderRow,wrap);
+    if(searchOrderNote.parentNode!==searchOrderRow) searchOrderRow.appendChild(searchOrderNote);
+    if(back.parentNode!==searchOrderRow) searchOrderRow.appendChild(back);
     var exitBtn=document.getElementById('jinpoRecommendExitBtn');
     if(!exitBtn&&recommend){
       exitBtn=document.createElement('button');
@@ -820,16 +744,15 @@
     var allBtn = document.getElementById('jinpoBondAllBtn');
     if(!allBtn){
       allBtn = document.createElement('button');allBtn.type='button';allBtn.id='jinpoBondAllBtn';allBtn.className='jinpoBondNavBtn';allBtn.textContent='因縁一覧';
-      allBtn.addEventListener('click', function(){ openModal('all'); });
+      allBtn.addEventListener('click', openModal);
     }
     if(allBtn.parentNode!==right)right.appendChild(allBtn);
     var activeBtn = document.getElementById('jinpoBondActiveBtn');
     if(!activeBtn){
       activeBtn = document.createElement('button');activeBtn.type='button';activeBtn.id='jinpoBondActiveBtn';activeBtn.className='jinpoBondNavBtn';activeBtn.textContent='現在発動中因縁';
-      activeBtn.addEventListener('click', function(){ openModal('active'); });
+      activeBtn.addEventListener('click', openActiveModal);
     }
     if(activeBtn.parentNode!==right)right.appendChild(activeBtn);
-    if(back.parentNode!==right)right.appendChild(back);
   }
 
   function ensureModal(){
@@ -853,6 +776,27 @@
     backdrop.addEventListener('click', function(ev){ if(ev.target === backdrop) closeModal(); });
     document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape' && backdrop.classList.contains('is-open')) closeModal(); });
   }
+
+  function ensureActiveModal(){
+    if(document.getElementById('jinpoActiveBondModalBackdrop')) return;
+    var backdrop = document.createElement('div');
+    backdrop.id = 'jinpoActiveBondModalBackdrop';
+    backdrop.setAttribute('aria-hidden','true');
+    backdrop.innerHTML = ''+
+      '<div id="jinpoActiveBondModal" role="dialog" aria-modal="true" aria-labelledby="jinpoActiveBondModalTitle">'+
+        '<div class="jinpoActiveBondModalHeader">'+
+          '<h3 id="jinpoActiveBondModalTitle">現在発動中因縁</h3>'+
+          '<span id="jinpoActiveBondModalCount" class="jinpoActiveBondModalCount"></span>'+
+          '<button id="jinpoActiveBondModalClose" type="button" aria-label="閉じる" title="閉じる"><span class="jinpoBondCloseIcon" aria-hidden="true">×</span><span class="jinpoBondCloseText">閉じる</span></button>'+
+        '</div>'+
+        '<div id="jinpoActiveBondModalBody" class="jinpoActiveBondModalBody"></div>'+
+      '</div>';
+    document.body.appendChild(backdrop);
+    document.getElementById('jinpoActiveBondModalClose').addEventListener('click', closeActiveModal);
+    backdrop.addEventListener('click', function(ev){ if(ev.target === backdrop) closeActiveModal(); });
+    document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape' && backdrop.classList.contains('is-open')) closeActiveModal(); });
+  }
+
   async function loadBondMaster(){
     /* 画面上で因縁マスターを差し替えた場合は、過去キャッシュより現在のinenMasterを必ず優先する。 */
     try{
@@ -883,54 +827,6 @@
       .finally(function(){ bondMasterLoadingPromise = null; });
     return bondMasterLoadingPromise;
   }
-  function appliedPreviewBondNames(){
-    var box = document.getElementById('appliedRowPreviewUnderFormation');
-    if(!box || !text(box.textContent)) return [];
-    var groups = Array.prototype.slice.call(box.querySelectorAll('.appliedPreviewBox'));
-    for(var i=0;i<groups.length;i++){
-      var label = groups[i].querySelector('.appliedPreviewLabel');
-      if(text(label && label.textContent) !== '因縁') continue;
-      return unique(Array.prototype.slice.call(groups[i].querySelectorAll('.appliedPreviewList span,.badge')).map(function(el){ return text(el.textContent); }));
-    }
-    return [];
-  }
-  function lowerAppliedBondNames(){
-    var box = document.getElementById('appliedDbRowDisplay');
-    if(!box || box.style.display === 'none') return [];
-    return unique(Array.prototype.slice.call(box.querySelectorAll('.badge')).map(function(el){ return text(el.textContent); }));
-  }
-  function highlightedRowBondNames(){
-    var row = document.querySelector('#dbFormationList tr.jinpoCurrentAppliedMainRow');
-    if(!row) return [];
-    var badges = Array.prototype.slice.call(row.querySelectorAll('.dbListBonds .badge,.badge'));
-    if(badges.length) return unique(badges.map(function(el){ return text(el.textContent); }));
-    var cells = row.querySelectorAll('td');
-    if(cells.length >= 5){
-      return unique(text(cells[4].textContent).split(/[|/、,]+/).map(text));
-    }
-    return [];
-  }
-  function calculationFormationConfig(formation, sourceMap){
-    var map = sourceMap && typeof sourceMap === 'object' ? sourceMap : window.JINPO_FORMATION_CONFIG;
-    var source = (map && map[formation]) || (window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation]) || {};
-    var canonical = ACTIVE_FORMATION_VIEW[formation];
-    if(!canonical) return map || window.JINPO_FORMATION_CONFIG;
-    var one = {};
-    Object.keys(source || {}).forEach(function(k){ one[k] = source[k]; });
-    /* 表示用の補助線が将来増えても、因縁判定は3人ラインだけに固定する。 */
-    one.activeLines = canonical.lines.map(function(line){ return line.slice(); });
-    var out = {};
-    out[formation] = one;
-    return out;
-  }
-  function restoreCanonicalCalculationLines(){
-    var map = window.JINPO_FORMATION_CONFIG;
-    if(!map || typeof map !== 'object') return;
-    Object.keys(ACTIVE_FORMATION_VIEW).forEach(function(formation){
-      if(!map[formation]) return;
-      map[formation].activeLines = ACTIVE_FORMATION_VIEW[formation].lines.map(function(line){ return line.slice(); });
-    });
-  }
   function currentCalculatedResult(master){
     try{
       if(typeof placement === 'undefined' || !placement) return null;
@@ -947,7 +843,7 @@
         sanitizedUniquePlacement(placement),
         formation,
         calcMaster,
-        calculationFormationConfig(formation)
+        window.JINPO_FORMATION_CONFIG
       );
     }catch(e){
       console.error('現在発動中因縁の陣形再計算失敗',e);
@@ -958,43 +854,87 @@
   function calculatedBondNamesFromResult(result){
     return unique((result && Array.isArray(result.activated) ? result.activated : []).map(function(a){ return text(a && a.name); }));
   }
-  function calculatedCurrentBondNames(){
-    try{ return calculatedBondNamesFromResult(currentCalculatedResult()); }
-    catch(e){ return []; }
+
+  function masterRowByBondName(master,name){
+    var wanted = normalize(name);
+    if(!wanted) return null;
+    var rows = Array.isArray(master) ? master : [];
+    for(var i=0;i<rows.length;i++){
+      if(normalize(rows[i] && rows[i]['因縁名']) === wanted) return rows[i];
+    }
+    return null;
   }
-  function currentActiveBondNames(result){
-    /* 現在の配置・陣形の再計算結果だけを正とする。
-       差替え直後の古いDOM表示や selectedDbResultId の有無には依存しない。 */
-    return calculatedBondNamesFromResult(result || currentCalculatedResult());
+
+  function resultOccurrences(act){
+    if(!act) return [];
+    if(Array.isArray(act.occurrences) && act.occurrences.length) return act.occurrences;
+    return [act];
   }
-  function rowsForMode(master){
-    if(modalMode !== 'active') return master.slice();
-    var wanted = new Set(activeBondNames.map(normalize));
-    return master.filter(function(row){ return wanted.has(normalize(row['因縁名'])); });
+
+  function resultLinesForActivation(act){
+    /* 同一因縁が複数ラインで成立しても、表示・発光は有効な1ラインだけ。
+       ActivationEngine が全体の文曲使用人数を最小化して選んだ lineSlots を優先する。 */
+    var selected = Array.isArray(act && act.lineSlots) ? act.lineSlots.map(Number).filter(Boolean) : [];
+    if(selected.length) return [selected];
+    var selectedOcc = act && act.selectedOccurrence;
+    var selectedOccLine = Array.isArray(selectedOcc && selectedOcc.lineSlots) ? selectedOcc.lineSlots.map(Number).filter(Boolean) : [];
+    if(selectedOccLine.length) return [selectedOccLine];
+    var occurrences=resultOccurrences(act);
+    for(var i=0;i<occurrences.length;i++){
+      var line=Array.isArray(occurrences[i] && occurrences[i].lineSlots) ? occurrences[i].lineSlots.map(Number).filter(Boolean) : [];
+      if(line.length) return [line];
+    }
+    return [];
   }
-  function resultLineDetails(){
-    var map = new Map();
-    var activated = activeCalculatedResult && Array.isArray(activeCalculatedResult.activated) ? activeCalculatedResult.activated : [];
-    activated.forEach(function(act){
-      var name = normalize(act && act.name);
-      if(!name) return;
-      var occ = Array.isArray(act.occurrences) && act.occurrences.length ? act.occurrences : [act];
-      var lines = uniqueBy(occ.map(function(o){
-        return Array.isArray(o && o.lineSlots) ? o.lineSlots.map(Number).filter(Boolean) : [];
-      }).filter(function(x){return x.length;}), lineId);
-      if(lines.length) map.set(name, lines);
+
+  function occurrenceForLine(act,line){
+    if(!act || !Array.isArray(line)) return null;
+    var wanted = lineId(line);
+    var occurrences = resultOccurrences(act);
+    for(var i=0;i<occurrences.length;i++){
+      if(lineId(occurrences[i] && occurrences[i].lineSlots) === wanted) return occurrences[i];
+    }
+    return null;
+  }
+
+  function assignmentsForOccurrence(act,occ){
+    if(!occ) return [];
+    if(act && act.selectedOccurrence === occ && Array.isArray(act.assignments) && act.assignments.length) return act.assignments;
+    return Array.isArray(occ.assignments) ? occ.assignments : [];
+  }
+
+  function orderedFactorsForActivation(act,row,lines){
+    var line = Array.isArray(lines) && lines.length ? lines[0] : null;
+    var occ = occurrenceForLine(act,line);
+    var assignments = assignmentsForOccurrence(act,occ);
+    if(line && assignments.length){
+      var byHero = new Map();
+      assignments.forEach(function(a){
+        var rel = Number(a && a.heroIndex);
+        var factor = text(a && a.requiredFactor);
+        if(Number.isInteger(rel) && factor && !byHero.has(rel)) byHero.set(rel,factor);
+      });
+      var ordered = line.map(function(slot,rel){ return byHero.get(rel) || ''; }).filter(Boolean);
+      if(ordered.length) return ordered;
+    }
+    var fromRow = [row && row['因子1'],row && row['因子2'],row && row['因子3']].map(text).filter(Boolean);
+    if(fromRow.length) return fromRow;
+    var fromAct = [];
+    resultOccurrences(act).some(function(o){
+      var values = assignmentsForOccurrence(act,o).map(function(a){ return text(a && a.requiredFactor); }).filter(Boolean);
+      if(values.length){ fromAct = values; return true; }
+      return false;
     });
-    return map;
+    return fromAct;
   }
 
   function allActiveLineIds(){
     var out = [];
-    resultLineDetails().forEach(function(lines){ lines.forEach(function(line){ out.push(lineId(line)); }); });
+    var activated = activeCalculatedResult && Array.isArray(activeCalculatedResult.activated) ? activeCalculatedResult.activated : [];
+    activated.forEach(function(act){
+      resultLinesForActivation(act).forEach(function(line){ out.push(lineId(line)); });
+    });
     return new Set(unique(out));
-  }
-
-  function activeLineDataForRow(row, detailMap){
-    return detailMap.get(normalize(row && row['因縁名'])) || [];
   }
 
   function renderFormationDiagram(){
@@ -1014,18 +954,19 @@
       }
     });
     var slotHtml = '';
-    for(var s=1;s<=6;s++){
-      var p = cfg.slots[s];
-      if(!p) continue;
-      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+s+'" style="left:'+p.x+'%;top:'+p.y+'%;">'+
-        '<strong>'+s+'</strong><div class="jinpoBondSlotHero">'+esc(currentHeroName(s))+'</div>'+
-        '<div class="jinpoBondSlotFactors">'+renderCurrentHeroFactors(s)+'</div></div>';
+    for(var slot=1;slot<=6;slot++){
+      var pos = cfg.slots[slot];
+      if(!pos) continue;
+      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+slot+'" style="left:'+pos.x+'%;top:'+pos.y+'%;">'+
+        '<strong>'+slot+'</strong><div class="jinpoBondSlotHero">'+esc(currentHeroName(slot))+'</div>'+
+        renderActiveFactorUseBadges(null)+
+        '<div class="jinpoBondSlotFactors">'+renderCurrentHeroFactors(slot)+'</div></div>';
     }
     return '<div id="jinpoBondFormationDiagram" class="jinpoBondFormationDiagram" data-formation="'+esc(formation)+'">'+
       '<svg class="jinpoBondFormationSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+svgLines.join('')+'</svg>'+slotHtml+'</div>';
   }
 
-  function setDiagramHighlight(lineIds,slots,factorMatches){
+  function setDiagramHighlight(lineIds,slots,factorMatches,factorUse){
     var diagram = document.getElementById('jinpoBondFormationDiagram');
     if(!diagram) return;
     var wantedLines = new Set((lineIds || []).map(text).filter(Boolean));
@@ -1033,93 +974,63 @@
     var wantedFactors = new Set((factorMatches || []).map(function(item){
       return Number(item && item.slot)+'|'+normalize(item && item.factor);
     }).filter(function(key){ return !/^0\|$/.test(key) && !/\|$/.test(key); }));
+    var useBySlot = new Map();
+    (factorUse || []).forEach(function(item){
+      var slot=Number(item && item.slot),values=Array.isArray(item && item.factors)?item.factors.map(Number).filter(function(n){return n>=1&&n<=4;}):[];
+      if(slot>=1&&slot<=6&&values.length) useBySlot.set(slot,new Set(values));
+    });
     var on = wantedLines.size > 0 || wantedSlots.size > 0;
-    diagram.classList.toggle('is-highlighting', on);
+    diagram.classList.toggle('is-highlighting',on);
     Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondDiagramLine'),function(el){
-      el.classList.toggle('is-hover', on && wantedLines.has(text(el.getAttribute('data-line-id'))));
+      el.classList.toggle('is-hover',on && wantedLines.has(text(el.getAttribute('data-line-id'))));
     });
     Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondDiagramSlot'),function(el){
-      el.classList.toggle('is-hover', on && wantedSlots.has(Number(el.getAttribute('data-slot'))));
+      var slot=Number(el.getAttribute('data-slot'));
+      el.classList.toggle('is-hover',on && wantedSlots.has(slot));
+      var holder=el.querySelector('.jinpoBondUseBadges');
+      if(holder){
+        var set=on?useBySlot.get(slot):null;
+        var html=renderActiveFactorUseBadgeContents(set);
+        holder.innerHTML=html;
+        holder.hidden=!html;
+      }
     });
     Array.prototype.forEach.call(diagram.querySelectorAll('.jinpoBondSlotFactor'),function(el){
       var slotEl = el.closest ? el.closest('.jinpoBondDiagramSlot') : null;
       var key = Number(slotEl && slotEl.getAttribute('data-slot'))+'|'+text(el.getAttribute('data-factor'));
-      el.classList.toggle('is-hover-factor', on && wantedFactors.has(key));
+      el.classList.toggle('is-hover-factor',on && wantedFactors.has(key));
     });
   }
 
-  function clearDiagramHighlight(){
-    setDiagramHighlight([],[],[]);
-  }
+  function clearDiagramHighlight(){ setDiagramHighlight([],[],[],[]); }
 
   function cardHighlightData(card){
     var ids = text(card && card.getAttribute('data-line-ids')).split('|').map(text).filter(Boolean);
     var slots = text(card && card.getAttribute('data-slots')).split(',').map(Number).filter(Boolean);
-    var factors = [];
+    var factors = [],factorUse=[];
     try{
       var raw = card && card.getAttribute('data-factor-matches');
       var parsed = raw ? JSON.parse(raw) : [];
       if(Array.isArray(parsed)) factors = parsed;
     }catch(e){}
-    return {ids:ids,slots:slots,factors:factors};
+    try{
+      var rawUse = card && card.getAttribute('data-factor-use');
+      var parsedUse = rawUse ? JSON.parse(rawUse) : [];
+      if(Array.isArray(parsedUse)) factorUse = parsedUse;
+    }catch(e){}
+    return {ids:ids,slots:slots,factors:factors,factorUse:factorUse};
   }
 
   function applyCardHighlight(card){
     var d = cardHighlightData(card);
-    setDiagramHighlight(d.ids,d.slots,d.factors);
+    setDiagramHighlight(d.ids,d.slots,d.factors,d.factorUse);
   }
 
-  function calculatedActivationForRow(row){
-    var wanted = normalize(row && row['因縁名']);
-    var activated = activeCalculatedResult && Array.isArray(activeCalculatedResult.activated) ? activeCalculatedResult.activated : [];
-    for(var i=0;i<activated.length;i++){
-      if(normalize(activated[i] && activated[i].name) === wanted) return activated[i];
-    }
-    return null;
-  }
-
-  function occurrenceForLine(act,line){
-    if(!act || !Array.isArray(line)) return null;
-    var wanted = lineId(line);
-    var occurrences = Array.isArray(act.occurrences) && act.occurrences.length ? act.occurrences : [act];
-    for(var i=0;i<occurrences.length;i++){
-      if(lineId(occurrences[i] && occurrences[i].lineSlots) === wanted) return occurrences[i];
-    }
-    return null;
-  }
-
-  function assignmentsForOccurrence(act,occ){
-    if(!occ) return [];
-    if(act && act.selectedOccurrence === occ && Array.isArray(act.assignments) && act.assignments.length) return act.assignments;
-    return Array.isArray(occ.assignments) ? occ.assignments : [];
-  }
-
-  function orderedFactorsForRow(row,lines){
-    var act = calculatedActivationForRow(row);
-    var line = Array.isArray(lines) && lines.length ? lines[0] : null;
-    var occ = occurrenceForLine(act,line);
-    var assignments = assignmentsForOccurrence(act,occ);
-    if(line && assignments.length){
-      var byHero = new Map();
-      assignments.forEach(function(a){
-        var rel = Number(a && a.heroIndex);
-        var factor = text(a && a.requiredFactor);
-        if(Number.isInteger(rel) && factor && !byHero.has(rel)) byHero.set(rel,factor);
-      });
-      var ordered = line.map(function(slot,rel){ return byHero.get(rel) || ''; }).filter(Boolean);
-      if(ordered.length) return ordered;
-    }
-    return [row && row['因子1'],row && row['因子2'],row && row['因子3']].map(text).filter(Boolean);
-  }
-
-  function factorMatchesForRow(row,lines){
-    var act = calculatedActivationForRow(row);
-    if(!act) return [];
+  function factorMatchesForActivation(act,lines){
     var allowed = new Set((lines || []).map(lineId));
-    var occurrences = Array.isArray(act.occurrences) && act.occurrences.length ? act.occurrences : [act];
     var out = [];
     var seen = new Set();
-    occurrences.forEach(function(occ){
+    resultOccurrences(act).forEach(function(occ){
       var line = Array.isArray(occ && occ.lineSlots) ? occ.lineSlots.map(Number).filter(Boolean) : [];
       if(!line.length || (allowed.size && !allowed.has(lineId(line)))) return;
       assignmentsForOccurrence(act,occ).forEach(function(a){
@@ -1136,27 +1047,54 @@
     return out;
   }
 
+  /* 特化/凸2/LV20/文曲は、その因縁の選択ラインで実際に採用された因子slotだけを返す。
+     編成全体の使用因子を合算して常時表示すると、どのラインで何を使ったか判別できなくなるため禁止。 */
+  function factorUseForActivation(act,lines){
+    var line = Array.isArray(lines) && lines.length ? lines[0] : null;
+    if(!Array.isArray(line) || !line.length) return [];
+    var occ = occurrenceForLine(act,line);
+    var assigns = assignmentsForOccurrence(act,occ);
+    var bySlot = new Map();
+    assigns.forEach(function(a){
+      var rel=Number(a && a.heroIndex),slot=(Number.isInteger(rel)&&rel>=0&&rel<line.length)?Number(line[rel]):0;
+      if(slot<1||slot>6) return;
+      var fi=Number(a && a.providedFactorIndex);
+      var use=0;
+      if(Number.isInteger(fi)&&fi>=0&&fi<=3) use=fi+1;
+      else if(a && a.usesFactor4) use=4;
+      if(!use) return;
+      if(!bySlot.has(slot)) bySlot.set(slot,new Set());
+      bySlot.get(slot).add(use);
+    });
+    var out=[];
+    bySlot.forEach(function(set,slot){out.push({slot:Number(slot),factors:Array.from(set).sort(function(a,b){return a-b;})});});
+    return out.sort(function(a,b){return a.slot-b.slot;});
+  }
+
   function bindActiveCardHighlight(){
-    var body = document.getElementById('jinpoBondModalBody');
+    var body = document.getElementById('jinpoActiveBondModalBody');
     if(!body) return;
     Array.prototype.forEach.call(body.querySelectorAll('.jinpoBondActiveCard'),function(card){
       card.addEventListener('mouseenter',function(){ applyCardHighlight(card); });
-      card.addEventListener('mouseleave',function(){ clearDiagramHighlight(); });
+      card.addEventListener('mouseleave',clearDiagramHighlight);
     });
   }
 
-  function renderActiveModal(rows){
+  function renderActiveModal(master,result){
     var formation = currentFormationName();
-    var detailMap = resultLineDetails();
-    var cards = rows.map(function(row,index){
-      var lines = activeLineDataForRow(row, detailMap);
-      var factors = orderedFactorsForRow(row,lines);
-      var factorMatches = factorMatchesForRow(row,lines);
+    var activated = result && Array.isArray(result.activated) ? result.activated : [];
+    var cards = activated.map(function(act,index){
+      var name = text(act && act.name);
+      var row = masterRowByBondName(master,name);
+      var lines = resultLinesForActivation(act);
+      var factors = orderedFactorsForActivation(act,row,lines);
+      var factorMatches = factorMatchesForActivation(act,lines);
+      var factorUse = factorUseForActivation(act,lines);
       var lineIds = unique(lines.map(lineId));
-      var slots = unique([].concat.apply([],lines).map(function(n){return String(Number(n));})).map(Number);
+      var slots = unique([].concat.apply([],lines).map(function(n){ return String(Number(n)); })).map(Number);
       var lineText = lines.length ? lines.map(lineDisplay).join(' / ') : '成立位置を再計算できませんでした';
-      return '<article class="jinpoBondActiveCard" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'" data-factor-matches="'+esc(JSON.stringify(factorMatches))+'">'+
-        '<div class="jinpoBondActiveCardHead"><div class="jinpoBondActiveCardTitle"><span class="jinpoBondActiveCardNo" aria-label="'+(index+1)+'番目">'+(index+1)+'</span><div class="jinpoBondActiveCardName">'+esc(row['因縁名'] || '')+'</div></div><div class="jinpoBondActiveCardKind">'+esc(row['因縁種類'] || '')+'</div></div>'+
+      return '<article class="jinpoBondActiveCard" data-active-bond-name="'+esc(name)+'" data-line-ids="'+esc(lineIds.join('|'))+'" data-slots="'+esc(slots.join(','))+'" data-factor-matches="'+esc(JSON.stringify(factorMatches))+'" data-factor-use="'+esc(JSON.stringify(factorUse))+'">'+
+        '<div class="jinpoBondActiveCardHead"><div class="jinpoBondActiveCardTitle"><span class="jinpoBondActiveCardNo" aria-label="'+(index+1)+'番目">'+(index+1)+'</span><div class="jinpoBondActiveCardName">'+esc(name)+'</div></div><div class="jinpoBondActiveCardKind">'+esc(row && row['因縁種類'] || '')+'</div></div>'+
         '<div class="jinpoBondActiveLine '+(lines.length?'':'jinpoBondActiveNoLine')+'">成立ライン '+esc(lineText)+'</div>'+
         '<div class="jinpoBondFactors">'+factors.map(function(f){ return '<span class="jinpoBondFactor">'+esc(f)+'</span>'; }).join('')+'</div>'+
       '</article>';
@@ -1167,7 +1105,7 @@
         renderFormationDiagram()+
       '</section>'+
       '<section class="jinpoBondActiveListPanel">'+
-        '<div class="jinpoBondActiveListHead"><strong>発動中因縁</strong><span class="jinpoBondModalCount">'+rows.length+'件</span></div>'+
+        '<div class="jinpoBondActiveListHead"><strong>発動中因縁</strong><span class="jinpoBondModalCount">'+activated.length+'件</span></div>'+
         '<div class="jinpoBondActiveCards">'+cards+'</div>'+
       '</section>'+
     '</div>';
@@ -1178,7 +1116,7 @@
     var count = document.getElementById('jinpoBondModalCount');
     var input = document.getElementById('jinpoBondSearch');
     if(!body || !count || !input || !Array.isArray(bondMasterCache)) return;
-    var base = rowsForMode(bondMasterCache);
+    var base = bondMasterCache.slice();
     var terms = text(input.value).split(/[\s　]+/).filter(Boolean).map(normalize);
     var rows = base.filter(function(row){
       if(!terms.length) return true;
@@ -1186,17 +1124,8 @@
       return terms.every(function(term){ return hay.indexOf(term) !== -1; });
     });
     count.textContent = rows.length + ' / ' + base.length + '件';
-    if(modalMode === 'active' && !activeBondNames.length){
-      body.innerHTML = '<div class="jinpoBondEmpty">現在発動中の因縁はありません。</div>';
-      return;
-    }
     if(!rows.length){
       body.innerHTML = '<div class="jinpoBondEmpty">該当する因縁がありません。</div>';
-      return;
-    }
-    if(modalMode === 'active'){
-      body.innerHTML = renderActiveModal(rows);
-      bindActiveCardHighlight();
       return;
     }
     body.innerHTML = '<table class="jinpoBondTable">'+
@@ -1212,39 +1141,22 @@
       }).join('')+
       '</tbody></table>';
   }
-  async function openModal(mode){
+
+  async function openModal(){
     ensureModal();
-    var requestMode = mode === 'active' ? 'active' : 'all';
     var requestToken = ++modalOpenToken;
-    modalMode = requestMode;
-    activeCalculatedResult = null;
-    activeBondNames = [];
-    var title = document.getElementById('jinpoBondModalTitle');
     var input = document.getElementById('jinpoBondSearch');
     var body = document.getElementById('jinpoBondModalBody');
     var backdrop = document.getElementById('jinpoBondModalBackdrop');
-    var modal = document.getElementById('jinpoBondModal');
-    if(modal) modal.classList.toggle('jinpoBondModalActiveMode', requestMode === 'active');
-    title.textContent = requestMode === 'active' ? '現在発動中因縁' : '因縁一覧';
     input.value = '';
     body.innerHTML = '<div class="jinpoBondEmpty">読み込み中...</div>';
-    backdrop.setAttribute('data-mode',requestMode);
     backdrop.classList.add('is-open');
     backdrop.setAttribute('aria-hidden','false');
     try{
-      var master = await loadBondMaster();
-      /* 閉じる/別モードを押した後に古い非同期結果を描画しない。 */
-      if(requestToken !== modalOpenToken || !backdrop.classList.contains('is-open') || modalMode !== requestMode) return;
-      if(requestMode === 'active'){
-        /* 必ずマスター読込完了後の「現在の6人＋現在の陣形」から再計算する。 */
-        activeCalculatedResult = currentCalculatedResult(master);
-        activeBondNames = currentActiveBondNames(activeCalculatedResult);
-      }
+      await loadBondMaster();
+      if(requestToken !== modalOpenToken || !backdrop.classList.contains('is-open')) return;
       renderModal();
-      setTimeout(function(){
-        if(requestToken !== modalOpenToken) return;
-        try{ input.focus(); }catch(e){}
-      },0);
+      setTimeout(function(){ if(requestToken === modalOpenToken) try{ input.focus(); }catch(e){} },0);
     }catch(err){
       if(requestToken !== modalOpenToken) return;
       console.error('因縁一覧読込エラー',err);
@@ -1253,14 +1165,71 @@
       if(count) count.textContent = '';
     }
   }
+
   function closeModal(){
     ++modalOpenToken;
     var backdrop = document.getElementById('jinpoBondModalBackdrop');
     if(!backdrop) return;
-    clearDiagramHighlight();
     backdrop.classList.remove('is-open');
     backdrop.setAttribute('aria-hidden','true');
   }
+
+  function renderActiveModalFromCurrentState(master){
+    var body = document.getElementById('jinpoActiveBondModalBody');
+    var count = document.getElementById('jinpoActiveBondModalCount');
+    if(!body || !count) return;
+    activeCalculatedResult = currentCalculatedResult(master);
+    var activated = activeCalculatedResult && Array.isArray(activeCalculatedResult.activated) ? activeCalculatedResult.activated : [];
+    count.textContent = activated.length + ' / ' + activated.length + '件';
+    if(!activated.length){
+      body.innerHTML = '<div class="jinpoBondEmpty">現在発動中の因縁はありません。</div>';
+      return;
+    }
+    body.innerHTML = renderActiveModal(master,activeCalculatedResult);
+    bindActiveCardHighlight();
+  }
+
+  async function openActiveModal(){
+    ensureActiveModal();
+    var requestToken = ++activeModalOpenToken;
+    var body = document.getElementById('jinpoActiveBondModalBody');
+    var backdrop = document.getElementById('jinpoActiveBondModalBackdrop');
+    body.innerHTML = '<div class="jinpoBondEmpty">読み込み中...</div>';
+    backdrop.classList.add('is-open');
+    backdrop.setAttribute('aria-hidden','false');
+    try{
+      var master = await loadBondMaster();
+      if(requestToken !== activeModalOpenToken || !backdrop.classList.contains('is-open')) return;
+      renderActiveModalFromCurrentState(master);
+    }catch(err){
+      if(requestToken !== activeModalOpenToken) return;
+      console.error('現在発動中因縁読込エラー',err);
+      body.innerHTML = '<div class="jinpoBondEmpty">現在発動中因縁を読み込めませんでした。</div>';
+      var count = document.getElementById('jinpoActiveBondModalCount');
+      if(count) count.textContent = '';
+    }
+  }
+
+  function closeActiveModal(){
+    ++activeModalOpenToken;
+    var backdrop = document.getElementById('jinpoActiveBondModalBackdrop');
+    if(!backdrop) return;
+    backdrop.classList.remove('is-open');
+    backdrop.setAttribute('aria-hidden','true');
+  }
+
+  function refreshActiveModalFromCurrentState(){
+    var backdrop = document.getElementById('jinpoActiveBondModalBackdrop');
+    if(!backdrop || !backdrop.classList.contains('is-open')) return;
+    var token = ++activeModalOpenToken;
+    loadBondMaster().then(function(master){
+      if(token !== activeModalOpenToken || !backdrop.classList.contains('is-open')) return;
+      renderActiveModalFromCurrentState(master);
+    }).catch(function(e){ console.error('現在発動中因縁の再描画失敗',e); });
+  }
+  document.addEventListener('change',function(ev){
+    if(ev.target && ev.target.id === 'formationSelect') setTimeout(refreshActiveModalFromCurrentState,0);
+  },false);
 
   /* 職業表示は英傑マスタ「職業」列を正とする。特化(因子1)とは混同しない。
      既存ロジックを変更せず、配置英傑モーダルの表示文字だけを補正する。 */
@@ -1474,11 +1443,7 @@
       var args = Array.prototype.slice.call(arguments);
       args[0] = sanitizedUniquePlacement(sourcePlacement);
       var canonical = canonicalFormation(formationName);
-      if(canonical){
-        args[1] = canonical;
-        /* 全計算経路で表示用補助線を遮断し、因縁判定は必ず3人ラインだけにする。 */
-        args[3] = calculationFormationConfig(canonical, args[3]);
-      }
+      if(canonical) args[1] = canonical;
       return current.apply(this,args);
     }
     guardedCalculateFormation.__jinpoDuplicatePlacementGuardWrapped = true;
@@ -1486,22 +1451,6 @@
     engine.calculateFormation = guardedCalculateFormation;
   }
 
-  function installFormationRenderGuard(){
-    var current = window.renderFormation;
-    if(typeof current !== 'function' || current.__jinpoCanonicalLineRestoreWrapped) return;
-    function guardedRenderFormation(){
-      try{
-        return current.apply(this,arguments);
-      }finally{
-        /* renderFormation が鶴翼の見た目用2人線を activeLines に混ぜても計算設定へ残さない。 */
-        restoreCanonicalCalculationLines();
-        syncFormationUiState();
-      }
-    }
-    guardedRenderFormation.__jinpoCanonicalLineRestoreWrapped = true;
-    guardedRenderFormation.__jinpoCanonicalLineRestoreOriginal = current;
-    window.renderFormation = guardedRenderFormation;
-  }
 
   function dbRowDuplicateHeroKeys(row){
     try{
@@ -1553,13 +1502,13 @@
         var ok=applyInen.apply(this,arguments);
         if(ok!==false){
           try{ if(typeof inenMaster!=='undefined' && Array.isArray(inenMaster)){ bondMasterCache=inenMaster.slice(); } }catch(e){ bondMasterCache=null; }
-          activeCalculatedResult=null; activeBondNames=[];
+          activeCalculatedResult=null;
           clearTransientAppliedDbState();
           invalidateReachCandidateCacheAfterMasterChange();
           syncRuntimeOverrideSearchState();
           try{
-            var modal=document.getElementById('jinpoBondModalBackdrop');
-            if(modal && modal.classList.contains('is-open') && modalMode==='active') setTimeout(function(){ openModal('active'); },0);
+            var modal=document.getElementById('jinpoActiveBondModalBackdrop');
+            if(modal && modal.classList.contains('is-open')) setTimeout(openActiveModal,0);
           }catch(e){}
         }
         return ok;
@@ -1591,7 +1540,7 @@
     if(window.__jinpoSavedFormationRefreshGuardInstalled) return;
     window.__jinpoSavedFormationRefreshGuardInstalled=true;
     /* 保存読込handlerはその場でcalculate()まで実行するため、
-       旧DB補正がそのcalculateへ混ざらないようcapture段階で先に破棄する。 */
+       読込前のDB適用状態をcapture段階で先に破棄する。 */
     document.addEventListener('click',function(ev){
       var btn=ev.target&&ev.target.closest?ev.target.closest('#savedFormations [data-load]'):null;
       if(btn) clearTransientAppliedDbState();
@@ -1610,12 +1559,7 @@
   function installDirectStateResetGuards(){
     if(window.__jinpoDirectStateResetGuardsInstalled) return;
     window.__jinpoDirectStateResetGuardsInstalled=true;
-    function onFormationReset(ev){
-      var t=ev && ev.target;
-      if(t && t.id==='formationSelect') clearTransientAppliedDbState();
-    }
-    document.addEventListener('change',onFormationReset,true);
-    document.addEventListener('input',onFormationReset,true);
+    /* 陣形変更は編成変更ではないため、適用中候補を消さない。全解除だけ状態を破棄する。 */
     document.addEventListener('click',function(ev){
       var t=ev && ev.target && ev.target.closest ? ev.target.closest('#clearBtn') : null;
       if(t) clearTransientAppliedDbState();
@@ -1647,11 +1591,9 @@
     injectStyle();
     ensureActions();
     ensureModal();
-    restoreCanonicalCalculationLines();
+    ensureActiveModal();
     installActivationDuplicateGuard();
-    installFormationRenderGuard();
     installDbApplyDuplicateGuard();
-    installReachSwapAppliedStateGuard();
     installDbRowRenderStateGuard();
     installRuntimeMasterOverrideGuards();
     installPrecomputedSearchOverrideGuard();

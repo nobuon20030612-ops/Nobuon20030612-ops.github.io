@@ -9,7 +9,7 @@
     '水':'水属性','水属性':'水属性','火':'火属性','火属性':'火属性','風':'風属性','風属性':'風属性'
   };
   var FORMATION_ALIASES={
-    '衡軛':'衡軛','衝軛':'衡軛','鴻鵠':'衡軛','こうやく':'衡軛','コウヤク':'衡軛',
+    '衡軛':'衡軛','こうやく':'衡軛','コウヤク':'衡軛',
     '鶴翼':'鶴翼','かくよく':'鶴翼','カクヨク':'鶴翼',
     '方円':'方円','ほうえん':'方円','ホウエン':'方円',
     '魚鱗':'魚鱗','ぎょりん':'魚鱗','ギョリン':'魚鱗'
@@ -18,7 +18,7 @@
   function q(id){return document.getElementById(id);}
   function qa(sel,root){return Array.prototype.slice.call((root||document).querySelectorAll(sel));}
   function text(v){return String(v==null?'':v).trim();}
-  function norm(v){return text(v).replace(/山中鹿之助/g,'山中鹿之介').replace(/・/g,'').replace(/[\s　]+/g,'');}
+  function norm(v){return text(v).replace(/・/g,'').replace(/[\s　]+/g,'');}
   function canonicalStat(v){return STAT_ALIASES[text(v)]||'';}
   function canonicalFormation(v){return FORMATION_ALIASES[text(v)]||'';}
   function emitChange(el){
@@ -356,7 +356,6 @@
   async function importSelectedJson(){var input=q('importJsonFile'),b=q('importJsonBtn');if(!input||!b)return fail('JSON読込機能が見つかりません。');if(!input.files||!input.files[0])return fail('JSONファイルが選択されていません。先にサイトのJSONファイル欄でファイルを選択してください。');var st=q('shareStatus'),before=text(st&&st.textContent||'');click(b);await waitUntil(function(){return text(st&&st.textContent||'')!==before;},1600);var msg=text(st&&st.textContent||'');return /失敗/.test(msg)?fail(msg||'JSON読込に失敗しました。'):ok(msg||'選択済みJSONを読み込みました。',{state:readSiteState()});}
   async function applySelectedBondMaster(){var input=q('overrideInenFile'),b=q('applyOverrideInenBtn');if(!input||!b)return fail('因縁マスター差替機能が見つかりません。');if(!input.files||!input.files[0])return fail('因縁マスターCSVが選択されていません。先にサイトのファイル欄でCSVを選択してください。');var st=q('overrideInenStatus'),before=text(st&&st.textContent||'');click(b);await waitUntil(function(){return text(st&&st.textContent||'')!==before;},1800);var msg=text(st&&st.textContent||'');return /失敗/.test(msg)?fail(msg||'因縁マスターの適用に失敗しました。'):ok(msg||'選択済み因縁マスターを適用しました。');}
   function resetBondMaster(){var b=q('resetOverrideInenBtn');if(!b)return fail('標準因縁へ戻す機能が見つかりません。');click(b);return ok('標準因縁マスターへ戻しました。');}
-  function clearFormationMaster(){var b=q('clearMasterBtn');if(!b)return fail('formations_masterクリア機能が見つかりません。');click(b);return ok('formations_masterをクリアしました。');}
   function scrollTopAction(){try{window.scrollTo({top:0,behavior:'smooth'});return ok('ページ上部へ移動しました。');}catch(e){return fail('ページ上部へ移動できませんでした。');}}
   function scrollResultAction(){var el=q('summary')||q('dbFormationList');if(!el||typeof el.scrollIntoView!=='function')return fail('結果位置が見つかりません。');el.scrollIntoView({behavior:'smooth',block:'start'});return ok('結果位置へ移動しました。');}
 
@@ -551,8 +550,8 @@
     set_owned_hero:function(a){return setOwnedHero(a&&a.slot,a&&a.hero);},set_owned_hero_auto:function(a){return setOwnedHeroAuto(a&&a.hero);},clear_owned_hero:function(a){return clearOwnedHero(a&&a.slot);},clear_owned_heroes:clearOwnedHeroes,open_owned_picker:function(a){return openOwnedPicker(a&&a.slot);},set_excluded_hero:function(a){return setExcludedHero(a&&a.hero,a&&a.excluded!==false);},clear_excluded_heroes:clearExcludedHeroes,open_excluded_picker:openExcludedPicker,get_owned_filters:getOwnedOnly,get_excluded_filters:getExcludedOnly,
     get_swap_candidates:function(a){return ok('差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit,a&&a.levels)});},apply_swap:applySwap,
     all_max:function(){return setEnhancementPanelMax('all');},clear_all_max:function(){return clearEnhancementPanel('all');},panel_max:function(a){return setEnhancementPanelMax(a&&a.panel);},panel_clear:function(a){return clearEnhancementPanel(a&&a.panel);},set_kenbun:function(a){return setEnhancementValue('kenbun',a&&a.job,a&&a.stat,a&&a.value);},set_kishin:function(a){return setEnhancementValue('kishin',a&&a.slot,a&&a.stat,a&&a.value);},set_tensei:function(a){return setTensei(a&&a.slot,a&&a.on);},open_enhancement:openEnhancement,
-    list_saved:function(){return ok('保存編成を取得しました。',{saved:listSaved()});},save_current:function(a){return saveCurrent(a&&a.name);},load_saved:function(a){return loadSaved(a&&a.ref);},delete_saved:function(a){return deleteSaved(a&&a.ref);},share_url:createShareUrl,export_json:exportJson,import_json:importSelectedJson,open_json_picker:function(){return openFilePicker('importJsonFile','JSON読込');},open_bond_master_picker:function(){return openFilePicker('overrideInenFile','因縁マスター');},open_formation_master_picker:function(){return openFilePicker('masterFiles','formations_master');},
-    apply_override_bond_master:applySelectedBondMaster,reset_bond_master:resetBondMaster,clear_formation_master:clearFormationMaster,scroll_top:scrollTopAction,scroll_result:scrollResultAction,
+    list_saved:function(){return ok('保存編成を取得しました。',{saved:listSaved()});},save_current:function(a){return saveCurrent(a&&a.name);},load_saved:function(a){return loadSaved(a&&a.ref);},delete_saved:function(a){return deleteSaved(a&&a.ref);},share_url:createShareUrl,export_json:exportJson,import_json:importSelectedJson,open_json_picker:function(){return openFilePicker('importJsonFile','JSON読込');},open_bond_master_picker:function(){return openFilePicker('overrideInenFile','因縁マスター');},
+    apply_override_bond_master:applySelectedBondMaster,reset_bond_master:resetBondMaster,scroll_top:scrollTopAction,scroll_result:scrollResultAction,
     show_all_bonds:function(a){return showBondList('all',a&&a.query);},show_active_bonds:function(){return showBondList('active','');},
     read_combined_totals:readCombinedTotalsOnly,apply_top_result:function(){return applyResult(1);},show_top_results:function(a){return ok('上位結果を取得しました。',{results:getResults(a&&a.limit||5)});},
     show_swap_non_down:function(a){return ok('因縁が減らない差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['up','flat'])});},show_swap_up:function(a){return ok('UP差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['up'])});},show_swap_flat:function(a){return ok('FLAT差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['flat'])});},show_swap_down:function(a){return ok('DOWN差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['down'])});},

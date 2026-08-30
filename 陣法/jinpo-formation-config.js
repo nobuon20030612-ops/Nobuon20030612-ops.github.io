@@ -1,6 +1,7 @@
 /**
  * jinpo-formation-config.js
  * 陣形ごとの表示位置・有効ライン・陣形ボーナス。
+ * activeLines / slots は data/jinpo_formation_spec.json を正本として同期する。
  *
  * 注意:
  * - slotPositions はZIP内 style.css の実配置を基準。
@@ -75,15 +76,15 @@ window.JINPO_FORMATION_CONFIG = {
     key: "hoen",
     label: "方円",
     slots: {
-      1: {x: 1, y: 0},
-      2: {x: 0, y: 1}, 6: {x: 2, y: 1},
-      3: {x: 0, y: 2}, 5: {x: 2, y: 2},
-      4: {x: 1, y: 3}
+      2: {x: 1, y: 0},
+      1: {x: 0, y: 1}, 3: {x: 2, y: 1},
+      6: {x: 0, y: 2}, 4: {x: 2, y: 2},
+      5: {x: 1, y: 3}
     },
     activeLines: [
-      [2,3,4],
-      [4,5,6],
-      [2,1,6]
+      [1,2,3],
+      [3,4,5],
+      [5,6,1]
     ],
     bonus: {
       "気合": 0.10,
@@ -137,14 +138,6 @@ window.JINPO_FORMATION_CONFIG = {
     var direct = String(summary.last_added_hero == null ? '' : summary.last_added_hero).trim();
     if(direct) return direct;
 
-    // v1 summary互換: 新英傑配列がある場合は、その最後の1人だけを表示する。
-    var heroes = Array.isArray(summary.new_heroes) ? summary.new_heroes : [];
-    for(var i=heroes.length-1;i>=0;i--){
-      var hero = heroes[i];
-      if(!hero || typeof hero !== 'object') continue;
-      var name = String(hero['英傑名'] || hero['名前'] || '').trim();
-      if(name) return name;
-    }
     return '';
   }
 

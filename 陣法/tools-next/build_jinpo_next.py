@@ -10,11 +10,11 @@ SITE = ROOT
 MASTER = SITE / 'data' / 'jinpo_eiketsu_master.csv'
 REPORT_DIR = ROOT / '_jinpo-next-report'
 REPORT = REPORT_DIR / 'build_report.json'
-OVERRIDES = ROOT / 'tools-next' / 'approved_overrides.json'
 PROVENANCE_AUDIT = ROOT / 'tools-next' / 'audit_source_provenance.py'
+TAIRANO_SPEC_AUDIT = ROOT / 'tools-next' / 'audit_tairano_spec.py'
 
 REQUIRED = [
-    '番号','コスト','名前','育成技能1:(0凸)','育成技能2:(0凸)','育成技能3:(0凸)',
+    '番号','コスト','名前','読み','育成技能1:(0凸)','育成技能2:(0凸)','育成技能3:(0凸)',
     '生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風',
     '因子1(特化)','因子2(2凸)','因子3(LV20)','因子4(文曲)'
 ]
@@ -52,20 +52,10 @@ def fail(msg: str, report: dict):
     sys.exit(1)
 
 def last_added_hero_from_summary(summary: dict) -> str:
-    """Return only a genuine previously-added hero name; never reuse generic target text."""
+    """Return the current explicit last-added hero field."""
     if not isinstance(summary, dict):
         return ''
-    direct = str(summary.get('last_added_hero', '')).strip()
-    if direct:
-        return direct
-    heroes = summary.get('new_heroes', [])
-    if isinstance(heroes, list):
-        for item in reversed(heroes):
-            if isinstance(item, dict):
-                name = str(item.get('英傑名') or item.get('名前') or '').strip()
-                if name:
-                    return name
-    return ''
+    return str(summary.get('last_added_hero', '')).strip()
 
 
 def write_latest_update_summary(summary_path: Path, new_infos: list, changed_infos: list, generation: dict, updated_at: str | None = None):
@@ -99,7 +89,7 @@ def write_latest_update_summary(summary_path: Path, new_infos: list, changed_inf
         'new_heroes': new_infos,
         'changed_existing': changed_infos,
         'generation': generation,
-        'note': '英傑一覧.csvから英傑マスタ・配置/除外候補・5～9因縁compact DB・Top500を自動更新',
+        'note': '英傑一覧.csvと現行正本から英傑マスタ・5～9因縁compact DB・Top500を完全再生成',
     }
     summary_path.write_text(json.dumps(update_summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return True, last_added_hero
@@ -117,6 +107,19 @@ def main():
     if not SOURCE.exists(): fail('source-next/英傑一覧.csv がありません', report)
     if not MASTER.exists(): fail('陣法/data/jinpo_eiketsu_master.csv がありません', report)
 
+    # Critical invariant guard: validate against an independent user-confirmed oracle BEFORE regeneration.
+    # Do not rely only on components that share formation_spec.py; that would allow circular validation.
+    if not TAIRANO_SPEC_AUDIT.exists(): fail('たいらの式独立正本監査がありません', report)
+    cp = subprocess.run([sys.executable, str(TAIRANO_SPEC_AUDIT)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('たいらの式独立正本監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    tairano_report_path = REPORT_DIR/'tairano_spec_report.json'
+    if not tairano_report_path.exists(): fail('たいらの式独立正本監査レポートがありません', report)
+    tairano_report = json.loads(tairano_report_path.read_text(encoding='utf-8'))
+    if tairano_report.get('status') != 'PASS' or tairano_report.get('independent_canonical_line_oracle') is not True:
+        fail('たいらの式独立正本監査が独立オラクルPASSではありません', report)
+    report['independent_formation_oracle_prebuild'] = True
+
     # 出典列は検索計算に使わない研究メタデータだが、スロット誤記を将来追跡できるよう
     # standalone buildでも必ず監査する。Actionsでは直前の専用stepを再利用する。
     provenance_report_path = REPORT_DIR / 'source_provenance_report.json'
@@ -131,9 +134,8 @@ def main():
     if provenance_report.get('status') != 'PASS': fail('英傑一覧の出典監査レポートがPASSではありません', report)
     report['source_provenance_audit'] = 'workflow-pre-audit' if provenance_ready else 'build-standalone-audit'
 
-    # GitHub Actionsでは直前にsync→freshness判定済み。ここで再syncすると
-    # new_heroes/dirty_internal_ids/force-full判定を失うため、同じレポートをそのまま使う。
-    # 単体実行時だけ従来どおり自前でsyncする。
+    # GitHub Actionsでは直前の同期レポートをそのまま利用する。
+    # 単体実行時だけこのスクリプト内で同期する。
     sync_report_path = REPORT_DIR/'master_sync.json'
     sync_ready = os.environ.get('JINPO_MASTER_SYNC_READY') == '1'
     if not sync_ready:
@@ -153,31 +155,6 @@ def main():
     source_rows, source_headers = read_csv(SOURCE)
     master_rows, _ = read_csv(MASTER)
 
-    # 承認済みの既知誤記だけを自動補正する。条件が完全一致した場合のみ適用。
-    applied_overrides = []
-    if OVERRIDES.exists():
-        ov = json.loads(OVERRIDES.read_text(encoding='utf-8'))
-        name_seen = {}
-        for r in source_rows:
-            name = str(r.get('名前','')).strip()
-            name_seen[name] = name_seen.get(name, 0) + 1
-            occ = name_seen[name]
-            for item in ov.get('rows', []):
-                if str(item.get('name','')).strip() != name or int(item.get('occurrence',1)) != occ:
-                    continue
-                fld = str(item.get('source_field','')).strip()
-                before = str(r.get(fld,'')).strip()
-                expected = str(item.get('source_value','')).strip()
-                canonical = str(item.get('canonical_value','')).strip()
-                if before == expected:
-                    r[fld] = canonical
-                    applied_overrides.append({
-                        'name': name, 'occurrence': occ, 'field': fld,
-                        'from': before, 'to': canonical, 'reason': item.get('reason','')
-                    })
-                elif before != canonical:
-                    fail(f'承認済み補正の前提値と一致しません: {name} {fld}={before}', report)
-        report['applied_overrides'] = applied_overrides
     missing = [h for h in REQUIRED if h not in source_headers]
     if missing: fail('英傑一覧の必須列不足: ' + ', '.join(missing), report)
 
@@ -186,7 +163,7 @@ def main():
     if any(not x for x in nums): fail('番号が空の行があります', report)
     if any(not x for x in names): fail('名前が空の行があります', report)
     if len(nums) != len(set(nums)): fail('英傑一覧の番号重複を検出', report)
-    # 新旧対応・変更判定はsync_eiketsu_master.pyの番号↔internal_id対応表だけを正とする。
+    # 番号↔internal_id対応表を現行識別の正本とする。
 
     report.update({
         'source_rows_input': sync_report.get('source_rows_input', len(source_rows)),
@@ -194,7 +171,6 @@ def main():
         'master_rows': len(master_rows),
         'new_heroes': sync_report.get('new_heroes', []),
         'removed_heroes': sync_report.get('removed_heroes', []),
-        'retired_source_rows_skipped': sync_report.get('retired_source_rows_skipped', []),
         'changed_existing': sync_report.get('changed_existing', []),
         'dirty_internal_ids': sync_report.get('dirty_internal_ids', []),
         'id_map_entries': sync_report.get('id_map_entries'),
@@ -202,35 +178,80 @@ def main():
         'master_sha256': sha256(MASTER),
     })
 
-    # Phase2 generation path:
-    # - pure new-hero additions: exact incremental generation (old records are byte-preserved)
-    # - existing-hero edits / removals / record-model changes: full regeneration
-    new_infos = sync_report.get('new_heroes', [])
-    changed_infos = sync_report.get('changed_existing', [])
-    removed_infos = sync_report.get('removed_heroes', [])
-    force_full = bool(sync_report.get('compact_record_model_force_all_dirty'))
-    pure_addition = bool(new_infos) and not changed_infos and not removed_infos and not force_full
-    if pure_addition:
-        generator = ROOT/'tools-next'/'rebuild_incremental_additions.py'
-        generation_label = '新英傑差分生成'
-    else:
-        generator = ROOT/'tools-next'/'rebuild_all_compact.py'
-        generation_label = '5～9因縁 全組み合わせ再生成'
-    if not generator.exists(): fail(f'Phase2生成スクリプトがありません: {generator.name}', report)
+    # たいらの式: 現行正本から毎回完全再生成する。
+    generator = ROOT/'tools-next'/'rebuild_all_compact.py'
+    if not generator.exists(): fail('完全再生成スクリプトがありません', report)
     cp = subprocess.run([sys.executable, str(generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if cp.returncode != 0:
-        fail(generation_label + 'FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+        fail('5～9因縁 完全再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
     generation_report_path = REPORT_DIR/'generation_report.json'
     if not generation_report_path.exists(): fail('組み合わせ生成レポートがありません', report)
     generation_report = json.loads(generation_report_path.read_text(encoding='utf-8'))
     if generation_report.get('status') != 'PASS': fail('組み合わせ生成レポートがPASSではありません', report)
+    if generation_report.get('source_of_truth_only') is not True:
+        fail('完全再生成が現行正本限定になっていません', report)
     report['generation'] = {
         'full_records': generation_report.get('full_records'),
-        'added_records': generation_report.get('added_records'),
-        'removed_records': generation_report.get('removed_records'),
         'seconds': generation_report.get('seconds'),
-        'full_regeneration': bool(generation_report.get('full_regeneration', generation_report.get('generation_mode') != 'incremental_additions')),
-        'generation_mode': generation_report.get('generation_mode', 'full'),
+        'full_regeneration': True,
+        'generation_mode': 'full_current_source_only',
+        'source_of_truth_only': True,
+    }
+
+    # 全等級5・6因縁専用索引も同じ英傑マスタ・因縁マスタから毎回完全再生成する。
+    bond56_builder = ROOT/'tools-next'/'build_bond56_index.py'
+    if not bond56_builder.exists(): fail('全等級5・6因縁索引生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(bond56_builder)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('全等級5・6因縁索引 完全再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    try:
+        bond56_report = json.loads((cp.stdout.strip().splitlines() or ['{}'])[-1])
+    except Exception as e:
+        fail('全等級5・6因縁索引生成レポート解析FAIL: ' + str(e), report)
+    if bond56_report.get('status') != 'PASS':
+        fail('全等級5・6因縁索引生成がPASSではありません', report)
+    report['bond56_generation'] = {
+        'version': bond56_report.get('version'),
+        'heroes': bond56_report.get('heroes'),
+        'bonds': bond56_report.get('bonds'),
+        'files': len(bond56_report.get('files') or {}),
+        'full_regeneration': True,
+        'source_of_truth_only': True,
+    }
+
+    # Independent completeness audits must not be optional. These catch common-mode failures
+    # where generator and ordinary integrity audit agree on the same wrong combination universe.
+    b56_independent = ROOT/'tools-next'/'audit_bond56_index_independent.py'
+    if not b56_independent.exists(): fail('5・6因縁独立完全性監査がありません', report)
+    cp = subprocess.run([sys.executable, str(b56_independent)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('5・6因縁独立完全性監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    b56_independent_report_path = REPORT_DIR/'bond56_index_independent_audit.json'
+    if not b56_independent_report_path.exists(): fail('5・6因縁独立完全性監査レポートがありません', report)
+    b56_independent_report = json.loads(b56_independent_report_path.read_text(encoding='utf-8'))
+    if b56_independent_report.get('status') != 'PASS' or int(b56_independent_report.get('errors') or 0) != 0:
+        fail('5・6因縁独立完全性監査がPASS/0errorsではありません', report)
+    report['bond56_independent_completeness'] = {
+        'errors': b56_independent_report.get('errors'),
+        'cross_implementation': b56_independent_report.get('cross_implementation'),
+        'skeletons': b56_independent_report.get('skeletons'),
+    }
+
+    combo_independent = ROOT/'tools-next'/'audit_combination_completeness_independent.py'
+    if not combo_independent.exists(): fail('5～9因縁組み合わせ独立完全性監査がありません', report)
+    cp = subprocess.run([sys.executable, str(combo_independent)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('5～9因縁組み合わせ独立完全性監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    combo_independent_report_path = REPORT_DIR/'combination_completeness_independent.json'
+    if not combo_independent_report_path.exists(): fail('5～9因縁組み合わせ独立完全性監査レポートがありません', report)
+    combo_independent_report = json.loads(combo_independent_report_path.read_text(encoding='utf-8'))
+    if combo_independent_report.get('status') != 'PASS' or int(combo_independent_report.get('total_mismatch') or 0) != 0:
+        fail('5～9因縁組み合わせ独立完全性監査がPASS/0 mismatchではありません', report)
+    report['combination_independent_completeness'] = {
+        'datasets': len(combo_independent_report.get('datasets') or {}),
+        'total_mismatch': combo_independent_report.get('total_mismatch'),
+        'all_hero_count': combo_independent_report.get('all_hero_count'),
+        'grade3_hero_count': combo_independent_report.get('grade3_hero_count'),
     }
 
     rebuild_top = ROOT/'tools-next'/'rebuild_top500.py'
@@ -289,19 +310,13 @@ def main():
     manifest_path = SITE/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 
-    # 通常5・6因縁は等級3以下ON専用の画面仕様であり、旧通常DBは不正データを含んでいたため完全廃止。
-    # manifest参照だけでなく物理ファイルの残存も公開前に拒否する。
+    # 現行検索モードごとの因縁数を固定する。
+    expected_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}}
     for section in ('datasets', 'top', 'sort_top'):
-        normal_counts = manifest.get(section, {}).get('normal', {})
-        for count in ('5', '6'):
-            if count in normal_counts:
-                fail(f'廃止済み通常{count}因縁DBがmanifestに残っています: {section}/normal/{count}', report)
-    legacy_normal56_files = sorted(
-        x.name for x in (SITE/'data'/'compact_search_v2').glob('*.bin.gz')
-        if ('normal_c5_' in x.name or 'normal_c6_' in x.name)
-    )
-    if legacy_normal56_files:
-        fail('廃止済み通常5・6因縁DBの物理ファイルが残っています: ' + ' / '.join(legacy_normal56_files[:10]), report)
+        for mode, expected in expected_counts.items():
+            actual = set(manifest.get(section, {}).get(mode, {}).keys())
+            if actual != expected:
+                fail(f'現行因縁数構成不一致: {section}/{mode}: {sorted(actual)}', report)
 
     if int(manifest.get('top_limit', 0)) != 500 or int(manifest.get('sort_top_limit', 0)) != 500:
         fail('Top500設定不一致: manifest top_limit/sort_top_limit が500ではありません', report)
@@ -420,9 +435,10 @@ def main():
             fail(f'確定済み500件/UI仕様が欠落: jinpo-fast-search.js: {frag}', report)
 
     required_worker_fragments = [
-        'q.limit||500', 'Top500正式運用', '_heroNameToIds', 'ownedInternalIds',
+        'q.limit||500', 'Top500正式運用', 'ownedInternalIds', 'excludedInternalIds',
         'eiketsu_internal_ids:internalIds.join', "d.type==='lookupExact'",
         'function lookupExact(q,token)', 'function exactBondIds(names,m)', "cache:'no-store'",
+        'for(var h=0;h<heroIds.length&&heroOk;h++)if(dv.getUint16(base+h*2,true)!==heroIds[h])heroOk=false',
         'function normalFiveSixUnsupported(q)', "reason:'normal_5_6_not_supported'"
     ]
     for frag in required_worker_fragments:
@@ -430,6 +446,10 @@ def main():
             fail(f'Top500/内部ID/完全照合 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
         fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
+    bond56_worker_text=(SITE/'jinpo-bond56-worker.js').read_text(encoding='utf-8')
+    for frag in ['semanticComboKey', 'heapSemantic:new Map()', 'matchedSemantic:new Set()', 'async function countHits', "d.type==='countHits'", '__hitCap']:
+        if frag not in bond56_worker_text:
+            fail(f'全等級5・6因縁Workerの重複排除/10万件打切り件数仕様が欠落: {frag}', report)
     if 'excludedNames:ex' in fast_text or 'excludedNameSet66' in index_text:
         fail('除外英傑の名前基準検索/差替判定が残っています。internal_id基準へ統一してください', report)
 
@@ -441,16 +461,18 @@ def main():
             'resetAll:function()', "listSort={key:'',dir:'desc'};appliedListRowKey=''",
         ],
         'jinpo.html': [
-            'function sameReachInternalIdSet', 'function sameReachBondSet',
+            'function sameReachInternalIdOrder', 'function sameReachBondSet',
             'function dbRowMatchesReachState', 'function lookupReachSwapExactDbRow',
+            'const currentIds=[1,2,3,4,5,6].map(s=>String(placement[s]?.internal_id || "").trim()).join("|")',
+            'const lookupIds=[1,2,3,4,5,6].map(s=>String(nextPlacement[s]?.internal_id || "").trim()).join("|")',
             'dbRowMatchesReachState(row,placement,liveResult',
-            'function buildHeroInternalIdLookup', 'internalIds.length === 6',
+            'function buildHeroInternalIdLookup', 'internalIds.length !== 6',
             '同名英傑が複数いるため、名前よりinternal_idを必ず優先する',
-            '所持英傑はinternal_idを正とする。同名別個体を名前でまとめない',
+            'function ownedHeroReachLockState()', 'const ids = new Set();',
             "+'@@g3='+(grade3On66()?'1':'0')+'@@owned='",
             "+'@@excluded='+excluded.join(',')",
             "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
-            'source:"current_result_db_exact"', 'if(modern) return null;',
+            'source:"current_result_db_exact"', 'function lookupReachSwapExactDbRow',
             'if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];',
             'return [1600,1400,1200,1000,800,600,400,200];',
             'function findHeroByInternalId', 'heroFactor4IdentityKey', 'data-hero-internal-id',
@@ -536,21 +558,9 @@ def main():
     if apply_positions != sorted(apply_positions) or len(set(apply_positions)) != len(apply_positions):
         fail('差替適用安全監査: 世代更新→差替完了→込み合計完了→表示解除の順序が崩れています', report)
 
-    preview_section = guard_section(
-        r'var\s+prevReachStable\s*=\s*window\.applyReachSwapCandidate\s*;',
-        r'document\.addEventListener\s*\(\s*[\"\']click[\"\']',
-        '差替後プレビュー同期監査',
-    )
-    preview_patterns = [
-        (r'prevReachStable\.apply\s*\(\s*this\s*,\s*arguments\s*\)', '元差替処理の実行'),
-        (r'syncRegisteredHitPreview\s*\(\s*\)', '即時同期'),
-        (r'if\s*\(\s*ret\s*&&\s*typeof\s+ret\.then\s*===\s*[\"\']function[\"\']\s*\)', 'Promise/thenable判定'),
-        (r'ret\.then\s*\(\s*function\s*\(\s*\)\s*\{\s*syncRegisteredHitPreview\s*\(\s*\)', '非同期完了後の再同期'),
-        (r'return\s+ret\s*;', '元の戻り値維持'),
-    ]
-    for pattern, label in preview_patterns:
-        if not re.search(pattern, preview_section, re.S):
-            fail(f'差替後プレビュー同期監査: {label}が欠落', report)
+    # 旧「registered hit preview」ラッパーは廃止済み。
+    # 現行は applyReachSwapCandidate 自体が現在6人を再計算し、全件DB完全照合Promiseを返す。
+    # 上の差替適用安全監査と required_function_fragments の return lookupPromise で監査する。
 
     for name, fragments in required_function_fragments.items():
         for frag in fragments:
@@ -575,8 +585,8 @@ def main():
         'stat_font_enlarged': True,
         'priority_notice_next_to_each_heading': True,
         'applied_row_glow_survives_list_sort': True,
-        'legacy_csv_search_refs_removed': True,
-        'legacy_linegen_search_refs_removed': True,
+        'compact_search_only': True,
+        'current_generation_path_only': True,
         'duplicate_name_internal_id_search': True,
         'owned_hero_internal_id_priority': True,
         'exact_bond_set_db_match': True,
@@ -592,14 +602,13 @@ def main():
         'unique_bond_count_with_line_occurrences_preserved': True,
         'manifest_fetch_fresh_before_versioned_db_cache': True,
         'normal_5_6_worker_access_blocked': True,
-        'legacy_normal_5_6_manifest_and_files_removed': True,
+        'current_mode_count_sets_exact': True,
         'factor4_assignment_uses_line_hero_index': True,
         'factor4_global_minimum_plan': True,
         'swap_loading_waits_for_exact_lookup': True,
         'swap_loading_stale_completion_guard': True,
         'swap_loading_token_generation_guard': True,
-        'registered_preview_async_refresh_guard': True,
-        'bonus_fallback_internal_id_first': True,
+        'bonus_internal_id_exact': True,
         'bonus_recalc_after_exact_lookup': True,
         'kenbun_job_uses_master_job_column_directly': True,
         'global_reset_button_and_state_reset': True,
@@ -614,7 +623,7 @@ def main():
 
     # 文字化け/UTF-8/CSV/JSONを毎回自動検査する。
     text_exts = {'.html','.js','.json','.csv','.txt','.md','.py','.yml','.yaml'}
-    mojibake_markers = ['\ufffd','縺','繧','蜿','譁','莠','Ã','Â','ΘÖúµ│ò']
+    mojibake_markers = ['\ufffd','\u7e3a','\u7e67','\u873f','\u8b41','\u83a0','\u00c3','\u00c2','\u0398\u00d6\u00fa\u00b5\u2502\u00f2']
     text_checked = 0
     csv_checked = 0
     json_checked = 0
@@ -623,6 +632,9 @@ def main():
             continue
         for p in base_dir.rglob('*'):
             if not p.is_file() or p.suffix.lower() not in text_exts:
+                continue
+            # 一時監査レポートは過去実行の診断情報であり、現行ソース判定には混ぜない。
+            if '_jinpo-next-report' in p.parts:
                 continue
             if p.resolve() == Path(__file__).resolve():
                 continue
@@ -768,7 +780,9 @@ def main():
     for mode, counts in manifest.get('datasets', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():
-                verify_compact_entry(info, f'datasets/{mode}/{count}/{formation}', (mode, count, formation))
+                # 全件意味/構造監査は直後の audit_search_integrity.py に統合。
+                # ここではgzip/SHA/magic/record size/件数/manifest整合性を検査する。
+                verify_compact_entry(info, f'datasets/{mode}/{count}/{formation}')
     for mode, counts in manifest.get('top', {}).items():
         for count, forms in counts.items():
             for formation, info in forms.items():
@@ -783,7 +797,7 @@ def main():
         'full_records_semantic_checked': semantic_records,
         'duplicate_combo_errors': semantic_duplicate_combos,
         'duplicate_display_names_kept_distinct_by_internal_id': duplicate_display_names,
-        'legacy_normal_5_6_removed': True,
+        'current_mode_count_sets_exact': True,
         'header_row_count_errors': 0,
     }
 
@@ -810,9 +824,22 @@ def main():
     audit_report = json.loads(audit_report_path.read_text(encoding='utf-8'))
     if audit_report.get('status') != 'PASS':
         fail('検索DB全件監査レポートがPASSではありません', report)
+    if audit_report.get('independent_canonical_oracle_errors') != 0:
+        fail('独立オラクル全件監査が0件ではありません: ' + str(audit_report.get('independent_canonical_oracle_errors')), report)
+    if not audit_report.get('independent_canonical_lines_zero'):
+        fail('独立オラクル全件監査の正本ライン記録がありません', report)
+    report['compact_integrity']['full_records_semantic_checked'] = int(audit_report.get('accessible_full_records') or 0)
+    report['compact_integrity']['duplicate_combo_errors'] = int(audit_report.get('duplicate_combo_errors') or 0)
+    report['compact_integrity']['row_structure_errors'] = int(audit_report.get('row_structure_errors') or 0)
+    report['compact_integrity']['grade3_cost_errors'] = int(audit_report.get('grade3_cost_errors') or 0)
     report['search_integrity_audit'] = {
         'accessible_full_records': audit_report.get('accessible_full_records'),
+        'row_structure_errors': audit_report.get('row_structure_errors'),
+        'duplicate_combo_errors': audit_report.get('duplicate_combo_errors'),
+        'grade3_cost_errors': audit_report.get('grade3_cost_errors'),
         'bondset_errors': audit_report.get('bondset_errors'),
+        'independent_canonical_oracle_errors': audit_report.get('independent_canonical_oracle_errors'),
+        'independent_canonical_lines_zero': audit_report.get('independent_canonical_lines_zero'),
         'factor4_errors': audit_report.get('factor4_errors'),
         'fullmax_errors': audit_report.get('fullmax_errors'),
         'fullmax_records_checked': audit_report.get('fullmax_records_checked'),
@@ -862,11 +889,16 @@ def main():
                 fail(f'jinpo.html inline JavaScript構文エラー #{i}: {cp.stderr.strip()}', report)
     report['javascript_syntax'] = {'external_js': js_checked, 'inline_scripts': len(inline_scripts), 'errors': 0}
 
-    # 5/6因縁は既存仕様どおり、陣形選択済みでも等級3以下OFFなら無効のまま固定。
-    grade_lock_fragment = 'if((c === 5 || c === 6) && formed && !grade3On()) return true;'
-    if grade_lock_fragment not in index_text:
-        fail('5/6因縁の等級3以下ON限定ロックが欠落', report)
+    # 通常5/6は等級3以下ON限定を維持し、独立した全等級5・6モード中だけ例外とする。
+    # 文字列の空白差ではなく、通常ロック条件とbond56例外の両方を監査する。
+    grade_lock_patterns = [
+        r'if\s*\(\s*\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!grade3On\(\)\s*&&\s*!b56\s*\)\s*return\s+true\s*;',
+        r'\(\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!g3\s*&&\s*!b56\)',
+    ]
+    if not all(re.search(pat, index_text) for pat in grade_lock_patterns):
+        fail('通常5/6の等級3以下ON限定ロック、または全等級5・6モード例外が欠落', report)
     report['grade3_5_6_lock'] = True
+    report['bond56_grade3_lock_exception'] = True
 
     too_large = []
     site_files = [p for p in SITE.rglob('*') if p.is_file()]

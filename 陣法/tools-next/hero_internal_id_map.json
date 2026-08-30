@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "source-next/英傑一覧.csv の番号と internal_id の安定対応。新英傑だけ新規採番し、削除済み重複行はretired_entriesで再登録を防止する。",
+  "description": "source-next/英傑一覧.csv の番号と internal_id の安定対応。現行英傑だけを保持し、新英傑だけ新規採番する。",
   "entries": {
     "1": {
       "internal_id": "EIK_0001",
@@ -1553,13 +1553,6 @@
     "389": {
       "internal_id": "EIK_0397",
       "last_name": "蒲生氏郷(能弁)"
-    }
-  },
-  "retired_entries": {
-    "125": {
-      "last_name": "竹中半兵衛",
-      "replacement_internal_id": "EIK_0246",
-      "reason": "2026-07-25確認済み重複。EIK_0125は削除し、EIK_0246 竹中半兵衛(知将)を正規個体として維持。"
     }
   }
 }

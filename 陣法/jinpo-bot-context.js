@@ -27,7 +27,7 @@
     return {assistant:ai>=0?h[ai]:null,user:ai>=0?previousUserBefore(h,ai):lastOf(h,'user'),assistantIndex:ai};
   }
   function isAck(t){return /^(?:はい|うん|そう|そうです|そうだね|了解|わかった|分かった|ok|おけ|いいえ|いや|ちがう|違う|ありがとう|ありがと|なるほど)$/i.test(C(t));}
-  function isFormation(t){return /^(?:衡軛|衝軛|鴻鵠|こうやく|コウヤク|鶴翼|かくよく|カクヨク|方円|ほうえん|ホウエン|魚鱗|ぎょりん|ギョリン)$/.test(S(t));}
+  function isFormation(t){return /^(?:衡軛|こうやく|コウヤク|鶴翼|かくよく|カクヨク|方円|ほうえん|ホウエン|魚鱗|ぎょりん|ギョリン)$/.test(S(t));}
   function hasExplicitWeather(t){return /天気|気温|天候|予報|降水|雨|雪|湿度|風速|最高気温|最低気温/.test(S(t));}
   function hasExplicitFx(t){return /為替|レート|ドル円|円ドル|米ドル|日本円|ユーロ|ポンド|JPY|USD|EUR|GBP|AUD|CAD|CHF|CNY/i.test(S(t));}
   function hasExplicitSiteIntent(t){return /陣形|因縁|腕力|耐久|器用|知力|魅力|生命|気合|土属性|水属性|火属性|風属性|英傑|配置|除外|差替|MAX|マックス|見聞録|鬼神石|転生|込み合計|検索条件|おすすめ検索|鶴翼|方円|魚鱗|衡軛|こうやく|文曲|発動因縁|検索結果/.test(S(t));}

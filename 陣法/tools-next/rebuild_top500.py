@@ -10,6 +10,7 @@ MANIFEST = DATA/'jinpo_unified_search_manifest.json'
 LIMIT = 500
 REC = 52
 STAT_OFFSETS = {'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41}
+FORM_FILE_CODE={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}
 
 def read_gz(path): return gzip.decompress(path.read_bytes())
 def write_gz(path,raw):
@@ -36,18 +37,30 @@ def materialize(raw,idx):
     return bytes(h)+b''.join(raw[16+i*REC:16+(i+1)*REC] for i in idx)
 
 def main():
-    m=json.loads(MANIFEST.read_text(encoding='utf-8'));old=m.get('version','');m['top_limit']=LIMIT;m['sort_top_limit']=LIMIT
+    m=json.loads(MANIFEST.read_text(encoding='utf-8'));old=m.get('version','')
+    m['top_limit']=LIMIT;m['sort_top_limit']=LIMIT
+    # 派生Topファイルも過去manifestを入力にせず、現行datasetsから毎回構成する。
+    top={}; sort_top={}
+    for mode,counts in (m.get('datasets') or {}).items():
+        top[mode]={}; sort_top[mode]={}
+        for count,forms in counts.items():
+            top[mode][count]={}; sort_top[mode][count]={}
+            for form in forms:
+                code=FORM_FILE_CODE[form]
+                top[mode][count][form]={'file':f'data/compact_search_v2/jinpo_top_{mode}_c{count}_{code}_v2.bin.gz'}
+                sort_top[mode][count][form]={stat:{'file':f'data/compact_search_v2/jinpo_sort_{mode}_c{count}_{code}_{i:02d}_v2.bin.gz'} for i,stat in enumerate(STAT_OFFSETS)}
+    m['top']=top; m['sort_top']=sort_top
     raw_cache={}
     def full_raw(mode,count,form):
         k=(mode,count,form)
         if k not in raw_cache:
             info=m['datasets'][mode][count][form];raw_cache[k]=read_gz(SITE/info['file'])
         return raw_cache[k]
-    for mode,counts in m.get('top',{}).items():
+    for mode,counts in m['top'].items():
         for count,forms in counts.items():
             for form,e in forms.items():
                 raw=full_raw(mode,count,form);out=materialize(raw,top_indices(raw,None));p=SITE/e['file'];write_gz(p,out);e.update(meta(p,out,(len(out)-16)//REC))
-    for mode,counts in m.get('sort_top',{}).items():
+    for mode,counts in m['sort_top'].items():
         for count,forms in counts.items():
             for form,stats in forms.items():
                 raw=full_raw(mode,count,form)
@@ -65,10 +78,10 @@ def main():
     fingerprint=hashlib.sha256('\n'.join(sorted(parts)).encode()).hexdigest()[:12]
     m['version']='unified-v2-top500-'+fingerprint
     notes=list(m.get('notes',[]))
-    for note in ('default and priority top datasets rebuilt from authoritative full DB','Top500正式運用'):
-        if note not in notes:
-            notes.append(note)
+    for note in ('default and priority top datasets rebuilt from current full DB','Top500正式運用'):
+        if note not in notes: notes.append(note)
     m['notes']=notes
     MANIFEST.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps({'old_version':old,'new_version':m['version'],'top_limit':LIMIT},ensure_ascii=False))
+    print(json.dumps({'previous_version':old,'version':m['version'],'top_limit':LIMIT},ensure_ascii=False))
+
 if __name__=='__main__':main()

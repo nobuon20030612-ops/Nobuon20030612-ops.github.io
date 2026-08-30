@@ -16,17 +16,16 @@ MASTER = SITE/'data'/'jinpo_eiketsu_master.csv'
 INEN = SITE/'data'/'jinpo_inen_master.csv'
 JOB_MAP = SITE/'data'/'jinpo_job_mapping.json'
 ID_MAP = ROOT/'tools-next'/'hero_internal_id_map.json'
-OVERRIDES = ROOT/'tools-next'/'approved_overrides.json'
 REPORT_DIR = ROOT/'_jinpo-next-report'
 REPORT = REPORT_DIR/'master_sync.json'
 
 REQUIRED = [
-    '番号','コスト','名前','育成技能1:(0凸)','育成技能2:(0凸)','育成技能3:(0凸)',
+    '番号','コスト','名前','読み','育成技能1:(0凸)','育成技能2:(0凸)','育成技能3:(0凸)',
     '生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風',
     '因子1(特化)','因子2(2凸)','因子3(LV20)','因子4(文曲)'
 ]
 FIELD_MAP = {
-    'コスト':'コスト','育成技能1':'育成技能1:(0凸)','育成技能2':'育成技能2:(0凸)','育成技能3':'育成技能3:(0凸)',
+    '読み':'読み','コスト':'コスト','育成技能1':'育成技能1:(0凸)','育成技能2':'育成技能2:(0凸)','育成技能3':'育成技能3:(0凸)',
     '生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力',
     '土属性':'土','水属性':'水','火属性':'火','風属性':'風',
     '因子1':'因子1(特化)','因子2':'因子2(2凸)','因子3':'因子3(LV20)','因子4':'因子4(文曲)'
@@ -48,26 +47,6 @@ def read_csv(path: Path):
     return rows, list(reader.fieldnames or [])
 
 
-def apply_overrides(rows):
-    applied=[]
-    if not OVERRIDES.exists():
-        return applied
-    data=json.loads(OVERRIDES.read_text(encoding='utf-8'))
-    seen=defaultdict(int)
-    for r in rows:
-        name=str(r.get('名前','')).strip();seen[name]+=1
-        for item in data.get('rows',[]):
-            if str(item.get('name','')).strip()!=name or int(item.get('occurrence',1))!=seen[name]:
-                continue
-            fld=str(item.get('source_field','')).strip()
-            before=str(r.get(fld,'')).strip(); expected=str(item.get('source_value','')).strip(); canonical=str(item.get('canonical_value','')).strip()
-            if before==expected:
-                r[fld]=canonical
-                applied.append({'name':name,'occurrence':seen[name],'field':fld,'from':before,'to':canonical,'reason':item.get('reason','')})
-            elif before!=canonical:
-                raise RuntimeError(f'承認済み補正の前提値と一致しません: {name} {fld}={before}')
-    return applied
-
 
 def load_job_lookup():
     data=json.loads(JOB_MAP.read_text(encoding='utf-8'))
@@ -80,15 +59,9 @@ def load_job_lookup():
 
 def resolve_job(factor1,lookup):
     f=str(factor1 or '').strip()
-    legacy_aliases={
-        '武士道':'侍','暗殺術':'忍者','古神道':'神主/巫女','召喚術':'陰陽師',
-        '修験':'薬師','医術':'薬師','神通':'薬師',
-    }
     if f in lookup:
         return lookup[f]
-    if f in legacy_aliases:
-        return legacy_aliases[f]
-    # mapping notesに従い、先頭2文字一致は一意な場合だけ許可。
+    # 現行職業マップで、先頭2文字一致が一意な場合だけ許可。
     candidates={job for spec,job in lookup.items() if len(f)>=2 and len(spec)>=2 and f[:2]==spec[:2]}
     if len(candidates)==1:
         return next(iter(candidates))
@@ -140,12 +113,17 @@ def main():
         raise RuntimeError('英傑一覧または英傑マスタがありません')
     src,src_headers=read_csv(SOURCE)
     master,master_headers=read_csv(MASTER)
+    # 2026-08-30: 読みは英傑一覧を正本とする。旧マスタには列がないため安全にスキーマ移行する。
+    if '読み' not in master_headers:
+        try: pos=master_headers.index('英傑名')+1
+        except ValueError: pos=len(master_headers)
+        master_headers=master_headers[:pos]+['読み']+master_headers[pos:]
+        for row in master: row['読み']=str(row.get('読み','') or '').strip()
     missing=[x for x in REQUIRED if x not in src_headers]
     if missing:
         raise RuntimeError('英傑一覧の必須列不足: '+', '.join(missing))
     if not master_headers:
         raise RuntimeError('英傑マスタのヘッダーがありません')
-    applied=apply_overrides(src)
 
     input_rows=len(src)
     numbers=[]
@@ -159,31 +137,9 @@ def main():
     if len(numbers)!=len(set(numbers)):
         raise RuntimeError('英傑一覧の番号重複を検出')
 
-    # 一度削除確定した重複行が、後日の元一覧更新で復活しても再登録しない。
-    # 番号だけで無条件スキップせず、登録済みの名前と一致する場合だけretiredとして扱う。
     if not ID_MAP.exists():
         raise RuntimeError('tools-next/hero_internal_id_map.json がありません')
     id_map=json.loads(ID_MAP.read_text(encoding='utf-8'))
-    retired=id_map.get('retired_entries',{}) or {}
-    retired_skipped=[]
-    active_src=[]
-    for r in src:
-        n=str(r.get('番号','')).strip()
-        if n not in retired:
-            active_src.append(r)
-            continue
-        spec=retired[n] or {}
-        expected_name=str(spec.get('last_name','')).strip()
-        actual_name=str(r.get('名前','')).strip()
-        if expected_name and actual_name!=expected_name:
-            raise RuntimeError(f'削除済み番号{n}が別英傑として再利用されています。自動更新停止: {expected_name} -> {actual_name}')
-        retired_skipped.append({
-            '番号':int(n),'英傑名':actual_name,
-            'replacement_internal_id':str(spec.get('replacement_internal_id','')).strip(),
-            'reason':str(spec.get('reason','')).strip(),
-        })
-    src=active_src
-    numbers=[str(r.get('番号','')).strip() for r in src]
 
     # 因子 typo をDB化する前に拒否。
     known_factors=set()
@@ -201,16 +157,12 @@ def main():
         raise RuntimeError('既存英傑の削除を検出したため自動更新を停止: 番号 '+', '.join(removed[:20]))
 
     master_by_id={str(r.get('internal_id','')).strip():r for r in master}
-    for item in retired_skipped:
-        replacement=item.get('replacement_internal_id','')
-        if replacement and replacement not in master_by_id:
-            raise RuntimeError(f'削除済み番号{item["番号"]}の置換先internal_idが英傑マスタにありません: {replacement}')
     existing_ids=[]
     for iid in master_by_id:
         if iid.startswith('EIK_') and iid[4:].isdigit(): existing_ids.append(int(iid[4:]))
     next_id=max(existing_ids,default=0)+1
 
-    new_infos=[]; changed_infos=[]; dirty_ids=[]
+    new_infos=[]; changed_infos=[]; reading_infos=[]; dirty_ids=[]
     src_by_number={str(r['番号']).strip():r for r in src}
     for num in sorted(numbers,key=int):
         s=src_by_number[num]
@@ -255,9 +207,15 @@ def main():
                 if is_new or mf in changed_factor_fields:
                     raise RuntimeError(f'{iid} {name}: 因子マスタに存在しない因子を検出: {mf}={f}')
         if diffs:
-            dirty_ids.append(iid)
-            if not any(x['internal_id']==iid for x in new_infos):
-                changed_infos.append({'番号':int(num),'internal_id':iid,'英傑名':name,'diffs':diffs})
+            is_new_row=any(x['internal_id']==iid for x in new_infos)
+            functional_diffs=[d for d in diffs if d.get('field')!='読み']
+            reading_diffs=[d for d in diffs if d.get('field')=='読み']
+            if is_new_row or functional_diffs:
+                dirty_ids.append(iid)
+            if not is_new_row and functional_diffs:
+                changed_infos.append({'番号':int(num),'internal_id':iid,'英傑名':name,'diffs':functional_diffs})
+            if not is_new_row and reading_diffs:
+                reading_infos.append({'番号':int(num),'internal_id':iid,'英傑名':name,'before':reading_diffs[-1].get('before',''),'after':reading_diffs[-1].get('after','')})
 
     # マッピング済みID以外のmaster行を勝手に残さない。sourceが唯一の英傑一覧。
     mapped_ids={str(v.get('internal_id','')).strip() for v in entries.values()}
@@ -284,17 +242,22 @@ def main():
         w.writeheader();w.writerows(master)
     ID_MAP.write_text(json.dumps(id_map,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
+    missing_readings=[]
+    for num in sorted(numbers,key=int):
+        sr=src_by_number[num]
+        if not str(sr.get('読み','')).strip():
+            ent=entries.get(num,{})
+            missing_readings.append({'番号':int(num),'internal_id':str(ent.get('internal_id','')).strip(),'英傑名':str(sr.get('名前','')).strip()})
     report={
         'status':'PASS','source_rows_input':input_rows,'source_rows':len(src),'master_rows':len(master),
-        'new_heroes':new_infos,'changed_existing':changed_infos,'removed_heroes':[],
-        'retired_source_rows_skipped':retired_skipped,
+        'new_heroes':new_infos,'changed_existing':changed_infos,'reading_changes':reading_infos,'removed_heroes':[],
         'dirty_internal_ids':sorted(set(dirty_ids),key=lambda x:int(x[4:])),
-        'applied_overrides':applied,
         'id_map_entries':len(entries),
+        'reading_column':'読み','missing_reading_count':len(missing_readings),'missing_readings':missing_readings,
     }
     REPORT_DIR.mkdir(exist_ok=True)
     REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps({'status':'PASS','new_heroes':new_infos,'changed_existing_count':len(changed_infos),'master_rows':len(master)},ensure_ascii=False))
+    print(json.dumps({'status':'PASS','new_heroes':new_infos,'changed_existing_count':len(changed_infos),'reading_changes_count':len(reading_infos),'master_rows':len(master)},ensure_ascii=False))
 
 if __name__=='__main__':
     try: main()

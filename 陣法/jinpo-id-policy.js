@@ -3,7 +3,7 @@
  * 独自ID運用ルール。
  *
  * - アプリ内の英傑識別は internal_id のみ使用。
- * - external_id は元サイト/formations_master照合や画像参照の補助に限定。
+ * - external_id は画像・出典参照の補助情報に限定。
  * - 名前に (〇〇) があるものは別バージョンとして完全に別 internal_id。
  */
 (function(){

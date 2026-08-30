@@ -5,7 +5,7 @@
   function normalize(t){return String(t==null?'':t).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).replace(/[　\s]+/g,' ').trim();}
   function A(){return window.JINPO_BOT_ACTIONS||{};}
   function cleanHeroText(v){return String(v||'').replace(/^(?:じゃあ|じゃ|それなら|なら|あと|ちなみに|じゃあさ|それじゃ)\s*/,'').replace(/^(?:英傑|キャラ)\s*/,'').trim();}
-  function findFormation(t){var aliases=['衡軛','衝軛','鴻鵠','こうやく','鶴翼','かくよく','方円','ほうえん','魚鱗','ぎょりん'];for(var i=0;i<aliases.length;i++)if(t.indexOf(aliases[i])>=0)return A().canonicalFormation?A().canonicalFormation(aliases[i]):aliases[i];return'';}
+  function findFormation(t){var aliases=['衡軛','こうやく','鶴翼','かくよく','方円','ほうえん','魚鱗','ぎょりん'];for(var i=0;i<aliases.length;i++)if(t.indexOf(aliases[i])>=0)return A().canonicalFormation?A().canonicalFormation(aliases[i]):aliases[i];return'';}
   function findStats(t){var words=['生命力','耐久力','器用さ','土属性','水属性','火属性','風属性','生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];var hits=[];words.forEach(function(w){var pos=t.indexOf(w);if(pos>=0){var s=A().canonicalStat?A().canonicalStat(w):w;if(s)hits.push({stat:s,pos:pos,len:w.length});}});hits.sort(function(a,b){return a.pos-b.pos||b.len-a.len;});var out=[];hits.forEach(function(h){if(out.indexOf(h.stat)<0)out.push(h.stat);});return out;}
   function statAfter(t,re){var m=re.exec(t);if(!m)return'';var rest=t.slice(m.index+m[0].length);var s=findStats(rest);return s[0]||'';}
   function rangeNear(t,stat){
@@ -59,10 +59,8 @@
     else if(/JSON.*(?:出力|書き出|エクスポート)/i.test(t)){plan.actions.push({name:'export_json'});plan.recognized=true;}
     else if(/JSON.*(?:読込|読み込|インポート)/i.test(t)){plan.actions.push({name:'import_json'});plan.recognized=true;}
     if(/因縁マスター.*(?:ファイル)?(?:選びたい|選ぶ|選択|開いて)/.test(t)){plan.actions.push({name:'open_bond_master_picker'});plan.recognized=true;}
-    if(/formations_master.*(?:ファイル)?(?:選びたい|選ぶ|選択|開いて)/i.test(t)){plan.actions.push({name:'open_formation_master_picker'});plan.recognized=true;}
     if(/(?:選択済み|この)?因縁マスター.*(?:適用|読み込)/.test(t)){plan.actions.push({name:'apply_override_bond_master'});plan.recognized=true;}
     if(/標準因縁(?:マスター)?(?:へ|に)?戻/.test(t)){plan.actions.push({name:'reset_bond_master'});plan.recognized=true;}
-    if(/formations_master.*(?:クリア|解除)/i.test(t)){plan.actions.push({name:'clear_formation_master'});plan.recognized=true;}
     if(/(?:ページ)?上(?:部)?へ|一番上へ|トップへ移動/.test(t)){plan.actions.push({name:'scroll_top'});plan.recognized=true;}
     if(/結果(?:位置|欄)?へ(?:移動|スクロール)|結果まで(?:移動|スクロール)/.test(t)){plan.actions.push({name:'scroll_result'});plan.recognized=true;}
 

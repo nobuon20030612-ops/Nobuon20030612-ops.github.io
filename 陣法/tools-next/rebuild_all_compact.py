@@ -9,11 +9,14 @@ import itertools
 import json
 import math
 import struct
+import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
 from pathlib import Path
 
 from factor4_optimizer import minimal_factor4_mask
+from formation_spec import LINES, FORM_CODE, MODE_CODE
 from fullmax_model import calc_fullmax_stats
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,17 +25,12 @@ DATA = SITE / 'data' / 'compact_search_v2'
 MANIFEST = DATA / 'jinpo_unified_search_manifest.json'
 REPORT_DIR = ROOT / '_jinpo-next-report'
 REPORT = REPORT_DIR / 'generation_report.json'
-SYNC_REPORT = REPORT_DIR / 'master_sync.json'
 REC = 52
 FULLMAX_REC = 26
 FULLMAX_DIR = DATA / 'fullmax_stats'
 STATS = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
-LINES = {
-    '衡軛': [(0,1,2),(3,4,5)],
-    '鶴翼': [(0,1,2),(3,4,5)],
-    '魚鱗': [(0,1,2),(2,3,4),(4,5,0)],
-    '方円': [(1,2,3),(3,4,5),(1,0,5)],
-}
+FORM_FILE_CODE = {'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}
+
 
 def csv_rows(path: Path):
     with path.open(encoding='utf-8-sig', newline='') as f:
@@ -44,26 +42,25 @@ def norm_stat(s: str) -> str:
     return {'耐久':'耐久力','器用':'器用さ','土':'土属性','水':'水属性','火':'火属性','風':'風属性'}.get(s,s)
 
 
-def gzread(path: Path) -> bytes:
-    return gzip.decompress(path.read_bytes())
-
-
-def gzwrite(path: Path, raw: bytes) -> None:
+def gzip_writer(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open('wb') as out:
-        with gzip.GzipFile(filename='', mode='wb', fileobj=out, compresslevel=6, mtime=0) as z:
-            z.write(raw)
+    raw = path.open('wb')
+    gz = gzip.GzipFile(filename='', mode='wb', fileobj=raw, compresslevel=6, mtime=0)
+    return raw, gz
 
 
-def meta(path: Path, raw: bytes, rows: int) -> dict:
-    gz = path.read_bytes()
-    return {
+def file_meta(path: Path, rows: int, raw_bytes: int, record_size: int | None = None) -> dict:
+    blob = path.read_bytes()
+    out = {
         'file': str(path.relative_to(SITE)).replace('\\','/'),
         'rows': rows,
-        'gzip_bytes': len(gz),
-        'raw_bytes': len(raw),
-        'sha256_16': hashlib.sha256(gz).hexdigest()[:16],
+        'gzip_bytes': len(blob),
+        'raw_bytes': raw_bytes,
+        'sha256_16': hashlib.sha256(blob).hexdigest()[:16],
     }
+    if record_size is not None:
+        out['record_size'] = record_size
+    return out
 
 
 def canonical_cycle(p):
@@ -77,16 +74,6 @@ def canonical_cycle(p):
     return min(variants)
 
 
-def fish_to_hoen(p):
-    # 魚鱗 ABC/CDE/EFA -> 方円の3ラインが同じ3集合になるよう1つ回転。
-    return (p[5],p[0],p[1],p[2],p[3],p[4])
-
-
-def hoen_to_fish(p):
-    # fish_to_hoen の逆変換。方円の同一3ライン集合を魚鱗配置へ戻す。
-    return (p[1],p[2],p[3],p[4],p[5],p[0])
-
-
 class Generator:
     def __init__(self, allowed_ids: list[int], heroes: dict, bonds: dict, coef: dict, formation_bonus_pct: dict):
         self.ids = sorted(allowed_ids)
@@ -96,9 +83,43 @@ class Generator:
         self.formation_bonus_pct = formation_bonus_pct
         self.tm: dict[tuple[int,int,int], int] = defaultdict(int)
         self.pair_groups: dict[tuple[int,int], tuple[tuple[int,tuple[int,...]],...]] = {}
-        self.assign_cache = {}
+        # たいらの式正本から生成する現行キャッシュ。
+        self.assign_cache = {}  # 旧実装との等価性監査用だけに保持
+        self.zero_pair_cache: dict[tuple[int,int], tuple[int,...]] = {}
+        self.neighbors: dict[int, set[int]] = {}
+        self.mask_info_cache: dict[int, tuple[tuple[int,...], tuple[tuple[int,...],...]]] = {}
+        self.hero_factor_f4 = {}
+        self.f4_by_triple = {}
+        self.rate_int = {bid: tuple(int(round(float(v)*10000)) for v in arr) for bid,arr in self.coef.items()}
+        self.hero_stats = {hid: tuple(int(v) for v in h['s']) for hid,h in self.heroes.items()}
+        # 全MAXは「文曲使用slotだけ転生不可」。見聞録/鬼神石加算はslotごとに固定なので事前計算する。
+        from fullmax_model import KENBUN_MAX, KISHIN_MAX, TENSEI_RATE, STATS as FM_STATS
+        self.hero_fullmax_plain = {}
+        self.hero_fullmax_tensei = {}
+        for hid,vals in self.hero_stats.items():
+            plain=[]; tensei=[]
+            for i,stat in enumerate(FM_STATS):
+                add=int(KENBUN_MAX[stat])+int(KISHIN_MAX[stat])
+                raw=int(vals[i])
+                plain.append(raw+add)
+                tensei.append(math.floor(raw*float(TENSEI_RATE)+1e-9)+add)
+            self.hero_fullmax_plain[hid]=tuple(plain)
+            self.hero_fullmax_tensei[hid]=tuple(tensei)
+        for hid,h in self.heroes.items():
+            fmap={}
+            for fi,value in enumerate(h['f']):
+                value=str(value or '').strip()
+                if not value or value in {'-','対象外'}:
+                    continue
+                prev=fmap.get(value)
+                uses_f4=(fi==3)
+                # 同じ因子が非因子4にもあれば文曲不要。
+                fmap[value]=uses_f4 if prev is None else (prev and uses_f4)
+            self.hero_factor_f4[hid]=fmap
         self._build_triple_masks()
+        self._build_factor4_triple_options()
         self._build_nonzero_pair_groups()
+        self._build_neighbors()
 
     def _build_triple_masks(self):
         by_factor = defaultdict(list)
@@ -116,6 +137,92 @@ class Generator:
                             continue
                         self.tm[tuple(sorted((a,b,c)))] |= bit
 
+    def _build_factor4_triple_options(self):
+        """成立済み3英傑ごとに、各因縁の文曲候補を一度だけ確定する。
+
+        triple は昇順hero id。値の3bitはその昇順位置に対応する。
+        以後の全2M件処理では因子文字列DFSを繰り返さない。
+        """
+        perms=((0,1,2),(0,2,1),(1,0,2),(1,2,0),(2,0,1),(2,1,0))
+        out={}
+        for triple,mask in self.tm.items():
+            rows=[]
+            for bid in self.bond_ids(mask):
+                req=self.bonds[bid]
+                opts=set()
+                for perm in perms:
+                    m=0; ok=True
+                    for ri,hi in enumerate(perm):
+                        flag=self.hero_factor_f4[triple[hi]].get(req[ri])
+                        if flag is None:
+                            ok=False; break
+                        if flag: m |= 1 << hi
+                    if ok: opts.add(m)
+                if not opts:
+                    raise RuntimeError(f'成立tripleの文曲割当候補なし: {triple} bid={bid}')
+                rows.append((bid,tuple(sorted(opts,key=lambda x:(x.bit_count(),x)))))
+            out[triple]=tuple(rows)
+        self.f4_by_triple=out
+
+    def factor4_mask_fast(self,p,form,bond_ids):
+        """factor4_optimizer.py と同じ全体最適化を、事前計算済み割当で実行する。"""
+        wanted=set(bond_ids)
+        options={bid:set() for bid in bond_ids}
+        for ln in LINES[form]:
+            ordered=(p[ln[0]],p[ln[1]],p[ln[2]])
+            triple=tuple(sorted(ordered))
+            pos={hid:i for i,hid in enumerate(ordered)}
+            for bid,rel_opts in self.f4_by_triple.get(triple,()):
+                if bid not in wanted:
+                    continue
+                for rel in rel_opts:
+                    gm=0
+                    for sorted_i,hid in enumerate(triple):
+                        if rel & (1<<sorted_i):
+                            gm |= 1 << ln[pos[hid]]
+                    options[bid].add(gm)
+        states={0}
+        for bid in bond_ids:
+            opts=options[bid]
+            if not opts:
+                raise RuntimeError(f'発動因縁の割当候補がありません: form={form} bid={bid} placement={tuple(p)}')
+            states={state|opt for state in states for opt in opts}
+        return min(states,key=lambda m:(m.bit_count(),m)) if states else 0
+
+    def mask_info(self,mask):
+        cached=self.mask_info_cache.get(mask)
+        if cached is not None:
+            return cached
+        bids=self.bond_ids(mask)
+        rates=[]
+        for si in range(11):
+            rates.append(tuple(self.rate_int[bid][si] for bid in bids if self.rate_int[bid][si]))
+        cached=(bids,tuple(rates))
+        self.mask_info_cache[mask]=cached
+        return cached
+
+    @staticmethod
+    def _effects(base,rates):
+        return [sum((int(base[i])*rate)//10000 for rate in rates[i]) for i in range(11)]
+
+    def shared_effects(self,p,mask,f4mask):
+        bids,rates=self.mask_info(mask)
+        base=[0]*11
+        fm=[0]*11
+        for slot,hid in enumerate(p):
+            hs=self.hero_stats[hid]
+            fs=self.hero_fullmax_plain[hid] if (f4mask & (1<<slot)) else self.hero_fullmax_tensei[hid]
+            for i in range(11):
+                base[i]+=hs[i]; fm[i]+=fs[i]
+        return bids,self._effects(base,rates),self._effects(fm,rates)
+
+    def apply_formation_bonus(self,raw,form):
+        bonus=self.formation_bonus_pct[form]
+        vals=[int(raw[i])*(100+int(bonus[i]))//100 for i in range(11)]
+        if any(v<0 or v>65535 for v in vals):
+            raise RuntimeError(f'ステータスがuint16範囲外: {form} {vals}')
+        return vals,sum(vals)
+
     def _build_nonzero_pair_groups(self):
         pg = defaultdict(lambda: defaultdict(list))
         for (a,b,c), mask in self.tm.items():
@@ -127,11 +234,26 @@ class Generator:
             for pair,groups in pg.items()
         }
 
+    def _build_neighbors(self):
+        n={h:set() for h in self.ids}
+        for a,b in self.pair_groups:
+            n[a].add(b); n[b].add(a)
+        self.neighbors=n
+
     def groups(self,a,b):
         return self.pair_groups.get((a,b) if a<b else (b,a),())
 
     def triple_mask(self,a,b,c):
         return self.tm.get(tuple(sorted((a,b,c))),0)
+
+    def zero_candidates(self,a,b):
+        pair=(a,b) if a<b else (b,a)
+        cached=self.zero_pair_cache.get(pair)
+        if cached is not None:
+            return cached
+        out=tuple(h for h in self.ids if h not in pair and self.triple_mask(pair[0],pair[1],h)==0)
+        self.zero_pair_cache[pair]=out
+        return out
 
     def placement_mask(self,p,form):
         mask = 0
@@ -142,7 +264,6 @@ class Generator:
     def generate_cycle(self, targets: set[int]):
         outs = {t:{} for t in targets}
         max_target = max(targets)
-        ids = self.ids
 
         def add(target, A,B,C,D,E,F, mask):
             if len({A,B,C,D,E,F}) != 6:
@@ -153,68 +274,89 @@ class Generator:
             if old is None or p < old:
                 outs[target][key] = p
 
-        # 3ラインすべてが少なくとも1因縁を持つケース。
-        for A,C,E in itertools.combinations(ids,3):
-            g1,g2,g3 = self.groups(A,C), self.groups(C,E), self.groups(A,E)
-            if not g1 or not g2 or not g3:
-                continue
-            shared = {A,C,E}
-            for m1,L1 in g1:
-                for m2,L2 in g2:
-                    u = m1 | m2
-                    if u.bit_count() > max_target:
-                        continue
-                    for m3,L3 in g3:
-                        mask = u | m3
-                        n = mask.bit_count()
-                        if n not in outs:
-                            continue
-                        for B in L1:
-                            if B in shared:
-                                continue
-                            for D in L2:
-                                if D in shared or D == B:
-                                    continue
-                                for F in L3:
-                                    if F in shared or F == B or F == D:
-                                        continue
-                                    add(n,A,B,C,D,E,F,mask)
+        # 3ラインすべて成立。非成立pairを最初から列挙しない。
+        for A in self.ids:
+            neighA=self.neighbors[A]
+            for C in (x for x in neighA if x>A):
+                common = neighA.intersection(self.neighbors[C])
+                for E in (x for x in common if x>C):
+                    g1,g2,g3=self.groups(A,C),self.groups(C,E),self.groups(A,E)
+                    shared={A,C,E}
+                    for m1,L1 in g1:
+                        for m2,L2 in g2:
+                            u=m1|m2
+                            if u.bit_count()>max_target: continue
+                            for m3,L3 in g3:
+                                mask=u|m3; n=mask.bit_count()
+                                if n not in outs: continue
+                                for B in L1:
+                                    if B in shared: continue
+                                    for D in L2:
+                                        if D in shared or D==B: continue
+                                        for F in L3:
+                                            if F in shared or F==B or F==D: continue
+                                            add(n,A,B,C,D,E,F,mask)
 
-        # ちょうど2ラインが有効、残り1ラインは0因縁のケース。
-        # 1ラインだけでは最大4因縁なので、検索対象5～9因縁ではこれで全ケースを覆う。
-        cases = ((0,1,2),(1,2,0),(2,0,1))
-        for A,C,E in itertools.combinations(ids,3):
-            vertices = (A,C,E)
-            groups = (self.groups(A,C), self.groups(C,E), self.groups(A,E))
-            for i,j,k in cases:
-                gi,gj = groups[i],groups[j]
-                if not gi or not gj:
-                    continue
-                for mi,Li in gi:
-                    for mj,Lj in gj:
-                        mask = mi | mj
-                        n = mask.bit_count()
-                        if n not in outs:
-                            continue
-                        for xi in Li:
-                            if xi in vertices:
-                                continue
-                            for xj in Lj:
-                                if xj in vertices or xj == xi:
-                                    continue
-                                used = {A,C,E,xi,xj}
-                                if k == 2:
-                                    u,v = A,E
-                                elif k == 0:
-                                    u,v = A,C
-                                else:
-                                    u,v = C,E
-                                for z in ids:
-                                    if z in used or self.triple_mask(u,v,z) != 0:
-                                        continue
-                                    mids = [None,None,None]
-                                    mids[i],mids[j],mids[k] = xi,xj,z
-                                    add(n,A,mids[0],C,mids[1],E,mids[2],mask)
+        # 2ライン成立、残り1ライン不成立。各ケースは必要な2辺だけから列挙する。
+        # case0: AC,CE active / AE inactive
+        for C in self.ids:
+            left=[x for x in self.neighbors[C] if x<C]
+            right=[x for x in self.neighbors[C] if x>C]
+            for A in left:
+                gi=self.groups(A,C)
+                for E in right:
+                    gj=self.groups(C,E)
+                    for mi,Li in gi:
+                        for mj,Lj in gj:
+                            mask=mi|mj; n=mask.bit_count()
+                            if n not in outs: continue
+                            for B in Li:
+                                if B in (A,C,E): continue
+                                for D in Lj:
+                                    if D in (A,C,E) or D==B: continue
+                                    used={A,C,E,B,D}
+                                    for F in self.zero_candidates(A,E):
+                                        if F in used: continue
+                                        add(n,A,B,C,D,E,F,mask)
+
+        # case1: CE,AE active / AC inactive
+        for A in self.ids:
+            for E in (x for x in self.neighbors[A] if x>A):
+                gj=self.groups(A,E)
+                for C in (x for x in self.neighbors[E] if A<x<E):
+                    gi=self.groups(C,E)
+                    for mi,Li in gi:
+                        for mj,Lj in gj:
+                            mask=mi|mj; n=mask.bit_count()
+                            if n not in outs: continue
+                            for D in Li:
+                                if D in (A,C,E): continue
+                                for F in Lj:
+                                    if F in (A,C,E) or F==D: continue
+                                    used={A,C,E,D,F}
+                                    for B in self.zero_candidates(A,C):
+                                        if B in used: continue
+                                        add(n,A,B,C,D,E,F,mask)
+
+        # case2: AE,AC active / CE inactive
+        for A in self.ids:
+            right=sorted(x for x in self.neighbors[A] if x>A)
+            for ix,C in enumerate(right):
+                gi=self.groups(A,C)
+                for E in right[ix+1:]:
+                    gj=self.groups(A,E)
+                    for mi,Li in gi:
+                        for mj,Lj in gj:
+                            mask=mi|mj; n=mask.bit_count()
+                            if n not in outs: continue
+                            for B in Li:
+                                if B in (A,C,E): continue
+                                for F in Lj:
+                                    if F in (A,C,E) or F==B: continue
+                                    used={A,C,E,B,F}
+                                    for D in self.zero_candidates(C,E):
+                                        if D in used: continue
+                                        add(n,A,B,C,D,E,F,mask)
         return outs
 
     def generate_disjoint(self, targets: set[int]):
@@ -256,8 +398,7 @@ class Generator:
         return tuple(i+1 for i in range(len(self.bonds)) if (mask >> i) & 1)
 
     def factor4_mask(self,p,form,bond_ids):
-        # 各因縁の全ライン・全割当を考慮し、編成全体で因子4を使う英傑集合を最小化する。
-        return minimal_factor4_mask(p, form, bond_ids, LINES, self.heroes, self.bonds, self.assign_cache)
+        return self.factor4_mask_fast(p,form,bond_ids)
 
     def calc_stats(self,p,bond_ids,form):
         base = [sum(self.heroes[h]['s'][i] for h in p) for i in range(11)]
@@ -272,9 +413,7 @@ class Generator:
             raise RuntimeError(f'ステータスがuint16範囲外: {form} {p} {vals}')
         return vals,sum(vals)
 
-    def record_bundle(self,p,bond_ids,form,tie):
-        # 文曲最小化はcompact本体と全MAX sidecarで共通のmaskを1回だけ計算する。
-        f4mask = self.factor4_mask(p,form,bond_ids)
+    def record_from_known_f4(self,p,bond_ids,form,tie,f4mask):
         vals,total = self.calc_stats(p,bond_ids,form)
         r = bytearray(REC)
         struct.pack_into('<6H',r,0,*p)
@@ -283,31 +422,45 @@ class Generator:
         for i,v in enumerate(vals):
             struct.pack_into('<H',r,21+2*i,v)
         struct.pack_into('<I',r,43,total)
-        r[47] = f4mask.bit_count()
+        r[47] = int(f4mask).bit_count()
         struct.pack_into('<I',r,48,tie)
+        return bytes(r)
 
-        fm_vals,fm_total = calc_fullmax_stats(
+    def fullmax_from_known_f4(self,p,bond_ids,form,f4mask):
+        vals,total = calc_fullmax_stats(
             p, f4mask, bond_ids, form, self.heroes, self.coef, self.formation_bonus_pct
         )
-        fm = bytearray(FULLMAX_REC)
+        out=bytearray(FULLMAX_REC)
+        struct.pack_into('<11H',out,0,*vals)
+        struct.pack_into('<I',out,22,total)
+        return bytes(out)
+
+    def records_from_shared(self,p,mask,form,tie,f4mask,normal_raw,fullmax_raw,bids):
+        vals,total=self.apply_formation_bonus(normal_raw,form)
+        r=bytearray(REC)
+        struct.pack_into('<6H',r,0,*p)
+        for i,bid in enumerate(bids): r[12+i]=bid
+        for i,v in enumerate(vals): struct.pack_into('<H',r,21+2*i,v)
+        struct.pack_into('<I',r,43,total)
+        r[47]=int(f4mask).bit_count()
+        struct.pack_into('<I',r,48,tie)
+        fm_vals,fm_total=self.apply_formation_bonus(fullmax_raw,form)
+        fm=bytearray(FULLMAX_REC)
         struct.pack_into('<11H',fm,0,*fm_vals)
         struct.pack_into('<I',fm,22,fm_total)
-        return bytes(r),bytes(fm)
+        return r,fm
 
 
 def load_model():
     heroes = {}
     grade3 = []
-    hero_rows = csv_rows(SITE/'data'/'jinpo_eiketsu_master.csv')
-    for r in hero_rows:
+    for r in csv_rows(SITE/'data'/'jinpo_eiketsu_master.csv'):
         iid = str(r.get('internal_id','')).strip()
         if not iid.startswith('EIK_'):
             continue
         hid = int(iid[4:])
-        if hid <= 0 or hid > 65535:
-            raise RuntimeError(f'internal_idがcompact形式範囲外: {iid}')
-        if hid in heroes:
-            raise RuntimeError(f'internal_id重複: {iid}')
+        if hid <= 0 or hid > 65535 or hid in heroes:
+            raise RuntimeError(f'internal_id不正または重複: {iid}')
         factors = [str(r.get(k,'')).strip() for k in ('因子1','因子2','因子3','因子4')]
         stats = [int(float(r.get(s) or 0)) for s in STATS]
         cost = int(float(r.get('コスト') or 99))
@@ -320,7 +473,7 @@ def load_model():
     for r in csv_rows(SITE/'data'/'jinpo_inen_master.csv'):
         bid = int(r['No'])
         if bid <= 0 or bid > 255:
-            raise RuntimeError(f'因縁Noがcompact形式範囲外: {bid}')
+            raise RuntimeError(f'因縁No不正: {bid}')
         bonds[bid] = [str(r[k]).strip() for k in ('因子1','因子2','因子3')]
         bond_names[bid] = str(r['因縁名']).strip()
 
@@ -333,7 +486,6 @@ def load_model():
             coef_name[name][stat] = value
     coef = {bid:[coef_name.get(name,{}).get(s,0.0) for s in STATS] for bid,name in bond_names.items()}
 
-    # 陣形補正はformation_bonus.csvを唯一の正として読み込む。
     formation_bonus_pct = {}
     for r in csv_rows(SITE/'data'/'formation_bonus.csv'):
         form = str(r.get('formation','')).strip()
@@ -343,348 +495,258 @@ def load_model():
             raise RuntimeError(f'formation_bonus.csvに未知の陣形: {form}')
         pct = []
         for stat in STATS:
-            raw_value = str(r.get(stat,'')).strip() or '1.00'
-            try:
-                factor = float(raw_value)
-            except Exception:
-                raise RuntimeError(f'formation_bonus.csvの倍率が数値ではありません: {form} {stat}={raw_value}')
+            factor = float(str(r.get(stat,'')).strip() or '1.00')
             hundred = round((factor - 1.0) * 100)
             if abs(factor - (1.0 + hundred/100.0)) > 1e-9 or hundred < 0:
-                raise RuntimeError(f'formation_bonus.csvの倍率は1%刻みの1.00以上で指定してください: {form} {stat}={raw_value}')
+                raise RuntimeError(f'formation_bonus.csv倍率不正: {form} {stat}={factor}')
             pct.append(int(hundred))
         formation_bonus_pct[form] = pct
-    missing_forms = sorted(set(LINES) - set(formation_bonus_pct))
-    if missing_forms:
-        raise RuntimeError('formation_bonus.csvに陣形が不足: '+', '.join(missing_forms))
-
+    if set(formation_bonus_pct) != set(LINES):
+        raise RuntimeError('formation_bonus.csvの4陣形が正本と一致しません')
     return heroes,sorted(grade3),bonds,bond_names,coef,formation_bonus_pct
 
 
-def fullmax_path(mode: str, count: int, form: str) -> Path:
-    code={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}[form]
-    return FULLMAX_DIR/mode/f'c{count}_{code}.bin.gz'
+CANDIDATE_REC=24
 
+def dump_candidates(generated: dict, path: Path) -> int:
+    path.parent.mkdir(parents=True,exist_ok=True)
+    with path.open('wb') as f:
+        f.write(struct.pack('<4sI',b'JCG1',len(generated)))
+        for key,p in generated.items():
+            mask=int(key[1])
+            f.write(struct.pack('<6H',*p))
+            f.write(mask.to_bytes(12,'little'))
+    return len(generated)
 
-def read_existing_fullmax(manifest: dict, mode: str, count: int, form: str, old_n: int):
-    info=(((manifest.get('fullmax_stats') or {}).get(mode) or {}).get(str(count)) or {}).get(form)
-    if not info:
-        return None
-    path=SITE/info.get('file','')
-    if not path.exists():
-        return None
-    try:
-        raw=gzread(path)
-        if len(raw)<16 or raw[:4]!=b'JMX1':
-            return None
-        rec=struct.unpack_from('<H',raw,6)[0]; rows=struct.unpack_from('<I',raw,8)[0]
-        if rec!=FULLMAX_REC or rows!=old_n or len(raw)!=16+rows*FULLMAX_REC:
-            return None
-        return raw
-    except Exception:
-        return None
+def iter_candidates(path: Path):
+    with path.open('rb') as f:
+        head=f.read(8)
+        if len(head)!=8 or head[:4]!=b'JCG1': raise RuntimeError(f'一時候補形式不正: {path.name}')
+        rows=struct.unpack_from('<I',head,4)[0]
+        for _ in range(rows):
+            rec=f.read(CANDIDATE_REC)
+            if len(rec)!=CANDIDATE_REC: raise RuntimeError(f'一時候補長不正: {path.name}')
+            p=struct.unpack_from('<6H',rec,0)
+            mask=int.from_bytes(rec[12:24],'little')
+            yield p,mask
+        if f.read(1): raise RuntimeError(f'一時候補末尾不正: {path.name}')
 
-
-def fullmax_meta(path: Path, raw: bytes, rows: int) -> dict:
-    out=meta(path,raw,rows)
-    out['record_size']=FULLMAX_REC
-    return out
-
-
-def write_dataset(manifest, generator: Generator, mode: str, count: int, form: str, generated: dict, dirty_ids: set[int], default_transform=lambda p:p):
-    print('WRITE',mode,count,form,len(generated),flush=True)
-    entry = manifest['datasets'][mode][str(count)][form]
-    path = SITE/entry['file']
-    old_raw = gzread(path)
-    if len(old_raw) < 16 or old_raw[:4] != b'JCF1' or struct.unpack_from('<H',old_raw,6)[0] != REC:
-        raise RuntimeError(f'既存compact DB不正: {entry["file"]}')
-    old_n = (len(old_raw)-16)//REC
-    old_fm = read_existing_fullmax(manifest,mode,count,form,old_n)
-
-    remaining = set(generated.keys())
-    out = bytearray(16 + len(generated)*REC)
-    out[:16] = old_raw[:16]
-    struct.pack_into('<I',out,8,len(generated))
-    out[12] = count
-
-    fm_out = bytearray(16 + len(generated)*FULLMAX_REC)
-    struct.pack_into('<4sHHII',fm_out,0,b'JMX1',1,FULLMAX_REC,len(generated),0)
-
-    write_index = 0
-    max_tie = 0
-    preserved = 0
-    reused_bytes = 0
-    reused_fullmax = 0
-    recalculated_fullmax = 0
-    placement_replaced = 0
-    removed = 0
-
-    for i in range(old_n):
-        off = 16+i*REC
-        old_p = tuple(struct.unpack_from('<6H',old_raw,off))
-        mask = 0
-        for b in old_raw[off+12:off+12+count]:
-            if b:
-                mask |= 1 << (b-1)
-        key = (tuple(sorted(old_p)),mask)
-        tie = struct.unpack_from('<I',old_raw,off+48)[0]
-        max_tie = max(max_tie,tie)
-        if key not in generated:
-            removed += 1
-            continue
-        dirty = bool(set(key[0]) & dirty_ids)
-        if not dirty:
-            p = old_p
-            rec = old_raw[off:off+REC]
-            preserved += 1
-            reused_bytes += 1
-            if old_fm is not None:
-                fm_rec=old_fm[16+i*FULLMAX_REC:16+(i+1)*FULLMAX_REC]
-                reused_fullmax += 1
-            else:
-                bids=generator.bond_ids(mask)
-                _,fm_rec=generator.record_bundle(p,bids,form,tie)
-                recalculated_fullmax += 1
-        else:
-            if generator.placement_mask(old_p,form) == mask:
-                p = old_p
-                preserved += 1
-            else:
-                p = default_transform(generated[key])
-                placement_replaced += 1
-            bids = generator.bond_ids(mask)
-            rec,fm_rec = generator.record_bundle(p,bids,form,tie)
-            recalculated_fullmax += 1
-        dest = 16 + write_index*REC
-        out[dest:dest+REC] = rec
-        fm_dest=16+write_index*FULLMAX_REC
-        fm_out[fm_dest:fm_dest+FULLMAX_REC]=fm_rec
-        write_index += 1
-        remaining.discard(key)
-
-    next_tie = max_tie + 1
-    for key in sorted(remaining,key=lambda k:(k[0],k[1])):
-        p = default_transform(generated[key])
-        bids = generator.bond_ids(key[1])
-        if len(bids) != count:
-            raise RuntimeError(f'因縁数不一致: {mode}/{count}/{form}')
-        if generator.placement_mask(p,form) != key[1]:
-            raise RuntimeError(f'配置と因縁集合不一致: {mode}/{count}/{form} {p}')
-        rec,fm_rec = generator.record_bundle(p,bids,form,next_tie)
-        dest = 16 + write_index*REC
-        out[dest:dest+REC] = rec
-        fm_dest=16+write_index*FULLMAX_REC
-        fm_out[fm_dest:fm_dest+FULLMAX_REC]=fm_rec
-        write_index += 1
-        next_tie += 1
-        recalculated_fullmax += 1
-
-    if write_index != len(generated):
-        raise RuntimeError(f'compact DB生成件数不一致: {mode}/{count}/{form} {write_index}!={len(generated)}')
-    raw = bytes(out)
-    gzwrite(path,raw)
-    entry.update(meta(path,raw,len(generated)))
-
-    fm_path=fullmax_path(mode,count,form)
-    fm_raw=bytes(fm_out)
-    gzwrite(fm_path,fm_raw)
-    manifest.setdefault('fullmax_stats',{}).setdefault(mode,{}).setdefault(str(count),{})[form]=fullmax_meta(fm_path,fm_raw,len(generated))
-    manifest['fullmax_stats_record_size']=FULLMAX_REC
-    manifest['fullmax_model']='全MAX: 見聞録MAX+鬼神石MAX+転生MAX(最小文曲使用英傑を除外)'
-
-    added_count = len(remaining)
-    result = {
-        'rows':len(generated),
-        'added':added_count,
-        'removed':removed,
-        'old_placement_preserved':preserved,
-        'record_bytes_reused':reused_bytes,
-        'fullmax_records_reused':reused_fullmax,
-        'fullmax_records_recalculated':recalculated_fullmax,
-        'old_placement_replaced':placement_replaced,
-    }
-    del remaining, out, old_raw, raw, fm_out, fm_raw, old_fm
+def release_memory():
     gc.collect()
     try:
         import ctypes
         ctypes.CDLL('libc.so.6').malloc_trim(0)
     except Exception:
         pass
-    return result
+
+def fullmax_path(mode: str, count: int, form: str) -> Path:
+    return FULLMAX_DIR/mode/f'c{count}_{FORM_FILE_CODE[form]}.bin.gz'
 
 
-def harmonize_cycle_pair(manifest, generator: Generator, mode: str, count: int):
-    """魚鱗・方円の同一6人＋同一因縁集合で、文曲人数が少ない代表配置へ統一する。
+def compact_header(mode: str, count: int, form: str, rows: int) -> bytes:
+    return struct.pack('<4sHHIBBBB', b'JCF1', MODE_CODE[mode], REC, rows, count, FORM_CODE[form], 1 if mode=='grade3' else 0, 0)
 
-    魚鱗と方円は3ライン集合が同型であり、fish_to_hoen/hoen_to_fishで
-    相互変換できる。既存の低い側は一切変更せず、高い側だけを置換する。
-    因縁集合・基礎ステータス・tie順は維持する。
-    """
-    forms=('魚鱗','方円')
-    raws={}; fm_raws={}; paths={}; fm_paths={}; entries={}; fm_entries={}
+
+def fullmax_header(rows: int) -> bytes:
+    return struct.pack('<4sHHII', b'JMX1', 1, FULLMAX_REC, rows, 0)
+
+
+def _gzip_raw_file(src: Path, dst: Path) -> None:
+    dst.parent.mkdir(parents=True,exist_ok=True)
+    with dst.open('wb') as out:
+        subprocess.run(['gzip','-n','-6','-c',str(src)],stdout=out,check=True)
+
+
+def write_family_pair(manifest: dict, generator: Generator, mode: str, count: int, forms: tuple[str,str], candidate_path: Path, rows: int) -> dict:
+    if LINES[forms[0]] != LINES[forms[1]]:
+        raise RuntimeError(f'同一ファミリの成立ラインが一致しません: {forms}')
+
+    temp_raw=REPORT_DIR/'raw_output'
+    temp_raw.mkdir(parents=True,exist_ok=True)
+    items=[]
+    handles=[]
     for form in forms:
         entry=manifest['datasets'][mode][str(count)][form]
-        path=SITE/entry['file']; raw=bytearray(gzread(path))
-        if len(raw)<16 or raw[:4]!=b'JCF1' or struct.unpack_from('<H',raw,6)[0]!=REC:
-            raise RuntimeError(f'既存compact DB不正: {entry["file"]}')
-        rows=struct.unpack_from('<I',raw,8)[0]
-        if rows!=int(entry.get('rows',-1)) or len(raw)!=16+rows*REC:
-            raise RuntimeError(f'compact構造不一致: {mode}/{count}/{form}')
-        fm_entry=manifest['fullmax_stats'][mode][str(count)][form]
-        fm_path=SITE/fm_entry['file']; fm_raw=bytearray(gzread(fm_path))
-        if len(fm_raw)!=16+rows*FULLMAX_REC or fm_raw[:4]!=b'JMX1' or struct.unpack_from('<H',fm_raw,6)[0]!=FULLMAX_REC or struct.unpack_from('<I',fm_raw,8)[0]!=rows:
-            raise RuntimeError(f'fullMAX構造不一致: {mode}/{count}/{form}')
-        raws[form]=raw; fm_raws[form]=fm_raw; paths[form]=path; fm_paths[form]=fm_path
-        entries[form]=entry; fm_entries[form]=fm_entry
+        path=SITE/entry['file']
+        fm_path=fullmax_path(mode,count,form)
+        raw_path=temp_raw/f'{mode}_{count}_{FORM_FILE_CODE[form]}.compact.raw'
+        fm_raw_path=temp_raw/f'{mode}_{count}_{FORM_FILE_CODE[form]}.fullmax.raw'
+        rf=raw_path.open('wb'); ff=fm_raw_path.open('wb')
+        rf.write(compact_header(mode,count,form,rows)); ff.write(fullmax_header(rows))
+        items.append((form,entry,path,fm_path,raw_path,fm_raw_path))
+        handles.append((form,rf,ff))
 
-    def row_key(raw, i):
-        off=16+i*REC
-        p=tuple(struct.unpack_from('<6H',raw,off))
-        mask=0
-        for bid in raw[off+12:off+12+count]:
-            if bid: mask |= 1 << (bid-1)
-        return (tuple(sorted(p)),mask),p
+    buffers={form:[bytearray(),bytearray()] for form in forms}
+    flush_every=16384
+    try:
+        for tie,(p,mask) in enumerate(iter_candidates(candidate_path),start=1):
+            bids,_=generator.mask_info(mask)
+            if len(bids)!=count:
+                raise RuntimeError(f'因縁数不一致: {mode}/{count} {p}')
+            # 同一ファミリは正本ラインが同じなので成立集合検証も1回で十分。
+            if generator.placement_mask(p,forms[0])!=mask:
+                raise RuntimeError(f'配置と因縁集合不一致: {mode}/{count}/{forms[0]} {p}')
+            f4mask=generator.factor4_mask(p,forms[0],bids)
+            _,normal_raw,fullmax_raw=generator.shared_effects(p,mask,f4mask)
+            for form,rf,ff in handles:
+                r,fm=generator.records_from_shared(p,mask,form,tie,f4mask,normal_raw,fullmax_raw,bids)
+                buffers[form][0].extend(r); buffers[form][1].extend(fm)
+            if tie % flush_every==0:
+                for form,rf,ff in handles:
+                    rf.write(buffers[form][0]); ff.write(buffers[form][1])
+                    buffers[form][0].clear(); buffers[form][1].clear()
+                if tie % 131072==0:
+                    release_memory()
+        for form,rf,ff in handles:
+            if buffers[form][0]: rf.write(buffers[form][0])
+            if buffers[form][1]: ff.write(buffers[form][1])
+    finally:
+        for _,rf,ff in handles:
+            rf.close(); ff.close()
 
-    hoen_index={}
-    hoen_rows=int(entries['方円']['rows'])
-    for i in range(hoen_rows):
-        key,_=row_key(raws['方円'],i)
-        if key in hoen_index:
-            raise RuntimeError(f'方円の意味上重複: {mode}/{count}')
-        hoen_index[key]=i
+    # レコード確定後の圧縮だけを並列化。計算順・tie順・中身は変えない。
+    jobs=[]
+    with ThreadPoolExecutor(max_workers=min(4,len(items)*2)) as ex:
+        for form,entry,path,fm_path,raw_path,fm_raw_path in items:
+            jobs.append(ex.submit(_gzip_raw_file,raw_path,path))
+            jobs.append(ex.submit(_gzip_raw_file,fm_raw_path,fm_path))
+        for job in jobs: job.result()
 
-    fish_rows=int(entries['魚鱗']['rows'])
-    if fish_rows!=hoen_rows:
-        raise RuntimeError(f'魚鱗・方円件数不一致: {mode}/{count} {fish_rows}!={hoen_rows}')
+    result={}
+    for form,entry,path,fm_path,raw_path,fm_raw_path in items:
+        if path.stat().st_size > 25*1024*1024 or fm_path.stat().st_size > 25*1024*1024:
+            raise RuntimeError(f'25MB制限超過: {form} {path.stat().st_size} {fm_path.stat().st_size}')
+        entry.update(file_meta(path,rows,16+rows*REC))
+        fm_meta=file_meta(fm_path,rows,16+rows*FULLMAX_REC,FULLMAX_REC)
+        manifest.setdefault('fullmax_stats',{}).setdefault(mode,{}).setdefault(str(count),{})[form]=fm_meta
+        result[form]={'rows':rows,'records_reused':0,'generation':'current_source_only'}
+        raw_path.unlink(missing_ok=True); fm_raw_path.unlink(missing_ok=True)
+    manifest['fullmax_stats_record_size']=FULLMAX_REC
+    manifest['fullmax_model']='全MAX: 見聞録MAX+鬼神石MAX+転生MAX(最小文曲使用英傑を除外)'
+    try: temp_raw.rmdir()
+    except OSError: pass
+    return result
 
-    fish_improved=hoen_improved=0
-    max_reduction=0
-    seen=set()
-    for fi in range(fish_rows):
-        key,fish_p=row_key(raws['魚鱗'],fi)
-        hi=hoen_index.get(key)
-        if hi is None:
-            raise RuntimeError(f'方円に対応キーなし: {mode}/{count} {key}')
-        seen.add(key)
-        _,hoen_p=row_key(raws['方円'],hi)
-        foff=16+fi*REC; hoff=16+hi*REC
-        fish_f4=int(raws['魚鱗'][foff+47]); hoen_f4=int(raws['方円'][hoff+47])
-        if fish_f4==hoen_f4:
-            continue
-        mask=key[1]; bids=generator.bond_ids(mask)
-        if len(bids)!=count:
-            raise RuntimeError(f'因縁数不一致: {mode}/{count} key={key}')
-        if fish_f4<hoen_f4:
-            target_p=fish_to_hoen(fish_p); target_form='方円'; target_i=hi; expected=fish_f4
-            hoen_improved+=1
-        else:
-            target_p=hoen_to_fish(hoen_p); target_form='魚鱗'; target_i=fi; expected=hoen_f4
-            fish_improved+=1
-        if generator.placement_mask(target_p,target_form)!=mask:
-            raise RuntimeError(f'代表配置変換後の因縁集合不一致: {mode}/{count}/{target_form} {target_p}')
-        target_raw=raws[target_form]; toff=16+target_i*REC
-        tie=struct.unpack_from('<I',target_raw,toff+48)[0]
-        rec,fm_rec=generator.record_bundle(target_p,bids,target_form,tie)
-        got=rec[47]
-        if got!=expected:
-            raise RuntimeError(f'代表配置変換後の文曲人数不一致: {mode}/{count}/{target_form} expected={expected} got={got}')
-        target_raw[toff:toff+REC]=rec
-        fmoff=16+target_i*FULLMAX_REC
-        fm_raws[target_form][fmoff:fmoff+FULLMAX_REC]=fm_rec
-        max_reduction=max(max_reduction,abs(fish_f4-hoen_f4))
-
-    if len(seen)!=len(hoen_index):
-        raise RuntimeError(f'魚鱗に存在しない方円キーあり: {mode}/{count}')
-
-    for form in forms:
-        raw=bytes(raws[form]); gzwrite(paths[form],raw); entries[form].update(meta(paths[form],raw,fish_rows))
-        fm_raw=bytes(fm_raws[form]); gzwrite(fm_paths[form],fm_raw); fm_entries[form].update(fullmax_meta(fm_paths[form],fm_raw,fish_rows))
-
+def fresh_manifest() -> dict:
+    datasets={'normal':{},'grade3':{}}
+    for mode,counts in (('normal',(7,8,9)),('grade3',(5,6,7,8,9))):
+        for count in counts:
+            datasets[mode][str(count)]={}
+            for form in LINES:
+                code=FORM_FILE_CODE[form]
+                datasets[mode][str(count)][form]={
+                    'file':f'data/compact_search_v2/jinpo_{mode}_c{count}_{code}_v2.bin.gz'
+                }
     return {
-        'rows':fish_rows,
-        'fish_rows_improved':fish_improved,
-        'hoen_rows_improved':hoen_improved,
-        'total_rows_improved':fish_improved+hoen_improved,
-        'max_factor4_reduction':max_reduction,
+        'version':'tairano-current-source-rebuild',
+        'magic':'JCF1',
+        'header_size':16,
+        'record_size':REC,
+        'stats':STATS,
+        'hero_names':[],
+        'bond_names':[],
+        'datasets':datasets,
+        'notes':[],
     }
-
 
 def main():
-    started = time.time()
-    manifest = json.loads(MANIFEST.read_text(encoding='utf-8'))
-    heroes,grade3,bonds,bond_names,coef,formation_bonus_pct = load_model()
-    report = {'status':'RUNNING','hero_count':len(heroes),'grade3_hero_count':len(grade3),'datasets':{}}
-    dirty_ids = set()
-    if SYNC_REPORT.exists():
-        sync = json.loads(SYNC_REPORT.read_text(encoding='utf-8'))
-        dirty_ids = {int(str(x).replace('EIK_','')) for x in sync.get('dirty_internal_ids', [])}
-    else:
-        # 単体実行では安全側。通常のGitHub Actions経路ではmaster_sync.jsonが必ず生成される。
-        dirty_ids = set(heroes)
-    report['dirty_internal_ids'] = [f'EIK_{x:04d}' for x in sorted(dirty_ids)]
-
-    # manifestのID表示表はmaster/因縁masterから毎回作り直す。削除済みIDの残骸を残さない。
-    max_hid = max(heroes,default=0)
-    hero_names = ['']*(max_hid+1)
-    for hid,h in heroes.items():
-        hero_names[hid] = h['name']
-    manifest['hero_names'] = hero_names
-    max_bid = max(bonds,default=0)
-    names = ['']*(max_bid+1)
-    for bid,name in bond_names.items():
-        names[bid] = name
-    manifest['bond_names'] = names
-    manifest['record_size'] = REC
-
-    # 通常7～9: 現在の全英傑から完全再生成。
-    print('STAGE normal generator init', flush=True)
-    normal_gen = Generator(sorted(heroes),heroes,bonds,coef,formation_bonus_pct)
-    print('STAGE normal cycle', flush=True)
-    normal_cycle = normal_gen.generate_cycle({7,8,9})
-    print('STAGE normal disjoint', flush=True)
-    normal_disjoint = normal_gen.generate_disjoint({7,8,9})
-    print('STAGE normal write', flush=True)
-    for count in (7,8,9):
-        report['datasets'][f'normal/{count}/衡軛'] = write_dataset(manifest,normal_gen,'normal',count,'衡軛',normal_disjoint[count],dirty_ids)
-        report['datasets'][f'normal/{count}/鶴翼'] = write_dataset(manifest,normal_gen,'normal',count,'鶴翼',normal_disjoint[count],dirty_ids)
-        report['datasets'][f'normal/{count}/魚鱗'] = write_dataset(manifest,normal_gen,'normal',count,'魚鱗',normal_cycle[count],dirty_ids)
-        report['datasets'][f'normal/{count}/方円'] = write_dataset(manifest,normal_gen,'normal',count,'方円',normal_cycle[count],dirty_ids,fish_to_hoen)
-        report.setdefault('cycle_representative_harmonization',{})[f'normal/{count}'] = harmonize_cycle_pair(manifest,normal_gen,'normal',count)
-    del normal_cycle,normal_disjoint,normal_gen
-
-    # 等級3以下5～9: コスト6以下だけから完全再生成。
-    print('STAGE grade generator init', flush=True)
-    grade_gen = Generator(grade3,heroes,bonds,coef,formation_bonus_pct)
-    print('STAGE grade cycle', flush=True)
-    grade_cycle = grade_gen.generate_cycle({5,6,7,8,9})
-    print('STAGE grade disjoint', flush=True)
-    grade_disjoint = grade_gen.generate_disjoint({5,6,7,8,9})
-    print('STAGE grade write', flush=True)
-    for count in (5,6,7,8,9):
-        report['datasets'][f'grade3/{count}/衡軛'] = write_dataset(manifest,grade_gen,'grade3',count,'衡軛',grade_disjoint[count],dirty_ids)
-        report['datasets'][f'grade3/{count}/鶴翼'] = write_dataset(manifest,grade_gen,'grade3',count,'鶴翼',grade_disjoint[count],dirty_ids)
-        report['datasets'][f'grade3/{count}/魚鱗'] = write_dataset(manifest,grade_gen,'grade3',count,'魚鱗',grade_cycle[count],dirty_ids)
-        report['datasets'][f'grade3/{count}/方円'] = write_dataset(manifest,grade_gen,'grade3',count,'方円',grade_cycle[count],dirty_ids,fish_to_hoen)
-        report.setdefault('cycle_representative_harmonization',{})[f'grade3/{count}'] = harmonize_cycle_pair(manifest,grade_gen,'grade3',count)
-
-    manifest['generator'] = {
-        'name':'tools-next/rebuild_all_compact.py',
-        'source_of_truth':['source-next/英傑一覧.csv','data/jinpo_inen_master.csv','data/91因縁_計算式_倍率展開.csv','data/formation_bonus.csv','tools-next/fullmax_model.py'],
+    started=time.time()
+    # 現行の命名規則と正本からmanifestを毎回新規作成する。
+    manifest=fresh_manifest()
+    heroes,grade3,bonds,bond_names,coef,formation_bonus_pct=load_model()
+    report={
+        'status':'RUNNING',
+        'generation_mode':'full_current_source_only',
         'full_regeneration':True,
+        'source_of_truth_only':True,
+        'hero_count':len(heroes),
+        'grade3_hero_count':len(grade3),
+        'datasets':{},
     }
-    notes = [x for x in manifest.get('notes',[]) if 'full regeneration' not in str(x).lower()]
-    notes.append('Phase2 full regeneration from current hero/bond/formation source of truth')
-    manifest['notes'] = notes
+
+    max_hid=max(heroes,default=0)
+    hero_names=['']*(max_hid+1)
+    for hid,h in heroes.items(): hero_names[hid]=h['name']
+    manifest['hero_names']=hero_names
+    max_bid=max(bonds,default=0)
+    names=['']*(max_bid+1)
+    for bid,name in bond_names.items(): names[bid]=name
+    manifest['bond_names']=names
+    manifest['record_size']=REC
+
+    families=(('衡軛','鶴翼'),('魚鱗','方円'))
+
+    temp_dir=REPORT_DIR/'current_candidates'
+    temp_dir.mkdir(parents=True,exist_ok=True)
+    families=(('衡軛','鶴翼'),('魚鱗','方円'))
+
+    print('STAGE normal generator',flush=True)
+    normal=Generator(sorted(heroes),heroes,bonds,coef,formation_bonus_pct)
+    print('STAGE normal cycle',flush=True)
+    cycle=normal.generate_cycle({7,8,9})
+    cycle_files={}
+    for count in (7,8,9):
+        path=temp_dir/f'normal_c{count}_cycle.tmp'
+        cycle_files[count]=(path,dump_candidates(cycle[count],path))
+    del cycle; release_memory()
+    print('STAGE normal disjoint',flush=True)
+    disjoint=normal.generate_disjoint({7,8,9})
+    disjoint_files={}
+    for count in (7,8,9):
+        path=temp_dir/f'normal_c{count}_disjoint.tmp'
+        disjoint_files[count]=(path,dump_candidates(disjoint[count],path))
+    del disjoint; release_memory()
+    for count in (7,8,9):
+        for forms,(path,rows) in ((families[0],disjoint_files[count]),(families[1],cycle_files[count])):
+            print('WRITE','normal',count,forms,rows,flush=True)
+            pair=write_family_pair(manifest,normal,'normal',count,forms,path,rows)
+            for form,val in pair.items(): report['datasets'][f'normal/{count}/{form}']=val
+            path.unlink(missing_ok=True); release_memory()
+    del normal; release_memory()
+
+    print('STAGE grade3 generator',flush=True)
+    grade=Generator(grade3,heroes,bonds,coef,formation_bonus_pct)
+    print('STAGE grade3 cycle',flush=True)
+    cycle=grade.generate_cycle({5,6,7,8,9})
+    cycle_files={}
+    for count in (5,6,7,8,9):
+        path=temp_dir/f'grade3_c{count}_cycle.tmp'
+        cycle_files[count]=(path,dump_candidates(cycle[count],path))
+    del cycle; release_memory()
+    print('STAGE grade3 disjoint',flush=True)
+    disjoint=grade.generate_disjoint({5,6,7,8,9})
+    disjoint_files={}
+    for count in (5,6,7,8,9):
+        path=temp_dir/f'grade3_c{count}_disjoint.tmp'
+        disjoint_files[count]=(path,dump_candidates(disjoint[count],path))
+    del disjoint; release_memory()
+    for count in (5,6,7,8,9):
+        for forms,(path,rows) in ((families[0],disjoint_files[count]),(families[1],cycle_files[count])):
+            print('WRITE','grade3',count,forms,rows,flush=True)
+            pair=write_family_pair(manifest,grade,'grade3',count,forms,path,rows)
+            for form,val in pair.items(): report['datasets'][f'grade3/{count}/{form}']=val
+            path.unlink(missing_ok=True); release_memory()
+    del grade; release_memory()
+    try: temp_dir.rmdir()
+    except OSError: pass
+
+    manifest['generator']={
+        'name':'tools-next/rebuild_all_compact.py',
+        'source_of_truth':['source-next/英傑一覧.csv','data/jinpo_inen_master.csv','data/91因縁_計算式_倍率展開.csv','data/formation_bonus.csv','data/jinpo_formation_spec.json','tools-next/factor4_optimizer.py','tools-next/fullmax_model.py'],
+        'full_regeneration':True,
+        'source_of_truth_only':True,
+    }
+    manifest['notes']=['たいらの式: 現行正本から毎回完全再生成。']
     MANIFEST.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
-    report['status'] = 'PASS'
-    report['seconds'] = round(time.time()-started,3)
-    report['full_records'] = sum(v['rows'] for v in report['datasets'].values())
-    report['added_records'] = sum(v['added'] for v in report['datasets'].values())
-    report['removed_records'] = sum(v['removed'] for v in report['datasets'].values())
+    report['status']='PASS'
+    report['seconds']=round(time.time()-started,3)
+    report['full_records']=sum(v['rows'] for v in report['datasets'].values())
+    report['semantic_unique_records']=report['full_records']//2
     REPORT_DIR.mkdir(exist_ok=True)
     REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps({'status':'PASS','hero_count':len(heroes),'full_records':report['full_records'],'added_records':report['added_records'],'removed_records':report['removed_records'],'seconds':report['seconds']},ensure_ascii=False))
+    print(json.dumps({'status':'PASS','full_records':report['full_records'],'source_of_truth_only':True,'seconds':report['seconds']},ensure_ascii=False),flush=True)
 
 
-if __name__ == '__main__':
+if __name__=='__main__':
     main()

@@ -17,9 +17,8 @@ ALLOWED_EXACT = {
 }
 ALLOWED_PREFIXES = (
     "陣法/data/compact_search_v2/",
-    "陣法/data/generation_history/",
+    "陣法/data/bond56_index/",
 )
-GENERATION_HISTORY_PREFIX = "陣法/data/generation_history/"
 FORBIDDEN_PARTS = (
     "/__pycache__/",
 )
@@ -49,10 +48,7 @@ def is_allowed(path: str) -> bool:
     path = path.replace("\\", "/")
     if path in ALLOWED_EXACT:
         return True
-    # 世代履歴は小さなJSONだけを許可し、任意バイナリの混入経路にしない。
-    if path.startswith(GENERATION_HISTORY_PREFIX):
-        return path.endswith(".json")
-    return any(path.startswith(prefix) for prefix in ALLOWED_PREFIXES if prefix != GENERATION_HISTORY_PREFIX)
+    return any(path.startswith(prefix) for prefix in ALLOWED_PREFIXES)
 
 
 def main() -> int:
