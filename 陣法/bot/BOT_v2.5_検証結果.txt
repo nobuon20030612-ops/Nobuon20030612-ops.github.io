@@ -1,0 +1,43 @@
+歩き巫女 Bot v2.5 Firebase共有記憶 検証結果
+
+※Firebase実プロジェクトの設定値は未投入のため、実Firestore接続テストは未実施。
+　v2.5はFirebase未設定時に従来どおりローカル動作するところまでをローカル確認版とする。
+
+【実装】
+・Firebase共有記憶設定ファイル追加
+・Firebase共有記憶モジュール追加
+・Anonymous Authenticationによる匿名認証
+・Cloud Firestoreへの共有キャッシュ保存/取得
+・Firebase SDKは設定済み時だけCDNから遅延読込
+・ローカル記憶 → Firebase共有記憶 → 無料公開Web の順に参照
+・Web取得成功後 localStorage + Firestore へ保存
+・Firebase障害時はローカルへフォールバック
+・共有記憶へ生チャット全文/個人陣法操作履歴を保存しない
+・Firestore Rules同梱（get/createのみ。list/update/delete禁止）
+・決め打ちdocument ID + TTLバケット方式
+
+【未設定時検証】
+・Firebase config enabled=false でSDK通信を開始しない
+・共有記憶 status() が未設定を返す
+・既存localStorage調査記憶を維持
+・既存Wikipedia参照を維持
+・陣法検索への依存追加なし
+
+【構文/データ】
+・Bot関連JavaScript Node --check: 20ファイル PASS
+・UTF-8文字化け検査: 0件 PASS
+・ZIP CRC検査: 最終ZIP作成後に実施
+
+【Firebase設定後に必要な実機確認】
+1. Anonymous Authentication成功
+2. Firestore get/create成功
+3. 別ブラウザから共有記憶hit
+4. Rulesでlist/update/delete拒否
+5. Firebase停止時にローカルへフォールバック
+6. App Check導入後、正規サイトからのアクセス継続
+
+【自動テスト】
+・Firebase未設定(enabled=false)で外部SDK読込なし PASS
+・ローカルWikipedia取得1回→2回目localStorageヒット PASS
+・Web取得回数 1回 PASS
+・Firebase関連script読込順/重複 4/4 PASS

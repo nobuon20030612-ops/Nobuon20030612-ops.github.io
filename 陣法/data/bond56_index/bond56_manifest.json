@@ -1,0 +1,60 @@
+{
+  "schema": "tairano-bond56-index/v1",
+  "version": "bond56-auto-a1e60f986b31dc7f",
+  "files": {
+    "bond56_model.json.gz": {
+      "file": "data/bond56_index/bond56_model.json.gz",
+      "gzip_bytes": 40616,
+      "raw_bytes": 102150,
+      "sha256_16": "1c394390bc74d8a8"
+    },
+    "bond56_core.bin.gz": {
+      "file": "data/bond56_index/bond56_core.bin.gz",
+      "gzip_bytes": 2689486,
+      "raw_bytes": 10883138,
+      "sha256_16": "71692fcaaac1da27"
+    },
+    "bondsets.bin.gz": {
+      "file": "data/bond56_index/bondsets.bin.gz",
+      "gzip_bytes": 1195989,
+      "raw_bytes": 5572604,
+      "sha256_16": "c57ff35b2024f968"
+    },
+    "cycle2_c5.bin.gz": {
+      "file": "data/bond56_index/cycle2_c5.bin.gz",
+      "gzip_bytes": 1263147,
+      "raw_bytes": 4243384,
+      "sha256_16": "484bb9982644ca43"
+    },
+    "cycle2_c6.bin.gz": {
+      "file": "data/bond56_index/cycle2_c6.bin.gz",
+      "gzip_bytes": 54052,
+      "raw_bytes": 183172,
+      "sha256_16": "d4d365477055f245"
+    },
+    "cycle3_c5.bin.gz": {
+      "file": "data/bond56_index/cycle3_c5.bin.gz",
+      "gzip_bytes": 23302141,
+      "raw_bytes": 90891664,
+      "sha256_16": "eb59f45fae67ad19"
+    },
+    "cycle3_c6.bin.gz": {
+      "file": "data/bond56_index/cycle3_c6.bin.gz",
+      "gzip_bytes": 3624105,
+      "raw_bytes": 13446160,
+      "sha256_16": "f12b91eb6de0429e"
+    },
+    "disjoint_c5.bin.gz": {
+      "file": "data/bond56_index/disjoint_c5.bin.gz",
+      "gzip_bytes": 376321,
+      "raw_bytes": 772856,
+      "sha256_16": "4cb8c72342bf28ae"
+    },
+    "disjoint_c6.bin.gz": {
+      "file": "data/bond56_index/disjoint_c6.bin.gz",
+      "gzip_bytes": 56401,
+      "raw_bytes": 120376,
+      "sha256_16": "db57d39eb7d04780"
+    }
+  }
+}
