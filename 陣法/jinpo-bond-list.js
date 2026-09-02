@@ -712,7 +712,7 @@
     if(!searchOrderNote){
       searchOrderNote=document.createElement('div');
       searchOrderNote.id='jinpoRecommendSearchOrderNote';
-      searchOrderNote.textContent='おすすめ検索は全因縁数で高い順検索になります';
+      searchOrderNote.textContent='おすすめ検索は７～９因縁数で高い順検索になります';
     }
     var searchOrderRow=document.getElementById('jinpoRecommendSearchOrderRow');
     if(!searchOrderRow){
