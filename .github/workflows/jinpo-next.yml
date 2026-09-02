@@ -17,8 +17,9 @@ on:
       - '陣法/jinpo-formation-config.js'
       - '陣法/data/jinpo_eiketsu_master.csv'
       - '陣法/data/jinpo_inen_master.csv'
+      - '陣法/data/jinpo_formation_spec.json'
       - '陣法/data/compact_search_v2/**'
-      - '陣法/data/generation_history/**'
+      - '陣法/data/bond56_index/**'
       - '陣法/data/91因縁_計算式_倍率展開.csv'
       - '陣法/data/formation_bonus.csv'
       - '陣法/data/jinpo_job_mapping.json'
@@ -37,10 +38,10 @@ env:
 
 jobs:
   build:
-    # 自動生成コミット自身では再実行しない。手動実行は常に許可する。
     if: github.actor != 'github-actions[bot]' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+
     steps:
       - name: リポジトリ取得
         uses: actions/checkout@v6
@@ -58,14 +59,13 @@ jobs:
       - name: 英傑一覧の出典・確認履歴監査
         run: python "陣法/tools-next/audit_source_provenance.py"
 
-      # Source of Truthを一度だけmasterへ同期し、その差分情報を後続の差分/full生成判定へ引き継ぐ。
       - name: 英傑マスタ事前同期
         run: python "陣法/tools-next/sync_eiketsu_master.py"
 
-      - name: compactレコードモデル変更時の事前全再計算保証
-        run: python "陣法/tools-next/ensure_compact_record_freshness.py"
+      - name: たいらの式正本事前監査
+        run: python "陣法/tools-next/audit_tairano_spec.py"
 
-      - name: 英傑一覧から陣法を差分/全再生成・既存監査
+      - name: 英傑一覧から陣法を完全再生成・総合監査
         env:
           JINPO_PROVENANCE_AUDIT_READY: '1'
           JINPO_MASTER_SYNC_READY: '1'
@@ -79,6 +79,7 @@ jobs:
           for f in \
             "陣法/_jinpo-next-report/source_provenance_report.json" \
             "陣法/_jinpo-next-report/master_sync.json" \
+            "陣法/_jinpo-next-report/tairano_spec_report.json" \
             "陣法/_jinpo-next-report/generation_report.json" \
             "陣法/_jinpo-next-report/search_integrity_report.json" \
             "陣法/_jinpo-next-report/build_report.json"; do
@@ -89,28 +90,18 @@ jobs:
             fi
           done
 
-      - name: 差分生成とfull生成の一致監査
-        run: python "陣法/tools-next/audit_incremental_equivalence.py"
-
       - name: compactステータス全件監査
         run: python "陣法/tools-next/audit_compact_stats.py"
 
       - name: 追加の回帰監査
         run: python "陣法/tools-next/audit_runtime_regressions.py"
 
-      # 全監査PASS後だけ、現在の生成物一式をimmutableな世代履歴として永続化する。
-      - name: 成功世代レポートを永続化
-        run: python "陣法/tools-next/persist_generation_history.py"
-
-      - name: 生成世代履歴の整合性監査
-        run: python "陣法/tools-next/audit_generation_history.py"
-
       - name: 一時監査レポートをコミット対象から除外
         shell: bash
         run: |
           tracked_reports="$(git ls-files -- '陣法/_jinpo-next-report/**')"
           if [ -n "$tracked_reports" ]; then
-            echo "陣法/_jinpo-next-report が追跡対象になっています。生成物の誤コミットを防ぐため停止します。" >&2
+            echo "陣法/_jinpo-next-report が追跡対象になっています。" >&2
             printf '%s\n' "$tracked_reports" >&2
             exit 1
           fi
@@ -123,7 +114,7 @@ jobs:
         id: diff
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- "陣法")" ]; then
+          if [ -z "$(git status --porcelain -- '陣法')" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -135,17 +126,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -- \
             "陣法/data/jinpo_eiketsu_master.csv" \
             "陣法/data/jinpo_latest_update_summary.json" \
             "陣法/data/compact_search_v2" \
-            "陣法/data/generation_history" \
+            "陣法/data/bond56_index" \
             "陣法/tools-next/hero_internal_id_map.json"
+
           if git diff --cached --quiet; then
             echo "コミット対象の差分なし"
             exit 0
           fi
-          git commit -m "chore(陣法): 英傑一覧から検索DBを再生成"
+
+          git commit -m "chore(陣法): 英傑一覧から検索DBを完全再生成"
           git push
 
       - name: GitHub Pages 再ビルド要求
@@ -154,6 +148,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh api --method POST "repos/${{ github.repository }}/pages/builds" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2026-03-10"
+          gh api --method POST "repos/${{ github.repository }}/pages/builds"
