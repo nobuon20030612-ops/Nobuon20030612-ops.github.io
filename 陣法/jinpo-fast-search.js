@@ -468,6 +468,11 @@
     body.jinpo-bond56-mode .jinpoResultSummaryItem{border-color:rgba(0,240,255,.62)!important;background:rgba(3,8,16,.9)!important;box-shadow:0 0 10px rgba(0,239,255,.1)!important}
     body.jinpo-bond56-mode .jinpoResultSummaryValue{color:#62fbff!important;text-shadow:0 0 8px rgba(0,245,255,.65)!important}
     body.jinpo-bond56-mode #grade3OnlySearchNote{color:#71fbff!important;text-shadow:0 0 7px rgba(0,245,255,.35)!important}
+    /* 2026-09-02: 5・6因縁モード中だけ7〜10因縁位置を人物画像で覆う。通常時は一切変更しない。 */
+    body.jinpo-bond56-mode #dbCountButtons{position:relative!important;padding-bottom:116px!important}
+    body.jinpo-bond56-mode #dbCountButtons::after{content:"";position:absolute!important;left:0!important;top:149px!important;width:420px!important;height:280px!important;background:url("assets/jinpo-bond56-cover.png") center/contain no-repeat!important;z-index:40!important;pointer-events:none!important;user-select:none!important}
+    body.jinpo-bond56-mode #dbCountButtons button[data-count="7"],body.jinpo-bond56-mode #dbCountButtons button[data-count="8"],body.jinpo-bond56-mode #dbCountButtons button[data-count="9"],body.jinpo-bond56-mode #dbCountButtons .jinpoTenBondPlaceholder{visibility:hidden!important}
+    body.jinpo-bond56-mode #dbCountButtons .jinpoTenBondGuideImage{display:none!important}
   `;document.head.appendChild(st);}
 
   document.addEventListener('change',function(ev){
