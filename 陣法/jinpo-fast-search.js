@@ -466,7 +466,7 @@
   function ensureFactor4Controls(){ensureFactor4Style();var legend=q('factor4BunkyokuLegend');if(!legend)return false;if(q('jinpoFactor4FilterControl')){syncFactor4();return true;}var parent=legend.parentNode;if(!parent)return false;var row=document.createElement('div');row.className='jinpoFactor4FilterRow';row.id='jinpoFactor4FilterRow';parent.insertBefore(row,legend);row.appendChild(legend);var ctl=document.createElement('div');ctl.id='jinpoFactor4FilterControl';ctl.className='jinpoFactor4FilterControl';ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');row.appendChild(ctl);return true;}
 
   function ensureBond56Style(){if(q('jinpoBond56ModeStyle'))return;var st=document.createElement('style');st.id='jinpoBond56ModeStyle';st.textContent=`
-    #jinpoBond56NobunagaOverlay{display:none;position:fixed;z-index:74;pointer-events:none;user-select:none;-webkit-user-drag:none;object-fit:contain;object-position:left bottom;max-width:none!important;max-height:none!important;width:auto;height:auto;filter:drop-shadow(0 3px 7px rgba(0,0,0,.55));}
+    #jinpoBond56NobunagaOverlay{display:none;position:fixed;z-index:74;pointer-events:none;user-select:none;-webkit-user-drag:none;object-fit:contain;object-position:center bottom;max-width:none!important;max-height:none!important;width:auto;height:auto;filter:drop-shadow(0 3px 7px rgba(0,0,0,.55));}
     body.jinpo-bond56-mode #jinpoBond56NobunagaOverlay{display:block;}
     .jinpoBond56ModeBtn{grid-column:1/-1!important;height:48px!important;border:2px solid #8b88a6!important;border-radius:12px!important;background:linear-gradient(135deg,#242435,#101019)!important;color:#d8d7e8!important;font-size:17px!important;font-weight:950!important;letter-spacing:.05em!important;box-shadow:inset 0 0 12px rgba(255,255,255,.04)!important;cursor:pointer!important}
     .jinpoBond56ModeBtn.active{border-color:#00f5ff!important;background:linear-gradient(135deg,#071a24,#120728 54%,#241006)!important;color:#f4ffff!important;text-shadow:0 0 7px #00f5ff,0 0 14px #ff2bd6!important;box-shadow:0 0 12px rgba(0,245,255,.85),0 0 24px rgba(255,43,214,.45),inset 0 0 18px rgba(0,245,255,.12)!important}
@@ -503,23 +503,24 @@
     bond56NobunagaOverlayQueued=false;
     var img=ensureBond56NobunagaOverlay();
     if(!bond56On()){img.style.display='none';img.style.visibility='hidden';return;}
-    var nav=q('jinpoRecommendNav'),card=q('dbCountBrowserCard'),formation=document.querySelector('#dbCountBrowserCard .formationMiniPanel')||document.querySelector('.formationMiniPanel'),sum=q('jinpoSumPrioritySort'),fixed=document.querySelector('.totalStatPanel');
-    if(!nav||!card||!formation){img.style.display='none';img.style.visibility='hidden';if(bond56NobunagaOverlayRetry<8){bond56NobunagaOverlayRetry++;setTimeout(scheduleBond56NobunagaOverlay,120*bond56NobunagaOverlayRetry);}return;}
+    var card=q('dbCountBrowserCard'),fixed=document.querySelector('.totalStatPanel');
+    if(!card){img.style.display='none';img.style.visibility='hidden';if(bond56NobunagaOverlayRetry<8){bond56NobunagaOverlayRetry++;setTimeout(scheduleBond56NobunagaOverlay,120*bond56NobunagaOverlayRetry);}return;}
     bond56NobunagaOverlayRetry=0;
-    var nr=nav.getBoundingClientRect(),cr=card.getBoundingClientRect(),fr=formation.getBoundingClientRect(),sr=sum&&sum.getBoundingClientRect?sum.getBoundingClientRect():null,tr=fixed&&fixed.getBoundingClientRect?fixed.getBoundingClientRect():null;
-    var gap=8,left=Math.max(cr.left+gap,4),right=Math.min(fr.left-gap,window.innerWidth-gap);
-    if(!(right>left+120)){img.style.display='none';img.style.visibility='hidden';return;}
-    var bottom=nr.bottom+10;
-    if(sr&&sr.top>nr.top)bottom=Math.min(bottom,sr.top-gap);
-    var topLimit=Math.max(4,tr&&tr.bottom>0?tr.bottom+gap:4);
-    var top=Math.max(topLimit,nr.top-190);
-    var maxH=Math.max(0,bottom-top),maxW=Math.max(0,right-left);
+    var cr=card.getBoundingClientRect(),tr=fixed&&fixed.getBoundingClientRect?fixed.getBoundingClientRect():null;
+    /* 信長は5・6因縁モード中の上段空き領域へ中央寄せ。おすすめ陣法ボタンとの重なりは許可するが、固定合計表示と陣形ラインを含む検索カードには重ねない。 */
+    var gap=4;
+    var top=Math.max(gap,tr&&tr.bottom>0?tr.bottom+gap:gap);
+    var bottom=Math.min(window.innerHeight-gap,cr.top-gap);
+    var maxH=Math.max(0,bottom-top);
+    var safeLeft=Math.max(gap,cr.left+gap),safeRight=Math.min(window.innerWidth-gap,cr.right-gap);
+    var maxW=Math.max(0,safeRight-safeLeft);
     if(maxH<70||maxW<160){img.style.display='none';img.style.visibility='hidden';return;}
     var naturalW=Number(img.naturalWidth)||2172,naturalH=Number(img.naturalHeight)||724,ratio=naturalW/Math.max(1,naturalH);
     var w=Math.min(maxW,maxH*ratio),h=w/ratio;
     if(h>maxH){h=maxH;w=h*ratio;}
+    var centerX=(safeLeft+safeRight)/2,left=centerX-w/2;
     img.style.setProperty('left',Math.round(left)+'px','important');
-    img.style.setProperty('top',Math.round(bottom-h)+'px','important');
+    img.style.setProperty('top',Math.round(top+(maxH-h)/2)+'px','important');
     img.style.setProperty('width',Math.round(w)+'px','important');
     img.style.setProperty('height',Math.round(h)+'px','important');
     img.style.display='block';img.style.visibility='visible';
