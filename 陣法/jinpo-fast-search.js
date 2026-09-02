@@ -507,21 +507,23 @@
     if(!nav||!card||!formation){img.style.display='none';img.style.visibility='hidden';if(bond56NobunagaOverlayRetry<8){bond56NobunagaOverlayRetry++;setTimeout(scheduleBond56NobunagaOverlay,120*bond56NobunagaOverlayRetry);}return;}
     bond56NobunagaOverlayRetry=0;
     var nr=nav.getBoundingClientRect(),cr=card.getBoundingClientRect(),fr=formation.getBoundingClientRect(),sr=sum&&sum.getBoundingClientRect?sum.getBoundingClientRect():null,tr=fixed&&fixed.getBoundingClientRect?fixed.getBoundingClientRect():null;
-    var gap=8,left=Math.max(cr.left+gap,4),right=Math.min(fr.left-gap,window.innerWidth-gap);
+    var gap=8,left=Math.max(4,cr.left+gap),right=Math.min(window.innerWidth-gap,cr.right-gap);
     if(!(right>left+120)){img.style.display='none';img.style.visibility='hidden';return;}
-    var bottom=nr.bottom+10;
+    /* 横方向は画面中央基準。陣形ラインは下側でだけ避け、左端を横幅制限に使わない。 */
+    var bottom=Math.min(cr.top-gap,fr.top-gap);
     if(sr&&sr.top>nr.top)bottom=Math.min(bottom,sr.top-gap);
     var topLimit=Math.max(4,tr&&tr.bottom>0?tr.bottom+gap:4);
     var top=Math.max(topLimit,nr.top-190);
     var maxH=Math.max(0,bottom-top),maxW=Math.max(0,right-left);
     if(maxH<70||maxW<160){img.style.display='none';img.style.visibility='hidden';return;}
-    var naturalW=Number(img.naturalWidth)||2172,naturalH=Number(img.naturalHeight)||724,ratio=naturalW/Math.max(1,naturalH);
+    var naturalW=Number(img.naturalWidth)||1774,naturalH=Number(img.naturalHeight)||887,ratio=naturalW/Math.max(1,naturalH);
     var baseW=Math.min(maxW,maxH*ratio),baseH=baseW/ratio;
     if(baseH>maxH){baseH=maxH;baseW=baseH*ratio;}
-    /* 2026-09-03: 元画像は変更せず、表示だけ約1.5倍。頭を残すため下寄せし、安全領域外はclip-pathで見切らせる。 */
-    var scale=1.5,w=baseW*scale,h=baseH*scale;
-    var x=right-w+Math.min(14,maxW*.025);
-    var y=top+Math.min(18,maxH*.08);
+    /* 2026-09-03: 元画像は変更せず、迫力優先で約2.2倍。中央寄せし、頭側を残して下側を安全領域で見切らせる。 */
+    var scale=2.2,w=baseW*scale,h=baseH*scale;
+    var centerX=(left+right)/2;
+    var x=centerX-w/2;
+    var y=top+Math.min(10,maxH*.035);
     var clipTop=Math.max(0,top-y),clipRight=Math.max(0,x+w-right),clipBottom=Math.max(0,y+h-bottom),clipLeft=Math.max(0,left-x);
     var clip='inset('+Math.round(clipTop)+'px '+Math.round(clipRight)+'px '+Math.round(clipBottom)+'px '+Math.round(clipLeft)+'px)';
     img.style.setProperty('left',Math.round(x)+'px','important');
@@ -536,6 +538,11 @@
     if(bond56NobunagaOverlayQueued)return;bond56NobunagaOverlayQueued=true;
     if(typeof requestAnimationFrame==='function')requestAnimationFrame(syncBond56NobunagaOverlay);else setTimeout(syncBond56NobunagaOverlay,0);
   }
+  function scrollBond56FormationSelect(){
+    var sel=q('formationSelect');if(!sel||typeof sel.scrollIntoView!=='function')return;
+    var run=function(){try{sel.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});}catch(e){try{sel.scrollIntoView();}catch(ignore){}}};
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(function(){requestAnimationFrame(run);});else setTimeout(run,0);
+  }
 
   document.addEventListener('change',function(ev){
     var t=ev.target;if(!t)return;
@@ -544,7 +551,7 @@
   document.addEventListener('change',function(ev){var t=ev.target;if(!t||t.id!=='formationSelect')return;Promise.resolve().then(function(){syncBond56FormationGuide();scheduleBond56NobunagaOverlay();});},true);
   document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation||recommendState.syncingPriority)return;var t=ev.target;if(!t)return;if(t.id==='formationSelect'){exitRecommendMode();return;}if(t.id==='dbPriorityStat1'){if(String(t.value||'')!==String(recommendState.targetStat||''))prepareRecommendPriority(recommendState.targetStat,false);return;}if(t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'||t.id==='dbPriorityMax1'||t.id==='dbPriorityMax2'){Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:recommendState.targetStat});});}},true);
 
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#jinpoBond56ModeBtn,[data-bond56-toggle]'):null;if(!b)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();window.__jinpoSearchCancelRequested=false;setCount(null);activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);setBond56Mode(!bond56On());var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent=bond56On()?'5・6因縁モード ON：全等級から5因縁または6因縁を検索できます。':'5・6因縁モード OFF：通常検索へ戻りました。';if(box)box.innerHTML='<div class="dbListNote">'+(bond56On()?'5因縁または6因縁を選択してください。7〜9因縁とおすすめ検索はモード中は無効です。':'通常の因縁数検索を選択してください。')+'</div>';},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#jinpoBond56ModeBtn,[data-bond56-toggle]'):null;if(!b)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();window.__jinpoSearchCancelRequested=false;setCount(null);activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);setBond56Mode(!bond56On());if(bond56On())scrollBond56FormationSelect();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent=bond56On()?'5・6因縁モード ON：全等級から5因縁または6因縁を検索できます。':'5・6因縁モード OFF：通常検索へ戻りました。';if(box)box.innerHTML='<div class="dbListNote">'+(bond56On()?'5因縁または6因縁を選択してください。7〜9因縁とおすすめ検索はモード中は無効です。':'通常の因縁数検索を選択してください。')+'</div>';},true);
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(recommendState.active||b.disabled)return;if(bond56On()&&c>6)return;if(!bond56On())exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
   document.addEventListener('click',function(ev){
     var btn=ev.target&&ev.target.closest?ev.target.closest('button[data-search-stat-mode]'):null;if(!btn)return;
