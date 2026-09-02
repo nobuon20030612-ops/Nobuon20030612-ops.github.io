@@ -519,11 +519,11 @@
     var naturalW=Number(img.naturalWidth)||1774,naturalH=Number(img.naturalHeight)||887,ratio=naturalW/Math.max(1,naturalH);
     var baseW=Math.min(maxW,maxH*ratio),baseH=baseW/ratio;
     if(baseH>maxH){baseH=maxH;baseW=baseH*ratio;}
-    /* 2026-09-03: 元画像は変更せず、迫力優先で約2.2倍。中央寄せし、頭側を残して下側を安全領域で見切らせる。 */
-    var scale=2.2,w=baseW*scale,h=baseH*scale;
+    /* 2026-09-03: 元画像は変更せず、さらに迫力を出すため約2.65倍。中央寄せを維持し、少し上へ寄せて髪をわずかに見切らせつつ顔をより大きく見せる。 */
+    var scale=2.65,w=baseW*scale,h=baseH*scale;
     var centerX=(left+right)/2;
     var x=centerX-w/2;
-    var y=top+Math.min(10,maxH*.035);
+    var y=top-Math.min(42,maxH*.14);
     var clipTop=Math.max(0,top-y),clipRight=Math.max(0,x+w-right),clipBottom=Math.max(0,y+h-bottom),clipLeft=Math.max(0,left-x);
     var clip='inset('+Math.round(clipTop)+'px '+Math.round(clipRight)+'px '+Math.round(clipBottom)+'px '+Math.round(clipLeft)+'px)';
     img.style.setProperty('left',Math.round(x)+'px','important');
