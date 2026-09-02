@@ -1,15 +1,23 @@
 {
   "schema": "jinpo-next-phase2-auto-update/v2",
   "source_file": "source-next/英傑一覧.csv",
-  "updated_at": "2026-08-19",
-  "last_added_hero": "蒲生氏郷(能弁)",
+  "updated_at": "2026-09-02",
+  "last_added_hero": "宇喜多秀家",
   "new_registration_only": true,
-  "new_heroes": [],
+  "new_heroes": [
+    {
+      "番号": 390,
+      "internal_id": "EIK_0398",
+      "英傑名": "宇喜多秀家"
+    }
+  ],
   "changed_existing": [],
   "generation": {
-    "full_records": 2203158,
+    "full_records": 2223384,
+    "seconds": 124.17,
     "full_regeneration": true,
-    "generation_mode": "full_current_source_only"
+    "generation_mode": "full_current_source_only",
+    "source_of_truth_only": true
   },
-  "note": "英傑一覧.csvとたいらの式正本から英傑マスタ・5～9因縁compact DB・Top500を完全再生成"
+  "note": "英傑一覧.csvと現行正本から英傑マスタ・5～9因縁compact DB・Top500を完全再生成"
 }

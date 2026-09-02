@@ -1,60 +1,60 @@
 {
   "schema": "tairano-bond56-index/v1",
-  "version": "bond56-auto-a1e60f986b31dc7f",
+  "version": "bond56-auto-fdd016cd63a3fcba",
   "files": {
     "bond56_model.json.gz": {
       "file": "data/bond56_index/bond56_model.json.gz",
-      "gzip_bytes": 40616,
-      "raw_bytes": 102150,
-      "sha256_16": "1c394390bc74d8a8"
+      "gzip_bytes": 40723,
+      "raw_bytes": 102399,
+      "sha256_16": "c1ac7e72b6139a0a"
     },
     "bond56_core.bin.gz": {
       "file": "data/bond56_index/bond56_core.bin.gz",
-      "gzip_bytes": 2689486,
-      "raw_bytes": 10883138,
-      "sha256_16": "71692fcaaac1da27"
+      "gzip_bytes": 2710374,
+      "raw_bytes": 10971628,
+      "sha256_16": "812d8bfb394a9209"
     },
     "bondsets.bin.gz": {
       "file": "data/bond56_index/bondsets.bin.gz",
-      "gzip_bytes": 1195989,
-      "raw_bytes": 5572604,
-      "sha256_16": "c57ff35b2024f968"
+      "gzip_bytes": 1208785,
+      "raw_bytes": 5627196,
+      "sha256_16": "9abdca3645521b84"
     },
     "cycle2_c5.bin.gz": {
       "file": "data/bond56_index/cycle2_c5.bin.gz",
-      "gzip_bytes": 1263147,
-      "raw_bytes": 4243384,
-      "sha256_16": "484bb9982644ca43"
+      "gzip_bytes": 1280277,
+      "raw_bytes": 4300324,
+      "sha256_16": "594f4978bf327f13"
     },
     "cycle2_c6.bin.gz": {
       "file": "data/bond56_index/cycle2_c6.bin.gz",
-      "gzip_bytes": 54052,
-      "raw_bytes": 183172,
-      "sha256_16": "d4d365477055f245"
+      "gzip_bytes": 54823,
+      "raw_bytes": 185548,
+      "sha256_16": "a48baf21fc7315d4"
     },
     "cycle3_c5.bin.gz": {
       "file": "data/bond56_index/cycle3_c5.bin.gz",
-      "gzip_bytes": 23302141,
-      "raw_bytes": 90891664,
-      "sha256_16": "eb59f45fae67ad19"
+      "gzip_bytes": 23530131,
+      "raw_bytes": 91723664,
+      "sha256_16": "8266e0d014d206e1"
     },
     "cycle3_c6.bin.gz": {
       "file": "data/bond56_index/cycle3_c6.bin.gz",
-      "gzip_bytes": 3624105,
-      "raw_bytes": 13446160,
-      "sha256_16": "f12b91eb6de0429e"
+      "gzip_bytes": 3663944,
+      "raw_bytes": 13589488,
+      "sha256_16": "0f2467f9854a796c"
     },
     "disjoint_c5.bin.gz": {
       "file": "data/bond56_index/disjoint_c5.bin.gz",
-      "gzip_bytes": 376321,
-      "raw_bytes": 772856,
-      "sha256_16": "4cb8c72342bf28ae"
+      "gzip_bytes": 383324,
+      "raw_bytes": 786168,
+      "sha256_16": "49681e53bd79f8b3"
     },
     "disjoint_c6.bin.gz": {
       "file": "data/bond56_index/disjoint_c6.bin.gz",
-      "gzip_bytes": 56401,
-      "raw_bytes": 120376,
-      "sha256_16": "db57d39eb7d04780"
+      "gzip_bytes": 57295,
+      "raw_bytes": 122496,
+      "sha256_16": "a050ce4d750e6094"
     }
   }
 }
