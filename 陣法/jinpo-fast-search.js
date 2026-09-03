@@ -503,7 +503,7 @@
     bond56NobunagaOverlayQueued=false;
     var img=ensureBond56NobunagaOverlay();
     if(!bond56On()){img.style.display='none';img.style.visibility='hidden';return;}
-    var nav=q('jinpoRecommendNav'),card=q('dbCountBrowserCard'),formation=document.querySelector('#dbCountBrowserCard .formationMiniPanel')||document.querySelector('.formationMiniPanel'),sum=q('jinpoSumPrioritySort'),fixed=document.querySelector('.totalStatPanel');
+    var nav=q('jinpoRecommendNav'),card=q('dbCountBrowserCard'),formation=document.querySelector('#dbCountBrowserCard .formationMiniPanel')||document.querySelector('.formationMiniPanel'),sum=q('jinpoSumPrioritySort'),fixed=document.querySelector('.totalStatPanel'),topBlockers=document.querySelectorAll('.totalStatPanel,#eiketsuKishinsekiCombinedPanel,#eiketsuKishinsekiCombinedResult');
     if(!nav||!card||!formation){img.style.display='none';img.style.visibility='hidden';if(bond56NobunagaOverlayRetry<8){bond56NobunagaOverlayRetry++;setTimeout(scheduleBond56NobunagaOverlay,120*bond56NobunagaOverlayRetry);}return;}
     bond56NobunagaOverlayRetry=0;
     var nr=nav.getBoundingClientRect(),cr=card.getBoundingClientRect(),fr=formation.getBoundingClientRect(),sr=sum&&sum.getBoundingClientRect?sum.getBoundingClientRect():null,tr=fixed&&fixed.getBoundingClientRect?fixed.getBoundingClientRect():null;
@@ -514,6 +514,13 @@
     if(sr&&sr.top>nr.top)bottom=Math.min(bottom,sr.top-gap);
     var topLimit=Math.max(4,tr&&tr.bottom>0?tr.bottom+gap:4);
     var top=Math.max(topLimit,nr.top-190);
+    /* 2026-09-03: 表示倍率・横位置・縦位置は維持し、上部ステータス表示だけを追加クリップする。 */
+    var safeClipTop=top;
+    Array.prototype.forEach.call(topBlockers,function(el){
+      if(!el||!el.getBoundingClientRect)return;var r=el.getBoundingClientRect();
+      if(r.width>0&&r.height>0&&r.bottom>0&&r.top<bottom)safeClipTop=Math.max(safeClipTop,r.bottom+gap);
+    });
+    safeClipTop=Math.min(bottom,safeClipTop);
     var maxH=Math.max(0,bottom-top),maxW=Math.max(0,right-left);
     if(maxH<70||maxW<160){img.style.display='none';img.style.visibility='hidden';return;}
     var naturalW=Number(img.naturalWidth)||1774,naturalH=Number(img.naturalHeight)||887,ratio=naturalW/Math.max(1,naturalH);
@@ -525,7 +532,7 @@
     /* 2026-09-03: 因縁一覧ボタンへ髪が重ならないよう、表示サイズ・縦位置は維持したまま横位置だけ120px左へ移動。 */
     var x=centerX-w/2-120;
     var y=top-Math.min(42,maxH*.14);
-    var clipTop=Math.max(0,top-y),clipRight=Math.max(0,x+w-right),clipBottom=Math.max(0,y+h-bottom),clipLeft=Math.max(0,left-x);
+    var clipTop=Math.max(0,safeClipTop-y),clipRight=Math.max(0,x+w-right),clipBottom=Math.max(0,y+h-bottom),clipLeft=Math.max(0,left-x);
     var clip='inset('+Math.round(clipTop)+'px '+Math.round(clipRight)+'px '+Math.round(clipBottom)+'px '+Math.round(clipLeft)+'px)';
     img.style.setProperty('left',Math.round(x)+'px','important');
     img.style.setProperty('top',Math.round(y)+'px','important');
