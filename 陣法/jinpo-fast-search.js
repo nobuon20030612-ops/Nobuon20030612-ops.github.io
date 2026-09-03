@@ -522,7 +522,8 @@
     /* 2026-09-03: 元画像は変更せず、さらに迫力を出すため約2.65倍。中央寄せを維持し、少し上へ寄せて髪をわずかに見切らせつつ顔をより大きく見せる。 */
     var scale=2.65,w=baseW*scale,h=baseH*scale;
     var centerX=(left+right)/2;
-    var x=centerX-w/2;
+    /* 2026-09-03: 因縁一覧ボタンへ髪が重ならないよう、表示サイズ・縦位置は維持したまま横位置だけ120px左へ移動。 */
+    var x=centerX-w/2-120;
     var y=top-Math.min(42,maxH*.14);
     var clipTop=Math.max(0,top-y),clipRight=Math.max(0,x+w-right),clipBottom=Math.max(0,y+h-bottom),clipLeft=Math.max(0,left-x);
     var clip='inset('+Math.round(clipTop)+'px '+Math.round(clipRight)+'px '+Math.round(clipBottom)+'px '+Math.round(clipLeft)+'px)';
