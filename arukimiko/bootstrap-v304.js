@@ -12,6 +12,13 @@
   var VERSION='3.69.0';
   var CACHE_VERSION=VERSION+'-stage13ZM';
 
+  function isArukimikoTopPage(){
+    var p='';
+    try{p=decodeURIComponent(location.pathname||'');}catch(e){p=String(location.pathname||'');}
+    return p==='/'||/\/index\.html$/i.test(p);
+  }
+  if(!isArukimikoTopPage())return;
+
   function abs(name){
     return new URL(name,location.origin+BASE).href;
   }

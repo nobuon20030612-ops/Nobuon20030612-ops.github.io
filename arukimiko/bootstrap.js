@@ -13,6 +13,13 @@
   var current=document.currentScript;
   var base='/arukimiko/';
   var VERSION='3.69.0';
+  function isArukimikoTopPage(){
+    var p='';
+    try{p=decodeURIComponent(location.pathname||'');}catch(e){p=String(location.pathname||'');}
+    return p==='/'||/\/index\.html$/i.test(p);
+  }
+  if(!isArukimikoTopPage())return;
+
   try{
     if(current&&current.src)base=new URL('./',current.src).href;
   }catch(e){}
