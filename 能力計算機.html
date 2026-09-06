@@ -2573,7 +2573,7 @@ function getTsukumoName(d){
 }
 let tsukumoTarget = null;
 
-/* 魔導結晶モーダルだけ、能力計算機本体 #sheet の transform 影響を受けないよう viewport 直下へ一時退避する。 */
+/* 九十九／魔導結晶モーダルを、能力計算機本体 #sheet の transform 影響を受けないよう viewport 直下へ一時退避する。 */
 const tsukumoModalHome = (() => {
   const modal = document.getElementById("tsukumoModal");
   return {
@@ -2591,9 +2591,9 @@ function clearMadouViewportFrame(modal){
 }
 
 function enforceMadouViewportFrame(modal){
-  if(tsukumoTarget !== "neck" || !modal) return;
+  if(!modal || !["neck","left","right"].includes(tsukumoTarget)) return;
 
-  /* 魔導結晶だけは #sheet の transform から必ず切り離す。 */
+  /* 九十九／魔導結晶は #sheet の transform から必ず切り離す。 */
   if(modal.parentNode !== document.body){
     try{
       document.body.appendChild(modal);
@@ -2657,14 +2657,14 @@ function restoreMadouModalHome(modal){
 }
 
 function recheckMadouViewportFrame(modal){
-  if(tsukumoTarget !== "neck" || !modal) return;
+  if(!modal || !["neck","left","right"].includes(tsukumoTarget)) return;
   requestAnimationFrame(() => {
-    if(tsukumoTarget === "neck" && !modal.classList.contains("hidden")){
+    if(["neck","left","right"].includes(tsukumoTarget) && !modal.classList.contains("hidden")){
       enforceMadouViewportFrame(modal);
     }
   });
   setTimeout(() => {
-    if(tsukumoTarget === "neck" && !modal.classList.contains("hidden")){
+    if(["neck","left","right"].includes(tsukumoTarget) && !modal.classList.contains("hidden")){
       enforceMadouViewportFrame(modal);
     }
   }, 50);
@@ -2672,7 +2672,7 @@ function recheckMadouViewportFrame(modal){
 
 window.addEventListener("resize", () => {
   const modal = document.getElementById("tsukumoModal");
-  if(tsukumoTarget === "neck" && modal && !modal.classList.contains("hidden")){
+  if(["neck","left","right"].includes(tsukumoTarget) && modal && !modal.classList.contains("hidden")){
     enforceMadouViewportFrame(modal);
   }
 });
@@ -2994,10 +2994,8 @@ function openTsukumoPicker(target){
 
   const config = getTsukumoConfig();
   const modal = document.getElementById("tsukumoModal");
-  if(tsukumoTarget === "neck"){
+  if(["neck","left","right"].includes(tsukumoTarget)){
     moveMadouModalToViewportRoot(modal);
-  }else{
-    restoreMadouModalHome(modal);
   }
   const title = document.getElementById("tsukumoPageTitle");
   const excludeArea = document.querySelector("#tsukumoModal .tsukumo-exclude-area");
@@ -3011,7 +3009,7 @@ function openTsukumoPicker(target){
     modal.classList.remove("hidden");
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
-    if(tsukumoTarget === "neck"){
+    if(["neck","left","right"].includes(tsukumoTarget)){
       recheckMadouViewportFrame(modal);
     }
   }
@@ -3038,9 +3036,7 @@ function openTsukumoPicker(target){
 function closeTsukumoPicker(){
   const modal = document.getElementById("tsukumoModal");
   modal.classList.add("hidden");
-  if(tsukumoTarget === "neck"){
-    restoreMadouModalHome(modal);
-  }
+  restoreMadouModalHome(modal);
 }
 
 function sortTsukumo(key){
