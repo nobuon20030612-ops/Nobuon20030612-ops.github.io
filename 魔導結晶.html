@@ -83,18 +83,18 @@ tr:hover{
 }
 
 tr.selected{
-  background:#302000 !important;
+  background:#3a202b !important;
   box-shadow:
-    inset 0 0 10px rgba(255,230,120,0.8),
-    0 0 10px rgba(255,230,120,0.7);
+    inset 0 0 10px rgba(255,196,214,0.82),
+    0 0 10px rgba(255,168,196,0.72);
 }
 
 tr.selected:hover{
-  background:#4a3300 !important;
+  background:#542b3b !important;
   box-shadow:
-    inset 0 0 14px rgba(255,255,200,1),
-    0 0 16px rgba(255,230,120,0.9),
-    0 0 28px rgba(255,200,80,0.8);
+    inset 0 0 14px rgba(255,220,231,1),
+    0 0 16px rgba(255,182,207,0.92),
+    0 0 28px rgba(255,150,188,0.82);
 }
 
 .replaceTarget{
@@ -158,7 +158,7 @@ button:active{
 .sorted-col-12 td:nth-child(12),
 .sorted-col-13 td:nth-child(13),
 .sorted-col-14 td:nth-child(14){
-  background:#2f3b2f !important;
+  box-shadow:inset 0 0 0 2px #2f3b2f !important;
 }
 
 *{
@@ -168,6 +168,269 @@ button:active{
 #zoomArea{
   transform-origin: top left;
 }
+
+/* ===== 2026-09 優先条件・倍率・選択数・優先並び替え ===== */
+.top-zoom[data-zoom].zoom-active{
+  color:#fff3a6;
+  border-color:#ffd966;
+  background:#352900;
+  box-shadow:
+    0 0 8px rgba(255,230,120,.95),
+    0 0 18px rgba(255,200,60,.85),
+    inset 0 0 10px rgba(255,220,80,.18);
+}
+
+.priority-box{
+  margin:10px 0 14px;
+  padding:8px 10px 10px;
+  border:2px solid #555;
+  background:#080808;
+  box-sizing:border-box;
+}
+.priority-block{
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  margin:4px 0;
+}
+.priority-block h3{
+  margin:0;
+  font-size:18px;
+  white-space:nowrap;
+}
+.priority-stat-row{
+  display:grid;
+  grid-template-columns:repeat(11,minmax(0,1fr));
+  gap:2px;
+  min-width:0;
+}
+.priority-stat-row button{
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:8px 2px;
+  font-size:14px;
+  line-height:1.1;
+  white-space:nowrap;
+  box-sizing:border-box;
+}
+
+.selected-count-heading{
+  margin-top:14px;
+}
+.selected-count-number{
+  display:inline-block;
+  min-width:1.2em;
+  margin:0 2px;
+  font-size:1.35em;
+  line-height:1;
+  text-align:center;
+  color:#ffc6d9;
+  text-shadow:
+    0 0 5px rgba(255,190,210,.95),
+    0 0 12px rgba(255,145,185,.72);
+}
+
+.list-heading-row{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:end;
+  gap:12px;
+  margin-top:10px;
+}
+.list-title-with-count{
+  display:flex;
+  align-items:flex-end;
+  gap:18px;
+  justify-self:start;
+  min-width:0;
+}
+.list-title-with-count > h3{
+  margin:16px 0 4px;
+}
+.list-title-with-count .selected-count-inline{
+  margin:0 0 4px;
+  white-space:nowrap;
+}
+.list-heading-row > .priority-sort-controls{
+  position:relative;
+  justify-self:center;
+  align-self:end;
+}
+.priority-sort-controls .priority-sort-buttons-line{
+  margin-top:0;
+}
+.selection-clear-trigger{
+  position:absolute;
+  right:calc(100% + 8px);
+  top:50%;
+  transform:translateY(-50%);
+  white-space:nowrap;
+}
+.selection-clear-trigger:hover{
+  transform:translateY(-50%) scale(1.05);
+}
+.list-heading-spacer{
+  min-width:1px;
+}
+.selected-count-inline{
+  font-size:16px;
+  font-weight:700;
+  color:#ddd;
+  margin-bottom:2px;
+}
+.selected-count-inline .selected-count-number{
+  font-size:22px;
+}
+
+.priority-sort-buttons-line{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  margin-top:2px;
+}
+.priority-sort-trigger{
+  margin:0;
+  min-width:118px;
+  padding:6px 10px;
+  font-size:14px;
+  line-height:1.2;
+  border:1px solid #777;
+  background:#151515;
+  color:#ddd;
+  font-weight:700;
+  text-align:center;
+}
+.priority-sort-trigger:hover{
+  border-color:#ffd966;
+  color:#fff;
+}
+.priority-sort-trigger .priority-sort-stat{
+  margin-left:5px;
+  font-weight:900;
+  text-shadow:0 0 6px currentColor;
+}
+
+.priority-sort-modal{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.78);
+  box-sizing:border-box;
+}
+.priority-sort-modal.hidden{
+  display:none;
+}
+.priority-sort-panel{
+  width:min(520px,92vw);
+  padding:18px;
+  border:2px solid #777;
+  background:#080808;
+  box-shadow:
+    0 0 18px rgba(255,220,100,.28),
+    inset 0 0 18px rgba(255,255,255,.04);
+  box-sizing:border-box;
+}
+.priority-sort-modal-buttons{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.priority-sort-modal-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  width:100%;
+}
+.priority-sort-modal-buttons button{
+  min-width:68px;
+  margin:0;
+  padding:10px 8px;
+  font-size:16px;
+  white-space:nowrap;
+}
+.priority-sort-modal-buttons button.active{
+  border-color:#ffd966;
+  box-shadow:
+    0 0 8px rgba(255,230,120,.9),
+    0 0 16px rgba(255,190,60,.7);
+}
+.priority-sort-modal-buttons button:disabled{
+  opacity:.28;
+  filter:none;
+  transform:none;
+}
+.priority-sort-clear{
+  min-width:72px !important;
+  color:#ff6868 !important;
+  border-color:#b90000 !important;
+  background:#2a0000 !important;
+  font-weight:900 !important;
+  box-shadow:
+    0 0 7px rgba(255,60,60,.45),
+    inset 0 0 8px rgba(255,0,0,.15);
+}
+.priority-sort-clear:hover{
+  color:#fff !important;
+  border-color:#ff3030 !important;
+  background:#650000 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,90,.9),
+    0 0 16px rgba(255,0,0,.65) !important;
+}
+.priority-sort-col{
+  position:relative;
+  box-shadow:
+    inset 0 0 0 2px var(--priority-col-color),
+    inset 0 0 10px rgba(255,255,255,.035) !important;
+}
+th.priority-sort-col{
+  font-weight:900;
+  text-shadow:0 0 6px var(--priority-col-color);
+}
+
+@media (max-width:900px){
+  .priority-block{
+    grid-template-columns:72px minmax(0,1fr);
+    gap:5px;
+  }
+  .priority-block h3{font-size:15px;}
+  .priority-stat-row{gap:1px;}
+  .priority-stat-row button{
+    padding:7px 1px;
+    font-size:12px;
+  }
+}
+
+
+/* ===== 季節背景：秋 ===== */
+body{
+  background-color:#1b0d07;
+  background-image:
+    radial-gradient(ellipse at 20px 16px, rgba(224,132,46,.20) 0 4px, transparent 5px),
+    radial-gradient(ellipse at 70px 52px, rgba(166,56,28,.20) 0 4px, transparent 5px),
+    radial-gradient(circle at 14% 12%, rgba(214,95,30,.31) 0 7%, transparent 25%),
+    radial-gradient(circle at 88% 18%, rgba(191,45,24,.25) 0 7%, transparent 26%),
+    radial-gradient(ellipse at 48% 88%, rgba(220,151,50,.20) 0 9%, transparent 31%),
+    linear-gradient(135deg,#160904 0%,#3b1609 42%,#2a0d08 70%,#120906 100%);
+  background-size:
+    102px 84px,
+    126px 108px,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-attachment:fixed;
+}
+
 </style>
 	
 </head>
@@ -177,35 +440,61 @@ button:active{
 <!-- 🔥 保存・戻る -->
 <div class="top-buttons no-capture">
   <div class="top-zoom" onclick="resetMadouSelection()">リセット</div>
-  <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
-  <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
-  <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
-  <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
-  <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
+  <div class="top-zoom" data-zoom="100" onclick="setKashinZoom(100)">100%</div>
+  <div class="top-zoom" data-zoom="125" onclick="setKashinZoom(125)">125%</div>
+  <div class="top-zoom zoom-active" data-zoom="150" onclick="setKashinZoom(150)">150%</div>
+  <div class="top-zoom" data-zoom="175" onclick="setKashinZoom(175)">175%</div>
+  <div class="top-zoom" data-zoom="200" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
 
-<div id="zoomArea">
+<div id="zoomArea" style="zoom:150%;">
 <h1 class="title">魔導結晶</h1>	
 
 <div id="rawData" style="display:none;">
   <table id="csvTable" cellspacing="0" border="0"></table>
 </div>
-<h3>第1優先</h3>
-<div id="mainBtns"></div>
+<div class="priority-box">
+  <div class="priority-block">
+    <h3>第1優先</h3>
+    <div id="mainBtns" class="priority-stat-row"></div>
+  </div>
+  <div class="priority-block">
+    <h3>第2優先</h3>
+    <div id="subBtns" class="priority-stat-row"></div>
+  </div>
+  <div class="priority-block">
+    <h3>第3優先</h3>
+    <div id="thirdBtns" class="priority-stat-row"></div>
+  </div>
+</div>
 
-<h3>第2優先</h3>
-<div id="subBtns"></div>
-
-<h3>第3優先</h3>
-<div id="thirdBtns"></div>
-
-<h3>選択中（8個）</h3>
+<h3 class="selected-count-heading">選択中（<span class="selected-count-number" data-selected-count>0</span>個）</h3>
 <table id="selectedTable"></table>
 
-<h3>一覧</h3>
+<div class="list-heading-row">
+  <div class="list-title-with-count">
+    <h3>一覧</h3>
+    <div class="selected-count-inline">選択中 <span class="selected-count-number" data-selected-count>0</span>個</div>
+  </div>
+  <div class="priority-sort-controls">
+    <button type="button" class="priority-sort-trigger selection-clear-trigger" onclick="clearAllSelected()">選択全解除</button>
+    <div class="priority-sort-buttons-line">
+      <button type="button" id="prioritySortTrigger1" class="priority-sort-trigger" onclick="openPrioritySortModal(0)">並び替え①</button>
+      <button type="button" id="prioritySortTrigger2" class="priority-sort-trigger" onclick="openPrioritySortModal(1)">並び替え②</button>
+    </div>
+  </div>
+  <div class="list-heading-spacer" aria-hidden="true"></div>
+</div>
 <table id="table"></table>
+</div>
+
+<div id="prioritySortModal" class="priority-sort-modal hidden no-capture" aria-hidden="true">
+  <div class="priority-sort-panel">
+    <div id="prioritySortButtons" class="priority-sort-modal-buttons"></div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -216,6 +505,8 @@ let replaceTarget=null;
 let mainStat=null;
 let subStat=null;
 let thirdStat=null;
+let prioritySortStats=[null,null];
+let prioritySortTarget=0;
 
 let sortKey="番号";
 let sortAsc=true;
@@ -227,6 +518,155 @@ const statColors={
   "器用":"#6fbf6f","知力":"#d6d67f","魅力":"#a87fd6",
   "土":"#d19a66","水":"#4f6fa8","火":"#b35f7a","風":"#9ccc65"
 };
+
+function updateSelectedCount(){
+  document.querySelectorAll("[data-selected-count]").forEach(el=>{
+    el.textContent=selected.length;
+  });
+}
+
+function clearAllSelected(){
+  selected=[];
+  replaceTarget=null;
+  render();
+}
+
+
+function comparePrioritySort(a,b){
+  const active=prioritySortStats.filter(Boolean);
+
+  if(active.length===1){
+    const s=active[0];
+    const diff=getVal(b,s)-getVal(a,s);
+    if(diff!==0)return diff;
+    return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+  }
+
+  if(active.length===2){
+    const first=prioritySortStats[0];
+    const second=prioritySortStats[1];
+
+    const aFirst=getVal(a,first);
+    const aSecond=getVal(a,second);
+    const bFirst=getVal(b,first);
+    const bSecond=getVal(b,second);
+
+    const aFirstOn=aFirst>=10;
+    const aSecondOn=aSecond>=10;
+    const bFirstOn=bFirst>=10;
+    const bSecondOn=bSecond>=10;
+
+    // 優先順位:
+    // 1) ①②とも10以上
+    // 2) ①のみ10以上
+    // 3) ②のみ10以上
+    // 4) ①②とも10未満
+    const bucket=(firstOn,secondOn)=>{
+      if(firstOn && secondOn) return 0;
+      if(firstOn) return 1;
+      if(secondOn) return 2;
+      return 3;
+    };
+
+    let diff=bucket(aFirstOn,aSecondOn)-bucket(bFirstOn,bSecondOn);
+    if(diff!==0)return diff;
+
+    const sumA=aFirst+aSecond;
+    const sumB=bFirst+bSecond;
+    diff=sumB-sumA;
+    if(diff!==0)return diff;
+
+    diff=bFirst-aFirst;
+    if(diff!==0)return diff;
+
+    diff=bSecond-aSecond;
+    if(diff!==0)return diff;
+
+    return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+  }
+
+  return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+}
+
+function makePrioritySortButtons(){
+  const box=document.getElementById("prioritySortButtons");
+  if(!box)return;
+
+  const rows=[
+    ["生命","気合"],
+    ["腕力","耐久","器用","知力","魅力"],
+    ["土","水","火","風"]
+  ];
+
+  box.innerHTML=rows.map((row,rowIndex)=>
+    `<div class="priority-sort-modal-row">${
+      row.map(s=>`<button type="button" data-priority-sort-stat="${s}" style="color:${statColors[s]}" onclick="selectPrioritySortStat('${s}')">${s}</button>`).join("")
+    }${rowIndex===0?`<button type="button" class="priority-sort-clear" onclick="clearPrioritySort()">解除</button>`:""}</div>`
+  ).join("");
+
+  updatePrioritySortUI();
+}
+
+function updatePrioritySortUI(){
+  [0,1].forEach(slot=>{
+    const trigger=document.getElementById(`prioritySortTrigger${slot+1}`);
+    if(!trigger)return;
+
+    const stat=prioritySortStats[slot];
+    if(stat){
+      trigger.innerHTML=`並び替え${slot===0?"①":"②"}<span class="priority-sort-stat" style="color:${statColors[stat]}">${stat}</span>`;
+    }else{
+      trigger.textContent=`並び替え${slot===0?"①":"②"}`;
+    }
+  });
+
+  document.querySelectorAll("[data-priority-sort-stat]").forEach(btn=>{
+    const stat=btn.dataset.prioritySortStat;
+    const current=prioritySortStats[prioritySortTarget];
+    const usedByOther=prioritySortStats.some((s,i)=>i!==prioritySortTarget && s===stat);
+
+    btn.classList.toggle("active",stat===current);
+    btn.disabled=usedByOther;
+  });
+}
+
+function selectPrioritySortStat(stat){
+  if(prioritySortStats[prioritySortTarget]===stat){
+    prioritySortStats[prioritySortTarget]=null;
+  }else{
+    const otherSlot=prioritySortTarget===0?1:0;
+    if(prioritySortStats[otherSlot]===stat)return;
+    prioritySortStats[prioritySortTarget]=stat;
+  }
+
+  updatePrioritySortUI();
+  closePrioritySortModal();
+  render();
+}
+
+function openPrioritySortModal(slot){
+  prioritySortTarget=slot===1?1:0;
+  const modal=document.getElementById("prioritySortModal");
+  if(!modal)return;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden","false");
+  updatePrioritySortUI();
+}
+
+function closePrioritySortModal(){
+  const modal=document.getElementById("prioritySortModal");
+  if(!modal)return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden","true");
+}
+
+function clearPrioritySort(){
+  prioritySortStats[prioritySortTarget]=null;
+  updatePrioritySortUI();
+  closePrioritySortModal();
+  render();
+}
+
 
 function getArrow(key){
   if(sortKey!==key) return "";
@@ -301,6 +741,7 @@ function resetMadouSelection(){
   subStat = null;
   thirdStat = null;
   replaceTarget = null;
+  prioritySortStats = [null,null];
   updateBtnState();
   render();
 }
@@ -346,6 +787,8 @@ function showTop(){
 }
 
 function setSort(key){
+  prioritySortStats=[null,null];
+  updatePrioritySortUI();
   if(sortKey===key){
     sortAsc=!sortAsc;
   }else{
@@ -360,11 +803,41 @@ function setReplace(id){
   render();
 }
 
-function toggle(id){
+function keepClickedRowPosition(id,beforeTop){
+  if(beforeTop==null)return;
+
+  const rows=document.querySelectorAll("#table tr[data-row-id]");
+  let currentRow=null;
+
+  for(const row of rows){
+    if(row.dataset.rowId==String(id)){
+      currentRow=row;
+      break;
+    }
+  }
+
+  if(!currentRow)return;
+
+  const afterTop=currentRow.getBoundingClientRect().top;
+  const delta=afterTop-beforeTop;
+
+  if(Math.abs(delta)>0.5){
+    window.scrollBy(0,delta);
+  }
+}
+
+function toggle(id,rowEl){
+  const beforeTop=rowEl ? rowEl.getBoundingClientRect().top : null;
+
+  const finish=()=>{
+    render();
+    keepClickedRowPosition(id,beforeTop);
+  };
+
   if(replaceTarget!=null){
     if(id==replaceTarget){
       replaceTarget=null;
-      render();
+      finish();
       return;
     }
 
@@ -377,7 +850,7 @@ function toggle(id){
     }
 
     replaceTarget=null;
-    render();
+    finish();
     return;
   }
 
@@ -390,7 +863,7 @@ function toggle(id){
     selected.push(id);
   }
 
-  render();
+  finish();
 }
 
 function calcTotals(){
@@ -410,6 +883,9 @@ function render(){
   let list=[...baseData];
 
   list.sort((a,b)=>{
+    if(prioritySortStats.some(Boolean)){
+      return comparePrioritySort(a,b);
+    }
     if(sortKey){
       let diff=getVal(a,sortKey)-getVal(b,sortKey);
       return sortAsc ? diff : -diff;
@@ -425,7 +901,10 @@ function render(){
   html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>魔導の力</th>`;
   stats.forEach(s=>{
-    html+=`<th onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
+    const activePriorityCol=prioritySortStats.includes(s);
+    const cls=activePriorityCol?"priority-sort-col":"";
+    const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
+    html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
   html+=`<th style="width:70px; white-space:nowrap;">入手</th>`;
   html+="</tr>";
@@ -434,12 +913,17 @@ function render(){
     const sel=selected.includes(d["番号"])?"selected":"";
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
-    html+=`<tr class="${sel} ${rep}" onclick="toggle('${d["番号"]}')">`;
+    html+=`<tr class="${sel} ${rep}" data-row-id="${d["番号"]}" onclick="toggle('${d["番号"]}', this)">`;
 
     html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["魔導の力"]||""}</td>`;
 
     stats.forEach(s=>{
-      html+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+      const activePriorityCol=prioritySortStats.includes(s);
+      const cls=activePriorityCol?"priority-sort-col":"";
+      const style=activePriorityCol
+        ?`color:${statColors[s]};--priority-col-color:${statColors[s]}`
+        :`color:${statColors[s]}`;
+      html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
     });
 
     html+=`<td style="white-space:nowrap;">${d["入手"]||""}</td>`;
@@ -449,7 +933,9 @@ function render(){
 
   table.innerHTML=html;
 
-  if(sortKey){
+  if(prioritySortStats.some(Boolean)){
+    table.className="";
+  }else if(sortKey){
     table.className="sorted-col-"+colIndexMap[sortKey];
   }else{
     table.className="";
@@ -494,9 +980,14 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
+  updateSelectedCount();
+  updatePrioritySortUI();
 }
 makeBtns();
 updateBtnState();
+makePrioritySortButtons();
+updateSelectedCount();
+updatePrioritySortUI();
 
 loadCSV().then(() => {
   loadFromHTML();
@@ -514,6 +1005,9 @@ function setKashinZoom(percent) {
   if(zoomArea){
     zoomArea.style.zoom = percent + "%";
   }
+  document.querySelectorAll(".top-zoom[data-zoom]").forEach(btn=>{
+    btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===Number(percent));
+  });
 }
 
 function downloadScreen() {
