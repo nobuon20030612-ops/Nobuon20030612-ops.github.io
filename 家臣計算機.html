@@ -1470,7 +1470,7 @@ body{ background:#000; }
   }
 }
 
-/* ===== 主要モーダル外寸統一（補助モーダルは対象外） ===== */
+/* ===== 主要モーダルだけを、同じ「ほぼ全画面」に統一 ===== */
 #tsukumoModal,
 #fuyosekiModal{
   position:fixed !important;
@@ -1488,6 +1488,7 @@ body{ background:#000; }
   inset:8px !important;
   padding:0 !important;
 }
+/* 操作列は2段に折り返さない */
 #fuyosekiModal .top-buttons{
   flex-wrap:nowrap !important;
   white-space:nowrap;
@@ -1496,45 +1497,208 @@ body{ background:#000; }
 #fuyosekiModal .top-buttons > *{
   flex:0 0 auto;
 }
-
-/* ===== 九十九の列幅：崩す前の standalone 基準へ復旧 ===== */
-#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable,
-#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable{
-  width:100% !important;
-  border-collapse:collapse !important;
-  table-layout:auto !important;
-}
-#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th,
-#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td,
-#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th,
-#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td{
-  border:1px solid #333 !important;
-  padding:4px !important;
-  text-align:center !important;
-  font-size:11px !important;
-  overflow:visible !important;
-  text-overflow:clip !important;
-  white-space:normal !important;
-}
+/* 元ページと同じ列幅を優先。計算機側の古い固定幅指定を打ち消す */
 #tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(1){
-  width:42px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+  width:42px !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
 }
-#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(1){
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(1){
+  width:42px !important;
+  white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(1){
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(1),
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(1){
+  width:42px !important;
+  white-space:nowrap !important;
+}
 #tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(2),
 #tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(2),
-#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(1),
-#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(1),
 #tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(2),
 #tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(2){
-  width:auto !important; min-width:0 !important; max-width:none !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
 }
 #tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(14),
 #tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(14){
-  width:70px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+  width:70px !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
 }
 #tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(14),
 #tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(14){
-  width:auto !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+}
+
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable{table-layout:fixed !important; width:100% !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(1), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(2), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(2){width:16.00815% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(3), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(3){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(4), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(4){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(5), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(5){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(6), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(6){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(7), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(7){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(8), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(8){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(9), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(9){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(10), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(10){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(11), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(11){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(12), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(12){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(13), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(13){width:5.00667% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th:nth-child(14), #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable th, #tsukumoModal.tsukumo-bg-spring #tsukumoPickerTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable{table-layout:fixed !important; width:100% !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(1), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(2), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(2){width:16.00815% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(3), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(3){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(4), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(4){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(5), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(5){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(6), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(6){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(7), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(7){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(8), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(8){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(9), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(9){width:7.75333% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(10), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(10){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(11), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(11){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(12), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(12){width:5.00222% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(13), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(13){width:5.00667% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th:nth-child(14), #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable th, #tsukumoModal.tsukumo-bg-spring #tsukumoSelectedTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable{table-layout:fixed !important; width:100% !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(1), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(2), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(3), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(4), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(5), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(6), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(7), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(8), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(9), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(10), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(11), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(12), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(13), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th:nth-child(14), #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable th, #tsukumoModal.tsukumo-bg-autumn #tsukumoPickerTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable{table-layout:fixed !important; width:100% !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(1), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(2), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(3), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(4), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(5), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(6), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(7), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(8), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(9), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(10), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(11), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(12), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(13), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th:nth-child(14), #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable th, #tsukumoModal.tsukumo-bg-autumn #tsukumoSelectedTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
+
+/* ===== 元ページとの computed style / 実寸完全同期 ===== */
+
+/* 元ページは top-buttons が1段・横スクロール、各ボタンは content-box */
+#tsukumoModal.tsukumo-page-sync .tsukumo-page-top-buttons{
+  white-space:nowrap !important;
+  overflow:auto !important;
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-page-top-buttons > *{
+  box-sizing:content-box !important;
+  white-space:nowrap !important;
+  flex:0 0 auto !important;
+}
+
+/* 計算機専用の反映バーは本文を押し下げない。機能は残したまま右下へ浮かせる */
+#tsukumoModal.tsukumo-page-sync > .tsukumo-actions{
+  position:fixed !important;
+  right:16px !important;
+  bottom:16px !important;
+  top:auto !important;
+  left:auto !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  z-index:100000 !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  white-space:nowrap !important;
+  box-sizing:border-box !important;
+  background:rgba(5,5,5,.94) !important;
+  border:1px solid #444 !important;
+}
+
+/* 九十九の除外欄は元ページの通常ブロック配置へ戻す */
+#tsukumoModal.tsukumo-page-sync .tsukumo-exclude-area{
+  display:block !important;
+  text-align:center !important;
+  margin:10px 0 !important;
+  align-items:normal !important;
+  gap:normal !important;
+  row-gap:normal !important;
+  column-gap:normal !important;
+}
+
+/* 元ページ内は全要素 pointer 指定 */
+#tsukumoModal.tsukumo-page-sync,
+#tsukumoModal.tsukumo-page-sync *{
+  cursor:pointer !important;
+}
+
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-spring .tsukumo-exclude-area{
+  display:block !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn .tsukumo-exclude-area{
+  display:none !important;
+}
+
+/* 元ページとの差分をさらに除去 */
+#tsukumoModal.tsukumo-page-sync{
+  outline:0 !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoZoomArea{
+  box-sizing:border-box !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-spring .tsukumo-exclude-area{
+  flex-wrap:nowrap !important;
+}
+
+/* ===== 元ページ完全同期：残差分 ===== */
+#tsukumoModal.tsukumo-page-sync .tsukumo-page-top-zoom[data-tsukumo-zoom].zoom-active{
+  color:#fff3a6 !important;
+  border-color:#ffd966 !important;
+  background:#352900 !important;
+  box-shadow:
+    0 0 8px rgba(255,230,120,.95),
+    0 0 18px rgba(255,200,60,.85),
+    inset 0 0 10px rgba(255,220,80,.18) !important;
+  outline-color:#fff3a6 !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoZoomArea{
+  transform-origin:top left !important;
+}
+
+#tsukumoModal.tsukumo-page-sync{
+  outline:8px solid #000 !important;
+  outline-offset:0 !important;
 }
 </style>
 </head>
@@ -1782,14 +1946,23 @@ createSection("左手：","left", true);
     <span id="tsukumoTargetLabel">九十九</span> <span id="tsukumoCount">選択数：0 / 8</span>
   </div>
 
-  <div id="tsukumoZoomArea" style="zoom:150%;">
+  <div id="tsukumoZoomArea" style="zoom:150%; width:100%;">
     <h1 id="tsukumoPageTitle" class="tsukumo-page-title">九十九</h1>
 
     <div class="tsukumo-exclude-area">
       <span>除外可能な九十九 系統</span>
-      <label id="tsukumoExcludeLabelA"><input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()"> 開運系・九十九</label>
-      <label id="tsukumoExcludeLabelB"><input type="checkbox" id="tsukumoExcludeB" onchange="onTsukumoExcludeChange()"> 英雄系・九十九</label>
-      <label id="tsukumoExcludeLabelC"><input type="checkbox" id="tsukumoExcludeC" onchange="onTsukumoExcludeChange()"> 上覧系・九十九</label>
+      <label id="tsukumoExcludeLabelA">
+    <input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()">
+    開運系・九十九
+  </label>
+      <label id="tsukumoExcludeLabelB">
+    <input type="checkbox" id="tsukumoExcludeB" onchange="onTsukumoExcludeChange()">
+    英雄系・九十九
+  </label>
+      <label id="tsukumoExcludeLabelC">
+    <input type="checkbox" id="tsukumoExcludeC" onchange="onTsukumoExcludeChange()">
+    上覧系・九十九
+  </label>
     </div>
 
     <div class="tsukumo-priority-box">
@@ -2168,6 +2341,8 @@ function updateTsukumoSelectedCountUI(){
       el.textContent = tsukumoSelected.length;
     });
   }
+  const actions = document.querySelector("#tsukumoModal > .tsukumo-actions");
+  if(actions) actions.style.setProperty("display", tsukumoSelected.length === 8 ? "flex" : "none", "important");
   const count = document.getElementById("tsukumoCount");
   if(count) count.textContent = "選択数：" + tsukumoSelected.length + " / 8";
 }
@@ -2273,7 +2448,10 @@ function keepTsukumoClickedRowPosition(id,beforeTop){
 }
 function setTsukumoModalZoom(percent){
   const area = document.getElementById("tsukumoZoomArea");
-  if(area) area.style.zoom = percent + "%";
+  if(area){
+    area.style.zoom = percent + "%";
+    area.style.width = "100%";
+  }
   const modal = document.getElementById("tsukumoModal");
   if(modal){
     modal.querySelectorAll("[data-tsukumo-zoom]").forEach(btn => {
