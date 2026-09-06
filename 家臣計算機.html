@@ -1738,7 +1738,7 @@ body{ background:#000; }
   right:16px;
   bottom:16px;
   z-index:100003;
-  display:none;
+  display:flex;
   align-items:center;
   gap:10px;
   padding:8px;
@@ -3261,7 +3261,7 @@ calc();
   function syncIntegrationActions(){
     const count = getSelectedRows().length;
     if(countEl) countEl.textContent = "選択数：" + count + " / 8";
-    if(actions) actions.style.display = count >= 1 ? "flex" : "none";
+    if(actions) actions.style.display = "flex";
   }
 
   function getReflectedRowValues(sectionClass){
