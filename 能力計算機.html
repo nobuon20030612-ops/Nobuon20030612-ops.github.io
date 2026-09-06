@@ -2582,13 +2582,72 @@ const tsukumoModalHome = (() => {
   };
 })();
 
-function moveMadouModalToViewportRoot(modal){
-  if(tsukumoTarget === "neck" && modal && modal.parentNode !== document.body){
-    document.body.appendChild(modal);
+function clearMadouViewportFrame(modal){
+  if(!modal) return;
+  [
+    "position","inset","top","right","bottom","left",
+    "width","height","max-width","max-height","transform","transform-origin"
+  ].forEach(prop => modal.style.removeProperty(prop));
+}
+
+function enforceMadouViewportFrame(modal){
+  if(tsukumoTarget !== "neck" || !modal) return;
+
+  /* 魔導結晶だけは #sheet の transform から必ず切り離す。 */
+  if(modal.parentNode !== document.body){
+    try{
+      document.body.appendChild(modal);
+    }catch(e){
+      /* BODY 退避に失敗した場合は下の逆補正へ進む。 */
+    }
   }
+
+  clearMadouViewportFrame(modal);
+
+  if(modal.parentNode === document.body){
+    modal.style.setProperty("position","fixed","important");
+    modal.style.setProperty("inset","auto","important");
+    modal.style.setProperty("left","8px","important");
+    modal.style.setProperty("top","8px","important");
+    modal.style.setProperty("width","calc(100vw - 16px)","important");
+    modal.style.setProperty("height","calc(100vh - 16px)","important");
+    modal.style.setProperty("max-width","none","important");
+    modal.style.setProperty("max-height","none","important");
+    modal.style.setProperty("transform","none","important");
+    modal.style.setProperty("transform-origin","top left","important");
+    return;
+  }
+
+  /*
+    万一モーダルが #sheet 内に残った場合でも、親の縮小率を逆補正して
+    実画面上の上下左右を viewport の約8px内側へ強制的に合わせる。
+  */
+  const sheet = document.getElementById("sheet");
+  if(!sheet) return;
+
+  const sr = sheet.getBoundingClientRect();
+  const scale = sheet.offsetWidth ? (sr.width / sheet.offsetWidth) : 1;
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  const inverseScale = 1 / safeScale;
+
+  modal.style.setProperty("position","fixed","important");
+  modal.style.setProperty("inset","auto","important");
+  modal.style.setProperty("left", ((8 - sr.left) / safeScale) + "px", "important");
+  modal.style.setProperty("top", ((8 - sr.top) / safeScale) + "px", "important");
+  modal.style.setProperty("width", (window.innerWidth - 16) + "px", "important");
+  modal.style.setProperty("height", (window.innerHeight - 16) + "px", "important");
+  modal.style.setProperty("max-width","none","important");
+  modal.style.setProperty("max-height","none","important");
+  modal.style.setProperty("transform", `scale(${inverseScale})`, "important");
+  modal.style.setProperty("transform-origin","top left","important");
+}
+
+function moveMadouModalToViewportRoot(modal){
+  enforceMadouViewportFrame(modal);
 }
 
 function restoreMadouModalHome(modal){
+  clearMadouViewportFrame(modal);
   if(!modal || !tsukumoModalHome.parent || modal.parentNode === tsukumoModalHome.parent) return;
   if(tsukumoModalHome.next && tsukumoModalHome.next.parentNode === tsukumoModalHome.parent){
     tsukumoModalHome.parent.insertBefore(modal, tsukumoModalHome.next);
@@ -2596,6 +2655,27 @@ function restoreMadouModalHome(modal){
     tsukumoModalHome.parent.appendChild(modal);
   }
 }
+
+function recheckMadouViewportFrame(modal){
+  if(tsukumoTarget !== "neck" || !modal) return;
+  requestAnimationFrame(() => {
+    if(tsukumoTarget === "neck" && !modal.classList.contains("hidden")){
+      enforceMadouViewportFrame(modal);
+    }
+  });
+  setTimeout(() => {
+    if(tsukumoTarget === "neck" && !modal.classList.contains("hidden")){
+      enforceMadouViewportFrame(modal);
+    }
+  }, 50);
+}
+
+window.addEventListener("resize", () => {
+  const modal = document.getElementById("tsukumoModal");
+  if(tsukumoTarget === "neck" && modal && !modal.classList.contains("hidden")){
+    enforceMadouViewportFrame(modal);
+  }
+});
 
 let tsukumoSortKey = "番号";
 let tsukumoSortAsc = true;
@@ -2931,6 +3011,9 @@ function openTsukumoPicker(target){
     modal.classList.remove("hidden");
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
+    if(tsukumoTarget === "neck"){
+      recheckMadouViewportFrame(modal);
+    }
   }
 
   makeTsukumoPriorityBtns();
