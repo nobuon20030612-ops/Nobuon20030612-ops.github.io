@@ -1688,16 +1688,11 @@ td{
   }
 }
 
-/* ===== 全モーダル外寸統一：ほぼ全画面 =====
-   対象モーダルは viewport の上下左右 8px だけ空けて同一サイズに統一。
-   中身・計算・保存・反映処理は変更しない。
-*/
+/* ===== 主要モーダル外寸統一（補助モーダルは対象外） ===== */
 #chinkonfuModal,
 #tsukumoModal,
 #sousekiModal,
-#fuyosekiModal,
-#fuyoDigitModal,
-#tsukumoPrioritySortModal{
+#fuyosekiModal{
   position:fixed !important;
   inset:8px !important;
   width:auto !important;
@@ -1705,33 +1700,75 @@ td{
   max-width:none !important;
   max-height:none !important;
   box-sizing:border-box !important;
+  overflow:auto !important;
+  outline:8px solid #000 !important;
+  outline-offset:0 !important;
 }
 #tsukumoModal.tsukumo-page-sync{
   inset:8px !important;
+  padding:0 !important;
 }
 
-/* 内容が画面を超える場合は、モーダル内部でスクロール */
-#chinkonfuModal,
-#tsukumoModal,
-#sousekiModal,
-#fuyosekiModal{
-  overflow:auto !important;
+/* 上部操作は1段固定。狭い場合だけ横スクロール */
+#sousekiModal .modal-top-buttons,
+#fuyosekiModal .modal-top-buttons{
+  flex-wrap:nowrap !important;
+  white-space:nowrap;
+  overflow-x:auto;
+}
+#sousekiModal .modal-top-buttons > *,
+#fuyosekiModal .modal-top-buttons > *{
+  flex:0 0 auto;
 }
 
-/* 子モーダルも同じ外寸の中で安全に表示 */
-#fuyoDigitModal,
-#tsukumoPrioritySortModal{
-  overflow:auto !important;
-  box-sizing:border-box !important;
+/* ===== 九十九/魔導結晶の列幅：崩す前の standalone 基準へ復旧 ===== */
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable{
+  width:100% !important;
+  border-collapse:collapse !important;
+  table-layout:auto !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th,
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td{
+  border:1px solid #333 !important;
+  padding:4px !important;
+  text-align:center !important;
+  font-size:11px !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
 }
 
-/* 子モーダル内部のパネルは外寸からはみ出さない */
-#fuyoDigitModal .fuyo-digit-box,
-#fuyoDigitModal .fuyoseki-digit-box,
-#tsukumoPrioritySortModal .tsukumo-priority-sort-panel{
-  max-width:100% !important;
-  max-height:100% !important;
-  box-sizing:border-box !important;
+/* 旧計算機側に残る 6px / 45px / 120px 固定幅を無効化 */
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(1){
+  width:42px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(1){
+  width:auto !important; min-width:0 !important; max-width:none !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoPickerTable td:nth-child(1){
+  width:42px !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(2){
+  width:auto !important; min-width:0 !important; max-width:none !important;
+}
+#tsukumoModal.tsukumo-page-sync.tsukumo-bg-autumn #tsukumoSelectedTable td:nth-child(1){
+  width:42px !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(14),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(14){
+  width:70px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(14),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(14){
+  width:auto !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
 }
 </style>
 </head>
@@ -2788,14 +2825,16 @@ function renderTsukumoSelectedTable(){
   TSUKUMO_STATS.forEach(s => {
     html += `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
   });
-  html += "<th>入手</th></tr>";
+  html += "<th style='width:70px; white-space:nowrap;'>入手</th></tr>";
 
   tsukumoSelected.forEach(id => {
     const d = tsukumoData.find(x => String(x["番号"] || "") === String(id));
     if(!d) return;
     const repClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
     html += `<tr class="${repClass}" onclick="setTsukumoReplace('${id}')">`;
-    html += `<td>${d["番号"] || ""}</td>`;
+    html += config.useExclude
+      ? `<td>${d["番号"] || ""}</td>`
+      : `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td>`;
     html += `<td>${getTsukumoName(d)}</td>`;
     TSUKUMO_STATS.forEach(s => {
       html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
@@ -2837,7 +2876,7 @@ function renderTsukumoPicker(){
   TSUKUMO_STATS.forEach((s,i) => colIndexMap[s] = i+3);
 
   let html = "<tr>";
-  html += `<th onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`;
+  html += `<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`;
   html += `<th>${config.nameLabel}</th>`;
   TSUKUMO_STATS.forEach(s => {
     const active = tsukumoPrioritySortStats.includes(s);
@@ -2847,7 +2886,7 @@ function renderTsukumoPicker(){
       : `color:${tsukumoStatColors[s]}`;
     html += `<th class="${cls}" style="${style}" onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;
   });
-  html += `<th>入手</th></tr>`;
+  html += `<th style="width:70px; white-space:nowrap;">入手</th></tr>`;
 
   list.forEach(d => {
     const id = String(d["番号"] || "");
@@ -2855,7 +2894,9 @@ function renderTsukumoPicker(){
     const replaceClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
     const excludedClass = isTsukumoExcluded(id) ? "excluded" : "";
     html += `<tr class="${selectedClass} ${replaceClass} ${excludedClass}" data-tsukumo-row-id="${id}" onclick="toggleTsukumo('${id}',this)">`;
-    html += `<td>${d["番号"] || ""}</td>`;
+    html += config.useExclude
+      ? `<td>${d["番号"] || ""}</td>`
+      : `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td>`;
     html += `<td>${getTsukumoName(d)}</td>`;
     TSUKUMO_STATS.forEach(s => {
       const active = tsukumoPrioritySortStats.includes(s);

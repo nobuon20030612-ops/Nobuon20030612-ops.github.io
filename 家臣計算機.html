@@ -1470,16 +1470,9 @@ body{ background:#000; }
   }
 }
 
-/* ===== 全モーダル外寸統一：ほぼ全画面 =====
-   対象モーダルは viewport の上下左右 8px だけ空けて同一サイズに統一。
-   中身・計算・保存・反映処理は変更しない。
-*/
-#chinkonfuModal,
+/* ===== 主要モーダル外寸統一（補助モーダルは対象外） ===== */
 #tsukumoModal,
-#sousekiModal,
-#fuyosekiModal,
-#fuyoDigitModal,
-#tsukumoPrioritySortModal{
+#fuyosekiModal{
   position:fixed !important;
   inset:8px !important;
   width:auto !important;
@@ -1487,33 +1480,61 @@ body{ background:#000; }
   max-width:none !important;
   max-height:none !important;
   box-sizing:border-box !important;
+  overflow:auto !important;
+  outline:8px solid #000 !important;
+  outline-offset:0 !important;
 }
 #tsukumoModal.tsukumo-page-sync{
   inset:8px !important;
+  padding:0 !important;
+}
+#fuyosekiModal .top-buttons{
+  flex-wrap:nowrap !important;
+  white-space:nowrap;
+  overflow-x:auto;
+}
+#fuyosekiModal .top-buttons > *{
+  flex:0 0 auto;
 }
 
-/* 内容が画面を超える場合は、モーダル内部でスクロール */
-#chinkonfuModal,
-#tsukumoModal,
-#sousekiModal,
-#fuyosekiModal{
-  overflow:auto !important;
+/* ===== 九十九の列幅：崩す前の standalone 基準へ復旧 ===== */
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable{
+  width:100% !important;
+  border-collapse:collapse !important;
+  table-layout:auto !important;
 }
-
-/* 子モーダルも同じ外寸の中で安全に表示 */
-#fuyoDigitModal,
-#tsukumoPrioritySortModal{
-  overflow:auto !important;
-  box-sizing:border-box !important;
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th,
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th,
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td{
+  border:1px solid #333 !important;
+  padding:4px !important;
+  text-align:center !important;
+  font-size:11px !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
 }
-
-/* 子モーダル内部のパネルは外寸からはみ出さない */
-#fuyoDigitModal .fuyo-digit-box,
-#fuyoDigitModal .fuyoseki-digit-box,
-#tsukumoPrioritySortModal .tsukumo-priority-sort-panel{
-  max-width:100% !important;
-  max-height:100% !important;
-  box-sizing:border-box !important;
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(1){
+  width:42px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(1),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(2),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(2){
+  width:auto !important; min-width:0 !important; max-width:none !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable th:nth-child(14),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable th:nth-child(14){
+  width:70px !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
+}
+#tsukumoModal.tsukumo-page-sync #tsukumoPickerTable td:nth-child(14),
+#tsukumoModal.tsukumo-page-sync #tsukumoSelectedTable td:nth-child(14){
+  width:auto !important; min-width:0 !important; max-width:none !important; white-space:nowrap !important;
 }
 </style>
 </head>
@@ -2490,7 +2511,7 @@ function renderTsukumoSelectedTable(){
   KASHIN_TSUKUMO_STATS.forEach(stat => {
     html += `<th style="color:${getKashinTsukumoColor(stat)}">${stat}</th>`;
   });
-  html += "<th>入手</th></tr>";
+  html += "<th style='width:70px; white-space:nowrap;'>入手</th></tr>";
 
   const total = {};
   KASHIN_TSUKUMO_STATS.forEach(stat => total[stat] = 0);
@@ -2572,7 +2593,7 @@ function renderTsukumoPicker(){
   KASHIN_TSUKUMO_STATS.forEach((s,i) => colIndexMap[s] = i+3);
 
   let html = "<tr>";
-  html += `<th onclick="sortTsukumo('番号')">番号${getKashinTsukumoArrow('番号')}</th>`;
+  html += `<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getKashinTsukumoArrow('番号')}</th>`;
   html += `<th>九十九の力</th>`;
   KASHIN_TSUKUMO_STATS.forEach(stat => {
     const active = tsukumoPrioritySortStats.includes(stat);
@@ -2581,7 +2602,7 @@ function renderTsukumoPicker(){
     const style = active ? `color:${color};--tsukumo-priority-col-color:${color}` : `color:${color}`;
     html += `<th class="${cls}" style="${style}" onclick="sortTsukumo('${stat}')">${stat}${getKashinTsukumoArrow(stat)}</th>`;
   });
-  html += `<th>入手</th></tr>`;
+  html += `<th style="width:70px; white-space:nowrap;">入手</th></tr>`;
 
   getTsukumoSortedData().forEach(row => {
     const id = String(row["番号"] || "");
