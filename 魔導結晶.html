@@ -425,6 +425,50 @@ body {
   background-repeat:no-repeat !important;
   background-attachment:fixed !important;
 }
+
+/* ===== 表示倍率とレイアウト幅を分離：倍率変更で横幅を壊さない ===== */
+.top-buttons{
+  flex-wrap:nowrap !important;
+  white-space:nowrap;
+  overflow-x:auto;
+}
+.top-buttons > *{
+  flex:0 0 auto;
+}
+#zoomArea{width:100%; max-width:none; box-sizing:border-box;}
+
+#table{table-layout:fixed !important; width:100% !important;}
+#table th:nth-child(1), #table td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(2), #table td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(3), #table td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(4), #table td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(5), #table td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(6), #table td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(7), #table td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(8), #table td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(9), #table td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(10), #table td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(11), #table td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(12), #table td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(13), #table td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
+#table th:nth-child(14), #table td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#table th, #table td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
+#selectedTable{table-layout:fixed !important; width:100% !important;}
+#selectedTable th:nth-child(1), #selectedTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(2), #selectedTable td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(3), #selectedTable td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(4), #selectedTable td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(5), #selectedTable td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(6), #selectedTable td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(7), #selectedTable td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(8), #selectedTable td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(9), #selectedTable td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(10), #selectedTable td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(11), #selectedTable td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(12), #selectedTable td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(13), #selectedTable td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
+#selectedTable th, #selectedTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
 </style>
 
 </head>
@@ -998,6 +1042,7 @@ function setKashinZoom(percent) {
   const zoomArea = document.getElementById("zoomArea");
   if(zoomArea){
     zoomArea.style.zoom = percent + "%";
+    zoomArea.style.width = "100%";
   }
   document.querySelectorAll(".top-zoom[data-zoom]").forEach(btn=>{
     btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===Number(percent));
