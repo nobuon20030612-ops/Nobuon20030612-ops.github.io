@@ -2572,6 +2572,31 @@ function getTsukumoName(d){
   return key ? (d[key] || "") : "";
 }
 let tsukumoTarget = null;
+
+/* 魔導結晶モーダルだけ、能力計算機本体 #sheet の transform 影響を受けないよう viewport 直下へ一時退避する。 */
+const tsukumoModalHome = (() => {
+  const modal = document.getElementById("tsukumoModal");
+  return {
+    parent: modal ? modal.parentNode : null,
+    next: modal ? modal.nextSibling : null
+  };
+})();
+
+function moveMadouModalToViewportRoot(modal){
+  if(tsukumoTarget === "neck" && modal && modal.parentNode !== document.body){
+    document.body.appendChild(modal);
+  }
+}
+
+function restoreMadouModalHome(modal){
+  if(!modal || !tsukumoModalHome.parent || modal.parentNode === tsukumoModalHome.parent) return;
+  if(tsukumoModalHome.next && tsukumoModalHome.next.parentNode === tsukumoModalHome.parent){
+    tsukumoModalHome.parent.insertBefore(modal, tsukumoModalHome.next);
+  }else{
+    tsukumoModalHome.parent.appendChild(modal);
+  }
+}
+
 let tsukumoSortKey = "番号";
 let tsukumoSortAsc = true;
 let tsukumoMainStat = null;
@@ -2741,7 +2766,7 @@ function getTsukumoArrow(key){
   if(tsukumoSortKey === key){
     return tsukumoSortAsc ? " ▲" : " ▼";
   }
-  return " ⇅";
+  return tsukumoTarget === "neck" ? "" : " ⇅";
 }
 
 async function loadTsukumoCSV(){
@@ -2889,6 +2914,11 @@ function openTsukumoPicker(target){
 
   const config = getTsukumoConfig();
   const modal = document.getElementById("tsukumoModal");
+  if(tsukumoTarget === "neck"){
+    moveMadouModalToViewportRoot(modal);
+  }else{
+    restoreMadouModalHome(modal);
+  }
   const title = document.getElementById("tsukumoPageTitle");
   const excludeArea = document.querySelector("#tsukumoModal .tsukumo-exclude-area");
 
@@ -2923,7 +2953,11 @@ function openTsukumoPicker(target){
 }
 
 function closeTsukumoPicker(){
-  document.getElementById("tsukumoModal").classList.add("hidden");
+  const modal = document.getElementById("tsukumoModal");
+  modal.classList.add("hidden");
+  if(tsukumoTarget === "neck"){
+    restoreMadouModalHome(modal);
+  }
 }
 
 function sortTsukumo(key){
@@ -2998,7 +3032,9 @@ function renderTsukumoSelectedTable(){
   html += "<th>番号</th>";
   html += `<th>${config.nameLabel}</th>`;
   TSUKUMO_STATS.forEach(s => {
-    html += `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
+    html += tsukumoTarget === "neck"
+      ? `<th>${s}</th>`
+      : `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
   });
   html += "<th style='width:70px; white-space:nowrap;'>入手</th></tr>";
 
@@ -3058,8 +3094,8 @@ function renderTsukumoPicker(){
     const cls = active ? "tsukumo-priority-sort-col" : "";
     const style = active
       ? `color:${tsukumoStatColors[s]};--tsukumo-priority-col-color:${tsukumoStatColors[s]}`
-      : `color:${tsukumoStatColors[s]}`;
-    html += `<th class="${cls}" style="${style}" onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;
+      : (tsukumoTarget === "neck" ? "" : `color:${tsukumoStatColors[s]}`);
+    html += `<th class="${cls}"${style ? ` style="${style}"` : ""} onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;
   });
   html += `<th style="width:70px; white-space:nowrap;">入手</th></tr>`;
 
