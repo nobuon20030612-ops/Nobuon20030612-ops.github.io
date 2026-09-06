@@ -1931,6 +1931,76 @@ td{
   outline:8px solid #000 !important;
   outline-offset:0 !important;
 }
+
+/* ===== 九十九／魔導結晶モーダル：元standaloneページをそのまま表示 ===== */
+#tsukumoModal.tsukumo-page-sync{
+  position:fixed !important;
+  inset:8px !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  outline:8px solid #000 !important;
+  outline-offset:0 !important;
+  overflow:hidden !important;
+  background:#000 !important;
+  box-sizing:border-box !important;
+  z-index:99999 !important;
+}
+#tsukumoModal.tsukumo-page-sync > :not(.tsukumo-standalone-frame):not(.tsukumo-integration-actions){
+  display:none !important;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-standalone-frame{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  margin:0;
+  padding:0;
+  display:block;
+  background:#000;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-actions{
+  position:absolute;
+  right:16px;
+  bottom:16px;
+  z-index:100003;
+  display:none;
+  align-items:center;
+  gap:10px;
+  padding:8px;
+  border:1px solid #444;
+  background:rgba(5,5,5,.94);
+  box-sizing:border-box;
+  white-space:nowrap;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-apply{
+  background:#b00000;
+  color:#fff;
+  border:3px solid #ff3333;
+  padding:10px 18px;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:
+    0 0 10px rgba(255,60,60,.95),
+    0 0 24px rgba(255,0,0,.9);
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-apply:hover{
+  background:#ff0000;
+  border-color:#ff7777;
+  filter:brightness(1.2);
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-count{
+  color:#ddd;
+  font-size:14px;
+  font-weight:700;
+}
+
 </style>
 </head>
 <body>
@@ -2083,6 +2153,12 @@ td{
     <div class="tsukumo-priority-sort-panel">
       <div id="tsukumoPrioritySortButtons" class="tsukumo-priority-sort-modal-buttons"></div>
     </div>
+  </div>
+
+  <iframe id="tsukumoStandaloneFrame" class="tsukumo-standalone-frame" title="九十九／魔導結晶"></iframe>
+  <div id="tsukumoIntegrationActions" class="tsukumo-integration-actions no-capture">
+    <button id="tsukumoIntegrationApply" type="button" class="tsukumo-integration-apply" onclick="applyTsukumoSelection()">選択した情報を反映</button>
+    <span id="tsukumoIntegrationCount" class="tsukumo-integration-count">選択数：0 / 8</span>
   </div>
 </div>
 
@@ -3632,5 +3708,128 @@ function applyFuyoSelected(){
 <!-- html2canvas -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="/arukimiko/bootstrap-v304.js?v=304"></script>
+
+<script id="tsukumo-standalone-modal-restore">
+/* 九十九／魔導結晶：モーダル内だけ元standaloneページをそのまま使用 */
+(function(){
+  const frame = document.getElementById("tsukumoStandaloneFrame");
+  const actions = document.getElementById("tsukumoIntegrationActions");
+  const countEl = document.getElementById("tsukumoIntegrationCount");
+  const applyBtn = document.getElementById("tsukumoIntegrationApply");
+  let frameObserver = null;
+
+  function getFrameDoc(){
+    try{
+      return frame && frame.contentDocument ? frame.contentDocument : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function getSelectedRows(){
+    const doc = getFrameDoc();
+    const table = doc && doc.getElementById("selectedTable");
+    if(!table) return [];
+    return Array.from(table.rows).slice(1).filter(row =>
+      !row.classList.contains("totalRow") && row.cells && row.cells.length >= 13
+    );
+  }
+
+  function syncIntegrationActions(){
+    const count = getSelectedRows().length;
+    if(countEl) countEl.textContent = "選択数：" + count + " / 8";
+    if(actions) actions.style.display = count >= 1 ? "flex" : "none";
+  }
+
+  function bindStandaloneFrame(){
+    const doc = getFrameDoc();
+    if(!doc) return;
+
+    const back = doc.querySelector(".top-back");
+    if(back){
+      back.onclick = function(ev){
+        if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+        closeTsukumoPicker();
+        return false;
+      };
+    }
+
+    const table = doc.getElementById("selectedTable");
+    if(frameObserver) frameObserver.disconnect();
+    if(table){
+      frameObserver = new MutationObserver(syncIntegrationActions);
+      frameObserver.observe(table, {childList:true, subtree:true});
+    }
+
+    doc.addEventListener("click", function(){ setTimeout(syncIntegrationActions, 0); });
+    doc.addEventListener("change", function(){ setTimeout(syncIntegrationActions, 0); });
+    syncIntegrationActions();
+  }
+
+  window.openTsukumoPicker = function(target){
+    tsukumoTarget = target;
+    const modal = document.getElementById("tsukumoModal");
+    if(!modal || !frame) return;
+
+    moveMadouModalToViewportRoot(modal);
+    modal.classList.remove("hidden");
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+
+    if(actions) actions.style.display = "none";
+    if(countEl) countEl.textContent = "選択数：0 / 8";
+    if(applyBtn){
+      applyBtn.textContent = target === "neck"
+        ? "選択した魔導結晶を反映"
+        : "選択した九十九を反映";
+    }
+
+    frame.onload = bindStandaloneFrame;
+    const page = target === "neck" ? "魔導結晶.html" : "九十九.html";
+    frame.src = page + "?modal=" + Date.now();
+  };
+
+  window.closeTsukumoPicker = function(){
+    const modal = document.getElementById("tsukumoModal");
+    if(modal) modal.classList.add("hidden");
+    if(frameObserver){ frameObserver.disconnect(); frameObserver = null; }
+    if(frame) frame.removeAttribute("src");
+    if(actions) actions.style.display = "none";
+    restoreMadouModalHome(modal);
+  };
+
+  window.applyTsukumoSelection = function(){
+    const rows = getSelectedRows();
+    if(rows.length < 1){
+      alert("1個以上選択してください");
+      return;
+    }
+
+    const total = {};
+    TSUKUMO_STATS.forEach(s => total[s] = 0);
+
+    rows.slice(0,8).forEach(row => {
+      TSUKUMO_STATS.forEach((s, index) => {
+        const raw = row.cells[index + 2] ? row.cells[index + 2].textContent : "0";
+        total[s] += Number(String(raw || "0").replace(/,/g,"").trim()) || 0;
+      });
+    });
+
+    let rowLabel = "";
+    if(tsukumoTarget === "right") rowLabel = "右手：九十九";
+    if(tsukumoTarget === "left") rowLabel = "左手：九十九";
+    if(tsukumoTarget === "neck") rowLabel = "首：魔導結晶";
+
+    if(!rowLabel){
+      alert("反映先が不明です");
+      return;
+    }
+
+    applyStatsToRow(rowLabel, total);
+    closeTsukumoPicker();
+  };
+})();
+</script>
+
 </body>
 </html>

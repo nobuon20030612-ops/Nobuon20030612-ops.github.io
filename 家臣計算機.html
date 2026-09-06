@@ -1700,6 +1700,76 @@ body{ background:#000; }
   outline:8px solid #000 !important;
   outline-offset:0 !important;
 }
+
+/* ===== 九十九／魔導結晶モーダル：元standaloneページをそのまま表示 ===== */
+#tsukumoModal.tsukumo-page-sync{
+  position:fixed !important;
+  inset:8px !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  outline:8px solid #000 !important;
+  outline-offset:0 !important;
+  overflow:hidden !important;
+  background:#000 !important;
+  box-sizing:border-box !important;
+  z-index:99999 !important;
+}
+#tsukumoModal.tsukumo-page-sync > :not(.tsukumo-standalone-frame):not(.tsukumo-integration-actions){
+  display:none !important;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-standalone-frame{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:0;
+  margin:0;
+  padding:0;
+  display:block;
+  background:#000;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-actions{
+  position:absolute;
+  right:16px;
+  bottom:16px;
+  z-index:100003;
+  display:none;
+  align-items:center;
+  gap:10px;
+  padding:8px;
+  border:1px solid #444;
+  background:rgba(5,5,5,.94);
+  box-sizing:border-box;
+  white-space:nowrap;
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-apply{
+  background:#b00000;
+  color:#fff;
+  border:3px solid #ff3333;
+  padding:10px 18px;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:
+    0 0 10px rgba(255,60,60,.95),
+    0 0 24px rgba(255,0,0,.9);
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-apply:hover{
+  background:#ff0000;
+  border-color:#ff7777;
+  filter:brightness(1.2);
+}
+#tsukumoModal.tsukumo-page-sync .tsukumo-integration-count{
+  color:#ddd;
+  font-size:14px;
+  font-weight:700;
+}
+
 </style>
 </head>
 
@@ -2004,6 +2074,12 @@ createSection("左手：","left", true);
     <div class="tsukumo-priority-sort-panel">
       <div id="tsukumoPrioritySortButtons" class="tsukumo-priority-sort-modal-buttons"></div>
     </div>
+  </div>
+
+  <iframe id="tsukumoStandaloneFrame" class="tsukumo-standalone-frame" title="九十九／魔導結晶"></iframe>
+  <div id="tsukumoIntegrationActions" class="tsukumo-integration-actions no-capture">
+    <button id="tsukumoIntegrationApply" type="button" class="tsukumo-integration-apply" onclick="applyTsukumoSelection()">選択した情報を反映</button>
+    <span id="tsukumoIntegrationCount" class="tsukumo-integration-count">選択数：0 / 8</span>
   </div>
 </div>
 
@@ -3154,5 +3230,174 @@ calc();
 </script>
 
 <script src="/arukimiko/bootstrap-v304.js?v=304"></script>
+
+<script id="tsukumo-standalone-modal-restore">
+/* 九十九：モーダル内だけ元standaloneページをそのまま使用 */
+(function(){
+  const frame = document.getElementById("tsukumoStandaloneFrame");
+  const actions = document.getElementById("tsukumoIntegrationActions");
+  const countEl = document.getElementById("tsukumoIntegrationCount");
+  const applyBtn = document.getElementById("tsukumoIntegrationApply");
+  let frameObserver = null;
+  let restoreTimer = null;
+
+  function getFrameDoc(){
+    try{
+      return frame && frame.contentDocument ? frame.contentDocument : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function getSelectedRows(){
+    const doc = getFrameDoc();
+    const table = doc && doc.getElementById("selectedTable");
+    if(!table) return [];
+    return Array.from(table.rows).slice(1).filter(row =>
+      !row.classList.contains("totalRow") && row.cells && row.cells.length >= 13
+    );
+  }
+
+  function syncIntegrationActions(){
+    const count = getSelectedRows().length;
+    if(countEl) countEl.textContent = "選択数：" + count + " / 8";
+    if(actions) actions.style.display = count >= 1 ? "flex" : "none";
+  }
+
+  function getReflectedRowValues(sectionClass){
+    const rows = [];
+    for(let i=0; i<8; i++){
+      const inputs = getKashinTsukumoRowInputs(sectionClass, i);
+      if(inputs.length !== 11 || !kashinInputsHaveAnyValue(inputs)) continue;
+      rows.push(inputs.map(input => Number(String(input.value || "0").replace(/,/g,"").trim()) || 0));
+    }
+    return rows;
+  }
+
+  function restoreSelectionsFromTable(sectionClass, attempt){
+    const doc = getFrameDoc();
+    if(!doc) return;
+    const mainTable = doc.getElementById("table");
+    if(!mainTable || mainTable.rows.length <= 1){
+      if((attempt || 0) < 60){
+        clearTimeout(restoreTimer);
+        restoreTimer = setTimeout(() => restoreSelectionsFromTable(sectionClass, (attempt || 0) + 1), 100);
+      }
+      return;
+    }
+
+    const wantedRows = getReflectedRowValues(sectionClass);
+    if(!wantedRows.length){
+      syncIntegrationActions();
+      return;
+    }
+
+    wantedRows.forEach(values => {
+      const row = Array.from(mainTable.rows).slice(1).find(candidate => {
+        if(!candidate.cells || candidate.cells.length < 13) return false;
+        return values.every((value, statIndex) => {
+          const raw = candidate.cells[statIndex + 2] ? candidate.cells[statIndex + 2].textContent : "0";
+          return (Number(String(raw || "0").replace(/,/g,"").trim()) || 0) === value;
+        });
+      });
+      if(row && !row.classList.contains("selected")) row.click();
+    });
+    setTimeout(syncIntegrationActions, 0);
+  }
+
+  function bindStandaloneFrame(){
+    const doc = getFrameDoc();
+    if(!doc) return;
+
+    const back = doc.querySelector(".top-back");
+    if(back){
+      back.onclick = function(ev){
+        if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+        closeTsukumoPicker();
+        return false;
+      };
+    }
+
+    const table = doc.getElementById("selectedTable");
+    if(frameObserver) frameObserver.disconnect();
+    if(table){
+      frameObserver = new MutationObserver(syncIntegrationActions);
+      frameObserver.observe(table, {childList:true, subtree:true});
+    }
+
+    doc.addEventListener("click", function(){ setTimeout(syncIntegrationActions, 0); });
+    doc.addEventListener("change", function(){ setTimeout(syncIntegrationActions, 0); });
+    syncIntegrationActions();
+
+    if(tsukumoTargetSection){
+      restoreSelectionsFromTable(tsukumoTargetSection, 0);
+    }
+  }
+
+  window.openTsukumoPicker = function(sectionClass, label){
+    tsukumoTargetSection = sectionClass;
+    tsukumoTargetLabel = label;
+
+    const modal = document.getElementById("tsukumoModal");
+    if(!modal || !frame) return;
+
+    modal.classList.remove("hidden");
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
+    if(actions) actions.style.display = "none";
+    if(countEl) countEl.textContent = "選択数：0 / 8";
+    if(applyBtn) applyBtn.textContent = "選択した九十九を表へ反映";
+
+    frame.onload = bindStandaloneFrame;
+    frame.src = "九十九.html?modal=" + Date.now();
+  };
+
+  window.closeTsukumoPicker = function(){
+    const modal = document.getElementById("tsukumoModal");
+    if(modal) modal.classList.add("hidden");
+    if(frameObserver){ frameObserver.disconnect(); frameObserver = null; }
+    clearTimeout(restoreTimer);
+    if(frame) frame.removeAttribute("src");
+    if(actions) actions.style.display = "none";
+    tsukumoTargetSection = "";
+    tsukumoTargetLabel = "";
+    tsukumoReplaceTarget = null;
+  };
+
+  window.applyTsukumoSelection = function(){
+    if(!tsukumoTargetSection){
+      alert("反映先が不明です");
+      return;
+    }
+
+    const rows = getSelectedRows();
+    if(rows.length < 1){
+      alert("1個以上選択してください");
+      return;
+    }
+
+    clearKashinTsukumoRows(tsukumoTargetSection);
+    tsukumoSelected = [];
+
+    rows.slice(0,8).forEach((row, rowIndex) => {
+      const id = row.cells[0] ? String(row.cells[0].textContent || "").trim() : "";
+      if(id) tsukumoSelected.push(id);
+
+      const inputs = getKashinTsukumoRowInputs(tsukumoTargetSection, rowIndex);
+      const total = makeKashinFuyoTotal();
+      KASHIN_TSUKUMO_STATS.forEach((stat, statIndex) => {
+        const raw = row.cells[statIndex + 2] ? row.cells[statIndex + 2].textContent : "0";
+        total[stat] = Number(String(raw || "0").replace(/,/g,"").trim()) || 0;
+      });
+      setKashinFuyoInputs(inputs, total);
+    });
+
+    saveKashinTsukumoCurrentState();
+    if(typeof calc === "function") calc();
+    closeTsukumoPicker();
+  };
+})();
+</script>
+
 </body>
 </html>
