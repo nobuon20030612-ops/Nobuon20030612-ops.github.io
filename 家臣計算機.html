@@ -3292,15 +3292,38 @@ calc();
       return;
     }
 
+    let restoreJoranIndex = 0;
+
     wantedRows.forEach(values => {
       const row = Array.from(mainTable.rows).slice(1).find(candidate => {
         if(!candidate.cells || candidate.cells.length < 13) return false;
+
+        const name = candidate.cells[1]
+          ? String(candidate.cells[1].textContent || "").replace(/\s+/g,"").trim()
+          : "";
+        const isJoranII = JORAN_TSUKUMO_II_NAMES.has(name);
+
         return values.every((value, statIndex) => {
           const raw = candidate.cells[statIndex + 2] ? candidate.cells[statIndex + 2].textContent : "0";
-          return (Number(String(raw || "0").replace(/,/g,"").trim()) || 0) === value;
+          let expected = Number(String(raw || "0").replace(/,/g,"").trim()) || 0;
+
+          if(isJoranII && statIndex === 0){
+            expected = JORAN_TSUKUMO_II_LIFE[restoreJoranIndex] ?? expected;
+          }else if(isJoranII && statIndex === 6){
+            expected = JORAN_TSUKUMO_II_CHARM[restoreJoranIndex] ?? expected;
+          }
+
+          return expected === value;
         });
       });
-      if(row && !row.classList.contains("selected")) row.click();
+
+      if(row){
+        const name = row.cells[1]
+          ? String(row.cells[1].textContent || "").replace(/\s+/g,"").trim()
+          : "";
+        if(JORAN_TSUKUMO_II_NAMES.has(name)) restoreJoranIndex++;
+        if(!row.classList.contains("selected")) row.click();
+      }
     });
     setTimeout(syncIntegrationActions, 0);
   }
@@ -3344,7 +3367,7 @@ calc();
     modal.classList.remove("hidden");
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
-    if(actions) actions.style.display = "none";
+    if(actions) actions.style.display = "flex";
     if(countEl) countEl.textContent = "選択数：0 / 8";
     if(applyBtn) applyBtn.textContent = "選択した九十九を表へ反映";
 
@@ -3363,6 +3386,22 @@ calc();
     tsukumoTargetLabel = "";
     tsukumoReplaceTarget = null;
   };
+
+
+  const JORAN_TSUKUMO_II_NAMES = new Set([
+    "怪力無双・弐",
+    "忠勇義烈・弐",
+    "才知覚醒・弐"
+  ]);
+  const JORAN_TSUKUMO_II_LIFE = [1100,650,425];
+  const JORAN_TSUKUMO_II_CHARM = [110,55,27];
+
+  function isJoranTsukumoIISelectedRow(row){
+    const name = row && row.cells && row.cells[1]
+      ? String(row.cells[1].textContent || "").replace(/\s+/g, "").trim()
+      : "";
+    return JORAN_TSUKUMO_II_NAMES.has(name);
+  }
 
   window.applyTsukumoSelection = function(){
     if(!tsukumoTargetSection){
@@ -3385,10 +3424,12 @@ calc();
 
       const inputs = getKashinTsukumoRowInputs(tsukumoTargetSection, rowIndex);
       const total = makeKashinFuyoTotal();
+
       KASHIN_TSUKUMO_STATS.forEach((stat, statIndex) => {
         const raw = row.cells[statIndex + 2] ? row.cells[statIndex + 2].textContent : "0";
         total[stat] = Number(String(raw || "0").replace(/,/g,"").trim()) || 0;
       });
+
       setKashinFuyoInputs(inputs, total);
     });
 

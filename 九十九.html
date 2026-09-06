@@ -1128,38 +1128,56 @@ function refreshOverflowTitles(){
 }
 
 const JORAN_TSUKUMO_II_NAMES=new Set(["怪力無双・弐","忠勇義烈・弐","才知覚醒・弐"]);
-const JORAN_TSUKUMO_II_LIFE_TOTAL=[0,1100,1750,2175];
-const JORAN_TSUKUMO_II_CHARM_TOTAL=[0,110,165,192];
+const JORAN_TSUKUMO_II_LIFE=[1100,650,425];
+const JORAN_TSUKUMO_II_CHARM=[110,55,27];
 
 function isJoranTsukumoII(d){
   const name=String((d&&d["九十九の力"])||"").replace(/\s+/g,"").trim();
   return JORAN_TSUKUMO_II_NAMES.has(name);
 }
 
-function calcTotals(){
-  let t={};
-  stats.forEach(s=>t[s]=0);
-
-  let joranTsukumoIICount=0;
+function getJoranTsukumoIISelectedRows(){
+  let joranIndex=0;
+  const rows=[];
 
   selected.forEach(id=>{
     const d=baseData.find(x=>x["番号"]==id);
     if(!d)return;
 
-    const isJoranII=isJoranTsukumoII(d);
-    if(isJoranII) joranTsukumoIICount++;
+    let specialIndex=-1;
+    if(isJoranTsukumoII(d)){
+      specialIndex=joranIndex;
+      joranIndex++;
+    }
 
-    stats.forEach(s=>{
-      if(isJoranII && (s==="生命" || s==="魅力")) return;
-      t[s]+=getVal(d,s);
-    });
+    rows.push({id,d,specialIndex});
   });
 
-  const count=Math.min(joranTsukumoIICount,3);
-  if(count>0){
-    t["生命"]+=JORAN_TSUKUMO_II_LIFE_TOTAL[count];
-    t["魅力"]+=JORAN_TSUKUMO_II_CHARM_TOTAL[count];
+  return rows;
+}
+
+function getSelectedDisplayVal(d,stat,specialIndex){
+  const original=getVal(d,stat);
+  if(specialIndex<0)return original;
+
+  if(stat==="生命"){
+    return JORAN_TSUKUMO_II_LIFE[specialIndex] ?? original;
   }
+  if(stat==="魅力"){
+    return JORAN_TSUKUMO_II_CHARM[specialIndex] ?? original;
+  }
+  return original;
+}
+
+function calcTotals(){
+  let t={};
+  stats.forEach(s=>t[s]=0);
+
+  getJoranTsukumoIISelectedRows().forEach(({d,specialIndex})=>{
+    stats.forEach(s=>{
+      t[s]+=getSelectedDisplayVal(d,s,specialIndex);
+    });
+  });
 
   return t;
 }
@@ -1234,17 +1252,14 @@ function render(){
   html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html2+="</tr>";
 
-  selected.forEach(id=>{
-    const d=baseData.find(x=>x["番号"]==id);
-    if(!d)return;
-
+  getJoranTsukumoIISelectedRows().forEach(({id,d,specialIndex})=>{
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
     html2+=`<tr class="${rep}" onclick="removeSelectedFromSummary('${id}')" title="クリックで選択解除">`;
 
     html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
-      html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
+      html2+=`<td style="color:${statColors[s]}">${getSelectedDisplayVal(d,s,specialIndex)}</td>`;
     });
     html2+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
 

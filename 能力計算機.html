@@ -3776,7 +3776,7 @@ function applyFuyoSelected(){
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
 
-    if(actions) actions.style.display = "none";
+    if(actions) actions.style.display = "flex";
     if(countEl) countEl.textContent = "選択数：0 / 8";
     if(applyBtn){
       applyBtn.textContent = target === "neck"
@@ -3797,6 +3797,7 @@ function applyFuyoSelected(){
     if(actions) actions.style.display = "none";
     restoreMadouModalHome(modal);
   };
+
 
   window.applyTsukumoSelection = function(){
     const rows = getSelectedRows();
