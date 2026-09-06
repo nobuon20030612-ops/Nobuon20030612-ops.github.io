@@ -50,7 +50,7 @@ body{
     0 0 8px rgba(255,80,80,0.9),
     0 0 20px rgba(255,0,0,0.9),
     0 0 40px rgba(255,0,0,0.8);
-  transform: scale(1.05);
+  transform:none !important;
 }
 h3{
   font-size:24px;
@@ -302,25 +302,32 @@ button:active{
   white-space:nowrap;
 }
 .list-heading-row > .priority-sort-controls{
-  position:relative;
-  justify-self:center;
+  position:static;
+  justify-self:end;
   align-self:end;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
 }
 .priority-sort-controls .priority-sort-buttons-line{
   margin-top:0;
 }
 .selection-clear-trigger{
-  position:absolute;
-  right:calc(100% + 8px);
-  top:50%;
-  transform:translateY(-50%);
+  position:static;
+  order:2;
   white-space:nowrap;
+  flex:0 0 auto;
 }
 .selection-clear-trigger:hover{
-  transform:translateY(-50%) scale(1.05);
+  transform:scale(1.05);
+}
+.priority-sort-buttons-line{
+  order:1;
+  flex:0 0 auto;
 }
 .list-heading-spacer{
-  min-width:1px;
+  display:none;
 }
 .selected-count-inline{
   font-size:16px;
@@ -455,6 +462,53 @@ th.priority-sort-col{
   .priority-stat-row button{
     padding:7px 1px;
     font-size:12px;
+  }
+}
+
+
+/* 九十九と同仕様：入手列は読める幅を確保し、改行しない */
+#table, #selectedTable{
+  table-layout:fixed;
+}
+#table th:nth-child(14), #table td:nth-child(14),
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
+  width:120px !important;
+  min-width:120px !important;
+  max-width:120px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+/* 小さい画面では上部ボタンを1列のまま収め、横スクロールさせない */
+@media (max-width:900px){
+  .top-buttons{
+    gap:4px !important;
+    padding:8px 8px 0 !important;
+    overflow-x:hidden !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+    white-space:nowrap;
+  }
+  .top-buttons .top-reset,
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back,
+  .top-buttons .top-info{
+    padding:8px 10px !important;
+    font-size:16px !important;
+    flex:0 0 auto !important;
+  }
+}
+@media (max-width:700px){
+  .top-buttons{gap:3px !important;}
+  .top-buttons .top-reset,
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back,
+  .top-buttons .top-info{
+    padding:7px 7px !important;
+    font-size:14px !important;
   }
 }
 
@@ -937,6 +991,22 @@ function toggle(id,rowEl){
   finish();
 }
 
+function removeSelectedFromSummary(id){
+  const idx = selected.findIndex(v => String(v) === String(id));
+  if(idx < 0) return;
+  selected.splice(idx,1);
+  if(String(replaceTarget) === String(id)) replaceTarget = null;
+  render();
+}
+
+function escapeAttr(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -997,7 +1067,7 @@ function render(){
         :`color:${statColors[s]}`;
       html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
     });
-    html+=`<td style="white-space:nowrap;">${d["入手"]||""}</td>`;
+    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
     html+="</tr>";
   });
 
@@ -1022,13 +1092,13 @@ function render(){
 
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
-    html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
+    html2+=`<tr class="${rep}" onclick="removeSelectedFromSummary('${id}')">`;
 
     html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["鬼神の力"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
-    html2+=`<td style="white-space:nowrap;">${d["入手"]||""}</td>`;
+    html2+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
 
     html2+="</tr>";
   });
