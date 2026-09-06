@@ -499,6 +499,33 @@ body {
   text-overflow:ellipsis !important;
 }
 
+
+/* 上部操作ボタン：小さい画面でも横スクロールさせず、位置を安定させる */
+@media (max-width:900px){
+  .top-buttons{
+    gap:4px !important;
+    padding:8px 8px 0 !important;
+    overflow-x:hidden !important;
+    justify-content:flex-end !important;
+  }
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back{
+    padding:8px 10px !important;
+    font-size:16px !important;
+    flex:0 0 auto !important;
+  }
+}
+@media (max-width:700px){
+  .top-buttons{gap:3px !important;}
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back{
+    padding:7px 7px !important;
+    font-size:14px !important;
+  }
+}
+
 </style>
 
 </head>
@@ -521,8 +548,8 @@ body {
 <h1 class="title">九十九</h1>
 <div style="text-align:center; margin:10px 0;">
 
-  <div style="font-size:14px; margin-bottom:6px;">
-    除外可能な九十九 系統
+  <div style="font-size:16px; margin-bottom:6px; color:#000; font-weight:700;">
+    以下を【チェック】すると検索や選択から除外されます
   </div>
 
   <label id="excludeLabelA">
