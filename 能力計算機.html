@@ -1267,36 +1267,251 @@ td{
 
 
 
-/* ===== 九十九モーダル：元の九十九ページ最新仕様へ同期（九十九モーダル限定） ===== */
+/* ===== 九十九モーダル：元の九十九ページ完全同期（九十九モーダル限定） ===== */
 #tsukumoModal.tsukumo-page-mode{
+  position:fixed !important;
+  inset:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  box-sizing:border-box !important;
+  overflow:auto !important;
+  color:#ccc !important;
+  font-family:sans-serif !important;
   background-color:#000 !important;
   background-image:
-    linear-gradient(rgba(0,0,0,.56),rgba(0,0,0,.56)),
+    linear-gradient(rgba(0,0,0,.56), rgba(0,0,0,.56)),
     url("bg_spring.png") !important;
   background-position:center center !important;
   background-size:cover !important;
   background-repeat:no-repeat !important;
   background-attachment:fixed !important;
 }
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-only{display:block !important;}
+#tsukumoModal:not(.tsukumo-page-mode) .tsukumo-page-only{display:none !important;}
+#tsukumoModal .tsukumo-nonpage-only{display:block;}
+#tsukumoModal.tsukumo-page-mode .tsukumo-nonpage-only{display:none !important;}
 
-#tsukumoModal .tsukumo-page-only{display:none;}
-#tsukumoModal.tsukumo-page-mode .tsukumo-page-only{display:block;}
-
-#tsukumoModal.tsukumo-page-mode [data-tsukumo-zoom].tsukumo-zoom-active{
-  color:#fff3a6 !important;
-  border-color:#ffd966 !important;
-  background:#352900 !important;
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-buttons{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:12px 20px 0 0;
+  box-sizing:border-box;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-zoom,
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-save,
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-back{
+  padding:10px 20px;
+  font-size:20px;
+  border:2px solid #ff3b3b;
+  color:#ff3b3b;
+  background:rgba(0,0,0,0.6);
+  cursor:pointer;
+  transition:all 0.2s;
+  box-sizing:border-box;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-zoom:hover,
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-save:hover,
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-back:hover{
+  color:#fff;
+  border-color:#ff0000;
+  box-shadow:
+    0 0 8px rgba(255,80,80,0.9),
+    0 0 20px rgba(255,0,0,0.9),
+    0 0 40px rgba(255,0,0,0.8);
+  transform:scale(1.05);
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-top-zoom.tsukumo-zoom-active{
+  color:#fff3a6;
+  border-color:#ffd966;
+  background:#352900;
   box-shadow:
     0 0 8px rgba(255,230,120,.95),
     0 0 18px rgba(255,200,60,.85),
-    inset 0 0 10px rgba(255,220,80,.18) !important;
+    inset 0 0 10px rgba(255,220,80,.18);
 }
 
+#tsukumoModal.tsukumo-page-mode #tsukumoZoomArea{
+  padding:0 8px 8px;
+  box-sizing:border-box;
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable,
+#tsukumoModal.tsukumo-page-mode #tsukumoSelectedTable{
+  width:100% !important;
+  border-collapse:collapse !important;
+  table-layout:auto !important;
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable th,
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable td,
+#tsukumoModal.tsukumo-page-mode #tsukumoSelectedTable th,
+#tsukumoModal.tsukumo-page-mode #tsukumoSelectedTable td{
+  border:1px solid #333 !important;
+  padding:4px !important;
+  text-align:center !important;
+  font-size:11px !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  white-space:normal;
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable th{cursor:pointer;}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr:hover,
+#tsukumoModal.tsukumo-page-mode #tsukumoSelectedTable tr:hover{
+  background:#222;
+  box-shadow:
+    0 0 6px rgba(255,255,200,0.5),
+    0 0 12px rgba(255,230,120,0.5);
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr.selected{
+  background:#3a202b !important;
+  box-shadow:
+    inset 0 0 10px rgba(255,196,214,0.82),
+    0 0 10px rgba(255,168,196,0.72);
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr.selected:hover{
+  background:#542b3b !important;
+  box-shadow:
+    inset 0 0 14px rgba(255,220,231,1),
+    0 0 16px rgba(255,182,207,0.92),
+    0 0 28px rgba(255,150,188,0.82);
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-exclude-area label.activeLabel{
+  color:#fff;
+  border-color:#ffd966;
+  background:#3a2a00;
+  box-shadow:
+    0 0 8px rgba(255,255,180,0.95),
+    0 0 18px rgba(255,220,80,0.9);
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr.excluded{
+  opacity:0.25;
+  text-decoration:line-through;
+}
+#tsukumoModal.tsukumo-page-mode .replaceTarget{
+  outline:3px solid #fff;
+  background:#444 !important;
+}
+
+#tsukumoModal.tsukumo-page-mode #tsukumoZoomArea button,
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-modal button{
+  background:#222;
+  color:#aaa;
+  border:1px solid #444;
+  margin:2px;
+  padding:12px 20px;
+  font-size:18px;
+  cursor:pointer;
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoZoomArea button:hover,
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-modal button:hover{
+  transform:scale(1.05);
+  filter:
+    brightness(1.2)
+    drop-shadow(0 0 6px rgba(255,255,200,0.9))
+    drop-shadow(0 0 14px rgba(255,230,120,0.9))
+    drop-shadow(0 0 24px rgba(255,200,80,0.8));
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoZoomArea button.active,
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-modal button.active{
+  background:#444;
+  color:#fff;
+  box-shadow:
+    0 0 10px rgba(255,255,200,1),
+    0 0 20px rgba(255,230,120,0.9),
+    0 0 40px rgba(255,200,80,0.8);
+  transform:scale(1.03);
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoZoomArea button:active,
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-modal button:active{
+  transform:scale(0.95);
+  filter:
+    brightness(1.4)
+    drop-shadow(0 0 10px rgba(255,255,200,1))
+    drop-shadow(0 0 20px rgba(255,200,80,1));
+}
+#tsukumoModal.tsukumo-page-mode #tsukumoSelectedTable tr.totalRow{
+  background:#1e2f1e;
+  font-weight:bold;
+}
+
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-1 td:nth-child(1),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-2 td:nth-child(2),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-3 td:nth-child(3),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-4 td:nth-child(4),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-5 td:nth-child(5),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-6 td:nth-child(6),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-7 td:nth-child(7),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-8 td:nth-child(8),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-9 td:nth-child(9),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-10 td:nth-child(10),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-11 td:nth-child(11),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-12 td:nth-child(12),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-13 td:nth-child(13),
+#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-14 td:nth-child(14){
+  box-shadow:inset 0 0 0 2px #2f3b2f !important;
+}
+
+#tsukumoModal.tsukumo-page-mode .tsukumo-page-title{
+  text-align:center;
+  font-size:40px;
+  margin:12px 0;
+  color:#ddd;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-exclude-area{
+  display:block !important;
+  text-align:center;
+  margin:10px 0 8px !important;
+  font-size:initial;
+  color:#ccc;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-exclude-area > span{
+  display:block;
+  font-size:14px;
+  margin-bottom:6px;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-exclude-area label{
+  border:0;
+  background:transparent;
+  padding:0;
+  font-weight:normal;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-exclude-area label + label{
+  margin-left:20px;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-area{
+  margin:10px 0 14px;
+  padding:8px 10px 10px;
+  border:2px solid #555;
+  background:#080808;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  align-items:center;
+  gap:4px 8px;
+  font-size:inherit;
+  color:#ccc;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-area > div:nth-child(odd){
+  margin:0;
+  font-size:18px;
+  white-space:nowrap;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-area > div:nth-child(even){
+  display:grid;
+  grid-template-columns:repeat(11,minmax(0,1fr));
+  gap:2px;
+  min-width:0;
+}
+#tsukumoModal.tsukumo-page-mode .tsukumo-priority-area > div:nth-child(even) button{
+  width:100%;min-width:0;margin:0;padding:8px 2px;font-size:14px;line-height:1.1;white-space:nowrap;box-sizing:border-box;
+}
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-box{
   margin:10px 0 14px;
   padding:8px 10px 10px;
   border:2px solid #555;
-  background:rgba(8,8,8,.88);
+  background:#080808;
   box-sizing:border-box;
 }
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-block{
@@ -1309,7 +1524,6 @@ td{
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-label{
   margin:0;
   font-size:18px;
-  font-weight:700;
   white-space:nowrap;
 }
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-stat-row{
@@ -1328,7 +1542,7 @@ td{
   white-space:nowrap;
   box-sizing:border-box;
 }
-
+#tsukumoModal.tsukumo-page-mode .tsukumo-selected-title{margin-top:14px; font-size:24px; font-weight:bold;}
 #tsukumoModal.tsukumo-page-mode .tsukumo-selected-count-number{
   display:inline-block;
   min-width:1.2em;
@@ -1337,12 +1551,10 @@ td{
   line-height:1;
   text-align:center;
   color:#ffc6d9;
-  text-shadow:0 0 5px rgba(255,190,210,.95),0 0 12px rgba(255,145,185,.72);
+  text-shadow:
+    0 0 5px rgba(255,190,210,.95),
+    0 0 12px rgba(255,145,185,.72);
 }
-#tsukumoModal.tsukumo-page-mode .tsukumo-selected-title{
-  font-size:16px;
-}
-
 #tsukumoModal.tsukumo-page-mode .tsukumo-list-heading-row{
   display:grid;
   grid-template-columns:1fr auto 1fr;
@@ -1357,16 +1569,19 @@ td{
   justify-self:start;
   min-width:0;
 }
-#tsukumoModal.tsukumo-page-mode .tsukumo-list-title-wrap .tsukumo-list-title{margin:0;}
+#tsukumoModal.tsukumo-page-mode .tsukumo-list-title{
+  margin:16px 0 4px;
+  font-size:24px;
+  font-weight:bold;
+}
 #tsukumoModal.tsukumo-page-mode .tsukumo-selected-count-inline{
-  margin:0;
+  margin:0 0 4px;
   white-space:nowrap;
   font-size:16px;
   font-weight:700;
   color:#ddd;
 }
 #tsukumoModal.tsukumo-page-mode .tsukumo-selected-count-inline .tsukumo-selected-count-number{font-size:22px;}
-
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-controls{
   position:relative;
   justify-self:center;
@@ -1377,6 +1592,7 @@ td{
   justify-content:center;
   align-items:center;
   gap:8px;
+  margin-top:0;
 }
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-trigger{
   margin:0;
@@ -1389,7 +1605,6 @@ td{
   color:#ddd;
   font-weight:700;
   text-align:center;
-  cursor:pointer;
 }
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-trigger:hover{
   border-color:#ffd966;
@@ -1428,7 +1643,9 @@ td{
   padding:18px;
   border:2px solid #777;
   background:#080808;
-  box-shadow:0 0 18px rgba(255,220,100,.28),inset 0 0 18px rgba(255,255,255,.04);
+  box-shadow:
+    0 0 18px rgba(255,220,100,.28),
+    inset 0 0 18px rgba(255,255,255,.04);
   box-sizing:border-box;
 }
 #tsukumoModal .tsukumo-priority-sort-modal-buttons{
@@ -1453,7 +1670,9 @@ td{
 }
 #tsukumoModal .tsukumo-priority-sort-modal-buttons button.active{
   border-color:#ffd966;
-  box-shadow:0 0 8px rgba(255,230,120,.9),0 0 16px rgba(255,190,60,.7);
+  box-shadow:
+    0 0 8px rgba(255,230,120,.9),
+    0 0 16px rgba(255,190,60,.7);
 }
 #tsukumoModal .tsukumo-priority-sort-modal-buttons button:disabled{
   opacity:.28;
@@ -1466,56 +1685,43 @@ td{
   border-color:#b90000 !important;
   background:#2a0000 !important;
   font-weight:900 !important;
-  box-shadow:0 0 7px rgba(255,60,60,.45),inset 0 0 8px rgba(255,0,0,.15);
+  box-shadow:
+    0 0 7px rgba(255,60,60,.45),
+    inset 0 0 8px rgba(255,0,0,.15);
 }
 #tsukumoModal .tsukumo-priority-sort-clear:hover{
   color:#fff !important;
   border-color:#ff3030 !important;
   background:#650000 !important;
-  box-shadow:0 0 8px rgba(255,90,90,.9),0 0 16px rgba(255,0,0,.65) !important;
+  box-shadow:
+    0 0 8px rgba(255,90,90,.9),
+    0 0 16px rgba(255,0,0,.65) !important;
 }
-
 #tsukumoModal.tsukumo-page-mode .tsukumo-priority-sort-col{
   position:relative;
-  box-shadow:inset 0 0 0 2px var(--tsukumo-priority-col-color),inset 0 0 10px rgba(255,255,255,.035) !important;
+  box-shadow:
+    inset 0 0 0 2px var(--tsukumo-priority-col-color),
+    inset 0 0 10px rgba(255,255,255,.035) !important;
 }
 #tsukumoModal.tsukumo-page-mode th.tsukumo-priority-sort-col{
   font-weight:900;
   text-shadow:0 0 6px var(--tsukumo-priority-col-color);
 }
-
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr.selected{
-  background:#3a202b !important;
-  box-shadow:inset 0 0 10px rgba(255,196,214,.82),0 0 10px rgba(255,168,196,.72);
-}
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable tr.selected:hover{
-  background:#542b3b !important;
-  box-shadow:inset 0 0 14px rgba(255,220,231,1),0 0 16px rgba(255,182,207,.92),0 0 28px rgba(255,150,188,.82);
-}
-
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-1 td:nth-child(1),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-2 td:nth-child(2),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-3 td:nth-child(3),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-4 td:nth-child(4),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-5 td:nth-child(5),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-6 td:nth-child(6),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-7 td:nth-child(7),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-8 td:nth-child(8),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-9 td:nth-child(9),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-10 td:nth-child(10),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-11 td:nth-child(11),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-12 td:nth-child(12),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-13 td:nth-child(13),
-#tsukumoModal.tsukumo-page-mode #tsukumoPickerTable.sorted-col-14 td:nth-child(14){
-  box-shadow:inset 0 0 0 2px #2f3b2f !important;
-}
+#tsukumoModal.tsukumo-page-mode *{cursor:pointer !important;}
 
 @media (max-width:900px){
-  #tsukumoModal.tsukumo-page-mode .tsukumo-priority-block{grid-template-columns:72px minmax(0,1fr);gap:5px;}
+  #tsukumoModal.tsukumo-page-mode .tsukumo-priority-block{
+    grid-template-columns:72px minmax(0,1fr);
+    gap:5px;
+  }
   #tsukumoModal.tsukumo-page-mode .tsukumo-priority-label{font-size:15px;}
   #tsukumoModal.tsukumo-page-mode .tsukumo-priority-stat-row{gap:1px;}
-  #tsukumoModal.tsukumo-page-mode .tsukumo-priority-stat-row button{padding:7px 1px;font-size:12px;}
+  #tsukumoModal.tsukumo-page-mode .tsukumo-priority-stat-row button{
+    padding:7px 1px;
+    font-size:12px;
+  }
 }
+
 </style>
 </head>
 <body>
@@ -1592,14 +1798,24 @@ td{
 </div>
 
 <div id="tsukumoModal" class="tsukumo-modal hidden">
-  <div class="modal-top-buttons no-capture">
+  <div class="modal-top-buttons no-capture tsukumo-nonpage-only">
     <button class="modal-top-btn" onclick="resetTsukumoModal()">リセット</button>
-    <button class="modal-top-btn" data-tsukumo-zoom="100" onclick="setTsukumoModalZoom(100)">100%</button>
-    <button class="modal-top-btn" data-tsukumo-zoom="125" onclick="setTsukumoModalZoom(125)">125%</button>
-    <button class="modal-top-btn" data-tsukumo-zoom="150" onclick="setTsukumoModalZoom(150)">150%</button>
-    <button class="modal-top-btn" data-tsukumo-zoom="175" onclick="setTsukumoModalZoom(175)">175%</button>
-    <button class="modal-top-btn" data-tsukumo-zoom="200" onclick="setTsukumoModalZoom(200)">200%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
+    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
     <button class="modal-top-btn" onclick="closeTsukumoPicker()">戻る</button>
+  </div>
+  <div class="tsukumo-page-only tsukumo-page-top-buttons no-capture">
+    <div class="tsukumo-page-top-zoom" onclick="resetTsukumoModal()">リセット</div>
+    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="100" onclick="setTsukumoModalZoom(100)">100%</div>
+    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="125" onclick="setTsukumoModalZoom(125)">125%</div>
+    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="150" onclick="setTsukumoModalZoom(150)">150%</div>
+    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="175" onclick="setTsukumoModalZoom(175)">175%</div>
+    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="200" onclick="setTsukumoModalZoom(200)">200%</div>
+    <div class="tsukumo-page-top-save" onclick="downloadTsukumoModalScreen()">保存</div>
+    <div class="tsukumo-page-top-back" onclick="closeTsukumoPicker()">戻る</div>
   </div>
   <div class="tsukumo-actions no-capture">
     <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した8個の合計を反映</button>
@@ -1608,36 +1824,34 @@ td{
   </div>
 
   <div id="tsukumoZoomArea" class="modal-zoom-area">
+    <h1 class="tsukumo-page-only tsukumo-page-title">九十九</h1>
     <div class="tsukumo-exclude-area">
       <span>除外可能な九十九 系統</span>
       <label id="tsukumoExcludeLabelA"><input type="checkbox" id="tsukumoExcludeA" onchange="onTsukumoExcludeChange()"> 開運系・九十九</label>
       <label id="tsukumoExcludeLabelB"><input type="checkbox" id="tsukumoExcludeB" onchange="onTsukumoExcludeChange()"> 英雄系・九十九</label>
       <label id="tsukumoExcludeLabelC"><input type="checkbox" id="tsukumoExcludeC" onchange="onTsukumoExcludeChange()"> 上覧系・九十九</label>
     </div>
-
-    <div class="tsukumo-priority-wrap tsukumo-priority-box">
-      <div class="tsukumo-priority-area">
-        <div class="tsukumo-priority-block"><div class="tsukumo-priority-label">第1優先</div><div id="tsukumoMainBtns" class="tsukumo-priority-stat-row"></div></div>
-        <div class="tsukumo-priority-block"><div class="tsukumo-priority-label">第2優先</div><div id="tsukumoSubBtns" class="tsukumo-priority-stat-row"></div></div>
-        <div class="tsukumo-priority-block"><div class="tsukumo-priority-label">第3優先</div><div id="tsukumoThirdBtns" class="tsukumo-priority-stat-row"></div></div>
-      </div>
+    <div class="tsukumo-priority-area">
+      <div>第1優先</div><div id="tsukumoMainBtns"></div>
+      <div>第2優先</div><div id="tsukumoSubBtns"></div>
+      <div>第3優先</div><div id="tsukumoThirdBtns"></div>
     </div>
-
     <div class="tsukumo-selected-area">
-      <div class="tsukumo-selected-title">選択中（<span class="tsukumo-selected-count-number" data-tsukumo-selected-count>8</span>個）</div>
+      <div class="tsukumo-selected-title tsukumo-nonpage-only">選択中（8個）</div>
+      <div class="tsukumo-selected-title tsukumo-page-only">選択中（<span class="tsukumo-selected-count-number" data-tsukumo-selected-count>0</span>個）</div>
       <table id="tsukumoSelectedTable"></table>
     </div>
-
-    <div class="tsukumo-list-heading-row">
-      <div class="tsukumo-list-title-wrap"><div class="tsukumo-list-title">一覧</div><div class="tsukumo-page-only tsukumo-selected-count-inline">選択中 <span class="tsukumo-selected-count-number" data-tsukumo-selected-count>0</span>個</div></div>
-      <div class="tsukumo-page-only tsukumo-priority-sort-controls">
+    <div class="tsukumo-list-title tsukumo-nonpage-only">一覧</div>
+    <div class="tsukumo-page-only tsukumo-list-heading-row">
+      <div class="tsukumo-list-title-wrap"><div class="tsukumo-list-title">一覧</div><div class="tsukumo-selected-count-inline">選択中 <span class="tsukumo-selected-count-number" data-tsukumo-selected-count>0</span>個</div></div>
+      <div class="tsukumo-priority-sort-controls">
         <button type="button" class="tsukumo-priority-sort-trigger tsukumo-selection-clear-trigger" onclick="clearTsukumoSelected()">選択全解除</button>
         <div class="tsukumo-priority-sort-buttons-line">
           <button type="button" id="tsukumoPrioritySortTrigger1" class="tsukumo-priority-sort-trigger" onclick="openTsukumoPrioritySortModal(0)">並び替え①</button>
           <button type="button" id="tsukumoPrioritySortTrigger2" class="tsukumo-priority-sort-trigger" onclick="openTsukumoPrioritySortModal(1)">並び替え②</button>
         </div>
       </div>
-      <div class="tsukumo-page-only" aria-hidden="true"></div>
+      <div aria-hidden="true"></div>
     </div>
     <table id="tsukumoPickerTable"></table>
   </div>
@@ -1952,12 +2166,12 @@ function resetTsukumoModal(){
   tsukumoSubStat = null;
   tsukumoThirdStat = null;
   tsukumoReplaceTarget = null;
-  tsukumoPrioritySortStats = [null,null];
-  closeTsukumoPrioritySortModal();
-  ["A","B","C"].forEach(code => {
-    const cb = document.getElementById("tsukumoExclude" + code);
-    if(cb) cb.checked = false;
-  });
+  const pageMode = !!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  if(pageMode){
+    tsukumoPrioritySortStats = [null,null];
+    closeTsukumoPrioritySortModal();
+  }
+  ["A","B","C"].forEach(code=>{const cb=document.getElementById("tsukumoExclude"+code);if(cb)cb.checked=false;});
   makeTsukumoPriorityBtns();
   updateTsukumoExcludeLabels();
   renderTsukumoPicker();
@@ -2141,9 +2355,9 @@ let tsukumoPrioritySortTarget = 0;
 function updateTsukumoSelectedCountUI(){
   const modal = document.getElementById("tsukumoModal");
   const isPageMode = !!(modal && modal.classList.contains("tsukumo-page-mode"));
-  document.querySelectorAll("#tsukumoModal [data-tsukumo-selected-count]").forEach(el => {
-    el.textContent = isPageMode ? tsukumoSelected.length : 8;
-  });
+  if(isPageMode){
+    modal.querySelectorAll("[data-tsukumo-selected-count]").forEach(el => el.textContent = tsukumoSelected.length);
+  }
   const count = document.getElementById("tsukumoCount");
   if(count) count.textContent = "選択数：" + tsukumoSelected.length + " / 8";
 }
@@ -2277,8 +2491,9 @@ const tsukumoStatColors = {
 };
 
 function getTsukumoArrow(key){
-  if(tsukumoSortKey !== key) return "";
-  return tsukumoSortAsc ? " ▲" : " ▼";
+  if(tsukumoSortKey === key) return tsukumoSortAsc ? " ▲" : " ▼";
+  const pageMode = !!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  return pageMode ? "" : " ⇅";
 }
 
 async function loadTsukumoCSV(){
@@ -2420,41 +2635,31 @@ function openTsukumoPicker(target){
   tsukumoTarget = target;
   tsukumoSelected = [];
   tsukumoReplaceTarget = null;
-
   const config = getTsukumoConfig();
   const modal = document.getElementById("tsukumoModal");
-  if(modal) modal.classList.toggle("tsukumo-page-mode", !!config.useExclude);
-  if(config.useExclude){
-    makeTsukumoPrioritySortButtons();
-    setTsukumoModalZoom(150);
-  }else{
-    closeTsukumoPrioritySortModal();
-  }
+  const pageMode = !!config.useExclude;
+  if(modal) modal.classList.toggle("tsukumo-page-mode",pageMode);
   const excludeArea = document.querySelector("#tsukumoModal .tsukumo-exclude-area");
-  if(excludeArea){
-    excludeArea.style.display = config.useExclude ? "flex" : "none";
-  }
-
-  document.getElementById("tsukumoModal").classList.remove("hidden");
-  updateTsukumoSelectedCountUI();
-  makeTsukumoPriorityBtns();
-  updateTsukumoExcludeLabels();
-
-  if(tsukumoData.length && tsukumoDataSource === config.csv){
-    showTsukumoTop();
+  if(excludeArea) excludeArea.style.display = config.useExclude ? "flex" : "none";
+  if(pageMode){tsukumoPrioritySortStats=[null,null];makeTsukumoPrioritySortButtons();setTsukumoModalZoom(150);}else{closeTsukumoPrioritySortModal();}
+  if(modal){modal.classList.remove("hidden");modal.scrollTop=0;modal.scrollLeft=0;}
+  makeTsukumoPriorityBtns();updateTsukumoExcludeLabels();updateTsukumoSelectedCountUI();
+  if(tsukumoData.length && tsukumoDataSource===config.csv){
+    if(pageMode) renderTsukumoPicker(); else showTsukumoTop();
   }else{
-    tsukumoData = [];
-    loadTsukumoCSV().then(() => {
+    tsukumoData=[];
+    loadTsukumoCSV().then(()=>{
       makeTsukumoPriorityBtns();
-      tsukumoSelected = [];
-      tsukumoReplaceTarget = null;
+      tsukumoSelected=[];
+      tsukumoReplaceTarget=null;
       renderTsukumoPicker();
     });
   }
 }
 
 function closeTsukumoPicker(){
-  closeTsukumoPrioritySortModal();
+  const pageMode = !!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  if(pageMode) closeTsukumoPrioritySortModal();
   document.getElementById("tsukumoModal").classList.add("hidden");
 }
 
@@ -2480,10 +2685,19 @@ function setTsukumoReplace(id){
 
 function toggleTsukumo(id,rowEl){
   if(isTsukumoExcluded(id)) return;
-  const beforeTop = rowEl ? rowEl.getBoundingClientRect().top : null;
-  const finish = () => { renderTsukumoPicker(); keepTsukumoClickedRowPosition(id,beforeTop); };
+  const pageMode = !!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  const beforeTop = pageMode && rowEl ? rowEl.getBoundingClientRect().top : null;
+  const finish = () => {
+    renderTsukumoPicker();
+    if(pageMode) keepTsukumoClickedRowPosition(id,beforeTop);
+  };
+
   if(tsukumoReplaceTarget != null){
-    if(id == tsukumoReplaceTarget){ tsukumoReplaceTarget = null; finish(); return; }
+    if(id == tsukumoReplaceTarget){
+      tsukumoReplaceTarget = null;
+      finish();
+      return;
+    }
     if(tsukumoSelected.includes(id)) return;
     const idx = tsukumoSelected.indexOf(tsukumoReplaceTarget);
     if(idx !== -1) tsukumoSelected[idx] = id;
@@ -2491,9 +2705,13 @@ function toggleTsukumo(id,rowEl){
     finish();
     return;
   }
+
   const i = tsukumoSelected.indexOf(id);
   if(i >= 0) tsukumoSelected.splice(i,1);
-  else{ if(tsukumoSelected.length >= 8) return; tsukumoSelected.push(id); }
+  else{
+    if(tsukumoSelected.length >= 8) return;
+    tsukumoSelected.push(id);
+  }
   finish();
 }
 
@@ -2511,102 +2729,58 @@ function calcTsukumoTotals(){
 }
 
 function renderTsukumoSelectedTable(){
-  const table = document.getElementById("tsukumoSelectedTable");
-  if(!table) return;
-
-  const config = getTsukumoConfig();
-  let html = "<tr>";
-html += "<th style='width:42px; white-space:nowrap;'>番号</th>";
-html += "<th>九十九の力</th>";
-
-TSUKUMO_STATS.forEach(s => {
-  html += `<th style="color:${tsukumoStatColors[s]}">${s}</th>`;
-});
-
-html += "<th style='width:70px; white-space:nowrap;'>入手</th>";
-html += "</tr>";
-
-  tsukumoSelected.forEach(id => {
-    const d = tsukumoData.find(x => x["番号"] == id);
-    if(!d) return;
-
-    const repClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
-    html += `<tr class="${repClass}" onclick="setTsukumoReplace('${id}')">`;
-    html += `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td>`;
-html += `<td>${d["九十九の力"] || ""}</td>`;
-
-TSUKUMO_STATS.forEach(s => {
-  html += `<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`;
-});
-
-html += `<td style="white-space:nowrap;">${d["入手"] || ""}</td>`;
-    html += "</tr>";
+  const table=document.getElementById("tsukumoSelectedTable");
+  if(!table)return;
+  const pageMode=!!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  let html="<tr>";
+  if(pageMode){
+    html+="<th>番号</th><th>九十九の力</th>";
+    TSUKUMO_STATS.forEach(s=>html+=`<th>${s}</th>`);
+  }else{
+    html+="<th style='width:42px; white-space:nowrap;'>番号</th><th>九十九の力</th>";
+    TSUKUMO_STATS.forEach(s=>html+=`<th style="color:${tsukumoStatColors[s]}">${s}</th>`);
+  }
+  html+="<th style='width:70px; white-space:nowrap;'>入手</th></tr>";
+  tsukumoSelected.forEach(id=>{
+    const d=tsukumoData.find(x=>x["番号"]==id); if(!d)return;
+    const rep=(tsukumoReplaceTarget==id)?"replaceTarget":"";
+    html+=`<tr class="${rep}" onclick="setTsukumoReplace('${id}')">`;
+    html+=pageMode?`<td>${d["番号"]||""}</td>`:`<td style="width:42px; white-space:nowrap;">${d["番号"]||""}</td>`;
+    html+=`<td>${d["九十九の力"]||""}</td>`;
+    TSUKUMO_STATS.forEach(s=>html+=`<td style="color:${tsukumoStatColors[s]}">${tsukumoNum(d[s])}</td>`);
+    html+=`<td style="white-space:nowrap;">${d["入手"]||""}</td></tr>`;
   });
-
-  const total = calcTsukumoTotals();
-  html += `<tr class="totalRow"><td colspan="2">合計</td>`;
-  TSUKUMO_STATS.forEach(s => {
-    html += `<td style="color:${tsukumoStatColors[s]}">${total[s]}</td>`;
-  });
-  html += `<td></td>`;
-
-  table.innerHTML = html;
+  const total=calcTsukumoTotals();
+  html+=`<tr class="totalRow"><td colspan="2">合計</td>`;
+  TSUKUMO_STATS.forEach(s=>html+=`<td style="color:${tsukumoStatColors[s]}">${total[s]}</td>`);
+  html+=`<td></td></tr>`; table.innerHTML=html;
 }
 
 function renderTsukumoPicker(){
-  const table = document.getElementById("tsukumoPickerTable");
-  syncTsukumoExcludedSelected();
-  updateTsukumoSelectedCountUI();
-  updateTsukumoExcludeLabels();
-  renderTsukumoSelectedTable();
-  updateTsukumoPrioritySortUI();
-  if(!table) return;
+  const table=document.getElementById("tsukumoPickerTable");
+  const pageMode=!!document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
+  syncTsukumoExcludedSelected(); updateTsukumoSelectedCountUI(); updateTsukumoExcludeLabels(); renderTsukumoSelectedTable();
+  if(pageMode)updateTsukumoPrioritySortUI(); if(!table)return;
+  let list=[...tsukumoData];
+  list.sort((a,b)=>{ if(pageMode&&tsukumoPrioritySortStats.some(Boolean))return compareTsukumoPrioritySort(a,b); if(tsukumoSortKey){const diff=tsukumoNum(a[tsukumoSortKey])-tsukumoNum(b[tsukumoSortKey]);return tsukumoSortAsc?diff:-diff;} return compareTsukumoPriority(a,b); });
+  const colIndexMap={"番号":1,"九十九の力":2}; TSUKUMO_STATS.forEach((s,i)=>colIndexMap[s]=i+3); colIndexMap["入手"]=14;
+  let html="<tr>"; html+=`<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`; html+=`<th>九十九の力</th>`;
+  TSUKUMO_STATS.forEach(s=>{const active=pageMode&&tsukumoPrioritySortStats.includes(s);const cls=active?"tsukumo-priority-sort-col":"";const style=active?`--tsukumo-priority-col-color:${tsukumoStatColors[s]};color:${tsukumoStatColors[s]}`:`color:${tsukumoStatColors[s]}`;html+=`<th class="${cls}" style="${style}" onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;});
+  html+=`<th style="width:70px; white-space:nowrap;">入手</th></tr>`;
+  list.forEach(d=>{const id=String(d["番号"]||"");const sel=tsukumoSelected.includes(id)?"selected":"";const rep=(tsukumoReplaceTarget==id)?"replaceTarget":"";const exc=isTsukumoExcluded(id)?"excluded":"";const attrs=pageMode?` data-tsukumo-row-id="${id}" onclick="toggleTsukumo('${id}',this)"`:` onclick="toggleTsukumo('${id}')"`;html+=`<tr class="${sel} ${rep} ${exc}"${attrs}>`;html+=pageMode?`<td>${d["番号"]||""}</td>`:`<td style="width:42px; white-space:nowrap;">${d["番号"]||""}</td>`;html+=`<td>${d["九十九の力"]||""}</td>`;TSUKUMO_STATS.forEach(s=>{const active=pageMode&&tsukumoPrioritySortStats.includes(s);const cls=active?"tsukumo-priority-sort-col":"";const style=active?`color:${tsukumoStatColors[s]};--tsukumo-priority-col-color:${tsukumoStatColors[s]}`:`color:${tsukumoStatColors[s]}`;html+=`<td class="${cls}" style="${style}">${tsukumoNum(d[s])}</td>`;});html+=`<td style="white-space:nowrap;">${d["入手"]||""}</td></tr>`;});
+  table.innerHTML=html;
+  if(pageMode&&tsukumoPrioritySortStats.some(Boolean))table.className="";else if(pageMode&&tsukumoSortKey)table.className="sorted-col-"+colIndexMap[tsukumoSortKey];else table.className="";
+}
 
-  let list = [...tsukumoData];
-  const pageMode = document.getElementById("tsukumoModal")?.classList.contains("tsukumo-page-mode");
-  list.sort((a,b) => {
-    if(pageMode && tsukumoPrioritySortStats.some(Boolean)) return compareTsukumoPrioritySort(a,b);
-    if(tsukumoSortKey){
-      const diff = tsukumoNum(a[tsukumoSortKey]) - tsukumoNum(b[tsukumoSortKey]);
-      return tsukumoSortAsc ? diff : -diff;
-    }
-    return compareTsukumoPriority(a,b);
+function downloadTsukumoModalScreen(){
+  const modal = document.getElementById("tsukumoModal");
+  if(!modal || typeof html2canvas !== "function") return;
+  html2canvas(modal, {backgroundColor:"#000000",scale:2,ignoreElements:(el)=>el.classList.contains("no-capture")}).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "九十九.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   });
-
-  const colIndexMap = {"番号":1,"九十九の力":2};
-  TSUKUMO_STATS.forEach((s,i)=>{colIndexMap[s]=i+3;});
-  colIndexMap["入手"]=14;
-
-  let html = "<tr>";
-  html += `<th style="width:42px; white-space:nowrap;" onclick="sortTsukumo('番号')">番号${getTsukumoArrow('番号')}</th>`;
-  html += `<th>九十九の力</th>`;
-  TSUKUMO_STATS.forEach(s => {
-    const active = pageMode && tsukumoPrioritySortStats.includes(s);
-    const cls = active ? "tsukumo-priority-sort-col" : "";
-    const style = active ? `--tsukumo-priority-col-color:${tsukumoStatColors[s]};color:${tsukumoStatColors[s]}` : `color:${tsukumoStatColors[s]}`;
-    html += `<th class="${cls}" style="${style}" onclick="sortTsukumo('${s}')">${s}${getTsukumoArrow(s)}</th>`;
-  });
-  html += `<th style="width:70px; white-space:nowrap;">入手</th></tr>`;
-
-  list.forEach(d => {
-    const id = String(d["番号"] || "");
-    const selectedClass = tsukumoSelected.includes(id) ? "selected" : "";
-    const replaceClass = (tsukumoReplaceTarget == id) ? "replaceTarget" : "";
-    const excludedClass = isTsukumoExcluded(id) ? "excluded" : "";
-    html += `<tr class="${selectedClass} ${replaceClass} ${excludedClass}" data-tsukumo-row-id="${id}" onclick="toggleTsukumo('${id}',this)">`;
-    html += `<td style="width:42px; white-space:nowrap;">${d["番号"] || ""}</td><td>${getTsukumoName(d)}</td>`;
-    TSUKUMO_STATS.forEach(s => {
-      const active = pageMode && tsukumoPrioritySortStats.includes(s);
-      const cls = active ? "tsukumo-priority-sort-col" : "";
-      const style = active ? `color:${tsukumoStatColors[s]};--tsukumo-priority-col-color:${tsukumoStatColors[s]}` : `color:${tsukumoStatColors[s]}`;
-      html += `<td class="${cls}" style="${style}">${tsukumoNum(d[s])}</td>`;
-    });
-    html += `<td style="white-space:nowrap;">${d["入手"] || ""}</td></tr>`;
-  });
-  table.innerHTML = html;
-  if(pageMode && tsukumoPrioritySortStats.some(Boolean)) table.className = "";
-  else if(pageMode && tsukumoSortKey) table.className = "sorted-col-" + colIndexMap[tsukumoSortKey];
-  else table.className = "";
 }
 
 function applyTsukumoSelection(){
