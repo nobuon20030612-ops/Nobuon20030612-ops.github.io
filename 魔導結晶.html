@@ -47,7 +47,7 @@ body{
     0 0 8px rgba(255,80,80,0.9),
     0 0 20px rgba(255,0,0,0.9),
     0 0 40px rgba(255,0,0,0.8);
-  transform: scale(1.05);
+  transform:none !important;
 }
 
 h3{
@@ -254,25 +254,32 @@ button:active{
   white-space:nowrap;
 }
 .list-heading-row > .priority-sort-controls{
-  position:relative;
-  justify-self:center;
+  position:static;
+  justify-self:end;
   align-self:end;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
 }
 .priority-sort-controls .priority-sort-buttons-line{
   margin-top:0;
 }
 .selection-clear-trigger{
-  position:absolute;
-  right:calc(100% + 8px);
-  top:50%;
-  transform:translateY(-50%);
+  position:static;
+  order:2;
   white-space:nowrap;
+  flex:0 0 auto;
 }
 .selection-clear-trigger:hover{
-  transform:translateY(-50%) scale(1.05);
+  transform:scale(1.05);
+}
+.priority-sort-buttons-line{
+  order:1;
+  flex:0 0 auto;
 }
 .list-heading-spacer{
-  min-width:1px;
+  display:none;
 }
 .selected-count-inline{
   font-size:16px;
@@ -410,6 +417,56 @@ th.priority-sort-col{
   }
 }
 
+
+/* 鬼神石と同仕様：小さい画面でも上部ボタンを1列のまま収める */
+@media (max-width:900px){
+  .top-buttons{
+    gap:4px !important;
+    padding:8px 8px 0 !important;
+    overflow-x:hidden !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+    white-space:nowrap;
+  }
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back{
+    padding:8px 10px !important;
+    font-size:16px !important;
+    flex:0 0 auto !important;
+  }
+}
+@media (max-width:700px){
+  .top-buttons{gap:3px !important;}
+  .top-buttons .top-zoom,
+  .top-buttons .top-save,
+  .top-buttons .top-back{
+    padding:7px 7px !important;
+    font-size:14px !important;
+  }
+}
+
+
+/* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
+#table, #selectedTable{
+  width:100% !important;
+  table-layout:auto !important;
+}
+#table th, #table td,
+#selectedTable th, #selectedTable td{
+  white-space:nowrap !important;
+}
+#table th:first-child, #table td:first-child,
+#selectedTable th:first-child, #selectedTable td:first-child{
+  width:42px !important;
+}
+#table th:nth-child(14), #table td:nth-child(14),
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
+  width:70px !important;
+  max-width:70px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
 </style>
 	
 
@@ -437,38 +494,6 @@ body {
 }
 #zoomArea{width:100%; max-width:none; box-sizing:border-box;}
 
-#table{table-layout:fixed !important; width:100% !important;}
-#table th:nth-child(1), #table td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(2), #table td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(3), #table td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(4), #table td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(5), #table td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(6), #table td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(7), #table td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(8), #table td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(9), #table td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(10), #table td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(11), #table td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(12), #table td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(13), #table td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
-#table th:nth-child(14), #table td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
-#table th, #table td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
-#selectedTable{table-layout:fixed !important; width:100% !important;}
-#selectedTable th:nth-child(1), #selectedTable td:nth-child(1){width:3.77778% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(2), #selectedTable td:nth-child(2){width:13.67259% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(3), #selectedTable td:nth-child(3){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(4), #selectedTable td:nth-child(4){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(5), #selectedTable td:nth-child(5){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(6), #selectedTable td:nth-child(6){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(7), #selectedTable td:nth-child(7){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(8), #selectedTable td:nth-child(8){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(9), #selectedTable td:nth-child(9){width:7.99630% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(10), #selectedTable td:nth-child(10){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(11), #selectedTable td:nth-child(11){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(12), #selectedTable td:nth-child(12){width:5.16000% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(13), #selectedTable td:nth-child(13){width:5.16889% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){width:5.85185% !important; min-width:0 !important; max-width:none !important;}
-#selectedTable th, #selectedTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
 </style>
 
 </head>
@@ -904,6 +929,36 @@ function toggle(id,rowEl){
   finish();
 }
 
+function removeSelectedFromSummary(id){
+  const idx = selected.findIndex(v => String(v) === String(id));
+  if(idx < 0) return;
+  selected.splice(idx,1);
+  if(String(replaceTarget) === String(id)) replaceTarget = null;
+  render();
+}
+
+function escapeAttr(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+
+function refreshOverflowTitles(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+      const full=(cell.textContent||"").trim();
+      if(full && cell.scrollWidth > cell.clientWidth + 1){
+        cell.title=full;
+      }else{
+        cell.removeAttribute("title");
+      }
+    });
+  });
+}
+
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -944,7 +999,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style="width:70px; white-space:nowrap;">入手</th>`;
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -964,7 +1019,7 @@ function render(){
       html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
     });
 
-    html+=`<td style="white-space:nowrap;">${d["入手"]||""}</td>`;
+    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
 
     html+="</tr>";
   });
@@ -993,7 +1048,7 @@ function render(){
 
     const rep=(replaceTarget==id)?"replaceTarget":"";
 
-    html2+=`<tr class="${rep}" onclick="setReplace('${id}')">`;
+    html2+=`<tr class="${rep}" onclick="removeSelectedFromSummary('${id}')">`;
 
     html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["魔導の力"]||""}</td>`;
 
@@ -1001,7 +1056,7 @@ function render(){
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
 
-    html2+=`<td style="white-space:nowrap;">${d["入手"]||""}</td>`;
+    html2+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
 
     html2+="</tr>";
   });
@@ -1018,6 +1073,7 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
+  refreshOverflowTitles();
   updateSelectedCount();
   updatePrioritySortUI();
 }

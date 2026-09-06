@@ -431,6 +431,27 @@ th.priority-sort-col{
   }
 }
 
+
+/* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
+#table, #selectedTable{
+  width:100% !important;
+  table-layout:auto !important;
+}
+#table th, #table td,
+#selectedTable th, #selectedTable td{
+  white-space:nowrap !important;
+}
+#table th:first-child, #table td:first-child,
+#selectedTable th:first-child, #selectedTable td:first-child{
+  width:42px !important;
+}
+#table th:nth-child(14), #table td:nth-child(14),
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
+  width:70px !important;
+  max-width:70px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
 </style>
 
 
@@ -458,21 +479,6 @@ body {
   flex:0 0 auto;
 }
 #zoomArea{width:100%; max-width:none; box-sizing:border-box;}
-
-#table{table-layout:fixed !important; width:100% !important;}
-#table th:nth-child(14), #table td:nth-child(14){width:120px !important; min-width:120px !important; max-width:120px !important;}
-#table th, #table td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
-#selectedTable{table-layout:fixed !important; width:100% !important;}
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){width:120px !important; min-width:120px !important; max-width:120px !important;}
-#selectedTable th, #selectedTable td{overflow:hidden !important; text-overflow:clip !important; white-space:nowrap !important;}
-/* 入手列：改行禁止。狭い画面で収まらない場合は末尾…＋hoverで全文確認 */
-#table th:nth-child(14), #table td:nth-child(14),
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-}
-
 
 /* 上部操作ボタン：小さい画面でも横スクロールさせず、位置を安定させる */
 @media (max-width:900px){
@@ -1026,6 +1032,20 @@ function escapeAttr(value){
     .replace(/>/g,"&gt;");
 }
 
+
+function refreshOverflowTitles(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+      const full=(cell.textContent||"").trim();
+      if(full && cell.scrollWidth > cell.clientWidth + 1){
+        cell.title=full;
+      }else{
+        cell.removeAttribute("title");
+      }
+    });
+  });
+}
+
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -1071,7 +1091,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style="width:70px; white-space:nowrap;">入手</th>`;
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -1081,7 +1101,7 @@ function render(){
 
     html+=`<tr class="${sel} ${rep} ${exc}" data-row-id="${d["番号"]}" onclick="toggle('${d["番号"]}', this)">`;
 
-    html+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
       const activePriorityCol=prioritySortStats.includes(s);
       const cls=activePriorityCol?"priority-sort-col":"";
@@ -1104,7 +1124,7 @@ function render(){
     table.className="";
   }
 
-  let html2="<tr><th>番号</th><th>九十九の力</th>";
+  let html2="<tr><th style='width:42px; white-space:nowrap;'>番号</th><th>九十九の力</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
   html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html2+="</tr>";
@@ -1117,7 +1137,7 @@ function render(){
 
     html2+=`<tr class="${rep}" onclick="removeSelectedFromSummary('${id}')" title="クリックで選択解除">`;
 
-    html2+=`<td>${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getVal(d,s)}</td>`;
     });
@@ -1136,6 +1156,7 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
+  refreshOverflowTitles();
   updateSelectedCount();
   updatePrioritySortUI();
 }

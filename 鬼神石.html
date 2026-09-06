@@ -466,20 +466,6 @@ th.priority-sort-col{
 }
 
 
-/* 九十九と同仕様：入手列は読める幅を確保し、改行しない */
-#table, #selectedTable{
-  table-layout:fixed;
-}
-#table th:nth-child(14), #table td:nth-child(14),
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
-  width:120px !important;
-  min-width:120px !important;
-  max-width:120px !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-}
-
 /* 小さい画面では上部ボタンを1列のまま収め、横スクロールさせない */
 @media (max-width:900px){
   .top-buttons{
@@ -512,6 +498,27 @@ th.priority-sort-col{
   }
 }
 
+
+/* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
+#table, #selectedTable{
+  width:100% !important;
+  table-layout:auto !important;
+}
+#table th, #table td,
+#selectedTable th, #selectedTable td{
+  white-space:nowrap !important;
+}
+#table th:first-child, #table td:first-child,
+#selectedTable th:first-child, #selectedTable td:first-child{
+  width:42px !important;
+}
+#table th:nth-child(14), #table td:nth-child(14),
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
+  width:70px !important;
+  max-width:70px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
 </style>
 
 <style id="season-background-style">
@@ -1007,6 +1014,20 @@ function escapeAttr(value){
     .replace(/>/g,"&gt;");
 }
 
+
+function refreshOverflowTitles(){
+  requestAnimationFrame(()=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+      const full=(cell.textContent||"").trim();
+      if(full && cell.scrollWidth > cell.clientWidth + 1){
+        cell.title=full;
+      }else{
+        cell.removeAttribute("title");
+      }
+    });
+  });
+}
+
 function calcTotals(){
   let t={};
   stats.forEach(s=>t[s]=0);
@@ -1049,7 +1070,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style="width:70px; white-space:nowrap;">入手</th>`;
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -1113,6 +1134,7 @@ function render(){
   html2+="</tr>";
 
   selectedTable.innerHTML=html2;
+  refreshOverflowTitles();
   updateSelectedCount();
   updatePrioritySortUI();
 }
