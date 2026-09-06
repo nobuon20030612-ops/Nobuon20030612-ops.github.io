@@ -422,29 +422,23 @@ th.priority-sort-col{
   }
 }
 
-
-/* ===== 季節背景：春 ===== */
-body{
-  background-color:#180e14;
-  background-image:
-    radial-gradient(ellipse at 18px 14px, rgba(255,220,230,.34) 0 3px, transparent 4px),
-    radial-gradient(ellipse at 64px 48px, rgba(255,174,198,.26) 0 3px, transparent 4px),
-    radial-gradient(ellipse at 12% 8%, rgba(255,195,214,.36) 0 5%, transparent 24%),
-    radial-gradient(ellipse at 88% 18%, rgba(255,222,231,.27) 0 4%, transparent 21%),
-    radial-gradient(ellipse at 25% 76%, rgba(255,142,178,.18) 0 5%, transparent 24%),
-    linear-gradient(135deg,#150a11 0%,#321522 45%,#160f18 100%);
-  background-size:
-    92px 76px,
-    118px 94px,
-    auto,
-    auto,
-    auto,
-    auto;
-  background-attachment:fixed;
-}
-
 </style>
 
+
+
+<style id="season-background-style">
+/* 季節背景画像：既存レイアウト・HTML・JSには影響させない */
+body {
+  background-color:#000 !important;
+  background-image:
+    linear-gradient(rgba(0,0,0,.56), rgba(0,0,0,.56)),
+    url("bg_spring.png") !important;
+  background-position:center center !important;
+  background-size:cover !important;
+  background-repeat:no-repeat !important;
+  background-attachment:fixed !important;
+}
+</style>
 
 </head>
 

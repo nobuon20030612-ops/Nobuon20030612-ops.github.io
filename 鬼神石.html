@@ -458,20 +458,22 @@ th.priority-sort-col{
   }
 }
 
-
-/* ===== 季節背景：夏 ===== */
-body{
-  background-color:#061922;
-  background-image:
-    repeating-radial-gradient(ellipse at 50% -18%, transparent 0 28px, rgba(95,225,240,.075) 29px 31px, transparent 32px 58px),
-    radial-gradient(circle at 16% 12%, rgba(79,226,212,.28) 0 7%, transparent 26%),
-    radial-gradient(circle at 85% 24%, rgba(65,168,255,.24) 0 8%, transparent 27%),
-    radial-gradient(ellipse at 52% 84%, rgba(44,180,205,.18) 0 8%, transparent 30%),
-    linear-gradient(145deg,#04141d 0%,#07303a 44%,#092037 72%,#04131d 100%);
-  background-attachment:fixed;
-}
-
 </style>
+
+<style id="season-background-style">
+/* 季節背景画像：既存レイアウト・HTML・JSには影響させない */
+body {
+  background-color:#000 !important;
+  background-image:
+    linear-gradient(rgba(0,0,0,.56), rgba(0,0,0,.56)),
+    url("bg_summer.png") !important;
+  background-position:center center !important;
+  background-size:cover !important;
+  background-repeat:no-repeat !important;
+  background-attachment:fixed !important;
+}
+</style>
+
 </head>
 
 <body>

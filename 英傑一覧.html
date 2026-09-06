@@ -57,28 +57,22 @@ tr:hover{background:#222;box-shadow:0 0 6px rgba(255,255,200,.5),0 0 12px rgba(2
 .totalRow{background:#1e2f1e;font-weight:bold;}
 .sorted-col td{background:#2f3b2f!important;}
 *{cursor:pointer!important;}
-
-/* ===== 季節背景：冬 ===== */
-body{
-  background-color:#07131f;
-  background-image:
-    radial-gradient(circle at 14px 18px, rgba(235,248,255,.30) 0 2px, transparent 3px),
-    radial-gradient(circle at 52px 44px, rgba(190,226,255,.24) 0 2px, transparent 3px),
-    radial-gradient(circle at 14% 10%, rgba(170,220,255,.24) 0 7%, transparent 27%),
-    radial-gradient(circle at 88% 18%, rgba(226,244,255,.20) 0 8%, transparent 28%),
-    linear-gradient(120deg, transparent 0 42%, rgba(180,222,255,.08) 50%, transparent 58%),
-    linear-gradient(145deg,#050e18 0%,#0b2236 45%,#0b192b 75%,#050d16 100%);
-  background-size:
-    72px 68px,
-    104px 92px,
-    auto,
-    auto,
-    auto,
-    auto;
-  background-attachment:fixed;
-}
-
 </style>
+
+<style id="season-background-style">
+/* 季節背景画像：既存レイアウト・HTML・JSには影響させない */
+body {
+  background-color:#000 !important;
+  background-image:
+    linear-gradient(rgba(0,0,0,.56), rgba(0,0,0,.56)),
+    url("bg_winter.png") !important;
+  background-position:center center !important;
+  background-size:cover !important;
+  background-repeat:no-repeat !important;
+  background-attachment:fixed !important;
+}
+</style>
+
 </head>
 <body>
 <div class="top-buttons no-capture">

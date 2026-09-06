@@ -410,29 +410,23 @@ th.priority-sort-col{
   }
 }
 
-
-/* ===== 季節背景：秋 ===== */
-body{
-  background-color:#1b0d07;
-  background-image:
-    radial-gradient(ellipse at 20px 16px, rgba(224,132,46,.20) 0 4px, transparent 5px),
-    radial-gradient(ellipse at 70px 52px, rgba(166,56,28,.20) 0 4px, transparent 5px),
-    radial-gradient(circle at 14% 12%, rgba(214,95,30,.31) 0 7%, transparent 25%),
-    radial-gradient(circle at 88% 18%, rgba(191,45,24,.25) 0 7%, transparent 26%),
-    radial-gradient(ellipse at 48% 88%, rgba(220,151,50,.20) 0 9%, transparent 31%),
-    linear-gradient(135deg,#160904 0%,#3b1609 42%,#2a0d08 70%,#120906 100%);
-  background-size:
-    102px 84px,
-    126px 108px,
-    auto,
-    auto,
-    auto,
-    auto;
-  background-attachment:fixed;
-}
-
 </style>
 	
+
+<style id="season-background-style">
+/* 季節背景画像：既存レイアウト・HTML・JSには影響させない */
+body {
+  background-color:#000 !important;
+  background-image:
+    linear-gradient(rgba(0,0,0,.56), rgba(0,0,0,.56)),
+    url("bg_autumn.png") !important;
+  background-position:center center !important;
+  background-size:cover !important;
+  background-repeat:no-repeat !important;
+  background-attachment:fixed !important;
+}
+</style>
+
 </head>
 
 <body>
