@@ -1,20 +1,25 @@
 {
   "schema": "jinpo-next-phase2-auto-update/v2",
   "source_file": "source-next/英傑一覧.csv",
-  "updated_at": "2026-09-02",
-  "last_added_hero": "宇喜多秀家",
+  "updated_at": "2026-09-09",
+  "last_added_hero": "津軽為信",
   "new_registration_only": true,
   "new_heroes": [
     {
-      "番号": 390,
-      "internal_id": "EIK_0398",
-      "英傑名": "宇喜多秀家"
+      "番号": 391,
+      "internal_id": "EIK_0399",
+      "英傑名": "最上義光"
+    },
+    {
+      "番号": 392,
+      "internal_id": "EIK_0400",
+      "英傑名": "津軽為信"
     }
   ],
   "changed_existing": [],
   "generation": {
-    "full_records": 2223384,
-    "seconds": 124.17,
+    "full_records": 2421620,
+    "seconds": 138.05,
     "full_regeneration": true,
     "generation_mode": "full_current_source_only",
     "source_of_truth_only": true

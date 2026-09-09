@@ -1,5 +1,5 @@
 {
-  "version": "unified-v2-top500-recsum-fullmax-ad9af41b3024",
+  "version": "unified-v2-top500-recsum-fullmax-10dcfd34d016",
   "magic": "JCF1",
   "header_size": 16,
   "record_size": 52,
@@ -415,7 +415,9 @@
     "太原雪斎(能弁)",
     "六角義賢",
     "蒲生氏郷(能弁)",
-    "宇喜多秀家"
+    "宇喜多秀家",
+    "最上義光",
+    "津軽為信"
   ],
   "bond_names": [
     "",
@@ -516,61 +518,107 @@
       "7": {
         "衡軛": {
           "file": "data/compact_search_v2/jinpo_normal_c7_kouyaku_v2.bin.gz",
-          "rows": 10478,
-          "gzip_bytes": 273586,
-          "raw_bytes": 544872,
-          "sha256_16": "e82b65bf707cab5f"
+          "rows": 11563,
+          "gzip_bytes": 301733,
+          "raw_bytes": 601292,
+          "sha256_16": "873ec5b25323b3f7",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_normal_c7_kakuyoku_v2.bin.gz",
-          "rows": 10478,
-          "gzip_bytes": 273836,
-          "raw_bytes": 544872,
-          "sha256_16": "c478cb84c25a52bd"
+          "rows": 11563,
+          "gzip_bytes": 301938,
+          "raw_bytes": 601292,
+          "sha256_16": "685c016c0727808f",
+          "record_size": 52
         },
         "魚鱗": {
-          "file": "data/compact_search_v2/jinpo_normal_c7_gyorin_v2.bin.gz",
-          "rows": 951441,
-          "gzip_bytes": 22823043,
-          "raw_bytes": 49474948,
-          "sha256_16": "d3cd231977a0ad0c"
+          "rows": 1049031,
+          "gzip_bytes": 25164301,
+          "raw_bytes": 54549628,
+          "sha256_16": "fac03c87a0881235",
+          "record_size": 52,
+          "sharded": true,
+          "part_count": 2,
+          "parts": [
+            {
+              "file": "data/compact_search_v2/jinpo_normal_c7_gyorin_v2_part001.bin.gz",
+              "rows": 524516,
+              "gzip_bytes": 12605796,
+              "raw_bytes": 27274848,
+              "sha256_16": "c6f7420e0bb4f58c",
+              "record_size": 52
+            },
+            {
+              "file": "data/compact_search_v2/jinpo_normal_c7_gyorin_v2_part002.bin.gz",
+              "rows": 524515,
+              "gzip_bytes": 12558505,
+              "raw_bytes": 27274796,
+              "sha256_16": "7786aab80cf45e39",
+              "record_size": 52
+            }
+          ]
         },
         "方円": {
-          "file": "data/compact_search_v2/jinpo_normal_c7_hoen_v2.bin.gz",
-          "rows": 951441,
-          "gzip_bytes": 22848513,
-          "raw_bytes": 49474948,
-          "sha256_16": "215fa58fdbfb0f1b"
+          "rows": 1049031,
+          "gzip_bytes": 25192502,
+          "raw_bytes": 54549628,
+          "sha256_16": "4904e69a431a6aa3",
+          "record_size": 52,
+          "sharded": true,
+          "part_count": 2,
+          "parts": [
+            {
+              "file": "data/compact_search_v2/jinpo_normal_c7_hoen_v2_part001.bin.gz",
+              "rows": 524516,
+              "gzip_bytes": 12621396,
+              "raw_bytes": 27274848,
+              "sha256_16": "bbfb9c2399accfb1",
+              "record_size": 52
+            },
+            {
+              "file": "data/compact_search_v2/jinpo_normal_c7_hoen_v2_part002.bin.gz",
+              "rows": 524515,
+              "gzip_bytes": 12571106,
+              "raw_bytes": 27274796,
+              "sha256_16": "c3acf4c9f3492165",
+              "record_size": 52
+            }
+          ]
         }
       },
       "8": {
         "衡軛": {
           "file": "data/compact_search_v2/jinpo_normal_c8_kouyaku_v2.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 2577,
-          "raw_bytes": 4540,
-          "sha256_16": "86be795a0e7842be"
+          "rows": 95,
+          "gzip_bytes": 2795,
+          "raw_bytes": 4956,
+          "sha256_16": "d733a1b874d541a0",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_normal_c8_kakuyoku_v2.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 2584,
-          "raw_bytes": 4540,
-          "sha256_16": "43d7e1b1d9ee846b"
+          "rows": 95,
+          "gzip_bytes": 2794,
+          "raw_bytes": 4956,
+          "sha256_16": "c6f40bf0a79e6a28",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_normal_c8_gyorin_v2.bin.gz",
-          "rows": 12711,
-          "gzip_bytes": 327678,
-          "raw_bytes": 660988,
-          "sha256_16": "86822f402e6e3978"
+          "rows": 13145,
+          "gzip_bytes": 339020,
+          "raw_bytes": 683556,
+          "sha256_16": "0fc13a34ed09ab3f",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_normal_c8_hoen_v2.bin.gz",
-          "rows": 12711,
-          "gzip_bytes": 328385,
-          "raw_bytes": 660988,
-          "sha256_16": "3f535a89f4036933"
+          "rows": 13145,
+          "gzip_bytes": 339665,
+          "raw_bytes": 683556,
+          "sha256_16": "1eb9bda09b3ee68a",
+          "record_size": 52
         }
       },
       "9": {
@@ -579,28 +627,32 @@
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "b6c3cba682d8465a"
+          "sha256_16": "b6c3cba682d8465a",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_normal_c9_kakuyoku_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "f6a2f2d59ba2c27c"
+          "sha256_16": "f6a2f2d59ba2c27c",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_normal_c9_gyorin_v2.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2884,
-          "raw_bytes": 5164,
-          "sha256_16": "6bec52706cf4ca82"
+          "rows": 100,
+          "gzip_bytes": 2925,
+          "raw_bytes": 5216,
+          "sha256_16": "963f3c12a584c6e3",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_normal_c9_hoen_v2.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2892,
-          "raw_bytes": 5164,
-          "sha256_16": "5192f22743e70a78"
+          "rows": 100,
+          "gzip_bytes": 2929,
+          "raw_bytes": 5216,
+          "sha256_16": "c88049d7e8293beb",
+          "record_size": 52
         }
       }
     },
@@ -611,28 +663,32 @@
           "rows": 1279,
           "gzip_bytes": 27186,
           "raw_bytes": 66524,
-          "sha256_16": "133f3d6953ac309b"
+          "sha256_16": "133f3d6953ac309b",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_grade3_c5_kakuyoku_v2.bin.gz",
           "rows": 1279,
           "gzip_bytes": 27187,
           "raw_bytes": 66524,
-          "sha256_16": "6f8d93e1a28fd148"
+          "sha256_16": "6f8d93e1a28fd148",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_grade3_c5_gyorin_v2.bin.gz",
           "rows": 134637,
           "gzip_bytes": 2486914,
           "raw_bytes": 7001140,
-          "sha256_16": "6dbe3374974d2f10"
+          "sha256_16": "6dbe3374974d2f10",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_grade3_c5_hoen_v2.bin.gz",
           "rows": 134637,
           "gzip_bytes": 2486224,
           "raw_bytes": 7001140,
-          "sha256_16": "06bbcadafe27b62f"
+          "sha256_16": "06bbcadafe27b62f",
+          "record_size": 52
         }
       },
       "6": {
@@ -641,28 +697,32 @@
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "7defac9bad47caaf"
+          "sha256_16": "7defac9bad47caaf",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_grade3_c6_kakuyoku_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "98d59503286a2b1e"
+          "sha256_16": "98d59503286a2b1e",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_grade3_c6_gyorin_v2.bin.gz",
           "rows": 958,
           "gzip_bytes": 19744,
           "raw_bytes": 49832,
-          "sha256_16": "c302a0815455b072"
+          "sha256_16": "c302a0815455b072",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_grade3_c6_hoen_v2.bin.gz",
           "rows": 958,
           "gzip_bytes": 19777,
           "raw_bytes": 49832,
-          "sha256_16": "7989ffc4b8eac2b8"
+          "sha256_16": "7989ffc4b8eac2b8",
+          "record_size": 52
         }
       },
       "7": {
@@ -671,28 +731,32 @@
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "d6cb22e2464ad6a0"
+          "sha256_16": "d6cb22e2464ad6a0",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_grade3_c7_kakuyoku_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "a80c003fd0829690"
+          "sha256_16": "a80c003fd0829690",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_grade3_c7_gyorin_v2.bin.gz",
           "rows": 2,
           "gzip_bytes": 109,
           "raw_bytes": 120,
-          "sha256_16": "7165168ab17fe7bf"
+          "sha256_16": "7165168ab17fe7bf",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_grade3_c7_hoen_v2.bin.gz",
           "rows": 2,
           "gzip_bytes": 112,
           "raw_bytes": 120,
-          "sha256_16": "08c018f6af80d516"
+          "sha256_16": "08c018f6af80d516",
+          "record_size": 52
         }
       },
       "8": {
@@ -701,28 +765,32 @@
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "09bf2ff7959930a8"
+          "sha256_16": "09bf2ff7959930a8",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_grade3_c8_kakuyoku_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "f641bca0227d444b"
+          "sha256_16": "f641bca0227d444b",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_grade3_c8_gyorin_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "ab2d3cc1b2f4a462"
+          "sha256_16": "ab2d3cc1b2f4a462",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_grade3_c8_hoen_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "d2bb7feaab4a39e7"
+          "sha256_16": "d2bb7feaab4a39e7",
+          "record_size": 52
         }
       },
       "9": {
@@ -731,28 +799,32 @@
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "dfc2fd2e072944cc"
+          "sha256_16": "dfc2fd2e072944cc",
+          "record_size": 52
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_grade3_c9_kakuyoku_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "87d45ed754fa688b"
+          "sha256_16": "87d45ed754fa688b",
+          "record_size": 52
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_grade3_c9_gyorin_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "90f7b9f4e364995e"
+          "sha256_16": "90f7b9f4e364995e",
+          "record_size": 52
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_grade3_c9_hoen_v2.bin.gz",
           "rows": 0,
           "gzip_bytes": 33,
           "raw_bytes": 16,
-          "sha256_16": "07afe36c74d98142"
+          "sha256_16": "07afe36c74d98142",
+          "record_size": 52
         }
       }
     }
@@ -769,68 +841,68 @@
       "7": {
         "衡軛": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c7_kouyaku.bin.gz",
-          "rows": 10478,
-          "gzip_bytes": 209110,
-          "raw_bytes": 272444,
-          "sha256_16": "7d8a8dffde05d32f",
+          "rows": 11563,
+          "gzip_bytes": 230218,
+          "raw_bytes": 300654,
+          "sha256_16": "af597d6acb67c777",
           "record_size": 26
         },
         "鶴翼": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c7_kakuyoku.bin.gz",
-          "rows": 10478,
-          "gzip_bytes": 209010,
-          "raw_bytes": 272444,
-          "sha256_16": "6facd4975f59fd58",
+          "rows": 11563,
+          "gzip_bytes": 230154,
+          "raw_bytes": 300654,
+          "sha256_16": "01c023438b971b90",
           "record_size": 26
         },
         "魚鱗": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c7_gyorin.bin.gz",
-          "rows": 951441,
-          "gzip_bytes": 17563348,
-          "raw_bytes": 24737482,
-          "sha256_16": "6ea047c6d73df2dc",
+          "rows": 1049031,
+          "gzip_bytes": 19369386,
+          "raw_bytes": 27274822,
+          "sha256_16": "92ccec912d02421b",
           "record_size": 26
         },
         "方円": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c7_hoen.bin.gz",
-          "rows": 951441,
-          "gzip_bytes": 17591934,
-          "raw_bytes": 24737482,
-          "sha256_16": "a28948bac30f2f42",
+          "rows": 1049031,
+          "gzip_bytes": 19400792,
+          "raw_bytes": 27274822,
+          "sha256_16": "ae67421dd7323ece",
           "record_size": 26
         }
       },
       "8": {
         "衡軛": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c8_kouyaku.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 1893,
-          "raw_bytes": 2278,
-          "sha256_16": "f49bb00aaf625695",
+          "rows": 95,
+          "gzip_bytes": 2046,
+          "raw_bytes": 2486,
+          "sha256_16": "324e40d85e8d8c87",
           "record_size": 26
         },
         "鶴翼": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c8_kakuyoku.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 1897,
-          "raw_bytes": 2278,
-          "sha256_16": "059cc92a7a3e235b",
+          "rows": 95,
+          "gzip_bytes": 2049,
+          "raw_bytes": 2486,
+          "sha256_16": "2c5c3560c140a335",
           "record_size": 26
         },
         "魚鱗": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c8_gyorin.bin.gz",
-          "rows": 12711,
-          "gzip_bytes": 252670,
-          "raw_bytes": 330502,
-          "sha256_16": "bc28f954ca6a8aa6",
+          "rows": 13145,
+          "gzip_bytes": 261254,
+          "raw_bytes": 341786,
+          "sha256_16": "ae79418fed311286",
           "record_size": 26
         },
         "方円": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c8_hoen.bin.gz",
-          "rows": 12711,
-          "gzip_bytes": 253354,
-          "raw_bytes": 330502,
-          "sha256_16": "e0bd8e0a21fcd7a2",
+          "rows": 13145,
+          "gzip_bytes": 262016,
+          "raw_bytes": 341786,
+          "sha256_16": "380dd5ca62b97b9a",
           "record_size": 26
         }
       },
@@ -853,18 +925,18 @@
         },
         "魚鱗": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c9_gyorin.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2143,
-          "raw_bytes": 2590,
-          "sha256_16": "4b02803920126319",
+          "rows": 100,
+          "gzip_bytes": 2165,
+          "raw_bytes": 2616,
+          "sha256_16": "8f8f5d75a352a73b",
           "record_size": 26
         },
         "方円": {
           "file": "data/compact_search_v2/fullmax_stats/normal/c9_hoen.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2168,
-          "raw_bytes": 2590,
-          "sha256_16": "6506b6dba9c762ce",
+          "rows": 100,
+          "gzip_bytes": 2188,
+          "raw_bytes": 2616,
+          "sha256_16": "ef95e0142fd39216",
           "record_size": 26
         }
       }
@@ -1066,60 +1138,60 @@
         "衡軛": {
           "file": "data/compact_search_v2/jinpo_top_normal_c7_kouyaku_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 13399,
+          "gzip_bytes": 13362,
           "raw_bytes": 26016,
-          "sha256_16": "616feea6b16885ed"
+          "sha256_16": "7a4173787a512a0d"
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_top_normal_c7_kakuyoku_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 13449,
+          "gzip_bytes": 13423,
           "raw_bytes": 26016,
-          "sha256_16": "488391fc3c1db744"
+          "sha256_16": "bd9e4d82f2391b92"
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_top_normal_c7_gyorin_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 13570,
+          "gzip_bytes": 13621,
           "raw_bytes": 26016,
-          "sha256_16": "d795da30955f206c"
+          "sha256_16": "17918e9c963e17fa"
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_top_normal_c7_hoen_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 13606,
+          "gzip_bytes": 13635,
           "raw_bytes": 26016,
-          "sha256_16": "007488047c24c792"
+          "sha256_16": "040163d9b4f9b1f4"
         }
       },
       "8": {
         "衡軛": {
           "file": "data/compact_search_v2/jinpo_top_normal_c8_kouyaku_v2.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 2556,
-          "raw_bytes": 4540,
-          "sha256_16": "c66e9b27f07fc262"
+          "rows": 95,
+          "gzip_bytes": 2767,
+          "raw_bytes": 4956,
+          "sha256_16": "7674aa2f470773b7"
         },
         "鶴翼": {
           "file": "data/compact_search_v2/jinpo_top_normal_c8_kakuyoku_v2.bin.gz",
-          "rows": 87,
-          "gzip_bytes": 2559,
-          "raw_bytes": 4540,
-          "sha256_16": "a7c5fd7e7be0cb94"
+          "rows": 95,
+          "gzip_bytes": 2773,
+          "raw_bytes": 4956,
+          "sha256_16": "0589a71982803286"
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_top_normal_c8_gyorin_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 14002,
+          "gzip_bytes": 13960,
           "raw_bytes": 26016,
-          "sha256_16": "28c8155e91bd53d2"
+          "sha256_16": "9efac1939e716596"
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_top_normal_c8_hoen_v2.bin.gz",
           "rows": 500,
-          "gzip_bytes": 13976,
+          "gzip_bytes": 13953,
           "raw_bytes": 26016,
-          "sha256_16": "3b5a0ae6f3a68e90"
+          "sha256_16": "ae61b9b13006851d"
         }
       },
       "9": {
@@ -1139,17 +1211,17 @@
         },
         "魚鱗": {
           "file": "data/compact_search_v2/jinpo_top_normal_c9_gyorin_v2.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2909,
-          "raw_bytes": 5164,
-          "sha256_16": "49c8af6dc7998434"
+          "rows": 100,
+          "gzip_bytes": 2945,
+          "raw_bytes": 5216,
+          "sha256_16": "62469a29da579316"
         },
         "方円": {
           "file": "data/compact_search_v2/jinpo_top_normal_c9_hoen_v2.bin.gz",
-          "rows": 99,
-          "gzip_bytes": 2918,
-          "raw_bytes": 5164,
-          "sha256_16": "9e222458529a365f"
+          "rows": 100,
+          "gzip_bytes": 2951,
+          "raw_bytes": 5216,
+          "sha256_16": "6dea9db50be7e4a2"
         }
       }
     },
@@ -1313,316 +1385,316 @@
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14945,
+            "gzip_bytes": 14855,
             "raw_bytes": 26016,
-            "sha256_16": "4522ae63bbb9f703"
+            "sha256_16": "19849c3ae69a4c35"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13388,
+            "gzip_bytes": 13379,
             "raw_bytes": 26016,
-            "sha256_16": "0730001bffbb9162"
+            "sha256_16": "f6dd1efc30727293"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14016,
+            "gzip_bytes": 14066,
             "raw_bytes": 26016,
-            "sha256_16": "2e774d1557e3b1b1"
+            "sha256_16": "aa0cc7e70b427bda"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13874,
+            "gzip_bytes": 13873,
             "raw_bytes": 26016,
-            "sha256_16": "4e11c07bddbdc3fa"
+            "sha256_16": "9d34dd2b3d4de887"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13371,
+            "gzip_bytes": 13277,
             "raw_bytes": 26016,
-            "sha256_16": "c5a862e75df5f900"
+            "sha256_16": "76253fe7f0525436"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13146,
+            "gzip_bytes": 13165,
             "raw_bytes": 26016,
-            "sha256_16": "f27421778db58df2"
+            "sha256_16": "128ce96b923e466f"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14376,
+            "gzip_bytes": 14321,
             "raw_bytes": 26016,
-            "sha256_16": "0dcb92b0f47dcdaa"
+            "sha256_16": "a3f400028c60009e"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13059,
+            "gzip_bytes": 13197,
             "raw_bytes": 26016,
-            "sha256_16": "8321fdace4da14e9"
+            "sha256_16": "50188867e8da15a9"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13183,
+            "gzip_bytes": 13222,
             "raw_bytes": 26016,
-            "sha256_16": "1304a71446672492"
+            "sha256_16": "fe5a99702eb96278"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13340,
+            "gzip_bytes": 13397,
             "raw_bytes": 26016,
-            "sha256_16": "aedf995153544b1c"
+            "sha256_16": "eff1917bf47d1c5d"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kouyaku_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13131,
+            "gzip_bytes": 13185,
             "raw_bytes": 26016,
-            "sha256_16": "83443db273799be8"
+            "sha256_16": "5f20324bf1df9c34"
           }
         },
         "鶴翼": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14953,
+            "gzip_bytes": 14874,
             "raw_bytes": 26016,
-            "sha256_16": "9ac0c647c92e9f02"
+            "sha256_16": "a2e2def28df7a5a1"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13403,
+            "gzip_bytes": 13390,
             "raw_bytes": 26016,
-            "sha256_16": "a514056c17eee76d"
+            "sha256_16": "403e528b99bc3a02"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14021,
+            "gzip_bytes": 14067,
             "raw_bytes": 26016,
-            "sha256_16": "0a723b04513b5bc3"
+            "sha256_16": "46fb4f1fc1be9bff"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13879,
+            "gzip_bytes": 13897,
             "raw_bytes": 26016,
-            "sha256_16": "f1a281313a6fe726"
+            "sha256_16": "33696464e9ee9d20"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13382,
+            "gzip_bytes": 13279,
             "raw_bytes": 26016,
-            "sha256_16": "3821bc43cf828b83"
+            "sha256_16": "5e5d4d6d33219619"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13152,
+            "gzip_bytes": 13168,
             "raw_bytes": 26016,
-            "sha256_16": "3cca9989cb015b77"
+            "sha256_16": "8e9530506fe4214d"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14367,
+            "gzip_bytes": 14306,
             "raw_bytes": 26016,
-            "sha256_16": "ee67bc7b8b14d17c"
+            "sha256_16": "ca8c4a9d0c2ff080"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13087,
+            "gzip_bytes": 13222,
             "raw_bytes": 26016,
-            "sha256_16": "561837f2458b373c"
+            "sha256_16": "26c8cd534e4c8956"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13211,
+            "gzip_bytes": 13238,
             "raw_bytes": 26016,
-            "sha256_16": "291535010159ed1d"
+            "sha256_16": "364941cfbec730d8"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13343,
+            "gzip_bytes": 13407,
             "raw_bytes": 26016,
-            "sha256_16": "4e456195f1196ced"
+            "sha256_16": "412b1646433b3211"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_kakuyoku_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13126,
+            "gzip_bytes": 13178,
             "raw_bytes": 26016,
-            "sha256_16": "114b4d713b80ac40"
+            "sha256_16": "c5113edd5e73ef44"
           }
         },
         "魚鱗": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14947,
+            "gzip_bytes": 15033,
             "raw_bytes": 26016,
-            "sha256_16": "5be98463bd6bd32f"
+            "sha256_16": "de14fe1268e927f8"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12141,
+            "gzip_bytes": 12139,
             "raw_bytes": 26016,
-            "sha256_16": "e6d03bd34feb04fa"
+            "sha256_16": "285794a6f588f6b2"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 11423,
+            "gzip_bytes": 10945,
             "raw_bytes": 26016,
-            "sha256_16": "370e01faa41b825b"
+            "sha256_16": "1bf87eb88db3f1be"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13366,
+            "gzip_bytes": 13346,
             "raw_bytes": 26016,
-            "sha256_16": "8e4eefbfda6da35c"
+            "sha256_16": "898fcb5496cbbbf2"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13130,
+            "gzip_bytes": 13273,
             "raw_bytes": 26016,
-            "sha256_16": "1fd269a74befc6f0"
+            "sha256_16": "0f7256db27502aa6"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13121,
+            "gzip_bytes": 13104,
             "raw_bytes": 26016,
-            "sha256_16": "57ea7cc5c85e8577"
+            "sha256_16": "cfa5850b5e60f773"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13499,
+            "gzip_bytes": 13508,
             "raw_bytes": 26016,
-            "sha256_16": "97204acdce8c4188"
+            "sha256_16": "de4f46eed4deefab"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12801,
+            "gzip_bytes": 12903,
             "raw_bytes": 26016,
-            "sha256_16": "76f64bd4986d3aef"
+            "sha256_16": "3c43bc194059daea"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13271,
+            "gzip_bytes": 13366,
             "raw_bytes": 26016,
-            "sha256_16": "817d5ffde55f28b8"
+            "sha256_16": "12e5c9f5d7b23b7a"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12967,
+            "gzip_bytes": 13031,
             "raw_bytes": 26016,
-            "sha256_16": "643ccfeb0a7ca1cd"
+            "sha256_16": "9bda4f408af8d481"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_gyorin_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12755,
+            "gzip_bytes": 12773,
             "raw_bytes": 26016,
-            "sha256_16": "386a4cfa5524d79b"
+            "sha256_16": "827f462121578aef"
           }
         },
         "方円": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14961,
+            "gzip_bytes": 15055,
             "raw_bytes": 26016,
-            "sha256_16": "5a3f57a7308e7096"
+            "sha256_16": "8335e2cbd9844fb3"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12156,
+            "gzip_bytes": 12151,
             "raw_bytes": 26016,
-            "sha256_16": "21b7fa0c9e8d3a1b"
+            "sha256_16": "857cc83543012cde"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 11445,
+            "gzip_bytes": 10990,
             "raw_bytes": 26016,
-            "sha256_16": "d8164763df78d7a5"
+            "sha256_16": "339870fed57f1952"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13360,
+            "gzip_bytes": 13330,
             "raw_bytes": 26016,
-            "sha256_16": "3151c6ea6423d901"
+            "sha256_16": "92ad1e1bf0fd422a"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13108,
+            "gzip_bytes": 13271,
             "raw_bytes": 26016,
-            "sha256_16": "704792d0216bfe2c"
+            "sha256_16": "50efb05633b9bf3a"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13121,
+            "gzip_bytes": 13106,
             "raw_bytes": 26016,
-            "sha256_16": "3234e88ca309bd0a"
+            "sha256_16": "b7e4a2169b7e706d"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13443,
+            "gzip_bytes": 13436,
             "raw_bytes": 26016,
-            "sha256_16": "b32187e32efa08df"
+            "sha256_16": "dc892bfc3d6e9f5f"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12850,
+            "gzip_bytes": 12928,
             "raw_bytes": 26016,
-            "sha256_16": "648a4a0aec7f1c35"
+            "sha256_16": "45fcf9f76e329cd1"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13295,
+            "gzip_bytes": 13368,
             "raw_bytes": 26016,
-            "sha256_16": "d3784a985ae3cdec"
+            "sha256_16": "9e943a1374073797"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13060,
+            "gzip_bytes": 13085,
             "raw_bytes": 26016,
-            "sha256_16": "3d147df6abc13553"
+            "sha256_16": "322bde241ae1a4fb"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c7_hoen_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 12833,
+            "gzip_bytes": 12837,
             "raw_bytes": 26016,
-            "sha256_16": "43f456741dead635"
+            "sha256_16": "3cbb6619f8917be8"
           }
         }
       },
@@ -1630,317 +1702,317 @@
         "衡軛": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_00_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2586,
-            "raw_bytes": 4540,
-            "sha256_16": "82a9fc455fd49b88"
+            "rows": 95,
+            "gzip_bytes": 2800,
+            "raw_bytes": 4956,
+            "sha256_16": "1424bde13e0af07b"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_01_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2569,
-            "raw_bytes": 4540,
-            "sha256_16": "3cb1c1dcc841407c"
+            "rows": 95,
+            "gzip_bytes": 2783,
+            "raw_bytes": 4956,
+            "sha256_16": "d33f6099b16440aa"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_02_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2548,
-            "raw_bytes": 4540,
-            "sha256_16": "dcef7d246575181b"
+            "rows": 95,
+            "gzip_bytes": 2748,
+            "raw_bytes": 4956,
+            "sha256_16": "379b408b73697d0a"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_03_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2540,
-            "raw_bytes": 4540,
-            "sha256_16": "ce16e28a1a967981"
+            "rows": 95,
+            "gzip_bytes": 2750,
+            "raw_bytes": 4956,
+            "sha256_16": "6654ad9c7eec5773"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_04_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2573,
-            "raw_bytes": 4540,
-            "sha256_16": "6ebea0e67febff6e"
+            "rows": 95,
+            "gzip_bytes": 2783,
+            "raw_bytes": 4956,
+            "sha256_16": "787c2270cd1bcb7a"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_05_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2555,
-            "raw_bytes": 4540,
-            "sha256_16": "d1ded50a57d38954"
+            "rows": 95,
+            "gzip_bytes": 2752,
+            "raw_bytes": 4956,
+            "sha256_16": "f66277b3d12129be"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_06_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2556,
-            "raw_bytes": 4540,
-            "sha256_16": "51260651155788af"
+            "rows": 95,
+            "gzip_bytes": 2766,
+            "raw_bytes": 4956,
+            "sha256_16": "47f03ad59a04d4ff"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_07_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2573,
-            "raw_bytes": 4540,
-            "sha256_16": "ebc46f2e802eca8b"
+            "rows": 95,
+            "gzip_bytes": 2786,
+            "raw_bytes": 4956,
+            "sha256_16": "163ba92ba30b1c82"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_08_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2567,
-            "raw_bytes": 4540,
-            "sha256_16": "fc7db495290003b9"
+            "rows": 95,
+            "gzip_bytes": 2777,
+            "raw_bytes": 4956,
+            "sha256_16": "3eebba55aece5de5"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_09_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2586,
-            "raw_bytes": 4540,
-            "sha256_16": "119c362a96fde299"
+            "rows": 95,
+            "gzip_bytes": 2799,
+            "raw_bytes": 4956,
+            "sha256_16": "d3765a5a1fe24ac6"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kouyaku_10_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2569,
-            "raw_bytes": 4540,
-            "sha256_16": "c95c54c26d2ee065"
+            "rows": 95,
+            "gzip_bytes": 2778,
+            "raw_bytes": 4956,
+            "sha256_16": "4d8d85db651de437"
           }
         },
         "鶴翼": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_00_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2585,
-            "raw_bytes": 4540,
-            "sha256_16": "60e4f57fd5668b87"
+            "rows": 95,
+            "gzip_bytes": 2799,
+            "raw_bytes": 4956,
+            "sha256_16": "6cfd07fc6dc9d5a8"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_01_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2575,
-            "raw_bytes": 4540,
-            "sha256_16": "1d3b30aa18204acf"
+            "rows": 95,
+            "gzip_bytes": 2793,
+            "raw_bytes": 4956,
+            "sha256_16": "fc66e9bd8521b441"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_02_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2551,
-            "raw_bytes": 4540,
-            "sha256_16": "09f54a49b7e997e7"
+            "rows": 95,
+            "gzip_bytes": 2760,
+            "raw_bytes": 4956,
+            "sha256_16": "d9ef1e427abe8b44"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_03_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2541,
-            "raw_bytes": 4540,
-            "sha256_16": "d732a1ce238c8863"
+            "rows": 95,
+            "gzip_bytes": 2748,
+            "raw_bytes": 4956,
+            "sha256_16": "21844f1f56739dfb"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_04_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2578,
-            "raw_bytes": 4540,
-            "sha256_16": "121f58523b4a1b62"
+            "rows": 95,
+            "gzip_bytes": 2786,
+            "raw_bytes": 4956,
+            "sha256_16": "de4e8f879728df25"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_05_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2556,
-            "raw_bytes": 4540,
-            "sha256_16": "6326ffbc5eeca4bd"
+            "rows": 95,
+            "gzip_bytes": 2754,
+            "raw_bytes": 4956,
+            "sha256_16": "2bf3d7c262370b3e"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_06_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2554,
-            "raw_bytes": 4540,
-            "sha256_16": "01cc5e4a5a0633a3"
+            "rows": 95,
+            "gzip_bytes": 2765,
+            "raw_bytes": 4956,
+            "sha256_16": "0bd6986da9542870"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_07_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2586,
-            "raw_bytes": 4540,
-            "sha256_16": "4be5dde83bffc3b5"
+            "rows": 95,
+            "gzip_bytes": 2797,
+            "raw_bytes": 4956,
+            "sha256_16": "b7d62d9f6b7ddde6"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_08_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2571,
-            "raw_bytes": 4540,
-            "sha256_16": "b426e347b49f4ff1"
+            "rows": 95,
+            "gzip_bytes": 2783,
+            "raw_bytes": 4956,
+            "sha256_16": "0f0cca6ebbf1dcae"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_09_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2588,
-            "raw_bytes": 4540,
-            "sha256_16": "be75738c1a248995"
+            "rows": 95,
+            "gzip_bytes": 2804,
+            "raw_bytes": 4956,
+            "sha256_16": "2e821b906b058815"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_kakuyoku_10_v2.bin.gz",
-            "rows": 87,
-            "gzip_bytes": 2579,
-            "raw_bytes": 4540,
-            "sha256_16": "5305c4d01006d2a3"
+            "rows": 95,
+            "gzip_bytes": 2783,
+            "raw_bytes": 4956,
+            "sha256_16": "26952ff2969f5cbe"
           }
         },
         "魚鱗": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14635,
+            "gzip_bytes": 14671,
             "raw_bytes": 26016,
-            "sha256_16": "22b06e55c640edff"
+            "sha256_16": "4dfe8080c6f777d1"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14406,
+            "gzip_bytes": 14428,
             "raw_bytes": 26016,
-            "sha256_16": "1aa4046b6a68b2d8"
+            "sha256_16": "10ac31c2e8963cfd"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14006,
+            "gzip_bytes": 14003,
             "raw_bytes": 26016,
-            "sha256_16": "970975d930ec3fa7"
+            "sha256_16": "0ef4f17f39832a83"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13770,
+            "gzip_bytes": 13784,
             "raw_bytes": 26016,
-            "sha256_16": "7f67537df88eabfa"
+            "sha256_16": "970a8e9a1242ad31"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14435,
+            "gzip_bytes": 14483,
             "raw_bytes": 26016,
-            "sha256_16": "9ec20dcdae0b0dab"
+            "sha256_16": "b81b115cdb2045f0"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14148,
+            "gzip_bytes": 14156,
             "raw_bytes": 26016,
-            "sha256_16": "60c311e7c2a1a97b"
+            "sha256_16": "1907c4bc1c0d89e9"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14105,
+            "gzip_bytes": 14057,
             "raw_bytes": 26016,
-            "sha256_16": "9958e0c157b92824"
+            "sha256_16": "59cd92a787ec4baa"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13502,
+            "gzip_bytes": 13518,
             "raw_bytes": 26016,
-            "sha256_16": "d7791a8bfbaf005d"
+            "sha256_16": "4eec0afe8f3146f1"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13438,
+            "gzip_bytes": 13420,
             "raw_bytes": 26016,
-            "sha256_16": "a48ad64c8983b2d3"
+            "sha256_16": "9135bd8a61f6300e"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13417,
+            "gzip_bytes": 13443,
             "raw_bytes": 26016,
-            "sha256_16": "de75c2743972ec6e"
+            "sha256_16": "807b031bf10e3428"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_gyorin_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13346,
+            "gzip_bytes": 13347,
             "raw_bytes": 26016,
-            "sha256_16": "b8cfdb23c5866dbf"
+            "sha256_16": "b644bfde0b021369"
           }
         },
         "方円": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_00_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14641,
+            "gzip_bytes": 14693,
             "raw_bytes": 26016,
-            "sha256_16": "04d67dc8c2ba46db"
+            "sha256_16": "7446a7936258dc35"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_01_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14437,
+            "gzip_bytes": 14456,
             "raw_bytes": 26016,
-            "sha256_16": "33661120ee27c793"
+            "sha256_16": "2741bc42eda3385b"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_02_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14024,
+            "gzip_bytes": 14019,
             "raw_bytes": 26016,
-            "sha256_16": "ad9fa0ab73421a31"
+            "sha256_16": "f9ea9b60baf201c9"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_03_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13779,
+            "gzip_bytes": 13795,
             "raw_bytes": 26016,
-            "sha256_16": "e5804deed6479b48"
+            "sha256_16": "2f6fc2b41c9ab43a"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_04_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14456,
+            "gzip_bytes": 14499,
             "raw_bytes": 26016,
-            "sha256_16": "4c659ff760cdef0c"
+            "sha256_16": "987d99d7b0102e38"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_05_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14141,
+            "gzip_bytes": 14151,
             "raw_bytes": 26016,
-            "sha256_16": "1da6a3df0e379489"
+            "sha256_16": "02637053e05efef4"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_06_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 14155,
+            "gzip_bytes": 14091,
             "raw_bytes": 26016,
-            "sha256_16": "93ca8b0db91de061"
+            "sha256_16": "8a69687b5ae84c5f"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_07_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13569,
+            "gzip_bytes": 13584,
             "raw_bytes": 26016,
-            "sha256_16": "b6fdd7b7ef6101b5"
+            "sha256_16": "37ca5dd6b8c5938e"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_08_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13483,
+            "gzip_bytes": 13453,
             "raw_bytes": 26016,
-            "sha256_16": "d449deb64b776c84"
+            "sha256_16": "b6f3fe414ea807d6"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_09_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13482,
+            "gzip_bytes": 13490,
             "raw_bytes": 26016,
-            "sha256_16": "1953a7efad026d67"
+            "sha256_16": "68dd7f4babb8e4cb"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c8_hoen_10_v2.bin.gz",
             "rows": 500,
-            "gzip_bytes": 13414,
+            "gzip_bytes": 13407,
             "raw_bytes": 26016,
-            "sha256_16": "065096cca83f841d"
+            "sha256_16": "334d6fd0f24e1de4"
           }
         }
       },
@@ -2106,159 +2178,159 @@
         "魚鱗": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_00_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2937,
-            "raw_bytes": 5164,
-            "sha256_16": "f6140e7d5092d179"
+            "rows": 100,
+            "gzip_bytes": 2975,
+            "raw_bytes": 5216,
+            "sha256_16": "d02edfed7584eb31"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_01_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2899,
-            "raw_bytes": 5164,
-            "sha256_16": "b1b3b6cb83477732"
+            "rows": 100,
+            "gzip_bytes": 2936,
+            "raw_bytes": 5216,
+            "sha256_16": "c978fdf34f437903"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_02_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2918,
-            "raw_bytes": 5164,
-            "sha256_16": "a4069ee63eaa7a0f"
+            "rows": 100,
+            "gzip_bytes": 2953,
+            "raw_bytes": 5216,
+            "sha256_16": "06e04189cf2e93e0"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_03_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2895,
-            "raw_bytes": 5164,
-            "sha256_16": "149461f4b79bc773"
+            "rows": 100,
+            "gzip_bytes": 2931,
+            "raw_bytes": 5216,
+            "sha256_16": "1121f3a9b5ceabae"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_04_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2919,
-            "raw_bytes": 5164,
-            "sha256_16": "6fc44f03fa3b7f4d"
+            "rows": 100,
+            "gzip_bytes": 2955,
+            "raw_bytes": 5216,
+            "sha256_16": "c1349b9f0e7395e0"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_05_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2887,
-            "raw_bytes": 5164,
-            "sha256_16": "49c1c72ab1dc2eb6"
+            "rows": 100,
+            "gzip_bytes": 2923,
+            "raw_bytes": 5216,
+            "sha256_16": "b5f618e3dd2ad1db"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_06_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2916,
-            "raw_bytes": 5164,
-            "sha256_16": "79221438fe7b2d2a"
+            "rows": 100,
+            "gzip_bytes": 2949,
+            "raw_bytes": 5216,
+            "sha256_16": "fe5678e53befc3a9"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_07_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2926,
-            "raw_bytes": 5164,
-            "sha256_16": "970347b361f72821"
+            "rows": 100,
+            "gzip_bytes": 2963,
+            "raw_bytes": 5216,
+            "sha256_16": "32c98de340108512"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_08_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2920,
-            "raw_bytes": 5164,
-            "sha256_16": "64a16e74f00bd510"
+            "rows": 100,
+            "gzip_bytes": 2956,
+            "raw_bytes": 5216,
+            "sha256_16": "103647be625f5407"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_09_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2906,
-            "raw_bytes": 5164,
-            "sha256_16": "39f4193bda4785e7"
+            "rows": 100,
+            "gzip_bytes": 2944,
+            "raw_bytes": 5216,
+            "sha256_16": "52466177faa70c5c"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_gyorin_10_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2929,
-            "raw_bytes": 5164,
-            "sha256_16": "d3080670047ece4a"
+            "rows": 100,
+            "gzip_bytes": 2966,
+            "raw_bytes": 5216,
+            "sha256_16": "8b6fb869c31f9c3a"
           }
         },
         "方円": {
           "生命": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_00_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2945,
-            "raw_bytes": 5164,
-            "sha256_16": "878fbb937df8e2aa"
+            "rows": 100,
+            "gzip_bytes": 2980,
+            "raw_bytes": 5216,
+            "sha256_16": "915e63103a2546c9"
           },
           "気合": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_01_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2916,
-            "raw_bytes": 5164,
-            "sha256_16": "cc7be5802e73d030"
+            "rows": 100,
+            "gzip_bytes": 2952,
+            "raw_bytes": 5216,
+            "sha256_16": "bd52c62d745bfa1d"
           },
           "腕力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_02_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2920,
-            "raw_bytes": 5164,
-            "sha256_16": "e160948e787beb84"
+            "rows": 100,
+            "gzip_bytes": 2955,
+            "raw_bytes": 5216,
+            "sha256_16": "65386e2b0d6f4162"
           },
           "耐久力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_03_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2903,
-            "raw_bytes": 5164,
-            "sha256_16": "e0dfde17f3400322"
+            "rows": 100,
+            "gzip_bytes": 2936,
+            "raw_bytes": 5216,
+            "sha256_16": "d0238328b1c71168"
           },
           "器用さ": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_04_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2927,
-            "raw_bytes": 5164,
-            "sha256_16": "de96ca4e059fbfb6"
+            "rows": 100,
+            "gzip_bytes": 2964,
+            "raw_bytes": 5216,
+            "sha256_16": "be50982b411b50d4"
           },
           "知力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_05_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2899,
-            "raw_bytes": 5164,
-            "sha256_16": "3c449a8177c4ee2b"
+            "rows": 100,
+            "gzip_bytes": 2933,
+            "raw_bytes": 5216,
+            "sha256_16": "ecad77ec1fe8d1a3"
           },
           "魅力": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_06_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2926,
-            "raw_bytes": 5164,
-            "sha256_16": "354ce45733fe527c"
+            "rows": 100,
+            "gzip_bytes": 2956,
+            "raw_bytes": 5216,
+            "sha256_16": "aed1915cc981ea71"
           },
           "土属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_07_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2933,
-            "raw_bytes": 5164,
-            "sha256_16": "ca921323bc521805"
+            "rows": 100,
+            "gzip_bytes": 2970,
+            "raw_bytes": 5216,
+            "sha256_16": "3818f157a639e621"
           },
           "水属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_08_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2935,
-            "raw_bytes": 5164,
-            "sha256_16": "53bcf6300f890de3"
+            "rows": 100,
+            "gzip_bytes": 2970,
+            "raw_bytes": 5216,
+            "sha256_16": "4e8f2b005b426ec7"
           },
           "火属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_09_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2913,
-            "raw_bytes": 5164,
-            "sha256_16": "a1f1dd869ecc64fe"
+            "rows": 100,
+            "gzip_bytes": 2952,
+            "raw_bytes": 5216,
+            "sha256_16": "27a085a469922ec6"
           },
           "風属性": {
             "file": "data/compact_search_v2/jinpo_sort_normal_c9_hoen_10_v2.bin.gz",
-            "rows": 99,
-            "gzip_bytes": 2941,
-            "raw_bytes": 5164,
-            "sha256_16": "fcd2f358d6a12a14"
+            "rows": 100,
+            "gzip_bytes": 2975,
+            "raw_bytes": 5216,
+            "sha256_16": "3b26970da273b8a9"
           }
         }
       }
@@ -3862,90 +3934,90 @@
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51767,
+          "gzip_bytes": 51770,
           "raw_bytes": 108016,
-          "sha256_16": "f0e7f4d26281910f",
+          "sha256_16": "6713e63b0e0b7cf7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55738,
+          "gzip_bytes": 55633,
           "raw_bytes": 108016,
-          "sha256_16": "55fed7820d0f79e8",
+          "sha256_16": "0ba3c9bb36be2638",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55387,
+          "gzip_bytes": 55421,
           "raw_bytes": 108016,
-          "sha256_16": "1060b93bee3c76f9",
+          "sha256_16": "ed79a34b4147c9ad",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 56201,
+          "gzip_bytes": 56204,
           "raw_bytes": 108016,
-          "sha256_16": "5cbfb59639ebc4c5",
+          "sha256_16": "32476be7430255be",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55264,
+          "gzip_bytes": 55278,
           "raw_bytes": 108016,
-          "sha256_16": "ad8ac8ac5ebbd38b",
+          "sha256_16": "7f1f0b20e4c4c03e",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 56266,
+          "gzip_bytes": 56153,
           "raw_bytes": 108016,
-          "sha256_16": "413cd555191720ff",
+          "sha256_16": "8fd1a2b4ceb2c399",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55090,
+          "gzip_bytes": 55122,
           "raw_bytes": 108016,
-          "sha256_16": "0cfa5e9945f25c78",
+          "sha256_16": "b7a15c55ea61b7dc",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55117,
+          "gzip_bytes": 55187,
           "raw_bytes": 108016,
-          "sha256_16": "e321b86d3bfc92b2",
+          "sha256_16": "102e0b241e032c94",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55101,
+          "gzip_bytes": 55118,
           "raw_bytes": 108016,
-          "sha256_16": "935f1447a8e6cd1c",
+          "sha256_16": "2c9792db49b8ddd6",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/life__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55138,
+          "gzip_bytes": 55237,
           "raw_bytes": 108016,
-          "sha256_16": "cb7cd62abc94dde9",
+          "sha256_16": "cf3d8cc41afd3f13",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -3954,90 +4026,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51779,
+          "gzip_bytes": 51787,
           "raw_bytes": 108016,
-          "sha256_16": "dcfdaa7724d0d266",
+          "sha256_16": "87b0a7d07745f22c",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48906,
+          "gzip_bytes": 48912,
           "raw_bytes": 108016,
-          "sha256_16": "c89b39ccbfe67981",
+          "sha256_16": "56de1ae0ef4ad015",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 49007,
+          "gzip_bytes": 48997,
           "raw_bytes": 108016,
-          "sha256_16": "7485048a012e467b",
+          "sha256_16": "530a8920b5ebdd2a",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48831,
+          "gzip_bytes": 48756,
           "raw_bytes": 108016,
-          "sha256_16": "88549728b20f928e",
+          "sha256_16": "6fbdb5ead3dadeb2",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48977,
+          "gzip_bytes": 48981,
           "raw_bytes": 108016,
-          "sha256_16": "96cfe32fdd248c03",
+          "sha256_16": "d4aca6961f248be1",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 49100,
+          "gzip_bytes": 49132,
           "raw_bytes": 108016,
-          "sha256_16": "cb431d6c6a16a2cb",
+          "sha256_16": "6c0dfcacc085a902",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48800,
+          "gzip_bytes": 48830,
           "raw_bytes": 108016,
-          "sha256_16": "278b402d09000477",
+          "sha256_16": "480d95e9b82d3d2c",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48789,
+          "gzip_bytes": 48770,
           "raw_bytes": 108016,
-          "sha256_16": "51055a642b2a0b88",
+          "sha256_16": "1435ae4936c7e341",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48868,
+          "gzip_bytes": 48844,
           "raw_bytes": 108016,
-          "sha256_16": "76b402f70ce8cc42",
+          "sha256_16": "f59b13375dd58e11",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/ki__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48850,
+          "gzip_bytes": 48847,
           "raw_bytes": 108016,
-          "sha256_16": "38d586697ac6684c",
+          "sha256_16": "6de2e5089fe18c2d",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4046,90 +4118,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55760,
+          "gzip_bytes": 55651,
           "raw_bytes": 108016,
-          "sha256_16": "9271457843a61c92",
+          "sha256_16": "e6b3ec7fccb0bf45",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48925,
+          "gzip_bytes": 48921,
           "raw_bytes": 108016,
-          "sha256_16": "5bb4206248271f00",
+          "sha256_16": "9960859859d9a3df",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50075,
+          "gzip_bytes": 48715,
           "raw_bytes": 108016,
-          "sha256_16": "5944112357e5dff7",
+          "sha256_16": "0434bf28456b81b5",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 49611,
+          "gzip_bytes": 48506,
           "raw_bytes": 108016,
-          "sha256_16": "413f868a53377176",
+          "sha256_16": "f3e184be5ff2ba22",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54429,
+          "gzip_bytes": 54226,
           "raw_bytes": 108016,
-          "sha256_16": "6e529d4026ff0993",
+          "sha256_16": "b9c89cd491d5262f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51859,
+          "gzip_bytes": 50859,
           "raw_bytes": 108016,
-          "sha256_16": "621e0741547f1851",
+          "sha256_16": "938fe32f2540f289",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51774,
+          "gzip_bytes": 51007,
           "raw_bytes": 108016,
-          "sha256_16": "57fb02b423926ecd",
+          "sha256_16": "f9dcff3d5c18cfe3",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52855,
+          "gzip_bytes": 51817,
           "raw_bytes": 108016,
-          "sha256_16": "99d0f44d5573b0b9",
+          "sha256_16": "3a84b3b87e047a5a",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53202,
+          "gzip_bytes": 52272,
           "raw_bytes": 108016,
-          "sha256_16": "90c9d8f6fc5bac5e",
+          "sha256_16": "1409ec283dd92ea0",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/str__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52693,
+          "gzip_bytes": 51801,
           "raw_bytes": 108016,
-          "sha256_16": "27254426694682ef",
+          "sha256_16": "3ce01975903e1679",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4138,90 +4210,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55411,
+          "gzip_bytes": 55428,
           "raw_bytes": 108016,
-          "sha256_16": "34602ec790f5cea6",
+          "sha256_16": "678d005fc39c1d5d",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48997,
+          "gzip_bytes": 49000,
           "raw_bytes": 108016,
-          "sha256_16": "5b29c5f25d85caf9",
+          "sha256_16": "301870af5e4fa33f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50066,
+          "gzip_bytes": 48742,
           "raw_bytes": 108016,
-          "sha256_16": "57a2128ea685e638",
+          "sha256_16": "0dea737707230936",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52663,
+          "gzip_bytes": 52451,
           "raw_bytes": 108016,
-          "sha256_16": "01313aa8b70d4f73",
+          "sha256_16": "fbe97b8182550412",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54128,
+          "gzip_bytes": 54161,
           "raw_bytes": 108016,
-          "sha256_16": "36a35f7ac06740a9",
+          "sha256_16": "11319ec26b01da43",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53524,
+          "gzip_bytes": 53530,
           "raw_bytes": 108016,
-          "sha256_16": "9024006e62f7bca4",
+          "sha256_16": "43c6b5ef47ea459b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55156,
+          "gzip_bytes": 55158,
           "raw_bytes": 108016,
-          "sha256_16": "95ebb57637d13589",
+          "sha256_16": "8619bbc3db859326",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54928,
+          "gzip_bytes": 54784,
           "raw_bytes": 108016,
-          "sha256_16": "0b280d4d26ce4962",
+          "sha256_16": "af5b704f30a55ef8",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55215,
+          "gzip_bytes": 55127,
           "raw_bytes": 108016,
-          "sha256_16": "7257484ab5e254be",
+          "sha256_16": "4cdbe5c04023bd16",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/vit__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54422,
+          "gzip_bytes": 54236,
           "raw_bytes": 108016,
-          "sha256_16": "987120c29aa9bc56",
+          "sha256_16": "2c03df4fb07707ea",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4230,90 +4302,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 56253,
+          "gzip_bytes": 56176,
           "raw_bytes": 108016,
-          "sha256_16": "d9ab897b6f2ef4e1",
+          "sha256_16": "b9a4cf863ea58826",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48805,
+          "gzip_bytes": 48732,
           "raw_bytes": 108016,
-          "sha256_16": "e2dfa4edf3c756ca",
+          "sha256_16": "7722eff1e6fd87e5",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 49659,
+          "gzip_bytes": 48547,
           "raw_bytes": 108016,
-          "sha256_16": "1e43ea7b02230bcd",
+          "sha256_16": "8f1c613c10053c1f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52669,
+          "gzip_bytes": 52462,
           "raw_bytes": 108016,
-          "sha256_16": "929a88e0b5fb8cff",
+          "sha256_16": "764da501ffa3c01e",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52655,
+          "gzip_bytes": 52906,
           "raw_bytes": 108016,
-          "sha256_16": "cdc093c859d9d07e",
+          "sha256_16": "45a4e1fa9ce07e6e",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53793,
+          "gzip_bytes": 53768,
           "raw_bytes": 108016,
-          "sha256_16": "15a8aecd080e8257",
+          "sha256_16": "1f2661b68addc02b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52018,
+          "gzip_bytes": 52261,
           "raw_bytes": 108016,
-          "sha256_16": "ce1e7cc81556f250",
+          "sha256_16": "f718fcb9225e1a54",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52137,
+          "gzip_bytes": 52239,
           "raw_bytes": 108016,
-          "sha256_16": "5d0688c4492266b9",
+          "sha256_16": "611bd2940d87f48c",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52496,
+          "gzip_bytes": 52662,
           "raw_bytes": 108016,
-          "sha256_16": "bb050e1af3616627",
+          "sha256_16": "e824daeb2375293f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/dex__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52293,
+          "gzip_bytes": 52376,
           "raw_bytes": 108016,
-          "sha256_16": "45c65c047816ffc4",
+          "sha256_16": "2ef7fc5c3112badb",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4322,90 +4394,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55261,
+          "gzip_bytes": 55303,
           "raw_bytes": 108016,
-          "sha256_16": "c84dffb921b32510",
+          "sha256_16": "819a2e0ebb9d989b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48989,
+          "gzip_bytes": 49044,
           "raw_bytes": 108016,
-          "sha256_16": "191c14e3517e0553",
+          "sha256_16": "857683e9173fb29b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54396,
+          "gzip_bytes": 54165,
           "raw_bytes": 108016,
-          "sha256_16": "d83359c969e4c1b9",
+          "sha256_16": "c8c524a13c3ba45d",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54142,
+          "gzip_bytes": 54156,
           "raw_bytes": 108016,
-          "sha256_16": "a2d2e2fa25027fc8",
+          "sha256_16": "6d481a0a199cf983",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52637,
+          "gzip_bytes": 52928,
           "raw_bytes": 108016,
-          "sha256_16": "3deb5c79d5554a34",
+          "sha256_16": "a8dda1574fc13908",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53688,
+          "gzip_bytes": 53692,
           "raw_bytes": 108016,
-          "sha256_16": "019093d96525d61c",
+          "sha256_16": "e56e2ce7bc7e5b07",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50252,
+          "gzip_bytes": 50436,
           "raw_bytes": 108016,
-          "sha256_16": "a2e7179632d234de",
+          "sha256_16": "874cf0cd988d130b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50372,
+          "gzip_bytes": 50590,
           "raw_bytes": 108016,
-          "sha256_16": "faaab5d69a9f789b",
+          "sha256_16": "0754ec2e22a33d65",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50615,
+          "gzip_bytes": 50687,
           "raw_bytes": 108016,
-          "sha256_16": "96345d3f5d380894",
+          "sha256_16": "b931bc614bada8a7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/int__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50561,
+          "gzip_bytes": 50696,
           "raw_bytes": 108016,
-          "sha256_16": "c75ea0772eb28f62",
+          "sha256_16": "9d2567861b4a2602",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4414,45 +4486,45 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 56263,
+          "gzip_bytes": 56147,
           "raw_bytes": 108016,
-          "sha256_16": "94e3cc089b1a112b",
+          "sha256_16": "40f15452aeac8690",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 49134,
+          "gzip_bytes": 49154,
           "raw_bytes": 108016,
-          "sha256_16": "dd654b1b4497ee9d",
+          "sha256_16": "17999b42a5d1f7e9",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51898,
+          "gzip_bytes": 50837,
           "raw_bytes": 108016,
-          "sha256_16": "d5f63cc5906117d7",
+          "sha256_16": "ae9f9e210fd1ca00",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53546,
+          "gzip_bytes": 53593,
           "raw_bytes": 108016,
-          "sha256_16": "6d24db9f324494bb",
+          "sha256_16": "2fa18153840f11d7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53792,
+          "gzip_bytes": 53708,
           "raw_bytes": 108016,
-          "sha256_16": "5f07a9a172fa4e00",
+          "sha256_16": "f2ffe89c332135c8",
           "record_size": 54,
           "limit_per_formation": 500
         },
@@ -4461,43 +4533,43 @@
           "rows": 2000,
           "gzip_bytes": 53717,
           "raw_bytes": 108016,
-          "sha256_16": "432ac25e2bbdb36e",
+          "sha256_16": "19d179a32b602cb0",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54130,
+          "gzip_bytes": 54248,
           "raw_bytes": 108016,
-          "sha256_16": "1fc5082dcfb82648",
+          "sha256_16": "cec0356793f6c9bd",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54293,
+          "gzip_bytes": 54218,
           "raw_bytes": 108016,
-          "sha256_16": "707525f30d0f237c",
+          "sha256_16": "799fa2a2f842ac80",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54316,
+          "gzip_bytes": 54424,
           "raw_bytes": 108016,
-          "sha256_16": "07f37aa38dc9fa18",
+          "sha256_16": "2bb37984da6d548f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/cha__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53938,
+          "gzip_bytes": 53899,
           "raw_bytes": 108016,
-          "sha256_16": "2b4048f0e6bb0b32",
+          "sha256_16": "ae2e4d446958b98f",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4506,90 +4578,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55075,
+          "gzip_bytes": 55134,
           "raw_bytes": 108016,
-          "sha256_16": "5c222e0c2d572a31",
+          "sha256_16": "4675fb4ec235ab0d",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48811,
+          "gzip_bytes": 48853,
           "raw_bytes": 108016,
-          "sha256_16": "9351e177e849e9e5",
+          "sha256_16": "92be198d65c158bc",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51790,
+          "gzip_bytes": 51003,
           "raw_bytes": 108016,
-          "sha256_16": "e2006bf9fba237af",
+          "sha256_16": "9fbbf0825a15e323",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55211,
+          "gzip_bytes": 55198,
           "raw_bytes": 108016,
-          "sha256_16": "4acd939b87410633",
+          "sha256_16": "3c12b697a22fd9a7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52009,
+          "gzip_bytes": 52311,
           "raw_bytes": 108016,
-          "sha256_16": "08f7c241276362ea",
+          "sha256_16": "5c25425acf8cdbc2",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50289,
+          "gzip_bytes": 50445,
           "raw_bytes": 108016,
-          "sha256_16": "687fe831f17c6ae2",
+          "sha256_16": "452212766e6873b7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54180,
+          "gzip_bytes": 54266,
           "raw_bytes": 108016,
-          "sha256_16": "bdb0ed4e49f6013e",
+          "sha256_16": "e44ce3b4574dfebf",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51123,
+          "gzip_bytes": 51272,
           "raw_bytes": 108016,
-          "sha256_16": "cd1956dec7741190",
+          "sha256_16": "39501030e612dc0a",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50928,
+          "gzip_bytes": 51271,
           "raw_bytes": 108016,
-          "sha256_16": "a5dea6daa958bdbd",
+          "sha256_16": "84b943a5ba46de5b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/earth__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51102,
+          "gzip_bytes": 51322,
           "raw_bytes": 108016,
-          "sha256_16": "860f38f429b32765",
+          "sha256_16": "cf28d38d5c3b4364",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4598,90 +4670,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55104,
+          "gzip_bytes": 55156,
           "raw_bytes": 108016,
-          "sha256_16": "74d5bbeb18c84979",
+          "sha256_16": "b6386c3c0048d6e5",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48795,
+          "gzip_bytes": 48802,
           "raw_bytes": 108016,
-          "sha256_16": "a051f122f3231004",
+          "sha256_16": "0898e9f7d6b21dd0",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52871,
+          "gzip_bytes": 51829,
           "raw_bytes": 108016,
-          "sha256_16": "5eff69b4d5f359b4",
+          "sha256_16": "84c6077d79cd066d",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54901,
+          "gzip_bytes": 54721,
           "raw_bytes": 108016,
-          "sha256_16": "c34cbe457eca65b3",
+          "sha256_16": "f743230ff0c74492",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52104,
+          "gzip_bytes": 52224,
           "raw_bytes": 108016,
-          "sha256_16": "de30a2d94d50db07",
+          "sha256_16": "71de38d8bbb9af5e",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50341,
+          "gzip_bytes": 50535,
           "raw_bytes": 108016,
-          "sha256_16": "cb51923959731ae1",
+          "sha256_16": "93af69880bcc7c18",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54314,
+          "gzip_bytes": 54245,
           "raw_bytes": 108016,
-          "sha256_16": "78eed5f76731e702",
+          "sha256_16": "87c202bc3fcc62af",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51063,
+          "gzip_bytes": 51268,
           "raw_bytes": 108016,
-          "sha256_16": "b8bea9027bfca4a0",
+          "sha256_16": "2c597396acfa2f93",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51390,
+          "gzip_bytes": 51608,
           "raw_bytes": 108016,
-          "sha256_16": "d05203017feb2c92",
+          "sha256_16": "9344bbbb78329af6",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/water__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51207,
+          "gzip_bytes": 51431,
           "raw_bytes": 108016,
-          "sha256_16": "64ef60c07c262926",
+          "sha256_16": "6f1e040ae0a8514b",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4690,90 +4762,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55034,
+          "gzip_bytes": 55111,
           "raw_bytes": 108016,
-          "sha256_16": "6eded38eb8c521f8",
+          "sha256_16": "eb3119a1539edbbe",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48887,
+          "gzip_bytes": 48839,
           "raw_bytes": 108016,
-          "sha256_16": "d3d896dd6e310763",
+          "sha256_16": "0b2b9b7bea3fada0",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53252,
+          "gzip_bytes": 52296,
           "raw_bytes": 108016,
-          "sha256_16": "9de99889e878c70e",
+          "sha256_16": "90a7ecb6efa7e41a",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55180,
+          "gzip_bytes": 55064,
           "raw_bytes": 108016,
-          "sha256_16": "8b6fc26b2ff18c13",
+          "sha256_16": "503cd83098b1b417",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52522,
+          "gzip_bytes": 52665,
           "raw_bytes": 108016,
-          "sha256_16": "b5135aeca42700c5",
+          "sha256_16": "73be8818d3985928",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50601,
+          "gzip_bytes": 50662,
           "raw_bytes": 108016,
-          "sha256_16": "18611f2bb1b475d3",
+          "sha256_16": "cb1c38e30e89d2e5",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54293,
+          "gzip_bytes": 54410,
           "raw_bytes": 108016,
-          "sha256_16": "3cd00d4f415b1372",
+          "sha256_16": "f8c30da00af34af4",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50891,
+          "gzip_bytes": 51247,
           "raw_bytes": 108016,
-          "sha256_16": "4c52bbf4a9da5912",
+          "sha256_16": "dfdb80ae93615563",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51437,
+          "gzip_bytes": 51564,
           "raw_bytes": 108016,
-          "sha256_16": "17197f23110c0c15",
+          "sha256_16": "ef329add45967eef",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "風属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/fire__wind.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51280,
+          "gzip_bytes": 51446,
           "raw_bytes": 108016,
-          "sha256_16": "d4039970fed7f17b",
+          "sha256_16": "716850364141295c",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -4782,90 +4854,90 @@
         "生命": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__life.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 55108,
+          "gzip_bytes": 55212,
           "raw_bytes": 108016,
-          "sha256_16": "7fbb8a2cc32a37e7",
+          "sha256_16": "820966b7850ba33f",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "気合": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__ki.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 48797,
+          "gzip_bytes": 48840,
           "raw_bytes": 108016,
-          "sha256_16": "edf906d71d0c9a47",
+          "sha256_16": "7355a6fbaa4ed8b7",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "腕力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__str.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52711,
+          "gzip_bytes": 51769,
           "raw_bytes": 108016,
-          "sha256_16": "ccafe53914553b4e",
+          "sha256_16": "9475fb8f9d17466e",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "耐久力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__vit.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 54406,
+          "gzip_bytes": 54213,
           "raw_bytes": 108016,
-          "sha256_16": "2ce31eae7584d593",
+          "sha256_16": "4a4f1a6bd01cc101",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "器用さ": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__dex.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 52251,
+          "gzip_bytes": 52377,
           "raw_bytes": 108016,
-          "sha256_16": "aaac2bc6adbf31c6",
+          "sha256_16": "eecfacf01f6cde0b",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "知力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__int.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 50526,
+          "gzip_bytes": 50686,
           "raw_bytes": 108016,
-          "sha256_16": "42ef2d6cd2b754d5",
+          "sha256_16": "3cfbf757f428ea10",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "魅力": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__cha.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 53890,
+          "gzip_bytes": 53912,
           "raw_bytes": 108016,
-          "sha256_16": "5988ab8ce3095d88",
+          "sha256_16": "3cd7d61024a8f2b9",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "土属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__earth.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51155,
+          "gzip_bytes": 51339,
           "raw_bytes": 108016,
-          "sha256_16": "96aecce57578a6f4",
+          "sha256_16": "fc7eabd0d9d53d78",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "水属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__water.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51260,
+          "gzip_bytes": 51449,
           "raw_bytes": 108016,
-          "sha256_16": "68250d1513169034",
+          "sha256_16": "f328753a80b41326",
           "record_size": 54,
           "limit_per_formation": 500
         },
         "火属性": {
           "file": "data/compact_search_v2/recommend_sum_top/normal/wind__fire.bin.gz",
           "rows": 2000,
-          "gzip_bytes": 51271,
+          "gzip_bytes": 51436,
           "raw_bytes": 108016,
-          "sha256_16": "fbf17f5599ffe905",
+          "sha256_16": "5e1dded0b2c93cad",
           "record_size": 54,
           "limit_per_formation": 500
         }
@@ -5894,89 +5966,89 @@
         "file": "data/compact_search_v2/fullmax_recommend/normal/life.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 104194,
+        "gzip_bytes": 104378,
         "raw_bytes": 160016,
-        "sha256_16": "0ef3a299d0ec12d0"
+        "sha256_16": "ad80c711d12739e3"
       },
       "気合": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/ki.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 86690,
+        "gzip_bytes": 86528,
         "raw_bytes": 160016,
-        "sha256_16": "a9b74f9537cd5cf3"
+        "sha256_16": "cae95c858453b845"
       },
       "腕力": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/str.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 88011,
+        "gzip_bytes": 85976,
         "raw_bytes": 160016,
-        "sha256_16": "778c8c156ca4ff49"
+        "sha256_16": "026a59102f789704"
       },
       "耐久力": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/vit.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 94531,
+        "gzip_bytes": 94518,
         "raw_bytes": 160016,
-        "sha256_16": "0acb9f454a4e024d"
+        "sha256_16": "54bce0603cf6315b"
       },
       "器用さ": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/dex.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 95825,
+        "gzip_bytes": 96244,
         "raw_bytes": 160016,
-        "sha256_16": "56c09b7517f5f1b7"
+        "sha256_16": "d8cdb63fbe8b75ae"
       },
       "知力": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/int.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 95903,
+        "gzip_bytes": 95956,
         "raw_bytes": 160016,
-        "sha256_16": "ab2b50973b972713"
+        "sha256_16": "c5c95206ec0e2dd9"
       },
       "魅力": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/cha.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 98932,
+        "gzip_bytes": 98889,
         "raw_bytes": 160016,
-        "sha256_16": "5f5654906d75d865"
+        "sha256_16": "6a93a2a1f703a357"
       },
       "土属性": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/earth.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 92616,
+        "gzip_bytes": 92883,
         "raw_bytes": 160016,
-        "sha256_16": "bbeaf8af4d98e296"
+        "sha256_16": "80bfaaaf84af28af"
       },
       "水属性": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/water.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 93068,
+        "gzip_bytes": 93291,
         "raw_bytes": 160016,
-        "sha256_16": "157fef06882c7f1f"
+        "sha256_16": "df8924089c8c9961"
       },
       "火属性": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/fire.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 93978,
+        "gzip_bytes": 94158,
         "raw_bytes": 160016,
-        "sha256_16": "9d300397d433ddc7"
+        "sha256_16": "3e2320625c2d70cd"
       },
       "風属性": {
         "file": "data/compact_search_v2/fullmax_recommend/normal/wind.bin.gz",
         "rows": 2000,
         "record_size": 80,
-        "gzip_bytes": 92391,
+        "gzip_bytes": 92632,
         "raw_bytes": 160016,
-        "sha256_16": "308c4f9a3ea60eda"
+        "sha256_16": "8d6dcc62743f1c7a"
       }
     },
     "grade3": {
@@ -6077,81 +6149,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91668,
+          "gzip_bytes": 91632,
           "raw_bytes": 160016,
-          "sha256_16": "e8ac152cf78956ea"
+          "sha256_16": "a659ecebb6fdbdcf"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 105345,
+          "gzip_bytes": 105145,
           "raw_bytes": 160016,
-          "sha256_16": "3d515c2c2ca5af26"
+          "sha256_16": "0632b9dc4c14ef1a"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 104879,
+          "gzip_bytes": 104764,
           "raw_bytes": 160016,
-          "sha256_16": "2cff28dd36b0c7c3"
+          "sha256_16": "da119b89854a3712"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 104694,
+          "gzip_bytes": 104668,
           "raw_bytes": 160016,
-          "sha256_16": "491e720d5e93b4e8"
+          "sha256_16": "bcd7c5dd0783183e"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102050,
+          "gzip_bytes": 102124,
           "raw_bytes": 160016,
-          "sha256_16": "70710b4ac457bbc8"
+          "sha256_16": "70c462ac212e447b"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 105197,
+          "gzip_bytes": 104864,
           "raw_bytes": 160016,
-          "sha256_16": "0e03631e74b5d271"
+          "sha256_16": "58919c3d2a0cfe6b"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102353,
+          "gzip_bytes": 102629,
           "raw_bytes": 160016,
-          "sha256_16": "64dd5fd019e6934a"
+          "sha256_16": "72f5ba315c7ac3a8"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102303,
+          "gzip_bytes": 102539,
           "raw_bytes": 160016,
-          "sha256_16": "54e955cb8f9de187"
+          "sha256_16": "bb8878fd6a9c01ef"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102475,
+          "gzip_bytes": 102724,
           "raw_bytes": 160016,
-          "sha256_16": "e8d9d9948d4fc7a0"
+          "sha256_16": "17c7a75dd8dcb93e"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/life__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102321,
+          "gzip_bytes": 102441,
           "raw_bytes": 160016,
-          "sha256_16": "b789cbc156b1a3d9"
+          "sha256_16": "b338e4764b7fd8fc"
         }
       },
       "気合": {
@@ -6159,81 +6231,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91684,
+          "gzip_bytes": 91649,
           "raw_bytes": 160016,
-          "sha256_16": "a4d61726a764b37b"
+          "sha256_16": "2b41f5f47b85f598"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87496,
+          "gzip_bytes": 87448,
           "raw_bytes": 160016,
-          "sha256_16": "b15bc93f21204e65"
+          "sha256_16": "017316b195941a4b"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87142,
+          "gzip_bytes": 87097,
           "raw_bytes": 160016,
-          "sha256_16": "00024a956a542a78"
+          "sha256_16": "1c3bc1ade84e3caf"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86944,
+          "gzip_bytes": 86764,
           "raw_bytes": 160016,
-          "sha256_16": "2bbf329163a87f0b"
+          "sha256_16": "6d799a7a02ec7d19"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86743,
+          "gzip_bytes": 86631,
           "raw_bytes": 160016,
-          "sha256_16": "d5d132baa7c4157b"
+          "sha256_16": "26029ae39195558a"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87387,
+          "gzip_bytes": 87313,
           "raw_bytes": 160016,
-          "sha256_16": "75b2bcbb2a22825f"
+          "sha256_16": "2cfcb3b3c93f5784"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86847,
+          "gzip_bytes": 86643,
           "raw_bytes": 160016,
-          "sha256_16": "3adce36fa8c3fed5"
+          "sha256_16": "d4dd1d6633fce616"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86877,
+          "gzip_bytes": 86655,
           "raw_bytes": 160016,
-          "sha256_16": "7353a0050cccc1eb"
+          "sha256_16": "38d7fa4ffc6e8a24"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86886,
+          "gzip_bytes": 86671,
           "raw_bytes": 160016,
-          "sha256_16": "5e32b7f131160bb4"
+          "sha256_16": "ae0198a7b6792a17"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/ki__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86845,
+          "gzip_bytes": 86658,
           "raw_bytes": 160016,
-          "sha256_16": "2acfa1ae7e36f020"
+          "sha256_16": "31f28b0a4b43077e"
         }
       },
       "腕力": {
@@ -6241,81 +6313,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 105331,
+          "gzip_bytes": 105142,
           "raw_bytes": 160016,
-          "sha256_16": "f16a28f03ec98a64"
+          "sha256_16": "a08ac6eccee8099b"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87498,
+          "gzip_bytes": 87440,
           "raw_bytes": 160016,
-          "sha256_16": "16a8ef47f3be494b"
+          "sha256_16": "e403207e62bcea36"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91640,
+          "gzip_bytes": 88423,
           "raw_bytes": 160016,
-          "sha256_16": "a286a3475bfb5eb0"
+          "sha256_16": "8d0bc12e57515f0d"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93053,
+          "gzip_bytes": 92284,
           "raw_bytes": 160016,
-          "sha256_16": "2b40e2abd8a81a61"
+          "sha256_16": "4edb1efc32b131bb"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98243,
+          "gzip_bytes": 97427,
           "raw_bytes": 160016,
-          "sha256_16": "1f98b69c925c899a"
+          "sha256_16": "09576d842a0f0af9"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 94620,
+          "gzip_bytes": 92815,
           "raw_bytes": 160016,
-          "sha256_16": "79cc1f3ef5838b84"
+          "sha256_16": "56042ffab355ed75"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98458,
+          "gzip_bytes": 98004,
           "raw_bytes": 160016,
-          "sha256_16": "ef0e146bcb3b9d19"
+          "sha256_16": "a5b5ec92d2dfccf2"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98493,
+          "gzip_bytes": 98170,
           "raw_bytes": 160016,
-          "sha256_16": "878021b2959433a3"
+          "sha256_16": "32aca2cd2bf72fad"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98363,
+          "gzip_bytes": 97989,
           "raw_bytes": 160016,
-          "sha256_16": "dc36b9375de0a78f"
+          "sha256_16": "58d0f0a4ea9f826c"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/str__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98571,
+          "gzip_bytes": 98113,
           "raw_bytes": 160016,
-          "sha256_16": "91711f063bebfafc"
+          "sha256_16": "105f38a95fbd5366"
         }
       },
       "耐久力": {
@@ -6323,81 +6395,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 104862,
+          "gzip_bytes": 104735,
           "raw_bytes": 160016,
-          "sha256_16": "036d671bd8b9a98a"
+          "sha256_16": "65aa15b924ebd168"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87166,
+          "gzip_bytes": 87133,
           "raw_bytes": 160016,
-          "sha256_16": "c7dce5879b044709"
+          "sha256_16": "7947df3447c82c99"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91744,
+          "gzip_bytes": 88470,
           "raw_bytes": 160016,
-          "sha256_16": "cd10b1eeab28b02a"
+          "sha256_16": "76e4044c02120537"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 96215,
+          "gzip_bytes": 96950,
           "raw_bytes": 160016,
-          "sha256_16": "5813d5916a2ee103"
+          "sha256_16": "9e77c662bf8cd234"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99112,
+          "gzip_bytes": 99118,
           "raw_bytes": 160016,
-          "sha256_16": "5fc150e9824f477c"
+          "sha256_16": "0526c87be2b47c85"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99612,
+          "gzip_bytes": 99483,
           "raw_bytes": 160016,
-          "sha256_16": "b984df58efcd92ae"
+          "sha256_16": "1f05945b286ed4ea"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98325,
+          "gzip_bytes": 98393,
           "raw_bytes": 160016,
-          "sha256_16": "cc7a2fc79e9dbcf9"
+          "sha256_16": "56e5c7179188771d"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98156,
+          "gzip_bytes": 98102,
           "raw_bytes": 160016,
-          "sha256_16": "6b13c6bac67517df"
+          "sha256_16": "b6b8ca063ec099b5"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98406,
+          "gzip_bytes": 98379,
           "raw_bytes": 160016,
-          "sha256_16": "63992ab6b6505e16"
+          "sha256_16": "531d50313880d827"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/vit__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98112,
+          "gzip_bytes": 98034,
           "raw_bytes": 160016,
-          "sha256_16": "5110b0bacd72dae5"
+          "sha256_16": "c66278dc641227aa"
         }
       },
       "器用さ": {
@@ -6405,81 +6477,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 104635,
+          "gzip_bytes": 104693,
           "raw_bytes": 160016,
-          "sha256_16": "2fe4bc9d35956292"
+          "sha256_16": "d49207184a923205"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86930,
+          "gzip_bytes": 86747,
           "raw_bytes": 160016,
-          "sha256_16": "72730fcd36cb038f"
+          "sha256_16": "53f271eb2f28a3dd"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93027,
+          "gzip_bytes": 92272,
           "raw_bytes": 160016,
-          "sha256_16": "9c17feee94fdc6f2"
+          "sha256_16": "3812e81da51f6fa9"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 96228,
+          "gzip_bytes": 96931,
           "raw_bytes": 160016,
-          "sha256_16": "36d3538f14d14943"
+          "sha256_16": "721c28aa788fcaf2"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95441,
+          "gzip_bytes": 95586,
           "raw_bytes": 160016,
-          "sha256_16": "a0c300b7fba2db57"
+          "sha256_16": "19a19aa3de4edcc2"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98014,
+          "gzip_bytes": 98025,
           "raw_bytes": 160016,
-          "sha256_16": "c5fd3ecb37fa6a98"
+          "sha256_16": "431fcdb981586a81"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 94902,
+          "gzip_bytes": 95083,
           "raw_bytes": 160016,
-          "sha256_16": "8ac274c226afc67c"
+          "sha256_16": "c0fdd85b33a0ad73"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95030,
+          "gzip_bytes": 95164,
           "raw_bytes": 160016,
-          "sha256_16": "50564e161678a5b6"
+          "sha256_16": "11c6fb1b8e759137"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95462,
+          "gzip_bytes": 95647,
           "raw_bytes": 160016,
-          "sha256_16": "784c34c18a057599"
+          "sha256_16": "d0eb3d9a65ab16e0"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/dex__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95164,
+          "gzip_bytes": 95298,
           "raw_bytes": 160016,
-          "sha256_16": "b37bbb7116c1fb88"
+          "sha256_16": "a734fce15d1f3064"
         }
       },
       "知力": {
@@ -6487,81 +6559,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102069,
+          "gzip_bytes": 102138,
           "raw_bytes": 160016,
-          "sha256_16": "3941f9791b83880d"
+          "sha256_16": "b18cbc558169120e"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86755,
+          "gzip_bytes": 86631,
           "raw_bytes": 160016,
-          "sha256_16": "a6a5e84397e49b7c"
+          "sha256_16": "cc86a57c26d5920a"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98231,
+          "gzip_bytes": 97426,
           "raw_bytes": 160016,
-          "sha256_16": "55ae780f7faf8eec"
+          "sha256_16": "017f490066250607"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99149,
+          "gzip_bytes": 99141,
           "raw_bytes": 160016,
-          "sha256_16": "d7c206ca5f89e2e6"
+          "sha256_16": "1fdf41859ec665cd"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95443,
+          "gzip_bytes": 95565,
           "raw_bytes": 160016,
-          "sha256_16": "ab6db7fd20164da3"
+          "sha256_16": "8949ed82f991de9c"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98568,
+          "gzip_bytes": 98624,
           "raw_bytes": 160016,
-          "sha256_16": "2cb14e0957a0767b"
+          "sha256_16": "ba9e4b4c0612f7cf"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91419,
+          "gzip_bytes": 91501,
           "raw_bytes": 160016,
-          "sha256_16": "a658d699a8f8d94e"
+          "sha256_16": "07bbc2edbf81ff69"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91412,
+          "gzip_bytes": 91458,
           "raw_bytes": 160016,
-          "sha256_16": "b474da339726bc26"
+          "sha256_16": "7ecfd4c4b339b6fd"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92138,
+          "gzip_bytes": 92396,
           "raw_bytes": 160016,
-          "sha256_16": "92c44ee71c3b310a"
+          "sha256_16": "78722845ad49c345"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/int__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91500,
+          "gzip_bytes": 91585,
           "raw_bytes": 160016,
-          "sha256_16": "d4173a1ffe0901d5"
+          "sha256_16": "71723d08c884b634"
         }
       },
       "魅力": {
@@ -6569,81 +6641,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 105185,
+          "gzip_bytes": 104888,
           "raw_bytes": 160016,
-          "sha256_16": "de104cb0451b139c"
+          "sha256_16": "cb8e30679a0b5f73"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 87374,
+          "gzip_bytes": 87308,
           "raw_bytes": 160016,
-          "sha256_16": "e5d1a3213d425c2e"
+          "sha256_16": "cc053b7ab609ef04"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 94631,
+          "gzip_bytes": 92827,
           "raw_bytes": 160016,
-          "sha256_16": "9b2cab8fa4fd2e60"
+          "sha256_16": "139d1a0559c7c109"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99651,
+          "gzip_bytes": 99544,
           "raw_bytes": 160016,
-          "sha256_16": "905e28b072372b91"
+          "sha256_16": "a939b0e29035d714"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98010,
+          "gzip_bytes": 98059,
           "raw_bytes": 160016,
-          "sha256_16": "1d23f3d3e615102c"
+          "sha256_16": "63f535a1a0a736b4"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98571,
+          "gzip_bytes": 98586,
           "raw_bytes": 160016,
-          "sha256_16": "5e8bcc181d9a59c6"
+          "sha256_16": "ac647e8eaf6ba36d"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99125,
+          "gzip_bytes": 99122,
           "raw_bytes": 160016,
-          "sha256_16": "fd65eb0ca659222a"
+          "sha256_16": "c207aa65749b4ee0"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99300,
+          "gzip_bytes": 99317,
           "raw_bytes": 160016,
-          "sha256_16": "81285d5931c4301d"
+          "sha256_16": "19dc9d147e24d0ec"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99243,
+          "gzip_bytes": 99344,
           "raw_bytes": 160016,
-          "sha256_16": "d32adfad551e0acb"
+          "sha256_16": "a41f553de668af38"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/cha__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98555,
+          "gzip_bytes": 98682,
           "raw_bytes": 160016,
-          "sha256_16": "b64bb1c7b1477f9f"
+          "sha256_16": "789ce5265341cb16"
         }
       },
       "土属性": {
@@ -6651,81 +6723,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102301,
+          "gzip_bytes": 102571,
           "raw_bytes": 160016,
-          "sha256_16": "917a64c14e81c51d"
+          "sha256_16": "1414351b3b91f4ea"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86857,
+          "gzip_bytes": 86671,
           "raw_bytes": 160016,
-          "sha256_16": "8972a46fac583fd4"
+          "sha256_16": "130af934d98a975f"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98494,
+          "gzip_bytes": 98037,
           "raw_bytes": 160016,
-          "sha256_16": "c6e4931cf3752ae2"
+          "sha256_16": "9f45b46859549f64"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98288,
+          "gzip_bytes": 98398,
           "raw_bytes": 160016,
-          "sha256_16": "2dafea3aa27af38b"
+          "sha256_16": "5ca3a304c8f2db9c"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 94870,
+          "gzip_bytes": 95047,
           "raw_bytes": 160016,
-          "sha256_16": "268a7f970f2b854a"
+          "sha256_16": "3cb0e246138f313a"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91413,
+          "gzip_bytes": 91500,
           "raw_bytes": 160016,
-          "sha256_16": "d9c0e531c0223a3f"
+          "sha256_16": "149ab2efbcf801e7"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99109,
+          "gzip_bytes": 99165,
           "raw_bytes": 160016,
-          "sha256_16": "0ca19ded688726f5"
+          "sha256_16": "6068a5f004db5c89"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92308,
+          "gzip_bytes": 92656,
           "raw_bytes": 160016,
-          "sha256_16": "e75390a141a8638d"
+          "sha256_16": "d17f9e4c9b15d50c"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92789,
+          "gzip_bytes": 93049,
           "raw_bytes": 160016,
-          "sha256_16": "2baec98f23c59677"
+          "sha256_16": "64f404d4029c8243"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/earth__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92688,
+          "gzip_bytes": 93012,
           "raw_bytes": 160016,
-          "sha256_16": "6e6479f5fc16d7c4"
+          "sha256_16": "569195d8d80b423d"
         }
       },
       "水属性": {
@@ -6733,81 +6805,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102275,
+          "gzip_bytes": 102500,
           "raw_bytes": 160016,
-          "sha256_16": "08999d1d304d55b8"
+          "sha256_16": "cc3f47f0b9b09853"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86879,
+          "gzip_bytes": 86661,
           "raw_bytes": 160016,
-          "sha256_16": "7c19e90ad73dda8c"
+          "sha256_16": "807badfc6c280667"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98513,
+          "gzip_bytes": 98138,
           "raw_bytes": 160016,
-          "sha256_16": "faca919222d5b238"
+          "sha256_16": "7dc52b1fad24abf8"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98126,
+          "gzip_bytes": 98103,
           "raw_bytes": 160016,
-          "sha256_16": "9809e7c9d04ff4c3"
+          "sha256_16": "3cd56c015567ffdb"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95017,
+          "gzip_bytes": 95143,
           "raw_bytes": 160016,
-          "sha256_16": "aa54f1a54d64d575"
+          "sha256_16": "81ad08302d0b17db"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91402,
+          "gzip_bytes": 91441,
           "raw_bytes": 160016,
-          "sha256_16": "fe7379943fb516f4"
+          "sha256_16": "ffc776dda52f9a9d"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99280,
+          "gzip_bytes": 99310,
           "raw_bytes": 160016,
-          "sha256_16": "49e9dbd672324fe8"
+          "sha256_16": "c8f8035f48ec66d6"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92338,
+          "gzip_bytes": 92681,
           "raw_bytes": 160016,
-          "sha256_16": "88a0aa9270a24e28"
+          "sha256_16": "7af83eea75d4cb7b"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93009,
+          "gzip_bytes": 93356,
           "raw_bytes": 160016,
-          "sha256_16": "eae30f5e091de0fd"
+          "sha256_16": "435229b2d14239b3"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/water__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92753,
+          "gzip_bytes": 92955,
           "raw_bytes": 160016,
-          "sha256_16": "632c6f9f6c94af82"
+          "sha256_16": "a2487d5009dec948"
         }
       },
       "火属性": {
@@ -6815,81 +6887,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102458,
+          "gzip_bytes": 102692,
           "raw_bytes": 160016,
-          "sha256_16": "94647daa44ce0a3d"
+          "sha256_16": "b8c008eebfd83e46"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86904,
+          "gzip_bytes": 86680,
           "raw_bytes": 160016,
-          "sha256_16": "ccc22ffe3ad63b75"
+          "sha256_16": "ec5b45dd4eb15dcf"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98463,
+          "gzip_bytes": 98107,
           "raw_bytes": 160016,
-          "sha256_16": "7511cfaefca0ff43"
+          "sha256_16": "8e71bc9d2e101568"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98354,
+          "gzip_bytes": 98324,
           "raw_bytes": 160016,
-          "sha256_16": "c64730fe4a8893d0"
+          "sha256_16": "425c33d5a8548b94"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95441,
+          "gzip_bytes": 95620,
           "raw_bytes": 160016,
-          "sha256_16": "691ba6709e0328d0"
+          "sha256_16": "c52f3578bd83e900"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92119,
+          "gzip_bytes": 92368,
           "raw_bytes": 160016,
-          "sha256_16": "205e52c10dec2770"
+          "sha256_16": "4fd052e85d0468a3"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 99180,
+          "gzip_bytes": 99267,
           "raw_bytes": 160016,
-          "sha256_16": "acf362ed36cacbc5"
+          "sha256_16": "6628a05441a971d6"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92719,
+          "gzip_bytes": 93001,
           "raw_bytes": 160016,
-          "sha256_16": "6d236706b6577d3e"
+          "sha256_16": "ae284cef08b12cf3"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93043,
+          "gzip_bytes": 93388,
           "raw_bytes": 160016,
-          "sha256_16": "c66e6ebd37c18aa4"
+          "sha256_16": "caa6646ec16a5beb"
         },
         "風属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/fire__wind.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93062,
+          "gzip_bytes": 93306,
           "raw_bytes": 160016,
-          "sha256_16": "c159582ee69846cc"
+          "sha256_16": "b52fecb53f1d5fdd"
         }
       },
       "風属性": {
@@ -6897,81 +6969,81 @@
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__life.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 102262,
+          "gzip_bytes": 102414,
           "raw_bytes": 160016,
-          "sha256_16": "7d172ce601141bc6"
+          "sha256_16": "ec6a12cc574f4601"
         },
         "気合": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__ki.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 86830,
+          "gzip_bytes": 86641,
           "raw_bytes": 160016,
-          "sha256_16": "fee11942ac1f6c7b"
+          "sha256_16": "8181d657dd31107e"
         },
         "腕力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__str.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98555,
+          "gzip_bytes": 98062,
           "raw_bytes": 160016,
-          "sha256_16": "7af043ed644c87f1"
+          "sha256_16": "bee4e77035cc7691"
         },
         "耐久力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__vit.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98123,
+          "gzip_bytes": 98059,
           "raw_bytes": 160016,
-          "sha256_16": "be2fcff63e62de13"
+          "sha256_16": "eefa4e50e53eb7d6"
         },
         "器用さ": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__dex.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 95152,
+          "gzip_bytes": 95300,
           "raw_bytes": 160016,
-          "sha256_16": "1399c57be0c10013"
+          "sha256_16": "6a2b817c8978c811"
         },
         "知力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__int.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 91490,
+          "gzip_bytes": 91590,
           "raw_bytes": 160016,
-          "sha256_16": "67a7f1f410e671c0"
+          "sha256_16": "da12aa187d76325f"
         },
         "魅力": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__cha.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 98489,
+          "gzip_bytes": 98614,
           "raw_bytes": 160016,
-          "sha256_16": "af6201013aaa61b0"
+          "sha256_16": "8256df3437944f3c"
         },
         "土属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__earth.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92687,
+          "gzip_bytes": 93054,
           "raw_bytes": 160016,
-          "sha256_16": "f73a5705102797a9"
+          "sha256_16": "ae5764948b50ab68"
         },
         "水属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__water.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 92759,
+          "gzip_bytes": 92967,
           "raw_bytes": 160016,
-          "sha256_16": "2a0490450d00e003"
+          "sha256_16": "8f8b1cf8bc4016ac"
         },
         "火属性": {
           "file": "data/compact_search_v2/fullmax_recommend/normal/wind__fire.bin.gz",
           "rows": 2000,
           "record_size": 80,
-          "gzip_bytes": 93049,
+          "gzip_bytes": 93296,
           "raw_bytes": 160016,
-          "sha256_16": "dea5211c422b2940"
+          "sha256_16": "43a5dc24f770efdb"
         }
       }
     },
