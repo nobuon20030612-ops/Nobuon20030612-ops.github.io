@@ -15,6 +15,7 @@ from pathlib import Path
 
 from factor4_optimizer import minimal_factor4_mask
 from formation_spec import LINES
+from rebuild_all_compact import read_manifest_entry, manifest_parts, manifest_entry_source
 
 ROOT=Path(__file__).resolve().parents[1]
 REPO=ROOT.parent
@@ -131,27 +132,25 @@ def validate_factor4_optimizer():
         for count,forms in counts.items():
             for form,info in forms.items():
                 if checked>=180: break
-                path=ROOT/info['file']
-                with gzip.open(path,'rb') as f:
-                    head=f.read(16)
-                    if len(head)!=16 or head[:4]!=b'JCF1': fail(f'文曲監査DBヘッダ不正: {info["file"]}')
-                    rows=struct.unpack_from('<I',head,8)[0]
-                    if not rows: continue
-                    take=min(40,rows)
-                    step=max(1,rows//take)
-                    for i in range(rows):
-                        rec=f.read(52)
-                        if len(rec)!=52: fail(f'文曲監査DB長不正: {info["file"]}')
-                        if i%step!=0: continue
-                        p6=struct.unpack_from('<6H',rec,0)
-                        bids=tuple(x for x in rec[12:21] if x)
-                        if not bids: fail(f'成立DBなのに因縁0: {info["file"]} row={i}')
-                        a=minimal_factor4_mask(p6,form,bids,LINES,heroes,bonds,cache)
-                        b=brute_factor4(p6,form,bids,heroes,bonds)
-                        if a!=b: fail(f'文曲全体最適化不一致: form={form} placement={p6} got={a} expected={b}')
-                        if a.bit_count()!=rec[47]: fail(f'文曲人数DB不一致: form={form} placement={p6} stored={rec[47]} expected={a.bit_count()}')
-                        checked+=1
-                        if checked>=180 or (i//step)+1>=take: break
+                src=manifest_entry_source(info);raw=read_manifest_entry(ROOT,info,b'JCF1',52)
+                head=raw[:16]
+                if len(head)!=16 or head[:4]!=b'JCF1': fail(f'文曲監査DBヘッダ不正: {src}')
+                rows=struct.unpack_from('<I',head,8)[0]
+                if not rows: continue
+                take=min(40,rows);step=max(1,rows//take)
+                for i in range(rows):
+                    rec=raw[16+i*52:16+(i+1)*52]
+                    if len(rec)!=52: fail(f'文曲監査DB長不正: {src}')
+                    if i%step!=0: continue
+                    p6=struct.unpack_from('<6H',rec,0)
+                    bids=tuple(x for x in rec[12:21] if x)
+                    if not bids: fail(f'成立DBなのに因縁0: {src} row={i}')
+                    a=minimal_factor4_mask(p6,form,bids,LINES,heroes,bonds,cache)
+                    b=brute_factor4(p6,form,bids,heroes,bonds)
+                    if a!=b: fail(f'文曲全体最適化不一致: form={form} placement={p6} got={a} expected={b}')
+                    if a.bit_count()!=rec[47]: fail(f'文曲人数DB不一致: form={form} placement={p6} stored={rec[47]} expected={a.bit_count()}')
+                    checked+=1
+                    if checked>=180 or (i//step)+1>=take: break
                 if checked>=180: break
             if checked>=180: break
         if checked>=180: break
@@ -187,9 +186,12 @@ def validate_manifest():
         for count,forms in counts.items():
             if set(forms)!=set(LINES): fail(f'4陣形DB不足: {mode}/{count}')
             for form,info in forms.items():
-                path=ROOT/info['file']
-                if not path.exists(): fail(f'DB不足: {info["file"]}')
-                if path.stat().st_size>25*1024*1024: fail(f'25MB超過: {info["file"]}')
+                parts=manifest_parts(info)
+                if not parts: fail(f'DB manifest不足: {mode}/{count}/{form}')
+                for part in parts:
+                    path=ROOT/part['file']
+                    if not path.exists(): fail(f'DB不足: {part["file"]}')
+                    if path.stat().st_size>25_000_000: fail(f'25MB超過: {part["file"]}')
                 checked+=1
     return checked
 

@@ -75,7 +75,9 @@
     return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];
   }
   function fullDatasetInfo(m,q){var c=String(Number(q.count)||0),f=String(q.formation||''),mode=q.mode==='grade3'?'grade3':'normal';return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];}
-  function cacheKey(q,info){return [q.mode||'normal',q.sourceType||'full',q.count,q.formation,q.sortStat||'',info&&info.file||''].join('|');}
+  function infoParts(info){var p=info&&Array.isArray(info.parts)?info.parts.filter(function(x){return x&&x.file;}):[];return p.length?p:(info&&info.file?[info]:[]);}
+  function sourceLabel(info){var p=infoParts(info);return info&&info.file?String(info.file):(p.length?String(p[0].file)+(p.length>1?(' +'+(p.length-1)+' parts'):''):'');}
+  function cacheKey(q,info){return [q.mode||'normal',q.sourceType||'full',q.count,q.formation,q.sortStat||'',sourceLabel(info),info&&info.sha256_16||''].join('|');}
   function normalFiveSixUnsupported(q){var c=Number(q&&q.count)||0;return q&&q.mode!=='grade3'&&(c===5||c===6);}
   function evictIfNeeded(keepType,keepKey){
     var total=0,arr=[];
@@ -88,12 +90,33 @@
       if(v){total-=v.rawBytes||0;map.delete(arr[i][1]);}
     }
   }
+  async function loadLogicalRaw(info,m,token,silent,label,magic,expectedRec){
+    var parts=infoParts(info);if(!parts.length)throw new Error(label+' manifest file/parts欠落');
+    if(parts.length===1&&!Array.isArray(info.parts)){
+      var one=parts[0],zipped=await cachedFetch(one.file,m.version,one.sha256_16,one.gzip_bytes);
+      if(!silent)self.postMessage({type:'progress',token:token,phase:'decompress',message:label+' 展開中',bytes:zipped.byteLength});
+      return gunzip(zipped);
+    }
+    var totalRows=Number(info.rows||0),totalBytes=Number(info.gzip_bytes||0);
+    if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:label+' 分割DB 読込中',bytes:totalBytes});
+    var out=new Uint8Array(16+totalRows*expectedRec),written=0,first=false;
+    for(var pi=0;pi<parts.length;pi++){
+      var part=parts[pi],z=await cachedFetch(part.file,m.version,part.sha256_16,part.gzip_bytes),ab=await gunzip(z),dv=new DataView(ab);
+      if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!==magic)throw new Error(label+' part magic不一致: '+part.file);
+      var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);
+      if(rec!==expectedRec||rows!==Number(part.rows||0)||ab.byteLength!==16+rows*rec)throw new Error(label+' part構造不一致: '+part.file);
+      if(!first){out.set(new Uint8Array(ab,0,16),0);first=true;}
+      out.set(new Uint8Array(ab,16),16+written*expectedRec);written+=rows;
+      if(!silent)self.postMessage({type:'progress',token:token,phase:'decompress',message:label+' 分割DB '+(pi+1)+'/'+parts.length+' 展開中',bytes:Number(part.gzip_bytes||z.byteLength)});
+    }
+    if(written!==totalRows)throw new Error(label+' 分割DB件数不一致 '+written+' != '+totalRows);
+    new DataView(out.buffer).setUint32(8,totalRows,true);return out.buffer;
+  }
   async function loadData(q,token,silent){
     var m=await loadManifest(),info=datasetInfo(m,q);if(!info)throw new Error('統一検索DBなし: '+[q.mode,q.count,q.formation,q.sourceType,q.sortStat].join('/'));
     var key=cacheKey(q,info),hit=buffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
     if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:'検索DB '+q.formation+' '+q.count+'因縁 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes);if(!silent)self.postMessage({type:'progress',token:token,phase:'decompress',message:'検索DB 展開中',bytes:zipped.byteLength});
-    var ab=await gunzip(zipped),dv=new DataView(ab);
+    var ab=await loadLogicalRaw(info,m,token,silent,'検索DB','JCF1',Number(m.record_size||52)),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JCF1')throw new Error('compact DB magic不一致');
     var recSize=dv.getUint16(6,true);if(recSize!==Number(m.record_size||52))throw new Error('compact DB record size不一致');
     var rows=Math.floor((ab.byteLength-16)/recSize);if(rows!==Number(info.rows||0))throw new Error('compact DB件数不一致 '+rows+' != '+info.rows);
@@ -105,9 +128,9 @@
   }
   async function loadFullmaxStats(q,token,silent){
     var m=await loadManifest(),info=fullmaxInfo(m,q);if(!info)throw new Error('全MAX検索ステータスDBなし: '+[q.mode,q.count,q.formation].join('/'));
-    var key=[q.mode||'normal',q.count,q.formation,info.file||''].join('|'),hit=fullmaxBuffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
+    var key=[q.mode||'normal',q.count,q.formation,sourceLabel(info),info.sha256_16||''].join('|'),hit=fullmaxBuffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
     if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:'全MAX込み合計DB '+q.formation+' '+q.count+'因縁 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes),ab=await gunzip(zipped),dv=new DataView(ab);
+    var ab=await loadLogicalRaw(info,m,token,silent,'全MAX検索DB','JMX1',Number(m.fullmax_stats_record_size||26)),dv=new DataView(ab);
     if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JMX1')throw new Error('全MAX検索DB magic不一致');
     var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);if(rec!==Number(m.fullmax_stats_record_size||26)||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('全MAX検索DB構造不一致');
     var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info,rawBytes:ab.byteLength,last:++lruSeq};fullmaxBuffers.set(key,obj);evictIfNeeded('fullmax',key);return obj;
@@ -150,7 +173,7 @@
     var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='grade3'?'等級3以下ON':'通常',bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:internalIds.join('|'),eiketsu_numeric_ids:numericIds.join('|'),bond_ids:bonds.join('|'),bond_names:bonds.join('|'),bond_numeric_ids:bondNumeric.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
     Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);if(fm)attachFullmaxRow(row,fm,rowIndex);return row;
   }
-  function materializeFirst(data,q,m,limit,fm){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,data.info.file,fm));return rows;}
+  function materializeFirst(data,q,m,limit,fm){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,sourceLabel(data.info),fm));return rows;}
 
   var RECOMMEND_FORMS=['衡軛','鶴翼','魚鱗','方円'];
   function recommendCounts(mode,m){
@@ -243,7 +266,7 @@
     for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){
       var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;
       var baseOff=base+2,fmOff=base+54,mq={mode:mode,count:count,formation:form};
-      var row=materialize(data.dv,baseOff,mq,m,i,data.info.file);attachFullmaxFromOffset(row,data.dv,fmOff);row.__recommendTie=tieAt(data.dv,baseOff);byForm[form].push(row);
+      var row=materialize(data.dv,baseOff,mq,m,i,sourceLabel(data.info));attachFullmaxFromOffset(row,data.dv,fmOff);row.__recommendTie=tieAt(data.dv,baseOff);byForm[form].push(row);
     }
     for(var fj=0;fj<RECOMMEND_FORMS.length;fj++){var ff=RECOMMEND_FORMS[fj];if(byForm[ff].length>limit)byForm[ff].length=limit;}
     var chosen='',bestRow=null;for(var j=0;j<RECOMMEND_FORMS.length;j++){var f2=RECOMMEND_FORMS[j],list=byForm[f2]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=f2;}}
@@ -261,7 +284,7 @@
     var mode=q.mode==='grade3'?'grade3':'normal',data=await loadRecommendSumTop(m,mode,target,secondary,token);if(!data)return null;
     var codeToForm={1:'衡軛',2:'鶴翼',3:'魚鱗',4:'方円'},byForm=Object.create(null),matchedByForm=Object.create(null),counts=recommendCounts(mode,m);
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi],matched=0;for(var ci=0;ci<counts.length;ci++){var full=fullDatasetInfo(m,{mode:mode,count:counts[ci],formation:f});if(full)matched+=Number(full.rows||0);}matchedByForm[f]=matched;byForm[f]=[];}
-    for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;var originalBase=base+2,mq={mode:mode,count:count,formation:form};var row=materialize(data.dv,originalBase,mq,m,i,data.info.file);row.__recommendTie=tieAt(data.dv,originalBase);byForm[form].push(row);}
+    for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;var originalBase=base+2,mq={mode:mode,count:count,formation:form};var row=materialize(data.dv,originalBase,mq,m,i,sourceLabel(data.info));row.__recommendTie=tieAt(data.dv,originalBase);byForm[form].push(row);}
     for(var fj=0;fj<RECOMMEND_FORMS.length;fj++){var ff=RECOMMEND_FORMS[fj];if(byForm[ff].length>limit)byForm[ff].length=limit;}
     var chosen='',bestRow=null;for(var j=0;j<RECOMMEND_FORMS.length;j++){var f2=RECOMMEND_FORMS[j],list=byForm[f2]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=f2;}}
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:data.rows,sourceType:'recommend-sum-top'};
@@ -284,7 +307,7 @@
         }
       }
       heap.sort(function(a,b){return recommendEntryBetter(a,b,secondary)?-1:(recommendEntryBetter(b,a,secondary)?1:0);});
-      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};var row=materialize(it.dv,it.base,mq,m,it.rowIndex,it.data.info.file,it.fm);row.__recommendTie=it.tie;return row;});matchedByForm[f]=matched;
+      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};var row=materialize(it.dv,it.base,mq,m,it.rowIndex,sourceLabel(it.data.info),it.fm);row.__recommendTie=it.tie;return row;});matchedByForm[f]=matched;
     }
     var chosen='',bestRow=null;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=form;}}
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:useFullmax?'fullmax-recommend-full':'recommend-full'};
@@ -337,7 +360,7 @@
       if(heap.length<limit)heapPush(heap,base,dv,rules,sumSort,fm,rec);else if(better(dv,base,heap[0],rules,sumSort,fm,rec)){heap[0]=base;heapDown(heap,0,dv,rules,sumSort,fm,rec);}
     }
     heap.sort(function(a,b){return better(dv,a,b,rules,sumSort,fm,rec)?-1:(better(dv,b,a,rules,sumSort,fm,rec)?1:0);});
-    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),data.info.file,fm);});
+    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),sourceLabel(data.info),fm);});
     return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:useFullmax?'fullmax-full':(q.sourceType||'full'),statMode:useFullmax?'fullmax':'base'};
   }
 
@@ -359,7 +382,7 @@
       if(!heroOk)continue;
       var bondOk=true;for(var w=0;w<bondIds.length&&bondOk;w++){var found=false;for(var b=0;b<count;b++){if(dv.getUint8(base+12+b)===bondIds[w]){found=true;break;}}if(!found)bondOk=false;}
       if(!bondOk)continue;
-      return {row:materialize(dv,base,dataQ,m,idx,data.info.file,fm),matched:1,scanned:idx+1,ms:performance.now()-started};
+      return {row:materialize(dv,base,dataQ,m,idx,sourceLabel(data.info),fm),matched:1,scanned:idx+1,ms:performance.now()-started};
     }
     return {row:null,matched:0,scanned:data.rows,ms:performance.now()-started};
   }

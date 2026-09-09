@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from formation_spec import LINES
 from fullmax_model import STATS
-from rebuild_all_compact import Generator, load_model
+from rebuild_all_compact import Generator, load_model, read_manifest_entry, manifest_entry_source
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -39,14 +39,13 @@ def csv_rows(path:Path):
     with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
 
 def read_raw(info):
-    p=SITE/info['file']
-    raw=gzip.decompress(p.read_bytes())
-    if raw[:4]!=b'JCF1':raise RuntimeError(f'magic不一致: {info["file"]}')
+    raw=read_manifest_entry(SITE,info,b'JCF1',REC); src=manifest_entry_source(info)
+    if raw[:4]!=b'JCF1':raise RuntimeError(f'magic不一致: {src}')
     rec=struct.unpack_from('<H',raw,6)[0]
-    if rec!=REC or (len(raw)-16)%REC:raise RuntimeError(f'record不正: {info["file"]}')
+    if rec!=REC or (len(raw)-16)%REC:raise RuntimeError(f'record不正: {src}')
     rows=(len(raw)-16)//REC
-    if rows!=int(info['rows']):raise RuntimeError(f'件数不一致: {info["file"]} {rows}!={info["rows"]}')
-    if struct.unpack_from('<I',raw,8)[0]!=rows:raise RuntimeError(f'header件数不一致: {info["file"]}')
+    if rows!=int(info['rows']):raise RuntimeError(f'件数不一致: {src} {rows}!={info["rows"]}')
+    if struct.unpack_from('<I',raw,8)[0]!=rows:raise RuntimeError(f'header件数不一致: {src}')
     return raw,rows
 
 def rec_bytes(raw,i):return raw[16+i*REC:16+(i+1)*REC]
@@ -75,11 +74,11 @@ def compare_top_body(full_raw,idxs,info,label):
             raise RuntimeError(f'{label}: Top内容/順序不一致 pos={pos} full_row={i}')
 
 def read_fullmax(info,expected_rows):
-    p=SITE/info['file']; raw=gzip.decompress(p.read_bytes())
-    if raw[:4]!=b'JMX1':raise RuntimeError(f'fullMAX magic不一致: {info["file"]}')
+    raw=read_manifest_entry(SITE,info,b'JMX1',FULLMAX_REC);src=manifest_entry_source(info)
+    if raw[:4]!=b'JMX1':raise RuntimeError(f'fullMAX magic不一致: {src}')
     rec=struct.unpack_from('<H',raw,6)[0];rows=struct.unpack_from('<I',raw,8)[0]
     if rec!=FULLMAX_REC or rows!=expected_rows or rows!=int(info.get('rows',-1)) or len(raw)!=16+rows*FULLMAX_REC:
-        raise RuntimeError(f'fullMAX record不正: {info["file"]}')
+        raise RuntimeError(f'fullMAX record不正: {src}')
     return raw
 
 

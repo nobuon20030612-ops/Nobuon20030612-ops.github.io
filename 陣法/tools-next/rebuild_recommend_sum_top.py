@@ -8,6 +8,7 @@ import shutil
 import struct
 import time
 from pathlib import Path
+from rebuild_all_compact import read_manifest_entry
 
 try:
     import numpy as np
@@ -59,7 +60,7 @@ def load_formation(m: dict, mode: str, formation: str):
         info = (((m.get('datasets') or {}).get(mode) or {}).get(str(count)) or {}).get(formation)
         if not info or int(info.get('rows',0) or 0) <= 0:
             continue
-        raw = read_gz(SITE / info['file'])
+        raw = read_manifest_entry(SITE,info,b'JCF1',SRC_REC)
         if len(raw) < 16 or raw[:4] != b'JCF1':
             raise RuntimeError(f'compact magic不一致: {mode}/{count}/{formation}')
         rec = struct.unpack_from('<H', raw, 6)[0]; rows = struct.unpack_from('<I', raw, 8)[0]

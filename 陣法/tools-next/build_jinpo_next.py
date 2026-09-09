@@ -2,6 +2,7 @@
 from __future__ import annotations
 import csv, json, sys, hashlib, gzip, struct, subprocess, shutil, tempfile, re, os
 from pathlib import Path
+from rebuild_all_compact import read_manifest_entry, manifest_parts, manifest_entry_source
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -705,39 +706,24 @@ def main():
 
     def verify_compact_entry(info, label, semantic=None):
         nonlocal compact_checked, semantic_records, semantic_duplicate_combos
-        if not isinstance(info, dict) or not info.get('file'):
+        if not isinstance(info, dict) or not manifest_parts(info):
             fail(f'compact DB manifest不正: {label}', report)
-        rel = str(info['file'])
-        if rel in seen_compact:
+        key=tuple(str(p.get('file') or '') for p in manifest_parts(info))
+        if key in seen_compact:
             return
-        seen_compact.add(rel)
-        path = SITE / rel
-        if not path.exists():
-            fail(f'compact DB参照切れ: {label}: {rel}', report)
-        gz = path.read_bytes()
-        if info.get('gzip_bytes') is not None and len(gz) != int(info['gzip_bytes']):
-            fail(f'compact DB gzipサイズ不一致: {label}: {rel}', report)
-        if info.get('sha256_16') and hashlib.sha256(gz).hexdigest()[:16] != str(info['sha256_16']):
-            fail(f'compact DB SHA不一致: {label}: {rel}', report)
+        seen_compact.add(key)
         try:
-            raw = gzip.decompress(gz)
+            raw=read_manifest_entry(SITE,info,b'JCF1',int(manifest.get('record_size',52)))
         except Exception as e:
-            fail(f'compact DB gzip破損: {label}: {rel}: {e}', report)
-        if len(raw) < 16 or raw[:4] != b'JCF1':
-            fail(f'compact DB magic不一致: {label}: {rel}', report)
-        rec = struct.unpack_from('<H', raw, 6)[0]
-        if rec != int(manifest.get('record_size', 52)):
-            fail(f'compact DB record size不一致: {label}: {rel}: {rec}', report)
-        if (len(raw)-16) % rec:
-            fail(f'compact DB body長不正: {label}: {rel}', report)
-        rows = (len(raw)-16)//rec
+            fail(f'compact DB検証失敗: {label}: {e}', report)
+        src=manifest_entry_source(info)
+        rec=struct.unpack_from('<H', raw, 6)[0]
+        rows=(len(raw)-16)//rec if rec else -1
         if rows != int(info.get('rows', -1)):
-            fail(f'compact DB件数不一致: {label}: {rel}: {rows} != {info.get("rows")}', report)
+            fail(f'compact DB件数不一致: {label}: {src}: {rows} != {info.get("rows")}', report)
         header_rows = struct.unpack_from('<I', raw, 8)[0]
         if header_rows != rows:
-            fail(f'compact DBヘッダー件数不一致: {label}: {rel}: header={header_rows} body={rows}', report)
-        if info.get('raw_bytes') is not None and len(raw) != int(info['raw_bytes']):
-            fail(f'compact DB rawサイズ不一致: {label}: {rel}', report)
+            fail(f'compact DBヘッダー件数不一致: {label}: {src}: header={header_rows} body={rows}', report)
 
         if semantic is not None:
             mode, count, formation = semantic

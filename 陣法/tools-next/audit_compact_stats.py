@@ -10,6 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+from rebuild_all_compact import read_manifest_entry, manifest_entry_source
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'data' / 'compact_search_v2'
@@ -101,13 +102,13 @@ def main():
         for count_s, forms in counts.items():
             count = int(count_s)
             for form, entry in forms.items():
-                path = ROOT / entry['file']
-                raw = gzip.decompress(path.read_bytes())
+                src = manifest_entry_source(entry)
+                raw = read_manifest_entry(ROOT,entry,b'JCF1',REC)
                 if len(raw) < 16 or raw[:4] != b'JCF1' or struct.unpack_from('<H', raw, 6)[0] != REC:
-                    raise RuntimeError(f'compact形式不正: {entry["file"]}')
+                    raise RuntimeError(f'compact形式不正: {src}')
                 n = struct.unpack_from('<I', raw, 8)[0]
                 if len(raw) != 16 + n * REC:
-                    raise RuntimeError(f'compact長不正: {entry["file"]}')
+                    raise RuntimeError(f'compact長不正: {src}')
                 recs = np.ndarray(shape=(n,), dtype=REC_DTYPE, buffer=raw, offset=16)
                 form_bonus = bonus.get(form)
                 if form_bonus is None:
@@ -120,7 +121,7 @@ def main():
                     if p.size:
                         if int(p.max()) >= len(hero_valid) or not bool(np.all(hero_valid[p])):
                             bad = np.argwhere((p >= len(hero_valid)) | (~hero_valid[np.minimum(p, len(hero_valid)-1)]))[0]
-                            raise RuntimeError(f'未知英傑ID: {entry["file"]} row={start + int(bad[0])}')
+                            raise RuntimeError(f'未知英傑ID: {src} row={start + int(bad[0])}')
                     base = heroes[p].sum(axis=1, dtype=np.int64)
 
                     bids = block['bond_ids'][:, :count].astype(np.intp, copy=False)
@@ -151,7 +152,7 @@ def main():
                             row = start + int(local)
                             bb = [int(x) for x in block['bond_ids'][local, :count] if int(x)]
                             first.append({
-                                'file': entry['file'],
+                                'file': src,
                                 'row': row,
                                 'heroes': tuple(int(x) for x in block['heroes'][local]),
                                 'bond_ids': bb,

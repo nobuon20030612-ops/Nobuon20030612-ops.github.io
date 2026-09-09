@@ -30,6 +30,66 @@ FULLMAX_REC = 26
 FULLMAX_DIR = DATA / 'fullmax_stats'
 STATS = ['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
 FORM_FILE_CODE = {'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'}
+MAX_PUBLISH_BYTES = 25_000_000
+SHARD_TARGET_BYTES = 24_000_000
+
+
+def manifest_parts(info: dict) -> list[dict]:
+    parts=info.get('parts') if isinstance(info,dict) else None
+    if isinstance(parts,list) and parts:
+        return [p for p in parts if isinstance(p,dict) and p.get('file')]
+    return [info] if isinstance(info,dict) and info.get('file') else []
+
+
+def manifest_entry_source(info: dict) -> str:
+    parts=manifest_parts(info)
+    return str(info.get('file') or (parts[0].get('file') if parts else ''))
+
+
+def manifest_entry_token(info: dict) -> str:
+    if not isinstance(info,dict): return ''
+    if info.get('sha256_16'): return str(info.get('sha256_16'))
+    return hashlib.sha256('\n'.join(str(p.get('sha256_16','')) for p in manifest_parts(info)).encode()).hexdigest()[:16]
+
+
+def read_manifest_entry(site: Path, info: dict, magic: bytes, record_size: int) -> bytes:
+    """Read one logical manifest entry, transparently joining sharded gzip parts."""
+    parts=manifest_parts(info)
+    if not parts:
+        raise RuntimeError('manifest file/parts欠落')
+    expected_total=int(info.get('rows',0) or 0)
+    out=None; total_rows=0; total_gzip=0; write_off=16
+    for pi,part in enumerate(parts,1):
+        rel=str(part.get('file') or '')
+        path=site/rel
+        if not path.exists(): raise RuntimeError(f'manifest参照切れ: {rel}')
+        gz=path.read_bytes();total_gzip+=len(gz)
+        if part.get('gzip_bytes') is not None and len(gz)!=int(part['gzip_bytes']): raise RuntimeError(f'gzipサイズ不一致: {rel}')
+        if part.get('sha256_16') and hashlib.sha256(gz).hexdigest()[:16]!=str(part['sha256_16']): raise RuntimeError(f'SHA不一致: {rel}')
+        raw=gzip.decompress(gz)
+        if len(raw)<16 or raw[:4]!=magic: raise RuntimeError(f'magic不一致: {rel}')
+        rec=struct.unpack_from('<H',raw,6)[0]
+        rows=struct.unpack_from('<I',raw,8)[0]
+        if rec!=record_size or len(raw)!=16+rows*record_size: raise RuntimeError(f'構造不一致: {rel}')
+        if part.get('rows') is not None and rows!=int(part['rows']): raise RuntimeError(f'part件数不一致: {rel}')
+        if part.get('raw_bytes') is not None and len(raw)!=int(part['raw_bytes']): raise RuntimeError(f'rawサイズ不一致: {rel}')
+        if len(parts)==1:
+            total_rows=rows
+            out=bytearray(raw)
+            break
+        if out is None:
+            if expected_total<=0: raise RuntimeError('shard論理件数欠落')
+            out=bytearray(16+expected_total*record_size);out[:16]=raw[:16]
+        body=raw[16:];out[write_off:write_off+len(body)]=body;write_off+=len(body);total_rows+=rows
+    if total_rows!=int(info.get('rows',total_rows)): raise RuntimeError(f'論理件数不一致: {total_rows}!={info.get("rows")}')
+    if info.get('gzip_bytes') is not None and total_gzip!=int(info['gzip_bytes']): raise RuntimeError(f'論理gzipサイズ不一致: {total_gzip}!={info["gzip_bytes"]}')
+    if len(parts)>1 and info.get('sha256_16'):
+        token=hashlib.sha256('\n'.join(str(p.get('sha256_16','')) for p in parts).encode()).hexdigest()[:16]
+        if token!=str(info['sha256_16']): raise RuntimeError(f'論理SHA不一致: {token}!={info["sha256_16"]}')
+    if out is None: raise RuntimeError('manifest展開失敗')
+    struct.pack_into('<I',out,8,total_rows)
+    if info.get('raw_bytes') is not None and len(out)!=int(info['raw_bytes']): raise RuntimeError(f'論理rawサイズ不一致: {len(out)}!={info["raw_bytes"]}')
+    return bytes(out)
 
 
 def csv_rows(path: Path):
@@ -557,6 +617,61 @@ def _gzip_raw_file(src: Path, dst: Path) -> None:
         subprocess.run(['gzip','-n','-6','-c',str(src)],stdout=out,check=True)
 
 
+def _part_path(path: Path, index: int) -> Path:
+    name=path.name
+    suffix='.bin.gz' if name.endswith('.bin.gz') else path.suffix
+    stem=name[:-len(suffix)] if suffix and name.endswith(suffix) else path.stem
+    return path.with_name(f'{stem}_part{index:03d}{suffix}')
+
+
+def _write_raw_slice_gzip(src: Path, dst: Path, header: bytes, start_row: int, rows: int, record_size: int) -> None:
+    dst.parent.mkdir(parents=True,exist_ok=True)
+    with src.open('rb') as inp, dst.open('wb') as raw_out:
+        with gzip.GzipFile(filename='',mode='wb',fileobj=raw_out,compresslevel=6,mtime=0) as z:
+            z.write(header)
+            inp.seek(16+start_row*record_size)
+            remain=rows*record_size
+            while remain:
+                chunk=inp.read(min(remain,4*1024*1024))
+                if not chunk: raise RuntimeError(f'raw slice不足: {src}')
+                z.write(chunk);remain-=len(chunk)
+
+
+def _compress_manifest_entry(raw_path: Path, output_path: Path, rows: int, record_size: int, header_builder) -> dict:
+    """Keep legacy single-file output under 25MiB; shard only when the logical gzip exceeds it."""
+    output_path.parent.mkdir(parents=True,exist_ok=True)
+    for stale in output_path.parent.glob(output_path.name.replace('.bin.gz','_part*.bin.gz')):
+        stale.unlink(missing_ok=True)
+    _gzip_raw_file(raw_path,output_path)
+    raw_bytes=16+rows*record_size
+    if output_path.stat().st_size<=MAX_PUBLISH_BYTES:
+        return file_meta(output_path,rows,raw_bytes,record_size)
+    whole_size=output_path.stat().st_size
+    output_path.unlink(missing_ok=True)
+    part_count=max(2,math.ceil(whole_size/SHARD_TARGET_BYTES))
+    while True:
+        paths=[]; metas=[]; start=0; failed=False
+        base=rows//part_count; extra=rows%part_count
+        for i in range(part_count):
+            n=base+(1 if i<extra else 0)
+            if n<=0: continue
+            pp=_part_path(output_path,i+1)
+            _write_raw_slice_gzip(raw_path,pp,header_builder(n),start,n,record_size)
+            pm=file_meta(pp,n,16+n*record_size,record_size)
+            paths.append(pp);metas.append(pm);start+=n
+            if pp.stat().st_size>MAX_PUBLISH_BYTES: failed=True
+        if not failed and all(p.stat().st_size<=SHARD_TARGET_BYTES for p in paths):
+            break
+        for p in paths:p.unlink(missing_ok=True)
+        part_count+=1
+        if part_count>rows: raise RuntimeError(f'25MB分割不能: {output_path}')
+    token=hashlib.sha256('\n'.join(m['sha256_16'] for m in metas).encode()).hexdigest()[:16]
+    return {
+        'rows':rows,'gzip_bytes':sum(int(m['gzip_bytes']) for m in metas),'raw_bytes':raw_bytes,
+        'sha256_16':token,'record_size':record_size,'sharded':True,'part_count':len(metas),'parts':metas,
+    }
+
+
 def write_family_pair(manifest: dict, generator: Generator, mode: str, count: int, forms: tuple[str,str], candidate_path: Path, rows: int) -> dict:
     if LINES[forms[0]] != LINES[forms[1]]:
         raise RuntimeError(f'同一ファミリの成立ラインが一致しません: {forms}')
@@ -604,22 +719,23 @@ def write_family_pair(manifest: dict, generator: Generator, mode: str, count: in
         for _,rf,ff in handles:
             rf.close(); ff.close()
 
-    # レコード確定後の圧縮だけを並列化。計算順・tie順・中身は変えない。
-    jobs=[]
+    # レコード確定後の圧縮だけを並列化。25MiBを超える論理DBだけpart分割し、
+    # 25MiB未満は従来どおり単一file形式を維持する。計算順・tie順・中身は変えない。
+    compressed={}
     with ThreadPoolExecutor(max_workers=min(4,len(items)*2)) as ex:
+        jobs=[]
         for form,entry,path,fm_path,raw_path,fm_raw_path in items:
-            jobs.append(ex.submit(_gzip_raw_file,raw_path,path))
-            jobs.append(ex.submit(_gzip_raw_file,fm_raw_path,fm_path))
-        for job in jobs: job.result()
+            jobs.append((form,'base',ex.submit(_compress_manifest_entry,raw_path,path,rows,REC,lambda n,m=mode,c=count,f=form: compact_header(m,c,f,n))))
+            jobs.append((form,'fullmax',ex.submit(_compress_manifest_entry,fm_raw_path,fm_path,rows,FULLMAX_REC,fullmax_header)))
+        for form,kind,job in jobs:
+            compressed[(form,kind)]=job.result()
 
     result={}
     for form,entry,path,fm_path,raw_path,fm_raw_path in items:
-        if path.stat().st_size > 25*1024*1024 or fm_path.stat().st_size > 25*1024*1024:
-            raise RuntimeError(f'25MB制限超過: {form} {path.stat().st_size} {fm_path.stat().st_size}')
-        entry.update(file_meta(path,rows,16+rows*REC))
-        fm_meta=file_meta(fm_path,rows,16+rows*FULLMAX_REC,FULLMAX_REC)
+        base_meta=compressed[(form,'base')];fm_meta=compressed[(form,'fullmax')]
+        entry.clear();entry.update(base_meta)
         manifest.setdefault('fullmax_stats',{}).setdefault(mode,{}).setdefault(str(count),{})[form]=fm_meta
-        result[form]={'rows':rows,'records_reused':0,'generation':'current_source_only'}
+        result[form]={'rows':rows,'records_reused':0,'generation':'current_source_only','sharded':bool(base_meta.get('parts')),'part_count':int(base_meta.get('part_count') or 1)}
         raw_path.unlink(missing_ok=True); fm_raw_path.unlink(missing_ok=True)
     manifest['fullmax_stats_record_size']=FULLMAX_REC
     manifest['fullmax_model']='全MAX: 見聞録MAX+鬼神石MAX+転生MAX(最小文曲使用英傑を除外)'

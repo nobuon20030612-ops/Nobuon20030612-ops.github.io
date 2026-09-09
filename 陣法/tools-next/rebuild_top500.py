@@ -2,6 +2,7 @@
 from __future__ import annotations
 import gzip, hashlib, heapq, json, struct
 from pathlib import Path
+from rebuild_all_compact import read_manifest_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -54,7 +55,7 @@ def main():
     def full_raw(mode,count,form):
         k=(mode,count,form)
         if k not in raw_cache:
-            info=m['datasets'][mode][count][form];raw_cache[k]=read_gz(SITE/info['file'])
+            info=m['datasets'][mode][count][form];raw_cache[k]=read_manifest_entry(SITE,info,b'JCF1',REC)
         return raw_cache[k]
     for mode,counts in m['top'].items():
         for count,forms in counts.items():

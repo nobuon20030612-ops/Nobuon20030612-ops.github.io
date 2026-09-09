@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv,gzip,json,struct,time
 from collections import defaultdict
 from pathlib import Path
+from rebuild_all_compact import read_manifest_entry
 
 ROOT=Path(__file__).resolve().parents[1]
 CORE=ROOT/'data'/'bond56_index'/'bond56_core.bin.gz'
@@ -40,7 +41,7 @@ def active_mask_from_record(active):
 
 def read_db_semantic(mode,count,form,manifest):
     e=manifest['datasets'][mode][str(count)][form]
-    raw=gzip.decompress((ROOT/e['file']).read_bytes())
+    raw=read_manifest_entry(ROOT,e,b'JCF1',REC)
     n=struct.unpack_from('<I',raw,8)[0]
     out=set(); exact=0
     for i in range(n):

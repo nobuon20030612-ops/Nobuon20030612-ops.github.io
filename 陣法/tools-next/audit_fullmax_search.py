@@ -7,6 +7,7 @@ import struct
 import time
 from collections import defaultdict
 from pathlib import Path
+from rebuild_all_compact import read_manifest_entry, manifest_entry_source
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT
@@ -26,18 +27,18 @@ def ungzip(rel:str)->bytes:
 
 
 def read_base(info:dict):
-    raw=ungzip(info['file'])
-    if len(raw)<16 or raw[:4]!=b'JCF1':raise RuntimeError(f'base magic不一致: {info["file"]}')
+    raw=read_manifest_entry(SITE,info,b'JCF1',BASE_REC);src=manifest_entry_source(info)
+    if len(raw)<16 or raw[:4]!=b'JCF1':raise RuntimeError(f'base magic不一致: {src}')
     rec=struct.unpack_from('<H',raw,6)[0];rows=struct.unpack_from('<I',raw,8)[0]
-    if rec!=BASE_REC or rows!=int(info.get('rows',-1)) or len(raw)!=16+rows*rec:raise RuntimeError(f'base構造不一致: {info["file"]}')
+    if rec!=BASE_REC or rows!=int(info.get('rows',-1)) or len(raw)!=16+rows*rec:raise RuntimeError(f'base構造不一致: {src}')
     return raw,rows
 
 
 def read_sidecar(info:dict,expected:int):
-    raw=ungzip(info['file'])
-    if len(raw)<16 or raw[:4]!=b'JMX1':raise RuntimeError(f'fullMAX magic不一致: {info["file"]}')
+    raw=read_manifest_entry(SITE,info,b'JMX1',FULLMAX_REC);src=manifest_entry_source(info)
+    if len(raw)<16 or raw[:4]!=b'JMX1':raise RuntimeError(f'fullMAX magic不一致: {src}')
     rec=struct.unpack_from('<H',raw,6)[0];rows=struct.unpack_from('<I',raw,8)[0]
-    if rec!=FULLMAX_REC or rows!=expected or rows!=int(info.get('rows',-1)) or len(raw)!=16+rows*rec:raise RuntimeError(f'fullMAX構造不一致: {info["file"]}')
+    if rec!=FULLMAX_REC or rows!=expected or rows!=int(info.get('rows',-1)) or len(raw)!=16+rows*rec:raise RuntimeError(f'fullMAX構造不一致: {src}')
     return raw
 
 

@@ -19,6 +19,7 @@ except Exception as e:
 from factor4_optimizer import minimal_factor4_mask
 from formation_spec import LINES
 from fullmax_model import STATS, calc_fullmax_stats
+from rebuild_all_compact import read_manifest_entry, _compress_manifest_entry, fullmax_header
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT
@@ -141,7 +142,7 @@ def build_sidecars(m: dict, heroes, bonds, coef, formation_bonus_pct):
             section[mode].setdefault(count_s,{})
             count=int(count_s)
             for form,info in forms.items():
-                raw=read_gz(SITE/info['file']); rows=validate_base(raw,info,f'{mode}/{count}/{form}')
+                raw=read_manifest_entry(SITE,info,b'JCF1',BASE_REC); rows=validate_base(raw,info,f'{mode}/{count}/{form}')
                 out=bytearray(16+rows*FULLMAX_REC)
                 struct.pack_into('<4sHHII',out,0,b'JMX1',1,FULLMAX_REC,rows,0)
                 for i in range(rows):
@@ -154,15 +155,17 @@ def build_sidecars(m: dict, heroes, bonds, coef, formation_bonus_pct):
                     struct.pack_into('<11H',out,dst,*vals)
                     struct.pack_into('<I',out,dst+22,total)
                 path=FULLMAX_DIR/mode/f'c{count}_{FORM_FILE_CODES[form]}.bin.gz'
-                write_gz(path,bytes(out))
-                section[mode][count_s][form]=file_meta(path,bytes(out),rows,FULLMAX_REC)
+                tmp=REPORT_DIR/'raw_output'/f'fullmax_rebuild_{mode}_{count}_{FORM_FILE_CODES[form]}.raw'
+                tmp.parent.mkdir(parents=True,exist_ok=True);tmp.write_bytes(out)
+                section[mode][count_s][form]=_compress_manifest_entry(tmp,path,rows,FULLMAX_REC,fullmax_header)
+                tmp.unlink(missing_ok=True)
                 total_rows+=rows
                 print('FULLMAX',mode,count,form,rows,flush=True)
     return section,total_rows,round(time.time()-started,3)
 
 
 def load_sidecar(info: dict, expected_rows: int) -> bytes:
-    raw=read_gz(SITE/info['file'])
+    raw=read_manifest_entry(SITE,info,b'JMX1',FULLMAX_REC)
     if len(raw)<16 or raw[:4]!=b'JMX1':
         raise RuntimeError(f'fullMAX magic不一致: {info["file"]}')
     rec=struct.unpack_from('<H',raw,6)[0]; rows=struct.unpack_from('<I',raw,8)[0]
@@ -216,7 +219,7 @@ def build_recommend(m: dict, fullmax_section: dict):
                 base_info=(((m.get('datasets') or {}).get(mode) or {}).get(c) or {}).get(form)
                 fm_info=(((fullmax_section.get(mode) or {}).get(c) or {}).get(form))
                 if not base_info or not fm_info or int(base_info.get('rows',0) or 0)<=0:continue
-                base_raw=read_gz(SITE/base_info['file']); n=validate_base(base_raw,base_info,f'{mode}/{count}/{form}')
+                base_raw=read_manifest_entry(SITE,base_info,b'JCF1',BASE_REC); n=validate_base(base_raw,base_info,f'{mode}/{count}/{form}')
                 fm_raw=load_sidecar(fm_info,n)
                 records=np.ndarray((n,BASE_REC),dtype=np.uint8,buffer=base_raw,offset=16,strides=(BASE_REC,1)).copy()
                 fm_records=np.ndarray((n,FULLMAX_REC),dtype=np.uint8,buffer=fm_raw,offset=16,strides=(FULLMAX_REC,1)).copy()
@@ -285,7 +288,7 @@ def validate_existing_sidecars(m: dict):
                 fm_info=(((section.get(mode) or {}).get(count_s) or {}).get(form))
                 if not fm_info:
                     raise RuntimeError(f'全MAX sidecar不足: {mode}/{count_s}/{form}')
-                raw=read_gz(SITE/base_info['file'])
+                raw=read_manifest_entry(SITE,base_info,b'JCF1',BASE_REC)
                 n=validate_base(raw,base_info,f'{mode}/{count_s}/{form}')
                 load_sidecar(fm_info,n)
                 total+=n;files+=1
