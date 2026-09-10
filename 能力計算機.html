@@ -650,6 +650,20 @@ td{
   filter:brightness(1.18);
 }
 
+.souseki-choice-btn.selected{
+  color:#ffffff;
+  border-color:#ffe27a;
+  background:
+    linear-gradient(to bottom,#7a5a00 0%,#3b2600 55%,#1c1200 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.38),
+    inset 0 -3px 0 rgba(0,0,0,0.9),
+    0 0 16px rgba(255,240,120,0.95),
+    0 0 34px rgba(255,180,40,0.8),
+    0 5px 0 #120900;
+  filter:brightness(1.18);
+}
+
 .souseki-choice-btn:active{
   transform:translateY(2px) scale(0.98);
   box-shadow:none;
@@ -3337,8 +3351,31 @@ function applyStatsToRow(label, total){
 
 
 const SOUSEKI_STATS = ["腕力","耐久","器用","知力","魅力"];
+const SOUSEKI_SELECTION_STORAGE_KEY = "nouryoku_souseki_selection_v1";
 let sousekiData = [];
 let sousekiTarget = "";
+
+function loadSousekiSelections(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(SOUSEKI_SELECTION_STORAGE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  }catch(e){
+    return {};
+  }
+}
+
+function saveSousekiSelection(label, rowIndex, stat, value){
+  if(!label) return;
+  const all = loadSousekiSelections();
+  all[label] = { rowIndex, stat, value };
+  try{
+    localStorage.setItem(SOUSEKI_SELECTION_STORAGE_KEY, JSON.stringify(all));
+  }catch(e){}
+}
+
+function getSousekiSelection(label){
+  return loadSousekiSelections()[label] || null;
+}
 
 async function loadSousekiCSV(){
   const response = await fetch("./装飾石.csv");
@@ -3387,10 +3424,12 @@ function renderSousekiButtons(){
     html += `<div class="souseki-grid-head" style="color:${sousekiStatColor(stat)}">${stat}</div>`;
   });
 
-  sousekiData.forEach(row => {
+  const selected = getSousekiSelection(sousekiTarget);
+  sousekiData.forEach((row, rowIndex) => {
     SOUSEKI_STATS.forEach(stat => {
       const value = tsukumoNum(row[stat]);
-      html += `<button class="souseki-choice-btn" style="color:${sousekiStatColor(stat)}" onclick="applySousekiSelection('${stat}', ${value})">${value}</button>`;
+      const selectedClass = selected && selected.rowIndex === rowIndex && selected.stat === stat && Number(selected.value) === Number(value) ? " selected" : "";
+      html += `<button class="souseki-choice-btn${selectedClass}" style="color:${sousekiStatColor(stat)}" onclick="applySousekiSelection('${stat}', ${value}, ${rowIndex})">${value}</button>`;
     });
   });
 
@@ -3428,7 +3467,7 @@ function closeSousekiPicker(){
   sousekiTarget = "";
 }
 
-function applySousekiSelection(stat, value){
+function applySousekiSelection(stat, value, rowIndex){
   if(!sousekiTarget){
     alert("反映先が不明です");
     return;
@@ -3439,6 +3478,7 @@ function applySousekiSelection(stat, value){
   total[stat] = value;
 
   applyStatsToRow(sousekiTarget, total);
+  saveSousekiSelection(sousekiTarget, rowIndex, stat, value);
   closeSousekiPicker();
 }
 
@@ -3716,7 +3756,32 @@ function applyFuyoSelected(){
   const actions = document.getElementById("tsukumoIntegrationActions");
   const countEl = document.getElementById("tsukumoIntegrationCount");
   const applyBtn = document.getElementById("tsukumoIntegrationApply");
+  const selectionStorageKey = "nouryoku_tsukumo_modal_selection_v1";
   let frameObserver = null;
+  let restoreTimer = null;
+
+  function loadSavedSelections(){
+    try{
+      const parsed = JSON.parse(localStorage.getItem(selectionStorageKey) || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveSelectedIds(target, ids){
+    if(!target) return;
+    const all = loadSavedSelections();
+    all[target] = Array.isArray(ids) ? ids.slice(0,8) : [];
+    try{
+      localStorage.setItem(selectionStorageKey, JSON.stringify(all));
+    }catch(e){}
+  }
+
+  function getSavedSelectedIds(target){
+    const all = loadSavedSelections();
+    return Array.isArray(all[target]) ? all[target].map(String).filter(Boolean).slice(0,8) : [];
+  }
 
   function getFrameDoc(){
     try{
@@ -3739,6 +3804,28 @@ function applyFuyoSelected(){
     const count = getSelectedRows().length;
     if(countEl) countEl.textContent = "選択数：" + count + " / 8";
     if(actions) actions.style.display = "flex";
+  }
+
+  function restoreSelectionsFromSaved(target, attempt){
+    const doc = getFrameDoc();
+    if(!doc) return;
+    const mainTable = doc.getElementById("table");
+    if(!mainTable || mainTable.rows.length <= 1){
+      if((attempt || 0) < 60){
+        clearTimeout(restoreTimer);
+        restoreTimer = setTimeout(() => restoreSelectionsFromSaved(target, (attempt || 0) + 1), 100);
+      }
+      return;
+    }
+
+    const wantedIds = getSavedSelectedIds(target);
+    wantedIds.forEach(id => {
+      const row = Array.from(mainTable.rows).slice(1).find(candidate =>
+        candidate.cells && candidate.cells[0] && String(candidate.cells[0].textContent || "").trim() === String(id)
+      );
+      if(row && !row.classList.contains("selected")) row.click();
+    });
+    setTimeout(syncIntegrationActions, 0);
   }
 
   function bindStandaloneFrame(){
@@ -3764,6 +3851,7 @@ function applyFuyoSelected(){
     doc.addEventListener("click", function(){ setTimeout(syncIntegrationActions, 0); });
     doc.addEventListener("change", function(){ setTimeout(syncIntegrationActions, 0); });
     syncIntegrationActions();
+    restoreSelectionsFromSaved(tsukumoTarget, 0);
   }
 
   window.openTsukumoPicker = function(target){
@@ -3793,6 +3881,7 @@ function applyFuyoSelected(){
     const modal = document.getElementById("tsukumoModal");
     if(modal) modal.classList.add("hidden");
     if(frameObserver){ frameObserver.disconnect(); frameObserver = null; }
+    clearTimeout(restoreTimer);
     if(frame) frame.removeAttribute("src");
     if(actions) actions.style.display = "none";
     restoreMadouModalHome(modal);
@@ -3805,6 +3894,10 @@ function applyFuyoSelected(){
       alert("1個以上選択してください");
       return;
     }
+
+    const selectedIds = rows.slice(0,8).map(row =>
+      row.cells[0] ? String(row.cells[0].textContent || "").trim() : ""
+    ).filter(Boolean);
 
     const total = {};
     TSUKUMO_STATS.forEach(s => total[s] = 0);
@@ -3827,6 +3920,7 @@ function applyFuyoSelected(){
     }
 
     applyStatsToRow(rowLabel, total);
+    saveSelectedIds(tsukumoTarget, selectedIds);
     closeTsukumoPicker();
   };
 })();

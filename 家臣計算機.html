@@ -3286,6 +3286,21 @@ calc();
       return;
     }
 
+    if(isKashinTsukumoReflected(sectionClass)){
+      const saved = tsukumoSavedState[sectionClass] || {};
+      const wantedIds = normalizeKashinTsukumoSelected(saved.selected);
+      if(wantedIds.length){
+        wantedIds.slice(0,8).forEach(id => {
+          const row = Array.from(mainTable.rows).slice(1).find(candidate =>
+            candidate.cells && candidate.cells[0] && String(candidate.cells[0].textContent || "").trim() === String(id)
+          );
+          if(row && !row.classList.contains("selected")) row.click();
+        });
+        setTimeout(syncIntegrationActions, 0);
+        return;
+      }
+    }
+
     const wantedRows = getReflectedRowValues(sectionClass);
     if(!wantedRows.length){
       syncIntegrationActions();
