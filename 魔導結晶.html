@@ -467,6 +467,128 @@ th.priority-sort-col{
   overflow:hidden !important;
   text-overflow:ellipsis !important;
 }
+
+/* ===== 九十九・鬼神石同仕様：魔導の力検索 ===== */
+.madou-search-guide{
+  margin:16px auto 8px;
+  padding:10px 16px;
+  width:min(900px,calc(100% - 32px));
+  box-sizing:border-box;
+  text-align:center;
+  font-size:20px;
+  font-weight:900;
+  color:#ffc6d9;
+  border:2px solid #ff9fbd;
+  background:rgba(45,8,22,.72);
+  text-shadow:
+    0 0 5px rgba(255,190,210,.95),
+    0 0 12px rgba(255,145,185,.72);
+  box-shadow:
+    0 0 8px rgba(255,170,205,.72),
+    inset 0 0 12px rgba(255,160,200,.16);
+}
+.madou-search-row{
+  display:flex;
+  justify-content:center;
+  margin:8px 0 10px;
+}
+.madou-search-input{
+  width:min(560px,calc(100% - 32px));
+  padding:10px 14px;
+  box-sizing:border-box;
+  font-size:18px;
+  color:#ffd8e4;
+  border:2px solid #ff9fbd;
+  background:#11070b;
+  outline:none;
+  box-shadow:0 0 8px rgba(255,170,205,.35);
+}
+.madou-search-input:focus{
+  border-color:#ffd0df;
+  box-shadow:
+    0 0 8px rgba(255,190,215,.9),
+    0 0 18px rgba(255,145,185,.65);
+}
+.madou-search-input::placeholder{color:#888;}
+.madou-search-results{margin:8px 0 14px;}
+.madou-search-results.hidden{display:none;}
+.madou-search-results h3{margin:8px 0 4px;}
+#madouSearchResultTable{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:auto;
+}
+#madouSearchResultTable th,
+#madouSearchResultTable td{
+  white-space:nowrap;
+}
+#madouSearchResultTable th:first-child,
+#madouSearchResultTable td:first-child{width:42px;}
+#madouSearchResultTable th:nth-child(14),
+#madouSearchResultTable td:nth-child(14){
+  width:70px;
+  max-width:70px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ===== 九十九・鬼神石同仕様：右下固定倍率 ===== */
+.fixed-zoom-controls{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:9000;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 16px !important;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.15;
+  background:rgba(0,0,0,.82) !important;
+  cursor:pointer;
+  transform:none !important;
+}
+.fixed-zoom-btn:hover{transform:none !important;}
+.fixed-zoom-out{
+  color:#9fd5ff !important;
+  border:2px solid #3f8cff !important;
+  box-shadow:
+    0 0 8px rgba(63,140,255,.82),
+    0 0 18px rgba(63,140,255,.42) !important;
+}
+.fixed-zoom-out:hover{
+  color:#fff !important;
+  border-color:#73b1ff !important;
+  box-shadow:
+    0 0 10px rgba(100,175,255,1),
+    0 0 24px rgba(63,140,255,.75) !important;
+}
+.fixed-zoom-in{
+  color:#ffabab !important;
+  border:2px solid #ff3b3b !important;
+  box-shadow:
+    0 0 8px rgba(255,59,59,.82),
+    0 0 18px rgba(255,0,0,.42) !important;
+}
+.fixed-zoom-in:hover{
+  color:#fff !important;
+  border-color:#ff7777 !important;
+  box-shadow:
+    0 0 10px rgba(255,100,100,1),
+    0 0 24px rgba(255,0,0,.75) !important;
+}
+@media (max-width:700px){
+  .fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
+  .fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+  .madou-search-guide{font-size:16px;width:calc(100% - 20px);}
+  .madou-search-input{font-size:16px;width:calc(100% - 20px);}
+}
+
 </style>
 	
 
@@ -503,13 +625,13 @@ body {
 <!-- 🔥 保存・戻る -->
 <div class="top-buttons no-capture">
   <div class="top-zoom" onclick="resetMadouSelection()">リセット</div>
-  <div class="top-zoom" data-zoom="100" onclick="setKashinZoom(100)">100%</div>
-  <div class="top-zoom" data-zoom="125" onclick="setKashinZoom(125)">125%</div>
-  <div class="top-zoom zoom-active" data-zoom="150" onclick="setKashinZoom(150)">150%</div>
-  <div class="top-zoom" data-zoom="175" onclick="setKashinZoom(175)">175%</div>
-  <div class="top-zoom" data-zoom="200" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
+</div>
+
+<div class="fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeMadouZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeMadouZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 
 <div id="zoomArea" style="zoom:150%;">
@@ -536,6 +658,13 @@ body {
 <h3 class="selected-count-heading">選択中（<span class="selected-count-number" data-selected-count>0</span>個）</h3>
 <table id="selectedTable"></table>
 
+<div class="madou-search-guide">【魔導の力】は、名前のどの漢字1文字でも検索できます。</div>
+<div class="madou-search-row">
+  <input type="search" id="madouNameSearch" class="madou-search-input"
+         placeholder="魔導の力を検索（漢字1文字から）" autocomplete="off"
+         aria-label="魔導の力の名前検索">
+</div>
+
 <div class="list-heading-row">
   <div class="list-title-with-count">
     <h3>一覧</h3>
@@ -550,6 +679,10 @@ body {
   </div>
   <div class="list-heading-spacer" aria-hidden="true"></div>
 </div>
+<div id="madouSearchResults" class="madou-search-results hidden">
+  <h3>検索結果（<span id="madouSearchCount">0</span>件）</h3>
+  <table id="madouSearchResultTable"></table>
+</div>
 <table id="table"></table>
 </div>
 
@@ -561,6 +694,22 @@ body {
 </div>
 
 <script>
+let currentMadouZoom = 150;
+
+function setMadouZoom(percent){
+  const next=Math.max(100,Math.min(300,Number(percent)||150));
+  currentMadouZoom=next;
+  const zoomArea=document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom=next+"%";
+    zoomArea.style.width="100%";
+  }
+}
+
+function changeMadouZoom(delta){
+  setMadouZoom(currentMadouZoom+Number(delta||0));
+}
+
 let baseData=[];
 let selected=[];
 let replaceTarget=null;
@@ -573,6 +722,10 @@ let prioritySortTarget=0;
 
 let sortKey="番号";
 let sortAsc=true;
+
+/* 検索結果は通常一覧とは独立して並び替える */
+let madouSearchSortKey="番号";
+let madouSearchSortAsc=true;
 
 const stats=["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 
@@ -805,6 +958,8 @@ function resetMadouSelection(){
   thirdStat = null;
   replaceTarget = null;
   prioritySortStats = [null,null];
+  const searchInput=document.getElementById("madouNameSearch");
+  if(searchInput)searchInput.value="";
   updateBtnState();
   render();
 }
@@ -948,7 +1103,7 @@ function escapeAttr(value){
 
 function refreshOverflowTitles(){
   requestAnimationFrame(()=>{
-    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td,#madouSearchResultTable th,#madouSearchResultTable td").forEach(cell=>{
       const full=(cell.textContent||"").trim();
       if(full && cell.scrollWidth > cell.clientWidth + 1){
         cell.title=full;
@@ -957,6 +1112,129 @@ function refreshOverflowTitles(){
       }
     });
   });
+}
+
+
+function getMadouSearchArrow(key){
+  if(madouSearchSortKey!==key)return "";
+  return madouSearchSortAsc ? " ▲" : " ▼";
+}
+
+function setMadouSearchSort(key){
+  if(madouSearchSortKey===key){
+    madouSearchSortAsc=!madouSearchSortAsc;
+  }else{
+    madouSearchSortKey=key;
+    madouSearchSortAsc=false;
+  }
+  renderMadouSearchResults();
+}
+
+function getMadouSearchSortedData(){
+  const list=[...baseData];
+  list.sort((a,b)=>{
+    if(madouSearchSortKey==="番号"){
+      const av=parseInt(a["番号"],10)||0;
+      const bv=parseInt(b["番号"],10)||0;
+      return madouSearchSortAsc ? av-bv : bv-av;
+    }
+    if(stats.includes(madouSearchSortKey)){
+      const diff=getVal(a,madouSearchSortKey)-getVal(b,madouSearchSortKey);
+      if(diff!==0)return madouSearchSortAsc ? diff : -diff;
+    }
+    return (parseInt(a["番号"],10)||0)-(parseInt(b["番号"],10)||0);
+  });
+  return list;
+}
+
+function toggleMadouFromSearch(id){
+  id=String(id);
+  if(replaceTarget!=null){
+    if(String(id)===String(replaceTarget)){
+      replaceTarget=null;
+      render();
+      return;
+    }
+    if(selected.map(String).includes(id))return;
+    const idx=selected.findIndex(v=>String(v)===String(replaceTarget));
+    if(idx!==-1)selected[idx]=id;
+    replaceTarget=null;
+    render();
+    return;
+  }
+  const idx=selected.findIndex(v=>String(v)===id);
+  if(idx>=0){
+    selected.splice(idx,1);
+  }else{
+    if(selected.length>=8)return;
+    selected.push(id);
+  }
+  render();
+}
+
+function renderMadouSearchResults(){
+  const input=document.getElementById("madouNameSearch");
+  const wrap=document.getElementById("madouSearchResults");
+  const resultTable=document.getElementById("madouSearchResultTable");
+  const countEl=document.getElementById("madouSearchCount");
+  if(!input || !wrap || !resultTable || !countEl)return;
+
+  const query=input.value.trim();
+  if(!query){
+    wrap.classList.add("hidden");
+    resultTable.innerHTML="";
+    countEl.textContent="0";
+    return;
+  }
+
+  const matches=getMadouSearchSortedData().filter(d=>
+    String(d["魔導の力"]||"").includes(query)
+  );
+
+  countEl.textContent=matches.length;
+  wrap.classList.remove("hidden");
+
+  const colIndexMap={"番号":1,"魔導の力":2};
+  stats.forEach((s,i)=>{colIndexMap[s]=i+3;});
+  colIndexMap["入手"]=14;
+
+  let html="<tr>";
+  html+=`<th style="width:42px; white-space:nowrap;" onclick="setMadouSearchSort('番号')">番号${getMadouSearchArrow('番号')}</th>`;
+  html+=`<th>魔導の力</th>`;
+  stats.forEach(s=>{
+    const cls=(madouSearchSortKey===s)?"priority-sort-col":"";
+    const style=(madouSearchSortKey===s)
+      ?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`
+      :` style="color:${statColors[s]}"`;
+    html+=`<th class="${cls}"${style} onclick="setMadouSearchSort('${s}')">${s}${getMadouSearchArrow(s)}</th>`;
+  });
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+="</tr>";
+
+  matches.forEach(d=>{
+    const id=String(d["番号"]||"");
+    const sel=selected.map(String).includes(id)?"selected":"";
+    const rep=(String(replaceTarget)===id)?"replaceTarget":"";
+    html+=`<tr class="${sel} ${rep}" data-row-id="${escapeAttr(id)}" onclick="toggleMadouFromSearch('${escapeAttr(id)}')">`;
+    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]||""}</td><td>${d["魔導の力"]||""}</td>`;
+    stats.forEach(s=>{
+      const cls=(madouSearchSortKey===s)?"priority-sort-col":"";
+      const style=(madouSearchSortKey===s)
+        ?`color:${statColors[s]};--priority-col-color:${statColors[s]}`
+        :`color:${statColors[s]}`;
+      html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
+    });
+    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html+="</tr>";
+  });
+
+  resultTable.innerHTML=html;
+  if(madouSearchSortKey){
+    resultTable.className="sorted-col-"+colIndexMap[madouSearchSortKey];
+  }else{
+    resultTable.className="";
+  }
+  refreshOverflowTitles();
 }
 
 function calcTotals(){
@@ -973,6 +1251,7 @@ function calcTotals(){
 }
 
 function render(){
+  renderMadouSearchResults();
   let list=[...baseData];
 
   list.sort((a,b)=>{
@@ -1085,6 +1364,8 @@ updatePrioritySortUI();
 
 loadCSV().then(() => {
   loadFromHTML();
+  const searchInput=document.getElementById("madouNameSearch");
+  if(searchInput)searchInput.addEventListener("input", renderMadouSearchResults);
   render();
 });</script>
 
@@ -1094,17 +1375,6 @@ loadCSV().then(() => {
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-function setKashinZoom(percent) {
-  const zoomArea = document.getElementById("zoomArea");
-  if(zoomArea){
-    zoomArea.style.zoom = percent + "%";
-    zoomArea.style.width = "100%";
-  }
-  document.querySelectorAll(".top-zoom[data-zoom]").forEach(btn=>{
-    btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===Number(percent));
-  });
-}
-
 function downloadScreen() {
   html2canvas(document.body, {
     backgroundColor: "#000000",

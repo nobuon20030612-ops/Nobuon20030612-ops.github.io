@@ -57,6 +57,36 @@ tr:hover{background:#222;box-shadow:0 0 6px rgba(255,255,200,.5),0 0 12px rgba(2
 .totalRow{background:#1e2f1e;font-weight:bold;}
 .sorted-col td{background:#2f3b2f!important;}
 *{cursor:pointer!important;}
+
+
+/* ===== 九十九と同仕様：英傑名検索 ===== */
+.eiketsu-search-guide{
+  margin:12px 0 6px;padding:10px 14px;box-sizing:border-box;text-align:center;
+  font-size:22px;line-height:1.35;font-weight:900;color:#ffd8e7;
+  border:2px solid #ffb8d1;background:rgba(24,8,16,.82);
+  text-shadow:0 0 7px rgba(255,216,231,.98),0 0 16px rgba(255,170,205,.88),0 0 28px rgba(255,135,185,.62);
+  box-shadow:0 0 10px rgba(255,184,209,.60),0 0 22px rgba(255,150,195,.34),inset 0 0 12px rgba(255,190,215,.12);
+}
+.eiketsu-search-row{display:flex;justify-content:center;align-items:center;margin:8px 0 4px;}
+.eiketsu-search-input{width:min(430px,100%);box-sizing:border-box;padding:9px 12px;border:2px solid #666;background:rgba(0,0,0,.82);color:#eee;font-size:16px;outline:none;}
+.eiketsu-search-input:focus{border-color:#ffb8d1;box-shadow:0 0 8px rgba(255,190,215,.82),0 0 16px rgba(255,150,195,.40),inset 0 0 8px rgba(255,190,215,.10);}
+.eiketsu-search-input::placeholder{color:#888;}
+.eiketsu-search-results{margin:8px 0 14px;}
+.eiketsu-search-results.hidden{display:none;}
+.eiketsu-search-results h3{margin:8px 0 4px;}
+#eiketsuSearchResultTable{width:100%;border-collapse:collapse;table-layout:fixed;}
+#eiketsuSearchResultTable th,#eiketsuSearchResultTable td{border:1px solid #333;padding:4px;text-align:center;font-size:11px;word-break:break-word;}
+
+/* ===== 九十九と同仕様：右下固定ズーム操作 ===== */
+.fixed-zoom-controls{position:fixed;right:22px;bottom:22px;z-index:999999;display:flex;align-items:center;gap:12px;}
+.fixed-zoom-btn{min-width:112px;margin:0!important;padding:12px 18px!important;border-radius:8px;font-size:18px!important;font-weight:900;line-height:1.1;color:#fff;background:rgba(0,0,0,.86);cursor:pointer;transition:filter .15s ease,box-shadow .15s ease,transform .15s ease;}
+.fixed-zoom-btn:hover{transform:scale(1.05)!important;filter:brightness(1.16);}
+.fixed-zoom-out{border:2px solid #55bfff!important;color:#bfe9ff!important;box-shadow:0 0 8px rgba(90,195,255,.95),0 0 18px rgba(40,145,255,.85),0 0 34px rgba(0,95,255,.65),inset 0 0 12px rgba(75,175,255,.14)!important;}
+.fixed-zoom-out:hover{border-color:#a7e2ff!important;box-shadow:0 0 10px rgba(165,225,255,1),0 0 24px rgba(65,165,255,.95),0 0 42px rgba(0,100,255,.78)!important;}
+.fixed-zoom-in{border:2px solid #ff4f5f!important;color:#ffd0d5!important;box-shadow:0 0 8px rgba(255,90,105,.98),0 0 18px rgba(255,35,55,.88),0 0 34px rgba(205,0,25,.68),inset 0 0 12px rgba(255,70,90,.14)!important;}
+.fixed-zoom-in:hover{border-color:#ff9da8!important;box-shadow:0 0 10px rgba(255,155,165,1),0 0 24px rgba(255,65,85,.95),0 0 42px rgba(210,0,30,.78)!important;}
+@media (max-width:700px){.fixed-zoom-controls{right:10px;bottom:10px;gap:8px}.fixed-zoom-btn{min-width:92px;padding:10px 12px!important;font-size:16px!important;}}
+
 </style>
 
 <style id="season-background-style">
@@ -77,15 +107,16 @@ body {
 <body>
 <div class="top-buttons no-capture">
   <div class="top-reset" onclick="resetEiketsuSelection()">リセット</div>
-  <div class="top-zoom" onclick="setEiketsuZoom(100)">100%</div>
-  <div class="top-zoom" onclick="setEiketsuZoom(125)">125%</div>
-  <div class="top-zoom" onclick="setEiketsuZoom(150)">150%</div>
-  <div class="top-zoom" onclick="setEiketsuZoom(175)">175%</div>
-  <div class="top-zoom" onclick="setEiketsuZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
-<div id="zoomArea">
+
+<div class="fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeEiketsuZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeEiketsuZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
+</div>
+
+<div id="zoomArea" style="zoom:100%;">
 <h1 class="title">英傑一覧</h1>
 
 <div class="guideBox">使い方：各優先で先に <strong>ステータス</strong> または <strong>育成技能</strong> を選んでから、右側の <strong>生命〜風</strong> ボタンを選んでください。</div>
@@ -94,6 +125,15 @@ body {
 <h3>第3優先</h3><div class="priority-row"><div class="modeBtns" id="mode3"></div><div class="statBtns" id="stat3"></div></div>
 <div class="statusText" id="statusText">優先条件を選択すると、一覧全体を並び替えます。</div>
 
+
+<div class="eiketsu-search-guide">【英傑名】は、名前のどの漢字1文字でも検索できます。</div>
+<div class="eiketsu-search-row">
+  <input type="search" id="eiketsuNameSearch" class="eiketsu-search-input" placeholder="英傑名を検索（漢字1文字から）" autocomplete="off" aria-label="英傑名検索">
+</div>
+<div id="eiketsuSearchResults" class="eiketsu-search-results hidden">
+  <h3>検索結果（<span id="eiketsuSearchCount">0</span>件）</h3>
+  <table id="eiketsuSearchResultTable"></table>
+</div>
 
 <h3>一覧</h3>
 <table id="table"></table>
@@ -104,6 +144,9 @@ let baseData=[];
 let sortKey="生命";
 let sortAsc=false;
 let priorities=[{mode:null,stat:null},{mode:null,stat:null},{mode:null,stat:null}];
+let eiketsuSearchSortKey="番号";
+let eiketsuSearchSortAsc=true;
+let eiketsuZoomPercent=100;
 
 const stats=["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 const skillCols=["育成技能１","育成技能２","育成技能３"];
@@ -222,6 +265,8 @@ function setMode(i,mode){priorities[i].mode=mode;updateButtons();render();}
 function setStat(i,stat){priorities[i].stat=stat;updateButtons();render();}
 function resetEiketsuSelection(){
   priorities=[{mode:null,stat:null},{mode:null,stat:null},{mode:null,stat:null}];
+  const searchInput=document.getElementById("eiketsuNameSearch");
+  if(searchInput) searchInput.value="";
   updateButtons();
   render();
 }
@@ -351,17 +396,80 @@ function renderList(){
   });
   table.innerHTML=renderRows(list,false);
 }
-function render(){renderResult();renderList();}
+
+function getEiketsuSearchArrow(key){
+  if(eiketsuSearchSortKey!==key) return "";
+  return eiketsuSearchSortAsc ? " ▲" : " ▼";
+}
+function setEiketsuSearchSort(key){
+  if(eiketsuSearchSortKey===key) eiketsuSearchSortAsc=!eiketsuSearchSortAsc;
+  else { eiketsuSearchSortKey=key; eiketsuSearchSortAsc=false; }
+  renderEiketsuSearchResults();
+}
+function renderEiketsuSearchRows(list){
+  let html="<tr>";
+  viewColumns.forEach(c=>{
+    const key=c.key;
+    const realKey=baseData.length?resolveCsvKey(baseData[0],key):key;
+    const cls=(key==="番号"?"numCol":key==="コスト"?"costCol":key==="名前"?"nameCol":key.includes("因子")?"factorCol":key==="武器"?"weaponCol":key==="固有技能名"?"skillNameCol":skillCols.includes(key)?"skillCol":c.stat?"statCol":"");
+    html+=`<th class="${cls}" onclick="setEiketsuSearchSort('${key}')">${realKey}${getEiketsuSearchArrow(key)}</th>`;
+  });
+  html+="</tr>";
+  list.forEach(d=>{
+    html+="<tr>";
+    viewColumns.forEach(c=>{
+      const value=cellValue(d,c.key);
+      const skillStat=skillCols.includes(c.key)?getSkillTextStat(value):null;
+      const colorStat=c.stat||skillStat;
+      const style=colorStat?` style="color:${statColors[colorStat]}"`:"";
+      html+=`<td${style}>${escapeHTML(value)}</td>`;
+    });
+    html+="</tr>";
+  });
+  return html;
+}
+function renderEiketsuSearchResults(){
+  const input=document.getElementById("eiketsuNameSearch");
+  const wrap=document.getElementById("eiketsuSearchResults");
+  const tableEl=document.getElementById("eiketsuSearchResultTable");
+  const countEl=document.getElementById("eiketsuSearchCount");
+  if(!input||!wrap||!tableEl||!countEl) return;
+  const query=input.value.trim();
+  if(!query){ wrap.classList.add("hidden"); tableEl.innerHTML=""; countEl.textContent="0"; return; }
+  const matches=baseData.filter(d=>String(cellValue(d,"名前")||"").includes(query));
+  matches.sort((a,b)=>{
+    const key=eiketsuSearchSortKey;
+    if(isNumericColumn(key)){
+      const diff=getVal(a,key)-getVal(b,key); return eiketsuSearchSortAsc?diff:-diff;
+    }
+    const A=cellValue(a,key), B=cellValue(b,key);
+    return eiketsuSearchSortAsc?A.localeCompare(B,'ja'):B.localeCompare(A,'ja');
+  });
+  countEl.textContent=String(matches.length);
+  tableEl.innerHTML=renderEiketsuSearchRows(matches);
+  wrap.classList.remove("hidden");
+}
+function render(){renderResult();renderList();renderEiketsuSearchResults();}
+
 makeButtons();updateButtons();
-loadCSV().then(()=>render());
+loadCSV().then(()=>{
+  const input=document.getElementById("eiketsuNameSearch");
+  if(input) input.addEventListener("input",renderEiketsuSearchResults);
+  render();
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 function setEiketsuZoom(percent){
+  eiketsuZoomPercent=Math.max(100,Math.min(300,Number(percent)||100));
   const zoomArea=document.getElementById("zoomArea");
   if(zoomArea){
-    zoomArea.style.zoom=percent+"%";
+    zoomArea.style.zoom=eiketsuZoomPercent+"%";
+    zoomArea.style.width="100%";
   }
+}
+function changeEiketsuZoom(delta){
+  setEiketsuZoom(eiketsuZoomPercent+Number(delta||0));
 }
 function downloadScreen(){html2canvas(document.body,{backgroundColor:"#000000",scale:2,x:window.scrollX,y:window.scrollY,width:window.innerWidth,height:window.innerHeight,windowWidth:window.innerWidth,windowHeight:window.innerHeight,ignoreElements:(el)=>el.classList.contains("no-capture")}).then(canvas=>{const link=document.createElement("a");link.download="英傑一覧.png";link.href=canvas.toDataURL("image/png");link.click();});}
 </script>
