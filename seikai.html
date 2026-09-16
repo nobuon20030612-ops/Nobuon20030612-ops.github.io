@@ -246,6 +246,22 @@ body{
   gap:0;
 }
 
+/* 虹彩の星光だけは銀素材が4個あるため、表示幅を少し広げて文字被りを防ぐ */
+.box.rainbow-four-box{
+  flex:1.22;
+}
+
+.box.rainbow-four-box .silver-list.four{
+  column-gap:4px;
+  row-gap:2px;
+}
+
+.box.rainbow-four-box .silver-list.four > div{
+  padding-left:1px;
+  padding-right:1px;
+  font-size:clamp(10px,1vw,12.5px);
+}
+
 
 /* 鬼神石と同じ「合成最低発現数」表示を、空いている左上へ配置 */
 .seikai-info-trigger{
@@ -732,7 +748,7 @@ function show(id,options){
     const four=silvers.length===4 ? " four" : "";
 
     html+=`
-      <div class="box">
+      <div class="box${g===0 ? " rainbow-four-box" : ""}">
         <div style="background:${colors[g]};color:${getTextColor(g)}">
           ${names[g]}の星光(金)
         </div>
