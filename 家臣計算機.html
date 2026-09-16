@@ -1771,6 +1771,76 @@ body{ background:#000; }
 }
 
 </style>
+<style>
+/* ===== 家臣計算機ページ本体：九十九と同仕様の右下固定ズーム ===== */
+body{
+  padding-bottom:110px !important;
+  box-sizing:border-box;
+}
+.kashin-page-fixed-zoom-controls{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:9000;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.kashin-page-fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.kashin-page-fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.kashin-page-fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.kashin-page-fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.kashin-page-fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.kashin-page-fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+@media (max-width:700px){
+  body{padding-bottom:95px !important;}
+  .kashin-page-fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
+  .kashin-page-fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+}
+</style>
 </head>
 
 <body>
@@ -1802,6 +1872,23 @@ function setKashinZoom(percent) {
   if(zoomArea){
     zoomArea.style.zoom = correctedPercent + "%";
   }
+}
+
+
+
+// ===== 家臣計算機ページ本体専用ズーム：モーダルには影響させない =====
+let currentKashinPageFixedZoom = 100;
+function setKashinPageFixedZoom(percent){
+  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  currentKashinPageFixedZoom=next;
+  const zoomArea=document.getElementById("zoomArea");
+  if(zoomArea){
+    zoomArea.style.zoom=next+"%";
+    zoomArea.style.width="100%";
+  }
+}
+function changeKashinPageFixedZoom(delta){
+  setKashinPageFixedZoom(currentKashinPageFixedZoom+Number(delta||0));
 }
 
 function fillKashinInputTestValues(){
@@ -1862,17 +1949,16 @@ function downloadScreen() {
 }
 </script>
   <div class="top-buttons no-capture">
-  <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
-  <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
-  <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
-  <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
-  <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
 <div class="top-buttons no-capture">
   <div class="top-zoom" onclick="resetKashinInputValues()">リセット</div>
   <div class="top-zoom" onclick="fillKashinInputTestValues()">入力テスト</div>
+</div>
+<div class="kashin-page-fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="kashin-page-fixed-zoom-btn kashin-page-fixed-zoom-out" onclick="changeKashinPageFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="kashin-page-fixed-zoom-btn kashin-page-fixed-zoom-in" onclick="changeKashinPageFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 <div id="zoomArea">
 <!-- 合計能力 -->
@@ -2001,11 +2087,6 @@ createSection("左手：","left", true);
 <div id="tsukumoModal" class="tsukumo-modal tsukumo-page-sync hidden">
   <div class="tsukumo-page-top-buttons no-capture">
     <div class="tsukumo-page-top-zoom" onclick="resetKashinTsukumoSelection()">リセット</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="100" onclick="setTsukumoModalZoom(100)">100%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="125" onclick="setTsukumoModalZoom(125)">125%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="150" onclick="setTsukumoModalZoom(150)">150%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="175" onclick="setTsukumoModalZoom(175)">175%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="200" onclick="setTsukumoModalZoom(200)">200%</div>
     <div class="tsukumo-page-top-save" onclick="downloadTsukumoModalScreen()">保存</div>
     <div class="tsukumo-page-top-back" onclick="closeTsukumoPicker()">戻る</div>
   </div>
@@ -3241,6 +3322,92 @@ calc();
   let frameObserver = null;
   let restoreTimer = null;
 
+/* ===== 九十九モーダル専用：standaloneと同仕様の右下ズーム ===== */
+  let tsukumoModalActionResizeObserver = null;
+
+  function isTsukumoStandaloneInFrame(){
+    const src = String(frame && frame.getAttribute("src") || "");
+    return !src.includes("魔導結晶.html");
+  }
+
+  function positionTsukumoModalZoomControls(){
+    if(!isTsukumoStandaloneInFrame()) return;
+    const doc = getFrameDoc();
+    const modal = document.getElementById("tsukumoModal");
+    const controls = doc && doc.querySelector(".fixed-zoom-controls");
+    if(!doc || !modal || !controls || !actions) return;
+
+    const actionRect = actions.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    if(!actionRect.height || !modalRect.height) return;
+
+    const gap = window.innerWidth <= 700 ? 8 : 12;
+    const bottom = Math.max(10, Math.round(modalRect.bottom - actionRect.top + gap));
+    controls.style.setProperty("bottom", bottom + "px", "important");
+  }
+
+  function ensureTsukumoModalZoomControls(){
+    if(!isTsukumoStandaloneInFrame()) return;
+    const doc = getFrameDoc();
+    if(!doc) return;
+    const win = doc.defaultView;
+    if(!win) return;
+
+    /* 旧100/125/150/175/200%はモーダルでは残さない。リセット等は残す。 */
+    doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => btn.remove());
+
+    if(!doc.getElementById("tsukumo-modal-fixed-zoom-style")){
+      const style = doc.createElement("style");
+      style.id = "tsukumo-modal-fixed-zoom-style";
+      style.textContent = '.fixed-zoom-controls{\n  position:fixed;\n  right:22px;\n  bottom:22px;\n  z-index:999999;\n  display:flex;\n  align-items:center;\n  gap:12px;\n}\n.fixed-zoom-btn{\n  min-width:112px;\n  margin:0 !important;\n  padding:12px 18px !important;\n  border-radius:8px;\n  font-size:18px !important;\n  font-weight:900;\n  line-height:1.1;\n  color:#fff;\n  background:rgba(0,0,0,.86);\n  cursor:pointer;\n  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;\n}\n.fixed-zoom-btn:hover{\n  transform:scale(1.05) !important;\n  filter:brightness(1.16);\n}\n.fixed-zoom-out{\n  border:2px solid #55bfff !important;\n  color:#bfe9ff !important;\n  box-shadow:\n    0 0 8px rgba(90,195,255,.95),\n    0 0 18px rgba(40,145,255,.85),\n    0 0 34px rgba(0,95,255,.65),\n    inset 0 0 12px rgba(75,175,255,.14) !important;\n}\n.fixed-zoom-out:hover{\n  border-color:#a7e2ff !important;\n  box-shadow:\n    0 0 10px rgba(165,225,255,1),\n    0 0 24px rgba(65,165,255,.95),\n    0 0 42px rgba(0,100,255,.78) !important;\n}\n.fixed-zoom-in{\n  border:2px solid #ff4f5f !important;\n  color:#ffd0d5 !important;\n  box-shadow:\n    0 0 8px rgba(255,90,105,.98),\n    0 0 18px rgba(255,35,55,.88),\n    0 0 34px rgba(205,0,25,.68),\n    inset 0 0 12px rgba(255,70,90,.14) !important;\n}\n.fixed-zoom-in:hover{\n  border-color:#ff9da8 !important;\n  box-shadow:\n    0 0 10px rgba(255,170,180,1),\n    0 0 24px rgba(255,70,90,.98),\n    0 0 42px rgba(220,0,25,.8) !important;\n}\n@media (max-width:700px){\n  .fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}\n  .fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}\n}';
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+
+    let controls = doc.querySelector(".fixed-zoom-controls");
+    if(!controls){
+      controls = doc.createElement("div");
+      controls.className = "fixed-zoom-controls no-capture";
+      controls.setAttribute("aria-label", "画面倍率操作");
+      controls.innerHTML = '<button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKashinZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>' +
+        '<button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeKashinZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>';
+      const zoomArea = doc.getElementById("zoomArea");
+      if(zoomArea && zoomArea.parentNode) zoomArea.parentNode.insertBefore(controls, zoomArea);
+      else if(doc.body) doc.body.appendChild(controls);
+    }
+
+    /* 古いstandaloneでも、モーダル内だけ現行standaloneと同じ25%刻み/100〜300%にする。 */
+    if(typeof win.changeKashinZoom !== "function"){
+      let currentKashinZoom = 150;
+      win.setKashinZoom = function(percent){
+        const next = Math.max(100, Math.min(300, Number(percent) || 150));
+        currentKashinZoom = next;
+        const zoomArea = doc.getElementById("zoomArea");
+        if(zoomArea){
+          zoomArea.style.zoom = next + "%";
+          zoomArea.style.width = "100%";
+        }
+        doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => {
+          btn.classList.toggle("zoom-active", Number(btn.dataset.zoom) === next);
+        });
+      };
+      win.changeKashinZoom = function(delta){
+        win.setKashinZoom(currentKashinZoom + Number(delta || 0));
+      };
+    }
+
+    if(typeof win.setKashinZoom === "function") win.setKashinZoom(150);
+    positionTsukumoModalZoomControls();
+    if(win.requestAnimationFrame){
+      win.requestAnimationFrame(() => positionTsukumoModalZoomControls());
+    }
+  }
+
+  window.addEventListener("resize", positionTsukumoModalZoomControls);
+  if(typeof ResizeObserver === "function" && actions){
+    tsukumoModalActionResizeObserver = new ResizeObserver(positionTsukumoModalZoomControls);
+    tsukumoModalActionResizeObserver.observe(actions);
+  }
+
   function getFrameDoc(){
     try{
       return frame && frame.contentDocument ? frame.contentDocument : null;
@@ -3346,6 +3513,8 @@ calc();
   function bindStandaloneFrame(){
     const doc = getFrameDoc();
     if(!doc) return;
+
+    ensureTsukumoModalZoomControls();
 
     const back = doc.querySelector(".top-back");
     if(back){

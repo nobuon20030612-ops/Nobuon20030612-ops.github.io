@@ -304,6 +304,63 @@ button:active{
   font-size:22px;
 }
 
+/* ===== 九十九の力 名前検索 ===== */
+.tsukumo-search-guide{
+  margin:12px 0 6px;
+  padding:10px 14px;
+  box-sizing:border-box;
+  text-align:center;
+  font-size:22px;
+  line-height:1.35;
+  font-weight:900;
+  color:#ffd8e7;
+  border:2px solid #ffb8d1;
+  background:rgba(24,8,16,.82);
+  text-shadow:
+    0 0 7px rgba(255,216,231,.98),
+    0 0 16px rgba(255,170,205,.88),
+    0 0 28px rgba(255,135,185,.62);
+  box-shadow:
+    0 0 10px rgba(255,184,209,.60),
+    0 0 22px rgba(255,150,195,.34),
+    inset 0 0 12px rgba(255,190,215,.12);
+}
+.tsukumo-search-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:8px 0 4px;
+}
+.tsukumo-search-input{
+  width:min(430px,100%);
+  box-sizing:border-box;
+  padding:9px 12px;
+  border:2px solid #666;
+  background:rgba(0,0,0,.82);
+  color:#eee;
+  font-size:16px;
+  outline:none;
+}
+.tsukumo-search-input:focus{
+  border-color:#ffb8d1;
+  box-shadow:
+    0 0 8px rgba(255,190,215,.82),
+    0 0 16px rgba(255,150,195,.40),
+    inset 0 0 8px rgba(255,190,215,.10);
+}
+.tsukumo-search-input::placeholder{
+  color:#888;
+}
+.tsukumo-search-results{
+  margin:8px 0 14px;
+}
+.tsukumo-search-results.hidden{
+  display:none;
+}
+.tsukumo-search-results h3{
+  margin:8px 0 4px;
+}
+
 /* 上覧九十九・弐：重複減衰の説明 */
 .joran-tsukumo2-info-wrap{
   text-align:center;
@@ -510,25 +567,102 @@ th.priority-sort-col{
 
 
 /* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
-#table, #selectedTable{
+#table, #selectedTable, #searchResultTable{
   width:100% !important;
   table-layout:auto !important;
 }
 #table th, #table td,
-#selectedTable th, #selectedTable td{
+#selectedTable th, #selectedTable td,
+#searchResultTable th, #searchResultTable td{
   white-space:nowrap !important;
 }
 #table th:first-child, #table td:first-child,
-#selectedTable th:first-child, #selectedTable td:first-child{
+#selectedTable th:first-child, #selectedTable td:first-child,
+#searchResultTable th:first-child, #searchResultTable td:first-child{
   width:42px !important;
 }
 #table th:nth-child(14), #table td:nth-child(14),
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
+#selectedTable th:nth-child(14), #selectedTable td:nth-child(14),
+#searchResultTable th:nth-child(14), #searchResultTable td:nth-child(14){
   width:70px !important;
   max-width:70px !important;
   overflow:hidden !important;
   text-overflow:ellipsis !important;
 }
+
+/* ===== 最下部の固定ズームボタン重なり回避 ===== */
+body{
+  padding-bottom:110px !important;
+  box-sizing:border-box;
+}
+@media (max-width:700px){
+  body{padding-bottom:95px !important;}
+}
+
+/* ===== 右下固定ズーム操作 ===== */
+.fixed-zoom-controls{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+@media (max-width:700px){
+  .fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
+  .fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+}
+
 </style>
 
 
@@ -593,13 +727,13 @@ body {
 
 <div class="top-buttons no-capture">
   <div class="top-zoom" onclick="resetTsukumoSelection()">リセット</div>
-  <div class="top-zoom" data-zoom="100" onclick="setKashinZoom(100)">100%</div>
-  <div class="top-zoom" data-zoom="125" onclick="setKashinZoom(125)">125%</div>
-  <div class="top-zoom zoom-active" data-zoom="150" onclick="setKashinZoom(150)">150%</div>
-  <div class="top-zoom" data-zoom="175" onclick="setKashinZoom(175)">175%</div>
-  <div class="top-zoom" data-zoom="200" onclick="setKashinZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
+</div>
+
+<div class="fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKashinZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeKashinZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 <div id="zoomArea" style="zoom:150%;">
 <h1 class="title">九十九</h1>
@@ -650,6 +784,13 @@ body {
 <h3 class="selected-count-heading">選択中（<span class="selected-count-number" data-selected-count>0</span>個）</h3>
 <table id="selectedTable"></table>
 
+<div class="tsukumo-search-guide">【九十九の力】は、名前のどの漢字1文字でも検索できます。</div>
+<div class="tsukumo-search-row">
+  <input type="search" id="tsukumoNameSearch" class="tsukumo-search-input"
+         placeholder="九十九の力を検索（漢字1文字から）" autocomplete="off"
+         aria-label="九十九の力の名前検索">
+</div>
+
 <div class="list-heading-row">
   <div class="list-title-with-count">
     <h3>一覧</h3>
@@ -663,6 +804,10 @@ body {
     </div>
   </div>
   <div class="list-heading-spacer" aria-hidden="true"></div>
+</div>
+<div id="tsukumoSearchResults" class="tsukumo-search-results hidden">
+  <h3>検索結果（<span id="tsukumoSearchCount">0</span>件）</h3>
+  <table id="searchResultTable"></table>
 </div>
 <table id="table"></table>
 </div>
@@ -896,6 +1041,8 @@ function resetTsukumoSelection(){
   thirdStat = null;
   replaceTarget = null;
   prioritySortStats = [null,null];
+  const searchInput=document.getElementById("tsukumoNameSearch");
+  if(searchInput)searchInput.value="";
   document.getElementById("excludeA").checked = false;
   document.getElementById("excludeB").checked = false;
   document.getElementById("excludeC").checked = false;
@@ -1030,10 +1177,11 @@ function setReplace(id){
 }
 
 /* 入替＋選択 */
-function keepClickedRowPosition(id,beforeTop){
+function keepClickedRowPosition(id,beforeTop,tableId="table"){
   if(beforeTop==null)return;
 
-  const rows=document.querySelectorAll("#table tr[data-row-id]");
+  const safeTableId=(tableId==="searchResultTable") ? "searchResultTable" : "table";
+  const rows=document.querySelectorAll(`#${safeTableId} tr[data-row-id]`);
   let currentRow=null;
 
   for(const row of rows){
@@ -1057,10 +1205,11 @@ function toggle(id,rowEl){
   if(isExcluded(id)) return;
 
   const beforeTop=rowEl ? rowEl.getBoundingClientRect().top : null;
+  const sourceTableId=rowEl?.closest("table")?.id || "table";
 
   const finish=()=>{
     render();
-    keepClickedRowPosition(id,beforeTop);
+    keepClickedRowPosition(id,beforeTop,sourceTableId);
   };
 
   if(replaceTarget!=null){
@@ -1116,7 +1265,7 @@ function escapeAttr(value){
 
 function refreshOverflowTitles(){
   requestAnimationFrame(()=>{
-    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td,#searchResultTable th,#searchResultTable td").forEach(cell=>{
       const full=(cell.textContent||"").trim();
       if(full && cell.scrollWidth > cell.clientWidth + 1){
         cell.title=full;
@@ -1182,6 +1331,74 @@ function calcTotals(){
   return t;
 }
 
+function renderSearchResults(sortedList){
+  const input=document.getElementById("tsukumoNameSearch");
+  const wrap=document.getElementById("tsukumoSearchResults");
+  const resultTable=document.getElementById("searchResultTable");
+  const countEl=document.getElementById("tsukumoSearchCount");
+  if(!input || !wrap || !resultTable || !countEl)return;
+
+  const query=input.value.trim();
+  if(!query){
+    wrap.classList.add("hidden");
+    resultTable.innerHTML="";
+    countEl.textContent="0";
+    return;
+  }
+
+  const matches=sortedList.filter(d=>{
+    if(isExcluded(d["番号"]))return false;
+    return String(d["九十九の力"]||"").includes(query);
+  });
+
+  countEl.textContent=matches.length;
+  wrap.classList.remove("hidden");
+
+  let html="<tr>";
+  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th>九十九の力</th>`;
+  stats.forEach(s=>{
+    const activePriorityCol=prioritySortStats.includes(s);
+    const cls=activePriorityCol?"priority-sort-col":"";
+    const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
+    html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
+  });
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+="</tr>";
+
+  matches.forEach(d=>{
+    const sel=selected.includes(d["番号"])?"selected":"";
+    const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
+
+    html+=`<tr class="${sel} ${rep}" data-row-id="${d["番号"]}" onclick="toggle('${d["番号"]}', this)">`;
+    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    stats.forEach(s=>{
+      const activePriorityCol=prioritySortStats.includes(s);
+      const cls=activePriorityCol?"priority-sort-col":"";
+      const style=activePriorityCol
+        ?`color:${statColors[s]};--priority-col-color:${statColors[s]}`
+        :`color:${statColors[s]}`;
+      html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
+    });
+    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html+="</tr>";
+  });
+
+  resultTable.innerHTML=html;
+
+  const colIndexMap={"番号":1,"九十九の力":2};
+  stats.forEach((s,i)=>{colIndexMap[s]=i+3;});
+  colIndexMap["入手"]=14;
+
+  if(prioritySortStats.some(Boolean)){
+    resultTable.className="";
+  }else if(sortKey){
+    resultTable.className="sorted-col-"+colIndexMap[sortKey];
+  }else{
+    resultTable.className="";
+  }
+}
+
 /* 描画 */
 function render(){
 
@@ -1200,6 +1417,8 @@ function render(){
     }
     return compare(a,b);
   });
+
+  renderSearchResults(list);
 
   const colIndexMap = {"番号":1,"九十九の力":2};
   stats.forEach((s,i)=>{ colIndexMap[s]=i+3; });
@@ -1295,6 +1514,7 @@ loadCSV().then(() => {
   document.getElementById("excludeA").addEventListener("change", onExcludeChange);
   document.getElementById("excludeB").addEventListener("change", onExcludeChange);
   document.getElementById("excludeC").addEventListener("change", onExcludeChange);
+  document.getElementById("tsukumoNameSearch").addEventListener("input", render);
 
   render();
 });</script>
@@ -1302,15 +1522,24 @@ loadCSV().then(() => {
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
+let currentKashinZoom = 150;
+
 function setKashinZoom(percent) {
+  const next=Math.max(100,Math.min(300,Number(percent)||150));
+  currentKashinZoom=next;
+
   const zoomArea = document.getElementById("zoomArea");
   if(zoomArea){
-    zoomArea.style.zoom = percent + "%";
+    zoomArea.style.zoom = next + "%";
     zoomArea.style.width = "100%";
   }
   document.querySelectorAll(".top-zoom[data-zoom]").forEach(btn=>{
-    btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===Number(percent));
+    btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===next);
   });
+}
+
+function changeKashinZoom(delta){
+  setKashinZoom(currentKashinZoom + Number(delta||0));
 }
 
 function downloadScreen() { 
