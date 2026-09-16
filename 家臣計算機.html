@@ -1949,7 +1949,7 @@ function setKashinZoom(percent) {
 // ===== 家臣計算機ページ本体専用ズーム：モーダルには影響させない =====
 let currentKashinPageFixedZoom = 100;
 function setKashinPageFixedZoom(percent){
-  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  const next=Math.max(25,Math.min(300,Number(percent)||100));
   currentKashinPageFixedZoom=next;
   const zoomArea=document.getElementById("zoomArea");
   if(zoomArea){
@@ -1958,7 +1958,16 @@ function setKashinPageFixedZoom(percent){
   }
 }
 function changeKashinPageFixedZoom(delta){
-  setKashinPageFixedZoom(currentKashinPageFixedZoom+Number(delta||0));
+  const step=Number(delta)||0;
+  const zoomArea=document.getElementById("zoomArea");
+  const actual=zoomArea ? parseFloat(zoomArea.style.zoom) : NaN;
+  const current=Number.isFinite(actual) ? actual : currentKashinPageFixedZoom;
+  const next=Math.max(25,Math.min(300,current+step));
+  if(next===current){
+    currentKashinPageFixedZoom=next;
+    return;
+  }
+  setKashinPageFixedZoom(next);
 }
 
 function fillKashinInputTestValues(){
@@ -2027,7 +2036,7 @@ function downloadScreen() {
   <div class="top-zoom" onclick="fillKashinInputTestValues()">入力テスト</div>
 </div>
 <div class="kashin-page-fixed-zoom-controls no-capture" aria-label="画面倍率操作">
-  <button type="button" class="kashin-page-fixed-zoom-btn kashin-page-fixed-zoom-out" onclick="changeKashinPageFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="kashin-page-fixed-zoom-btn kashin-page-fixed-zoom-out" onclick="changeKashinPageFixedZoom(-25)" title="25%縮小（最小25%）">－ 縮小</button>
   <button type="button" class="kashin-page-fixed-zoom-btn kashin-page-fixed-zoom-in" onclick="changeKashinPageFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 <div id="zoomArea">
@@ -2245,7 +2254,7 @@ createSection("左手：","left", true);
     <span id="fuyosekiSelectedCount" class="fuyoseki-count">選択 0/2</span>
   </div>
   <div id="kashinFuyoFixedZoomControls" class="fuyo-fixed-zoom-controls no-capture" aria-label="付与モーダル倍率操作">
-    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-out" onclick="changeKashinFuyoFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-out" onclick="changeKashinFuyoFixedZoom(-25)" title="25%縮小（最小25%）">－ 縮小</button>
     <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeKashinFuyoFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
   </div>
   <div id="fuyosekiZoomArea">
@@ -2494,7 +2503,7 @@ function clearFuyoActiveValue(){
 // ===== 付与モーダル専用ズーム：ページ本体・九十九モーダルには影響させない =====
 let currentKashinFuyoFixedZoom = 100;
 function setKashinFuyoFixedZoom(percent){
-  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  const next=Math.max(25,Math.min(300,Number(percent)||100));
   currentKashinFuyoFixedZoom=next;
   const area=document.getElementById("fuyosekiZoomArea");
   if(area){
@@ -2503,7 +2512,16 @@ function setKashinFuyoFixedZoom(percent){
   }
 }
 function changeKashinFuyoFixedZoom(delta){
-  setKashinFuyoFixedZoom(currentKashinFuyoFixedZoom+Number(delta||0));
+  const step=Number(delta)||0;
+  const area=document.getElementById("fuyosekiZoomArea");
+  const actual=area ? parseFloat(area.style.zoom) : NaN;
+  const current=Number.isFinite(actual) ? actual : currentKashinFuyoFixedZoom;
+  const next=Math.max(25,Math.min(300,current+step));
+  if(next===current){
+    currentKashinFuyoFixedZoom=next;
+    return;
+  }
+  setKashinFuyoFixedZoom(next);
 }
 function positionKashinFuyoFixedZoomControls(){
   const modal=document.getElementById("fuyosekiModal");
@@ -3465,32 +3483,39 @@ calc();
       controls = doc.createElement("div");
       controls.className = "fixed-zoom-controls no-capture";
       controls.setAttribute("aria-label", "画面倍率操作");
-      controls.innerHTML = '<button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKashinZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>' +
+      controls.innerHTML = '<button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKashinZoom(-25)" title="25%縮小（最小25%）">－ 縮小</button>' +
         '<button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeKashinZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>';
       const zoomArea = doc.getElementById("zoomArea");
       if(zoomArea && zoomArea.parentNode) zoomArea.parentNode.insertBefore(controls, zoomArea);
       else if(doc.body) doc.body.appendChild(controls);
     }
 
-    /* 古いstandaloneでも、モーダル内だけ現行standaloneと同じ25%刻み/100〜300%にする。 */
-    if(typeof win.changeKashinZoom !== "function"){
-      let currentKashinZoom = 150;
-      win.setKashinZoom = function(percent){
-        const next = Math.max(100, Math.min(300, Number(percent) || 150));
+    /* 九十九モーダル内は既存standalone実装に依存せず、25%刻み・25〜300%で完全停止させる。 */
+    let currentKashinZoom = 150;
+    win.setKashinZoom = function(percent){
+      const next = Math.max(25, Math.min(300, Number(percent) || 150));
+      currentKashinZoom = next;
+      const zoomArea = doc.getElementById("zoomArea");
+      if(zoomArea){
+        zoomArea.style.zoom = next + "%";
+        zoomArea.style.width = "100%";
+      }
+      doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => {
+        btn.classList.toggle("zoom-active", Number(btn.dataset.zoom) === next);
+      });
+    };
+    win.changeKashinZoom = function(delta){
+      const step = Number(delta) || 0;
+      const zoomArea = doc.getElementById("zoomArea");
+      const actual = zoomArea ? parseFloat(zoomArea.style.zoom) : NaN;
+      const current = Number.isFinite(actual) ? actual : currentKashinZoom;
+      const next = Math.max(25, Math.min(300, current + step));
+      if(next === current){
         currentKashinZoom = next;
-        const zoomArea = doc.getElementById("zoomArea");
-        if(zoomArea){
-          zoomArea.style.zoom = next + "%";
-          zoomArea.style.width = "100%";
-        }
-        doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => {
-          btn.classList.toggle("zoom-active", Number(btn.dataset.zoom) === next);
-        });
-      };
-      win.changeKashinZoom = function(delta){
-        win.setKashinZoom(currentKashinZoom + Number(delta || 0));
-      };
-    }
+        return;
+      }
+      win.setKashinZoom(next);
+    };
 
     if(typeof win.setKashinZoom === "function") win.setKashinZoom(150);
     positionTsukumoModalZoomControls();
