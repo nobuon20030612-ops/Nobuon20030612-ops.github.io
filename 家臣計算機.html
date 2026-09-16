@@ -1947,7 +1947,7 @@ function setKashinZoom(percent) {
 
 
 // ===== 家臣計算機ページ本体専用ズーム：モーダルには影響させない =====
-let currentKashinPageFixedZoom = 100;
+let currentKashinPageFixedZoom = 75;
 function setKashinPageFixedZoom(percent){
   const next=Math.max(25,Math.min(300,Number(percent)||100));
   currentKashinPageFixedZoom=next;
@@ -1969,6 +1969,9 @@ function changeKashinPageFixedZoom(delta){
   }
   setKashinPageFixedZoom(next);
 }
+document.addEventListener("DOMContentLoaded", function(){
+  setKashinPageFixedZoom(75);
+});
 
 function fillKashinInputTestValues(){
   if(!confirm("入力可能な全マスに1を入力します。実行していいですか？")) return;
