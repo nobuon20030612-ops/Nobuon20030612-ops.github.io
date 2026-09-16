@@ -297,6 +297,100 @@ body{
   flex:0 1 auto;
 }
 
+
+/* ===== 初期操作案内：上部の色帯を視覚的に案内 ===== */
+.seikai-start-guide{
+  position:fixed;
+  left:50%;
+  top:clamp(175px,20vh,235px);
+  transform:translateX(-50%);
+  z-index:8500;
+  width:min(92vw,980px);
+  text-align:center;
+  pointer-events:none;
+  opacity:1;
+  visibility:visible;
+  transition:opacity .22s ease, visibility .22s ease;
+}
+.seikai-start-guide.hidden{
+  opacity:0;
+  visibility:hidden;
+}
+.seikai-guide-arrow-wrap{
+  height:clamp(125px,17vh,185px);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  margin-bottom:clamp(12px,2vh,24px);
+}
+.seikai-guide-arrow{
+  position:relative;
+  width:clamp(76px,7vw,118px);
+  height:clamp(116px,14vh,170px);
+  animation:seikai-guide-bob 1.15s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(255,255,255,.95))
+         drop-shadow(0 0 20px rgba(255,80,80,.85))
+         drop-shadow(0 0 38px rgba(255,0,0,.55));
+}
+/* 矢印の軸 */
+.seikai-guide-arrow::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:clamp(42px,5vh,62px);
+  width:clamp(22px,2.2vw,34px);
+  height:clamp(70px,9vh,108px);
+  transform:translateX(-50%);
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 0 10px rgba(255,255,255,.95);
+}
+/* 矢印の先端 */
+.seikai-guide-arrow::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:clamp(38px,3.5vw,58px) solid transparent;
+  border-right:clamp(38px,3.5vw,58px) solid transparent;
+  border-bottom:clamp(58px,6vh,84px) solid #fff;
+}
+.seikai-guide-text{
+  display:inline-block;
+  padding:clamp(12px,1.4vw,20px) clamp(18px,2.8vw,40px);
+  border:2px solid rgba(255,90,90,.9);
+  border-radius:12px;
+  background:rgba(0,0,0,.82);
+  color:#fff;
+  font-size:clamp(24px,2.4vw,42px);
+  line-height:1.35;
+  font-weight:900;
+  letter-spacing:.04em;
+  text-shadow:0 0 8px rgba(255,255,255,.65),0 0 18px rgba(255,80,80,.55);
+  box-shadow:0 0 14px rgba(255,70,70,.45),inset 0 0 16px rgba(255,70,70,.12);
+}
+@keyframes seikai-guide-bob{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-24px);}
+}
+@media (prefers-reduced-motion:reduce){
+  .seikai-guide-arrow{animation:none;}
+}
+@media screen and (max-width:640px){
+  .seikai-start-guide{
+    top:150px;
+    width:94vw;
+  }
+  .seikai-guide-arrow-wrap{height:110px;margin-bottom:10px;}
+  .seikai-guide-arrow{width:72px;height:108px;}
+  .seikai-guide-arrow::before{top:38px;width:20px;height:66px;}
+  .seikai-guide-arrow::after{border-left-width:36px;border-right-width:36px;border-bottom-width:54px;}
+  .seikai-guide-text{font-size:clamp(18px,4.8vw,26px);padding:10px 14px;}
+}
+
 </style>
 <link rel="manifest" href="manifest.json">
 </head>
@@ -313,6 +407,14 @@ body{
   <button class="rentei" data-stone-id="27" onclick="show(27)">廉貞</button>
   <button class="kyomon" data-stone-id="28" onclick="show(28)">巨門</button>
   <button class="tanrou" data-stone-id="29" onclick="show(29)">貪狼</button>
+</div>
+
+
+<div id="seikaiStartGuide" class="seikai-start-guide" aria-hidden="true">
+  <div class="seikai-guide-arrow-wrap">
+    <div class="seikai-guide-arrow"></div>
+  </div>
+  <div class="seikai-guide-text">上部の色をクリックすると合成方法が表示されます</div>
 </div>
 
 <div class="top-back" onclick="goBack()">戻る</div>
@@ -399,9 +501,17 @@ const statusColors=[
   "#ffff99","#cc99ff","#ffcc99","#6699ff","#ff99aa","#99ff99"
 ];
 
+
+function hideSeikaiStartGuide(){
+  const guide=document.getElementById("seikaiStartGuide");
+  if(guide) guide.classList.add("hidden");
+}
+
 function show(id,options){
   id=Number(id);
   if(!topRecipe[id] || !statusData[id] || !stoneSlugs[id]) return false;
+
+  hideSeikaiStartGuide();
 
   const display=document.getElementById("display");
   const list=topRecipe[id];
