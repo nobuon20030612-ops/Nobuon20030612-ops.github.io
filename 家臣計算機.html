@@ -1840,6 +1840,76 @@ body{
   .kashin-page-fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
   .kashin-page-fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
 }
+
+
+/* ===== 付与モーダル専用：右下固定ズーム（ページ本体・他モーダルには影響させない） ===== */
+.fuyo-fixed-zoom-controls{
+  position:fixed;
+  z-index:100050;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.fuyo-fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.fuyo-fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.fuyo-fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.fuyo-fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.fuyo-fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.fuyo-fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+.fuyo-fixed-zoom-safe-space{
+  height:110px;
+  width:100%;
+  pointer-events:none;
+  clear:both;
+}
+@media (max-width:700px){
+  .fuyo-fixed-zoom-controls{gap:8px;}
+  .fuyo-fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+  .fuyo-fixed-zoom-safe-space{height:92px;}
+}
 </style>
 </head>
 
@@ -2167,11 +2237,6 @@ createSection("左手：","left", true);
 <div id="fuyosekiModal" class="fuyoseki-modal hidden">
   <div class="top-buttons no-capture">
     <div class="top-zoom" onclick="resetFuyoModalSelection()">リセット</div>
-    <div class="top-zoom" onclick="setKashinZoom(100)">100%</div>
-    <div class="top-zoom" onclick="setKashinZoom(125)">125%</div>
-    <div class="top-zoom" onclick="setKashinZoom(150)">150%</div>
-    <div class="top-zoom" onclick="setKashinZoom(175)">175%</div>
-    <div class="top-zoom" onclick="setKashinZoom(200)">200%</div>
   </div>
   <div class="fuyoseki-actions">
     <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">表に反映</button>
@@ -2179,10 +2244,15 @@ createSection("左手：","left", true);
     <span id="fuyosekiTargetLabel">付与</span>
     <span id="fuyosekiSelectedCount" class="fuyoseki-count">選択 0/2</span>
   </div>
+  <div id="kashinFuyoFixedZoomControls" class="fuyo-fixed-zoom-controls no-capture" aria-label="付与モーダル倍率操作">
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-out" onclick="changeKashinFuyoFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeKashinFuyoFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
+  </div>
   <div id="fuyosekiZoomArea">
     <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
     <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
   </div>
+  <div class="fuyo-fixed-zoom-safe-space no-capture" aria-hidden="true"></div>
 </div>
 <div id="fuyoDigitModal" class="fuyoseki-digit-modal hidden">
   <div class="fuyoseki-digit-box">
@@ -2419,7 +2489,34 @@ function clearFuyoActiveValue(){
   setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, 0);
   renderFuyoButtons();
 }
-function openFuyoPicker(sectionClass, label){fuyosekiTargetSection = sectionClass; fuyosekiTargetLabel = label; const modal = document.getElementById("fuyosekiModal"); const targetLabel = document.getElementById("fuyosekiTargetLabel"); const fuyosekiZoomArea = document.getElementById("fuyosekiZoomArea"); if(targetLabel) targetLabel.textContent = label; if(fuyosekiZoomArea) fuyosekiZoomArea.style.zoom = "100%"; if(modal){ modal.classList.remove("hidden"); modal.scrollTop = 0; modal.scrollLeft = 0; } loadFuyoTargetStateFromTable(sectionClass); renderFuyoButtons();}
+
+
+// ===== 付与モーダル専用ズーム：ページ本体・九十九モーダルには影響させない =====
+let currentKashinFuyoFixedZoom = 100;
+function setKashinFuyoFixedZoom(percent){
+  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  currentKashinFuyoFixedZoom=next;
+  const area=document.getElementById("fuyosekiZoomArea");
+  if(area){
+    area.style.zoom=next+"%";
+    area.style.width="100%";
+  }
+}
+function changeKashinFuyoFixedZoom(delta){
+  setKashinFuyoFixedZoom(currentKashinFuyoFixedZoom+Number(delta||0));
+}
+function positionKashinFuyoFixedZoomControls(){
+  const modal=document.getElementById("fuyosekiModal");
+  const controls=document.getElementById("kashinFuyoFixedZoomControls");
+  if(!modal||!controls||modal.classList.contains("hidden")) return;
+  const rect=modal.getBoundingClientRect();
+  const edge=window.innerWidth<=700?10:22;
+  controls.style.right=Math.max(10,Math.round(window.innerWidth-rect.right+edge))+"px";
+  controls.style.bottom=Math.max(10,Math.round(window.innerHeight-rect.bottom+edge))+"px";
+}
+window.addEventListener("resize", positionKashinFuyoFixedZoomControls);
+
+function openFuyoPicker(sectionClass, label){fuyosekiTargetSection = sectionClass; fuyosekiTargetLabel = label; const modal = document.getElementById("fuyosekiModal"); const targetLabel = document.getElementById("fuyosekiTargetLabel"); if(targetLabel) targetLabel.textContent = label; setKashinFuyoFixedZoom(100); if(modal){ modal.classList.remove("hidden"); modal.scrollTop = 0; modal.scrollLeft = 0; } positionKashinFuyoFixedZoomControls(); if(window.requestAnimationFrame) window.requestAnimationFrame(positionKashinFuyoFixedZoomControls); loadFuyoTargetStateFromTable(sectionClass); renderFuyoButtons();}
 function closeFuyoPicker(){closeFuyoDigitModal(); const modal = document.getElementById("fuyosekiModal"); if(modal) modal.classList.add("hidden"); fuyosekiTargetSection = ""; fuyosekiTargetLabel = ""; clearFuyoModalSelectionState(); updateFuyoSelectedCount();}
 function getKashinInputsAfterLabelCell(labelCell){let cell = labelCell; const inputs = []; for(let i=0;i<11;i++){cell = cell ? cell.nextElementSibling : null; const input = cell ? cell.querySelector("input") : null; if(input) inputs.push(input);} return inputs;}
 function getKashinFuyoInputs(sectionClass){const section = document.querySelector(`.table.${sectionClass}`); if(!section) return []; const button = section.querySelector(`.kashin-fuyo-row-label[data-fuyo-section="${sectionClass}"]`); if(!button) return []; return getKashinInputsAfterLabelCell(button.closest(".cell"));}

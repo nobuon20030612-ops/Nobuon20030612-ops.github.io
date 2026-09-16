@@ -519,6 +519,140 @@ th.priority-sort-col{
   overflow:hidden !important;
   text-overflow:ellipsis !important;
 }
+
+/* ===== 九十九と同仕様：鬼神の力 名前検索 ===== */
+.kishin-search-guide{
+  margin:12px 0 6px;
+  padding:10px 14px;
+  box-sizing:border-box;
+  text-align:center;
+  font-size:22px;
+  line-height:1.35;
+  font-weight:900;
+  color:#ffd8e7;
+  border:2px solid #ffb8d1;
+  background:rgba(24,8,16,.82);
+  text-shadow:
+    0 0 7px rgba(255,216,231,.98),
+    0 0 16px rgba(255,170,205,.88),
+    0 0 28px rgba(255,135,185,.62);
+  box-shadow:
+    0 0 10px rgba(255,184,209,.60),
+    0 0 22px rgba(255,150,195,.34),
+    inset 0 0 12px rgba(255,190,215,.12);
+}
+.kishin-search-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:8px 0 4px;
+}
+.kishin-search-input{
+  width:min(430px,100%);
+  box-sizing:border-box;
+  padding:9px 12px;
+  border:2px solid #666;
+  background:rgba(0,0,0,.82);
+  color:#eee;
+  font-size:16px;
+  outline:none;
+}
+.kishin-search-input:focus{
+  border-color:#ffb8d1;
+  box-shadow:
+    0 0 8px rgba(255,190,215,.82),
+    0 0 16px rgba(255,150,195,.40),
+    inset 0 0 8px rgba(255,190,215,.10);
+}
+.kishin-search-input::placeholder{color:#888;}
+.kishin-search-results{margin:8px 0 14px;}
+.kishin-search-results.hidden{display:none;}
+.kishin-search-results h3{margin:8px 0 4px;}
+
+#kishinSearchResultTable{
+  width:100% !important;
+  table-layout:auto !important;
+}
+#kishinSearchResultTable th,
+#kishinSearchResultTable td{
+  white-space:nowrap !important;
+}
+#kishinSearchResultTable th:first-child,
+#kishinSearchResultTable td:first-child{
+  width:42px !important;
+}
+#kishinSearchResultTable th:nth-child(14),
+#kishinSearchResultTable td:nth-child(14){
+  width:70px !important;
+  max-width:70px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+/* ===== 九十九と同仕様：右下固定ズーム操作 ===== */
+.fixed-zoom-controls{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+@media (max-width:700px){
+  .fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
+  .fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+}
+
 </style>
 
 <style id="season-background-style">
@@ -541,16 +675,16 @@ body {
 
 <div class="top-buttons no-capture">
   <div class="top-reset" onclick="resetKishinsekiSelection()">リセット</div>
-  <div class="top-zoom" data-zoom="100" onclick="setKishinsekiZoom(100)">100%</div>
-  <div class="top-zoom" data-zoom="125" onclick="setKishinsekiZoom(125)">125%</div>
-  <div class="top-zoom zoom-active" data-zoom="150" onclick="setKishinsekiZoom(150)">150%</div>
-  <div class="top-zoom" data-zoom="175" onclick="setKishinsekiZoom(175)">175%</div>
-  <div class="top-zoom" data-zoom="200" onclick="setKishinsekiZoom(200)">200%</div>
   <div class="top-save" onclick="downloadScreen()">保存</div>
   <div class="top-back" onclick="location.href='index.html'">戻る</div>
 </div>
 <div class="top-buttons no-capture">
   <div class="top-info" onclick="openKishinsekiInfoModal()">合成最低発現数</div>
+</div>
+
+<div class="fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKishinsekiZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeKishinsekiZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 
 <div id="kishinsekiInfoModal" class="kishinseki-info-modal hidden">
@@ -587,6 +721,13 @@ body {
 <h3 class="selected-count-heading">選択中（<span class="selected-count-number" data-selected-count>0</span>個）</h3>
 <table id="selectedTable"></table>
 
+<div class="kishin-search-guide">【鬼神の力】は、名前のどの漢字1文字でも検索できます。</div>
+<div class="kishin-search-row">
+  <input type="search" id="kishinNameSearch" class="kishin-search-input"
+         placeholder="鬼神の力を検索（漢字1文字から）" autocomplete="off"
+         aria-label="鬼神の力の名前検索">
+</div>
+
 <div class="list-heading-row">
   <div class="list-title-with-count">
     <h3>一覧</h3>
@@ -601,6 +742,10 @@ body {
   </div>
   <div class="list-heading-spacer" aria-hidden="true"></div>
 </div>
+<div id="kishinSearchResults" class="kishin-search-results hidden">
+  <h3>検索結果（<span id="kishinSearchCount">0</span>件）</h3>
+  <table id="kishinSearchResultTable"></table>
+</div>
 <table id="table"></table>
 </div>
 
@@ -612,14 +757,21 @@ body {
 </div>
 
 <script>
+let currentKishinsekiZoom = 150;
+
 function setKishinsekiZoom(percent) {
+  const next=Math.max(100,Math.min(300,Number(percent)||150));
+  currentKishinsekiZoom=next;
+
   const zoomArea = document.getElementById("zoomArea");
   if(zoomArea){
-    zoomArea.style.zoom = percent + "%";
+    zoomArea.style.zoom = next + "%";
+    zoomArea.style.width = "100%";
   }
-  document.querySelectorAll(".top-zoom[data-zoom]").forEach(btn=>{
-    btn.classList.toggle("zoom-active", Number(btn.dataset.zoom)===Number(percent));
-  });
+}
+
+function changeKishinsekiZoom(delta){
+  setKishinsekiZoom(currentKishinsekiZoom + Number(delta||0));
 }
 
 function resetKishinsekiSelection(){
@@ -646,6 +798,10 @@ let prioritySortTarget=0;
 /* ★修正：初期ソート */
 let sortKey="番号";
 let sortAsc=true;
+
+/* 検索結果は通常一覧とは独立して並び替える */
+let kishinSearchSortKey="番号";
+let kishinSearchSortAsc=true;
 
 const stats=["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
 
@@ -808,6 +964,22 @@ function getArrow(key){
   if(sortKey!==key) return "";
   return sortAsc ? " ▲" : " ▼";
 }
+
+function getKishinSearchArrow(key){
+  if(kishinSearchSortKey!==key) return "";
+  return kishinSearchSortAsc ? " ▲" : " ▼";
+}
+
+function setKishinSearchSort(key){
+  if(kishinSearchSortKey===key){
+    kishinSearchSortAsc=!kishinSearchSortAsc;
+  }else{
+    kishinSearchSortKey=key;
+    kishinSearchSortAsc=false;
+  }
+  renderKishinSearchResults();
+}
+
 async function loadCSV() {
   const response = await fetch("./鬼神石.csv");
 
@@ -1017,7 +1189,7 @@ function escapeAttr(value){
 
 function refreshOverflowTitles(){
   requestAnimationFrame(()=>{
-    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td").forEach(cell=>{
+    document.querySelectorAll("#table th,#table td,#selectedTable th,#selectedTable td,#kishinSearchResultTable th,#kishinSearchResultTable td").forEach(cell=>{
       const full=(cell.textContent||"").trim();
       if(full && cell.scrollWidth > cell.clientWidth + 1){
         cell.title=full;
@@ -1041,8 +1213,121 @@ function calcTotals(){
   return t;
 }
 
+
+/* ===== 鬼神の力：独立検索 ===== */
+function toggleKishinFromSearch(id){
+  id=String(id);
+
+  if(replaceTarget!=null){
+    if(id==String(replaceTarget)){
+      replaceTarget=null;
+      render();
+      return;
+    }
+
+    if(selected.map(String).includes(id)) return;
+
+    const idx=selected.findIndex(v=>String(v)===String(replaceTarget));
+    if(idx!==-1){
+      selected[idx]=id;
+    }
+    replaceTarget=null;
+    render();
+    return;
+  }
+
+  const i=selected.findIndex(v=>String(v)===id);
+  if(i>=0){
+    selected.splice(i,1);
+  }else{
+    if(selected.length>=8)return;
+    selected.push(id);
+  }
+  render();
+}
+
+function getKishinSearchSortedData(){
+  const data=[...baseData];
+  data.sort((a,b)=>{
+    const key=kishinSearchSortKey;
+    if(!key) return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+
+    let diff=getVal(a,key)-getVal(b,key);
+    if(diff!==0) return kishinSearchSortAsc ? diff : -diff;
+    return (parseInt(a["番号"])||0)-(parseInt(b["番号"])||0);
+  });
+  return data;
+}
+
+function renderKishinSearchResults(){
+  const input=document.getElementById("kishinNameSearch");
+  const wrap=document.getElementById("kishinSearchResults");
+  const resultTable=document.getElementById("kishinSearchResultTable");
+  const countEl=document.getElementById("kishinSearchCount");
+  if(!input || !wrap || !resultTable || !countEl)return;
+
+  const query=input.value.trim();
+  if(!query){
+    wrap.classList.add("hidden");
+    resultTable.innerHTML="";
+    countEl.textContent="0";
+    return;
+  }
+
+  const matches=getKishinSearchSortedData().filter(d=>
+    String(d["鬼神の力"]||"").includes(query)
+  );
+
+  countEl.textContent=matches.length;
+  wrap.classList.remove("hidden");
+
+  const colIndexMap={"番号":1,"鬼神の力":2};
+  stats.forEach((s,i)=>{colIndexMap[s]=i+3;});
+  colIndexMap["入手"]=14;
+
+  let html="<tr>";
+  html+=`<th style="width:42px; white-space:nowrap;" onclick="setKishinSearchSort('番号')">番号${getKishinSearchArrow('番号')}</th>`;
+  html+=`<th>鬼神の力</th>`;
+  stats.forEach(s=>{
+    const cls=(kishinSearchSortKey===s)?"priority-sort-col":"";
+    const style=(kishinSearchSortKey===s)
+      ?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`
+      :` style="color:${statColors[s]}"`;
+    html+=`<th class="${cls}"${style} onclick="setKishinSearchSort('${s}')">${s}${getKishinSearchArrow(s)}</th>`;
+  });
+  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+="</tr>";
+
+  matches.forEach(d=>{
+    const id=String(d["番号"]||"");
+    const sel=selected.map(String).includes(id)?"selected":"";
+    const rep=(String(replaceTarget)===id)?"replaceTarget":"";
+    html+=`<tr class="${sel} ${rep}" data-row-id="${escapeAttr(id)}" onclick="toggleKishinFromSearch('${escapeAttr(id)}')">`;
+    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]||""}</td><td>${d["鬼神の力"]||""}</td>`;
+    stats.forEach(s=>{
+      const cls=(kishinSearchSortKey===s)?"priority-sort-col":"";
+      const style=(kishinSearchSortKey===s)
+        ?`color:${statColors[s]};--priority-col-color:${statColors[s]}`
+        :`color:${statColors[s]}`;
+      html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
+    });
+    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html+="</tr>";
+  });
+
+  resultTable.innerHTML=html;
+  if(kishinSearchSortKey){
+    resultTable.className="sorted-col-"+colIndexMap[kishinSearchSortKey];
+  }else{
+    resultTable.className="";
+  }
+  refreshOverflowTitles();
+}
+
 /* 描画 */
 function render(){
+
+  renderKishinSearchResults();
 
   let list=[...baseData];
 
@@ -1148,6 +1433,10 @@ updatePrioritySortUI();
 
 loadCSV().then(() => {
   loadFromHTML();
+  const searchInput=document.getElementById("kishinNameSearch");
+  if(searchInput){
+    searchInput.addEventListener("input", renderKishinSearchResults);
+  }
   render();
 });
 </script>

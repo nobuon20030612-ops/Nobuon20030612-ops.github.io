@@ -2015,19 +2015,264 @@ td{
   font-weight:700;
 }
 
+
+
+/* ===== 付与モーダル専用：右下固定ズーム（ページ本体・他モーダルには影響させない） ===== */
+.fuyo-fixed-zoom-controls{
+  position:fixed;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.fuyo-fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.fuyo-fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.fuyo-fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.fuyo-fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.fuyo-fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.fuyo-fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+.fuyo-fixed-zoom-safe-space{
+  height:110px;
+  width:100%;
+  pointer-events:none;
+  clear:both;
+}
+@media (max-width:700px){
+  .fuyo-fixed-zoom-controls{gap:8px;}
+  .fuyo-fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+  .fuyo-fixed-zoom-safe-space{height:92px;}
+}
 </style>
+
+<style id="nouryoku-page-fixed-zoom-style">
+/* ===== 能力計算機ページ本体：家臣計算機と同仕様の右下固定ズーム ===== */
+body{
+  padding-bottom:110px !important;
+  box-sizing:border-box;
+}
+.nouryoku-page-fixed-zoom-controls{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  z-index:9000;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.nouryoku-page-fixed-zoom-btn{
+  min-width:112px;
+  margin:0 !important;
+  padding:12px 18px !important;
+  border-radius:8px;
+  font-size:18px !important;
+  font-weight:900;
+  line-height:1.1;
+  color:#fff;
+  background:rgba(0,0,0,.86);
+  cursor:pointer;
+  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.nouryoku-page-fixed-zoom-btn:hover{
+  transform:scale(1.05) !important;
+  filter:brightness(1.16);
+}
+.nouryoku-page-fixed-zoom-out{
+  border:2px solid #55bfff !important;
+  color:#bfe9ff !important;
+  box-shadow:
+    0 0 8px rgba(90,195,255,.95),
+    0 0 18px rgba(40,145,255,.85),
+    0 0 34px rgba(0,95,255,.65),
+    inset 0 0 12px rgba(75,175,255,.14) !important;
+}
+.nouryoku-page-fixed-zoom-out:hover{
+  border-color:#a7e2ff !important;
+  box-shadow:
+    0 0 10px rgba(165,225,255,1),
+    0 0 24px rgba(65,165,255,.95),
+    0 0 42px rgba(0,100,255,.78) !important;
+}
+.nouryoku-page-fixed-zoom-in{
+  border:2px solid #ff4f5f !important;
+  color:#ffd0d5 !important;
+  box-shadow:
+    0 0 8px rgba(255,90,105,.98),
+    0 0 18px rgba(255,35,55,.88),
+    0 0 34px rgba(205,0,25,.68),
+    inset 0 0 12px rgba(255,70,90,.14) !important;
+}
+.nouryoku-page-fixed-zoom-in:hover{
+  border-color:#ff9da8 !important;
+  box-shadow:
+    0 0 10px rgba(255,170,180,1),
+    0 0 24px rgba(255,70,90,.98),
+    0 0 42px rgba(220,0,25,.8) !important;
+}
+@media (max-width:700px){
+  body{padding-bottom:95px !important;}
+  .nouryoku-page-fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}
+  .nouryoku-page-fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}
+}
+</style>
+
+
+
+<style id="ability-fullscreen-modal-guard-style">
+/* ===== 全モーダル完全全画面化・背面誤操作防止 ===== */
+#abilityGlobalModalShield{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:#000 !important;
+  z-index:999900 !important;
+  pointer-events:auto !important;
+  display:none;
+}
+body.ability-modal-open{overflow:hidden !important;}
+body.ability-modal-open #viewport{pointer-events:none !important;}
+/* モーダル表示中は元ページ自体を見せない。BODY直下へ退避済みのモーダルだけを残す */
+body.ability-modal-open > .main-top-buttons,
+body.ability-modal-open > .nouryoku-page-fixed-zoom-controls,
+body.ability-modal-open > #viewport{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+
+#chinkonfuModal,
+#tsukumoModal,
+#sousekiModal,
+#fuyosekiModal,
+#fuyoDigitModal{
+  position:fixed !important;
+  inset:0 !important;
+  left:0 !important;
+  top:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  background:#000 !important;
+  outline:0 !important;
+  border:0 !important;
+  transform:none !important;
+  transform-origin:top left !important;
+  pointer-events:auto !important;
+  overflow:auto !important;
+  z-index:1000000 !important;
+}
+#tsukumoModal.tsukumo-page-sync{
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  padding:0 !important;
+  z-index:1000100 !important;
+}
+#fuyosekiModal{z-index:1000100 !important;}
+#sousekiModal{z-index:1000100 !important;}
+#chinkonfuModal{z-index:1000100 !important;}
+#fuyoDigitModal{
+  z-index:1000200 !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px !important;
+}
+#fuyoDigitModal.hidden{display:none !important;}
+#fuyoDigitModal .fuyo-digit-box{
+  max-height:calc(100vh - 32px) !important;
+  overflow:auto !important;
+}
+#tsukumoPrioritySortModal{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:16px !important;
+  box-sizing:border-box !important;
+  background:rgba(0,0,0,.98) !important;
+  z-index:1000300 !important;
+  overflow:auto !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#tsukumoPrioritySortModal:not(.hidden){display:flex !important;}
+#tsukumoPrioritySortModal.hidden{display:none !important;}
+
+/* 全画面時は内部のiframe領域も最大化 */
+#chinkonfuModal .chinkonfu-iframe-wrap{min-height:0 !important; flex:1 1 auto !important;}
+#chinkonfuModal #chinkonfuFrame{width:100% !important; height:100% !important;}
+
+@media (max-width:700px){
+  #fuyoDigitModal{padding:8px !important;}
+  #tsukumoPrioritySortModal{padding:8px !important;}
+}
+</style>
+
 </head>
 <body>
 
 <div class="main-top-buttons no-capture">
   <button class="main-top-btn" onclick="resetNouryokuInputs()">リセット</button>
-  <button class="main-top-btn" onclick="setNouryokuSheetZoom(100)">100%</button>
-  <button class="main-top-btn" onclick="setNouryokuSheetZoom(125)">125%</button>
-  <button class="main-top-btn" onclick="setNouryokuSheetZoom(150)">150%</button>
-  <button class="main-top-btn" onclick="setNouryokuSheetZoom(175)">175%</button>
-  <button class="main-top-btn" onclick="setNouryokuSheetZoom(200)">200%</button>
   <button class="main-top-btn" onclick="downloadScreen()">保存</button>
   <button class="main-top-btn" onclick="location.href='index.html'">戻る</button>
+</div>
+<div class="nouryoku-page-fixed-zoom-controls no-capture" aria-label="画面倍率操作">
+  <button type="button" class="nouryoku-page-fixed-zoom-btn nouryoku-page-fixed-zoom-out" onclick="changeNouryokuSheetZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+  <button type="button" class="nouryoku-page-fixed-zoom-btn nouryoku-page-fixed-zoom-in" onclick="changeNouryokuSheetZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
 </div>
 
 <div id="viewport">
@@ -2093,20 +2338,15 @@ td{
 
 <div id="tsukumoModal" class="tsukumo-modal tsukumo-page-sync hidden">
   <div class="tsukumo-page-top-buttons no-capture">
-    <div class="tsukumo-page-top-zoom" onclick="resetTsukumoModal()">リセット</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="100" onclick="setTsukumoModalZoom(100)">100%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="125" onclick="setTsukumoModalZoom(125)">125%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="150" onclick="setTsukumoModalZoom(150)">150%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="175" onclick="setTsukumoModalZoom(175)">175%</div>
-    <div class="tsukumo-page-top-zoom" data-tsukumo-zoom="200" onclick="setTsukumoModalZoom(200)">200%</div>
+    <div class="tsukumo-page-top-zoom" onclick="resetKashinTsukumoSelection()">リセット</div>
     <div class="tsukumo-page-top-save" onclick="downloadTsukumoModalScreen()">保存</div>
     <div class="tsukumo-page-top-back" onclick="closeTsukumoPicker()">戻る</div>
   </div>
 
   <div class="tsukumo-actions no-capture">
-    <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した8個の合計を反映</button>
+    <button class="tsukumo-apply-btn" onclick="applyTsukumoSelection()">選択した九十九を表へ反映</button>
     <button class="tsukumo-close-btn" onclick="closeTsukumoPicker()">閉じる</button>
-    <span id="tsukumoCount">選択数：0 / 8</span>
+    <span id="tsukumoTargetLabel">九十九</span> <span id="tsukumoCount">選択数：0 / 8</span>
   </div>
 
   <div id="tsukumoZoomArea" style="zoom:150%; width:100%;">
@@ -2177,36 +2417,24 @@ td{
 </div>
 
 <div id="sousekiModal" class="tsukumo-modal hidden">
-  <div class="modal-top-buttons no-capture">
-    <button class="modal-top-btn" onclick="resetSousekiModal()">リセット</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
-    <button class="modal-top-btn" onclick="closeSousekiPicker()">戻る</button>
-  </div>
   <div class="tsukumo-actions no-capture">
     <button class="tsukumo-close-btn" onclick="closeSousekiPicker()">閉じる</button>
     <span id="sousekiTargetLabel">装飾石</span>
+  </div>
+
+  <div id="nouryokuSousekiFixedZoomControls" class="fuyo-fixed-zoom-controls no-capture" aria-label="装飾石モーダル倍率操作">
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-out" onclick="changeNouryokuSousekiFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeNouryokuSousekiFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
   </div>
 
   <div id="sousekiZoomArea" class="modal-zoom-area">
     <div class="souseki-note">選んだボタンの数値を表へ反映して閉じます</div>
     <div id="sousekiButtonGrid" class="souseki-button-grid"></div>
   </div>
+  <div class="fuyo-fixed-zoom-safe-space no-capture" aria-hidden="true"></div>
 </div>
 
 <div id="fuyosekiModal" class="tsukumo-modal fuyoseki-modal hidden">
-  <div class="modal-top-buttons no-capture">
-    <button class="modal-top-btn" onclick="resetFuyoModal()">リセット</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(100)">100%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(125)">125%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(150)">150%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(175)">175%</button>
-    <button class="modal-top-btn" onclick="setNouryokuModalZoom(200)">200%</button>
-    <button class="modal-top-btn" onclick="closeFuyoPicker()">戻る</button>
-  </div>
   <div class="tsukumo-actions no-capture">
     <button class="fuyoseki-decide-btn" onclick="applyFuyoSelected()">表に反映</button>
     <button class="tsukumo-close-btn" onclick="closeFuyoPicker()">閉じる</button>
@@ -2214,11 +2442,16 @@ td{
     <span id="fuyosekiSelectedCount" class="fuyoseki-count">入力セル未選択</span>
   </div>
 
+  <div id="nouryokuFuyoFixedZoomControls" class="fuyo-fixed-zoom-controls no-capture" aria-label="付与モーダル倍率操作">
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-out" onclick="changeNouryokuFuyoFixedZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>
+    <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeNouryokuFuyoFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
+  </div>
   <div id="fuyosekiZoomArea" class="modal-zoom-area">
     <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
     <div class="fuyo-layout-title">付与枠</div>
     <div id="fuyoFrameWrap" class="fuyo-frame-wrap"></div>
   </div>
+  <div class="fuyo-fixed-zoom-safe-space no-capture" aria-hidden="true"></div>
 </div>
 
 <div id="fuyoDigitModal" class="fuyo-digit-modal hidden">
@@ -2232,6 +2465,18 @@ td{
     </div>
   </div>
 </div>
+
+<script id="ability-modal-root-port-early">
+/* 全モーダルを #sheet の transform/scale から切り離す。表示前に body 直下へ固定する。 */
+(function(){
+  ["chinkonfuModal","tsukumoModal","sousekiModal","fuyosekiModal","fuyoDigitModal"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el && el.parentNode!==document.body){
+      document.body.appendChild(el);
+    }
+  });
+})();
+</script>
 
 <script>
 /* ===== 能力計算：表示レイアウト変更なし ===== */
@@ -2397,9 +2642,15 @@ window.addEventListener("load", recalcAll);
 
 <script>
 let NOURYOKU_SHEET_ZOOM = 100;
+const NOURYOKU_MIN_AUTO_FIT_SCALE = 0.65;
+let nouryokuFitResizeTimer = 0;
+
 function setNouryokuSheetZoom(percent){
-  NOURYOKU_SHEET_ZOOM = percent;
+  NOURYOKU_SHEET_ZOOM = Math.max(100, Math.min(300, Number(percent) || 100));
   fit();
+}
+function changeNouryokuSheetZoom(delta){
+  setNouryokuSheetZoom(NOURYOKU_SHEET_ZOOM + Number(delta || 0));
 }
 function resetNouryokuInputs(){
   document.querySelectorAll(".sheet-input").forEach(input => {
@@ -2412,17 +2663,69 @@ function resetNouryokuInputs(){
 }
 function fit(){
   const sheet = document.getElementById('sheet');
+  if(!sheet) return;
 
-  // 横幅に合わせた倍率に、操作ボタンの倍率を掛ける
-  const scale = (window.innerWidth / 1559) * (NOURYOKU_SHEET_ZOOM / 100);
+  // 能力計算機本体だけを、幅と高さの両方から自動フィットする。
+  // 各モーダルの倍率・配置には触れない。
+  // 既存スクロールバーの幅をフィット計算へ持ち込まないよう、測定時だけ非表示にする。
+  document.documentElement.style.overflowX = 'hidden';
+  document.documentElement.style.overflowY = 'hidden';
+  document.body.style.overflowX = 'hidden';
+  document.body.style.overflowY = 'hidden';
+  sheet.style.transform = 'none';
+  sheet.style.height = '780px';
+
+  const rect = sheet.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const naturalWidth = 1559;
+  const naturalHeight = 780;
+  const fixedControls = document.querySelector(".nouryoku-page-fixed-zoom-controls");
+  let bottomReserve = 8;
+  if(fixedControls){
+    const controlRect = fixedControls.getBoundingClientRect();
+    const controlStyle = getComputedStyle(fixedControls);
+    const fixedBottom = parseFloat(controlStyle.bottom) || 0;
+    bottomReserve = controlRect.height + fixedBottom + 12;
+  }
+
+  const availableWidth = Math.max(1, viewportWidth);
+  const availableHeight = Math.max(1, viewportHeight - Math.max(0, rect.top) - bottomReserve - 8);
+
+  const rawAutoScale = Math.min(
+    1,
+    availableWidth / naturalWidth,
+    availableHeight / naturalHeight
+  );
+  const autoScale = Math.max(NOURYOKU_MIN_AUTO_FIT_SCALE, rawAutoScale);
+  const manualScale = NOURYOKU_SHEET_ZOOM / 100;
+  const scale = autoScale * manualScale;
 
   sheet.style.transform = 'scale(' + scale + ')';
+  sheet.style.height = (naturalHeight * scale) + 'px';
 
-  // 縮小・拡大後の高さに合わせる
-  sheet.style.height = (780 * scale) + 'px';
+  const visualWidth = naturalWidth * scale;
+  const visualHeight = naturalHeight * scale;
+  const fitsViewport = visualWidth <= availableWidth + 1 && visualHeight <= availableHeight + 1;
+
+  // 65%までで収まる時は不要なスクロールを消す。
+  // 65%でも収まらない画面、または手動拡大で収まらない時だけスクロールを許可する。
+  document.documentElement.style.overflowX = fitsViewport ? 'hidden' : 'auto';
+  document.documentElement.style.overflowY = fitsViewport ? 'hidden' : 'auto';
+  document.body.style.overflowX = fitsViewport ? 'hidden' : 'auto';
+  document.body.style.overflowY = fitsViewport ? 'hidden' : 'auto';
 }
-window.addEventListener('load', fit);
-window.addEventListener('resize', fit);
+function scheduleNouryokuFit(){
+  clearTimeout(nouryokuFitResizeTimer);
+  nouryokuFitResizeTimer = setTimeout(fit, 60);
+}
+window.addEventListener('load', function(){
+  requestAnimationFrame(function(){
+    fit();
+    setTimeout(fit, 120);
+  });
+});
+window.addEventListener('resize', scheduleNouryokuFit, {passive:true});
 </script>
 <script>
 document.addEventListener("input", function(e){
@@ -2477,6 +2780,18 @@ function setNouryokuModalZoom(percent){
   if(area){
     area.style.zoom = percent + "%";
   }
+}
+function resetKashinTsukumoSelection(){
+  tsukumoSelected = [];
+  tsukumoMainStat = null;
+  tsukumoSubStat = null;
+  tsukumoThirdStat = null;
+  tsukumoReplaceTarget = null;
+  tsukumoPrioritySortStats = [null,null];
+  tsukumoSortKey = "番号";
+  tsukumoSortAsc = true;
+  closeTsukumoPrioritySortModal();
+  renderTsukumoPicker();
 }
 function resetTsukumoModal(){
   tsukumoSelected = [];
@@ -3436,6 +3751,31 @@ function renderSousekiButtons(){
   grid.innerHTML = html;
 }
 
+// ===== 装飾石モーダル専用ズーム：100〜300%、25%刻み =====
+let currentNouryokuSousekiFixedZoom = 100;
+function setNouryokuSousekiFixedZoom(percent){
+  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  currentNouryokuSousekiFixedZoom=next;
+  const area=document.getElementById("sousekiZoomArea");
+  if(area){
+    area.style.zoom=next+"%";
+    area.style.width="100%";
+  }
+}
+function changeNouryokuSousekiFixedZoom(delta){
+  setNouryokuSousekiFixedZoom(currentNouryokuSousekiFixedZoom+Number(delta||0));
+}
+function positionNouryokuSousekiFixedZoomControls(){
+  const modal=document.getElementById("sousekiModal");
+  const controls=document.getElementById("nouryokuSousekiFixedZoomControls");
+  if(!modal||!controls||modal.classList.contains("hidden")) return;
+  const edge=window.innerWidth<=700?10:22;
+  controls.style.right=edge+"px";
+  controls.style.bottom=edge+"px";
+  controls.style.display="flex";
+}
+window.addEventListener("resize", positionNouryokuSousekiFixedZoomControls);
+
 function openSousekiPicker(label){
   sousekiTarget = label;
   const modal = document.getElementById("sousekiModal");
@@ -3445,9 +3785,14 @@ function openSousekiPicker(label){
     targetLabel.textContent = label;
   }
 
+  setNouryokuSousekiFixedZoom(100);
   if(modal){
+    modal.scrollTop = 0;
+    modal.scrollLeft = 0;
     modal.classList.remove("hidden");
   }
+  positionNouryokuSousekiFixedZoomControls();
+  if(window.requestAnimationFrame) window.requestAnimationFrame(positionNouryokuSousekiFixedZoomControls);
 
   if(sousekiData.length){
     renderSousekiButtons();
@@ -3464,6 +3809,8 @@ function closeSousekiPicker(){
   if(modal){
     modal.classList.add("hidden");
   }
+  const controls=document.getElementById("nouryokuSousekiFixedZoomControls");
+  if(controls) controls.style.display="none";
   sousekiTarget = "";
 }
 
@@ -3590,27 +3937,66 @@ function updateFuyoSelectedCount(){
     count.textContent = "入力セル未選択";
   }
 }
+
+
+// ===== 付与モーダル専用ズーム：ページ本体・九十九・装飾石には影響させない =====
+let currentNouryokuFuyoFixedZoom = 100;
+function setNouryokuFuyoFixedZoom(percent){
+  const next=Math.max(100,Math.min(300,Number(percent)||100));
+  currentNouryokuFuyoFixedZoom=next;
+  const area=document.getElementById("fuyosekiZoomArea");
+  if(area){
+    area.style.zoom=next+"%";
+    area.style.width="100%";
+  }
+}
+function changeNouryokuFuyoFixedZoom(delta){
+  setNouryokuFuyoFixedZoom(currentNouryokuFuyoFixedZoom+Number(delta||0));
+}
+function ensureNouryokuFuyoFixedZoomControlHost(){
+  const modal=document.getElementById("fuyosekiModal");
+  const controls=document.getElementById("nouryokuFuyoFixedZoomControls");
+  if(!controls) return null;
+  if(modal && controls.parentElement!==modal) modal.appendChild(controls);
+  controls.style.display="flex";
+  return controls;
+}
+function positionNouryokuFuyoFixedZoomControls(){
+  const modal=document.getElementById("fuyosekiModal");
+  const controls=document.getElementById("nouryokuFuyoFixedZoomControls");
+  if(!modal||!controls||modal.classList.contains("hidden")) return;
+  const rect=modal.getBoundingClientRect();
+  const edge=window.innerWidth<=700?10:22;
+  controls.style.right=Math.max(10,Math.round(window.innerWidth-rect.right+edge))+"px";
+  controls.style.bottom=Math.max(10,Math.round(window.innerHeight-rect.bottom+edge))+"px";
+}
+window.addEventListener("resize", positionNouryokuFuyoFixedZoomControls);
+
 function openFuyoPicker(label){
   fuyosekiTarget = label;
   loadFuyoTargetState(label);
 
   const modal = document.getElementById("fuyosekiModal");
   const targetLabel = document.getElementById("fuyosekiTargetLabel");
-  const zoomArea = document.getElementById("fuyosekiZoomArea");
 
   if(targetLabel) targetLabel.textContent = label;
-  if(zoomArea) zoomArea.style.zoom = "100%";
+  setNouryokuFuyoFixedZoom(100);
   if(modal){
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
     modal.classList.remove("hidden");
   }
+  ensureNouryokuFuyoFixedZoomControlHost();
+  positionNouryokuFuyoFixedZoomControls();
+  if(window.requestAnimationFrame) window.requestAnimationFrame(positionNouryokuFuyoFixedZoomControls);
   renderFuyoButtons();
 }
 function closeFuyoPicker(){
   saveFuyoCurrentState();
   const modal = document.getElementById("fuyosekiModal");
   if(modal) modal.classList.add("hidden");
+  const controls=document.getElementById("nouryokuFuyoFixedZoomControls");
+  if(controls) controls.style.display="none";
   closeFuyoDigitModal();
   fuyosekiTarget = "";
   fuyoActiveCellKey = "";
@@ -3760,6 +4146,92 @@ function applyFuyoSelected(){
   let frameObserver = null;
   let restoreTimer = null;
 
+/* ===== 九十九／魔導結晶モーダル専用：standaloneと同仕様の右下ズーム ===== */
+  let tsukumoModalActionResizeObserver = null;
+
+  function isTsukumoStandaloneInFrame(){
+    const src = String(frame && frame.getAttribute("src") || "");
+    return src.includes("九十九.html") || src.includes("魔導結晶.html");
+  }
+
+  function positionTsukumoModalZoomControls(){
+    if(!isTsukumoStandaloneInFrame()) return;
+    const doc = getFrameDoc();
+    const modal = document.getElementById("tsukumoModal");
+    const controls = doc && doc.querySelector(".fixed-zoom-controls");
+    if(!doc || !modal || !controls || !actions) return;
+
+    const actionRect = actions.getBoundingClientRect();
+    const modalRect = modal.getBoundingClientRect();
+    if(!actionRect.height || !modalRect.height) return;
+
+    const gap = window.innerWidth <= 700 ? 8 : 12;
+    const bottom = Math.max(10, Math.round(modalRect.bottom - actionRect.top + gap));
+    controls.style.setProperty("bottom", bottom + "px", "important");
+  }
+
+  function ensureTsukumoModalZoomControls(){
+    if(!isTsukumoStandaloneInFrame()) return;
+    const doc = getFrameDoc();
+    if(!doc) return;
+    const win = doc.defaultView;
+    if(!win) return;
+
+    /* 旧100/125/150/175/200%はモーダルでは残さない。リセット等は残す。 */
+    doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => btn.remove());
+
+    if(!doc.getElementById("tsukumo-modal-fixed-zoom-style")){
+      const style = doc.createElement("style");
+      style.id = "tsukumo-modal-fixed-zoom-style";
+      style.textContent = '.fixed-zoom-controls{\n  position:fixed;\n  right:22px;\n  bottom:22px;\n  z-index:999999;\n  display:flex;\n  align-items:center;\n  gap:12px;\n}\n.fixed-zoom-btn{\n  min-width:112px;\n  margin:0 !important;\n  padding:12px 18px !important;\n  border-radius:8px;\n  font-size:18px !important;\n  font-weight:900;\n  line-height:1.1;\n  color:#fff;\n  background:rgba(0,0,0,.86);\n  cursor:pointer;\n  transition:filter .15s ease, box-shadow .15s ease, transform .15s ease;\n}\n.fixed-zoom-btn:hover{\n  transform:scale(1.05) !important;\n  filter:brightness(1.16);\n}\n.fixed-zoom-out{\n  border:2px solid #55bfff !important;\n  color:#bfe9ff !important;\n  box-shadow:\n    0 0 8px rgba(90,195,255,.95),\n    0 0 18px rgba(40,145,255,.85),\n    0 0 34px rgba(0,95,255,.65),\n    inset 0 0 12px rgba(75,175,255,.14) !important;\n}\n.fixed-zoom-out:hover{\n  border-color:#a7e2ff !important;\n  box-shadow:\n    0 0 10px rgba(165,225,255,1),\n    0 0 24px rgba(65,165,255,.95),\n    0 0 42px rgba(0,100,255,.78) !important;\n}\n.fixed-zoom-in{\n  border:2px solid #ff4f5f !important;\n  color:#ffd0d5 !important;\n  box-shadow:\n    0 0 8px rgba(255,90,105,.98),\n    0 0 18px rgba(255,35,55,.88),\n    0 0 34px rgba(205,0,25,.68),\n    inset 0 0 12px rgba(255,70,90,.14) !important;\n}\n.fixed-zoom-in:hover{\n  border-color:#ff9da8 !important;\n  box-shadow:\n    0 0 10px rgba(255,170,180,1),\n    0 0 24px rgba(255,70,90,.98),\n    0 0 42px rgba(220,0,25,.8) !important;\n}\n@media (max-width:700px){\n  .fixed-zoom-controls{right:10px;bottom:10px;gap:8px;}\n  .fixed-zoom-btn{min-width:92px;padding:10px 12px !important;font-size:16px !important;}\n}';
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+
+    let controls = doc.querySelector(".fixed-zoom-controls");
+    if(!controls){
+      controls = doc.createElement("div");
+      controls.className = "fixed-zoom-controls no-capture";
+      controls.setAttribute("aria-label", "画面倍率操作");
+      controls.innerHTML = '<button type="button" class="fixed-zoom-btn fixed-zoom-out" onclick="changeKashinZoom(-25)" title="25%縮小（最小100%）">－ 縮小</button>' +
+        '<button type="button" class="fixed-zoom-btn fixed-zoom-in" onclick="changeKashinZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>';
+      const zoomArea = doc.getElementById("zoomArea");
+      if(zoomArea && zoomArea.parentNode) zoomArea.parentNode.insertBefore(controls, zoomArea);
+      else if(doc.body) doc.body.appendChild(controls);
+    }
+
+    /* 古いstandaloneでも、モーダル内だけ現行standaloneと同じ25%刻み/100〜300%にする。 */
+    if(typeof win.changeKashinZoom !== "function"){
+      let currentKashinZoom = 150;
+      win.setKashinZoom = function(percent){
+        const next = Math.max(100, Math.min(300, Number(percent) || 150));
+        currentKashinZoom = next;
+        const zoomArea = doc.getElementById("zoomArea");
+        if(zoomArea){
+          zoomArea.style.zoom = next + "%";
+          zoomArea.style.width = "100%";
+        }
+        doc.querySelectorAll(".top-zoom[data-zoom]").forEach(btn => {
+          btn.classList.toggle("zoom-active", Number(btn.dataset.zoom) === next);
+        });
+      };
+      win.changeKashinZoom = function(delta){
+        win.setKashinZoom(currentKashinZoom + Number(delta || 0));
+      };
+    }
+
+    if(typeof win.setKashinZoom === "function") win.setKashinZoom(150);
+    positionTsukumoModalZoomControls();
+    if(win.requestAnimationFrame){
+      win.requestAnimationFrame(() => positionTsukumoModalZoomControls());
+    }
+  }
+
+  window.addEventListener("resize", positionTsukumoModalZoomControls);
+  if(typeof ResizeObserver === "function" && actions){
+    tsukumoModalActionResizeObserver = new ResizeObserver(positionTsukumoModalZoomControls);
+    tsukumoModalActionResizeObserver.observe(actions);
+  }
+
   function loadSavedSelections(){
     try{
       const parsed = JSON.parse(localStorage.getItem(selectionStorageKey) || "{}");
@@ -3832,6 +4304,8 @@ function applyFuyoSelected(){
     const doc = getFrameDoc();
     if(!doc) return;
 
+    ensureTsukumoModalZoomControls();
+
     const back = doc.querySelector(".top-back");
     if(back){
       back.onclick = function(ev){
@@ -3869,7 +4343,7 @@ function applyFuyoSelected(){
     if(applyBtn){
       applyBtn.textContent = target === "neck"
         ? "選択した魔導結晶を反映"
-        : "選択した九十九を反映";
+        : "選択した九十九を表へ反映";
     }
 
     frame.onload = bindStandaloneFrame;
@@ -3923,6 +4397,80 @@ function applyFuyoSelected(){
     saveSelectedIds(tsukumoTarget, selectedIds);
     closeTsukumoPicker();
   };
+})();
+</script>
+
+
+<script id="ability-fullscreen-modal-guard-script">
+(function(){
+  const ROOT_MODAL_IDS = ["chinkonfuModal","tsukumoModal","sousekiModal","fuyosekiModal","fuyoDigitModal"];
+  const ALL_MODAL_IDS = [...ROOT_MODAL_IDS,"tsukumoPrioritySortModal"];
+
+  function ensureShield(){
+    let shield=document.getElementById("abilityGlobalModalShield");
+    if(!shield){
+      shield=document.createElement("div");
+      shield.id="abilityGlobalModalShield";
+      shield.setAttribute("aria-hidden","true");
+      document.body.appendChild(shield);
+    }
+    return shield;
+  }
+
+  function moveRootModalsToBody(){
+    ROOT_MODAL_IDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el && el.parentNode!==document.body){
+        document.body.appendChild(el);
+      }
+    });
+  }
+
+  function isVisibleModal(el){
+    if(!el || el.classList.contains("hidden")) return false;
+    const cs=getComputedStyle(el);
+    return cs.display!=="none" && cs.visibility!=="hidden";
+  }
+
+  function syncModalGuard(){
+    moveRootModalsToBody();
+    const anyOpen=ALL_MODAL_IDS.some(id=>isVisibleModal(document.getElementById(id)));
+    const shield=ensureShield();
+    shield.style.display=anyOpen?"block":"none";
+    document.body.classList.toggle("ability-modal-open",anyOpen);
+    if(anyOpen){
+      ROOT_MODAL_IDS.forEach(id=>{
+        const el=document.getElementById(id);
+        if(isVisibleModal(el)){
+          el.style.setProperty("position","fixed","important");
+          el.style.setProperty("inset","0","important");
+          el.style.setProperty("width","100vw","important");
+          el.style.setProperty("height","100vh","important");
+          el.style.setProperty("max-width","none","important");
+          el.style.setProperty("max-height","none","important");
+          el.style.setProperty("transform","none","important");
+        }
+      });
+    }
+  }
+
+  function observe(){
+    moveRootModalsToBody();
+    ensureShield();
+    ALL_MODAL_IDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      new MutationObserver(syncModalGuard).observe(el,{attributes:true,attributeFilter:["class","style","aria-hidden"]});
+    });
+    syncModalGuard();
+  }
+
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",observe,{once:true});
+  else observe();
+
+  window.addEventListener("resize",syncModalGuard);
+  document.addEventListener("click",()=>setTimeout(syncModalGuard,0),true);
+  document.addEventListener("keydown",()=>setTimeout(syncModalGuard,0),true);
 })();
 </script>
 
