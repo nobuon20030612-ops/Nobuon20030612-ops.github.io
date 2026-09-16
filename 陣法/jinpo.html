@@ -5165,6 +5165,96 @@ window.bindHardRequireFormation = bindHardRequireFormation;
   function placementObj(){try{if(typeof placement!=='undefined'&&placement)return placement;}catch(e){}return window.placement||null;}
   function currentFormation(){try{var s=document.getElementById('formationSelect')||window.formationSelect;if(s&&s.value)return String(s.value).trim();}catch(e){}return '';}
   function currentResult(p){try{var f=currentFormation();if(!f||!p||!window.JinpoActivationEngine||typeof window.JinpoActivationEngine.calculateFormation!=='function'||typeof inenMaster==='undefined')return null;return window.JinpoActivationEngine.calculateFormation(p,f,inenMaster,window.JINPO_FORMATION_CONFIG);}catch(e){return null;}}
+  /* 差し替え候補一覧の因縁数判定だけを軽量化する。
+     正式な成立条件は変更せず、3因子を3人の別英傑へ割り当て可能かだけを判定する。
+     文曲判定は既存エンジンの正式な割当列挙を使い、整合しない場合だけ従来の calculateFormation へ戻す。 */
+  var fastFactorCache66=(typeof WeakMap==='function'?new WeakMap():null),fastInenCache66=null,fastInenSource66=null;
+  function fastFactorSet66(h){
+    if(!h)return null;
+    if(fastFactorCache66&&fastFactorCache66.has(h))return fastFactorCache66.get(h);
+    var set=new Set();
+    ['因子1','因子2','因子3','因子4'].forEach(function(k){var v=String(h[k]||'').trim();if(v&&v!=='-'&&v!=='対象外')set.add(v);});
+    if(fastFactorCache66)fastFactorCache66.set(h,set);
+    return set;
+  }
+  function fastInenRows66(){
+    var src=null;try{src=inenMaster;}catch(e){}
+    if(!Array.isArray(src))return null;
+    if(fastInenSource66===src&&fastInenCache66)return fastInenCache66;
+    fastInenSource66=src;
+    fastInenCache66=src.map(function(x,idx){
+      var fs=['因子1','因子2','因子3'].map(function(k){return String(x&&x[k]||'').trim();}).filter(function(v){return v&&v!=='-';});
+      var no=String(x&&(x.No||x.no)||'').trim(),name=String(x&&x['因縁名']||'').trim();
+      return {factors:fs,key:no?('no:'+no):('name:'+name),index:idx};
+    });
+    return fastInenCache66;
+  }
+  function fastDistinctMatch66(req,a,b,c){
+    if(!req||req.length!==3||!a||!b||!c)return false;
+    var r0=req[0],r1=req[1],r2=req[2];
+    return (a.has(r0)&&b.has(r1)&&c.has(r2))||
+           (a.has(r0)&&b.has(r2)&&c.has(r1))||
+           (a.has(r1)&&b.has(r0)&&c.has(r2))||
+           (a.has(r1)&&b.has(r2)&&c.has(r0))||
+           (a.has(r2)&&b.has(r0)&&c.has(r1))||
+           (a.has(r2)&&b.has(r1)&&c.has(r0));
+  }
+  function fastActivatedCount66(p,form){
+    try{
+      var cfg=window.JINPO_FORMATION_CONFIG&&window.JINPO_FORMATION_CONFIG[form],lines=cfg&&cfg.activeLines,rows=fastInenRows66();
+      if(!p||!Array.isArray(lines)||!rows)return null;
+      var lineSets=[];
+      for(var li=0;li<lines.length;li++){
+        var line=lines[li];if(!Array.isArray(line)||line.length!==3)return null;
+        var a=fastFactorSet66(p[line[0]]),b=fastFactorSet66(p[line[1]]),c=fastFactorSet66(p[line[2]]);
+        if(!a||!b||!c)return null;
+        lineSets.push([a,b,c]);
+      }
+      var activatedKeys=new Set();
+      for(var ri=0;ri<rows.length;ri++){
+        var row=rows[ri];if(!row||row.factors.length!==3)continue;
+        for(var xi=0;xi<lineSets.length;xi++){
+          var ls=lineSets[xi];
+          if(fastDistinctMatch66(row.factors,ls[0],ls[1],ls[2])){activatedKeys.add(row.key);break;}
+        }
+      }
+      return activatedKeys.size;
+    }catch(e){return null;}
+  }
+  function bitCount66(n){n=Number(n)>>>0;var c=0;while(n){n&=n-1;c++;}return c;}
+  function assignmentMask66(line,assigns){
+    var mask=0;(assigns||[]).forEach(function(a){
+      if(!a||!a.usesFactor4)return;
+      var rel=Number(a.heroIndex);if(!Number.isInteger(rel)||rel<0||rel>=line.length)return;
+      var slot=Number(line[rel]);if(slot>=1&&slot<=6)mask|=1<<(slot-1);
+    });
+    return mask;
+  }
+  function fastFactor4Mask66(p,form,expectedCount){
+    try{
+      var eng=window.JinpoActivationEngine,cfg=window.JINPO_FORMATION_CONFIG&&window.JINPO_FORMATION_CONFIG[form],lines=cfg&&cfg.activeLines,rows=fastInenRows66(),src=null;
+      try{src=inenMaster;}catch(e){}
+      if(!p||!eng||typeof eng.enumerateInenAssignments!=='function'||!Array.isArray(lines)||!rows||!Array.isArray(src))return null;
+      var groups=new Map();
+      for(var li=0;li<lines.length;li++){
+        var line=lines[li];if(!Array.isArray(line)||line.length!==3)return null;
+        var hs=[p[line[0]],p[line[1]],p[line[2]]];if(hs.some(function(h){return !h;}))return null;
+        for(var ri=0;ri<rows.length;ri++){
+          var row=rows[ri],inen=src[row.index],all=eng.enumerateInenAssignments(inen,hs);
+          if(!Array.isArray(all)||!all.length)continue;
+          var masks=groups.get(row.key);if(!masks){masks=new Set();groups.set(row.key,masks);}
+          for(var ai=0;ai<all.length;ai++)masks.add(assignmentMask66(line,all[ai]));
+        }
+      }
+      if(expectedCount!=null&&groups.size!==Number(expectedCount))return null;
+      var states=new Set([0]);
+      groups.forEach(function(masks){
+        var next=new Set();states.forEach(function(stateMask){masks.forEach(function(mask){next.add(stateMask|mask);});});states=next;
+      });
+      var arr=Array.from(states).sort(function(a,b){return bitCount66(a)-bitCount66(b)||a-b;});
+      return arr.length?arr[0]:0;
+    }catch(e){return null;}
+  }
   function legendHtml(){return '<div class="step66ReachLegend" aria-label="差し替え候補の色説明"><span class="step66ReachLegendItem step66ReachLegendUp"><span class="step66ReachLegendDot"></span>赤＝UP</span><span class="step66ReachLegendItem step66ReachLegendFlat"><span class="step66ReachLegendDot"></span>緑＝FLAT</span><span class="step66ReachLegendItem step66ReachLegendDown"><span class="step66ReachLegendDot"></span>青＝DOWN</span></div>';}
   function stateKey(){
     var p=placementObj(),ids=[];for(var i=1;i<=6;i++)ids.push(hId(p&&p[i])||norm(hName(p&&p[i])));
@@ -5175,8 +5265,8 @@ window.bindHardRequireFormation = bindHardRequireFormation;
   function buildMap(){
     var key=stateKey();
     if(key&&key===cacheKey&&cacheMap&&cacheStore){candidateStore=cacheStore;return cacheMap;}
-    var p=placementObj(), base=currentResult(p), map={}, store={}, localSeq=1;
-    if(!p||!base) return map;
+    var p=placementObj(), form=currentFormation(), base=currentResult(p), map={}, store={}, localSeq=1;
+    if(!p||!form||!base) return map;
     var currentCount=Array.isArray(base.activated)?base.activated.length:0;
     var used=new Set();for(var s=1;s<=6;s++){var id=hId(p[s]);if(id)used.add(id);}
     var lock=ownedLock66(), excluded=excludedIdSet66(), grade3=grade3On66();
@@ -5188,13 +5278,18 @@ window.bindHardRequireFormation = bindHardRequireFormation;
         for(var j=1;j<=6;j++) test[j]=p[j];
         test[slot]=cand;
         if(!keepsOwned66(test,lock)) continue;
-        var r=currentResult(test); if(!r) continue;
-        var nextCount=Array.isArray(r.activated)?r.activated.length:0;
+        var nextCount=fastActivatedCount66(test,form),r=null;
+        if(nextCount==null){r=currentResult(test);if(!r)continue;nextCount=Array.isArray(r.activated)?r.activated.length:0;}
         var delta=nextCount-currentCount;
         if(delta<-1) continue;
         var cls=delta>0?'up':(delta===0?'flat':'down');
-        var id='s66_'+(localSeq++);
-        var item={slot:slot,after:hName(cand),afterId:hId(cand),costLabel:hCostLabel(cand),usesFactor4:resultUsesHeroFactor4(r,test,slot),from:currentCount,to:nextCount,delta:delta,level:cls};
+        var id='s66_'+(localSeq++),usesFactor4=false;
+        if(hFactor4(cand)){
+          var f4mask=fastFactor4Mask66(test,form,nextCount);
+          if(f4mask==null){if(!r)r=currentResult(test);usesFactor4=resultUsesHeroFactor4(r,test,slot);}
+          else usesFactor4=!!(f4mask&(1<<(Number(slot)-1)));
+        }
+        var item={slot:slot,after:hName(cand),afterId:hId(cand),costLabel:hCostLabel(cand),usesFactor4:usesFactor4,from:currentCount,to:nextCount,delta:delta,level:cls};
         store[id]=item;
         if(!map[slot]) map[slot]=[];
         item.storeId=id; map[slot].push(item);
@@ -9305,6 +9400,67 @@ function observe(){
   }
 }
 </style>
+
+<script id="jinpo-small-viewport-wheel-scroll-fix-20260916">
+/* 小さい画面で、横スクロール領域などの上にマウスがあると縦ホイールがページへ伝わらない症状だけを補正。
+   レイアウト・検索・計算・表示倍率・タッチ操作・既存クリック処理は変更しない。 */
+(function(){
+  'use strict';
+  if(window.__jinpoSmallViewportWheelScrollFixInstalled) return;
+  window.__jinpoSmallViewportWheelScrollFixInstalled = true;
+
+  function isSmallViewport(){
+    return window.innerWidth <= 900;
+  }
+
+  function isOpenOverlay(el){
+    if(!el || !el.closest) return false;
+    return !!el.closest(
+      '.eiketsuKishinsekiModalBackdrop.open,' +
+      '#jinpoCommonHeroPicker.isOpen,' +
+      '#jinpoExcludedHeroModal.isOpen,' +
+      '#jinpoCostCalcOverlay.isOpen,' +
+      '#step66ReachModal.isOpen,' +
+      '#jinpoCommonConfirmBackdrop.isOpen'
+    );
+  }
+
+  function hasUsableVerticalScroller(start, deltaY){
+    var el = start && start.nodeType === 1 ? start : (start && start.parentElement);
+    while(el && el !== document.body && el !== document.documentElement){
+      var cs;
+      try{ cs = getComputedStyle(el); }catch(e){ cs = null; }
+      if(cs){
+        var oy = cs.overflowY;
+        if((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1){
+          if(deltaY < 0 && el.scrollTop > 0) return true;
+          if(deltaY > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1) return true;
+        }
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  document.addEventListener('wheel', function(ev){
+    if(!isSmallViewport()) return;
+    if(ev.defaultPrevented || ev.ctrlKey) return;
+    if(Math.abs(ev.deltaY) < Math.abs(ev.deltaX)) return;
+    if(!ev.deltaY) return;
+    if(isOpenOverlay(ev.target)) return;
+    if(hasUsableVerticalScroller(ev.target, ev.deltaY)) return;
+
+    var root = document.scrollingElement || document.documentElement;
+    if(!root) return;
+    var maxY = Math.max(0, root.scrollHeight - window.innerHeight);
+    var currentY = window.pageYOffset || root.scrollTop || 0;
+    if((ev.deltaY < 0 && currentY <= 0) || (ev.deltaY > 0 && currentY >= maxY)) return;
+
+    ev.preventDefault();
+    window.scrollBy({top: ev.deltaY, left: 0, behavior: 'auto'});
+  }, {capture:true, passive:false});
+})();
+</script>
 
 </body>
 </html>
