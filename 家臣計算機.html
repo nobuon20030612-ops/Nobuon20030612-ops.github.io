@@ -879,59 +879,150 @@ body{ background:#000; }
 .fuyoseki-value-btn:hover,.fuyoseki-value-btn.active{color:#ffffff !important;border-color:#ff9999;background:#220000;box-shadow:inset 0 0 10px rgba(255,160,160,0.75),0 0 12px rgba(255,60,60,0.8);filter:brightness(1.25);transform:none;}
 .fuyoseki-value-stat{display:block;font-size:13px;font-weight:900;}
 .fuyoseki-value-number{display:block;margin-top:1px;font-size:13px;font-weight:900;color:#ffffff;}
-.fuyoseki-digit-modal{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:100000;display:flex;align-items:center;justify-content:center;}
-.fuyoseki-digit-modal.hidden{display:none;}
-.fuyoseki-digit-box{min-width:520px;max-width:calc(100vw - 80px);border:3px solid #ff3b3b;background:#060000;padding:18px;box-shadow:0 0 24px rgba(255,0,0,0.85);}
-.fuyoseki-active-text{color:#ffd0d0;font-size:18px;font-weight:900;margin-bottom:12px;text-align:center;}
-.fuyoseki-place-buttons,.fuyoseki-number-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
-
-.fuyoseki-manual-direct-input{
-  width:100%;
+.fuyoseki-digit-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.78);
+  z-index:100000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
   box-sizing:border-box;
-  margin:10px 0 12px;
-  padding:10px 12px;
-  background:#080808;
-  color:#ffffff;
-  border:2px solid #ff7777;
-  font-size:24px;
-  font-weight:900;
-  text-align:center;
-  outline:none;
 }
-
-.fuyoseki-manual-direct-input:focus{
-  border-color:#ffcccc;
+.fuyoseki-digit-modal.hidden{display:none;}
+.fuyoseki-digit-box{
+  --fuyo-active-color:#ffd0d0;
+  position:relative;
+  width:min(460px, calc(100vw - 32px));
+  min-width:0;
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  box-sizing:border-box;
+  padding:54px 18px 16px;
+  border:3px solid var(--fuyo-active-color);
+  border-radius:10px;
+  background:#060606;
+  color:#fff;
   box-shadow:
-    0 0 10px rgba(255,120,120,0.9),
-    0 0 22px rgba(255,40,40,0.75);
+    0 0 16px var(--fuyo-active-color),
+    0 0 30px rgba(255,255,255,0.08),
+    inset 0 0 18px rgba(255,255,255,0.025);
 }
-.fuyoseki-place-btn,.fuyoseki-number-btn,.fuyoseki-clear-btn,.fuyoseki-digit-close-btn{background:#111;color:#ffd0d0;border:1px solid #774444;padding:10px 15px;font-size:18px;font-weight:900;cursor:pointer;}
-.fuyoseki-place-btn.active{background:#7a0000;color:#ffffff;border-color:#ff5555;box-shadow:0 0 12px rgba(255,0,0,0.9);}
-.fuyoseki-number-btn:hover,.fuyoseki-place-btn:hover,.fuyoseki-clear-btn:hover,.fuyoseki-digit-close-btn:hover{color:#ffffff;border-color:#ff9999;filter:brightness(1.25);}
-.fuyoseki-digit-column-wrap{
-  display:grid;
-  grid-template-columns:repeat(4, minmax(90px, 1fr));
-  gap:10px;
-  margin:10px 0 14px;
-}
-.fuyoseki-digit-column{
-  border:1px solid #774444;
-  background:#090909;
-  padding:6px;
-}
-.fuyoseki-digit-column-title{
-  color:#ffd0d0;
-  font-size:18px;
+.fuyoseki-digit-top-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  min-width:78px;
+  height:34px;
+  padding:0 14px;
+  border:2px solid #ff4f5f;
+  border-radius:6px;
+  background:#260006;
+  color:#ffd0d5;
+  font-size:15px;
   font-weight:900;
-  text-align:center;
-  padding:4px 0 8px;
+  line-height:30px;
+  cursor:pointer;
+  box-shadow:0 0 8px rgba(255,79,95,.75);
+  z-index:2;
 }
-.fuyoseki-digit-column .fuyoseki-number-btn{
-  display:block;
+.fuyoseki-digit-top-close:hover{
+  color:#fff;
+  border-color:#ff9da8;
+  background:#52000d;
+  box-shadow:0 0 14px rgba(255,79,95,.95);
+  filter:brightness(1.15);
+}
+.fuyoseki-digit-context{
+  text-align:center;
+  font-weight:900;
+  line-height:1.25;
+}
+.fuyoseki-digit-frame-name{
+  font-size:27px;
+  color:#fff;
+  margin-bottom:6px;
+}
+.fuyoseki-digit-row-name{
+  font-size:22px;
+  color:#ddd;
+  margin-bottom:7px;
+}
+.fuyoseki-digit-stat-name{
+  font-size:28px;
+  color:var(--fuyo-active-color);
+  text-shadow:0 0 10px currentColor;
+  margin-bottom:16px;
+}
+.fuyoseki-digit-step-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 70px);
+  justify-content:center;
+  gap:12px;
+  margin:4px auto 14px;
+}
+.fuyoseki-digit-step-col{
+  display:grid;
+  grid-template-rows:44px 58px 44px;
+  gap:6px;
+  min-width:0;
+}
+.fuyoseki-digit-arrow{
   width:100%;
-  margin:4px 0;
-  padding:7px 0;
-  font-size:20px;
+  height:44px;
+  padding:0;
+  border:2px solid var(--fuyo-active-color);
+  border-radius:7px;
+  background:#101010;
+  color:var(--fuyo-active-color);
+  font-size:28px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:inset 0 0 8px rgba(255,255,255,0.035),0 0 8px var(--fuyo-active-color);
+}
+.fuyoseki-digit-arrow:hover:not(:disabled){
+  color:#fff;
+  background:#1b1b1b;
+  filter:brightness(1.2);
+  box-shadow:0 0 14px var(--fuyo-active-color);
+}
+.fuyoseki-digit-arrow:disabled{
+  opacity:.28;
+  cursor:default;
+  filter:none;
+  box-shadow:none;
+}
+.fuyoseki-digit-input{
+  width:100%;
+  height:58px;
+  box-sizing:border-box;
+  padding:0;
+  border:2px solid var(--fuyo-active-color);
+  border-radius:7px;
+  outline:none;
+  background:#000;
+  color:var(--fuyo-active-color);
+  font-size:36px;
+  font-weight:900;
+  line-height:58px;
+  text-align:center;
+  text-shadow:0 0 9px currentColor;
+  caret-color:var(--fuyo-active-color);
+  ime-mode:disabled;
+}
+.fuyoseki-digit-input:focus{
+  color:#fff;
+  border-color:#fff;
+  box-shadow:0 0 14px var(--fuyo-active-color), inset 0 0 10px rgba(255,255,255,0.08);
+}
+.fuyoseki-digit-help{
+  margin:0 0 10px;
+  color:#aaa;
+  font-size:12px;
+  line-height:1.45;
+  text-align:center;
 }
 .fuyoseki-digit-actions{
   display:flex;
@@ -940,7 +1031,40 @@ body{ background:#000; }
   flex-wrap:wrap;
   margin-top:8px;
 }
-.fuyoseki-modal-help{color:#ccc;font-size:12px;margin:4px 0;text-align:center;}
+.fuyoseki-clear-btn,
+.fuyoseki-digit-close-btn{
+  padding:9px 18px;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  border-radius:6px;
+}
+.fuyoseki-clear-btn{
+  background:#111;
+  color:#ddd;
+  border:1px solid #666;
+}
+.fuyoseki-digit-close-btn{
+  background:#111;
+  color:var(--fuyo-active-color);
+  border:2px solid var(--fuyo-active-color);
+  box-shadow:0 0 10px var(--fuyo-active-color);
+}
+.fuyoseki-clear-btn:hover,
+.fuyoseki-digit-close-btn:hover{
+  color:#fff;
+  filter:brightness(1.2);
+}
+@media (max-width:520px){
+  .fuyoseki-digit-box{padding:52px 10px 12px;}
+  .fuyoseki-digit-top-close{top:8px;right:8px;min-width:72px;height:32px;font-size:14px;line-height:28px;}
+  .fuyoseki-digit-frame-name{font-size:23px;}
+  .fuyoseki-digit-row-name{font-size:19px;}
+  .fuyoseki-digit-stat-name{font-size:24px;margin-bottom:12px;}
+  .fuyoseki-digit-step-grid{grid-template-columns:repeat(4, minmax(54px, 64px));gap:7px;}
+  .fuyoseki-digit-input{font-size:31px;}
+  .fuyoseki-digit-arrow{font-size:25px;}
+}
 
 /* ▼付与モーダル：枠・項目の色分け */
 .fuyoseki-frame-slot1{
@@ -986,65 +1110,6 @@ body{ background:#000; }
   background:#08240f;
   color:#a8ffbf;
   border-color:#2f8f48;
-}
-
-
-/* ▼付与の数値入力モーダル：初期表示で全体が収まりやすいサイズへ調整 */
-.fuyoseki-digit-box{
-  min-width:520px;
-  max-width:calc(100vw - 80px);
-  max-height:calc(100vh - 32px);
-  overflow:auto;
-  box-sizing:border-box;
-  padding:10px;
-}
-.fuyoseki-active-text{
-  font-size:16px;
-  margin-bottom:6px;
-}
-.fuyoseki-manual-direct-input{
-  margin:6px 0 8px;
-  padding:6px 10px;
-  font-size:20px;
-}
-.fuyoseki-digit-column-wrap{
-  gap:8px;
-  margin:6px 0 8px;
-}
-.fuyoseki-digit-column{
-  padding:4px;
-}
-.fuyoseki-digit-column-title{
-  font-size:16px;
-  padding:2px 0 4px;
-}
-.fuyoseki-digit-column .fuyoseki-number-btn{
-  margin:2px 0;
-  padding:3px 0;
-  font-size:17px;
-  line-height:1.15;
-}
-.fuyoseki-digit-actions{
-  margin-top:6px;
-}
-.fuyoseki-clear-btn,
-.fuyoseki-digit-close-btn{
-  padding:8px 18px;
-  font-size:18px;
-}
-.fuyoseki-digit-close-btn{
-  background:#b00000;
-  color:#ffffff;
-  border:2px solid #ff3333;
-  box-shadow:
-    0 0 10px rgba(255,60,60,0.95),
-    0 0 24px rgba(255,0,0,0.9);
-}
-.fuyoseki-digit-close-btn:hover{
-  background:#ff0000;
-  color:#ffffff;
-  border-color:#ff7777;
-  filter:brightness(1.2);
 }
 
 
@@ -1911,6 +1976,106 @@ body{
   .fuyo-fixed-zoom-safe-space{height:92px;}
 }
 </style>
+
+<style id="kashin-shared-number-modal-and-visual-update-20260922">
+/* ===== 通常数値入力：付与数値入力と同じ中央モーダル（九十九行はJS側で除外） ===== */
+.kashin-number-modal{
+  position:fixed;
+  inset:0;
+  z-index:100002;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  box-sizing:border-box;
+  background:rgba(0,0,0,.78);
+}
+.kashin-number-modal.hidden{display:none;}
+.kashin-number-box{width:min(540px,calc(100vw - 32px));}
+.kashin-number-grid.fuyoseki-digit-step-grid{grid-template-columns:repeat(4,70px);}
+.kashin-number-grid.digits-5.fuyoseki-digit-step-grid{grid-template-columns:repeat(5,70px);gap:10px;}
+.kashin-number-input-source{cursor:pointer !important;}
+@media (max-width:560px){
+  .kashin-number-grid.fuyoseki-digit-step-grid{grid-template-columns:repeat(4,minmax(50px,64px));gap:7px;}
+  .kashin-number-grid.digits-5.fuyoseki-digit-step-grid{grid-template-columns:repeat(5,minmax(44px,56px));gap:5px;}
+  .kashin-number-grid.digits-5 .fuyoseki-digit-input{font-size:28px;}
+  .kashin-number-grid.digits-5 .fuyoseki-digit-arrow{font-size:23px;}
+}
+
+/* ===== 付与／九十九の入口ボタン：少し大型化＋控えめな脈動 ===== */
+@keyframes kashin-entry-button-pulse{
+  0%,100%{transform:scale(.98);}
+  50%{transform:scale(1.055);}
+}
+.fuyoseki-select-btn{
+  position:relative;
+  z-index:3;
+  width:calc(100% + 6px) !important;
+  height:calc(100% + 2px) !important;
+  margin:-1px 0 0 -3px !important;
+  font-size:14px !important;
+  animation:kashin-entry-button-pulse 1.55s ease-in-out infinite;
+  transform-origin:center;
+  will-change:transform;
+}
+.kashin-tsukumo-inline-btn{
+  z-index:3;
+  left:2px !important;
+  top:0 !important;
+  height:26px !important;
+  padding:0 7px !important;
+  font-size:12px !important;
+  line-height:22px !important;
+  animation:kashin-entry-button-pulse 1.55s ease-in-out infinite;
+  transform-origin:center;
+  will-change:transform;
+}
+.fuyoseki-select-btn:hover,
+.kashin-tsukumo-inline-btn:hover{
+  animation-play-state:paused;
+  transform:scale(1.08) !important;
+}
+.fuyoseki-select-btn:active,
+.kashin-tsukumo-inline-btn:active{
+  animation-play-state:paused;
+  transform:scale(.96) !important;
+}
+@media (prefers-reduced-motion:reduce){
+  .fuyoseki-select-btn,.kashin-tsukumo-inline-btn{animation:none !important;}
+}
+
+/* ===== 合計能力「残」：サイズ・閾値色・1～99の脈動 ===== */
+.top-v[class*="remain-"]{
+  font-size:16px !important;
+  font-weight:900 !important;
+  line-height:1;
+  transform-origin:center;
+  transition:color .15s ease,text-shadow .15s ease;
+}
+.top-v.remain-positive{
+  color:#ff5252 !important;
+  text-shadow:0 0 7px rgba(255,60,60,.82);
+}
+.top-v.remain-zero{
+  color:#63ff84 !important;
+  text-shadow:0 0 7px rgba(60,255,100,.85);
+}
+.top-v.remain-negative{
+  color:#59a9ff !important;
+  text-shadow:0 0 7px rgba(60,145,255,.9);
+}
+@keyframes kashin-remain-low-pulse{
+  0%,100%{transform:scale(.97);}
+  50%{transform:scale(1.08);}
+}
+.top-v.remain-low{
+  animation:kashin-remain-low-pulse 1.05s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .top-v.remain-low{animation:none !important;}
+}
+</style>
+
 </head>
 
 <body>
@@ -2261,18 +2426,23 @@ createSection("左手：","left", true);
     <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeKashinFuyoFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
   </div>
   <div id="fuyosekiZoomArea">
-    <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
+    <div class="fuyoseki-note">生命〜風のボタンを押すと、中央の入力モーダルで各桁を矢印または数字入力できます</div>
     <div id="fuyosekiButtonGrid" class="fuyoseki-button-grid"></div>
   </div>
   <div class="fuyo-fixed-zoom-safe-space no-capture" aria-hidden="true"></div>
 </div>
 <div id="fuyoDigitModal" class="fuyoseki-digit-modal hidden">
-  <div class="fuyoseki-digit-box">
-    <div id="fuyoDigitActiveText" class="fuyoseki-active-text">入力するマスを選択してください</div>
-    <input id="fuyoManualDirectInput" class="fuyoseki-manual-direct-input" inputmode="numeric" placeholder="手動入力" oninput="setFuyoManualDirectInput(this)">
-    <div id="fuyoDigitPlaceButtons" class="fuyoseki-place-buttons"></div>
-    <div id="fuyoDigitNumberButtons" class="fuyoseki-number-buttons"></div>
-    <div class="fuyoseki-modal-help">千〜一の位の各列から0〜9を押して入力します</div>
+  <div id="fuyoDigitBox" class="fuyoseki-digit-box">
+    <button type="button" class="fuyoseki-digit-top-close" onclick="closeFuyoDigitModal()" aria-label="数値入力モーダルを閉じる">閉じる</button>
+    <div id="fuyoDigitContext" class="fuyoseki-digit-context"></div>
+    <div id="fuyoDigitNumberButtons"></div>
+  </div>
+</div>
+<div id="kashinNumberModal" class="kashin-number-modal hidden no-capture" aria-hidden="true">
+  <div id="kashinNumberBox" class="fuyoseki-digit-box kashin-number-box">
+    <button type="button" class="fuyoseki-digit-top-close" onclick="closeKashinNumberModal()" aria-label="数値入力モーダルを閉じる">閉じる</button>
+    <div id="kashinNumberContext" class="fuyoseki-digit-context"></div>
+    <div id="kashinNumberControls"></div>
   </div>
 </div>
 
@@ -2297,10 +2467,8 @@ let fuyosekiTargetSection = "";
 let fuyosekiTargetLabel = "";
 let fuyosekiManualValues = {};
 let fuyosekiActiveTarget = null;
-let fuyosekiActivePlace = "ones";
 let fuyosekiSavedState = loadFuyoSavedStateAll();
 const FUYOKU_PLACE_INDEX = { thousands:0, hundreds:1, tens:2, ones:3 };
-const FUYOKU_PLACE_LABELS = [{key:"thousands", label:"千の位"},{key:"hundreds", label:"百の位"},{key:"tens", label:"十の位"},{key:"ones", label:"一の位"}];
 const FUYOKU_LAYOUT = [
   {title:"1枠目",rows:[{key:"slot1_fuyo", title:"付与　or　神秘"},{key:"slot1_jingi", title:"神器石1"},{key:"slot1_tenro", title:"天楼武器"},{key:"slot1_other", title:"その他1"}]},
   {title:"2枠目",rows:[{key:"slot2_fuyo", title:"付与　or　神秘"},{key:"slot2_jingi", title:"神器石2"},{key:"slot2_tenro", title:"御法具"},{key:"slot2_other", title:"その他2"}]}
@@ -2316,7 +2484,7 @@ function saveFuyoCurrentState(){if(!fuyosekiTargetSection) return; fuyosekiSaved
 function makeFuyoValueKey(rowKey, stat){return `${rowKey}_${stat}`;}
 function getFuyoValue(rowKey, stat){return kashinFuyoNum(fuyosekiManualValues[makeFuyoValueKey(rowKey, stat)] || "");}
 function setFuyoValue(rowKey, stat, value){const key = makeFuyoValueKey(rowKey, stat); const n = kashinFuyoNum(value); if(n){fuyosekiManualValues[key] = String(Math.floor(n));}else{delete fuyosekiManualValues[key];}}
-function clearFuyoModalSelectionState(){fuyosekiManualValues = {}; fuyosekiActiveTarget = null; fuyosekiActivePlace = "ones";}
+function clearFuyoModalSelectionState(){fuyosekiManualValues = {}; fuyosekiActiveTarget = null;}
 function resetFuyoModalSelection(){closeFuyoDigitModal(); clearFuyoModalSelectionState(); renderFuyoButtons();}
 function kashinInputsHaveAnyValue(inputs){return inputs.some(input => String(input?.value || "").trim() !== "" && kashinFuyoNum(input.value) !== 0);}
 function readKashinInputsTotal(inputs){const total = makeKashinFuyoTotal(); KASHIN_ALL_STATS.forEach((stat, i) => {total[stat] = kashinFuyoNum(inputs[i]?.value || "");}); return total;}
@@ -2362,45 +2530,54 @@ function loadFuyoTargetStateFromTable(sectionClass){
   }
 }
 function updateFuyoSelectedCount(){const count = document.getElementById("fuyosekiSelectedCount"); if(!count) return; count.textContent = fuyosekiActiveTarget ? `入力中：${fuyosekiActiveTarget.title} / ${fuyosekiActiveTarget.stat}` : "入力セル未選択";}
+function getFuyoActiveDigitArray(){
+  if(!fuyosekiActiveTarget) return ["0","0","0","0"];
+  return String(getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat) || 0)
+    .padStart(4,"0").slice(-4).split("");
+}
+function getFuyoActiveFrameName(){
+  if(!fuyosekiActiveTarget) return "";
+  return String(fuyosekiActiveTarget.rowKey || "").startsWith("slot2_") ? "2枠目" : "1枠目";
+}
 function renderFuyoDigitModal(){
   const modal = document.getElementById("fuyoDigitModal");
-  const activeText = document.getElementById("fuyoDigitActiveText");
-  const placeBox = document.getElementById("fuyoDigitPlaceButtons");
+  const box = document.getElementById("fuyoDigitBox");
+  const context = document.getElementById("fuyoDigitContext");
   const numberBox = document.getElementById("fuyoDigitNumberButtons");
-  const manualInput = document.getElementById("fuyoManualDirectInput");
-  if(!modal || !activeText || !placeBox || !numberBox) return;
+  if(!modal || !box || !context || !numberBox) return;
 
   if(!fuyosekiActiveTarget){
-    activeText.textContent = "入力するマスを選択してください";
-    if(manualInput){
-      manualInput.value = "";
-      manualInput.disabled = true;
-    }
-  }else{
-    const value = getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat);
-    activeText.textContent = `${fuyosekiActiveTarget.title} / ${fuyosekiActiveTarget.stat}　現在値：${value || "未入力"}`;
-    if(manualInput){
-      manualInput.disabled = false;
-      manualInput.value = value ? String(value) : "";
-    }
+    box.style.setProperty("--fuyo-active-color", "#ffd0d0");
+    context.innerHTML = `<div class="fuyoseki-digit-frame-name">入力するマスを選択してください</div>`;
+    numberBox.innerHTML = "";
+    return;
   }
 
-  placeBox.innerHTML = "";
+  const color = fuyosekiStatColor(fuyosekiActiveTarget.stat);
+  const digits = getFuyoActiveDigitArray();
+  const places = ["thousands","hundreds","tens","ones"];
+  box.style.setProperty("--fuyo-active-color", color);
+  context.innerHTML =
+    `<div class="fuyoseki-digit-frame-name">${getFuyoActiveFrameName()}</div>` +
+    `<div class="fuyoseki-digit-row-name">${fuyosekiActiveTarget.title}</div>` +
+    `<div class="fuyoseki-digit-stat-name">${fuyosekiActiveTarget.stat}</div>`;
 
-  let numberHtml = `<div class="fuyoseki-digit-column-wrap">`;
-  FUYOKU_PLACE_LABELS.forEach(place => {
-    numberHtml += `<div class="fuyoseki-digit-column"><div class="fuyoseki-digit-column-title">${place.label}</div>`;
-    for(let i=0;i<=9;i++){
-      numberHtml += `<button class="fuyoseki-number-btn" onclick="setFuyoDigitAtPlace('${place.key}', ${i})">${i}</button>`;
-    }
-    numberHtml += `</div>`;
+  let html = `<div class="fuyoseki-digit-step-grid">`;
+  places.forEach((place, idx) => {
+    const digit = Number(digits[idx]) || 0;
+    html += `<div class="fuyoseki-digit-step-col">`;
+    html += `<button type="button" class="fuyoseki-digit-arrow" onclick="stepFuyoDigit('${place}',1)" ${digit>=9?"disabled":""} aria-label="${idx+1}桁目を増やす">⇧</button>`;
+    html += `<input id="fuyoDigitInput-${place}" class="fuyoseki-digit-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en" value="${digit}" onfocus="this.select()" onkeydown="guardFuyoDigitKeyDown(event)" onbeforeinput="guardFuyoDigitBeforeInput(event)" oninput="setFuyoDigitInput(this,'${place}')" aria-label="${idx+1}桁目">`;
+    html += `<button type="button" class="fuyoseki-digit-arrow" onclick="stepFuyoDigit('${place}',-1)" ${digit<=0?"disabled":""} aria-label="${idx+1}桁目を減らす">⇩</button>`;
+    html += `</div>`;
   });
-  numberHtml += `</div>`;
-  numberHtml += `<div class="fuyoseki-digit-actions">`;
-  numberHtml += `<button class="fuyoseki-clear-btn" onclick="clearFuyoActiveValue()">このマスを消す</button>`;
-  numberHtml += `<button class="fuyoseki-digit-close-btn" onclick="closeFuyoDigitModal()">反映</button>`;
-  numberHtml += `</div>`;
-  numberBox.innerHTML = numberHtml;
+  html += `</div>`;
+  html += `<div class="fuyoseki-digit-help">数字部分は直接入力できます。0～9以外の文字とIME変換入力は受け付けません。</div>`;
+  html += `<div class="fuyoseki-digit-actions">`;
+  html += `<button type="button" class="fuyoseki-clear-btn" onclick="clearFuyoActiveValue()">このマスを0にする</button>`;
+  html += `<button type="button" class="fuyoseki-digit-close-btn" onclick="closeFuyoDigitModal()">反映</button>`;
+  html += `</div>`;
+  numberBox.innerHTML = html;
 }
 function openFuyoDigitModal(){
   const modal = document.getElementById("fuyoDigitModal");
@@ -2454,47 +2631,58 @@ function selectFuyoValueCell(rowKey, stat, title){
   renderFuyoButtons();
   openFuyoDigitModal();
 }
-function normalizeFuyoManualInputValue(value){
-  return String(value || "")
-    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[－ー]/g, "-")
-    .replace(/[^0-9\-]/g, "");
+function guardFuyoDigitKeyDown(event){
+  if(!event) return;
+  if(event.ctrlKey || event.metaKey || event.altKey) return;
+  const allowed = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
+  if(allowed.includes(event.key)) return;
+  if(/^[0-9]$/.test(event.key)) return;
+  event.preventDefault();
 }
-function setFuyoManualDirectInput(input){
-  if(!input || !fuyosekiActiveTarget) return;
-  const value = normalizeFuyoManualInputValue(input.value);
-  input.value = value;
-  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, value);
-  renderFuyoButtons();
-  const nextInput = document.getElementById("fuyoManualDirectInput");
-  if(nextInput){
-    nextInput.focus();
-    const pos = nextInput.value.length;
-    try{ nextInput.setSelectionRange(pos, pos); }catch(e){}
+function guardFuyoDigitBeforeInput(event){
+  if(!event) return;
+  if(event.inputType && event.inputType.startsWith("delete")) return;
+  if(event.inputType && event.inputType.toLowerCase().includes("composition")){
+    event.preventDefault();
+    return;
+  }
+  if(typeof event.data === "string" && event.data !== "" && !/^[0-9]$/.test(event.data)){
+    event.preventDefault();
   }
 }
-function setFuyoDigitAtPlace(place, digit){
+function setFuyoDigitValueAtPlace(place, digit){
   if(!fuyosekiActiveTarget) return;
-  const current = String(getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat) || 0).padStart(4,"0").slice(-4).split("");
   const idx = FUYOKU_PLACE_INDEX[place];
   if(idx == null) return;
-  current[idx] = String(digit);
-  const next = parseInt(current.join(""), 10) || 0;
+  const digits = getFuyoActiveDigitArray();
+  const nextDigit = Math.max(0, Math.min(9, Number(digit) || 0));
+  digits[idx] = String(nextDigit);
+  const next = parseInt(digits.join(""), 10) || 0;
   setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, next);
-  renderFuyoButtons();
 }
-function setFuyoDigitPlace(place){
-  fuyosekiActivePlace = place;
-  renderFuyoDigitModal();
-}
-function setFuyoDigit(digit){
+function stepFuyoDigit(place, delta){
   if(!fuyosekiActiveTarget) return;
-  const current = String(getFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat) || 0).padStart(4,"0").slice(-4).split("");
-  const idx = FUYOKU_PLACE_INDEX[fuyosekiActivePlace];
-  current[idx] = String(digit);
-  const next = parseInt(current.join(""), 10) || 0;
-  setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, next);
+  const idx = FUYOKU_PLACE_INDEX[place];
+  if(idx == null) return;
+  const digits = getFuyoActiveDigitArray();
+  const current = Number(digits[idx]) || 0;
+  const next = Math.max(0, Math.min(9, current + (Number(delta) || 0)));
+  if(next === current) return;
+  setFuyoDigitValueAtPlace(place, next);
   renderFuyoButtons();
+}
+function setFuyoDigitInput(input, place){
+  if(!input || !fuyosekiActiveTarget) return;
+  const asciiOnly = String(input.value || "").replace(/[^0-9]/g, "").slice(-1);
+  const digit = asciiOnly === "" ? 0 : Number(asciiOnly);
+  input.value = String(digit);
+  setFuyoDigitValueAtPlace(place, digit);
+  renderFuyoButtons();
+  const nextInput = document.getElementById(`fuyoDigitInput-${place}`);
+  if(nextInput){
+    nextInput.focus();
+    try{nextInput.select();}catch(e){}
+  }
 }
 function clearFuyoActiveValue(){
   if(!fuyosekiActiveTarget) return;
@@ -3237,6 +3425,199 @@ function applyTsukumoSelection(){
 </script>
 
 
+
+<script id="kashin-shared-number-modal-20260922">
+/* 通常数値入力用。九十九8行は対象外。 */
+let kashinNumberActiveInput = null;
+let kashinNumberDigitCount = 4;
+let kashinNumberActiveStat = "";
+let kashinNumberActiveTitle = "";
+let kashinNumberActiveRowTitle = "";
+
+function getKashinNumberInputInfo(input){
+  if(!input || !input.classList || !input.classList.contains("input")) return null;
+  const cell = input.closest(".cell");
+  const table = input.closest(".table");
+  if(!cell || !table) return null;
+  const cells = Array.from(table.children).filter(el => el.classList && el.classList.contains("cell"));
+  const cellIndex = cells.indexOf(cell);
+  if(cellIndex < 0) return null;
+  const rowStart = cellIndex - (cellIndex % 12);
+  const rowLabelCell = cells[rowStart] || null;
+
+  /* 九十九の入力8行は絶対にこのモーダルへ接続しない */
+  if(rowLabelCell && rowLabelCell.classList.contains("kashin-tsukumo-detail-label")) return null;
+
+  const colClass = Array.from(input.classList).find(c => /^col-\d+$/.test(c));
+  const statIndex = colClass ? Number(colClass.slice(4)) : -1;
+  const stat = (statIndex >= 0 && typeof KASHIN_ALL_STATS !== "undefined") ? KASHIN_ALL_STATS[statIndex] : "";
+
+  const isAbility = table.classList.contains("kashin-ability");
+  const sectionMap = {head:"頭",body:"胴",right:"右手",left:"左手"};
+  let sectionTitle = isAbility ? "家臣能力" : "数値入力";
+  Object.keys(sectionMap).forEach(cls => { if(table.classList.contains(cls)) sectionTitle = sectionMap[cls]; });
+
+  let rowTitle = rowLabelCell ? String(rowLabelCell.textContent || "").trim() : "";
+  if(rowTitle){
+    rowTitle = rowTitle.replace(new RegExp("^" + sectionTitle.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + "[：:]?"), "").trim();
+  }
+  if(!rowTitle && isAbility) rowTitle = "家臣能力";
+  if(!rowTitle) rowTitle = "入力";
+
+  return {input,cell,table,stat,isAbility,digits:isAbility?5:4,sectionTitle,rowTitle};
+}
+
+function normalizeKashinOneDigit(value){
+  return String(value == null ? "" : value)
+    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0)-0xFEE0))
+    .replace(/[^0-9]/g, "")
+    .slice(-1);
+}
+
+function getKashinNumberDigits(){
+  const count = kashinNumberDigitCount || 4;
+  const raw = kashinNumberActiveInput ? String(kashinNumberActiveInput.value || "").replace(/[^0-9]/g,"") : "";
+  return raw.padStart(count,"0").slice(-count).split("").map(x => Number(x)||0);
+}
+
+function applyKashinNumberDigits(digits){
+  if(!kashinNumberActiveInput) return;
+  const value = parseInt(digits.join(""),10) || 0;
+  kashinNumberActiveInput.value = value ? String(value) : "";
+  const cell = kashinNumberActiveInput.closest(".cell");
+  if(cell){
+    cell.classList.toggle("filled", value !== 0);
+    if(value !== 0) cell.classList.remove("active");
+  }
+  if(typeof calc === "function") calc();
+}
+
+function renderKashinNumberModal(){
+  const modal = document.getElementById("kashinNumberModal");
+  const box = document.getElementById("kashinNumberBox");
+  const context = document.getElementById("kashinNumberContext");
+  const controls = document.getElementById("kashinNumberControls");
+  if(!modal || !box || !context || !controls || !kashinNumberActiveInput) return;
+
+  const color = (typeof fuyosekiStatColor === "function") ? fuyosekiStatColor(kashinNumberActiveStat) : "#ffd0d0";
+  box.style.setProperty("--fuyo-active-color", color);
+  const rowLine = kashinNumberActiveRowTitle === kashinNumberActiveTitle ? "" : `<div class="fuyoseki-digit-row-name">${kashinNumberActiveRowTitle}</div>`;
+  context.innerHTML = `<div class="fuyoseki-digit-frame-name">${kashinNumberActiveTitle}</div>${rowLine}<div class="fuyoseki-digit-stat-name">${kashinNumberActiveStat}</div>`;
+
+  const digits = getKashinNumberDigits();
+  let html = `<div class="fuyoseki-digit-step-grid kashin-number-grid digits-${kashinNumberDigitCount}">`;
+  digits.forEach((digit,idx) => {
+    html += `<div class="fuyoseki-digit-step-col">`;
+    html += `<button type="button" class="fuyoseki-digit-arrow" onclick="stepKashinNumberDigit(${idx},1)" ${digit>=9?"disabled":""} aria-label="${idx+1}桁目を増やす">⇧</button>`;
+    html += `<input class="fuyoseki-digit-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en" value="${digit}" data-kashin-number-digit="${idx}" onfocus="this.select()" onkeydown="guardKashinNumberDigitKeyDown(event)" onbeforeinput="guardKashinNumberDigitBeforeInput(event)" oninput="setKashinNumberDigitInput(this,${idx})" aria-label="${idx+1}桁目">`;
+    html += `<button type="button" class="fuyoseki-digit-arrow" onclick="stepKashinNumberDigit(${idx},-1)" ${digit<=0?"disabled":""} aria-label="${idx+1}桁目を減らす">⇩</button>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  html += `<div class="fuyoseki-digit-help">数字部分は直接入力できます。0～9以外の文字とIME変換入力は受け付けません。</div>`;
+  html += `<div class="fuyoseki-digit-actions"><button type="button" class="fuyoseki-clear-btn" onclick="clearKashinNumberValue()">このマスを0にする</button><button type="button" class="fuyoseki-digit-close-btn" onclick="closeKashinNumberModal()">反映</button></div>`;
+  controls.innerHTML = html;
+}
+
+function openKashinNumberModal(input){
+  const info = getKashinNumberInputInfo(input);
+  if(!info) return false;
+
+  // 共通入力モーダルで別のマスを選んだら、以前の選択表示を必ず解除する。
+  document.querySelectorAll(".cell.active").forEach(cell => {
+    cell.classList.remove("active");
+  });
+  const selectedCell = info.input.closest(".cell");
+  if(selectedCell) selectedCell.classList.add("active");
+
+  kashinNumberActiveInput = info.input;
+  kashinNumberDigitCount = info.digits;
+  kashinNumberActiveStat = info.stat;
+  kashinNumberActiveTitle = info.sectionTitle;
+  kashinNumberActiveRowTitle = info.rowTitle;
+  const modal = document.getElementById("kashinNumberModal");
+  renderKashinNumberModal();
+  if(modal){modal.classList.remove("hidden");modal.setAttribute("aria-hidden","false");}
+  return true;
+}
+
+function closeKashinNumberModal(){
+  const modal = document.getElementById("kashinNumberModal");
+  if(modal){modal.classList.add("hidden");modal.setAttribute("aria-hidden","true");}
+  kashinNumberActiveInput = null;
+}
+
+function stepKashinNumberDigit(index,delta){
+  if(!kashinNumberActiveInput) return;
+  const digits = getKashinNumberDigits();
+  if(index < 0 || index >= digits.length) return;
+  digits[index] = Math.max(0,Math.min(9,digits[index] + (delta>0?1:-1)));
+  applyKashinNumberDigits(digits);
+  renderKashinNumberModal();
+}
+
+function setKashinNumberDigitInput(input,index){
+  if(!kashinNumberActiveInput) return;
+  const digitText = normalizeKashinOneDigit(input.value);
+  const digits = getKashinNumberDigits();
+  digits[index] = digitText === "" ? 0 : Number(digitText);
+  applyKashinNumberDigits(digits);
+  renderKashinNumberModal();
+  const next = document.querySelector(`#kashinNumberControls [data-kashin-number-digit="${index}"]`);
+  if(next){next.focus();try{next.select();}catch(e){}}
+}
+
+function guardKashinNumberDigitKeyDown(event){
+  if(!event) return;
+  if(event.isComposing || event.key === "Process") {event.preventDefault();return;}
+  if(event.ctrlKey || event.metaKey || event.altKey) return;
+  const allowed=["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
+  if(allowed.includes(event.key)) return;
+  if(!/^[0-9]$/.test(event.key)) event.preventDefault();
+}
+function guardKashinNumberDigitBeforeInput(event){
+  if(!event) return;
+  if(event.isComposing || (event.inputType && event.inputType.includes("Composition"))){event.preventDefault();return;}
+  if(typeof event.data === "string" && event.data !== "" && !/^[0-9]$/.test(event.data)) event.preventDefault();
+}
+function clearKashinNumberValue(){
+  if(!kashinNumberActiveInput) return;
+  applyKashinNumberDigits(new Array(kashinNumberDigitCount).fill(0));
+  renderKashinNumberModal();
+}
+
+function setupKashinSharedNumberInputs(){
+  document.querySelectorAll("input.input").forEach(input => {
+    const info = getKashinNumberInputInfo(input);
+    if(!info){
+      input.classList.remove("kashin-number-input-source");
+      input.readOnly = false;
+      return;
+    }
+    input.classList.add("kashin-number-input-source");
+    input.readOnly = true;
+    if(input.dataset.kashinNumberBound === "1") return;
+    input.dataset.kashinNumberBound = "1";
+    input.addEventListener("click", function(e){
+      e.stopPropagation();
+      openKashinNumberModal(input);
+    });
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        openKashinNumberModal(input);
+      }
+    });
+  });
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", setupKashinSharedNumberInputs, {once:true});
+}else{
+  setupKashinSharedNumberInputs();
+}
+</script>
+
 <script>
 // 全角→半角変換
 function toHalfWidth(str){
@@ -3257,7 +3638,15 @@ function calc(){
     document.querySelector(".total-"+i).textContent = sum;
 
     const max = (i === 0 || i === 1) ? 65535 : 8000;
-    document.querySelector(".remain-"+i).textContent = max - sum;
+    const remain = max - sum;
+    const remainEl = document.querySelector(".remain-"+i);
+    if(remainEl){
+      remainEl.textContent = remain;
+      remainEl.classList.toggle("remain-positive", remain >= 1);
+      remainEl.classList.toggle("remain-zero", remain === 0);
+      remainEl.classList.toggle("remain-negative", remain <= -1);
+      remainEl.classList.toggle("remain-low", remain >= 1 && remain <= 99);
+    }
   }
 }
 
@@ -3314,8 +3703,7 @@ calc();
     if(!input || input.tagName !== "INPUT") return false;
     if(input.type === "checkbox" || input.type === "radio" || input.type === "button" || input.type === "submit") return false;
     return input.classList.contains("input") ||
-      input.classList.contains("fuyoseki-manual-input") ||
-      input.classList.contains("fuyoseki-manual-direct-input");
+      input.classList.contains("fuyoseki-manual-input");
   }
 
   function applyNoImeAttributes(input){
