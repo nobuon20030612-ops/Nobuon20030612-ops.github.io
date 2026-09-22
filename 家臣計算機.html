@@ -2688,6 +2688,7 @@ function clearFuyoActiveValue(){
   if(!fuyosekiActiveTarget) return;
   setFuyoValue(fuyosekiActiveTarget.rowKey, fuyosekiActiveTarget.stat, 0);
   renderFuyoButtons();
+  closeFuyoDigitModal();
 }
 
 
@@ -3584,6 +3585,7 @@ function clearKashinNumberValue(){
   if(!kashinNumberActiveInput) return;
   applyKashinNumberDigits(new Array(kashinNumberDigitCount).fill(0));
   renderKashinNumberModal();
+  closeKashinNumberModal();
 }
 
 function setupKashinSharedNumberInputs(){

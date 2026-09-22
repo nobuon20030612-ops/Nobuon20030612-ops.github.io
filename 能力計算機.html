@@ -2262,6 +2262,232 @@ body.ability-modal-open > #viewport{
 }
 </style>
 
+
+<style id="nouryoku-shared-digit-input-style">
+/* ===== 数値入力モーダル共通仕様：家臣計算機と同じ見た目／通常入力・付与数値入力だけ ===== */
+.nouryoku-number-modal{
+  position:fixed;
+  inset:0;
+  z-index:1000400;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  box-sizing:border-box;
+  background:rgba(0,0,0,.78);
+}
+.nouryoku-number-modal.hidden{display:none;}
+
+.nouryoku-shared-digit-box{
+  --nouryoku-active-color:#ffd0d0;
+  position:relative;
+  width:min(460px, calc(100vw - 32px));
+  min-width:0;
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  box-sizing:border-box;
+  padding:54px 18px 16px;
+  border:3px solid var(--nouryoku-active-color);
+  border-radius:10px;
+  background:#060606;
+  color:#fff;
+  box-shadow:
+    0 0 16px var(--nouryoku-active-color),
+    0 0 30px rgba(255,255,255,0.08),
+    inset 0 0 18px rgba(255,255,255,0.025);
+}
+/* 家臣計算機の通常入力モーダルと同じ幅 */
+#nouryokuNumberModal .nouryoku-shared-digit-box{
+  width:min(540px, calc(100vw - 32px));
+}
+.nouryoku-digit-top-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  min-width:78px;
+  height:34px;
+  padding:0 14px;
+  border:2px solid #ff4f5f;
+  border-radius:6px;
+  background:#260006;
+  color:#ffd0d5;
+  font-size:15px;
+  font-weight:900;
+  line-height:30px;
+  cursor:pointer;
+  box-shadow:0 0 8px rgba(255,79,95,.75);
+  z-index:2;
+}
+.nouryoku-digit-top-close:hover{
+  color:#fff;
+  border-color:#ff9da8;
+  background:#52000d;
+  box-shadow:0 0 14px rgba(255,79,95,.95);
+  filter:brightness(1.15);
+}
+.nouryoku-digit-context{
+  text-align:center;
+  font-weight:900;
+  line-height:1.25;
+}
+.nouryoku-digit-frame-name{
+  font-size:27px;
+  color:#fff;
+  margin-bottom:6px;
+}
+.nouryoku-digit-row-name{
+  font-size:22px;
+  color:#ddd;
+  margin-bottom:7px;
+}
+.nouryoku-digit-stat-name{
+  font-size:28px;
+  color:var(--nouryoku-active-color);
+  text-shadow:0 0 10px currentColor;
+  margin-bottom:16px;
+}
+.nouryoku-digit-step-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 70px);
+  justify-content:center;
+  gap:12px;
+  margin:4px auto 14px;
+}
+.nouryoku-digit-step-grid.digits-3{
+  grid-template-columns:repeat(3,70px);
+  gap:12px;
+}
+.nouryoku-digit-step-grid.digits-5{
+  grid-template-columns:repeat(5,70px);
+  gap:10px;
+}
+.nouryoku-digit-step-grid.digits-6{
+  grid-template-columns:repeat(6,58px);
+  gap:7px;
+}
+.nouryoku-digit-step-col{
+  display:grid;
+  grid-template-rows:44px 58px 44px;
+  gap:6px;
+  min-width:0;
+}
+.nouryoku-digit-arrow{
+  width:100%;
+  height:44px;
+  padding:0;
+  border:2px solid var(--nouryoku-active-color);
+  border-radius:7px;
+  background:#101010;
+  color:var(--nouryoku-active-color);
+  font-size:28px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:inset 0 0 8px rgba(255,255,255,0.035),0 0 8px var(--nouryoku-active-color);
+}
+.nouryoku-digit-arrow:hover:not(:disabled){
+  color:#fff;
+  background:#1b1b1b;
+  filter:brightness(1.2);
+  box-shadow:0 0 14px var(--nouryoku-active-color);
+}
+.nouryoku-digit-arrow:disabled{
+  opacity:.28;
+  cursor:default;
+  filter:none;
+  box-shadow:none;
+}
+.nouryoku-digit-input{
+  width:100%;
+  height:58px;
+  box-sizing:border-box;
+  padding:0;
+  border:2px solid var(--nouryoku-active-color);
+  border-radius:7px;
+  outline:none;
+  background:#000;
+  color:var(--nouryoku-active-color);
+  font-size:36px;
+  font-weight:900;
+  line-height:58px;
+  text-align:center;
+  text-shadow:0 0 9px currentColor;
+  caret-color:var(--nouryoku-active-color);
+  ime-mode:disabled;
+}
+.nouryoku-digit-input:focus{
+  color:#fff;
+  border-color:#fff;
+  box-shadow:0 0 14px var(--nouryoku-active-color), inset 0 0 10px rgba(255,255,255,0.08);
+}
+.nouryoku-digit-help{
+  margin:0 0 10px;
+  color:#aaa;
+  font-size:12px;
+  line-height:1.45;
+  text-align:center;
+}
+.nouryoku-digit-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.nouryoku-digit-clear-btn,
+.nouryoku-digit-close-btn{
+  padding:9px 18px;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  border-radius:6px;
+}
+.nouryoku-digit-clear-btn{
+  background:#111;
+  color:#ddd;
+  border:1px solid #666;
+}
+.nouryoku-digit-close-btn{
+  background:#111;
+  color:var(--nouryoku-active-color);
+  border:2px solid var(--nouryoku-active-color);
+  box-shadow:0 0 10px var(--nouryoku-active-color);
+}
+.nouryoku-digit-clear-btn:hover,
+.nouryoku-digit-close-btn:hover{
+  color:#fff;
+  filter:brightness(1.2);
+}
+
+/* 付与数値入力だけ、家臣計算機と同じ半透明オーバーレイにする */
+#fuyoDigitModal{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px !important;
+  box-sizing:border-box;
+  background:rgba(0,0,0,.78) !important;
+}
+#fuyoDigitModal.hidden{display:none !important;}
+#fuyoDigitModal .nouryoku-shared-digit-box{
+  width:min(460px, calc(100vw - 32px));
+  max-height:calc(100vh - 32px);
+}
+
+@media (max-width:620px){
+  .nouryoku-shared-digit-box{padding:52px 10px 12px;}
+  .nouryoku-digit-top-close{top:8px;right:8px;min-width:72px;height:32px;font-size:14px;line-height:28px;}
+  .nouryoku-digit-frame-name{font-size:23px;}
+  .nouryoku-digit-row-name{font-size:19px;}
+  .nouryoku-digit-stat-name{font-size:24px;margin-bottom:12px;}
+  .nouryoku-digit-step-grid{grid-template-columns:repeat(4, minmax(54px,64px));gap:7px;}
+  .nouryoku-digit-step-grid.digits-5{grid-template-columns:repeat(5,minmax(44px,56px));gap:5px;}
+  .nouryoku-digit-step-grid.digits-6{grid-template-columns:repeat(6,minmax(38px,48px));gap:4px;}
+  .nouryoku-digit-input{font-size:31px;}
+  .nouryoku-digit-arrow{font-size:25px;}
+}
+</style>
+
 </head>
 <body>
 
@@ -2447,7 +2673,7 @@ body.ability-modal-open > #viewport{
     <button type="button" class="fuyo-fixed-zoom-btn fuyo-fixed-zoom-in" onclick="changeNouryokuFuyoFixedZoom(25)" title="25%拡大（最大300%）">拡大 ＋</button>
   </div>
   <div id="fuyosekiZoomArea" class="modal-zoom-area">
-    <div class="fuyoseki-note">生命〜風のボタンを押すと、別モーダルで千〜一の位をクリック入力できます</div>
+    <div class="fuyoseki-note">生命〜風のボタンを押すと、中央の数値入力モーダルで各桁を矢印または数字入力できます</div>
     <div class="fuyo-layout-title">付与枠</div>
     <div id="fuyoFrameWrap" class="fuyo-frame-wrap"></div>
   </div>
@@ -2455,14 +2681,18 @@ body.ability-modal-open > #viewport{
 </div>
 
 <div id="fuyoDigitModal" class="fuyo-digit-modal hidden">
-  <div class="fuyo-digit-box">
-    <div id="fuyoDigitTitle" class="fuyo-digit-title">入力</div>
-    <input id="fuyoDigitManualInput" class="fuyo-manual-input" inputmode="numeric" oninput="setFuyoManualDigitInput(this.value)">
-    <div class="fuyo-digit-cols" id="fuyoDigitCols"></div>
-    <div class="fuyo-digit-actions">
-      <button class="fuyo-digit-action-btn" onclick="clearFuyoActiveCell()">このマスを消す</button>
-      <button class="fuyo-digit-action-btn apply" onclick="applyFuyoDigitModal()">反映</button>
-    </div>
+  <div id="fuyoDigitBox" class="nouryoku-shared-digit-box">
+    <button type="button" class="nouryoku-digit-top-close" onclick="closeFuyoDigitModal()" aria-label="付与数値入力モーダルを閉じる">閉じる</button>
+    <div id="fuyoDigitContext" class="nouryoku-digit-context"></div>
+    <div id="fuyoDigitControls"></div>
+  </div>
+</div>
+
+<div id="nouryokuNumberModal" class="nouryoku-number-modal hidden no-capture" aria-hidden="true">
+  <div id="nouryokuNumberBox" class="nouryoku-shared-digit-box">
+    <button type="button" class="nouryoku-digit-top-close" onclick="closeNouryokuNumberModal()" aria-label="数値入力モーダルを閉じる">閉じる</button>
+    <div id="nouryokuNumberContext" class="nouryoku-digit-context"></div>
+    <div id="nouryokuNumberControls"></div>
   </div>
 </div>
 
@@ -2532,7 +2762,8 @@ function calcEiketsuTotal(){
   for(let i=0; i<11; i++){
     const checked = !!(check && rightCell(check,i) && rightCell(check,i).querySelector("input[type='checkbox']") && rightCell(check,i).querySelector("input[type='checkbox']").checked);
     const v = getNum(rightCell(base,i));
-    setNum(rightCell(total,i), checked ? v * 1.5 : v);
+    const eiketsuTotalValue = checked ? v * 1.5 : v;
+    setNum(rightCell(total,i), (i === 0 || i === 1) ? Math.min(eiketsuTotalValue, 10000) : eiketsuTotalValue);
   }
 }
 function calcKashinTotal(){
@@ -3878,11 +4109,9 @@ function setFuyoValue(key, value){
   }
 }
 function normalizeFuyoInput(value){
-  return String(value || "")
-    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-    .replace(/[－ー]/g, "-")
-    .replace(/[^\d\-]/g, "")
-    .slice(0, 5);
+  return String(value == null ? "" : value)
+    .replace(/[^0-9]/g, "")
+    .slice(0, 4);
 }
 function makeFuyoCellKey(frame, row, stat){
   return `${frame}_${row}_${stat}`;
@@ -4012,13 +4241,58 @@ function resetFuyoModal(){
   renderFuyoButtons();
   closeFuyoDigitModal();
 }
-function updateFuyoDigitTitle(){
-  const title = document.getElementById("fuyoDigitTitle");
-  if(!title || !fuyoActiveCellKey) return;
-  const value = fuyoValue(fuyoActiveCellKey);
-  title.textContent = `${fuyoActiveRowTitle || "付与　or　神秘"} / ${fuyoActiveStat || ""}　現在値：${value || "未入力"}`;
+function getFuyoActiveFrameName(){
+  if(!fuyoActiveCellKey) return "";
+  const parts = String(fuyoActiveCellKey).split("_");
+  return parts[0] === "2" ? "2枠目" : "1枠目";
 }
-function openFuyoDigitModal(key, rowTitle, stat){
+function getFuyoActiveDigitCount(){
+  return (fuyoActiveStat === "生命" || fuyoActiveStat === "気合") ? 5 : 4;
+}
+function getFuyoActiveDigits(){
+  const count = getFuyoActiveDigitCount();
+  const raw = fuyoActiveCellKey ? String(fuyoValue(fuyoActiveCellKey) || "").replace(/[^0-9]/g,"") : "";
+  return raw.padStart(count,"0").slice(-count).split("").map(v => Number(v)||0);
+}
+function renderFuyoDigitModal(){
+  const modal = document.getElementById("fuyoDigitModal");
+  const box = document.getElementById("fuyoDigitBox");
+  const context = document.getElementById("fuyoDigitContext");
+  const controls = document.getElementById("fuyoDigitControls");
+  if(!modal || !box || !context || !controls) return;
+
+  if(!fuyoActiveCellKey){
+    box.style.setProperty("--nouryoku-active-color","#ffd0d0");
+    context.innerHTML = `<div class="nouryoku-digit-frame-name">入力するマスを選択してください</div>`;
+    controls.innerHTML = "";
+    return;
+  }
+
+  const color = fuyosekiStatColor(fuyoActiveStat);
+  const digits = getFuyoActiveDigits();
+  box.style.setProperty("--nouryoku-active-color",color);
+  context.innerHTML =
+    `<div class="nouryoku-digit-frame-name">${getFuyoActiveFrameName()}</div>` +
+    `<div class="nouryoku-digit-row-name">${fuyoActiveRowTitle || "付与　or　神秘"}</div>` +
+    `<div class="nouryoku-digit-stat-name">${fuyoActiveStat || ""}</div>`;
+
+  let html = `<div class="nouryoku-digit-step-grid digits-${getFuyoActiveDigitCount()}">`;
+  digits.forEach((digit,index) => {
+    html += `<div class="nouryoku-digit-step-col">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepFuyoDigit(${index},1)" ${digit>=9?"disabled":""} aria-label="${index+1}桁目を増やす">⇧</button>`;
+    html += `<input class="nouryoku-digit-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en" value="${digit}" data-fuyo-digit-index="${index}" onfocus="this.select()" onkeydown="guardSharedDigitKeyDown(event)" onbeforeinput="guardSharedDigitBeforeInput(event)" oninput="setFuyoDigitInput(this,${index})" aria-label="${index+1}桁目">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepFuyoDigit(${index},-1)" ${digit<=0?"disabled":""} aria-label="${index+1}桁目を減らす">⇩</button>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  html += `<div class="nouryoku-digit-help">数字部分は直接入力できます。半角数字0～9以外とIME変換入力は受け付けません。</div>`;
+  html += `<div class="nouryoku-digit-actions">`;
+  html += `<button type="button" class="nouryoku-digit-clear-btn" onclick="clearFuyoActiveCell()">このマスを0にする</button>`;
+  html += `<button type="button" class="nouryoku-digit-close-btn" onclick="applyFuyoDigitModal()">反映</button>`;
+  html += `</div>`;
+  controls.innerHTML = html;
+}
+function openFuyoDigitModal(key,rowTitle,stat){
   fuyoActiveCellKey = key;
   fuyoActiveRowTitle = rowTitle || "";
   fuyoActiveStat = stat || "";
@@ -4026,19 +4300,11 @@ function openFuyoDigitModal(key, rowTitle, stat){
   if(modal && modal.parentElement !== document.body){
     document.body.appendChild(modal);
   }
-  const input = document.getElementById("fuyoDigitManualInput");
-  updateFuyoDigitTitle();
-  if(input) input.value = fuyoValue(key);
-  renderFuyoDigitColumns();
+  renderFuyoDigitModal();
   if(modal){
     modal.classList.remove("hidden");
     modal.scrollTop = 0;
     modal.scrollLeft = 0;
-    const box = modal.querySelector(".fuyo-digit-box");
-    if(box){
-      box.scrollTop = 0;
-      box.scrollLeft = 0;
-    }
   }
   updateFuyoSelectedCount();
 }
@@ -4046,52 +4312,41 @@ function closeFuyoDigitModal(){
   const modal = document.getElementById("fuyoDigitModal");
   if(modal) modal.classList.add("hidden");
 }
-function setFuyoManualDigitInput(value){
+function setFuyoDigits(digits){
   if(!fuyoActiveCellKey) return;
-  const input = document.getElementById("fuyoDigitManualInput");
-  const clean = normalizeFuyoInput(value);
-  if(input && input.value !== clean) input.value = clean;
-  setFuyoValue(fuyoActiveCellKey, clean);
-  updateFuyoDigitTitle();
+  const value = parseInt(digits.join(""),10) || 0;
+  setFuyoValue(fuyoActiveCellKey,value ? String(value) : "");
   renderFuyoButtons();
 }
-function renderFuyoDigitColumns(){
-  const box = document.getElementById("fuyoDigitCols");
-  if(!box) return;
-  const cols = [
-    {label:"千の位", index:0},
-    {label:"百の位", index:1},
-    {label:"十の位", index:2},
-    {label:"一の位", index:3}
-  ];
-  let html = "";
-  cols.forEach(col => {
-    html += `<div><div class="fuyo-digit-col-title">${col.label}</div>`;
-    for(let n=0; n<=9; n++){
-      html += `<button class="fuyo-digit-number" onclick="setFuyoDigitAt(${col.index}, ${n})">${n}</button>`;
-    }
-    html += `</div>`;
-  });
-  box.innerHTML = html;
-}
-function setFuyoDigitAt(index, number){
+function stepFuyoDigit(index,delta){
   if(!fuyoActiveCellKey) return;
-  let raw = fuyoValue(fuyoActiveCellKey);
-  raw = raw.padStart(4, "0").slice(-4).split("");
-  raw[index] = String(number);
-  const clean = String(Number(raw.join("")) || "");
-  setFuyoValue(fuyoActiveCellKey, clean);
-  updateFuyoDigitTitle();
-  const input = document.getElementById("fuyoDigitManualInput");
-  if(input) input.value = clean;
-  renderFuyoButtons();
+  const digits = getFuyoActiveDigits();
+  if(index < 0 || index >= digits.length) return;
+  const current = digits[index] || 0;
+  const next = Math.max(0,Math.min(9,current + (delta > 0 ? 1 : -1)));
+  if(next === current) return;
+  digits[index] = next;
+  setFuyoDigits(digits);
+  renderFuyoDigitModal();
+}
+function setFuyoDigitInput(input,index){
+  if(!input || !fuyoActiveCellKey) return;
+  const digitText = normalizeSharedOneDigit(input.value);
+  const digits = getFuyoActiveDigits();
+  digits[index] = digitText === "" ? 0 : Number(digitText);
+  setFuyoDigits(digits);
+  renderFuyoDigitModal();
+  const next = document.querySelector(`#fuyoDigitControls [data-fuyo-digit-index="${index}"]`);
+  if(next){
+    next.focus();
+    try{next.select();}catch(e){}
+  }
 }
 function clearFuyoActiveCell(){
   if(!fuyoActiveCellKey) return;
   delete fuyoModalValues[fuyoActiveCellKey];
-  const input = document.getElementById("fuyoDigitManualInput");
-  if(input) input.value = "";
   renderFuyoButtons();
+  closeFuyoDigitModal();
 }
 function applyFuyoDigitModal(){
   renderFuyoButtons();
@@ -4398,6 +4653,211 @@ function applyFuyoSelected(){
     closeTsukumoPicker();
   };
 })();
+</script>
+
+
+
+<script id="nouryoku-shared-number-modal-script">
+/* ===== 通常数値入力／付与数値入力の共通操作。対象外モーダルには接続しない。 ===== */
+const NOURYOKU_SHARED_STATS = ["生命","気合","腕力","耐久","器用","知力","魅力","土","水","火","風"];
+let nouryokuNumberActiveInput = null;
+let nouryokuNumberDigitCount = 4;
+let nouryokuNumberActiveStat = "";
+let nouryokuNumberActiveRowTitle = "";
+
+function normalizeSharedOneDigit(value){
+  return String(value == null ? "" : value)
+    .replace(/[^0-9]/g,"")
+    .slice(-1);
+}
+function guardSharedDigitKeyDown(event){
+  if(!event) return;
+  if(event.isComposing || event.key === "Process"){
+    event.preventDefault();
+    return;
+  }
+  if(event.ctrlKey || event.metaKey || event.altKey) return;
+  const allowed = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
+  if(allowed.includes(event.key)) return;
+  if(!/^[0-9]$/.test(event.key)) event.preventDefault();
+}
+function guardSharedDigitBeforeInput(event){
+  if(!event) return;
+  if(event.isComposing || (event.inputType && event.inputType.toLowerCase().includes("composition"))){
+    event.preventDefault();
+    return;
+  }
+  if(event.inputType && event.inputType.startsWith("delete")) return;
+  if(typeof event.data === "string" && event.data !== "" && !/^[0-9]$/.test(event.data)){
+    event.preventDefault();
+  }
+}
+
+function getNouryokuInputInfo(input){
+  if(!input || !input.classList || !input.classList.contains("sheet-input")) return null;
+  const td = input.closest("td");
+  const tr = input.closest("tr");
+  if(!td || !tr) return null;
+  const cells = Array.from(tr.children).filter(el => el.tagName === "TD");
+  const tdIndex = cells.indexOf(td);
+
+  /* 主従の力の3入力は通常ステータス列ではないため、専用の3桁入力として扱う。 */
+  const rightRowTitle = cells[13] ? String(cells[13].textContent || "").trim() : "";
+  if(rightRowTitle === "主従の力"){
+    const specialInputs = {
+      15:"個数",
+      19:"軍神神格★4数",
+      22:"覚醒技能実装分：生命"
+    };
+    if(Object.prototype.hasOwnProperty.call(specialInputs,tdIndex)){
+      return {input,stat:specialInputs[tdIndex],rowTitle:"主従の力",digits:3};
+    }
+  }
+
+  let statIndex = -1;
+  let labelCell = null;
+
+  if(tdIndex >= 1 && tdIndex <= 11){
+    statIndex = tdIndex - 1;
+    labelCell = cells[0] || null;
+  }else if(tdIndex >= 14 && tdIndex <= 24){
+    statIndex = tdIndex - 14;
+    labelCell = cells[13] || null;
+  }else{
+    return null;
+  }
+
+  const stat = NOURYOKU_SHARED_STATS[statIndex] || "";
+  if(!stat) return null;
+  let rowTitle = labelCell ? String(labelCell.textContent || "").trim() : "";
+  if(!rowTitle) rowTitle = "数値入力";
+
+  /* 生命・気合は5桁、それ以外は4桁。 */
+  const digits = (stat === "生命" || stat === "気合") ? 5 : 4;
+  return {input,stat,rowTitle,digits};
+}
+function getNouryokuNumberDigits(){
+  const count = nouryokuNumberDigitCount || 4;
+  const raw = nouryokuNumberActiveInput
+    ? String(nouryokuNumberActiveInput.value || "").replace(/[^0-9]/g,"")
+    : "";
+  return raw.padStart(count,"0").slice(-count).split("").map(v => Number(v)||0);
+}
+function applyNouryokuNumberDigits(digits){
+  if(!nouryokuNumberActiveInput) return;
+  const value = parseInt(digits.join(""),10) || 0;
+  nouryokuNumberActiveInput.value = value ? String(value) : "";
+  nouryokuNumberActiveInput.dispatchEvent(new Event("input",{bubbles:true}));
+}
+function renderNouryokuNumberModal(){
+  const modal = document.getElementById("nouryokuNumberModal");
+  const box = document.getElementById("nouryokuNumberBox");
+  const context = document.getElementById("nouryokuNumberContext");
+  const controls = document.getElementById("nouryokuNumberControls");
+  if(!modal || !box || !context || !controls || !nouryokuNumberActiveInput) return;
+
+  const color = (typeof fuyosekiStatColor === "function")
+    ? fuyosekiStatColor(nouryokuNumberActiveStat)
+    : "#ffd0d0";
+  box.style.setProperty("--nouryoku-active-color",color);
+  context.innerHTML =
+    `<div class="nouryoku-digit-frame-name">${nouryokuNumberActiveRowTitle}</div>` +
+    `<div class="nouryoku-digit-stat-name">${nouryokuNumberActiveStat}</div>`;
+
+  const digits = getNouryokuNumberDigits();
+  let html = `<div class="nouryoku-digit-step-grid digits-${nouryokuNumberDigitCount}">`;
+  digits.forEach((digit,index) => {
+    html += `<div class="nouryoku-digit-step-col">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepNouryokuNumberDigit(${index},1)" ${digit>=9?"disabled":""} aria-label="${index+1}桁目を増やす">⇧</button>`;
+    html += `<input class="nouryoku-digit-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en" value="${digit}" data-nouryoku-number-index="${index}" onfocus="this.select()" onkeydown="guardSharedDigitKeyDown(event)" onbeforeinput="guardSharedDigitBeforeInput(event)" oninput="setNouryokuNumberDigitInput(this,${index})" aria-label="${index+1}桁目">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepNouryokuNumberDigit(${index},-1)" ${digit<=0?"disabled":""} aria-label="${index+1}桁目を減らす">⇩</button>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  html += `<div class="nouryoku-digit-help">数字部分は直接入力できます。半角数字0～9以外とIME変換入力は受け付けません。</div>`;
+  html += `<div class="nouryoku-digit-actions">`;
+  html += `<button type="button" class="nouryoku-digit-clear-btn" onclick="clearNouryokuNumberValue()">このマスを0にする</button>`;
+  html += `<button type="button" class="nouryoku-digit-close-btn" onclick="closeNouryokuNumberModal()">反映</button>`;
+  html += `</div>`;
+  controls.innerHTML = html;
+}
+function openNouryokuNumberModal(input){
+  const info = getNouryokuInputInfo(input);
+  if(!info) return false;
+  nouryokuNumberActiveInput = info.input;
+  nouryokuNumberDigitCount = info.digits;
+  nouryokuNumberActiveStat = info.stat;
+  nouryokuNumberActiveRowTitle = info.rowTitle;
+  const modal = document.getElementById("nouryokuNumberModal");
+  renderNouryokuNumberModal();
+  if(modal){
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden","false");
+  }
+  return true;
+}
+function closeNouryokuNumberModal(){
+  const modal = document.getElementById("nouryokuNumberModal");
+  if(modal){
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden","true");
+  }
+  nouryokuNumberActiveInput = null;
+}
+function stepNouryokuNumberDigit(index,delta){
+  if(!nouryokuNumberActiveInput) return;
+  const digits = getNouryokuNumberDigits();
+  if(index < 0 || index >= digits.length) return;
+  const current = digits[index] || 0;
+  const next = Math.max(0,Math.min(9,current + (delta > 0 ? 1 : -1)));
+  if(next === current) return;
+  digits[index] = next;
+  applyNouryokuNumberDigits(digits);
+  renderNouryokuNumberModal();
+}
+function setNouryokuNumberDigitInput(input,index){
+  if(!input || !nouryokuNumberActiveInput) return;
+  const digitText = normalizeSharedOneDigit(input.value);
+  const digits = getNouryokuNumberDigits();
+  digits[index] = digitText === "" ? 0 : Number(digitText);
+  applyNouryokuNumberDigits(digits);
+  renderNouryokuNumberModal();
+  const next = document.querySelector(`#nouryokuNumberControls [data-nouryoku-number-index="${index}"]`);
+  if(next){
+    next.focus();
+    try{next.select();}catch(e){}
+  }
+}
+function clearNouryokuNumberValue(){
+  if(!nouryokuNumberActiveInput) return;
+  applyNouryokuNumberDigits(new Array(nouryokuNumberDigitCount).fill(0));
+  closeNouryokuNumberModal();
+}
+function setupNouryokuNumberInputs(){
+  document.querySelectorAll("input.sheet-input").forEach(input => {
+    if(!getNouryokuInputInfo(input)) return;
+    input.readOnly = true;
+    input.setAttribute("inputmode","none");
+    if(input.dataset.nouryokuNumberModalBound === "1") return;
+    input.dataset.nouryokuNumberModalBound = "1";
+    input.addEventListener("click",function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      openNouryokuNumberModal(input);
+    });
+    input.addEventListener("keydown",function(e){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        openNouryokuNumberModal(input);
+      }
+    });
+  });
+}
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded",setupNouryokuNumberInputs,{once:true});
+}else{
+  setupNouryokuNumberInputs();
+}
 </script>
 
 
