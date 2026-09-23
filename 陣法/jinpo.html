@@ -201,6 +201,8 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
     }else{
       try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
     }
+    /* 描画同期のみ: 等級3以下変更後に差し替え英傑表示を現在状態へ更新する。 */
+    try{ if(typeof window.scheduleJinpoReachRefreshOnce === 'function') window.scheduleJinpoReachRefreshOnce(0); }catch(e){}
     setTimeout(syncButtonState, 0);
     setTimeout(syncButtonState, 120);
     setTimeout(function(){ if(lastForcedState !== null) setGrade(lastForcedState); syncButtonState(); }, 320);
@@ -1987,6 +1989,8 @@ box.querySelector("[data-grade3-toggle]")?.addEventListener("click", ()=>{
 grade3Cost6OnlyEnabled = !grade3Cost6OnlyEnabled;
 renderDbCountButtons();
 renderDbFormationList();
+/* 描画同期のみ: 通常クリック経路でも差し替え英傑表示を更新する。 */
+try{ if(typeof window.scheduleJinpoReachRefreshOnce === "function") window.scheduleJinpoReachRefreshOnce(0); }catch(e){}
 });
 box.querySelectorAll("button[data-count]").forEach(btn=>{
 btn.addEventListener("click", (event)=>{
@@ -2311,6 +2315,8 @@ try{ renderSlots(); }catch(e){ console.error("適用後の配置欄更新失敗"
 try{ queueAppliedCandidateRender(row, deferredResult); }catch(e){ console.error(e); }
 try{ if(typeof window.__jinpoRefreshAppliedBondCountBanner === "function") window.__jinpoRefreshAppliedBondCountBanner(); }catch(e){}
 try{ renderResults(deferredResult); }catch(e){ console.error("適用後の候補表示更新失敗",e); }
+/* 描画同期のみ: 検索結果適用後の差し替え英傑表示を同じ計算結果の状態へ更新する。 */
+try{ if(typeof window.scheduleJinpoReachRefreshOnce === "function") window.scheduleJinpoReachRefreshOnce(0); }catch(e){}
 });
 return appliedResult;
 }
@@ -2330,6 +2336,8 @@ if(maxEl){ maxEl.value = ""; try{ maxEl.dispatchEvent(new Event("change",{bubble
 renderDbStatButtons();
 renderOwnedHeroFilterUi();
 renderDbFormationList();
+/* 描画同期のみ: フィルター全解除後の差し替え英傑表示を更新する。 */
+try{ if(typeof window.scheduleJinpoReachRefreshOnce === "function") window.scheduleJinpoReachRefreshOnce(0); }catch(e){}
 }
 function bindDbBrowserEvents(){
 const resetBtn = document.getElementById("dbFilterResetBtn");
@@ -2913,6 +2921,8 @@ return row ? rowName(row) : k;
 }
 function syncExistingFilter(){
 try{ if(typeof ownedHeroFilterIds !== "undefined") ownedHeroFilterIds = state.selected.filter(Boolean).slice(0,6); }catch(e){}
+/* 描画同期のみ: 配置英傑変更後に差し替え英傑表示のロック状態を反映する。 */
+try{ if(typeof window.scheduleJinpoReachRefreshOnce === "function") window.scheduleJinpoReachRefreshOnce(0); }catch(e){}
 }
 function refreshButtons(){
 for(let i=0;i<6;i++){
@@ -6548,7 +6558,7 @@ body{padding-top:0 !important;}
     },0);
   }
   function safeRenderModalList(){try{renderModalList();}catch(e){console.error('除外英傑一覧更新失敗',e);updateCount();}}
-  function applyListAndRerender(list){saveList(list);safeRenderModalList();rerender();}
+  function applyListAndRerender(list){saveList(list);safeRenderModalList();rerender();/* 描画同期のみ: 除外英傑変更後に差し替え英傑表示へ反映する。 */try{if(typeof window.scheduleJinpoReachRefreshOnce==='function')window.scheduleJinpoReachRefreshOnce(0);}catch(e){}}
   function updateCount(){var c=getList().length;var el=document.getElementById('jinpoExcludedHeroCount');if(el)el.textContent='除外中：'+c+'人';var modalCount=document.getElementById('jinpoExcludedHeroModalCount');if(modalCount)modalCount.textContent='除外中：'+c+'人';}
   function ensureControls(){
     var anchor=document.getElementById('ownedHeroSelectedInfo');

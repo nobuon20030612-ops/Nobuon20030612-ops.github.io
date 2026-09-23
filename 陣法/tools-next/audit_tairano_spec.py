@@ -101,9 +101,12 @@ process.stdout.write(JSON.stringify(ctx.window.JINPO_FORMATION_CONFIG));
     bm=json.loads(b56.read_text(encoding='utf-8'))
     if bm.get('schema')!='tairano-bond56-index/v1': fail('全等級5・6因縁manifest schema不正')
     for info in (bm.get('files') or {}).values():
-        fp=ROOT/str(info.get('file') or '')
-        if not fp.exists(): fail('全等級5・6因縁索引ファイル欠落: '+str(fp))
-        if fp.stat().st_size>=25*1024*1024: fail('全等級5・6因縁索引25MiB超過: '+str(fp))
+        parts=info.get('parts') if isinstance(info,dict) else None
+        parts=parts if isinstance(parts,list) and parts else [info]
+        for part in parts:
+            fp=ROOT/str(part.get('file') or '')
+            if not fp.exists(): fail('全等級5・6因縁索引ファイル欠落: '+str(fp))
+            if fp.stat().st_size>25_000_000: fail('全等級5・6因縁索引25MB超過: '+str(fp))
 
     # After generation, manifest itself must prove source-only full regeneration.
     if MANIFEST.exists():

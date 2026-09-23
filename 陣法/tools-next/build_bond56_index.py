@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import csv,gzip,hashlib,json,os,re,shutil,struct,subprocess,tempfile
+import csv,gzip,hashlib,json,math,os,re,shutil,struct,subprocess,tempfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -13,6 +13,9 @@ FORM_SPEC=ROOT/'data'/'jinpo_formation_spec.json'
 CPP=ROOT/'tools-next'/'bond56_index_builder.cpp'
 STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性']
 IGNORE={'','対象外','未確認','?'}
+MAX_PUBLISH_BYTES=25_000_000
+SHARD_TARGET_BYTES=24_000_000
+
 
 def rows(path):
     with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
@@ -27,6 +30,48 @@ def deterministic_gzip(raw:bytes,level:int=6)->bytes:
     bio=io.BytesIO()
     with gzip.GzipFile(filename='',mode='wb',fileobj=bio,compresslevel=level,mtime=0) as g:g.write(raw)
     return bio.getvalue()
+
+def _part_path(path:Path,index:int)->Path:
+    name=path.name; suffix='.bin.gz' if name.endswith('.bin.gz') else path.suffix
+    stem=name[:-len(suffix)] if suffix and name.endswith(suffix) else path.stem
+    return path.with_name(f'{stem}_part{index:03d}{suffix}')
+
+def _write_b56s_part(raw:bytes,path:Path,start_row:int,rows_count:int,record_size:int)->dict:
+    header=bytearray(raw[:16]); struct.pack_into('<Q',header,8,rows_count)
+    body=raw[16+start_row*record_size:16+(start_row+rows_count)*record_size]
+    part_raw=bytes(header)+body; gz=deterministic_gzip(part_raw,6); path.write_bytes(gz)
+    return {'file':str(path.relative_to(ROOT)).replace('\\','/'),'rows':rows_count,'gzip_bytes':len(gz),'raw_bytes':len(part_raw),'sha256_16':hashlib.sha256(gz).hexdigest()[:16],'record_size':record_size}
+
+def write_gzip_entry(rawname:str,raw:bytes)->dict:
+    gzname=rawname+'.gz'; out=OUT/gzname
+    for stale in OUT.glob(gzname.replace('.bin.gz','_part*.bin.gz')): stale.unlink(missing_ok=True)
+    gz=deterministic_gzip(raw,6)
+    if len(gz)<=MAX_PUBLISH_BYTES:
+        out.write_bytes(gz)
+        return {'file':f'data/bond56_index/{gzname}','gzip_bytes':len(gz),'raw_bytes':len(raw),'sha256_16':hashlib.sha256(gz).hexdigest()[:16]}
+    if raw[:4]!=b'B56S':
+        raise RuntimeError(f'25MB制限超過（分割対象外）: {gzname} {len(gz)}')
+    typ=raw[6]; record_size={2:12,3:16,4:8}.get(typ)
+    if not record_size: raise RuntimeError(f'B56S type不正: {gzname} type={typ}')
+    total_rows=struct.unpack_from('<Q',raw,8)[0]
+    if len(raw)!=16+total_rows*record_size: raise RuntimeError(f'B56S構造不正: {gzname}')
+    out.unlink(missing_ok=True)
+    part_count=max(2,math.ceil(len(gz)/SHARD_TARGET_BYTES))
+    while True:
+        metas=[]; paths=[]; start=0; failed=False
+        base=total_rows//part_count; extra=total_rows%part_count
+        for i in range(part_count):
+            n=base+(1 if i<extra else 0)
+            if n<=0: continue
+            pp=_part_path(out,i+1); pm=_write_b56s_part(raw,pp,start,n,record_size)
+            paths.append(pp); metas.append(pm); start+=n
+            if pp.stat().st_size>SHARD_TARGET_BYTES: failed=True
+        if not failed and all(p.stat().st_size<=MAX_PUBLISH_BYTES for p in paths): break
+        for pp in paths: pp.unlink(missing_ok=True)
+        part_count+=1
+        if part_count>total_rows: raise RuntimeError(f'25MB分割不能: {gzname}')
+    token=hashlib.sha256('\n'.join(m['sha256_16'] for m in metas).encode()).hexdigest()[:16]
+    return {'rows':total_rows,'gzip_bytes':sum(m['gzip_bytes'] for m in metas),'raw_bytes':len(raw),'sha256_16':token,'record_size':record_size,'sharded':True,'part_count':len(metas),'parts':metas}
 
 def build_model():
     hr=rows(MASTER); br=rows(INEN); cr=rows(COEF); fr=rows(FORM_BONUS)
@@ -91,9 +136,7 @@ def main():
         for n in sorted(raws):input_hash.update(n.encode());input_hash.update(raws[n])
         version='bond56-auto-'+input_hash.hexdigest()[:16]
         for rawname,raw in raws.items():
-            gzname=rawname+'.gz'; gz=deterministic_gzip(raw,6); (OUT/gzname).write_bytes(gz)
-            if len(gz)>=25*1024*1024:raise RuntimeError(f'25MiB制限超過: {gzname} {len(gz)}')
-            files[gzname]={'file':f'data/bond56_index/{gzname}','gzip_bytes':len(gz),'raw_bytes':len(raw),'sha256_16':hashlib.sha256(gz).hexdigest()[:16]}
+            gzname=rawname+'.gz'; files[gzname]=write_gzip_entry(rawname,raw)
         manifest={'schema':'tairano-bond56-index/v1','version':version,'files':files}
         (OUT/'bond56_manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         # Delete stale raw files if a prior interrupted build left any.

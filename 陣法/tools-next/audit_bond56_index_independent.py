@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import gzip,json,struct,time
+import gzip,hashlib,json,struct,time
 from collections import defaultdict
 from pathlib import Path
 from rebuild_all_compact import load_model,Generator
@@ -9,6 +9,27 @@ ROOT=Path(__file__).resolve().parents[1]
 DIR=ROOT/'data'/'bond56_index'
 REPORT=ROOT/'_jinpo-next-report'/'bond56_index_independent_audit.json'
 CANON={'衡軛':[[0,1,2],[3,4,5]],'鶴翼':[[0,1,2],[3,4,5]],'魚鱗':[[0,1,2],[2,3,4],[4,5,0]],'方円':[[0,1,2],[2,3,4],[4,5,0]]}
+
+def read_skeleton_raw(name):
+ manifest=json.loads((DIR/'bond56_manifest.json').read_text(encoding='utf-8'));info=(manifest.get('files') or {}).get(name)
+ if not info: raise RuntimeError(name+' manifest missing')
+ parts=info.get('parts') if isinstance(info,dict) else None;parts=parts if isinstance(parts,list) and parts else [info]
+ if len(parts)==1 and not info.get('parts'): return gzip.decompress((ROOT/parts[0]['file']).read_bytes())
+ total_rows=int(info.get('rows') or 0);rec=int(info.get('record_size') or 0)
+ if total_rows<=0 or rec<=0: raise RuntimeError(name+' shard manifest')
+ out=bytearray(16+total_rows*rec);written=0;total_gzip=0;first=False
+ for part in parts:
+  path=ROOT/str(part.get('file') or '');blob=path.read_bytes();total_gzip+=len(blob)
+  if part.get('gzip_bytes') is not None and len(blob)!=int(part['gzip_bytes']): raise RuntimeError(name+' part gzip size')
+  if part.get('sha256_16') and hashlib.sha256(blob).hexdigest()[:16]!=str(part['sha256_16']): raise RuntimeError(name+' part sha')
+  raw=gzip.decompress(blob);rows=int(struct.unpack_from('<Q',raw,8)[0])
+  if raw[:4]!=b'B56S' or rows!=int(part.get('rows') or 0) or len(raw)!=16+rows*rec: raise RuntimeError(name+' part structure')
+  if not first: out[:16]=raw[:16];first=True
+  out[16+written*rec:16+(written+rows)*rec]=raw[16:];written+=rows
+ if written!=total_rows or total_gzip!=int(info.get('gzip_bytes') or total_gzip): raise RuntimeError(name+' shard total')
+ struct.pack_into('<Q',out,8,total_rows)
+ if len(out)!=int(info.get('raw_bytes') or len(out)): raise RuntimeError(name+' shard raw size')
+ return bytes(out)
 
 def parse_core():
  raw=gzip.decompress((DIR/'bond56_core.bin.gz').read_bytes());o=4
@@ -33,7 +54,7 @@ def parse_bsets():
  return out
 
 def skeleton(name,typ,count):
- raw=gzip.decompress((DIR/name).read_bytes());
+ raw=read_skeleton_raw(name);
  if raw[:4]!=b'B56S' or struct.unpack_from('<H',raw,4)[0]!=2 or raw[6]!=typ or raw[7]!=count:raise RuntimeError(name+' header')
  n=struct.unpack_from('<Q',raw,8)[0]; rec={2:12,3:16,4:8}[typ]
  if len(raw)!=16+n*rec:raise RuntimeError(name+' length')
