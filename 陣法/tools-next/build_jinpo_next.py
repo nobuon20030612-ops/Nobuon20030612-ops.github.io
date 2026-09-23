@@ -199,6 +199,44 @@ def main():
         'source_of_truth_only': True,
     }
 
+    # 選抜人気専用DBは通常/等級3以下の完全再生成直後に追加する。
+    # この順番なら後続の全MAX sidecar生成・独立監査が選抜人気6～9因縁も同じ公開物として検証できる。
+    popular_builder = ROOT/'tools-next'/'build_popular_search.py'
+    if not popular_builder.exists(): fail('選抜人気専用検索DB生成スクリプトがありません', report)
+    cp = subprocess.run([sys.executable, str(popular_builder)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('選抜人気専用検索DB再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    popular_report_path = REPORT_DIR/'popular_search_report.json'
+    if not popular_report_path.exists(): fail('選抜人気専用検索DBレポートがありません', report)
+    popular_report = json.loads(popular_report_path.read_text(encoding='utf-8'))
+    if popular_report.get('status') != 'PASS': fail('選抜人気専用検索DBレポートがPASSではありません', report)
+    if int(popular_report.get('selected_image_heroes') or 0) != 20:
+        fail('選抜人気画像指定英傑件数が20ではありません', report)
+    report['popular_search'] = {
+        'selected_image_heroes': popular_report.get('selected_image_heroes'),
+        'grade3_heroes': popular_report.get('grade3_heroes'),
+        'popular_heroes': popular_report.get('popular_heroes'),
+        'full_records': popular_report.get('full_records'),
+        'seconds': popular_report.get('seconds'),
+    }
+
+    popular_independent = ROOT/'tools-next'/'audit_popular_search_independent.py'
+    if not popular_independent.exists(): fail('選抜人気専用の独立完全性監査がありません', report)
+    cp = subprocess.run([sys.executable, str(popular_independent)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('選抜人気専用の独立完全性監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    popular_independent_report_path = REPORT_DIR/'popular_search_independent_audit.json'
+    if not popular_independent_report_path.exists(): fail('選抜人気独立完全性監査レポートがありません', report)
+    popular_independent_report = json.loads(popular_independent_report_path.read_text(encoding='utf-8'))
+    if popular_independent_report.get('status') != 'PASS' or int(popular_independent_report.get('total_mismatch') or 0) != 0:
+        fail('選抜人気独立完全性監査がPASS/0 mismatchではありません', report)
+    report['popular_independent_completeness'] = {
+        'popular_heroes': popular_independent_report.get('popular_heroes'),
+        'counts': popular_independent_report.get('counts'),
+        'total_mismatch': popular_independent_report.get('total_mismatch'),
+        'seconds': popular_independent_report.get('seconds'),
+    }
+
     # 全等級5・6因縁専用索引も同じ英傑マスタ・因縁マスタから毎回完全再生成する。
     bond56_builder = ROOT/'tools-next'/'build_bond56_index.py'
     if not bond56_builder.exists(): fail('全等級5・6因縁索引生成スクリプトがありません', report)
@@ -253,6 +291,8 @@ def main():
         'total_mismatch': combo_independent_report.get('total_mismatch'),
         'all_hero_count': combo_independent_report.get('all_hero_count'),
         'grade3_hero_count': combo_independent_report.get('grade3_hero_count'),
+        'popular_hero_count': combo_independent_report.get('popular_hero_count'),
+        'popular_selected_image_heroes': combo_independent_report.get('popular_selected_image_heroes'),
     }
 
     rebuild_top = ROOT/'tools-next'/'rebuild_top500.py'
@@ -287,6 +327,25 @@ def main():
         'seconds': fullmax_report.get('seconds'),
     }
 
+    popular_runtime_audit = ROOT/'tools-next'/'audit_popular_runtime_integrity.py'
+    if not popular_runtime_audit.exists(): fail('選抜人気runtime全件監査がありません', report)
+    cp = subprocess.run([sys.executable, str(popular_runtime_audit)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if cp.returncode != 0:
+        fail('選抜人気runtime全件監査FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+    popular_runtime_report_path = REPORT_DIR/'popular_runtime_integrity.json'
+    if not popular_runtime_report_path.exists(): fail('選抜人気runtime全件監査レポートがありません', report)
+    popular_runtime_report = json.loads(popular_runtime_report_path.read_text(encoding='utf-8'))
+    if popular_runtime_report.get('status') != 'PASS': fail('選抜人気runtime全件監査がPASSではありません', report)
+    report['popular_runtime_integrity'] = {
+        'rows_checked': popular_runtime_report.get('rows_checked'),
+        'eligibility_errors': popular_runtime_report.get('eligibility_errors'),
+        'bond_errors': popular_runtime_report.get('bond_errors'),
+        'factor4_errors': popular_runtime_report.get('factor4_errors'),
+        'fullmax_errors': popular_runtime_report.get('fullmax_errors'),
+        'cycle_pair_errors': popular_runtime_report.get('cycle_pair_errors'),
+        'seconds': popular_runtime_report.get('seconds'),
+    }
+
     # ヘッダー表示:
     # - 最終更新日は、英傑一覧に実変更があった更新日に変更してよい。
     # - 「追加英傑」は最後に本当に追加された1人だけを保持し、既存英傑修正やDB整備では変更しない。
@@ -301,7 +360,7 @@ def main():
 
     # Static-site integrity checks for staging.
     required_site = [
-        SITE/'jinpo.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js', SITE/'jinpo-activation-engine.js',
+        SITE/'jinpo.html', SITE/'jinpo-fast-search.js', SITE/'jinpo-fast-search-worker.js', SITE/'jinpo-popular-selection.js', SITE/'jinpo-activation-engine.js',
         SITE/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
     ]
     for p in required_site:
@@ -312,9 +371,14 @@ def main():
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 
     # 現行検索モードごとの因縁数を固定する。
-    expected_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}}
-    for section in ('datasets', 'top', 'sort_top'):
-        for mode, expected in expected_counts.items():
+    expected_dataset_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}, 'popular': {'6','7','8','9'}}
+    for mode, expected in expected_dataset_counts.items():
+        actual = set(manifest.get('datasets', {}).get(mode, {}).keys())
+        if actual != expected:
+            fail(f'現行因縁数構成不一致: datasets/{mode}: {sorted(actual)}', report)
+    expected_derived_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}}
+    for section in ('top', 'sort_top'):
+        for mode, expected in expected_derived_counts.items():
             actual = set(manifest.get(section, {}).get(mode, {}).keys())
             if actual != expected:
                 fail(f'現行因縁数構成不一致: {section}/{mode}: {sorted(actual)}', report)
@@ -445,6 +509,30 @@ def main():
     for frag in required_worker_fragments:
         if frag not in worker_text:
             fail(f'Top500/内部ID/完全照合 Worker仕様が欠落: jinpo-fast-search-worker.js: {frag}', report)
+
+    # 選抜人気おすすめ検索のモード固定・誤フォールバック再発防止。
+    recommend_pos=fast_text.find('async function renderRecommended(opts)')
+    recommend_mode_pos=fast_text.find('var mode=unifiedDbMode();', recommend_pos) if recommend_pos>=0 else -1
+    recommend_prepare_pos=fast_text.find('prepareRecommendPriority(target,targetChanged)', recommend_pos) if recommend_pos>=0 else -1
+    if recommend_pos<0 or recommend_mode_pos<0 or recommend_prepare_pos<0 or recommend_mode_pos>recommend_prepare_pos:
+        fail('選抜人気おすすめ検索の検索モード固定が優先UI変更より後になっています', report)
+    if "function dbMode(q){return q&&q.mode==='popular'?'popular':(q&&q.mode==='grade3'?'grade3':'normal');}" in worker_text:
+        fail('不正/欠落検索モードを通常DBへ落とす旧フォールバックが残っています', report)
+    if "throw new Error('統一検索モードが不正です: '+(mode||'(empty)'))" not in worker_text:
+        fail('不正/欠落検索モードをエラー停止するガードがありません', report)
+    report['popular_recommend_mode_guard']=True
+    report['invalid_mode_normal_fallback_removed']=True
+
+    # 選抜人気背景CSSが body 直下の固定UI/モーダルまで position:relative に変える事故を禁止。
+    bond_list_text=(SITE/'jinpo-bond-list.js').read_text(encoding='utf-8')
+    if 'body.jinpo-selected-grade3-mode > *{position:relative;z-index:1;}' in bond_list_text or 'body.jinpo-selected-grade3-mode > *:not(' in bond_list_text:
+        fail('選抜人気CSSにbody直下全要素へのposition上書きが残っています', report)
+    required_popular_layer='body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}'
+    if required_popular_layer not in bond_list_text:
+        fail('選抜人気背景の前面化対象がheader/mainへ限定されていません', report)
+    if '#jinpoScrollTopBtn{position:fixed;' not in bond_list_text:
+        fail('上へ戻るボタンのfixed配置が失われています', report)
+    report['popular_fixed_ui_flow_guard']=True
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
         fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
     bond56_worker_text=(SITE/'jinpo-bond56-worker.js').read_text(encoding='utf-8')
@@ -470,7 +558,7 @@ def main():
             'function buildHeroInternalIdLookup', 'internalIds.length !== 6',
             '同名英傑が複数いるため、名前よりinternal_idを必ず優先する',
             'function ownedHeroReachLockState()', 'const ids = new Set();',
-            "+'@@g3='+(grade3On66()?'1':'0')+'@@owned='",
+            "+'@@g3='+(grade3On66()?'1':'0')+'@@popular='+(popularModeOn66()?'1':'0')+'@@owned='",
             "+'@@excluded='+excluded.join(',')",
             "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
             'source:"current_result_db_exact"', 'function lookupReachSwapExactDbRow',
@@ -875,16 +963,21 @@ def main():
                 fail(f'jinpo.html inline JavaScript構文エラー #{i}: {cp.stderr.strip()}', report)
     report['javascript_syntax'] = {'external_js': js_checked, 'inline_scripts': len(inline_scripts), 'errors': 0}
 
-    # 通常5/6は等級3以下ON限定を維持し、独立した全等級5・6モード中だけ例外とする。
-    # 文字列の空白差ではなく、通常ロック条件とbond56例外の両方を監査する。
+    # 通常5/6は等級3以下ON限定を維持する。例外は全等級5・6モードと、選抜人気モードの6因縁だけ。
+    # 選抜人気5因縁は明示的にロックし、6因縁のみ通常のgrade3ロックから除外する。
     grade_lock_patterns = [
-        r'if\s*\(\s*\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!grade3On\(\)\s*&&\s*!b56\s*\)\s*return\s+true\s*;',
-        r'\(\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!g3\s*&&\s*!b56\)',
+        r'if\s*\(\s*popular\s*&&\s*c\s*===\s*5\s*\)\s*return\s+true\s*;',
+        r'if\s*\(\s*\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!grade3On\(\)\s*&&\s*!b56\s*&&\s*!popular\s*\)\s*return\s+true\s*;',
+        r'\(\(c\s*===\s*5\s*\|\|\s*c\s*===\s*6\)\s*&&\s*formed\s*&&\s*!g3\s*&&\s*!b56\s*&&\s*!popular\)',
     ]
     if not all(re.search(pat, index_text) for pat in grade_lock_patterns):
-        fail('通常5/6の等級3以下ON限定ロック、または全等級5・6モード例外が欠落', report)
+        fail('通常5/6ロック、5・6専用例外、選抜人気6因縁例外のいずれかが欠落', report)
+    if "if(popularOn()&&c===5)" not in fast_text or "!popularOn()&&(c===5||c===6)&&!gradeOn()" not in fast_text:
+        fail('選抜人気モード6因縁の検索ガードが欠落', report)
     report['grade3_5_6_lock'] = True
     report['bond56_grade3_lock_exception'] = True
+    report['popular_6_bond_exception'] = True
+    report['popular_5_bond_locked'] = True
 
     too_large = []
     site_files = [p for p in SITE.rglob('*') if p.is_file()]

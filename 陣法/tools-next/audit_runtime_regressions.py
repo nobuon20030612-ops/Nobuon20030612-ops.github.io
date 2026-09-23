@@ -178,9 +178,10 @@ process.stdout.write('PASS');
 
 def validate_manifest():
     m=json.loads(MANIFEST.read_text(encoding='utf-8'))
-    if set(m.get('datasets',{}))!={'normal','grade3'}: fail('検索DB mode不正')
+    if set(m.get('datasets',{}))!={'normal','grade3','popular'}: fail('検索DB mode不正')
     if set(m['datasets']['normal'])!={'7','8','9'}: fail('通常検索の因縁数構成不正')
     if set(m['datasets']['grade3'])!={'5','6','7','8','9'}: fail('等級3以下検索の因縁数構成不正')
+    if set(m['datasets']['popular'])!={'6','7','8','9'}: fail('選抜人気検索の因縁数構成不正')
     checked=0
     for mode,counts in m['datasets'].items():
         for count,forms in counts.items():

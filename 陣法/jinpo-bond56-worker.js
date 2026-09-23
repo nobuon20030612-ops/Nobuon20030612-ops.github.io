@@ -93,7 +93,9 @@
 
   function queryContext(q){
     var spec=primarySpec(q),rr=parseRules(q),priority=[];
-    (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){var si=STAT_INDEX[String(r&&r.stat||'')];if(si!=null)priority.push(si);});
+    var prioritySource=Array.isArray(q.priorityStats)?q.priorityStats:null;
+    if(prioritySource){prioritySource.forEach(function(stat){var si=STAT_INDEX[String(stat||'')];if(si!=null&&priority.indexOf(si)<0)priority.push(si);});}
+    else (Array.isArray(q.rules)?q.rules:[]).forEach(function(r){var si=STAT_INDEX[String(r&&r.stat||'')];if(si!=null)priority.push(si);});
     var minLimit=new Array(11).fill(null),maxLimit=new Array(11).fill(null),invalidRange=false;
     for(var ri=0;ri<rr.length;ri++){var r=rr[ri],si=r.si;if(r.min!==null){var mn=Math.ceil(r.min);if(minLimit[si]===null||mn>minLimit[si])minLimit[si]=mn;}if(r.max!==null){var mx=Math.floor(r.max);if(maxLimit[si]===null||mx<maxLimit[si])maxLimit[si]=mx;}}
     for(var rsi=0;rsi<11;rsi++)if(minLimit[rsi]!==null&&maxLimit[rsi]!==null&&minLimit[rsi]>maxLimit[rsi])invalidRange=true;

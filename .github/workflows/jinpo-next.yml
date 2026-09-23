@@ -15,6 +15,8 @@ on:
       - '陣法/jinpo-fast-search-worker.js'
       - '陣法/jinpo-activation-engine.js'
       - '陣法/jinpo-formation-config.js'
+      - '陣法/jinpo-popular-selection.js'
+      - '陣法/data/jinpo_popular_selection.json'
       - '陣法/data/jinpo_eiketsu_master.csv'
       - '陣法/data/jinpo_inen_master.csv'
       - '陣法/data/jinpo_formation_spec.json'

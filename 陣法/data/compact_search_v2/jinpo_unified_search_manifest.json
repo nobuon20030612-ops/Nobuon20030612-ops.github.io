@@ -1,5 +1,5 @@
 {
-  "version": "unified-v2-top500-recsum-fullmax-c460f98116e5",
+  "version": "unified-v2-top500-recsum-fullmax-d1426c8296e0",
   "magic": "JCF1",
   "header_size": 16,
   "record_size": 52,
@@ -828,6 +828,144 @@
           "record_size": 52
         }
       }
+    },
+    "popular": {
+      "6": {
+        "衡軛": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c6_kouyaku_v2.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 2557,
+          "raw_bytes": 5060,
+          "sha256_16": "8a3299c4e10e3fbe",
+          "record_size": 52
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c6_kakuyoku_v2.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 2554,
+          "raw_bytes": 5060,
+          "sha256_16": "d1211ad9ac15c93b",
+          "record_size": 52
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c6_gyorin_v2.bin.gz",
+          "rows": 38830,
+          "gzip_bytes": 806845,
+          "raw_bytes": 2019176,
+          "sha256_16": "157956b1b32a54f5",
+          "record_size": 52
+        },
+        "方円": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c6_hoen_v2.bin.gz",
+          "rows": 38830,
+          "gzip_bytes": 806762,
+          "raw_bytes": 2019176,
+          "sha256_16": "0748709d6f55361b",
+          "record_size": 52
+        }
+      },
+      "7": {
+        "衡軛": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c7_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "096fa4510ba03dc9",
+          "record_size": 52
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c7_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "15453ffad2a82e38",
+          "record_size": 52
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c7_gyorin_v2.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 10251,
+          "raw_bytes": 22896,
+          "sha256_16": "caf112c7a6c89d94",
+          "record_size": 52
+        },
+        "方円": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c7_hoen_v2.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 10236,
+          "raw_bytes": 22896,
+          "sha256_16": "40b21606d67c0427",
+          "record_size": 52
+        }
+      },
+      "8": {
+        "衡軛": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c8_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "cd61af6f49bd1161",
+          "record_size": 52
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c8_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "0d2a2d02c64175dd",
+          "record_size": 52
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c8_gyorin_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "bca7332e1e660b5b",
+          "record_size": 52
+        },
+        "方円": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c8_hoen_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "5147ea9bacf46bdc",
+          "record_size": 52
+        }
+      },
+      "9": {
+        "衡軛": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c9_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "3c252b1d319d4eae",
+          "record_size": 52
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c9_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "dd8cd4032cb43deb",
+          "record_size": 52
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c9_gyorin_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "e544ec9bd8eeb6ad",
+          "record_size": 52
+        },
+        "方円": {
+          "file": "data/compact_search_v2/popular/jinpo_popular_c9_hoen_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "7e0b58aded5d5c7e",
+          "record_size": 52
+        }
+      }
     }
   },
   "notes": [
@@ -835,7 +973,8 @@
     "default and priority top datasets rebuilt from current full DB",
     "Top500正式運用",
     "おすすめ陣法の第1＋第2合計Top500を事前生成（因縁数混在・陣形別）",
-    "全MAX込み合計検索用ステータスsidecar＋おすすめTop500を事前生成"
+    "全MAX込み合計検索用ステータスsidecar＋おすすめTop500を事前生成",
+    "選抜人気モード: 画像指定20英傑＋等級3以下全員の専用検索DB（6～9因縁）"
   ],
   "fullmax_stats": {
     "normal": {
@@ -1106,6 +1245,144 @@
         },
         "方円": {
           "file": "data/compact_search_v2/fullmax_stats/grade3/c9_hoen.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        }
+      }
+    },
+    "popular": {
+      "6": {
+        "衡軛": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c6_kouyaku.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 1819,
+          "raw_bytes": 2538,
+          "sha256_16": "f30e80d0e0c2a71b",
+          "record_size": 26
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c6_kakuyoku.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 1814,
+          "raw_bytes": 2538,
+          "sha256_16": "fea2859e4064598f",
+          "record_size": 26
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c6_gyorin.bin.gz",
+          "rows": 38830,
+          "gzip_bytes": 590908,
+          "raw_bytes": 1009596,
+          "sha256_16": "5c505c4936459530",
+          "record_size": 26
+        },
+        "方円": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c6_hoen.bin.gz",
+          "rows": 38830,
+          "gzip_bytes": 590968,
+          "raw_bytes": 1009596,
+          "sha256_16": "08caa40e8a7dda92",
+          "record_size": 26
+        }
+      },
+      "7": {
+        "衡軛": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c7_kouyaku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c7_kakuyoku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c7_gyorin.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 7294,
+          "raw_bytes": 11456,
+          "sha256_16": "82d8b6ef52a59253",
+          "record_size": 26
+        },
+        "方円": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c7_hoen.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 7290,
+          "raw_bytes": 11456,
+          "sha256_16": "33d2663dcff8f822",
+          "record_size": 26
+        }
+      },
+      "8": {
+        "衡軛": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c8_kouyaku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c8_kakuyoku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c8_gyorin.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "方円": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c8_hoen.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        }
+      },
+      "9": {
+        "衡軛": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c9_kouyaku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c9_kakuyoku.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c9_gyorin.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 29,
+          "raw_bytes": 16,
+          "sha256_16": "5de06f84fe2be928",
+          "record_size": 26
+        },
+        "方円": {
+          "file": "data/compact_search_v2/fullmax_stats/popular/c9_hoen.bin.gz",
           "rows": 0,
           "gzip_bytes": 29,
           "raw_bytes": 16,
@@ -7954,5 +8231,19 @@
     }
   },
   "fullmax_recommend_limit": 500,
-  "fullmax_recommend_record_size": 80
+  "fullmax_recommend_record_size": 80,
+  "popular_selection": {
+    "schema": "jinpo-popular-selection/v1",
+    "config": "data/jinpo_popular_selection.json",
+    "selected_image_heroes": 20,
+    "grade3_rule": "cost<=6",
+    "grade3_heroes": 173,
+    "eligible_heroes": 193,
+    "counts": [
+      6,
+      7,
+      8,
+      9
+    ]
+  }
 }

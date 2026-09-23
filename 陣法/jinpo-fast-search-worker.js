@@ -68,17 +68,23 @@
     if(typeof DecompressionStream==='undefined')throw new Error('DecompressionStream(gzip)未対応');
     return new Response(new Blob([ab]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   }
+  function dbMode(q){
+    var mode=String(q&&q.mode||'');
+    if(mode==='normal'||mode==='grade3'||mode==='popular')return mode;
+    /* モード欠落・不正時に通常DBへ落とす旧フォールバックは禁止。誤検索せずエラーで停止する。 */
+    throw new Error('統一検索モードが不正です: '+(mode||'(empty)'));
+  }
   function datasetInfo(m,q){
-    var c=String(Number(q.count)||0),f=String(q.formation||''),mode=q.mode==='grade3'?'grade3':'normal';
+    var c=String(Number(q.count)||0),f=String(q.formation||''),mode=dbMode(q);
     if(q.sourceType==='sort'&&mode==='normal')return m.sort_top&&m.sort_top.normal&&m.sort_top.normal[c]&&m.sort_top.normal[c][f]&&m.sort_top.normal[c][f][q.sortStat];
     if(q.sourceType==='top')return m.top&&m.top[mode]&&m.top[mode][c]&&m.top[mode][c][f];
     return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];
   }
-  function fullDatasetInfo(m,q){var c=String(Number(q.count)||0),f=String(q.formation||''),mode=q.mode==='grade3'?'grade3':'normal';return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];}
+  function fullDatasetInfo(m,q){var c=String(Number(q.count)||0),f=String(q.formation||''),mode=dbMode(q);return m.datasets&&m.datasets[mode]&&m.datasets[mode][c]&&m.datasets[mode][c][f];}
   function infoParts(info){var p=info&&Array.isArray(info.parts)?info.parts.filter(function(x){return x&&x.file;}):[];return p.length?p:(info&&info.file?[info]:[]);}
   function sourceLabel(info){var p=infoParts(info);return info&&info.file?String(info.file):(p.length?String(p[0].file)+(p.length>1?(' +'+(p.length-1)+' parts'):''):'');}
-  function cacheKey(q,info){return [q.mode||'normal',q.sourceType||'full',q.count,q.formation,q.sortStat||'',sourceLabel(info),info&&info.sha256_16||''].join('|');}
-  function normalFiveSixUnsupported(q){var c=Number(q&&q.count)||0;return q&&q.mode!=='grade3'&&(c===5||c===6);}
+  function cacheKey(q,info){return [dbMode(q),q.sourceType||'full',q.count,q.formation,q.sortStat||'',sourceLabel(info),info&&info.sha256_16||''].join('|');}
+  function normalFiveSixUnsupported(q){var c=Number(q&&q.count)||0,mode=dbMode(q);if(mode==='grade3')return false;if(mode==='popular')return c===5;return c===5||c===6;}
   function evictIfNeeded(keepType,keepKey){
     var total=0,arr=[];
     buffers.forEach(function(v,k){total+=v.rawBytes||0;if(!(keepType==='base'&&k===keepKey))arr.push(['base',k,v.last||0,v.rawBytes||0]);});
@@ -123,7 +129,7 @@
     var obj={ab:ab,dv:dv,rows:rows,recSize:recSize,info:info,rawBytes:ab.byteLength,last:++lruSeq};buffers.set(key,obj);evictIfNeeded('base',key);return obj;
   }
   function fullmaxInfo(m,q){
-    var c=String(Number(q.count)||0),f=String(q.formation||''),mode=q.mode==='grade3'?'grade3':'normal';
+    var c=String(Number(q.count)||0),f=String(q.formation||''),mode=dbMode(q);
     return m.fullmax_stats&&m.fullmax_stats[mode]&&m.fullmax_stats[mode][c]&&m.fullmax_stats[mode][c][f];
   }
   async function loadFullmaxStats(q,token,silent){
@@ -169,16 +175,16 @@
     var names=[],numericIds=[],internalIds=[];
     for(var i=0;i<6;i++){var id=dv.getUint16(base+i*2,true);numericIds.push(id);internalIds.push(eikInternalId(id));names.push((m.hero_names||[])[id]||('英傑#'+id));}
     var count=Number(q.count)||0,bonds=[],bondNumeric=[];for(var b=0;b<count;b++){var bi=dv.getUint8(base+12+b);if(bi){bondNumeric.push(bi);bonds.push((m.bond_names||[])[bi]||String(bi));}}
-    var rid='compact_v2_'+(q.mode==='grade3'?'g3':'n')+'_'+count+'_'+(FORM_CODE[q.formation]||'f')+'_'+tieAt(dv,base).toString(16)+'_'+rowIndex;
-    var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='grade3'?'等級3以下ON':'通常',bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:internalIds.join('|'),eiketsu_numeric_ids:numericIds.join('|'),bond_ids:bonds.join('|'),bond_names:bonds.join('|'),bond_numeric_ids:bondNumeric.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
+    var rid='compact_v2_'+(q.mode==='popular'?'pop':(q.mode==='grade3'?'g3':'n'))+'_'+count+'_'+(FORM_CODE[q.formation]||'f')+'_'+tieAt(dv,base).toString(16)+'_'+rowIndex;
+    var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='popular'?'選抜人気':(q.mode==='grade3'?'等級3以下ON':'通常'),bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:internalIds.join('|'),eiketsu_numeric_ids:numericIds.join('|'),bond_ids:bonds.join('|'),bond_names:bonds.join('|'),bond_numeric_ids:bondNumeric.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
     Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);if(fm)attachFullmaxRow(row,fm,rowIndex);return row;
   }
   function materializeFirst(data,q,m,limit,fm){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,sourceLabel(data.info),fm));return rows;}
 
   var RECOMMEND_FORMS=['衡軛','鶴翼','魚鱗','方円'];
   function recommendCounts(mode,m){
-    var src=m&&m.datasets&&m.datasets[mode==='grade3'?'grade3':'normal']||{},out=[];
-    (mode==='grade3'?[5,6,7,8,9]:[7,8,9]).forEach(function(c){if(src[String(c)])out.push(c);});return out;
+    var src=m&&m.datasets&&m.datasets[mode==='popular'?'popular':(mode==='grade3'?'grade3':'normal')]||{},out=[];
+    (mode==='grade3'?[5,6,7,8,9]:(mode==='popular'?[6,7,8,9]:[7,8,9])).forEach(function(c){if(src[String(c)])out.push(c);});return out;
   }
   function rowMetricStat(row,key){
     if(row&&row.search_stat_mode==='fullmax'&&row.fullmax_stats&&row.fullmax_stats[key]!=null)return Number(row.fullmax_stats[key])||0;
@@ -260,7 +266,7 @@
     var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info};fullmaxRecommendBuffers.set(key,obj);return obj;
   }
   async function recommendFromFullmaxPrecomputed(q,token,m,target,secondary,limit){
-    var mode=q.mode==='grade3'?'grade3':'normal',data=await loadFullmaxRecommend(m,mode,target,secondary,token);if(!data)return null;
+    var mode=dbMode(q),data=await loadFullmaxRecommend(m,mode,target,secondary,token);if(!data)return null;
     var codeToForm={1:'衡軛',2:'鶴翼',3:'魚鱗',4:'方円'},byForm=Object.create(null),matchedByForm=Object.create(null),counts=recommendCounts(mode,m);
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi],matched=0;for(var ci=0;ci<counts.length;ci++){var full=fullDatasetInfo(m,{mode:mode,count:counts[ci],formation:f});if(full)matched+=Number(full.rows||0);}matchedByForm[f]=matched;byForm[f]=[];}
     for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){
@@ -281,7 +287,7 @@
     var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info};recommendSumBuffers.set(key,obj);return obj;
   }
   async function recommendFromSumTop(q,token,m,target,secondary,limit){
-    var mode=q.mode==='grade3'?'grade3':'normal',data=await loadRecommendSumTop(m,mode,target,secondary,token);if(!data)return null;
+    var mode=dbMode(q),data=await loadRecommendSumTop(m,mode,target,secondary,token);if(!data)return null;
     var codeToForm={1:'衡軛',2:'鶴翼',3:'魚鱗',4:'方円'},byForm=Object.create(null),matchedByForm=Object.create(null),counts=recommendCounts(mode,m);
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi],matched=0;for(var ci=0;ci<counts.length;ci++){var full=fullDatasetInfo(m,{mode:mode,count:counts[ci],formation:f});if(full)matched+=Number(full.rows||0);}matchedByForm[f]=matched;byForm[f]=[];}
     for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;var originalBase=base+2,mq={mode:mode,count:count,formation:form};var row=materialize(data.dv,originalBase,mq,m,i,sourceLabel(data.info));row.__recommendTie=tieAt(data.dv,originalBase);byForm[form].push(row);}
@@ -290,7 +296,7 @@
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:data.rows,sourceType:'recommend-sum-top'};
   }
   async function recommendFromFull(q,token,m,target,secondary,limit,filters){
-    var mode=q.mode==='grade3'?'grade3':'normal',counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0,useFullmax=String(q&&q.statMode||'base')==='fullmax';
+    var mode=dbMode(q),counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0,useFullmax=String(q&&q.statMode||'base')==='fullmax';
     if(filters.owned.some(function(g){return !g.length;}))return {formation:'',rows:[],matched:0,scanned:0,sourceType:'recommend-full'};
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){
       var f=RECOMMEND_FORMS[fi],heap=[],matched=0;
@@ -316,16 +322,16 @@
     var started=performance.now(),m=await loadManifest(),target=String(q&&q.targetStat||'').trim(),secondary=String(q&&q.secondaryStat||'').trim(),limit=Math.max(1,Number(q&&q.limit||500)||500);
     if(STAT_OFFSETS[target]==null)throw new Error('おすすめ陣法のステータスが不正です: '+target);
     if(secondary===target)secondary='';if(secondary&&STAT_OFFSETS[secondary]==null)throw new Error('おすすめ陣法の第2ステータスが不正です: '+secondary);
-    var filters=recommendFilters(q,m),result=null,mode=q.mode==='grade3'?'grade3':'normal',useFullmax=String(q&&q.statMode||'base')==='fullmax';
+    var filters=recommendFilters(q,m),result=null,mode=dbMode(q),useFullmax=String(q&&q.statMode||'base')==='fullmax';
     if(useFullmax&&filters.noFilters&&fullmaxRecommendInfo(m,mode,target,secondary))result=await recommendFromFullmaxPrecomputed(q,token,m,target,secondary,limit);
     if(!useFullmax&&filters.noFilters&&secondary&&recommendSumInfo(m,mode,target,secondary))result=await recommendFromSumTop(q,token,m,target,secondary,limit);
-    if(!result&&!useFullmax&&!secondary&&(q.mode!=='grade3')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
+    if(!result&&!useFullmax&&!secondary&&(dbMode(q)==='normal')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
     if(!result)result=await recommendFromFull(q,token,m,target,secondary,limit,filters);
     result.ms=performance.now()-started;result.targetStat=target;result.secondaryStat=secondary;result.statMode=useFullmax?'fullmax':'base';return result;
   }
 
   async function search(q,token){
-    if(normalFiveSixUnsupported(q))throw new Error('通常5・6因縁は検索対象外です（等級3以下ON専用）');
+    if(normalFiveSixUnsupported(q))throw new Error(q&&q.mode==='popular'?'選抜人気モードは6〜9因縁が検索対象です':'通常5・6因縁は検索対象外です（等級3以下ON専用）');
     var started=performance.now(),m=await loadManifest(),useFullmax=String(q&&q.statMode||'base')==='fullmax';
     var loadQ=Object.assign({},q);if(useFullmax){loadQ.sourceType='full';loadQ.sortStat='';}
     var data=await loadData(loadQ,token,false),fm=useFullmax?await loadFullmaxStats(loadQ,token,false):null,dv=data.dv,rec=data.recSize;
@@ -372,7 +378,7 @@
     if(normalFiveSixUnsupported(q))return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'normal_5_6_not_supported'};
     var bondIds=exactBondIds(q.bondNames,m);if(bondIds.length!==count)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_names_invalid'};
     var useFullmax=String(q&&q.statMode||'base')==='fullmax';
-    var dataQ={mode:q.mode==='grade3'?'grade3':'normal',count:count,formation:String(q.formation||''),sourceType:'full',sortStat:'',statMode:useFullmax?'fullmax':'base'};
+    var dataQ={mode:dbMode(q),count:count,formation:String(q.formation||''),sourceType:'full',sortStat:'',statMode:useFullmax?'fullmax':'base'};
     var data=await loadData(dataQ,token,true),fm=useFullmax?await loadFullmaxStats(dataQ,token,true):null,dv=data.dv,rec=data.recSize,base=16;
     if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
     for(var idx=0;idx<data.rows;idx++,base+=rec){

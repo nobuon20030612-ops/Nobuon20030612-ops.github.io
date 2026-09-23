@@ -1,0 +1,115 @@
+{
+  "schema": "jinpo-popular-selection/v1",
+  "mode": "popular",
+  "grade3_rule": "cost<=6",
+  "selected_hero_ids": [
+    "EIK_0253",
+    "EIK_0230",
+    "EIK_0188",
+    "EIK_0083",
+    "EIK_0198",
+    "EIK_0082",
+    "EIK_0242",
+    "EIK_0215",
+    "EIK_0241",
+    "EIK_0245",
+    "EIK_0084",
+    "EIK_0099",
+    "EIK_0104",
+    "EIK_0073",
+    "EIK_0107",
+    "EIK_0081",
+    "EIK_0258",
+    "EIK_0207",
+    "EIK_0187",
+    "EIK_0068"
+  ],
+  "selected_heroes": [
+    {
+      "internal_id": "EIK_0253",
+      "name": "福島正則"
+    },
+    {
+      "internal_id": "EIK_0230",
+      "name": "出雲阿国(野望)"
+    },
+    {
+      "internal_id": "EIK_0188",
+      "name": "斎藤道三(巳)"
+    },
+    {
+      "internal_id": "EIK_0083",
+      "name": "豊臣秀吉"
+    },
+    {
+      "internal_id": "EIK_0198",
+      "name": "大友宗麟"
+    },
+    {
+      "internal_id": "EIK_0082",
+      "name": "山中鹿之介"
+    },
+    {
+      "internal_id": "EIK_0242",
+      "name": "仙桃院"
+    },
+    {
+      "internal_id": "EIK_0215",
+      "name": "加藤清正"
+    },
+    {
+      "internal_id": "EIK_0241",
+      "name": "石田三成(西軍)"
+    },
+    {
+      "internal_id": "EIK_0245",
+      "name": "滝川一益(風雲)"
+    },
+    {
+      "internal_id": "EIK_0084",
+      "name": "高台院"
+    },
+    {
+      "internal_id": "EIK_0099",
+      "name": "明石全登"
+    },
+    {
+      "internal_id": "EIK_0104",
+      "name": "霧隠才蔵"
+    },
+    {
+      "internal_id": "EIK_0073",
+      "name": "大谷吉継(西軍)"
+    },
+    {
+      "internal_id": "EIK_0107",
+      "name": "井伊直虎"
+    },
+    {
+      "internal_id": "EIK_0081",
+      "name": "陶晴賢"
+    },
+    {
+      "internal_id": "EIK_0258",
+      "name": "明智光秀(闇)"
+    },
+    {
+      "internal_id": "EIK_0207",
+      "name": "お江"
+    },
+    {
+      "internal_id": "EIK_0187",
+      "name": "今川義元(周年)"
+    },
+    {
+      "internal_id": "EIK_0068",
+      "name": "島津義久"
+    }
+  ],
+  "search_counts": [
+    6,
+    7,
+    8,
+    9
+  ]
+}

@@ -14,7 +14,6 @@
   var modalOpenToken = 0;
   var activeModalOpenToken = 0;
   var activeCalculatedResult = null;
-  var specialModePreviousGrade3State = null;
   var specialModeActive = false;
 
   /* 現在発動中因縁モーダルの表示座標。
@@ -115,64 +114,113 @@
     try{ window.grade3Cost6OnlyEnabled = on; }catch(e){}
     return on;
   }
+  function bond56ModeOn(){
+    try{ return !!(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isBond56Mode === 'function' && window.JINPO_FAST_SEARCH.isBond56Mode()); }catch(e){}
+    return !!(document.body && document.body.classList.contains('jinpo-bond56-mode'));
+  }
   function specialModeOn(){
     try{ return !!(document.body && document.body.classList.contains('jinpo-selected-grade3-mode')); }catch(e){}
     return !!specialModeActive;
   }
-  function syncSpecialModeButtonState(){
-    var btn=document.getElementById('jinpoSpecialModeBtn');
-    if(!btn) return;
-    var on=specialModeOn();
-    btn.classList.toggle('is-active',on);
-    btn.setAttribute('aria-pressed',on?'true':'false');
-    btn.title=on?'選抜人気招喚鈴・巳＆等級３以下モード ON':'選抜人気招喚鈴・巳＆等級３以下モード OFF';
+  function currentSearchMode(){
+    if(specialModeOn()) return 'special';
+    if(bond56ModeOn()) return 'bond56';
+    if(readGrade3ModeState()) return 'grade3';
+    return 'normal';
   }
-  function syncSpecialModeSearchUi(){
+  function syncModeSelectorState(){
+    var mode=currentSearchMode();
+    if(document.body){
+      document.body.classList.toggle('jinpo-search-mode-normal',mode==='normal');
+      document.body.classList.toggle('jinpo-search-mode-grade3',mode==='grade3');
+      document.body.classList.toggle('jinpo-search-mode-bond56',mode==='bond56');
+      document.body.classList.toggle('jinpo-search-mode-special',mode==='special');
+    }
+    document.querySelectorAll('#jinpoModeButtonGroup [data-jinpo-search-mode]').forEach(function(btn){
+      var key=text(btn.getAttribute('data-jinpo-search-mode'));
+      var active=key===mode;
+      btn.classList.toggle('is-active',active);
+      btn.setAttribute('aria-pressed',active?'true':'false');
+      var wrap=btn.closest('.jinpoModeChoiceWrap');
+      if(wrap) wrap.classList.toggle('is-active',active);
+    });
+    return mode;
+  }
+  function syncModeDependentUi(rerun){
     try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
     try{ if(typeof window.step75ApplyFormationGrade3ButtonState === 'function') window.step75ApplyFormationGrade3ButtonState(); }catch(e){}
     try{ if(typeof updateTopButtons === 'function') updateTopButtons(); }catch(e){}
-    try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
-    var st=document.getElementById('dbListStatus');
-    if(st){
-      st.textContent=specialModeOn()
-        ? '選抜人気招喚鈴・巳＆等級３以下モード ON：専用モードに切り替わりました。'
-        : '選抜人気招喚鈴・巳＆等級３以下モード OFF：通常表示へ戻りました。';
-    }
-  }
-  function setSpecialMode(on,opts){
-    on=!!on;
-    opts=opts||{};
-    var body=document.body;
-    if(!body) return false;
-    if(on===specialModeOn()){
-      syncSpecialModeButtonState();
-      return on;
-    }
-    if(on){
-      specialModePreviousGrade3State = readGrade3ModeState();
+    syncModeSelectorState();
+    if(rerun===false) return;
+    var count=0;
+    try{ count=Number(typeof selectedDbListBondCount!=='undefined'?selectedDbListBondCount:window.selectedDbListBondCount)||0; }catch(e){}
+    if(count>=5&&count<=9){
       try{
-        if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isBond56Mode === 'function' && window.JINPO_FAST_SEARCH.isBond56Mode() && typeof window.JINPO_FAST_SEARCH.setBond56Mode === 'function'){
-          window.JINPO_FAST_SEARCH.setBond56Mode(false);
+        if(typeof window.handleDbCountButtonClick==='function'){
+          var run=window.handleDbCountButtonClick(count);
+          if(run&&typeof run.catch==='function')run.catch(function(err){console.error('検索モード切替後の再検索失敗',err);});
+          return;
         }
-      }catch(e){}
-      writeGrade3ModeState(true);
-    }else{
-      if(specialModePreviousGrade3State !== null){
-        writeGrade3ModeState(specialModePreviousGrade3State);
-      }
-      specialModePreviousGrade3State = null;
+      }catch(e){console.error('検索モード切替後の再検索失敗',e);}
     }
-    specialModeActive = on;
-    body.classList.toggle('jinpo-selected-grade3-mode',on);
-    syncSpecialModeButtonState();
-    syncSpecialModeSearchUi();
-    try{
-      window.dispatchEvent(new CustomEvent('jinpo:selected-grade3-mode',{detail:{active:on}}));
-    }catch(e){}
-    return on;
+    try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
+  }
+  function setSpecialModeVisual(on){
+    specialModeActive=!!on;
+    if(document.body) document.body.classList.toggle('jinpo-selected-grade3-mode',!!on);
+    try{ window.dispatchEvent(new CustomEvent('jinpo:selected-grade3-mode',{detail:{active:!!on}})); }catch(e){}
+  }
+  function setSearchMode(mode){
+    mode=text(mode);
+    if(['normal','grade3','bond56','special'].indexOf(mode)<0) return false;
+    var before=currentSearchMode();
+    if(before===mode){ syncModeSelectorState(); return true; }
+
+    if(specialModeOn() && mode!=='special') setSpecialModeVisual(false);
+
+    if(mode==='bond56'){
+      writeGrade3ModeState(false);
+      setSpecialModeVisual(false);
+      try{
+        if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.selectBond56Mode==='function'){
+          window.JINPO_FAST_SEARCH.selectBond56Mode(true);
+        }else if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.setBond56Mode==='function'){
+          window.JINPO_FAST_SEARCH.setBond56Mode(true);
+        }
+      }catch(e){ console.error('5・6因縁モード切替失敗',e); }
+      syncModeSelectorState();
+      return true;
+    }
+
+    if(bond56ModeOn()){
+      try{
+        if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.selectBond56Mode==='function') window.JINPO_FAST_SEARCH.selectBond56Mode(false);
+        else if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.setBond56Mode==='function') window.JINPO_FAST_SEARCH.setBond56Mode(false);
+      }catch(e){ console.error('5・6因縁モード解除失敗',e); }
+    }
+
+    if(mode==='normal'){
+      writeGrade3ModeState(false);
+      setSpecialModeVisual(false);
+    }else if(mode==='grade3'){
+      writeGrade3ModeState(true);
+      setSpecialModeVisual(false);
+    }else if(mode==='special'){
+      /* 選抜人気は等級3以下モードとは独立。専用検索DBを使う。 */
+      writeGrade3ModeState(false);
+      setSpecialModeVisual(true);
+    }
+    syncModeDependentUi(true);
+    return true;
+  }
+  function setSpecialMode(on){
+    if(on) return setSearchMode('special');
+    if(specialModeOn()) setSpecialModeVisual(false);
+    syncModeSelectorState();
+    return false;
   }
   function toggleSpecialMode(){
-    return setSpecialMode(!specialModeOn());
+    return setSearchMode(specialModeOn()?'normal':'special');
   }
 
   function renderActiveFactorUseBadgeContents(useSet){
@@ -470,9 +518,25 @@
     style.textContent = [
       '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
       '#jinpoRecommendSearchOrderRow{display:grid;grid-template-columns:132px minmax(0,1fr) 132px;align-items:center;gap:8px;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 8px 0;}',
-      '#jinpoRecommendSearchOrderNote{display:block;grid-column:2;min-width:0;width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:8px 14px 6px;color:#ffe27a;font-size:clamp(24px,2vw,34px);font-weight:1000;line-height:1.25;letter-spacing:.035em;text-align:center;white-space:nowrap;pointer-events:none;text-shadow:0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.75);}',
+      '#jinpoRecommendSearchOrderNote{display:block;grid-column:2;min-width:0;width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:8px 14px 6px;color:#ffe27a;font-size:clamp(24px,2vw,34px);font-weight:1000;line-height:1.25;letter-spacing:.035em;text-align:center;white-space:nowrap;pointer-events:none;text-shadow:-1px -1px 0 rgba(0,0,0,.95),1px -1px 0 rgba(0,0,0,.95),-1px 1px 0 rgba(0,0,0,.95),1px 1px 0 rgba(0,0,0,.95),0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.85);}',
       '#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:3;justify-self:end;margin:0 !important;}',
       '#jinpoRecommendNav{--jinpo-group-accent:#ffd463;--jinpo-group-glow:rgba(255,202,58,.52);--jinpo-group-soft:rgba(255,232,155,.14);position:relative;display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;padding:6px 7px;border:2px solid var(--jinpo-group-accent);border-radius:14px;background:linear-gradient(180deg,rgba(84,48,8,.38),rgba(24,13,4,.58));box-shadow:0 0 12px var(--jinpo-group-glow),0 0 24px rgba(255,184,39,.18),inset 0 0 0 1px rgba(255,239,183,.10),inset 0 0 12px var(--jinpo-group-soft);box-sizing:border-box;isolation:isolate;animation:jinpoRecommendGroupGlow 1.65s ease-in-out infinite alternate;}',
+      'body.jinpo-search-mode-normal{background:#120d09 url("assets/jinpo-normal-mode-bg.png") center top/cover no-repeat fixed!important;}',
+      'body.jinpo-search-mode-grade3{background:#f2f2f2 url("assets/jinpo-grade3-mode-bg.png") center top/cover no-repeat fixed!important;}',
+      'body.jinpo-search-mode-special{background:#f2f2f2 url("assets/jinpo-popular-mode-bg.png") center top/cover no-repeat fixed!important;}',
+      'body.jinpo-search-mode-bond56,body.jinpo-bond56-mode{background:#11220a url("assets/jinpo-bond56-mode-bg.png") center top/cover no-repeat fixed!important;}',
+      'body.jinpo-search-mode-normal header{border-bottom-color:rgba(220,72,72,.72)!important;box-shadow:0 2px 14px rgba(145,20,20,.14)!important;}',
+      'body.jinpo-search-mode-normal .card,body.jinpo-search-mode-normal .formationMiniPanel,body.jinpo-search-mode-normal .dbPriorityGroup,body.jinpo-search-mode-normal #jinpoSumPrioritySort,body.jinpo-search-mode-normal .jinpoSearchStatMode,body.jinpo-search-mode-normal .dbListBox,body.jinpo-search-mode-normal .formation,body.jinpo-search-mode-normal .totalStatPanel{border-color:rgba(205,70,70,.56)!important;box-shadow:0 0 12px rgba(150,24,24,.10),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-normal select,body.jinpo-search-mode-normal input,body.jinpo-search-mode-normal textarea{border-color:rgba(188,72,72,.62)!important;}',
+      'body.jinpo-search-mode-grade3 header{border-bottom-color:rgba(255,255,255,.82)!important;box-shadow:0 2px 14px rgba(255,255,255,.10)!important;}',
+      'body.jinpo-search-mode-grade3 .card,body.jinpo-search-mode-grade3 .formationMiniPanel,body.jinpo-search-mode-grade3 .dbPriorityGroup,body.jinpo-search-mode-grade3 #jinpoSumPrioritySort,body.jinpo-search-mode-grade3 .jinpoSearchStatMode,body.jinpo-search-mode-grade3 .dbListBox,body.jinpo-search-mode-grade3 .formation,body.jinpo-search-mode-grade3 .totalStatPanel{border-color:rgba(245,245,245,.72)!important;box-shadow:0 0 12px rgba(255,255,255,.10),0 8px 24px rgba(0,0,0,.20)!important;}',
+      'body.jinpo-search-mode-grade3 select,body.jinpo-search-mode-grade3 input,body.jinpo-search-mode-grade3 textarea{border-color:rgba(235,235,235,.72)!important;}',
+      'body.jinpo-search-mode-bond56 header,body.jinpo-bond56-mode header{border-bottom-color:rgba(96,214,112,.74)!important;box-shadow:0 2px 14px rgba(54,176,82,.12)!important;}',
+      'body.jinpo-search-mode-bond56 .card,body.jinpo-search-mode-bond56 .formationMiniPanel,body.jinpo-search-mode-bond56 .dbPriorityGroup,body.jinpo-search-mode-bond56 #jinpoSumPrioritySort,body.jinpo-search-mode-bond56 .jinpoSearchStatMode,body.jinpo-search-mode-bond56 .dbListBox,body.jinpo-search-mode-bond56 .formation,body.jinpo-search-mode-bond56 .totalStatPanel,body.jinpo-bond56-mode .card,body.jinpo-bond56-mode .formationMiniPanel,body.jinpo-bond56-mode .dbPriorityGroup,body.jinpo-bond56-mode #jinpoSumPrioritySort,body.jinpo-bond56-mode .jinpoSearchStatMode,body.jinpo-bond56-mode .dbListBox,body.jinpo-bond56-mode .formation,body.jinpo-bond56-mode .totalStatPanel{border-color:rgba(82,205,105,.62)!important;box-shadow:0 0 14px rgba(55,190,82,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-bond56 select,body.jinpo-search-mode-bond56 input,body.jinpo-search-mode-bond56 textarea,body.jinpo-bond56-mode select,body.jinpo-bond56-mode input,body.jinpo-bond56-mode textarea{border-color:rgba(76,196,98,.66)!important;box-shadow:inset 0 0 8px rgba(50,175,75,.05)!important;}',
+      'body.jinpo-search-mode-special header{border-bottom-color:rgba(178,105,222,.76)!important;box-shadow:0 2px 14px rgba(132,64,185,.13)!important;}',
+      'body.jinpo-search-mode-special .card,body.jinpo-search-mode-special .formationMiniPanel,body.jinpo-search-mode-special .dbPriorityGroup,body.jinpo-search-mode-special #jinpoSumPrioritySort,body.jinpo-search-mode-special .jinpoSearchStatMode,body.jinpo-search-mode-special .dbListBox,body.jinpo-search-mode-special .formation,body.jinpo-search-mode-special .totalStatPanel{border-color:rgba(176,102,220,.62)!important;box-shadow:0 0 14px rgba(144,71,195,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-special select,body.jinpo-search-mode-special input,body.jinpo-search-mode-special textarea{border-color:rgba(170,104,210,.66)!important;}',
       'body.jinpo-recommend-active{--jinpo-rec-accent:#ffd463;--jinpo-rec-accent2:#e7bd5c;--jinpo-rec-bg1:#6f2419;--jinpo-rec-bg2:#26100a;--jinpo-rec-text:#fff5d4;--jinpo-rec-soft:rgba(231,189,92,.18);--jinpo-rec-glow:rgba(231,189,92,.46);}',
       'body.jinpo-recommend-active #jinpoRecommendNav{--jinpo-group-accent:var(--jinpo-rec-accent);--jinpo-group-glow:var(--jinpo-rec-glow);--jinpo-group-soft:var(--jinpo-rec-soft);background:linear-gradient(180deg,var(--jinpo-rec-soft),rgba(18,11,6,.68));}',
       'body.jinpo-runtime-master-override #dbCountButtons .dbCountBtn,body.jinpo-runtime-master-override [data-jinpo-recommend-stat]{pointer-events:none!important;cursor:not-allowed!important;opacity:.42!important;filter:grayscale(.55)!important;}',
@@ -483,7 +547,7 @@
       '.jinpoRecommendExitBtn{flex:0 0 auto;min-width:104px;min-height:38px;padding:6px 11px;border-radius:10px;border:2px solid #d6aa50;background:linear-gradient(#3d2a18,#1a1009);color:#a88f68;font-size:13px;font-weight:950;line-height:1;cursor:not-allowed;white-space:nowrap;box-sizing:border-box;opacity:.52;transition:filter .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease;}',
       '.jinpoRecommendExitBtn.is-active{background:linear-gradient(var(--jinpo-rec-bg1,#9e2d22),var(--jinpo-rec-bg2,#57110c));color:var(--jinpo-rec-text,#fff2d0);border-color:var(--jinpo-rec-accent,#ffd463);cursor:pointer;opacity:1;box-shadow:0 0 13px var(--jinpo-rec-glow,rgba(255,76,48,.38)),inset 0 0 8px var(--jinpo-rec-soft,rgba(255,220,120,.12));}',
       '.jinpoRecommendExitBtn.is-active:hover,.jinpoRecommendExitBtn.is-active:focus-visible{filter:brightness(1.17);box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(255,83,52,.64)),0 0 10px var(--jinpo-rec-soft,rgba(231,189,92,.40));transform:translateY(-1px);outline:none;}',
-      '.jinpoRecommendModeNotice{display:none;flex:1 1 100%;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:8px;padding:7px 12px;margin:0 0 2px 0;border:1px solid var(--jinpo-rec-accent,#ffcd57);border-radius:10px;background:linear-gradient(90deg,var(--jinpo-rec-bg1,#701810),var(--jinpo-rec-bg2,#32140a),var(--jinpo-rec-bg1,#701810));color:var(--jinpo-rec-text,#fff0bd);font-size:14px;font-weight:950;letter-spacing:.02em;text-align:center;box-shadow:0 0 12px var(--jinpo-rec-glow,rgba(255,81,45,.22));}',
+      '.jinpoRecommendModeNotice{display:none;flex:1 1 100%;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:8px;padding:12px 18px;margin:0 0 4px 0;border:2px solid var(--jinpo-rec-accent,#ffcd57);border-radius:12px;background:linear-gradient(90deg,var(--jinpo-rec-bg1,#701810),var(--jinpo-rec-bg2,#32140a),var(--jinpo-rec-bg1,#701810));color:var(--jinpo-rec-text,#fff0bd);font-size:24px;font-weight:1000;letter-spacing:.02em;text-align:center;box-shadow:0 0 16px var(--jinpo-rec-glow,rgba(255,81,45,.30));text-shadow:0 0 8px rgba(255,255,255,.18),0 2px 0 rgba(0,0,0,.6);}',
       '.jinpoRecommendModeNotice.is-active{display:flex;}',
       '#jinpoRecommendModeBadge{position:fixed;right:4px;top:52%;z-index:9500;display:none;min-width:62px;max-width:72px;min-height:250px;padding:14px 9px;border:2px solid var(--jinpo-rec-accent,#ffd45e);border-radius:16px 0 0 16px;background:linear-gradient(180deg,var(--jinpo-rec-bg1,#9f2c20),var(--jinpo-rec-bg2,#571009) 68%,#090706);color:var(--jinpo-rec-text,#fff5d4);box-shadow:0 0 22px var(--jinpo-rec-glow,rgba(255,72,42,.52)),inset 0 0 14px var(--jinpo-rec-soft,rgba(255,220,110,.14));box-sizing:border-box;pointer-events:none;writing-mode:vertical-rl;text-orientation:upright;font-size:21px;font-weight:1000;letter-spacing:.08em;text-shadow:0 2px 0 rgba(0,0,0,.62);transform:translateY(-50%);}',
       '#jinpoRecommendModeBadge.is-active{display:flex;align-items:center;justify-content:center;gap:10px;animation:jinpoRecommendModeFloat 1.8s ease-in-out infinite,jinpoRecommendModePulse 1.2s ease-in-out infinite alternate;}',
@@ -495,17 +559,34 @@
       '.jinpoRecommendBtn:hover{filter:brightness(1.15);box-shadow:0 0 12px rgba(231,189,92,.30);}',
       '.jinpoRecommendBtn.active{outline:2px solid #fff4b8;outline-offset:1px;box-shadow:0 0 13px rgba(255,239,170,.72),inset 0 0 8px rgba(255,255,255,.12);}',
       '.jinpoRecommendBtn[data-stat="生命"]{background:#fff;color:#111;border-color:#cfcfcf}.jinpoRecommendBtn[data-stat="気合"]{background:#cfefff;color:#102633;border-color:#78b8da}.jinpoRecommendBtn[data-stat="腕力"]{background:#c93333;color:#fff;border-color:#ff7777}.jinpoRecommendBtn[data-stat="耐久力"]{background:#245fc7;color:#fff;border-color:#70a0ff}.jinpoRecommendBtn[data-stat="器用さ"]{background:#3a9b55;color:#fff;border-color:#75d28d}.jinpoRecommendBtn[data-stat="知力"]{background:#f2d93b;color:#241f00;border-color:#fff083}.jinpoRecommendBtn[data-stat="魅力"]{background:#8b4bb4;color:#fff;border-color:#c88fe8}.jinpoRecommendBtn[data-stat="土属性"]{background:#fff1a8;color:#332800;border-color:#d9c35d}.jinpoRecommendBtn[data-stat="水属性"]{background:#73d7f3;color:#073340;border-color:#b5efff}.jinpoRecommendBtn[data-stat="火属性"]{background:#f3a0a0;color:#4b1111;border-color:#ffd0d0}.jinpoRecommendBtn[data-stat="風属性"]{background:#a8e2a6;color:#173a16;border-color:#d2f4d0}',
-      '#jinpoSpecialModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 100%;width:100%;max-width:100%;min-height:100px;margin:0;box-sizing:border-box;overflow:visible;}',
-      '#jinpoSpecialModeBtn{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto;min-width:0;height:clamp(96px,5.8vw,118px);margin:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible;cursor:pointer;box-sizing:border-box;}',
-      '#jinpoSpecialModeBtn:hover,#jinpoSpecialModeBtn:focus-visible{filter:brightness(1.08);outline:none;}',
-      '#jinpoSpecialModeBtn.is-active{filter:brightness(1.08) drop-shadow(0 0 12px rgba(255,170,255,.42)) drop-shadow(0 0 22px rgba(180,70,255,.28));}',
-      '#jinpoSpecialModeBtn img{display:block;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:left center;pointer-events:none;user-select:none;-webkit-user-drag:none;}',
+      '#jinpoSpecialModeRow{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;flex:0 0 100%;width:100%;max-width:100%;margin:0;box-sizing:border-box;overflow:visible;}',
+      '#jinpoModeSelectHeader{display:flex;align-items:center;justify-content:center;gap:14px;flex:1 1 100%;width:100%;margin:0 0 6px;padding:2px 0 6px;box-sizing:border-box;text-align:center;}',
+      '#jinpoModeSelectHeader .jinpoModeSelectArrow{position:relative;display:inline-block;flex:0 0 92px;width:92px;height:92px;filter:drop-shadow(0 0 10px rgba(255,255,255,.98)) drop-shadow(0 0 22px rgba(255,90,218,.98)) drop-shadow(0 0 38px rgba(255,38,190,.92));animation:jinpoModeSelectArrowFloat 1.15s ease-in-out infinite;}',
+      '#jinpoModeSelectHeader .jinpoModeSelectArrow::before{content:"";position:absolute;left:50%;top:4px;transform:translateX(-50%);width:30px;height:44px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#fff0fb 0%,#ff9ce2 18%,#ff4fc2 56%,#e9008d 100%);box-shadow:inset 0 0 9px rgba(255,255,255,.9);}',
+      '#jinpoModeSelectHeader .jinpoModeSelectArrow::after{content:"";position:absolute;left:50%;top:38px;transform:translateX(-50%);width:0;height:0;border-left:39px solid transparent;border-right:39px solid transparent;border-top:46px solid #ff35b6;filter:drop-shadow(0 6px 0 #b80072);}',
+      '#jinpoModeSelectHeader .jinpoModeSelectText{display:inline-flex;align-items:center;justify-content:center;padding:5px 18px 7px;border:2px solid rgba(255,143,224,.76);border-radius:999px;background:linear-gradient(180deg,rgba(255,120,214,.95),rgba(48,8,35,.98));color:#ffe7ff;font-size:31px;font-weight:1000;line-height:1;letter-spacing:.08em;white-space:nowrap;text-shadow:0 0 8px rgba(255,255,255,.88),0 0 16px rgba(255,118,216,.72),0 2px 0 rgba(0,0,0,.78);box-shadow:0 0 18px rgba(255,106,214,.44),inset 0 0 12px rgba(255,255,255,.12);}',
+      '@keyframes jinpoModeSelectArrowFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}',
+      '#jinpoModeButtonGroup{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:start;flex:1 1 1120px;min-width:0;max-width:100%;box-sizing:border-box;}',
+      '.jinpoModeChoiceWrap{position:relative;min-width:0;padding-top:27px;box-sizing:border-box;}',
+      '#jinpoPopularHeroListBtn{display:block;width:100%;margin:8px 0 0;padding:10px 12px;border:2px solid #f3d18d;border-radius:12px;background:linear-gradient(180deg,#5b2a76,#241033);color:#fff4d5;font-size:18px;font-weight:1000;line-height:1.2;letter-spacing:.04em;text-align:center;box-shadow:0 0 14px rgba(191,111,255,.34),inset 0 0 10px rgba(255,255,255,.08);cursor:pointer;transition:filter .14s ease,transform .14s ease,box-shadow .14s ease;}',
+      '#jinpoPopularHeroListBtn:hover,#jinpoPopularHeroListBtn:focus-visible{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 0 18px rgba(219,126,255,.44),inset 0 0 10px rgba(255,255,255,.12);outline:none;}',
+      '.jinpoModeChoiceLabel{position:absolute;left:50%;top:-6px;z-index:4;display:none;transform:translateX(-50%);min-width:124px;padding:6px 18px;border:3px solid #fff1a6;border-radius:999px;background:linear-gradient(180deg,#b83d22,#5b0e09);color:#fffbdc;font-size:22px;font-weight:1000;line-height:1.05;letter-spacing:.08em;text-align:center;white-space:nowrap;text-shadow:0 0 8px #fff,0 0 16px #ffd45c,0 2px 2px #000;box-shadow:0 0 12px rgba(255,255,255,.86),0 0 26px rgba(255,201,62,.82);pointer-events:none;}',
+      '.jinpoModeChoiceWrap.is-active .jinpoModeChoiceLabel{display:block;animation:jinpoModeChoiceLabelPulse 1s ease-in-out infinite alternate;}',
+      '@keyframes jinpoModeChoiceLabelPulse{from{filter:brightness(.96);transform:translateX(-50%) scale(1)}to{filter:brightness(1.18);transform:translateX(-50%) scale(1.045)}}',
+      '.jinpoModeChoiceBtn{appearance:none;-webkit-appearance:none;display:block;width:100%;min-width:0;aspect-ratio:8/3;margin:0;padding:0;border:2px solid transparent;border-radius:15px;background:rgba(0,0,0,.16);box-shadow:none;overflow:hidden;cursor:pointer;box-sizing:border-box;transition:filter .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease;}',
+      '.jinpoModeChoiceBtn:hover,.jinpoModeChoiceBtn:focus-visible{filter:brightness(1.08);outline:none;transform:translateY(-1px);}',
+      '.jinpoModeChoiceBtn.is-active{border-color:#fff5b5;box-shadow:0 0 7px rgba(255,255,255,.95),0 0 17px rgba(255,224,94,.95),0 0 31px rgba(255,137,35,.66),inset 0 0 10px rgba(255,255,255,.24);filter:brightness(1.08);}',
+      '.jinpoModeChoiceBtn img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;pointer-events:none;user-select:none;-webkit-user-drag:none;}',
+      '@media(max-width:1250px){#jinpoModeButtonGroup{flex-basis:100%}}',
+      '@media(max-width:760px){#jinpoModeSelectHeader{gap:8px;margin-bottom:4px}#jinpoModeSelectHeader .jinpoModeSelectArrow{flex-basis:68px;width:68px;height:70px}#jinpoModeSelectHeader .jinpoModeSelectArrow::before{width:22px;height:32px}#jinpoModeSelectHeader .jinpoModeSelectArrow::after{top:29px;border-left-width:28px;border-right-width:28px;border-top-width:34px}#jinpoModeSelectHeader .jinpoModeSelectText{font-size:22px;padding:4px 12px 6px}#jinpoModeButtonGroup{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.jinpoModeChoiceWrap{padding-top:33px}.jinpoModeChoiceLabel{font-size:16px;min-width:100px;padding:4px 12px;top:-2px}#jinpoPopularHeroListBtn{font-size:14px;padding:8px 8px}}',
+      '@media(max-width:430px){#jinpoModeButtonGroup{grid-template-columns:1fr}}',
       'body.jinpo-selected-grade3-mode{background:#10000d!important;background-image:none!important;background-attachment:fixed!important;position:relative;isolation:isolate;}',
-      'body.jinpo-selected-grade3-mode::before{content:"";position:fixed;inset:0;z-index:0;background:url("assets/jinpo-selected-grade3-mode-bg.png") center top / cover no-repeat;pointer-events:none;opacity:1;}',
-      'body.jinpo-selected-grade3-mode > *{position:relative;z-index:1;}',
+      'body.jinpo-selected-grade3-mode::before{content:"";position:fixed;inset:0;z-index:0;background:url("assets/jinpo-popular-mode-bg.png") center top / cover no-repeat;pointer-events:none;opacity:1;}',
+      'body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}',
       'body.jinpo-selected-grade3-mode main,body.jinpo-selected-grade3-mode header{background:transparent!important;}',
       'body.jinpo-selected-grade3-mode .card,body.jinpo-selected-grade3-mode .formationMiniPanel,body.jinpo-selected-grade3-mode .dbPriorityGroup,body.jinpo-selected-grade3-mode #jinpoSumPrioritySort,body.jinpo-selected-grade3-mode .jinpoSearchStatMode{background:linear-gradient(180deg,rgba(23,7,19,.82),rgba(9,3,12,.90))!important;border-color:rgba(255,173,233,.42)!important;box-shadow:0 0 18px rgba(219,114,255,.12),inset 0 0 18px rgba(255,255,255,.03)!important;backdrop-filter:blur(1.5px);}',
-      '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
+      '#jinpoBondNavLeft{position:absolute;z-index:8;top:-48px;left:36%;display:flex;align-items:center;justify-content:flex-start;gap:8px;width:max-content;max-width:min(520px,90vw);margin:0;box-sizing:border-box;transform:translateX(-50%);}',
+      '#jinpoBondNavRight{display:none!important;}',
       '@media(min-width:761px){body.jinpo-recommend-active #jinpoBondNavRight{padding-right:80px;box-sizing:border-box;}}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
       'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
@@ -526,6 +607,22 @@
       '.jinpoRecommendLoadingSub{font-size:clamp(15px,1.15vw,20px);font-weight:900;line-height:1.45;color:var(--jinpo-rec-text,#fff5d4);opacity:.96;}',
       '.jinpoRecommendLoading .dbSearchSpinner{width:38px;height:38px;border-width:5px;margin:0;vertical-align:middle;}',
       '.jinpoBondNavBtn{min-height:38px;padding:7px 14px;border-radius:12px;border:2px solid #b99043;background:linear-gradient(#5e4020,#35230f);color:#fff1c9;font-size:15px;font-weight:900;line-height:1;box-shadow:0 0 12px rgba(231,189,92,.20);cursor:pointer;white-space:nowrap;}',
+      '#jinpoPopularHeroModalBackdrop{position:fixed;inset:0;z-index:10055;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.76);box-sizing:border-box;}',
+      '#jinpoPopularHeroModalBackdrop.is-open{display:flex;}',
+      '#jinpoPopularHeroModal{width:min(900px,96vw);max-height:90vh;display:flex;flex-direction:column;border:2px solid #d9a84a;border-radius:16px;background:linear-gradient(180deg,#24150d,#110a07);color:#f7ead0;box-shadow:0 0 34px rgba(0,0,0,.76),0 0 22px rgba(205,139,255,.20);overflow:hidden;}',
+      '.jinpoPopularHeroModalHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(231,189,92,.34);background:rgba(89,34,109,.36);}',
+      '.jinpoPopularHeroModalHeader h3{margin:0;font-size:20px;color:#ffd8ff;}',
+      '.jinpoPopularHeroModalCount{font-size:12px;color:#e1c7ef;}',
+      '#jinpoPopularHeroModalClose{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:104px;height:42px;padding:0 13px;border:2px solid #d4a442;border-radius:12px;background:linear-gradient(180deg,#5a3919,#2e1c0d);color:#fff3d0;font-family:inherit;font-size:14px;font-weight:900;line-height:1;letter-spacing:.02em;box-shadow:0 2px 0 rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08),0 0 10px rgba(231,189,92,.16);cursor:pointer;transition:transform .12s ease,filter .12s ease,border-color .12s ease,box-shadow .12s ease;}',
+      '#jinpoPopularHeroModalClose:hover{filter:brightness(1.16);border-color:#f1c45c;box-shadow:0 2px 0 rgba(0,0,0,.42),0 0 16px rgba(241,196,92,.34);}',
+      '#jinpoPopularHeroModalClose:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.38),0 0 9px rgba(241,196,92,.24);}',
+      '#jinpoPopularHeroModalClose:focus-visible{outline:3px solid rgba(255,218,112,.50);outline-offset:3px;}',
+      '.jinpoPopularHeroModalBody{padding:16px;overflow:auto;}',
+      '.jinpoPopularHeroList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;}',
+      '.jinpoPopularHeroItem{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(220,166,255,.28);border-radius:12px;background:linear-gradient(180deg,rgba(66,27,83,.46),rgba(18,10,22,.88));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);}',
+      '.jinpoPopularHeroIndex{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:999px;border:1px solid rgba(255,225,162,.72);background:linear-gradient(180deg,#6a4016,#37200c);color:#fff0c7;font-size:14px;font-weight:1000;}',
+      '.jinpoPopularHeroName{min-width:0;font-size:18px;font-weight:900;line-height:1.35;color:#fff1d8;word-break:break-word;}',
+      '.jinpoPopularHeroModalError{padding:24px 12px;text-align:center;color:#ffd7d7;font-size:16px;font-weight:900;}',
       '.jinpoBondNavBtn:hover{filter:brightness(1.12);box-shadow:0 0 16px rgba(231,189,92,.36);}',
       '#jinpoBondModalBackdrop{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
       '#jinpoBondModalBackdrop.is-open{display:flex;}',
@@ -606,12 +703,26 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoSpecialModeRow{flex-wrap:wrap;gap:6px;min-height:0}#jinpoSpecialModeBtn{flex:1 1 100%;height:clamp(72px,18vw,100px)}#jinpoBondNavRight{width:100%;justify-content:flex-end}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{display:none!important}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoBondNavLeft{top:-44px;gap:5px;max-width:92vw;flex-wrap:nowrap}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoSpecialModeRow{flex-wrap:wrap;gap:6px;min-height:0}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:18px;padding:9px 10px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{display:none!important}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3,.jinpoPopularHeroModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoPopularHeroList{grid-template-columns:1fr}.jinpoPopularHeroName{font-size:16px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
       '@media(max-width:620px){#jinpoRecommendSearchOrderRow{grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center}#jinpoRecommendSearchOrderNote{grid-column:1 / -1;grid-row:1;font-size:16px;white-space:normal;line-height:1.25;padding:5px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:2;grid-row:2;justify-self:end;margin-top:2px !important}}'
     ].join('\n');
     document.head.appendChild(style);
   }
+  var popularHeroListPromise = null;
   var recommendDecorState = {active:false,targetStat:'',secondaryStat:''};
+  function loadPopularSelectedHeroes(){
+    if(popularHeroListPromise) return popularHeroListPromise;
+    popularHeroListPromise = fetch('data/jinpo_popular_selection.json',{cache:'no-cache'}).then(function(res){
+      if(!res.ok) throw new Error('popular selection load failed: '+res.status);
+      return res.json();
+    }).then(function(json){
+      var list = Array.isArray(json && json.selected_heroes) ? json.selected_heroes : [];
+      return list.map(function(item, idx){
+        return {index:idx+1,name:text(item && item.name),internalId:text(item && item.internal_id)};
+      }).filter(function(item){ return item.name; });
+    });
+    return popularHeroListPromise;
+  }
   var recommendStatLabels = {'生命':'生命','気合':'気合','腕力':'腕力','耐久力':'耐久','器用さ':'器用','知力':'知力','魅力':'魅力','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};
   var recommendThemes = {
     '生命': {accent:'#ffffff',accent2:'#d6d6d6',bg1:'#5a5a5a',bg2:'#171717',text:'#ffffff',soft:'rgba(255,255,255,.16)',glow:'rgba(255,255,255,.48)'},
@@ -795,7 +906,7 @@
     if(!searchOrderNote){
       searchOrderNote=document.createElement('div');
       searchOrderNote.id='jinpoRecommendSearchOrderNote';
-      searchOrderNote.textContent='おすすめ検索は【全陣形 】【７～９因縁】で高い順検索になります';
+      searchOrderNote.textContent='おすすめ検索は【全陣形 】で高い順検索になります';
     }
     var searchOrderRow=document.getElementById('jinpoRecommendSearchOrderRow');
     if(!searchOrderRow){
@@ -817,7 +928,7 @@
     if(!notice){
       notice=document.createElement('div');
       notice.id='jinpoRecommendModeNotice';notice.className='jinpoRecommendModeNotice';notice.setAttribute('aria-hidden','true');
-      notice.textContent='おすすめモード中は5〜9因縁の通常検索は使用できません（等級3以下 ON / OFF は使用できます）';
+      notice.textContent='おすすめ検索中は因縁別の検索は使用できません';
       wrap.insertBefore(notice,recommend||wrap.firstChild);
     }
     ensureRecommendModeBadge();
@@ -828,32 +939,118 @@
       specialRow.id='jinpoSpecialModeRow';
       wrap.insertBefore(specialRow,recommend||null);
     }
-    var specialBtn = document.getElementById('jinpoSpecialModeBtn');
-    if(!specialBtn){
-      specialBtn=document.createElement('button');
-      specialBtn.type='button';
-      specialBtn.id='jinpoSpecialModeBtn';
-      specialBtn.setAttribute('aria-label','選抜人気招喚鈴・巳＆等級３以下モード');
-      specialBtn.innerHTML='<img src="assets/jinpo-selected-grade3-mode-banner.png" alt="選抜人気招喚鈴・巳＆等級３以下モード">';
-      specialBtn.addEventListener('click',function(ev){ ev.preventDefault(); toggleSpecialMode(); });
+    var modeGroup=document.getElementById('jinpoModeButtonGroup');
+    if(!modeGroup){
+      modeGroup=document.createElement('div');
+      modeGroup.id='jinpoModeButtonGroup';
+      modeGroup.setAttribute('role','group');
+      modeGroup.setAttribute('aria-label','検索モード選択');
+      modeGroup.innerHTML=[
+        ['normal','jinpoModeNormalBtn','assets/jinpo-mode-normal-7plus.png','7因縁以上の通常検索モード'],
+        ['grade3','jinpoModeGrade3Btn','assets/jinpo-mode-grade3-only.png','等級3以下のみ検索モード'],
+        ['bond56','jinpoModeBond56Btn','assets/jinpo-mode-bond56-only.png','5＆6因縁のみ検索モード'],
+        ['special','jinpoSpecialModeBtn','assets/jinpo-selected-grade3-mode-banner.png','選抜人気招喚鈴・巳＆等級3以下モード']
+      ].map(function(item){
+        return '<div class="jinpoModeChoiceWrap" data-jinpo-mode-wrap="'+item[0]+'"><span class="jinpoModeChoiceLabel" aria-hidden="true">選択中</span><button type="button" id="'+item[1]+'" class="jinpoModeChoiceBtn" data-jinpo-search-mode="'+item[0]+'" aria-label="'+item[3]+'" aria-pressed="false"><img src="'+item[2]+'" alt="'+item[3]+'" draggable="false"></button></div>';
+      }).join('');
+      modeGroup.addEventListener('click',function(ev){
+        var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-search-mode]');
+        if(!btn)return;
+        ev.preventDefault();
+        setSearchMode(btn.getAttribute('data-jinpo-search-mode'));
+      });
     }
-    syncSpecialModeButtonState();
-    if(specialBtn.parentNode!==specialRow) specialRow.insertBefore(specialBtn,specialRow.firstChild);
+    var modeHeader=document.getElementById('jinpoModeSelectHeader');
+    if(!modeHeader){
+      modeHeader=document.createElement('div');
+      modeHeader.id='jinpoModeSelectHeader';
+      modeHeader.innerHTML='<span class="jinpoModeSelectArrow" aria-hidden="true"></span><span class="jinpoModeSelectText">モード選択</span>';
+    }
+    if(modeHeader.parentNode!==specialRow) specialRow.insertBefore(modeHeader,specialRow.firstChild);
+    if(modeGroup.parentNode!==specialRow || modeGroup.previousSibling!==modeHeader) specialRow.insertBefore(modeGroup,modeHeader.nextSibling);
+    var specialWrap=modeGroup.querySelector('[data-jinpo-mode-wrap="special"]');
+    if(specialWrap){
+      var popularListBtn=document.getElementById('jinpoPopularHeroListBtn');
+      if(!popularListBtn){
+        popularListBtn=document.createElement('button');
+        popularListBtn.type='button';popularListBtn.id='jinpoPopularHeroListBtn';popularListBtn.textContent='選抜人気英傑一覧';
+        popularListBtn.addEventListener('click',function(ev){ev.preventDefault();openPopularHeroModal();});
+      }
+      if(popularListBtn.parentNode!==specialWrap) specialWrap.appendChild(popularListBtn);
+    }
+    syncModeSelectorState();
     var right = document.getElementById('jinpoBondNavRight');
-    if(!right){right=document.createElement('div');right.id='jinpoBondNavRight';}
-    if(right.parentNode!==specialRow) specialRow.appendChild(right);
+    if(right&&right.parentNode) right.parentNode.removeChild(right);
+    var left = document.getElementById('jinpoBondNavLeft');
+    if(!left){left=document.createElement('div');left.id='jinpoBondNavLeft';}
+    if(left.parentNode!==recommend) recommend.appendChild(left);
+    var durabilityBtn=recommend.querySelector('[data-jinpo-recommend-stat="耐久力"]');
+    function positionBondNavLeft(){
+      if(!left||!durabilityBtn)return;
+      var x=durabilityBtn.offsetLeft+(durabilityBtn.offsetWidth/2);
+      if(Number.isFinite(x)&&x>0)left.style.left=x+'px';
+    }
+    requestAnimationFrame(function(){requestAnimationFrame(positionBondNavLeft);});
+    if(!left.__jinpoResizeBound){left.__jinpoResizeBound=true;window.addEventListener('resize',positionBondNavLeft);}
     var allBtn = document.getElementById('jinpoBondAllBtn');
     if(!allBtn){
       allBtn = document.createElement('button');allBtn.type='button';allBtn.id='jinpoBondAllBtn';allBtn.className='jinpoBondNavBtn';allBtn.textContent='因縁一覧';
       allBtn.addEventListener('click', openModal);
     }
-    if(allBtn.parentNode!==right)right.appendChild(allBtn);
+    if(allBtn.parentNode!==left)left.appendChild(allBtn);
     var activeBtn = document.getElementById('jinpoBondActiveBtn');
     if(!activeBtn){
       activeBtn = document.createElement('button');activeBtn.type='button';activeBtn.id='jinpoBondActiveBtn';activeBtn.className='jinpoBondNavBtn';activeBtn.textContent='現在発動中因縁';
       activeBtn.addEventListener('click', openActiveModal);
     }
-    if(activeBtn.parentNode!==right)right.appendChild(activeBtn);
+    if(activeBtn.parentNode!==left)left.appendChild(activeBtn);
+  }
+
+  function ensurePopularHeroModal(){
+    if(document.getElementById('jinpoPopularHeroModalBackdrop')) return;
+    var backdrop=document.createElement('div');
+    backdrop.id='jinpoPopularHeroModalBackdrop';
+    backdrop.setAttribute('aria-hidden','true');
+    backdrop.innerHTML=''+
+      '<div id="jinpoPopularHeroModal" role="dialog" aria-modal="true" aria-labelledby="jinpoPopularHeroModalTitle">'+
+        '<div class="jinpoPopularHeroModalHeader">'+
+          '<h3 id="jinpoPopularHeroModalTitle">選抜人気英傑一覧</h3>'+
+          '<span id="jinpoPopularHeroModalCount" class="jinpoPopularHeroModalCount"></span>'+
+          '<button id="jinpoPopularHeroModalClose" type="button" aria-label="閉じる" title="閉じる"><span class="jinpoBondCloseIcon" aria-hidden="true">×</span><span class="jinpoBondCloseText">閉じる</span></button>'+
+        '</div>'+
+        '<div id="jinpoPopularHeroModalBody" class="jinpoPopularHeroModalBody"></div>'+
+      '</div>';
+    document.body.appendChild(backdrop);
+    document.getElementById('jinpoPopularHeroModalClose').addEventListener('click',closePopularHeroModal);
+    backdrop.addEventListener('click',function(ev){ if(ev.target===backdrop) closePopularHeroModal(); });
+    document.addEventListener('keydown', function(ev){ if(ev.key==='Escape' && backdrop.classList.contains('is-open')) closePopularHeroModal(); });
+  }
+  function closePopularHeroModal(){
+    var backdrop=document.getElementById('jinpoPopularHeroModalBackdrop');
+    if(!backdrop) return;
+    backdrop.classList.remove('is-open');
+    backdrop.setAttribute('aria-hidden','true');
+  }
+  function openPopularHeroModal(){
+    ensurePopularHeroModal();
+    var backdrop=document.getElementById('jinpoPopularHeroModalBackdrop');
+    var body=document.getElementById('jinpoPopularHeroModalBody');
+    var count=document.getElementById('jinpoPopularHeroModalCount');
+    if(!backdrop||!body) return;
+    backdrop.classList.add('is-open');
+    backdrop.setAttribute('aria-hidden','false');
+    body.innerHTML='<div class="jinpoPopularHeroModalError">読込中...</div>';
+    if(count) count.textContent='';
+    loadPopularSelectedHeroes().then(function(list){
+      body.innerHTML='<div class="jinpoPopularHeroList">'+list.map(function(item){
+        return '<div class="jinpoPopularHeroItem"><span class="jinpoPopularHeroIndex">'+item.index+'</span><span class="jinpoPopularHeroName">'+esc(item.name)+'</span></div>';
+      }).join('')+'</div>';
+      if(count) count.textContent=list.length+'名';
+    }).catch(function(err){
+      console.error('選抜人気英傑一覧読込エラー',err);
+      body.innerHTML='<div class="jinpoPopularHeroModalError">選抜人気英傑一覧を読み込めませんでした。</div>';
+      if(count) count.textContent='';
+    });
   }
 
   function ensureModal(){
@@ -1691,10 +1888,22 @@
   function boot(){
     injectStyle();
     window.JINPO_SELECTED_GRADE3_MODE = {isActive:specialModeOn,setActive:setSpecialMode,toggle:toggleSpecialMode};
+    window.JINPO_SEARCH_MODE_SELECTOR = {getMode:currentSearchMode,setMode:setSearchMode,sync:syncModeSelectorState};
+    window.__jinpoSyncModeSelector = syncModeSelectorState;
+    if(!window.__jinpoModeBackgroundLegacyGrade3SyncInstalled){
+      window.__jinpoModeBackgroundLegacyGrade3SyncInstalled = true;
+      document.addEventListener('click',function(ev){
+        var t=ev&&ev.target&&ev.target.closest?ev.target.closest('[data-grade3-toggle],.dbGradeToggleBtn'):null;
+        if(t) setTimeout(syncModeSelectorState,0);
+      },true);
+    }
     if(!window.__jinpoSelectedGrade3Bond56BridgeInstalled){
       window.__jinpoSelectedGrade3Bond56BridgeInstalled = true;
       window.addEventListener('jinpo:bond56-mode',function(ev){
-        try{ if(ev && ev.detail && ev.detail.active && specialModeOn()) setSpecialMode(false); }catch(e){}
+        try{
+          if(ev && ev.detail && ev.detail.active && specialModeOn()){ setSpecialModeVisual(false); writeGrade3ModeState(false); }
+          syncModeSelectorState();
+        }catch(e){}
       });
     }
     ensureActions();
