@@ -422,6 +422,10 @@
       '.jinpoRecommendBtn:hover{filter:brightness(1.15);box-shadow:0 0 12px rgba(231,189,92,.30);}',
       '.jinpoRecommendBtn.active{outline:2px solid #fff4b8;outline-offset:1px;box-shadow:0 0 13px rgba(255,239,170,.72),inset 0 0 8px rgba(255,255,255,.12);}',
       '.jinpoRecommendBtn[data-stat="生命"]{background:#fff;color:#111;border-color:#cfcfcf}.jinpoRecommendBtn[data-stat="気合"]{background:#cfefff;color:#102633;border-color:#78b8da}.jinpoRecommendBtn[data-stat="腕力"]{background:#c93333;color:#fff;border-color:#ff7777}.jinpoRecommendBtn[data-stat="耐久力"]{background:#245fc7;color:#fff;border-color:#70a0ff}.jinpoRecommendBtn[data-stat="器用さ"]{background:#3a9b55;color:#fff;border-color:#75d28d}.jinpoRecommendBtn[data-stat="知力"]{background:#f2d93b;color:#241f00;border-color:#fff083}.jinpoRecommendBtn[data-stat="魅力"]{background:#8b4bb4;color:#fff;border-color:#c88fe8}.jinpoRecommendBtn[data-stat="土属性"]{background:#fff1a8;color:#332800;border-color:#d9c35d}.jinpoRecommendBtn[data-stat="水属性"]{background:#73d7f3;color:#073340;border-color:#b5efff}.jinpoRecommendBtn[data-stat="火属性"]{background:#f3a0a0;color:#4b1111;border-color:#ffd0d0}.jinpoRecommendBtn[data-stat="風属性"]{background:#a8e2a6;color:#173a16;border-color:#d2f4d0}',
+      '#jinpoSpecialModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 100%;width:100%;max-width:100%;min-height:100px;margin:0;box-sizing:border-box;overflow:visible;}',
+      '#jinpoSpecialModeBtn{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto;min-width:0;height:clamp(96px,5.8vw,118px);margin:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible;cursor:pointer;box-sizing:border-box;}',
+      '#jinpoSpecialModeBtn:hover,#jinpoSpecialModeBtn:focus-visible{filter:brightness(1.08);outline:none;}',
+      '#jinpoSpecialModeBtn img{display:block;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:left center;pointer-events:none;user-select:none;-webkit-user-drag:none;}',
       '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
       '@media(min-width:761px){body.jinpo-recommend-active #jinpoBondNavRight{padding-right:80px;box-sizing:border-box;}}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
@@ -523,7 +527,7 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{display:none!important}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoSpecialModeRow{flex-wrap:wrap;gap:6px;min-height:0}#jinpoSpecialModeBtn{flex:1 1 100%;height:clamp(72px,18vw,100px)}#jinpoBondNavRight{width:100%;justify-content:flex-end}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:12px;padding:6px 8px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}#jinpoScrollTopBtn{display:none!important}#jinpoScrollTopBtn .jinpoScrollTopArrow{font-size:20px}.jinpoBondModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
       '@media(max-width:620px){#jinpoRecommendSearchOrderRow{grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center}#jinpoRecommendSearchOrderNote{grid-column:1 / -1;grid-row:1;font-size:16px;white-space:normal;line-height:1.25;padding:5px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:2;grid-row:2;justify-self:end;margin-top:2px !important}}'
     ].join('\n');
     document.head.appendChild(style);
@@ -739,8 +743,24 @@
     }
     ensureRecommendModeBadge();
     bindRecommendDecorListener();
+    var specialRow = document.getElementById('jinpoSpecialModeRow');
+    if(!specialRow){
+      specialRow=document.createElement('div');
+      specialRow.id='jinpoSpecialModeRow';
+      wrap.insertBefore(specialRow,recommend||null);
+    }
+    var specialBtn = document.getElementById('jinpoSpecialModeBtn');
+    if(!specialBtn){
+      specialBtn=document.createElement('button');
+      specialBtn.type='button';
+      specialBtn.id='jinpoSpecialModeBtn';
+      specialBtn.setAttribute('aria-label','選抜人気招喚鈴・巳＆等級３以下モード');
+      specialBtn.innerHTML='<img src="assets/jinpo-selected-grade3-mode-banner.png" alt="選抜人気招喚鈴・巳＆等級３以下モード">';
+    }
+    if(specialBtn.parentNode!==specialRow) specialRow.insertBefore(specialBtn,specialRow.firstChild);
     var right = document.getElementById('jinpoBondNavRight');
-    if(!right){right=document.createElement('div');right.id='jinpoBondNavRight';wrap.appendChild(right);}
+    if(!right){right=document.createElement('div');right.id='jinpoBondNavRight';}
+    if(right.parentNode!==specialRow) specialRow.appendChild(right);
     var allBtn = document.getElementById('jinpoBondAllBtn');
     if(!allBtn){
       allBtn = document.createElement('button');allBtn.type='button';allBtn.id='jinpoBondAllBtn';allBtn.className='jinpoBondNavBtn';allBtn.textContent='因縁一覧';
