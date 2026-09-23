@@ -14,6 +14,8 @@
   var modalOpenToken = 0;
   var activeModalOpenToken = 0;
   var activeCalculatedResult = null;
+  var specialModePreviousGrade3State = null;
+  var specialModeActive = false;
 
   /* 現在発動中因縁モーダルの表示座標。
      判定ラインは JINPO_FORMATION_CONFIG の activeLines を正本とし、ここでは表示座標だけを保持する。 */
@@ -100,6 +102,77 @@
       return (index ? '<span class="jinpoBondSlotFactorSep" aria-hidden="true">・</span>' : '')+
         '<span class="jinpoBondSlotFactor" data-factor="'+esc(normalize(factor))+'">'+esc(factor)+'</span>';
     }).join('');
+  }
+
+  function readGrade3ModeState(){
+    try{ if(typeof grade3Cost6OnlyEnabled !== 'undefined') return !!grade3Cost6OnlyEnabled; }catch(e){}
+    try{ return !!window.grade3Cost6OnlyEnabled; }catch(e){}
+    return false;
+  }
+  function writeGrade3ModeState(v){
+    var on=!!v;
+    try{ grade3Cost6OnlyEnabled = on; }catch(e){}
+    try{ window.grade3Cost6OnlyEnabled = on; }catch(e){}
+    return on;
+  }
+  function specialModeOn(){
+    try{ return !!(document.body && document.body.classList.contains('jinpo-selected-grade3-mode')); }catch(e){}
+    return !!specialModeActive;
+  }
+  function syncSpecialModeButtonState(){
+    var btn=document.getElementById('jinpoSpecialModeBtn');
+    if(!btn) return;
+    var on=specialModeOn();
+    btn.classList.toggle('is-active',on);
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.title=on?'選抜人気招喚鈴・巳＆等級３以下モード ON':'選抜人気招喚鈴・巳＆等級３以下モード OFF';
+  }
+  function syncSpecialModeSearchUi(){
+    try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
+    try{ if(typeof window.step75ApplyFormationGrade3ButtonState === 'function') window.step75ApplyFormationGrade3ButtonState(); }catch(e){}
+    try{ if(typeof updateTopButtons === 'function') updateTopButtons(); }catch(e){}
+    try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
+    var st=document.getElementById('dbListStatus');
+    if(st){
+      st.textContent=specialModeOn()
+        ? '選抜人気招喚鈴・巳＆等級３以下モード ON：専用モードに切り替わりました。'
+        : '選抜人気招喚鈴・巳＆等級３以下モード OFF：通常表示へ戻りました。';
+    }
+  }
+  function setSpecialMode(on,opts){
+    on=!!on;
+    opts=opts||{};
+    var body=document.body;
+    if(!body) return false;
+    if(on===specialModeOn()){
+      syncSpecialModeButtonState();
+      return on;
+    }
+    if(on){
+      specialModePreviousGrade3State = readGrade3ModeState();
+      try{
+        if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isBond56Mode === 'function' && window.JINPO_FAST_SEARCH.isBond56Mode() && typeof window.JINPO_FAST_SEARCH.setBond56Mode === 'function'){
+          window.JINPO_FAST_SEARCH.setBond56Mode(false);
+        }
+      }catch(e){}
+      writeGrade3ModeState(true);
+    }else{
+      if(specialModePreviousGrade3State !== null){
+        writeGrade3ModeState(specialModePreviousGrade3State);
+      }
+      specialModePreviousGrade3State = null;
+    }
+    specialModeActive = on;
+    body.classList.toggle('jinpo-selected-grade3-mode',on);
+    syncSpecialModeButtonState();
+    syncSpecialModeSearchUi();
+    try{
+      window.dispatchEvent(new CustomEvent('jinpo:selected-grade3-mode',{detail:{active:on}}));
+    }catch(e){}
+    return on;
+  }
+  function toggleSpecialMode(){
+    return setSpecialMode(!specialModeOn());
   }
 
   function renderActiveFactorUseBadgeContents(useSet){
@@ -425,7 +498,13 @@
       '#jinpoSpecialModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 100%;width:100%;max-width:100%;min-height:100px;margin:0;box-sizing:border-box;overflow:visible;}',
       '#jinpoSpecialModeBtn{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto;min-width:0;height:clamp(96px,5.8vw,118px);margin:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible;cursor:pointer;box-sizing:border-box;}',
       '#jinpoSpecialModeBtn:hover,#jinpoSpecialModeBtn:focus-visible{filter:brightness(1.08);outline:none;}',
+      '#jinpoSpecialModeBtn.is-active{filter:brightness(1.08) drop-shadow(0 0 12px rgba(255,170,255,.42)) drop-shadow(0 0 22px rgba(180,70,255,.28));}',
       '#jinpoSpecialModeBtn img{display:block;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:left center;pointer-events:none;user-select:none;-webkit-user-drag:none;}',
+      'body.jinpo-selected-grade3-mode{background:#10000d!important;background-image:none!important;background-attachment:fixed!important;position:relative;isolation:isolate;}',
+      'body.jinpo-selected-grade3-mode::before{content:"";position:fixed;inset:0;z-index:0;background:url("assets/jinpo-selected-grade3-mode-bg.png") center top / cover no-repeat;pointer-events:none;opacity:1;}',
+      'body.jinpo-selected-grade3-mode > *{position:relative;z-index:1;}',
+      'body.jinpo-selected-grade3-mode main,body.jinpo-selected-grade3-mode header{background:transparent!important;}',
+      'body.jinpo-selected-grade3-mode .card,body.jinpo-selected-grade3-mode .formationMiniPanel,body.jinpo-selected-grade3-mode .dbPriorityGroup,body.jinpo-selected-grade3-mode #jinpoSumPrioritySort,body.jinpo-selected-grade3-mode .jinpoSearchStatMode{background:linear-gradient(180deg,rgba(23,7,19,.82),rgba(9,3,12,.90))!important;border-color:rgba(255,173,233,.42)!important;box-shadow:0 0 18px rgba(219,114,255,.12),inset 0 0 18px rgba(255,255,255,.03)!important;backdrop-filter:blur(1.5px);}',
       '#jinpoBondNavRight{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;margin-left:auto;}',
       '@media(min-width:761px){body.jinpo-recommend-active #jinpoBondNavRight{padding-right:80px;box-sizing:border-box;}}',
       '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
@@ -756,7 +835,9 @@
       specialBtn.id='jinpoSpecialModeBtn';
       specialBtn.setAttribute('aria-label','選抜人気招喚鈴・巳＆等級３以下モード');
       specialBtn.innerHTML='<img src="assets/jinpo-selected-grade3-mode-banner.png" alt="選抜人気招喚鈴・巳＆等級３以下モード">';
+      specialBtn.addEventListener('click',function(ev){ ev.preventDefault(); toggleSpecialMode(); });
     }
+    syncSpecialModeButtonState();
     if(specialBtn.parentNode!==specialRow) specialRow.insertBefore(specialBtn,specialRow.firstChild);
     var right = document.getElementById('jinpoBondNavRight');
     if(!right){right=document.createElement('div');right.id='jinpoBondNavRight';}
@@ -1609,6 +1690,13 @@
 
   function boot(){
     injectStyle();
+    window.JINPO_SELECTED_GRADE3_MODE = {isActive:specialModeOn,setActive:setSpecialMode,toggle:toggleSpecialMode};
+    if(!window.__jinpoSelectedGrade3Bond56BridgeInstalled){
+      window.__jinpoSelectedGrade3Bond56BridgeInstalled = true;
+      window.addEventListener('jinpo:bond56-mode',function(ev){
+        try{ if(ev && ev.detail && ev.detail.active && specialModeOn()) setSpecialMode(false); }catch(e){}
+      });
+    }
     ensureActions();
     ensureModal();
     ensureActiveModal();
