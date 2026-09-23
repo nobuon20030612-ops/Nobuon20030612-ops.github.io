@@ -4340,7 +4340,7 @@ function addChinkonfuTotal(total, name, value){
 function applyChinkonfuStatsToRow(total){
   const rows = [...document.querySelectorAll("#sheet table tr")];
   const row = rows.find(tr =>
-    [...tr.cells].some(td => (td.innerText || "").trim() === "鎮魂符")
+    [...tr.cells].some(td => (td.textContent || "").trim() === "鎮魂符")
   );
   if(!row){
     alert("鎮魂符 の行が見つかりません");
@@ -5069,7 +5069,7 @@ function applyTsukumoSelection(){
 function applyStatsToRow(label, total){
   const rows = [...document.querySelectorAll("#sheet table tr")];
   const row = rows.find(tr =>
-  [...tr.cells].some(td => (td.innerText || "").trim() === label)
+  [...tr.cells].some(td => (td.textContent || "").trim() === label)
 );
   if(!row){
     alert(label + " の行が見つかりません");
