@@ -567,8 +567,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">配置英傑：未選択</div>
   </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
-
-  <section class="card totalStatPanel">
+<section class="card totalStatPanel">
   <div class="totalStatHeader">
     <strong>※正確な数値ではありません【ステータス表示は参考程度にご覧下さい】</strong>
     <span id="totalStatMode" class="totalStatMode"></span>
@@ -582,6 +581,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     <div id="eiketsuKishinsekiCombinedResult" class="totalStatGrid eiketsuKishinsekiCombinedGrid"></div>
   </div>
 </section>
+
 
   <section class="formationMiniPanel">
   <h2>陣形ライン</h2>
@@ -5933,23 +5933,35 @@ body{padding-top:0 !important;}
 @media (max-width:900px){
   html,
   body{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
     -webkit-text-size-adjust:100% !important;
   }
+
   body{
     box-sizing:border-box !important;
     padding-bottom:calc(96px + env(safe-area-inset-bottom)) !important;
   }
+
   main,
   .card,
   #dbCountBrowserCard,
   #dbCountBrowserCard *{
     box-sizing:border-box !important;
   }
+
   main,
   .card,
   #dbCountBrowserCard{
-    margin-left:0 !important; margin-right:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+    overflow-x:hidden !important;
   }
+
   .totalStatPanel{
     left:0 !important;
     right:0 !important;
@@ -5958,36 +5970,44 @@ body{padding-top:0 !important;}
     overflow:hidden !important;
     padding:10px 10px calc(10px + env(safe-area-inset-top) * 0) 10px !important;
   }
+
   .totalStatHeader{
     gap:4px !important;
     margin-bottom:6px !important;
   }
+
   .totalStatHeader strong{
     font-size:16px !important;
   }
+
   .totalStatMode{
     font-size:11px !important;
   }
+
   .totalStatGrid{
     grid-template-columns:repeat(3,minmax(0,1fr)) !important;
     gap:6px !important;
   }
+
   .totalStatItem{
     min-width:0 !important;
     padding:6px 4px !important;
   }
+
   .totalStatItem .statName{
     font-size:11px !important;
     white-space:nowrap !important;
     overflow:hidden !important;
     text-overflow:ellipsis !important;
   }
+
   .totalStatItem .statVal{
     font-size:20px !important;
     white-space:nowrap !important;
     overflow:hidden !important;
     text-overflow:ellipsis !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop{
     display:block !important;
     width:100% !important;
@@ -6002,6 +6022,7 @@ body{padding-top:0 !important;}
     background:rgba(0,0,0,.10) !important;
     overflow:hidden !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.row{
     display:grid !important;
     grid-template-columns:1fr !important;
@@ -6017,23 +6038,34 @@ body{padding-top:0 !important;}
     border-radius:10px !important;
     background:rgba(40,20,10,.32) !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop label{
-    display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; font-size:22px !important; line-height:1.2 !important;
+    display:block !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    font-size:22px !important;
+    line-height:1.2 !important;
+    white-space:normal !important;
   }
+
   #formationSelect,
   #clearBtn{
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
   }
+
   #formationSelect{
     min-height:54px !important;
     font-size:22px !important;
   }
+
   #clearBtn{
     min-height:48px !important;
     font-size:17px !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel{
     display:block !important;
     position:relative !important;
@@ -6054,11 +6086,13 @@ body{padding-top:0 !important;}
     border-radius:12px !important;
     background:rgba(0,0,0,.18) !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel h2{
     margin:0 0 6px 0 !important;
     font-size:16px !important;
     line-height:1.1 !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView,
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel .formation{
     width:100% !important;
@@ -6068,6 +6102,7 @@ body{padding-top:0 !important;}
     min-height:235px !important;
     overflow:hidden !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot{
     width:92px !important;
     max-width:92px !important;
@@ -6076,14 +6111,17 @@ body{padding-top:0 !important;}
     font-size:9px !important;
     line-height:1.05 !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{
     font-size:10px !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{
     font-size:7px !important;
     max-height:14px !important;
     line-height:1.05 !important;
   }
+
   #ownedHeroControl,
   .ownedHeroControl,
   #dbCountBrowserCard .dbFormationSelectTop>#ownedHeroControl{
@@ -6096,6 +6134,7 @@ body{padding-top:0 !important;}
     margin:8px 0 !important;
     padding:0 !important;
   }
+
   .ownedHeroBtn,
   .ownedHeroClearBtn{
     flex:1 1 calc(50% - 8px) !important;
@@ -6106,10 +6145,12 @@ body{padding-top:0 !important;}
     text-overflow:ellipsis !important;
     min-height:44px !important;
   }
+
   .ownedHeroSelected{
     flex:1 1 100% !important;
     max-width:100% !important;
   }
+
   #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons,
   #dbCountButtons{
     display:grid !important;
@@ -6121,6 +6162,7 @@ body{padding-top:0 !important;}
     margin:8px 0 0 0 !important;
     padding:0 !important;
   }
+
   #dbCountButtons .dbCountBtn,
   #dbCountButtons button,
   #dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons .dbCountBtn{
@@ -6133,15 +6175,24 @@ body{padding-top:0 !important;}
     font-size:14px !important;
     white-space:nowrap !important;
   }
+
   .dbPriorityControls{
-    display:grid !important; width:100% !important; max-width:100% !important; min-width:0 !important; gap:10px !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    gap:10px !important;
+    overflow:hidden !important;
   }
+
   .dbPriorityGroup,
   .dbPriorityGroup select{
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
   }
+
   #dbFormationList.dbListBox,
   .dbListBox{
     width:100% !important;
@@ -6150,60 +6201,53 @@ body{padding-top:0 !important;}
     overflow-y:visible !important;
     -webkit-overflow-scrolling:touch !important;
   }
+
   #dbFormationList .dbListTable,
   .dbListBox .dbListTable{
-    display:table !important; table-layout:fixed !important; font-size:11px !important;
+    display:table !important;
+    width:920px !important;
+    min-width:920px !important;
+    max-width:none !important;
+    table-layout:fixed !important;
+    font-size:11px !important;
   }
-  #dbFormationList .dbListTable thead{
-    display:table-header-group !important;
-  }
-  #dbFormationList .dbListTable tbody{
-    display:table-row-group !important;
-  }
-  #dbFormationList .dbListTable tr{
-    display:table-row !important;
-  }
+
+  #dbFormationList .dbListTable thead{display:table-header-group !important;}
+  #dbFormationList .dbListTable tbody{display:table-row-group !important;}
+  #dbFormationList .dbListTable tr{display:table-row !important;}
   #dbFormationList .dbListTable th,
-  #dbFormationList .dbListTable td{
-    display:table-cell !important;
-  }
+  #dbFormationList .dbListTable td{display:table-cell !important;}
+
   #dbFormationList .dbListTable th:nth-child(1),
-  #dbFormationList .dbListTable td:nth-child(1){
-    width:74px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(1){width:74px !important;}
   #dbFormationList .dbListTable th:nth-child(2),
-  #dbFormationList .dbListTable td:nth-child(2){
-    width:68px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(2){width:68px !important;}
   #dbFormationList .dbListTable th:nth-child(3),
-  #dbFormationList .dbListTable td:nth-child(3){
-    width:76px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(3){width:76px !important;}
   #dbFormationList .dbListTable th:nth-child(4),
-  #dbFormationList .dbListTable td:nth-child(4){
-    width:240px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(4){width:240px !important;}
   #dbFormationList .dbListTable th:nth-child(5),
-  #dbFormationList .dbListTable td:nth-child(5){
-    width:230px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(5){width:230px !important;}
   #dbFormationList .dbListTable th:nth-child(6),
-  #dbFormationList .dbListTable td:nth-child(6){
-    width:232px !important;
-  }
+  #dbFormationList .dbListTable td:nth-child(6){width:232px !important;}
+
   #dbFormationList .dbPlacementMini{
     min-width:0 !important;
     width:100% !important;
     grid-template-columns:repeat(6,minmax(0,1fr)) !important;
   }
+
+
   #appliedRowPreviewUnderFormation{
     width:100% !important;
     max-width:100% !important;
     overflow:hidden !important;
   }
+
   #appliedRowPreviewUnderFormation .appliedPreviewGrid{
     grid-template-columns:1fr !important;
   }
+
   .mobileActionBar{
     padding-bottom:calc(8px + env(safe-area-inset-bottom)) !important;
     z-index:30000 !important;
