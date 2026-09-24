@@ -762,17 +762,17 @@
     return badge;
   }
   function syncRecommendBottomSpacer(active){
-    var el=document.getElementById('jinpoRecommendBottomSpacer');
+    var spacer=document.getElementById('jinpoRecommendBottomSpacer');
     if(active){
-      if(!el){
-        el=document.createElement('div');
-        el.id='jinpoRecommendBottomSpacer';
-        el.setAttribute('aria-hidden','true');
-        el.style.cssText='height:88px;width:1px;pointer-events:none;';
-        document.body.appendChild(el);
+      if(!spacer){
+        spacer=document.createElement('div');
+        spacer.id='jinpoRecommendBottomSpacer';
+        spacer.setAttribute('aria-hidden','true');
+        spacer.style.cssText='height:88px;width:1px;pointer-events:none;';
+        document.body.appendChild(spacer);
       }
-    }else if(el){
-      el.remove();
+    }else if(spacer){
+      spacer.remove();
     }
   }
   function updateRecommendDecor(detail){
