@@ -1,0 +1,15 @@
+{
+  "base": "陣法_オープニング本番統合版_ページ表示時自動開始版",
+  "base_sha256": "6a07a45071c46dbf35aa5808b95759e1a1cdbb219af893af2f052acac7883107",
+  "output_sha256": "0a4846b9ecaf42291e2a1d7638d2abc37bee153f3617d2cacecc31a3bd813fc5",
+  "changes": [
+    "演出用4モード複製表示を完全削除",
+    "モードDOM複製・位置同期・handoff処理を完全削除",
+    "背後の実サイト本体のモードだけを表示",
+    "ページ表示時自動開始を維持",
+    "女性・字幕・琴効果音を変更せず維持"
+  ],
+  "guide_asset_unchanged": true,
+  "soundtrack_asset_unchanged": true,
+  "existing_site_core_dom_preserved": true
+}

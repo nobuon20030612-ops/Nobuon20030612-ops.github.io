@@ -566,7 +566,7 @@
     var fb=ev.target&&ev.target.closest?ev.target.closest('button[data-factor4-exclude]'):null;if(fb){ev.preventDefault();selectedExclude=Number(fb.getAttribute('data-factor4-exclude'))||0;syncFactor4();renderCurrent({count:selectedCount()});return;}
     var b=ev.target&&ev.target.closest?ev.target.closest('button[data-unified-db-idx]'):null;if(!b)return;var row=displayRows[Number(b.getAttribute('data-unified-db-idx'))];if(!row)return;ev.preventDefault();cancelHitCountWorker();appliedListRowKey=stableRowKey(row);markAppliedRowVisual(b);
     /* 適用クリックでは一覧500件を再生成しない。先に即時で上部へ1回だけ移動し、重い再計算は次フレームへ譲る。 */
-    try{var top=q('totalStatResult');if(top&&typeof top.scrollIntoView==='function')top.scrollIntoView({behavior:'auto',block:'center'});}catch(e){}
+    try{if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function')window.__jinpoScrollToRecommendSearchTopOnce('auto');}catch(e){}
     var applyNow=function(){try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}};
     /* スクロール位置を確定させた次フレームで軽量適用。余分な setTimeout を挟まない。 */
     if(typeof requestAnimationFrame==='function')requestAnimationFrame(applyNow);else setTimeout(applyNow,0);
