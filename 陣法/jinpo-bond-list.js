@@ -578,7 +578,6 @@
       '.jinpoModeChoiceBtn.is-active{border-color:#fff5b5;box-shadow:0 0 7px rgba(255,255,255,.95),0 0 17px rgba(255,224,94,.95),0 0 31px rgba(255,137,35,.66),inset 0 0 10px rgba(255,255,255,.24);filter:brightness(1.08);}',
       '.jinpoModeChoiceBtn img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;pointer-events:none;user-select:none;-webkit-user-drag:none;}',
       '#jinpoSpecialModeBtn{overflow:visible;}',
-      '#jinpoSpecialModeBtn img{transform:scale(1.10);transform-origin:center center;}',
       '@media(max-width:1250px){#jinpoModeButtonGroup{flex-basis:100%}}',
       '@media(max-width:760px){#jinpoModeSelectHeader{gap:8px;margin-bottom:4px}#jinpoModeSelectHeader .jinpoModeSelectArrow{flex-basis:68px;width:68px;height:70px}#jinpoModeSelectHeader .jinpoModeSelectArrow::before{width:22px;height:32px}#jinpoModeSelectHeader .jinpoModeSelectArrow::after{top:29px;border-left-width:28px;border-right-width:28px;border-top-width:34px}#jinpoModeSelectHeader .jinpoModeSelectText{font-size:22px;padding:4px 12px 6px}#jinpoModeButtonGroup{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.jinpoModeChoiceWrap{padding-top:33px}.jinpoModeChoiceLabel{font-size:16px;min-width:100px;padding:4px 12px;top:-2px}#jinpoPopularHeroListBtn{font-size:14px;padding:8px 8px}}',
       '@media(max-width:430px){#jinpoModeButtonGroup{grid-template-columns:1fr}}',

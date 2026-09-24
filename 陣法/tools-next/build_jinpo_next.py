@@ -530,8 +530,13 @@ def main():
     required_popular_layer='body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}'
     if required_popular_layer not in bond_list_text:
         fail('選抜人気背景の前面化対象がheader/mainへ限定されていません', report)
-    if '#jinpoScrollTopBtn{position:fixed;' not in bond_list_text:
-        fail('上へ戻るボタンのfixed配置が失われています', report)
+    # 現行仕様：旧 #jinpoScrollTopBtn の fixed 配置は廃止済み。
+    # 上へ戻る操作は #jinpoBackBtn をおすすめ検索順序行の右端に配置する。
+    if '#jinpoScrollTopBtn' in bond_list_text or 'ensureScrollTopButton' in bond_list_text:
+        fail('廃止済みの上へ戻るfixed経路が復活しています', report)
+    required_back_layout='#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:3;justify-self:end;margin:0 !important;}'
+    if required_back_layout not in bond_list_text:
+        fail('上へ戻るボタンの現行右寄せ配置が失われています', report)
     report['popular_fixed_ui_flow_guard']=True
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
         fail('同名英傑を1IDへ潰す旧Workerマップを検出', report)
