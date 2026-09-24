@@ -459,7 +459,7 @@ def main():
                 fail(f'禁止仕様/旧方式の残骸を検出: {name}: {frag}', report)
 
     required_fast_fragments = [
-        'var LIMIT=500',
+        'var LIMIT=500,HIT_CAP=100000',
         'ステータスのみ選択時は高い順で表示します',
         '検索結果は各ステータスで並べ替えできます',
         'jinpoResultHitValue',
@@ -518,24 +518,42 @@ def main():
         fail('選抜人気おすすめ検索の検索モード固定が優先UI変更より後になっています', report)
     if "function dbMode(q){return q&&q.mode==='popular'?'popular':(q&&q.mode==='grade3'?'grade3':'normal');}" in worker_text:
         fail('不正/欠落検索モードを通常DBへ落とす旧フォールバックが残っています', report)
-    if "throw new Error('統一検索モードが不正です: '+(mode||'(empty)'))" not in worker_text:
+    if not re.search(r"throw\s+new\s+Error\s*\([^;]*mode[^;]*\)",worker_text,re.S):
         fail('不正/欠落検索モードをエラー停止するガードがありません', report)
     report['popular_recommend_mode_guard']=True
     report['invalid_mode_normal_fallback_removed']=True
+
+    recommend_counts_match=re.search(
+        r"function\s+recommendCounts\s*\(mode,m\)\s*\{.*?mode===['\"]grade3['\"]\?\[5,6,7,8,9\]\s*:\s*\(mode===['\"]popular['\"]\?\[6,7,8,9\]\s*:\s*\[7,8,9\]\)",
+        worker_text,re.S
+    )
+    if not recommend_counts_match:
+        fail('おすすめ検索の現行因縁数契約（通常7〜9／等級3以下5〜9／選抜人気6〜9）が崩れています', report)
+    report['recommend_count_contract']=True
 
     # 選抜人気背景CSSが body 直下の固定UI/モーダルまで position:relative に変える事故を禁止。
     bond_list_text=(SITE/'jinpo-bond-list.js').read_text(encoding='utf-8')
     if 'body.jinpo-selected-grade3-mode > *{position:relative;z-index:1;}' in bond_list_text or 'body.jinpo-selected-grade3-mode > *:not(' in bond_list_text:
         fail('選抜人気CSSにbody直下全要素へのposition上書きが残っています', report)
-    required_popular_layer='body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}'
-    if required_popular_layer not in bond_list_text:
+    popular_layer_match=re.search(
+        r'body\.jinpo-selected-grade3-mode\s*>\s*header\s*,\s*body\.jinpo-selected-grade3-mode\s*>\s*main\s*\{(?P<body>[^}]*)\}',
+        bond_list_text,re.S
+    )
+    if not popular_layer_match or not re.search(r'position\s*:\s*relative',popular_layer_match.group('body')) or not re.search(r'z-index\s*:\s*1',popular_layer_match.group('body')):
         fail('選抜人気背景の前面化対象がheader/mainへ限定されていません', report)
     # 現行仕様：旧 #jinpoScrollTopBtn の fixed 配置は廃止済み。
     # 上へ戻る操作は #jinpoBackBtn をおすすめ検索順序行の右端に配置する。
     if '#jinpoScrollTopBtn' in bond_list_text or 'ensureScrollTopButton' in bond_list_text:
         fail('廃止済みの上へ戻るfixed経路が復活しています', report)
-    required_back_layout='#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:3;justify-self:end;margin:0 !important;}'
-    if required_back_layout not in bond_list_text:
+    if 'formation-free-space' in index_text:
+        fail('廃止済みの因縁数称号の空き領域逃避経路が復活しています', report)
+    if '#dbFormationList .dbListBonds{' in index_text or '#dbFormationList .dbListStat{' in index_text:
+        fail('廃止済みの検索結果強制改行CSSが復活しています', report)
+    back_layout_match=re.search(
+        r'#jinpoRecommendSearchOrderRow\s+#jinpoBackBtn\.jinpoBackBtn\s*\{(?P<body>[^}]*)\}',
+        bond_list_text,re.S
+    )
+    if not back_layout_match or not re.search(r'grid-column\s*:\s*3',back_layout_match.group('body')) or not re.search(r'justify-self\s*:\s*end',back_layout_match.group('body')):
         fail('上へ戻るボタンの現行右寄せ配置が失われています', report)
     report['popular_fixed_ui_flow_guard']=True
     if '_heroNameToId=' in worker_text or '_heroNameToId =' in worker_text:
@@ -587,11 +605,11 @@ def main():
             'occurrences:[occurrence]', 'activated: activatedFlat', 'activatedOccurrences', 'factor4Slots: factor4Plan.slots.slice()', 'chooseMinimalFactor4Plan', 'heroInternalId:',
         ],
         'jinpo-bond-list.js': [
-            'jinpoRecommendNav', 'おすすめ陣法', 'jinpoRecommendExitBtn',
+            'jinpoRecommendNav', 'jinpoRecommendExitBtn',
             'jinpoRecommendModeBadge', 'jinpoRecommendModeNotice', 'jinpoRecommendSumGuide',
-            
-            'おすすめモード中は5〜9因縁の通常検索は使用できません',
-            '※第1・第2優先の数値条件を指定すると、その条件に応じて検索結果も変わります',
+            'function applyRecommendTheme(active,targetStat)', 'function updateRecommendDecor(detail)',
+            'function ensureRecommendSumGuide()', "notice.id='jinpoRecommendModeNotice'", "guide.id='jinpoRecommendSumGuide'",
+            'jinpoRecommendSearchOrderNote',
             "['生命','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力']",
             "['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']",
         ],
