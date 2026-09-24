@@ -555,7 +555,6 @@
       '@keyframes jinpoRecommendModeFloat{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}',
       '@keyframes jinpoRecommendModePulse{from{opacity:.86}to{opacity:1}}',
       '@media(prefers-reduced-motion:reduce){#jinpoRecommendModeBadge.is-active,#jinpoRecommendNav,.jinpoRecommendLabel{animation:none!important;}}',
-      'body.jinpo-recommend-active main{padding-bottom:96px;}',
       '.jinpoRecommendBtn{flex:1 1 0;min-width:46px;min-height:38px;padding:6px 7px;border-radius:10px;border:1px solid #9a7538;background:linear-gradient(#382718,#17100a);color:#f7e9c9;font-size:13px;font-weight:950;line-height:1;cursor:pointer;white-space:nowrap;box-sizing:border-box;}',
       '.jinpoRecommendBtn:hover{filter:brightness(1.15);box-shadow:0 0 12px rgba(231,189,92,.30);}',
       '.jinpoRecommendBtn.active{outline:2px solid #fff4b8;outline-offset:1px;box-shadow:0 0 13px rgba(255,239,170,.72),inset 0 0 8px rgba(255,255,255,.12);}',
@@ -701,7 +700,7 @@
       '.jinpoBondFactor{display:inline-block;padding:3px 7px;border:1px solid rgba(231,189,92,.38);border-radius:7px;background:rgba(0,0,0,.28);color:#f2e4c5;white-space:nowrap;}',
       '.jinpoBondEmpty{padding:32px 10px;text-align:center;color:#cdbb96;}',
       '@media(max-width:1250px){#jinpoRecommendNav{flex-basis:100%;order:1}.jinpoBondNavRight{order:2;width:100%}}',
-      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoBondNavLeft{top:-44px;gap:5px;max-width:92vw;flex-wrap:nowrap}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoSpecialModeRow{flex-wrap:wrap;gap:6px;min-height:0}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:18px;padding:9px 10px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;bottom:66px;max-width:calc(100vw - 12px);padding:9px 13px;border-radius:12px;font-size:16px;letter-spacing:.03em}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModeFloat 1.8s ease-in-out infinite,jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}.jinpoBondModalHeader h3,.jinpoPopularHeroModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoPopularHeroList{grid-template-columns:1fr}.jinpoPopularHeroName{font-size:16px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
+      '@media(max-width:760px){#jinpoBondNavActions{gap:6px}#jinpoBondNavLeft{top:-44px;gap:5px;max-width:92vw;flex-wrap:nowrap}#jinpoRecommendSearchOrderRow{grid-template-columns:112px minmax(0,1fr) 112px;gap:5px}#jinpoRecommendSearchOrderNote{font-size:18px;padding:7px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{min-width:104px !important;width:104px !important;font-size:14px !important}#jinpoSpecialModeRow{flex-wrap:wrap;gap:6px;min-height:0}#jinpoRecommendNav{overflow-x:auto;padding:5px 5px 6px;border-radius:12px}.jinpoRecommendLabel{font-size:15px;padding:5px 7px;margin-right:2px}.jinpoRecommendExitBtn{min-width:94px;min-height:36px;font-size:12px;padding:6px 8px}.jinpoRecommendModeNotice{font-size:18px;padding:9px 10px}#jinpoRecommendSumGuide{font-size:15px;padding:10px 12px;margin-bottom:8px}.jinpoRecommendBtn{flex:0 0 52px;font-size:12px;padding:6px 5px;min-height:36px}.jinpoBondNavBtn{font-size:13px;padding:7px 10px;min-height:36px}#jinpoRecommendModeBadge{right:6px;top:auto;bottom:66px;min-width:0;max-width:calc(100vw - 12px);min-height:0;padding:9px 13px;border-radius:12px;writing-mode:horizontal-tb;text-orientation:mixed;font-size:16px;letter-spacing:.03em;transform:none}#jinpoRecommendModeBadge.is-active{display:flex;flex-direction:row;gap:8px;animation:jinpoRecommendModePulse 1.2s ease-in-out infinite alternate}#jinpoRecommendModeBadge .jinpoRecommendModeBadgeStat{margin:0 0 0 6px;padding:0 0 0 8px;border-top:0;border-left:1px solid var(--jinpo-rec-accent,rgba(255,235,170,.55));font-size:13px}.jinpoBondModalHeader h3,.jinpoPopularHeroModalHeader h3{font-size:18px}#jinpoActiveBondModal{width:calc(100vw - 8px);max-height:98vh}.jinpoPopularHeroList{grid-template-columns:1fr}.jinpoPopularHeroName{font-size:16px}.jinpoBondTable{font-size:13px}.jinpoBondTable th:nth-child(2),.jinpoBondTable td:nth-child(2){display:none}.jinpoBondTable th,.jinpoBondTable td{padding:8px 6px}}',
       '@media(max-width:620px){#jinpoRecommendSearchOrderRow{grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center}#jinpoRecommendSearchOrderNote{grid-column:1 / -1;grid-row:1;font-size:16px;white-space:normal;line-height:1.25;padding:5px 4px}#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:2;grid-row:2;justify-self:end;margin-top:2px !important}}'
     ].join('\n');
     document.head.appendChild(style);
@@ -762,12 +761,27 @@
     document.body.appendChild(badge);
     return badge;
   }
+  function syncRecommendBottomSpacer(active){
+    var el=document.getElementById('jinpoRecommendBottomSpacer');
+    if(active){
+      if(!el){
+        el=document.createElement('div');
+        el.id='jinpoRecommendBottomSpacer';
+        el.setAttribute('aria-hidden','true');
+        el.style.cssText='height:88px;width:1px;pointer-events:none;';
+        document.body.appendChild(el);
+      }
+    }else if(el){
+      el.remove();
+    }
+  }
   function updateRecommendDecor(detail){
     detail=detail||{};
     recommendDecorState.active=!!detail.active;
     recommendDecorState.targetStat=recommendDecorState.active?text(detail.targetStat):'';
     recommendDecorState.secondaryStat=recommendDecorState.active?text(detail.secondaryStat):'';
     var active=recommendDecorState.active;
+    syncRecommendBottomSpacer(active);
     applyRecommendTheme(active,recommendDecorState.targetStat);
     var exitBtn=document.getElementById('jinpoRecommendExitBtn');
     if(exitBtn){
