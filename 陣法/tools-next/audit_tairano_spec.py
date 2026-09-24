@@ -32,6 +32,7 @@ EXPECTED_TOOL_FILES={
  'rebuild_all_compact.py','rebuild_fullmax_search.py','rebuild_recommend_sum_top.py','rebuild_top500.py','sync_eiketsu_master.py',
  'build_bond56_index.py','bond56_index_builder.cpp',
  'audit_bond56_index_independent.py','audit_combination_completeness_independent.py',
+ 'audit_popular_runtime_integrity.py','audit_popular_search_independent.py','build_popular_search.py',
 }
 
 def fail(msg):
