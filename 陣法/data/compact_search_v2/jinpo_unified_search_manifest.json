@@ -1,5 +1,5 @@
 {
-  "version": "unified-v2-top500-recsum-fullmax-d1426c8296e0",
+  "version": "unified-v2-top500-recsum-fullmax-d276c62decc9",
   "magic": "JCF1",
   "header_size": 16,
   "record_size": 52,
@@ -970,11 +970,11 @@
   },
   "notes": [
     "たいらの式: 現行正本から毎回完全再生成。",
+    "選抜人気モード: 画像指定20英傑＋等級3以下全員の専用検索DB（6～9因縁）",
     "default and priority top datasets rebuilt from current full DB",
     "Top500正式運用",
     "おすすめ陣法の第1＋第2合計Top500を事前生成（因縁数混在・陣形別）",
-    "全MAX込み合計検索用ステータスsidecar＋おすすめTop500を事前生成",
-    "選抜人気モード: 画像指定20英傑＋等級3以下全員の専用検索DB（6～9因縁）"
+    "全MAX込み合計検索用ステータスsidecar＋おすすめTop500を事前生成"
   ],
   "fullmax_stats": {
     "normal": {
@@ -1652,6 +1652,128 @@
           "gzip_bytes": 33,
           "raw_bytes": 16,
           "sha256_16": "4adb1c1cb59785dd"
+        }
+      }
+    },
+    "popular": {
+      "6": {
+        "衡軛": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c6_kouyaku_v2.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 2553,
+          "raw_bytes": 5060,
+          "sha256_16": "c8f787c36a8e0ead"
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c6_kakuyoku_v2.bin.gz",
+          "rows": 97,
+          "gzip_bytes": 2552,
+          "raw_bytes": 5060,
+          "sha256_16": "712d3f073b827d44"
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c6_gyorin_v2.bin.gz",
+          "rows": 500,
+          "gzip_bytes": 12112,
+          "raw_bytes": 26016,
+          "sha256_16": "bb183a3bdb02a63c"
+        },
+        "方円": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c6_hoen_v2.bin.gz",
+          "rows": 500,
+          "gzip_bytes": 12182,
+          "raw_bytes": 26016,
+          "sha256_16": "c444743cb67f23a6"
+        }
+      },
+      "7": {
+        "衡軛": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c7_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "9d4fd35055927f60"
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c7_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "bd6ffdd72acdfab3"
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c7_gyorin_v2.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 10629,
+          "raw_bytes": 22896,
+          "sha256_16": "eddbcc727463100a"
+        },
+        "方円": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c7_hoen_v2.bin.gz",
+          "rows": 440,
+          "gzip_bytes": 10589,
+          "raw_bytes": 22896,
+          "sha256_16": "10a45be71286b71e"
+        }
+      },
+      "8": {
+        "衡軛": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c8_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "c13e5c25bd530e7d"
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c8_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "96d4632560d01f85"
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c8_gyorin_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "2cdb2b3903d498ed"
+        },
+        "方円": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c8_hoen_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "eaf53369860b1696"
+        }
+      },
+      "9": {
+        "衡軛": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c9_kouyaku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "3026ee2189478594"
+        },
+        "鶴翼": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c9_kakuyoku_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "457b9d7dce989569"
+        },
+        "魚鱗": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c9_gyorin_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "6557f0d7273646ec"
+        },
+        "方円": {
+          "file": "data/compact_search_v2/jinpo_top_popular_c9_hoen_v2.bin.gz",
+          "rows": 0,
+          "gzip_bytes": 33,
+          "raw_bytes": 16,
+          "sha256_16": "8d942f91d463af56"
         }
       }
     }
@@ -4201,6 +4323,1280 @@
             "gzip_bytes": 33,
             "raw_bytes": 16,
             "sha256_16": "4adb1c1cb59785dd"
+          }
+        }
+      }
+    },
+    "popular": {
+      "6": {
+        "衡軛": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_00_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2571,
+            "raw_bytes": 5060,
+            "sha256_16": "53e3345491fdecf8"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_01_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2551,
+            "raw_bytes": 5060,
+            "sha256_16": "076b3a412a7ca940"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_02_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2569,
+            "raw_bytes": 5060,
+            "sha256_16": "c05011dd6073298d"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_03_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2561,
+            "raw_bytes": 5060,
+            "sha256_16": "2c2f4460c370f6c8"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_04_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2560,
+            "raw_bytes": 5060,
+            "sha256_16": "bb7a5ade2fac555c"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_05_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2560,
+            "raw_bytes": 5060,
+            "sha256_16": "779508f931a05e66"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_06_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2562,
+            "raw_bytes": 5060,
+            "sha256_16": "409fd263ca784d57"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_07_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2534,
+            "raw_bytes": 5060,
+            "sha256_16": "a5c849c9cb67dbaf"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_08_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2533,
+            "raw_bytes": 5060,
+            "sha256_16": "a9a638f9eedc80dd"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_09_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2542,
+            "raw_bytes": 5060,
+            "sha256_16": "a07e47d9ab2e6d48"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kouyaku_10_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2536,
+            "raw_bytes": 5060,
+            "sha256_16": "d91a95f650d492c7"
+          }
+        },
+        "鶴翼": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_00_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2575,
+            "raw_bytes": 5060,
+            "sha256_16": "198de38eee634bcd"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_01_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2551,
+            "raw_bytes": 5060,
+            "sha256_16": "4a75e0c163507b85"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_02_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2570,
+            "raw_bytes": 5060,
+            "sha256_16": "558522538c682b51"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_03_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2554,
+            "raw_bytes": 5060,
+            "sha256_16": "ea78cb6e36218619"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_04_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2564,
+            "raw_bytes": 5060,
+            "sha256_16": "00ace110f5c34239"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_05_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2560,
+            "raw_bytes": 5060,
+            "sha256_16": "b7fe8e2113655151"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_06_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2563,
+            "raw_bytes": 5060,
+            "sha256_16": "1574c58f09329b1a"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_07_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2532,
+            "raw_bytes": 5060,
+            "sha256_16": "f79b22accb0b8be5"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_08_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2528,
+            "raw_bytes": 5060,
+            "sha256_16": "5d909a885d242228"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_09_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2534,
+            "raw_bytes": 5060,
+            "sha256_16": "116ce30411cd5d0e"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_kakuyoku_10_v2.bin.gz",
+            "rows": 97,
+            "gzip_bytes": 2533,
+            "raw_bytes": 5060,
+            "sha256_16": "1e9ea544f6a7a8c3"
+          }
+        },
+        "魚鱗": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_00_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 14628,
+            "raw_bytes": 26016,
+            "sha256_16": "7d31b38b8c9fe508"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_01_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 11306,
+            "raw_bytes": 26016,
+            "sha256_16": "d43aa0346b3c0cb9"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_02_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 11127,
+            "raw_bytes": 26016,
+            "sha256_16": "1201b3360fca3946"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_03_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 12133,
+            "raw_bytes": 26016,
+            "sha256_16": "c79be345b3e67e44"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_04_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13392,
+            "raw_bytes": 26016,
+            "sha256_16": "b08a960278d9e76c"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_05_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13369,
+            "raw_bytes": 26016,
+            "sha256_16": "1acbc53be09a1880"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_06_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13241,
+            "raw_bytes": 26016,
+            "sha256_16": "8022f93bdd3b6785"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_07_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13082,
+            "raw_bytes": 26016,
+            "sha256_16": "7c72a3cb211b2d42"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_08_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13187,
+            "raw_bytes": 26016,
+            "sha256_16": "4a88775acd46fdd4"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_09_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13196,
+            "raw_bytes": 26016,
+            "sha256_16": "91957e2d1a15305a"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_gyorin_10_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13321,
+            "raw_bytes": 26016,
+            "sha256_16": "dfebca232e8243fc"
+          }
+        },
+        "方円": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_00_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 14653,
+            "raw_bytes": 26016,
+            "sha256_16": "f02a5eff27441c3f"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_01_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 11364,
+            "raw_bytes": 26016,
+            "sha256_16": "c9a8cddc2bdb2d69"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_02_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 11164,
+            "raw_bytes": 26016,
+            "sha256_16": "0a84bb45334351b7"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_03_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 12121,
+            "raw_bytes": 26016,
+            "sha256_16": "860d9f2a8b739cf4"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_04_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13405,
+            "raw_bytes": 26016,
+            "sha256_16": "3381fb15b72fd898"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_05_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13375,
+            "raw_bytes": 26016,
+            "sha256_16": "ded96e08341cb523"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_06_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13246,
+            "raw_bytes": 26016,
+            "sha256_16": "c39cf8c2da576e12"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_07_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13099,
+            "raw_bytes": 26016,
+            "sha256_16": "cbbeb964087d8676"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_08_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13219,
+            "raw_bytes": 26016,
+            "sha256_16": "f9e178c7b7da3fed"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_09_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13223,
+            "raw_bytes": 26016,
+            "sha256_16": "22c86e5a50c9c583"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c6_hoen_10_v2.bin.gz",
+            "rows": 500,
+            "gzip_bytes": 13359,
+            "raw_bytes": 26016,
+            "sha256_16": "f49880c7dfa1c6a3"
+          }
+        }
+      },
+      "7": {
+        "衡軛": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kouyaku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "9d4fd35055927f60"
+          }
+        },
+        "鶴翼": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_kakuyoku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "bd6ffdd72acdfab3"
+          }
+        },
+        "魚鱗": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_00_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10703,
+            "raw_bytes": 22896,
+            "sha256_16": "6f8f2d34846b8c90"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_01_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10584,
+            "raw_bytes": 22896,
+            "sha256_16": "5076a53ba5c33238"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_02_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10679,
+            "raw_bytes": 22896,
+            "sha256_16": "9ac4dced6c5eb4bb"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_03_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10514,
+            "raw_bytes": 22896,
+            "sha256_16": "26c2054b7bdc022a"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_04_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10667,
+            "raw_bytes": 22896,
+            "sha256_16": "a7acb9e693ae0a63"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_05_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10429,
+            "raw_bytes": 22896,
+            "sha256_16": "a6a2fa6c06d154fc"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_06_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10508,
+            "raw_bytes": 22896,
+            "sha256_16": "30029b21062cb0b4"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_07_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10438,
+            "raw_bytes": 22896,
+            "sha256_16": "c9f5ce4dbde6863e"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_08_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10415,
+            "raw_bytes": 22896,
+            "sha256_16": "48a521bcef2157d1"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_09_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10426,
+            "raw_bytes": 22896,
+            "sha256_16": "2f7b00163d511e15"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_gyorin_10_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10426,
+            "raw_bytes": 22896,
+            "sha256_16": "5a2e0f6f02477fbc"
+          }
+        },
+        "方円": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_00_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10674,
+            "raw_bytes": 22896,
+            "sha256_16": "2bd0e51eeaaea38f"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_01_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10552,
+            "raw_bytes": 22896,
+            "sha256_16": "796d88bca6b0d09f"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_02_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10669,
+            "raw_bytes": 22896,
+            "sha256_16": "f42344bc7ac41227"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_03_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10501,
+            "raw_bytes": 22896,
+            "sha256_16": "78ea9c728a3f7cd9"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_04_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10636,
+            "raw_bytes": 22896,
+            "sha256_16": "c68d45ceea4c5047"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_05_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10402,
+            "raw_bytes": 22896,
+            "sha256_16": "04bb5fc9e40948b4"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_06_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10494,
+            "raw_bytes": 22896,
+            "sha256_16": "ed1c931697d5b3d8"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_07_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10430,
+            "raw_bytes": 22896,
+            "sha256_16": "4f7759684852a944"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_08_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10410,
+            "raw_bytes": 22896,
+            "sha256_16": "80e9a377a142347b"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_09_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10417,
+            "raw_bytes": 22896,
+            "sha256_16": "bd606cd6e594d3d4"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c7_hoen_10_v2.bin.gz",
+            "rows": 440,
+            "gzip_bytes": 10427,
+            "raw_bytes": 22896,
+            "sha256_16": "1b6e8efb34bd4664"
+          }
+        }
+      },
+      "8": {
+        "衡軛": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kouyaku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "c13e5c25bd530e7d"
+          }
+        },
+        "鶴翼": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_kakuyoku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "96d4632560d01f85"
+          }
+        },
+        "魚鱗": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_gyorin_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "2cdb2b3903d498ed"
+          }
+        },
+        "方円": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c8_hoen_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "eaf53369860b1696"
+          }
+        }
+      },
+      "9": {
+        "衡軛": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kouyaku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "3026ee2189478594"
+          }
+        },
+        "鶴翼": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_kakuyoku_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "457b9d7dce989569"
+          }
+        },
+        "魚鱗": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_gyorin_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "6557f0d7273646ec"
+          }
+        },
+        "方円": {
+          "生命": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_00_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "気合": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_01_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "腕力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_02_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "耐久力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_03_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "器用さ": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_04_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "知力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_05_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "魅力": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_06_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "土属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_07_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "水属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_08_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "火属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_09_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
+          },
+          "風属性": {
+            "file": "data/compact_search_v2/jinpo_sort_popular_c9_hoen_10_v2.bin.gz",
+            "rows": 0,
+            "gzip_bytes": 33,
+            "raw_bytes": 16,
+            "sha256_16": "8d942f91d463af56"
           }
         }
       }
@@ -8231,19 +9627,5 @@
     }
   },
   "fullmax_recommend_limit": 500,
-  "fullmax_recommend_record_size": 80,
-  "popular_selection": {
-    "schema": "jinpo-popular-selection/v1",
-    "config": "data/jinpo_popular_selection.json",
-    "selected_image_heroes": 20,
-    "grade3_rule": "cost<=6",
-    "grade3_heroes": 173,
-    "eligible_heroes": 193,
-    "counts": [
-      6,
-      7,
-      8,
-      9
-    ]
-  }
+  "fullmax_recommend_record_size": 80
 }
