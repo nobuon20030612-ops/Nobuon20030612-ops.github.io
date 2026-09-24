@@ -8651,6 +8651,65 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 </style>
 
 
+
+<style id="kenbun-kishin-fit-window-20260924">
+/* 2026-09-24: 見聞録・鬼神石だけをウィンドウ幅へ収め、右端の項目名/MAX/解除まで常時表示する。 */
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiModal,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+  width:min(1540px,calc(100vw - 20px)) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiBody,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+  grid-template-columns:clamp(116px,14vw,188px) minmax(0,1fr) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiSide,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiSide{
+  padding-left:clamp(4px,.55vw,8px) !important;
+  padding-right:clamp(4px,.55vw,8px) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMain,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMain{
+  overflow-x:hidden !important;
+  padding-left:clamp(5px,.8vw,12px) !important;
+  padding-right:clamp(5px,.8vw,12px) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRow,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRow{
+  grid-template-columns:minmax(54px,.8fr) minmax(44px,.55fr) minmax(0,3.4fr) minmax(48px,.7fr) minmax(44px,.58fr) minmax(44px,.58fr) !important;
+  gap:clamp(2px,.42vw,7px) !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiName{font-size:clamp(15px,1.45vw,22px) !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiValue,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiValue{font-size:clamp(13px,1.2vw,18px) !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRightName,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRightName{font-size:clamp(12px,1.05vw,16px) !important;padding-right:0 !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoices,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoices{
+  display:grid !important;
+  min-width:0 !important;
+  width:100% !important;
+  gap:clamp(1px,.22vw,3px) !important;
+  overflow:hidden !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoices{grid-template-columns:repeat(10,minmax(5px,1fr)) !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoices{grid-template-columns:repeat(25,minmax(3px,1fr)) !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice,
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice span,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice span{width:100% !important;min-width:0 !important;margin-left:0 !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice:nth-child(5n+1):not(:first-child),
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice:nth-child(5n+1):not(:first-child){margin-left:0 !important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMaxBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiClearBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMaxBtn,
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiClearBtn{
+  width:100% !important;min-width:0 !important;padding-left:3px !important;padding-right:3px !important;font-size:clamp(11px,.9vw,14px) !important;
+}
+</style>
+
 <style id="current-applied-list-row-highlight-user-request">
 /* 下部一覧の現在適用中項目全体を強調。その他UI・機能は変更しない。 */
 #dbFormationList tr.jinpoCurrentAppliedMainRow,
@@ -9415,6 +9474,8 @@ var mode='owned',slot=0;
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];});}
 function hira(v){return String(v||'').normalize('NFKC').replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);}).replace(/[\s　・･（）()]/g,'').toLowerCase();}
 function heroRows(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
+function heroNewestNumber(h){var id=idOf(h),m=String(id||'').match(/(\d+)(?!.*\d)/);return m?Number(m[1]):-1;}
+function sortHeroesNewestFirst(rows){return rows.slice().sort(function(a,b){var d=heroNewestNumber(b)-heroNewestNumber(a);if(d)return d;return String(idOf(b)).localeCompare(String(idOf(a)),'ja',{numeric:true});});}
 function nameOf(h){return String(h&& (h['英傑名']||h['名前']||h.name)||'').trim();}
 function idOf(h){return String(h&& (h.internal_id||h['internal_id']||h['番号'])||'').trim();}
 function costOf(h){var n=Number(h&&(h['コスト']??h.cost));return Number.isFinite(n)?n:null;}
@@ -9434,7 +9495,7 @@ function render(){
  var currentId='';try{currentId=String(typeof window.__jinpoOwnedHeroInternalIdAtSlot==='function'?window.__jinpoOwnedHeroInternalIdAtSlot(slot):'');}catch(e){}
  function card(h,pinned){var id=idOf(h),nm=nameOf(h),r=readingOf(h),isO=own.has(id),isE=ex.has(id),selected=mode==='owned'&&id===currentId;var pinnedMode=pinned?(mode==='owned'?' isPinnedOwned':' isPinnedExcluded'):'';var cls='jinpoCommonHeroCard'+(isO?' isPlaced':'')+(selected?' isSelected':'')+(isE?' isExcluded':'')+(pinned?' isPinnedSelected':'')+pinnedMode;var tags='';if(isO)tags+='<span class="jinpoCommonTag jinpoCommonTagPlaced">配置中</span>';if(isE)tags+='<span class="jinpoCommonTag jinpoCommonTagExcluded">除外中</span>';var overlay=pinned?'<span class="jinpoCommonPinnedOverlay '+(mode==='owned'?'owned':'exclude')+'">選択中</span>':'';var fh='';for(var fi=1;fi<=4;fi++){var fv=String(h['因子'+fi]||'').trim();if(fv&&fv!=='?'&&fv!=='未確認'&&fv!=='対象外')fh+='<span class="jinpoCommonFactor jinpoCommonFactor'+fi+'">'+esc(fv)+'</span>';}var factors=fh?'<div class="jinpoCommonHeroFactors"><span class="jinpoCommonHeroFactorLabel">因子</span>'+fh+'</div>':'<div class="jinpoCommonHeroFactors"><span class="jinpoCommonHeroFactorLabel">因子：なし</span></div>';return '<button type="button" class="'+cls+'" data-common-hero-id="'+esc(id)+'">'+overlay+'<div class="jinpoCommonHeroName">'+esc(nm)+(r?'<span class="jinpoCommonHeroReading">'+esc(r)+'</span>':'')+'</div><div class="jinpoCommonHeroMeta">'+esc(h['職']||h['職業']||h['因子1']||'')+' / コスト '+esc(costOf(h)==null?'未確認':costOf(h))+'</div>'+factors+'<div class="jinpoCommonHeroTags">'+tags+'</div></button>';}
  var pinned=selectedIds.map(function(id){return all.find(function(h){return idOf(h)===String(id);});}).filter(Boolean);
- var rs=all.filter(function(h){var id=idOf(h);if(selectedSet.has(id))return false;if(mode==='owned'&&grade3()&&Number(costOf(h))>6)return false;if(!matches(h,q))return false;if(job&&String(h['因子1']||'').trim()!==job)return false;if(factor&&!factorsOf(h).includes(factor))return false;return true;});
+ var rs=sortHeroesNewestFirst(all.filter(function(h){var id=idOf(h);if(selectedSet.has(id))return false;if(mode==='owned'&&grade3()&&Number(costOf(h))>6)return false;if(!matches(h,q))return false;if(job&&String(h['因子1']||'').trim()!==job)return false;if(factor&&!factorsOf(h).includes(factor))return false;return true;}));
  document.getElementById('jinpoCommonHeroCount').textContent=(pinned.length?'選択中 '+pinned.length+'人 / ':'')+'絞込 '+rs.length+'人';
  var heading=mode==='owned'?'配置英傑選択中':'除外英傑選択中',headClass=mode==='owned'?' owned':' exclude';
  if(pinned.length){
