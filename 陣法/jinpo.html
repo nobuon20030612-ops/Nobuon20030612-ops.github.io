@@ -542,7 +542,21 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 
 <section class="card" id="dbCountBrowserCard">
   
-  <div class="dbFormationSelectTop">
+  <section class="card totalStatPanel">
+  <div class="totalStatHeader">
+    <strong>※正確な数値ではありません【ステータス表示は参考程度にご覧下さい】</strong>
+    <span id="totalStatMode" class="totalStatMode"></span>
+  </div>
+  <div id="totalStatResult" class="totalStatGrid"></div>
+  <div id="eiketsuKishinsekiCombinedPanel" class="eiketsuKishinsekiCombinedPanel" aria-label="転生と見聞録と鬼神石込みの合計" style="display:none">
+    <div class="eiketsuKishinsekiCombinedHeader">
+      <strong>転生＆見聞録＆鬼神石込み合計</strong>
+      <span id="eiketsuKishinsekiCombinedMode">反映前</span>
+    </div>
+    <div id="eiketsuKishinsekiCombinedResult" class="totalStatGrid eiketsuKishinsekiCombinedGrid"></div>
+  </div>
+</section>
+<div class="dbFormationSelectTop">
 <div class="row">
     <div id="jinpoGlobalResetRow"><button id="jinpoGlobalResetBtn" type="button">全解除</button></div>
     <label>陣形選択
@@ -567,20 +581,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     <div id="ownedHeroSelectedInfo" class="ownedHeroSelectedInfo">配置英傑：未選択</div>
   </div>
   <div id="dbCountButtons" class="dbCountButtonBar"></div>
-<section class="card totalStatPanel">
-  <div class="totalStatHeader">
-    <strong>※正確な数値ではありません【ステータス表示は参考程度にご覧下さい】</strong>
-    <span id="totalStatMode" class="totalStatMode"></span>
-  </div>
-  <div id="totalStatResult" class="totalStatGrid"></div>
-  <div id="eiketsuKishinsekiCombinedPanel" class="eiketsuKishinsekiCombinedPanel" aria-label="転生と見聞録と鬼神石込みの合計" style="display:none">
-    <div class="eiketsuKishinsekiCombinedHeader">
-      <strong>転生＆見聞録＆鬼神石込み合計</strong>
-      <span id="eiketsuKishinsekiCombinedMode">反映前</span>
-    </div>
-    <div id="eiketsuKishinsekiCombinedResult" class="totalStatGrid eiketsuKishinsekiCombinedGrid"></div>
-  </div>
-</section>
+
 
 
   <section class="formationMiniPanel">
@@ -9561,7 +9562,7 @@ function applyTargetSize(box,img,n,scale){
   box.dataset.displayWidth=String(w);box.dataset.displayHeight=String(h);
 }
 function positionBanner(){
-  var box=document.getElementById('jinpoAppliedBondCountBanner'),img=document.getElementById('jinpoAppliedBondCountBannerImg'),panel=document.querySelector('.formationMiniPanel'),form=document.getElementById('formationView'),factorLegend=document.getElementById('jinpoFactorLegend'),statusLegend=document.getElementById('jinpoStatusLegend'),legend=statusLegend||factorLegend;
+  var box=document.getElementById('jinpoAppliedBondCountBanner'),img=document.getElementById('jinpoAppliedBondCountBannerImg'),panel=document.querySelector('.formationMiniPanel'),form=document.getElementById('formationView'),factorLegend=document.getElementById('jinpoFactorLegend'),legend=factorLegend;
   if(!box||box.hidden||!img||!panel||!form||!legend)return;
   var n=Number(box.dataset.bondCount||lastCount||0);if(n<5||n>10)return;
   var pr=panel.getBoundingClientRect(),fr=form.getBoundingClientRect(),lr=legend.getBoundingClientRect(),gap=1,edge=5;
@@ -9579,20 +9580,9 @@ function positionBanner(){
     var scale=scales[si];applyTargetSize(box,img,n,scale);
     var br=box.getBoundingClientRect(),w=br.width,h=br.height;if(!w||!h)continue;
     var left=Math.max(fr.left+edge,Math.min(lr.left,fr.right-edge-w));
-    var picks=[
-      candidate(left,lr.top-gap-h,w,h),
-      candidate(fr.left+edge,fr.bottom-edge-h,w,h),
-      candidate(fr.left+edge,fr.top+edge,w,h),
-      candidate(fr.right-edge-w,fr.bottom-edge-h,w,h),
-      candidate(fr.right-edge-w,fr.top+edge,w,h)
-    ];
-    chosen=picks.find(free)||null;
-    if(!chosen){
-      var minX=Math.ceil(fr.left+edge),maxX=Math.floor(fr.right-edge-w),minY=Math.ceil(fr.top+edge),maxY=Math.floor(fr.bottom-edge-h);
-      for(var yy=maxY;yy>=minY&&!chosen;yy-=6){
-        for(var xx=minX;xx<=maxX;xx+=6){var c=candidate(xx,yy,w,h);if(free(c)){chosen=c;break;}}
-      }
-    }
+    /* 仕様固定：因縁数称号は「使用因子」の上だけに置く。空き場所探索で左下・右下等へ逃がさない。 */
+    var aboveFactor=candidate(left,lr.top-gap-h,w,h);
+    chosen=free(aboveFactor)?aboveFactor:null;
     if(chosen)chosenScale=scale;
   }
   if(!chosen){box.style.visibility='hidden';box.dataset.positionMode='no-safe-space';return;}
