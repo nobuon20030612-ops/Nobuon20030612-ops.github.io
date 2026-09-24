@@ -589,7 +589,7 @@ def main():
         'jinpo-bond-list.js': [
             'jinpoRecommendNav', 'おすすめ陣法', 'jinpoRecommendExitBtn',
             'jinpoRecommendModeBadge', 'jinpoRecommendModeNotice', 'jinpoRecommendSumGuide',
-            '上へ戻る',
+            
             'おすすめモード中は5〜9因縁の通常検索は使用できません',
             '※第1・第2優先の数値条件を指定すると、その条件に応じて検索結果も変わります',
             "['生命','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力']",
