@@ -585,7 +585,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   <h2>陣形ライン</h2>
   <div id="formationView" class="formation"></div>
   <div id="jinpoAppliedBondCountBanner" class="jinpoAppliedBondCountBanner" aria-live="polite" aria-label="適用中の因縁数" hidden><img id="jinpoAppliedBondCountBannerImg" src="" alt=""></div>
-  <div id="jinpoStatusLegend" class="jinpoStatusLegend" aria-label="等級3以下と文曲の見分け方">
+  <div id="jinpoStatusLegend" class="jinpoStatusLegend jinpoStatusLegendPlaceholder" aria-hidden="true">
     <span class="jinpoStatusLegendItem jinpoStatusLegendGrade3"><span class="jinpoStatusLegendBlueFrame" aria-hidden="true"></span><span class="jinpoStatusLegendText">＝等級3以下</span></span>
     <span class="jinpoStatusLegendItem jinpoStatusLegendBunkyoku"><span class="jinpoStatusLegendRedText">赤文字</span><span class="jinpoStatusLegendText">＝文曲</span></span>
   </div>
@@ -596,6 +596,10 @@ body.jinpoOpeningLocked{overflow:hidden!important}
       <span class="jinpoFactorUseBadge factor2">凸2</span>
       <span class="jinpoFactorUseBadge factor3">LV20</span>
       <span class="jinpoFactorUseBadge factor4">文曲</span>
+    </div>
+    <div id="jinpoStatusLegendMoved" class="jinpoStatusLegendMoved" aria-label="等級3以下と文曲の見分け方">
+      <span class="jinpoStatusLegendItem jinpoStatusLegendGrade3"><span class="jinpoStatusLegendBlueFrame" aria-hidden="true"></span><span class="jinpoStatusLegendText">＝等級3以下</span></span>
+      <span class="jinpoStatusLegendItem jinpoStatusLegendBunkyoku"><span class="jinpoStatusLegendRedText">赤文字</span><span class="jinpoStatusLegendText">＝文曲</span></span>
     </div>
   </div>
   <div id="appliedRowPreviewUnderFormation" aria-live="polite"></div>
@@ -9123,6 +9127,14 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorUseBadge.factor3{color:#9deaff;border-color:#63d8ff;background:#0c2630}
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorUseBadge.factor4{color:#ffd6d6;border-color:#ff7272;background:#5a0000;box-shadow:0 0 8px rgba(255,60,60,.45),0 1px 5px rgba(0,0,0,.9)}
 .formationMiniPanel>.jinpoStatusLegend{position:relative;z-index:24;display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 16px);padding:6px 8px;margin:-86px 0 4px 14px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendItem{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;line-height:1;font-weight:1000}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBlueFrame{display:inline-block;width:30px;height:18px;flex:0 0 30px;border:2px solid #3f9cff;border-radius:7px;background:linear-gradient(180deg,rgba(22,78,154,.34),rgba(9,32,62,.28));box-shadow:0 0 12px rgba(63,156,255,.42),inset 0 0 8px rgba(255,255,255,.08)}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendGrade3,.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendGrade3 .jinpoStatusLegendText{color:#7dc2ff;text-shadow:0 0 8px rgba(63,156,255,.45)}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBunkyoku{color:#ff8a8a}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendRedText,.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBunkyoku .jinpoStatusLegendText{color:#ff6868;text-shadow:0 0 8px rgba(255,38,38,.55),0 0 16px rgba(255,74,74,.35)}
+/* 2026-09-24: 元の凡例段は空欄のまま保持し、凡例表示だけを使用因子の右隣へ移動 */
+.formationMiniPanel>.jinpoStatusLegendPlaceholder{visibility:hidden !important}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);z-index:25;display:flex;align-items:center;gap:10px;flex-wrap:nowrap;width:max-content;max-width:none;padding:6px 8px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendItem{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;line-height:1;font-weight:1000}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBlueFrame{display:inline-block;width:30px;height:18px;flex:0 0 30px;border:2px solid #3f9cff;border-radius:7px;background:linear-gradient(180deg,rgba(22,78,154,.34),rgba(9,32,62,.28));box-shadow:0 0 12px rgba(63,156,255,.42),inset 0 0 8px rgba(255,255,255,.08)}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendGrade3,.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendGrade3 .jinpoStatusLegendText{color:#7dc2ff;text-shadow:0 0 8px rgba(63,156,255,.45)}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBunkyoku{color:#ff8a8a}
+.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendRedText,.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBunkyoku .jinpoStatusLegendText{color:#ff6868;text-shadow:0 0 8px rgba(255,38,38,.55),0 0 16px rgba(255,74,74,.35)}
 @media(max-width:760px){
   #formationView .jinpoFormationEmptyNotice{left:14px;top:12px}
   .formationMiniPanel>.jinpoFactorLegend{order:3;width:184px;padding:6px 7px;margin:6px 0 8px 8px}
