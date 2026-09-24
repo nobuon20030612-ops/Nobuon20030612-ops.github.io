@@ -119,238 +119,8 @@ main{width:100% !important;max-width:none !important;min-width:0 !important;marg
 #dbCountButtons .dbCountBtn.recommendModeLocked{opacity:.34!important;filter:grayscale(.9) brightness(.62)!important;cursor:not-allowed!important;box-shadow:none!important;transform:none!important;}
 #dbCountButtons .dbCountBtn.recommendModeLocked:hover{filter:grayscale(.9) brightness(.62)!important;box-shadow:none!important;transform:none!important;}
 </style>
-
-<style id="jinpo-opening-sequence-style">
-html.jinpoOpeningLocked,
-body.jinpoOpeningLocked{overflow:hidden!important}
-
-#jinpoOpeningOverlay{
-  position:fixed;
-  inset:0;
-  z-index:2147483600;
-  overflow:hidden;
-  background:transparent;
-  pointer-events:auto;
-  user-select:none;
-  isolation:isolate;
-}
-#jinpoOpeningOverlay *{box-sizing:border-box}
-
-#jinpoOpeningBackdrop{
-  position:absolute;inset:0;z-index:1;
-  background:#000;opacity:1;
-}
-#jinpoOpeningLight{
-  position:absolute;inset:-18%;z-index:2;
-  opacity:0;transform:scale(.25);
-  background:
-    radial-gradient(circle at 50% 42%,
-      rgba(255,255,248,1) 0 2.5%,
-      rgba(255,239,195,.96) 4%,
-      rgba(255,187,92,.54) 10%,
-      rgba(118,40,18,.20) 24%,
-      rgba(0,0,0,.84) 45%,
-      #000 69%);
-  filter:blur(14px);
-}
-#jinpoOpeningRays{
-  position:absolute;inset:-28%;z-index:3;
-  opacity:0;transform:scale(.45);
-  mix-blend-mode:screen;
-  background:
-    conic-gradient(from 205deg at 50% 42%,
-      transparent 0 4%,
-      rgba(255,247,218,.24) 5% 7%,
-      transparent 8% 15%,
-      rgba(255,190,82,.17) 16% 18%,
-      transparent 19% 29%,
-      rgba(255,255,255,.16) 30% 31%,
-      transparent 32% 100%);
-  filter:blur(8px);
-}
-#jinpoOpeningFlash{
-  position:absolute;inset:0;z-index:4;
-  background:#fff;opacity:0;pointer-events:none;
-}
-
-
-/* 女性 */
-#jinpoOpeningGuide{
-  position:absolute;z-index:24;
-  right:-1vw;bottom:-2vh;
-  width:min(66vw,1020px);
-  max-height:82vh;
-  height:auto;
-  object-fit:contain;
-  object-position:right bottom;
-  opacity:0;
-  transform:translate(52px,20px) scale(.965);
-  filter:
-    drop-shadow(0 24px 38px rgba(0,0,0,.90))
-    drop-shadow(0 0 22px rgba(255,174,91,.20));
-  pointer-events:none;
-  -webkit-user-drag:none;
-}
-
-/* 字幕 */
-#jinpoOpeningSubtitleWrap{
-  position:absolute;z-index:32;
-  left:2.5vw;right:2.5vw;bottom:3vh;
-  display:flex;justify-content:center;
-  opacity:0;transform:translateY(14px);
-  pointer-events:none;
-}
-#jinpoOpeningSubtitle{
-  max-width:94vw;
-  padding:.17em .74em .26em;
-  text-align:center;
-  font-family:"Yu Mincho","Hiragino Mincho ProN","Yu Gothic",serif;
-  font-size:clamp(34px,3.8vw,68px);
-  font-weight:1000;
-  font-synthesis-weight:auto;
-  line-height:1.2;
-  letter-spacing:.040em;
-  color:#ffb7d9;
-  -webkit-text-stroke:3.8px #000;
-  paint-order:stroke fill;
-  text-shadow:
-    0 0 1px #ffb7d9,
-    0 0 1px #ffb7d9,
-    0 1px 0 #000,
-    1px 0 0 #000,
-    -1px 0 0 #000,
-    0 -1px 0 #000,
-    2px 2px 0 rgba(0,0,0,.60);
-  background:linear-gradient(90deg,transparent,rgba(0,0,0,.34) 14%,rgba(0,0,0,.50) 50%,rgba(0,0,0,.34) 86%,transparent);
-  border-radius:15px;
-}
-#jinpoOpeningVignette{
-  position:absolute;inset:0;z-index:40;
-  pointer-events:none;
-  box-shadow:inset 0 0 150px 34px rgba(0,0,0,.72);
-  opacity:1;
-}
-
-/* ページ表示時に自動開始：開始ボタンなし */
-/* 開始演出 */
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningBackdrop{
-  animation:jinpoOpeningDarkLift 1.25s ease-in-out forwards;
-}
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningLight{
-  animation:jinpoOpeningLightBreak 1.12s cubic-bezier(.12,.72,.16,1) forwards;
-}
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningRays{
-  animation:jinpoOpeningRaysOpen 1.15s ease-out forwards;
-}
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningFlash{
-  animation:jinpoOpeningFlash .34s ease-out .62s both;
-}
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningGuide{
-  animation:jinpoOpeningGuideIn .68s cubic-bezier(.17,.86,.23,1) 1s forwards;
-}
-#jinpoOpeningOverlay.isPlaying #jinpoOpeningSubtitleWrap{
-  animation:jinpoOpeningSubtitleIn .40s ease-out 1.32s forwards;
-}
-
-/*
-  終盤:
-  モードsnapshotには一切 opacity / transform / filter をかけない。
-  モード以外だけをフェードアウトする。
-*/
-#jinpoOpeningOverlay.isReveal #jinpoOpeningBackdrop{
-  transition:opacity 1.05s ease;
-  opacity:0!important;
-}
-#jinpoOpeningOverlay.isReveal #jinpoOpeningLight,
-#jinpoOpeningOverlay.isReveal #jinpoOpeningRays,
-#jinpoOpeningOverlay.isReveal #jinpoOpeningVignette{
-  transition:opacity 1.05s ease;
-  opacity:0!important;
-}
-#jinpoOpeningOverlay.isGuideOut #jinpoOpeningGuide{
-  transition:opacity .88s ease,transform .88s ease,filter .88s ease;
-  opacity:0!important;
-  transform:translate(24px,7px) scale(.985);
-  filter:blur(1.4px) drop-shadow(0 12px 25px #000);
-}
-#jinpoOpeningOverlay.isGuideOut #jinpoOpeningSubtitleWrap{
-  transition:opacity .72s ease,transform .72s ease;
-  opacity:0!important;
-  transform:translateY(8px);
-}
-
-@keyframes jinpoOpeningDarkLift{
-  0%{opacity:1}
-  57%{opacity:.90}
-  100%{opacity:.05}
-}
-@keyframes jinpoOpeningLightBreak{
-  0%{opacity:0;transform:scale(.25);filter:blur(18px)}
-  28%{opacity:.82}
-  72%{opacity:1;transform:scale(1.04);filter:blur(5px)}
-  100%{opacity:.72;transform:scale(1.75);filter:blur(10px)}
-}
-@keyframes jinpoOpeningRaysOpen{
-  0%{opacity:0;transform:scale(.45) rotate(-2deg)}
-  45%{opacity:.72}
-  100%{opacity:.22;transform:scale(1.46) rotate(2deg)}
-}
-@keyframes jinpoOpeningFlash{
-  0%{opacity:0}
-  44%{opacity:.55}
-  100%{opacity:0}
-}
-@keyframes jinpoOpeningGuideIn{
-  from{opacity:0;transform:translate(52px,20px) scale(.965);filter:blur(4px) drop-shadow(0 24px 38px rgba(0,0,0,.90))}
-  to{opacity:1;transform:translate(0,0) scale(1);filter:blur(0) drop-shadow(0 24px 38px rgba(0,0,0,.90)) drop-shadow(0 0 22px rgba(255,174,91,.20))}
-}
-@keyframes jinpoOpeningSubtitleIn{
-  from{opacity:0;transform:translateY(14px);filter:blur(3px)}
-  to{opacity:1;transform:translateY(0);filter:blur(0)}
-}
-
-@media(max-width:1050px){
-  #jinpoOpeningGuide{
-    width:min(88vw,760px);
-    max-height:69vh;
-    right:-7vw;
-    bottom:-1vh;
-  }
-  #jinpoOpeningSubtitle{
-    font-size:clamp(28px,5.6vw,50px);
-  }
-}
-@media(max-width:520px){
-  #jinpoOpeningGuide{
-    width:min(96vw,620px);
-    max-height:62vh;
-    right:-12vw;
-  }
-  #jinpoOpeningSubtitleWrap{bottom:2vh}
-}
-</style>
-
 </head>
 <body>
-
-<div id="jinpoOpeningOverlay" aria-label="陣法オープニング演出">
-  <div id="jinpoOpeningBackdrop"></div>
-  <div id="jinpoOpeningLight"></div>
-  <div id="jinpoOpeningRays"></div>
-  <div id="jinpoOpeningFlash"></div>
-
-  <img id="jinpoOpeningGuide" src="assets/opening/guide.png" alt="" draggable="false">
-
-  <div id="jinpoOpeningSubtitleWrap">
-    <div id="jinpoOpeningSubtitle">好きなモードを選んで、使うがよい。</div>
-  </div>
-
-  <div id="jinpoOpeningVignette"></div>
-
-</div>
-
-<audio id="jinpoOpeningSoundtrack" preload="auto" src="assets/opening/opening-soundtrack.wav"></audio>
-
 
 
 
@@ -535,8 +305,6 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 </header>
 <main>
 
-<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="トップへ戻る">戻る</a>
-
 <section class="card totalStatPanel">
   <div class="totalStatHeader">
     <strong>※正確な数値ではありません【ステータス表示は参考程度にご覧下さい】</strong>
@@ -551,7 +319,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     <div id="eiketsuKishinsekiCombinedResult" class="totalStatGrid eiketsuKishinsekiCombinedGrid"></div>
   </div>
 </section>
-
+<a id="jinpoBackBtn" class="jinpoBackBtn" href="../index.html" aria-label="トップへ戻る">戻る</a>
 
 <section class="card" id="dbCountBrowserCard">
   
@@ -585,7 +353,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   <h2>陣形ライン</h2>
   <div id="formationView" class="formation"></div>
   <div id="jinpoAppliedBondCountBanner" class="jinpoAppliedBondCountBanner" aria-live="polite" aria-label="適用中の因縁数" hidden><img id="jinpoAppliedBondCountBannerImg" src="" alt=""></div>
-  <div id="jinpoStatusLegend" class="jinpoStatusLegend jinpoStatusLegendPlaceholder" aria-hidden="true">
+  <div id="jinpoStatusLegend" class="jinpoStatusLegend" aria-label="等級3以下と文曲の見分け方">
     <span class="jinpoStatusLegendItem jinpoStatusLegendGrade3"><span class="jinpoStatusLegendBlueFrame" aria-hidden="true"></span><span class="jinpoStatusLegendText">＝等級3以下</span></span>
     <span class="jinpoStatusLegendItem jinpoStatusLegendBunkyoku"><span class="jinpoStatusLegendRedText">赤文字</span><span class="jinpoStatusLegendText">＝文曲</span></span>
   </div>
@@ -596,10 +364,6 @@ body.jinpoOpeningLocked{overflow:hidden!important}
       <span class="jinpoFactorUseBadge factor2">凸2</span>
       <span class="jinpoFactorUseBadge factor3">LV20</span>
       <span class="jinpoFactorUseBadge factor4">文曲</span>
-    </div>
-    <div id="jinpoStatusLegendMoved" class="jinpoStatusLegendMoved" aria-label="等級3以下と文曲の見分け方">
-      <span class="jinpoStatusLegendItem jinpoStatusLegendGrade3"><span class="jinpoStatusLegendBlueFrame" aria-hidden="true"></span><span class="jinpoStatusLegendText">＝等級3以下</span></span>
-      <span class="jinpoStatusLegendItem jinpoStatusLegendBunkyoku"><span class="jinpoStatusLegendRedText">赤文字</span><span class="jinpoStatusLegendText">＝文曲</span></span>
     </div>
   </div>
   <div id="appliedRowPreviewUnderFormation" aria-live="polite"></div>
@@ -1540,21 +1304,10 @@ ${effectRows.length ? `
 ` : `<p class="small">発動因縁なし</p>`}
 `;
 }
-function scrollToRecommendSearchTopOnce(behavior="smooth"){
-function move(){
-const el = document.getElementById("jinpoRecommendNav");
-if(!el) return false;
-const top = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
-try{ window.scrollTo({top:Math.max(0, top), left:0, behavior:behavior}); }
-catch(e){ window.scrollTo(0, Math.max(0, top)); }
-return true;
-}
-if(move()) return;
-requestAnimationFrame(()=>{ if(!move()) setTimeout(move, 80); });
-}
-window.__jinpoScrollToRecommendSearchTopOnce = scrollToRecommendSearchTopOnce;
 function scrollToTotalStatResultOnce(){
-scrollToRecommendSearchTopOnce("smooth");
+const el = document.getElementById("totalStatResult");
+if(!el || typeof el.scrollIntoView !== "function") return;
+el.scrollIntoView({behavior:"smooth", block:"center"});
 }
 window.__jinpoScrollToTotalStatResultOnce = scrollToTotalStatResultOnce;
 
@@ -6235,19 +5988,6 @@ body{padding-top:0 !important;}
     grid-template-columns:repeat(6,minmax(0,1fr)) !important;
   }
 
-  #dbFormationList .dbListBonds{
-    flex-wrap:wrap !important;
-    white-space:normal !important;
-    overflow:visible !important;
-  }
-
-  #dbFormationList .dbListStat{
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    line-height:1.45 !important;
-  }
-
   #appliedRowPreviewUnderFormation{
     width:100% !important;
     max-width:100% !important;
@@ -8651,65 +8391,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 </style>
 
 
-
-<style id="kenbun-kishin-fit-window-20260924">
-/* 2026-09-24: 見聞録・鬼神石だけをウィンドウ幅へ収め、右端の項目名/MAX/解除まで常時表示する。 */
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiModal,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
-  width:min(1540px,calc(100vw - 20px)) !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiBody,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
-  grid-template-columns:clamp(116px,14vw,188px) minmax(0,1fr) !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiSide,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiSide{
-  padding-left:clamp(4px,.55vw,8px) !important;
-  padding-right:clamp(4px,.55vw,8px) !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMain,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMain{
-  overflow-x:hidden !important;
-  padding-left:clamp(5px,.8vw,12px) !important;
-  padding-right:clamp(5px,.8vw,12px) !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRow,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRow{
-  grid-template-columns:minmax(54px,.8fr) minmax(44px,.55fr) minmax(0,3.4fr) minmax(48px,.7fr) minmax(44px,.58fr) minmax(44px,.58fr) !important;
-  gap:clamp(2px,.42vw,7px) !important;
-  min-width:0 !important;
-  width:100% !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiName,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiName{font-size:clamp(15px,1.45vw,22px) !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiValue,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiValue{font-size:clamp(13px,1.2vw,18px) !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiRightName,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRightName{font-size:clamp(12px,1.05vw,16px) !important;padding-right:0 !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoices,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoices{
-  display:grid !important;
-  min-width:0 !important;
-  width:100% !important;
-  gap:clamp(1px,.22vw,3px) !important;
-  overflow:hidden !important;
-}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoices{grid-template-columns:repeat(10,minmax(5px,1fr)) !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoices{grid-template-columns:repeat(25,minmax(3px,1fr)) !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice,
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice span,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice span{width:100% !important;min-width:0 !important;margin-left:0 !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiChoice:nth-child(5n+1):not(:first-child),
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiChoice:nth-child(5n+1):not(:first-child){margin-left:0 !important}
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiMaxBtn,
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiClearBtn,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiMaxBtn,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiClearBtn{
-  width:100% !important;min-width:0 !important;padding-left:3px !important;padding-right:3px !important;font-size:clamp(11px,.9vw,14px) !important;
-}
-</style>
-
 <style id="current-applied-list-row-highlight-user-request">
 /* 下部一覧の現在適用中項目全体を強調。その他UI・機能は変更しない。 */
 #dbFormationList tr.jinpoCurrentAppliedMainRow,
@@ -9186,14 +8867,6 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorUseBadge.factor3{color:#9deaff;border-color:#63d8ff;background:#0c2630}
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorUseBadge.factor4{color:#ffd6d6;border-color:#ff7272;background:#5a0000;box-shadow:0 0 8px rgba(255,60,60,.45),0 1px 5px rgba(0,0,0,.9)}
 .formationMiniPanel>.jinpoStatusLegend{position:relative;z-index:24;display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 16px);padding:6px 8px;margin:-86px 0 4px 14px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendItem{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;line-height:1;font-weight:1000}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBlueFrame{display:inline-block;width:30px;height:18px;flex:0 0 30px;border:2px solid #3f9cff;border-radius:7px;background:linear-gradient(180deg,rgba(22,78,154,.34),rgba(9,32,62,.28));box-shadow:0 0 12px rgba(63,156,255,.42),inset 0 0 8px rgba(255,255,255,.08)}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendGrade3,.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendGrade3 .jinpoStatusLegendText{color:#7dc2ff;text-shadow:0 0 8px rgba(63,156,255,.45)}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBunkyoku{color:#ff8a8a}.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendRedText,.formationMiniPanel>.jinpoStatusLegend .jinpoStatusLegendBunkyoku .jinpoStatusLegendText{color:#ff6868;text-shadow:0 0 8px rgba(255,38,38,.55),0 0 16px rgba(255,74,74,.35)}
-/* 2026-09-24: 元の凡例段は空欄のまま保持し、凡例表示だけを使用因子の右隣へ移動 */
-.formationMiniPanel>.jinpoStatusLegendPlaceholder{visibility:hidden !important}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);z-index:25;display:flex;align-items:center;gap:10px;flex-wrap:nowrap;width:max-content;max-width:none;padding:6px 8px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendItem{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;line-height:1;font-weight:1000}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBlueFrame{display:inline-block;width:30px;height:18px;flex:0 0 30px;border:2px solid #3f9cff;border-radius:7px;background:linear-gradient(180deg,rgba(22,78,154,.34),rgba(9,32,62,.28));box-shadow:0 0 12px rgba(63,156,255,.42),inset 0 0 8px rgba(255,255,255,.08)}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendGrade3,.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendGrade3 .jinpoStatusLegendText{color:#7dc2ff;text-shadow:0 0 8px rgba(63,156,255,.45)}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBunkyoku{color:#ff8a8a}
-.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendRedText,.formationMiniPanel>.jinpoFactorLegend>.jinpoStatusLegendMoved .jinpoStatusLegendBunkyoku .jinpoStatusLegendText{color:#ff6868;text-shadow:0 0 8px rgba(255,38,38,.55),0 0 16px rgba(255,74,74,.35)}
 @media(max-width:760px){
   #formationView .jinpoFormationEmptyNotice{left:14px;top:12px}
   .formationMiniPanel>.jinpoFactorLegend{order:3;width:184px;padding:6px 7px;margin:6px 0 8px 8px}
@@ -9474,8 +9147,6 @@ var mode='owned',slot=0;
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];});}
 function hira(v){return String(v||'').normalize('NFKC').replace(/[ァ-ヶ]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0x60);}).replace(/[\s　・･（）()]/g,'').toLowerCase();}
 function heroRows(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
-function heroNewestNumber(h){var id=idOf(h),m=String(id||'').match(/(\d+)(?!.*\d)/);return m?Number(m[1]):-1;}
-function sortHeroesNewestFirst(rows){return rows.slice().sort(function(a,b){var d=heroNewestNumber(b)-heroNewestNumber(a);if(d)return d;return String(idOf(b)).localeCompare(String(idOf(a)),'ja',{numeric:true});});}
 function nameOf(h){return String(h&& (h['英傑名']||h['名前']||h.name)||'').trim();}
 function idOf(h){return String(h&& (h.internal_id||h['internal_id']||h['番号'])||'').trim();}
 function costOf(h){var n=Number(h&&(h['コスト']??h.cost));return Number.isFinite(n)?n:null;}
@@ -9495,7 +9166,7 @@ function render(){
  var currentId='';try{currentId=String(typeof window.__jinpoOwnedHeroInternalIdAtSlot==='function'?window.__jinpoOwnedHeroInternalIdAtSlot(slot):'');}catch(e){}
  function card(h,pinned){var id=idOf(h),nm=nameOf(h),r=readingOf(h),isO=own.has(id),isE=ex.has(id),selected=mode==='owned'&&id===currentId;var pinnedMode=pinned?(mode==='owned'?' isPinnedOwned':' isPinnedExcluded'):'';var cls='jinpoCommonHeroCard'+(isO?' isPlaced':'')+(selected?' isSelected':'')+(isE?' isExcluded':'')+(pinned?' isPinnedSelected':'')+pinnedMode;var tags='';if(isO)tags+='<span class="jinpoCommonTag jinpoCommonTagPlaced">配置中</span>';if(isE)tags+='<span class="jinpoCommonTag jinpoCommonTagExcluded">除外中</span>';var overlay=pinned?'<span class="jinpoCommonPinnedOverlay '+(mode==='owned'?'owned':'exclude')+'">選択中</span>':'';var fh='';for(var fi=1;fi<=4;fi++){var fv=String(h['因子'+fi]||'').trim();if(fv&&fv!=='?'&&fv!=='未確認'&&fv!=='対象外')fh+='<span class="jinpoCommonFactor jinpoCommonFactor'+fi+'">'+esc(fv)+'</span>';}var factors=fh?'<div class="jinpoCommonHeroFactors"><span class="jinpoCommonHeroFactorLabel">因子</span>'+fh+'</div>':'<div class="jinpoCommonHeroFactors"><span class="jinpoCommonHeroFactorLabel">因子：なし</span></div>';return '<button type="button" class="'+cls+'" data-common-hero-id="'+esc(id)+'">'+overlay+'<div class="jinpoCommonHeroName">'+esc(nm)+(r?'<span class="jinpoCommonHeroReading">'+esc(r)+'</span>':'')+'</div><div class="jinpoCommonHeroMeta">'+esc(h['職']||h['職業']||h['因子1']||'')+' / コスト '+esc(costOf(h)==null?'未確認':costOf(h))+'</div>'+factors+'<div class="jinpoCommonHeroTags">'+tags+'</div></button>';}
  var pinned=selectedIds.map(function(id){return all.find(function(h){return idOf(h)===String(id);});}).filter(Boolean);
- var rs=sortHeroesNewestFirst(all.filter(function(h){var id=idOf(h);if(selectedSet.has(id))return false;if(mode==='owned'&&grade3()&&Number(costOf(h))>6)return false;if(!matches(h,q))return false;if(job&&String(h['因子1']||'').trim()!==job)return false;if(factor&&!factorsOf(h).includes(factor))return false;return true;}));
+ var rs=all.filter(function(h){var id=idOf(h);if(selectedSet.has(id))return false;if(mode==='owned'&&grade3()&&Number(costOf(h))>6)return false;if(!matches(h,q))return false;if(job&&String(h['因子1']||'').trim()!==job)return false;if(factor&&!factorsOf(h).includes(factor))return false;return true;});
  document.getElementById('jinpoCommonHeroCount').textContent=(pinned.length?'選択中 '+pinned.length+'人 / ':'')+'絞込 '+rs.length+'人';
  var heading=mode==='owned'?'配置英傑選択中':'除外英傑選択中',headClass=mode==='owned'?' owned':' exclude';
  if(pinned.length){
@@ -9754,115 +9425,6 @@ function observe(){
     ev.preventDefault();
     window.scrollBy({top: ev.deltaY, left: 0, behavior: 'auto'});
   }, {capture:true, passive:false});
-})();
-</script>
-
-
-<script id="jinpo-opening-sequence-script">
-(function(){
-  'use strict';
-  if(window.__jinpoOpeningSequenceInstalled) return;
-  window.__jinpoOpeningSequenceInstalled = true;
-
-  var overlay=document.getElementById('jinpoOpeningOverlay');
-  var soundtrack=document.getElementById('jinpoOpeningSoundtrack');
-  var guide=document.getElementById('jinpoOpeningGuide');
-  if(!overlay||!soundtrack) return;
-
-  document.documentElement.classList.add('jinpoOpeningLocked');
-  if(document.body) document.body.classList.add('jinpoOpeningLocked');
-
-  var started=false;
-  var startedAt=0;
-  var autoplayAudioBlocked=false;
-
-  function unlockPage(){
-    document.documentElement.classList.remove('jinpoOpeningLocked');
-    if(document.body) document.body.classList.remove('jinpoOpeningLocked');
-  }
-
-  function finish(){
-    overlay.style.display='none';
-    unlockPage();
-    try{soundtrack.pause();}catch(e){}
-  }
-
-  function startOpening(){
-    if(started) return;
-    started=true;
-    startedAt=performance.now();
-
-    try{
-      soundtrack.currentTime=0;
-      soundtrack.volume=1;
-      var p=soundtrack.play();
-      if(p&&typeof p.catch==='function'){
-        p.catch(function(err){
-          autoplayAudioBlocked=true;
-          console.warn('陣法オープニング音声の自動再生がブラウザに制限されました',err);
-        });
-      }
-    }catch(e){
-      autoplayAudioBlocked=true;
-      console.warn('陣法オープニング音声自動再生失敗',e);
-    }
-
-    overlay.classList.add('isPlaying');
-
-    /*
-      演出用のモード画像・複製DOMは一切表示しない。
-      暗闇・光が薄くなると、背後にある実サイト本体の
-      本物のモードボタンがそのまま見える。
-    */
-    setTimeout(function(){
-      overlay.classList.add('isReveal');
-    },3720);
-
-    setTimeout(function(){
-      overlay.classList.add('isGuideOut');
-    },4480);
-
-    setTimeout(finish,5500);
-  }
-
-  function resumeBlockedAudioOnGesture(){
-    if(!started||!autoplayAudioBlocked||overlay.style.display==='none') return;
-    autoplayAudioBlocked=false;
-    try{
-      var elapsed=Math.max(0,(performance.now()-startedAt)/1000);
-      soundtrack.currentTime=Math.min(elapsed,Math.max(0,(soundtrack.duration||6)-0.05));
-      soundtrack.volume=1;
-      var p=soundtrack.play();
-      if(p&&typeof p.catch==='function') p.catch(function(){autoplayAudioBlocked=true;});
-    }catch(e){
-      autoplayAudioBlocked=true;
-    }
-  }
-
-  ['pointerdown','touchstart','keydown'].forEach(function(type){
-    window.addEventListener(type,resumeBlockedAudioOnGesture,{capture:true,passive:true});
-  });
-
-  try{
-    soundtrack.load();
-    if(guide) guide.decoding='async';
-  }catch(e){}
-
-  /* 陣法ページを開いたら自動開始 */
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){
-      requestAnimationFrame(startOpening);
-    },{once:true});
-  }else{
-    requestAnimationFrame(startOpening);
-  }
-
-  setTimeout(function(){
-    if(started&&overlay.style.display!=='none'){
-      overlay.style.display='none';
-      unlockPage();
-    }
-  },9000);
 })();
 </script>
 
