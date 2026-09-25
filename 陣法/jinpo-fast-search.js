@@ -398,10 +398,8 @@
   }
   function scrollSearchResults(){
     var el=q('dbFormationList')||q('summary');
-    if(!el)return;
-    var top=0;
-    try{top=el.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0);}catch(e){return;}
-    try{window.scrollTo({top:Math.max(0,top),left:0,behavior:'smooth'});}catch(e){try{window.scrollTo(0,Math.max(0,top));}catch(ignore){}}
+    if(!el||typeof el.scrollIntoView!=='function')return;
+    try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
 
@@ -507,7 +505,6 @@
   }
 
   function rerunForFormationChange(count){
-    if(recommendState.applyingFormation)return Promise.resolve(true);
     var serial=++formationRerunSerial,c=Number(count||selectedCount()||0);
     if(c<5||c>9||!form())return Promise.resolve(true);
     setCount(c);
