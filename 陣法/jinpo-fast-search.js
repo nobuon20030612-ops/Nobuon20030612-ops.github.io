@@ -396,20 +396,9 @@
     main.classList.add('jinpoAppliedRow');btn.textContent='適用中';
     var stat=main.nextElementSibling;if(stat&&stat.classList&&stat.classList.contains('dbStatRow'))stat.classList.add('jinpoAppliedRow');
   }
-  /* 一覧への自動スクロールは、同じ1回のユーザー操作から再検索が複数経路で走っても1回だけにする。
-     スクロール先・位置・smooth指定は従来どおり変更しない。 */
-  var listAutoScrollInteractionSeq=0,lastListAutoScrollInteractionSeq=-1;
-  function markListAutoScrollInteraction(){listAutoScrollInteractionSeq++;}
-  try{
-    document.addEventListener('pointerdown',markListAutoScrollInteraction,true);
-    document.addEventListener('keydown',markListAutoScrollInteraction,true);
-    if(!('PointerEvent' in window))document.addEventListener('touchstart',markListAutoScrollInteraction,{capture:true,passive:true});
-  }catch(e){}
   function scrollSearchResults(){
     var el=q('dbFormationList')||q('summary');
     if(!el||typeof el.scrollIntoView!=='function')return;
-    if(lastListAutoScrollInteractionSeq===listAutoScrollInteractionSeq)return;
-    lastListAutoScrollInteractionSeq=listAutoScrollInteractionSeq;
     try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
