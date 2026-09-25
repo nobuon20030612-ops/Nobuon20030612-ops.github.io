@@ -396,19 +396,21 @@
     main.classList.add('jinpoAppliedRow');btn.textContent='適用中';
     var stat=main.nextElementSibling;if(stat&&stat.classList&&stat.classList.contains('dbStatRow'))stat.classList.add('jinpoAppliedRow');
   }
+  /* 一覧への自動スクロールは、同じ1回のユーザー操作から再検索が複数経路で走っても1回だけにする。
+     スクロール先・位置・smooth指定は従来どおり変更しない。 */
+  var listAutoScrollInteractionSeq=0,lastListAutoScrollInteractionSeq=-1;
+  function markListAutoScrollInteraction(){listAutoScrollInteractionSeq++;}
+  try{
+    document.addEventListener('pointerdown',markListAutoScrollInteraction,true);
+    document.addEventListener('keydown',markListAutoScrollInteraction,true);
+    if(!('PointerEvent' in window))document.addEventListener('touchstart',markListAutoScrollInteraction,{capture:true,passive:true});
+  }catch(e){}
   function scrollSearchResults(){
-    try{
-      if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function'){
-        window.__jinpoScrollToRecommendSearchTopOnce('auto');
-        return;
-      }
-    }catch(e){}
-    var el=q('jinpoRecommendNav');
-    if(!el)return;
-    var top=Math.max(0,el.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0));
-    var current=window.pageYOffset||document.documentElement.scrollTop||0;
-    if(Math.abs(current-top)<=1)return;
-    try{window.scrollTo({top:top,left:0,behavior:'auto'});}catch(e){try{window.scrollTo(0,top);}catch(ignore){}}
+    var el=q('dbFormationList')||q('summary');
+    if(!el||typeof el.scrollIntoView!=='function')return;
+    if(lastListAutoScrollInteractionSeq===listAutoScrollInteractionSeq)return;
+    lastListAutoScrollInteractionSeq=listAutoScrollInteractionSeq;
+    try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
 
@@ -477,7 +479,7 @@
     var loadingTarget=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)):(recommendLabel(target));
     var loadingSub=(secondary?(loadingTarget+'の合計値が高い組み合わせを検索しています'):(loadingTarget+'が高い組み合わせを検索しています'))+'（'+statModeLabel()+'基準）';
     box.innerHTML='<div class="jinpoRecommendLoading" role="status" aria-live="polite"><span class="dbSearchSpinner" aria-hidden="true"></span><div class="jinpoRecommendLoadingTitle">おすすめ陣法を検索中…</div><div class="jinpoRecommendLoadingSub">'+esc(loadingSub)+'</div></div>';
-    try{var r=mode==='bond56'?await searchRecommendedBond56(query,target,secondary,myToken):await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':(mode==='popular'?' / 選抜人気対象のみ':(mode==='bond56'?' / 5・6因縁のみ':'')),f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',basisText=' / 検索基準 '+statModeLabel(),rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順'),countText=mode==='bond56'?'5・6因縁のみ':'因縁数混在',matchedComplete=mode==='bond56'?r.matchedComplete!==false:true;if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / '+countText+' / 条件一致 '+hitStatusText(r.matched||0,matchedComplete)+' / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+basisText;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text+basisText;}setSummary(r.matched||0,activeRows.length,matchedComplete);rerenderList(null);scrollSearchResults();return true;
+    try{var r=mode==='bond56'?await searchRecommendedBond56(query,target,secondary,myToken):await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var gradeText=mode==='grade3'?' / 等級3以下のみ':(mode==='popular'?' / 選抜人気対象のみ':(mode==='bond56'?' / 5・6因縁のみ':'')),f4Text=selectedExclude>0?' / 文曲除外人数 '+selectedExclude:'',basisText=' / 検索基準 '+statModeLabel(),rankText=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+'の合計が高い順'):(recommendLabel(target)+'が高い順'),countText=mode==='bond56'?'5・6因縁のみ':'因縁数混在',matchedComplete=mode==='bond56'?r.matchedComplete!==false:true;if(formation){status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / '+formation+' / '+countText+' / 条件一致 '+hitStatusText(r.matched||0,matchedComplete)+' / '+rankText+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text+basisText;}else{status.textContent='おすすめ陣法：'+(secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)+' 合計値'):recommendLabel(target))+' / 条件に一致する組み合わせがありません。'+gradeText+f4Text+basisText;}setSummary(r.matched||0,activeRows.length,matchedComplete);rerenderList(null);return true;
     }catch(err){
       if(myToken!==activeToken)return true;console.error('おすすめ陣法検索エラー',err);status.textContent='おすすめ陣法の検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">おすすめ陣法の検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;
     }finally{if(myToken===activeToken)hideProgress();}
