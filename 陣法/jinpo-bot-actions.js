@@ -101,9 +101,8 @@
     return out;
   }
   function getOwnedFilters(){
-    var st=window.__ownedHeroReliableState;
-    if(st&&Array.isArray(st.selected))return st.selected.slice(0,3).map(String);
-    return [1,2,3].map(function(i){var b=q('ownedHeroSlotBtn'+i);var m=text(b&&b.textContent||'').match(/：(.+)$/);return m&&m[1]!=='未選択'?m[1]:'';});
+    try{if(typeof window.__jinpoOwnedHeroInternalIds==='function')return (window.__jinpoOwnedHeroInternalIds()||[]).slice(0,6).map(String);}catch(e){}
+    return [1,2,3,4,5,6].map(function(i){var b=q('ownedHeroSlotBtn'+i);var m=text(b&&b.textContent||'').match(/：(.+)$/);return m&&m[1]!=='未選択'?m[1]:'';});
   }
   function getExcluded(){
     try{return typeof window.__jinpoGetExcludedHeroInternalIds==='function'?(window.__jinpoGetExcludedHeroInternalIds()||[]).map(String):[];}catch(e){return[];}
@@ -349,7 +348,7 @@
     return ok(mode==='active'?'現在発動中因縁を表示しました。':'因縁一覧を表示しました。',{mode:mode,query:text(query)});
   }
   function openEnhancement(){var b=q('eiketsuKishinsekiOpenBtn');if(!b)return fail('転生＆見聞録＆鬼神石画面が見つかりません。');click(b);return ok('転生＆見聞録＆鬼神石画面を開きました。');}
-  function openOwnedPicker(slot){slot=Number(slot)||1;if(slot<1||slot>3)return fail('配置英傑の指定枠は1〜3です。');if(typeof window.__ownedHeroOpenReliable!=='function')return fail('配置英傑選択画面が準備できていません。');window.__ownedHeroOpenReliable(slot-1,null);return ok('配置英傑'+slot+'の選択画面を開きました。',{slot:slot});}
+  function openOwnedPicker(slot){slot=Number(slot)||1;if(slot<1||slot>6)return fail('配置英傑の指定枠は1〜6です。');if(typeof window.__jinpoOpenCommonOwnedHeroPicker!=='function')return fail('配置英傑選択画面が準備できていません。');window.__jinpoOpenCommonOwnedHeroPicker(slot-1,null);return ok('配置英傑'+slot+'の選択画面を開きました。',{slot:slot});}
   function openExcludedPicker(){var b=q('jinpoExcludedHeroOpenBtn');if(!b)return fail('除外英傑選択画面が見つかりません。');click(b);return ok('除外英傑選択画面を開きました。');}
   function exportJson(){var b=q('exportJsonBtn');if(!b)return fail('JSON出力機能が見つかりません。');click(b);return ok('現在編成のJSON出力を実行しました。');}
   function openFilePicker(id,label){var input=q(id);if(!input)return fail(label+'のファイル選択欄が見つかりません。');try{click(input);return ok(label+'のファイル選択を開きました。');}catch(e){return fail(label+'のファイル選択を開けませんでした。');}}
@@ -367,15 +366,17 @@
   function readCurrentPlacement(){return getPlacementSlots().filter(Boolean);}
 
   async function setOwnedHero(slot,query){
-    slot=Number(slot);if(slot<1||slot>3)return fail('配置英傑の指定枠は1〜3です。');if(!query)return fail('英傑名またはinternal_idを指定してください。');
-    if(typeof window.__ownedHeroOpenReliable!=='function')return fail('配置英傑選択機能が準備できていません。');
+    slot=Number(slot);if(slot<1||slot>6)return fail('配置英傑の指定枠は1〜6です。');if(!query)return fail('英傑名またはinternal_idを指定してください。');
+    if(typeof window.__jinpoOpenCommonOwnedHeroPicker!=='function')return fail('配置英傑選択機能が準備できていません。');
     return mutateWithoutSearch(async function(){
-      window.__ownedHeroOpenReliable(slot-1,null);var st=window.__ownedHeroReliableState;if(st)st.justOpenedAt=0;
-      var search=q('ownedHeroReliableSearch');if(search){search.value=String(query);emitInput(search);}var cards=qa('#ownedHeroReliableGrid [data-owned-reliable-key]');
-      var nq=norm(query);var exact=cards.filter(function(c){var id=text(c.getAttribute('data-owned-reliable-key'));var nm=norm((c.querySelector('.ownedHeroName')||c).textContent||'').replace(/選択中$/,'');return id===text(query)||nm===nq;});
-      var matches=exact.length?exact:cards.filter(function(c){var nm=norm((c.querySelector('.ownedHeroName')||c).textContent||'').replace(/選択中$/,'');return nq&&nm.indexOf(nq)>=0;});
-      if(matches.length!==1){var candidates=(matches.length?matches:cards).slice(0,8).map(function(c){return {id:text(c.getAttribute('data-owned-reliable-key')),name:text((c.querySelector('.ownedHeroName')||c).textContent||'').replace(/\s*選択中\s*$/,'')};});return fail(matches.length>1?'候補が複数あります。もう少し名前を詳しく指定してください。':'該当英傑が見つかりません。',{candidates:candidates});}
-      var selectedName=text((matches[0].querySelector('.ownedHeroName')||matches[0]).textContent||'').replace(/\s*選択中\s*$/,'');click(matches[0]);return ok('配置英傑'+slot+'に'+selectedName+'を指定しました。',{slot:slot,id:text(matches[0].getAttribute('data-owned-reliable-key')),hero:selectedName});
+      window.__jinpoOpenCommonOwnedHeroPicker(slot-1,null);
+      var search=q('jinpoCommonHeroSearch');if(search){search.value=String(query);emitInput(search);}
+      var cards=qa('#jinpoCommonHeroPicker [data-common-hero-id]');
+      function cardName(c){var n=c.querySelector('.jinpoCommonHeroName');if(!n)return '';var node=n.firstChild;return text(node&&node.nodeType===3?node.nodeValue:n.textContent||'');}
+      var nq=norm(query),qid=text(query);var exact=cards.filter(function(c){return text(c.getAttribute('data-common-hero-id'))===qid||norm(cardName(c))===nq;});
+      var matches=exact.length?exact:cards.filter(function(c){var nm=norm(cardName(c));return nq&&nm.indexOf(nq)>=0;});
+      if(matches.length!==1){var candidates=(matches.length?matches:cards).slice(0,8).map(function(c){return {id:text(c.getAttribute('data-common-hero-id')),name:cardName(c)};});return fail(matches.length>1?'候補が複数あります。もう少し名前を詳しく指定してください。':'該当英傑が見つかりません。',{candidates:candidates});}
+      var selectedName=cardName(matches[0]);click(matches[0]);return ok('配置英傑'+slot+'に'+selectedName+'を指定しました。',{slot:slot,id:text(matches[0].getAttribute('data-common-hero-id')),hero:selectedName});
     });
   }
   async function setOwnedHeroAuto(query){

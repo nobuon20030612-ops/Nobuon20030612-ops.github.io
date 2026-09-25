@@ -1526,44 +1526,6 @@
     if(ev.target && ev.target.id === 'formationSelect') setTimeout(refreshActiveModalFromCurrentState,0);
   },false);
 
-  /* 職業表示は英傑マスタ「職業」列を正とする。特化(因子1)とは混同しない。
-     既存ロジックを変更せず、配置英傑モーダルの表示文字だけを補正する。 */
-  function correctOwnedHeroJobMeta(){
-    var grid = document.getElementById('ownedHeroReliableGrid');
-    if(!grid) return;
-    var master = [];
-    try{ if(typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)) master = eiketsuMaster; }catch(e){}
-    if(!master.length) return;
-    Array.prototype.forEach.call(grid.querySelectorAll('[data-owned-reliable-key]'),function(card){
-      var key = text(card.getAttribute('data-owned-reliable-key'));
-      if(!key) return;
-      var hero = master.find(function(h){
-        return text(h && h.internal_id) === key || normalize(h && h['英傑名']) === normalize(key);
-      });
-      if(!hero) return;
-      var job = text(hero['職業']);
-      if(!job) return;
-      var meta = card.querySelector('.ownedHeroMeta');
-      if(!meta) return;
-      var cost = text(hero['コスト']) || '未確認';
-      meta.textContent = job + ' / コスト ' + cost;
-    });
-  }
-  function scheduleOwnedHeroJobMetaFix(){
-    setTimeout(correctOwnedHeroJobMeta,0);
-    setTimeout(correctOwnedHeroJobMeta,80);
-  }
-  document.addEventListener('click',function(ev){
-    var t = ev.target && ev.target.closest ? ev.target.closest('#ownedHeroSlotBtn1,#ownedHeroSlotBtn2,#ownedHeroSlotBtn3,#ownedHeroSlotBtn4,#ownedHeroSlotBtn5,#ownedHeroSlotBtn6,#ownedHeroReliableGrid,[data-owned-reliable-key]') : null;
-    if(t) scheduleOwnedHeroJobMetaFix();
-  },true);
-  document.addEventListener('input',function(ev){
-    if(ev.target && ev.target.id === 'ownedHeroReliableSearch') scheduleOwnedHeroJobMetaFix();
-  },true);
-  document.addEventListener('change',function(ev){
-    if(ev.target && (ev.target.id === 'ownedHeroReliableJob' || ev.target.id === 'ownedHeroReliableFactor')) scheduleOwnedHeroJobMetaFix();
-  },true);
-
   function currentMasterRowsSafe(){
     try{ if(typeof eiketsuMaster !== 'undefined' && Array.isArray(eiketsuMaster)) return eiketsuMaster; }catch(e){}
     return [];
