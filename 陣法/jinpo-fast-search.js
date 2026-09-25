@@ -397,9 +397,18 @@
     var stat=main.nextElementSibling;if(stat&&stat.classList&&stat.classList.contains('dbStatRow'))stat.classList.add('jinpoAppliedRow');
   }
   function scrollSearchResults(){
-    var el=q('dbFormationList')||q('summary');
-    if(!el||typeof el.scrollIntoView!=='function')return;
-    try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
+    try{
+      if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function'){
+        window.__jinpoScrollToRecommendSearchTopOnce('auto');
+        return;
+      }
+    }catch(e){}
+    var el=q('jinpoRecommendNav');
+    if(!el)return;
+    var top=Math.max(0,el.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0));
+    var current=window.pageYOffset||document.documentElement.scrollTop||0;
+    if(Math.abs(current-top)<=1)return;
+    try{window.scrollTo({top:top,left:0,behavior:'auto'});}catch(e){try{window.scrollTo(0,top);}catch(ignore){}}
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
 
@@ -505,6 +514,7 @@
   }
 
   function rerunForFormationChange(count){
+    if(recommendState.applyingFormation)return Promise.resolve(true);
     var serial=++formationRerunSerial,c=Number(count||selectedCount()||0);
     if(c<5||c>9||!form())return Promise.resolve(true);
     setCount(c);
