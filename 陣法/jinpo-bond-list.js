@@ -170,13 +170,30 @@
     if(document.body) document.body.classList.toggle('jinpo-selected-grade3-mode',!!on);
     try{ window.dispatchEvent(new CustomEvent('jinpo:selected-grade3-mode',{detail:{active:!!on}})); }catch(e){}
   }
+  function resetScreenForModeChange(){
+    try{
+      if(typeof window.__jinpoPerformGlobalReset==='function'){
+        window.__jinpoPerformGlobalReset();
+        return true;
+      }
+    }catch(e){ console.error('検索モード切替時の画面初期化失敗',e); }
+    try{
+      if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.resetAll==='function') window.JINPO_FAST_SEARCH.resetAll();
+    }catch(e){ console.error('検索モード切替時の検索状態初期化失敗',e); }
+    try{ writeGrade3ModeState(false); }catch(e){}
+    try{ setSpecialModeVisual(false); }catch(e){}
+    return false;
+  }
   function setSearchMode(mode){
     mode=text(mode);
     if(['normal','grade3','bond56','special'].indexOf(mode)<0) return false;
     var before=currentSearchMode();
     if(before===mode){ syncModeSelectorState(); return true; }
 
-    if(specialModeOn() && mode!=='special') setSpecialModeVisual(false);
+    /* 別モードへ切り替える時は、ページを開いて最初にモードを選んだ直後と同じ画面状態へ戻す。
+       保存済み編成やマスターデータは触らず、既存の全解除＝画面初期化経路だけを再利用する。 */
+    if(specialModeOn()) setSpecialModeVisual(false);
+    resetScreenForModeChange();
 
     if(mode==='bond56'){
       writeGrade3ModeState(false);
@@ -952,7 +969,15 @@
         var btn=ev.target&&ev.target.closest&&ev.target.closest('[data-jinpo-search-mode]');
         if(!btn)return;
         ev.preventDefault();
+        /* モード選択では現在の表示位置を動かさない。切替時の初期化・再描画によるスクロール位置の変化だけを打ち消す。 */
+        var keepX=window.pageXOffset||document.documentElement.scrollLeft||0;
+        var keepY=window.pageYOffset||document.documentElement.scrollTop||0;
         setSearchMode(btn.getAttribute('data-jinpo-search-mode'));
+        var restoreModeScroll=function(){
+          try{window.scrollTo({left:keepX,top:keepY,behavior:'auto'});}catch(e){try{window.scrollTo(keepX,keepY);}catch(ignore){}}
+        };
+        restoreModeScroll();
+        if(typeof requestAnimationFrame==='function') requestAnimationFrame(restoreModeScroll);
       });
     }
     var modeHeader=document.getElementById('jinpoModeSelectHeader');

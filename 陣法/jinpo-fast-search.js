@@ -403,9 +403,27 @@
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
 
+  var progressOriginalParent=null,progressOriginalNextSibling=null;
+  function bringProgressToFrontForPopularMode(){
+    var p=q('dbSearchProgress');if(!p)return null;
+    /* 選抜人気モードは背景用 filter / stacking context を使うため、検索中だけ進捗パネルを body 直下へ退避し、
+       暗転と読込表示が必ず最前面に出るようにする。通常時のDOM配置は変更しない。 */
+    if(popularOn()&&p.parentNode!==document.body){
+      progressOriginalParent=p.parentNode;
+      progressOriginalNextSibling=p.nextSibling;
+      document.body.appendChild(p);
+    }
+    return p;
+  }
+  function restoreProgressPosition(){
+    var p=q('dbSearchProgress'),parent=progressOriginalParent,next=progressOriginalNextSibling;
+    progressOriginalParent=null;progressOriginalNextSibling=null;
+    if(!p||!parent||!parent.isConnected)return;
+    if(next&&next.parentNode===parent)parent.insertBefore(p,next);else parent.appendChild(p);
+  }
   function ensureCancelButton(){var panel=q('dbSearchProgress');if(!panel)return null;var btn=q('dbSearchProgressCancel');if(!btn){btn=document.createElement('button');btn.id='dbSearchProgressCancel';btn.type='button';btn.textContent='検索を中止する';panel.appendChild(btn);}return btn;}
-  function showProgress(msg,bytes){var cb=ensureCancelButton();if(cb)cb.style.display='block';var p=q('dbSearchProgress');if(p){p.style.display='block';p.classList.add('active');}var t=q('dbSearchProgressTitle');if(t)t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'検索中');var c=q('dbSearchProgressCount');if(c)c.textContent=bytes?((bytes/1024/1024).toFixed(1)+'MB'):'検索DB';var r=q('dbSearchProgressRemain');if(r)r.textContent='高速検索中';var b=q('dbSearchProgressBar');if(b){b.style.width='42%';if(b.parentElement)b.parentElement.classList.add('indeterminate');}}
-  function hideProgress(){var cb=q('dbSearchProgressCancel');if(cb)cb.style.display='none';var p=q('dbSearchProgress');if(p){p.style.display='none';p.classList.remove('active');}var b=q('dbSearchProgressBar');if(b){b.style.width='0%';if(b.parentElement)b.parentElement.classList.remove('indeterminate');}}
+  function showProgress(msg,bytes){var p=bringProgressToFrontForPopularMode();var cb=ensureCancelButton();if(cb)cb.style.display='block';if(p){p.style.display='block';p.classList.add('active');}var t=q('dbSearchProgressTitle');if(t)t.innerHTML='<span class="dbSearchSpinner"></span>'+esc(msg||'検索中');var c=q('dbSearchProgressCount');if(c)c.textContent=bytes?((bytes/1024/1024).toFixed(1)+'MB'):'検索DB';var r=q('dbSearchProgressRemain');if(r)r.textContent='高速検索中';var b=q('dbSearchProgressBar');if(b){b.style.width='42%';if(b.parentElement)b.parentElement.classList.add('indeterminate');}}
+  function hideProgress(){var cb=q('dbSearchProgressCancel');if(cb)cb.style.display='none';var p=q('dbSearchProgress');if(p){p.style.display='none';p.classList.remove('active');}var b=q('dbSearchProgressBar');if(b){b.style.width='0%';if(b.parentElement)b.parentElement.classList.remove('indeterminate');}restoreProgressPosition();}
   function updateGlobals(rows){try{window.resultDbRows=rows;resultDbRows=rows;if(typeof rebuildResultDbIndex==='function')rebuildResultDbIndex();}catch(e){try{window.resultDbRows=rows;}catch(_){}}}
 
   function applyRecommendedFormation(formation){
