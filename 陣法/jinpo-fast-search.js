@@ -398,8 +398,10 @@
   }
   function scrollSearchResults(){
     var el=q('dbFormationList')||q('summary');
-    if(!el||typeof el.scrollIntoView!=='function')return;
-    try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
+    if(!el)return;
+    var top=0;
+    try{top=el.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0);}catch(e){return;}
+    try{window.scrollTo({top:Math.max(0,top),left:0,behavior:'smooth'});}catch(e){try{window.scrollTo(0,Math.max(0,top));}catch(ignore){}}
   }
   window.__jinpoScrollSearchResults=scrollSearchResults;
 
