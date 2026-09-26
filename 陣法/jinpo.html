@@ -7227,8 +7227,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .dbPriorityValueChoice:disabled{cursor:not-allowed !important;transform:none !important;}
 .dbPriorityStatChoice:disabled:not(.active),
 .dbPriorityValueChoice:disabled:not(.active){opacity:.30 !important;filter:grayscale(.45) !important;}
-.dbPriorityStatChoice.jinpoRecommendFixed{opacity:1 !important;filter:none !important;outline:3px solid #fff4b8 !important;box-shadow:0 0 15px rgba(255,239,170,.86) !important;}
-.dbPriorityButtonGroup[data-recommend-fixed="1"] > label::after{content:"【おすすめ固定】";margin-left:8px;color:#ffe1a1;font-size:12px;font-weight:950;white-space:nowrap;}
 .dbPriorityValueChoice{
   background:#17110b !important;
   color:#ffe9b4 !important;
@@ -7310,6 +7308,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000];
   var NORMAL_VALUES = [1600,1400,1200,1000,800,600,400,200];
   var recommendLock = {active:false,targetStat:""};
+  var recommendPrimaryConfirmPending = false;
 
   function dispatchChange(el){
     if(!el) return;
@@ -7337,23 +7336,45 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     var currentValue=valueSel.value || "";
     var currentMax=maxInput.value || "";
     var group=statBox.closest('.dbPriorityButtonGroup');
-    var lockedPrimary=!!recommendLock.active && index===1;
-    if(group) group.dataset.recommendFixed=lockedPrimary?'1':'0';
+    if(group) group.dataset.recommendFixed='0';
 
     statBox.innerHTML="";
     STATS.forEach(function(item){
       var b=document.createElement('button');
       var blockedSecondary=!!recommendLock.active && index===2 && item.value===recommendLock.targetStat;
-      var fixed=lockedPrimary && item.value===recommendLock.targetStat;
       b.type='button';
-      b.className='dbPriorityStatChoice'+(currentStat===item.value?' active':'')+(fixed?' jinpoRecommendFixed':'');
+      b.className='dbPriorityStatChoice'+(currentStat===item.value?' active':'');
       b.setAttribute('data-stat',item.value);
       b.textContent=item.label;
-      b.title=fixed?(item.label+'（おすすめ固定）'):item.label;
-      b.disabled=lockedPrimary||blockedSecondary;
+      b.title=item.label;
+      b.disabled=blockedSecondary;
       b.addEventListener('click',function(){
         if(b.disabled)return;
         var same=statSel.value===item.value;
+
+        /* おすすめ中の第1優先変更だけ、既存の共通はい/いいえモーダルで確認する。
+           現在のおすすめ対象を押した場合は解除せず、そのまま維持する。 */
+        if(index===1 && recommendLock.active){
+          if(same || recommendPrimaryConfirmPending) return;
+          var ask=window.__jinpoAskYesNo;
+          if(typeof ask!=='function') return;
+          recommendPrimaryConfirmPending=true;
+          Promise.resolve(ask({
+            title:'おすすめ検索の変更',
+            message:'おすすめ検索を変更していいですか？'
+          })).then(function(ok){
+            if(!ok) return;
+            /* ここでは第1優先だけ変更する。数値条件・第2優先の整理と再検索は
+               jinpo-fast-search.js の正規おすすめ検索経路へ一本化する。 */
+            statSel.value=item.value;
+            dispatchChange(statSel);
+            render(index);
+          }).finally(function(){
+            recommendPrimaryConfirmPending=false;
+          });
+          return;
+        }
+
         statSel.value=same ? "" : item.value;
         valueSel.value="";
         maxInput.value="";
