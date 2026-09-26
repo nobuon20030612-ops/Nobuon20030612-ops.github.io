@@ -105,9 +105,9 @@
     if(q('jinpoResultUiEnhanceStyle'))return;
     var st=document.createElement('style');st.id='jinpoResultUiEnhanceStyle';st.textContent=`
       .dbPriorityControls.dbPriorityButtonMode{grid-template-columns:repeat(2,minmax(0,1fr)) !important;align-items:stretch !important}
-      .jinpoPriorityTitleRow{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:10px !important;min-width:0 !important;margin:0 0 8px 0 !important;white-space:nowrap !important}
-      .jinpoPriorityTitleRow > label{display:block !important;flex:0 0 auto !important;margin:0 !important}
-      .jinpoPrioritySortNotice{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;box-sizing:border-box;margin:0;padding:4px 10px;border:2px solid #e7bd5c;border-radius:9px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-size:16px;font-weight:950;line-height:1.25;letter-spacing:.02em;box-shadow:0 0 10px rgba(231,189,92,.30),inset 0 0 8px rgba(255,231,167,.08);white-space:nowrap}
+      .jinpoPriorityTitleRow{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:0 !important;min-width:0 !important;margin:0 0 8px 0 !important;padding-left:6px !important;white-space:nowrap !important}
+      .jinpoPriorityTitleRow > label{display:block !important;flex:0 0 auto !important;min-width:112px !important;margin:0 !important;text-align:left !important}
+      .jinpoPrioritySortNotice{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;box-sizing:border-box;margin:0 0 0 14px;padding:4px 10px;border:2px solid #e7bd5c;border-radius:9px;background:linear-gradient(135deg,rgba(122,33,24,.92),rgba(45,27,10,.96));color:#fff1bd;font-weight:950;line-height:1.25;letter-spacing:.02em;box-shadow:0 0 10px rgba(231,189,92,.30),inset 0 0 8px rgba(255,231,167,.08);white-space:nowrap;overflow:hidden;text-overflow:clip}
       #formationSelect.jinpoRecommendFormationLocked{opacity:.38 !important;filter:grayscale(.92) brightness(.62) !important;cursor:not-allowed !important;pointer-events:none !important}
       label.jinpoRecommendFormationLocked:has(#formationSelect){opacity:.48 !important;filter:grayscale(.82) brightness(.70) !important;cursor:not-allowed !important;pointer-events:none !important}
       #jinpoResultSummary{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:10px;margin:10px 0 6px 0}
@@ -156,7 +156,7 @@
       #dbFormationList .dbMainRow.jinpoAppliedRow>td:first-child,#dbFormationList .dbStatRow.jinpoAppliedRow>td:first-child{border-left-color:#91e1ff !important}
       #dbFormationList .dbMainRow.jinpoAppliedRow>td:last-child,#dbFormationList .dbStatRow.jinpoAppliedRow>td:last-child{border-right-color:#91e1ff !important}
       #dbFormationList .dbMainRow.jinpoAppliedRow .applyBtn{background:linear-gradient(#66b9d7,#2f7795) !important;border-color:#a9e8ff !important;color:#f3fcff !important;box-shadow:0 0 16px rgba(145,225,255,.52) !important}
-      @media(max-width:900px){.dbPriorityControls.dbPriorityButtonMode{grid-template-columns:460px 460px !important}.jinpoPrioritySortNotice{font-size:14px !important;padding:4px 7px !important}#jinpoResultSummary{grid-template-columns:1fr 1fr !important}.jinpoResultSummaryValue{font-size:23px !important}}
+      @media(max-width:900px){.dbPriorityControls.dbPriorityButtonMode{grid-template-columns:460px 460px !important}.jinpoPrioritySortNotice{padding:4px 7px !important}#jinpoResultSummary{grid-template-columns:1fr 1fr !important}.jinpoResultSummaryValue{font-size:23px !important}}
     `;document.head.appendChild(st);
   }
 
@@ -392,11 +392,11 @@
       if(typeof requestAnimationFrame==='function')requestAnimationFrame(step);else setTimeout(step,0);
     });
   }
-  function scrollSearchResults(){
-    var root=q('reachList'),el=root&&root.querySelector(':scope > h3');
-    if(!el)el=q('reachSection')||root;
-    if(!el||typeof el.scrollIntoView!=='function')return;
-    try{el.scrollIntoView({behavior:'auto',block:'start',inline:'nearest'});}catch(e){try{el.scrollIntoView(true);}catch(ignore){}}
+  function scrollSearchCompletionTarget(){
+    var el=q('jinpoFactor4FilterControl');
+    if(!el||typeof el.scrollIntoView!=='function')return false;
+    try{el.scrollIntoView({behavior:'auto',block:'start',inline:'nearest'});}catch(e){try{el.scrollIntoView(true);}catch(ignore){return false;}}
+    return true;
   }
   function finalizeSearchResults(count,searchToken){
     /* 25件分割描画完了 → 現在検索か確認 → 1回だけスクロール → 描画反映後に完了。
@@ -404,7 +404,7 @@
     return rerenderList(count).then(function(completed){
       if(!completed)return false;
       if(searchToken!=null&&(searchToken!==activeToken||window.__jinpoSearchCancelRequested))return false;
-      scrollSearchResults();
+      scrollSearchCompletionTarget();
       return new Promise(function(resolve){
         if(typeof requestAnimationFrame!=='function'){setTimeout(function(){resolve(true);},0);return;}
         requestAnimationFrame(function(){requestAnimationFrame(function(){resolve(true);});});
@@ -565,7 +565,27 @@
   }
   function ensureFactor4Style(){if(q('jinpoFactor4FilterStyle'))return;var st=document.createElement('style');st.id='jinpoFactor4FilterStyle';st.textContent='.jinpoFactor4FilterControl{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:nowrap;width:100%;min-width:0;margin:0 0 8px 0;padding:6px 8px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:auto;}.jinpoFactor4FilterLabel{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:2px 8px;border:1px solid rgba(255,104,104,.72);border-radius:9px;background:linear-gradient(180deg,rgba(98,20,20,.62),rgba(39,8,8,.42));font-size:20px;line-height:1;font-weight:1000;color:#ffd7d7;white-space:nowrap;text-shadow:0 0 7px rgba(255,72,72,.72),0 2px 0 rgba(50,0,0,.95);box-shadow:0 0 8px rgba(255,68,68,.22);}.jinpoFactor4FilterBtn{min-width:34px;height:30px;padding:3px 8px;border:1px solid rgba(231,189,92,.65);border-radius:9px;background:linear-gradient(#3d2817,#181008);color:#f6e7c4;font-weight:900;cursor:pointer;}.jinpoFactor4FilterBtn:hover{filter:brightness(1.15);}.jinpoFactor4FilterBtn.active{border-color:#ff6868;background:linear-gradient(#6a1717,#2c0909);color:#fff0f0;box-shadow:0 0 8px rgba(255,68,68,.95),0 0 18px rgba(255,68,68,.6),inset 0 0 8px rgba(255,80,80,.25);}@media(max-width:760px){.jinpoFactor4FilterControl{gap:4px;}.jinpoFactor4FilterBtn{min-width:30px;padding:3px 5px}.jinpoFactor4FilterLabel{font-size:18px;}}';document.head.appendChild(st);}
   function syncFactor4(){document.querySelectorAll('.jinpoFactor4FilterBtn').forEach(function(btn){var on=Number(btn.getAttribute('data-factor4-exclude'))===selectedExclude;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');});}
-  function ensureFactor4Controls(){ensureFactor4Style();var anchor=q('jinpoResultSortHintSub');if(!anchor)return false;if(q('jinpoFactor4FilterControl')){syncFactor4();return true;}var ctl=document.createElement('div');ctl.id='jinpoFactor4FilterControl';ctl.className='jinpoFactor4FilterControl';ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');anchor.insertAdjacentElement('afterend',ctl);return true;}
+  function positionPriorityControlsAfterFactor4(ctl){
+    var controls=document.querySelector('.dbPriorityControls.dbPriorityButtonMode');
+    if(!ctl||!controls)return false;
+    if(ctl.nextElementSibling!==controls)ctl.insertAdjacentElement('afterend',controls);
+    return true;
+  }
+  function ensureFactor4Controls(){
+    ensureFactor4Style();
+    var anchor=q('jinpoResultSortHintSub');if(!anchor)return false;
+    var ctl=q('jinpoFactor4FilterControl');
+    if(!ctl){
+      ctl=document.createElement('div');
+      ctl.id='jinpoFactor4FilterControl';
+      ctl.className='jinpoFactor4FilterControl';
+      ctl.innerHTML='<span class="jinpoFactor4FilterLabel">文曲除外人数</span>'+[6,5,4,3,2,1,0].map(function(v){return '<button type="button" class="jinpoFactor4FilterBtn'+(v===selectedExclude?' active':'')+'" data-factor4-exclude="'+v+'" aria-pressed="'+(v===selectedExclude?'true':'false')+'">'+v+'</button>';}).join('');
+      anchor.insertAdjacentElement('afterend',ctl);
+    }
+    syncFactor4();
+    positionPriorityControlsAfterFactor4(ctl);
+    return true;
+  }
 
   function ensureBond56Style(){if(q('jinpoBond56ModeStyle'))return;var st=document.createElement('style');st.id='jinpoBond56ModeStyle';st.textContent=`
     body.jinpo-bond56-mode{background:#11220a!important;background:url("assets/jinpo-bond56-mode-bg.png") center top / cover no-repeat fixed!important;color:#faffea!important}
