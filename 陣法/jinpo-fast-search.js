@@ -588,7 +588,7 @@
   }
 
   function ensureBond56Style(){if(q('jinpoBond56ModeStyle'))return;var st=document.createElement('style');st.id='jinpoBond56ModeStyle';st.textContent=`
-    body.jinpo-bond56-mode{background:#11220a!important;background:url("assets/jinpo-bond56-mode-bg.png") center top / cover no-repeat fixed!important;color:#faffea!important}
+    body.jinpo-bond56-mode{color:#faffea!important}
     body.jinpo-bond56-mode main,body.jinpo-bond56-mode header{background:transparent!important}
     body.jinpo-bond56-mode .card,body.jinpo-bond56-mode .formationMiniPanel,body.jinpo-bond56-mode .dbPriorityGroup{background:linear-gradient(180deg,rgba(7,13,24,.96),rgba(3,4,10,.97))!important;border-color:rgba(0,240,255,.58)!important;box-shadow:0 0 16px rgba(0,239,255,.10),inset 0 0 18px rgba(255,40,210,.025)!important}
     body.jinpo-bond56-mode .card h2,body.jinpo-bond56-mode .card strong,body.jinpo-bond56-mode label,body.jinpo-bond56-mode .small,body.jinpo-bond56-mode .dbListNote{color:#dffcff!important}
