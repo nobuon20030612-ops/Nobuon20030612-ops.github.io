@@ -84,7 +84,6 @@
   function extractJob(text){for(var i=0;i<JOBS.length;i++)if(S(text).indexOf(JOBS[i])>=0)return JOBS[i];return'';}
   function extractSlot(text){var s=kanjiDigits(text),m=s.match(/(?:配置|枠|スロット|鬼神石|転生)[^0-9]{0,5}([1-6])/);return m?Number(m[1]):0;}
   function extractRange(text){var s=kanjiDigits(text),min=null,max=null,m=s.match(/([0-9]{2,5})\s*(?:以上|超え|より上|最低)/);if(m)min=Number(m[1]);m=s.match(/([0-9]{2,5})\s*(?:以下|未満|まで|より下)/);if(m)max=Number(m[1]);return {min:min,max:max};}
-  function basis(text){if(/(?:全?MAX|マックス|フル)(?:込み|状態|基準)|強化込み/.test(text))return'fullmax';if(/基礎値|基礎|素ステ|素の|元ステ|強化なし|通常値|(?:^|[\s、])素(?:で|基準|$)/.test(text))return'base';return'';}
   function direction(text){if(/低い順|小さい順|昇順/.test(text))return'asc';if(/高い順|大きい順|降順|上から/.test(text))return'desc';return'';}
   function removeFillers(text){return clean(text).replace(/^(?:じゃあ|じゃ|なら|それなら|それじゃ|じゃあさ|えっと|えーと|とりあえず|ひとまず|まず|あと|ちなみに|ねえ|ねぇ|お願いだから)\s*/,'').trim();}
   function heroQuery(text,mode){
@@ -99,7 +98,6 @@
       var range=e.range||{};var s='第1 '+e.stats[0];if(range.min!=null)s+=' '+range.min+'以上';if(range.max!=null)s+=' '+range.max+'以下';p.push(s);
     }
     if(e.stats[1])p.push('第2 '+e.stats[1]);
-    if(e.basis==='fullmax')p.push('検索基準を全MAX込みにして');else if(e.basis==='base')p.push('検索基準を基礎値にして');
     if(/等級\s*3以下/.test(text))p.push(/(?:OFF|オフ|なし|解除|使わない)/i.test(text)?'等級3以下 OFF':'等級3以下 ON');
     var f4=kanjiDigits(text).match(/文曲[^0-9]{0,8}([0-6])\s*人?/);if(f4)p.push('文曲除外'+Number(f4[1])+'人');
     if(!p.length&&site&&(site.formation||site.count))return'検索して';
@@ -109,14 +107,14 @@
   function infer(input,context){
     var original=S(input).trim();if(!original)return null;
     var t=removeFillers(original),ct=compact(t),site=context&&context.siteState||{},ref=context&&context.lastReference||{},mem=loadMemory();
-    var e={stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),ranks:extractRanks(t),panel:extractPanel(t),job:extractJob(t),slot:extractSlot(t),range:extractRange(t),basis:basis(t),dir:direction(t)};
+    var e={stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),ranks:extractRanks(t),panel:extractPanel(t),job:extractJob(t),slot:extractSlot(t),range:extractRange(t),dir:direction(t)};
     // よく使われる2項目省略。単語登録ではなく、陣法のステータス組み合わせとして補完する。
     var pairMap={'腕知':['腕力','知力'],'腕生':['腕力','生命'],'腕耐':['腕力','耐久力'],'生知':['生命','知力'],'生耐':['生命','耐久力'],'知魅':['知力','魅力']};
     Object.keys(pairMap).forEach(function(k){if(t.indexOf(k)>=0)e.stats=unique(pairMap[k].concat(e.stats||[]));});
     if(!e.stats.length&&/(?:^|[^知魅耐器生気水火土風])力(?:トップ|一番|いちばん|最高|最大)/.test(t))e.stats=['腕力'];
     var c=[];
     var searchish=any(t,SEARCH_WORDS),applyish=any(t,APPLY_WORDS),includeish=any(t,INCLUDE_WORDS),excludeish=any(t,EXCLUDE_WORDS);
-    var hasEntities=!!(e.formation||e.count||e.stats.length||e.basis);
+    var hasEntities=!!(e.formation||e.count||e.stats.length);
 
     // 「一番高い」「トップ」系に加え、「耐久と魅力の合計高い」のような
     // 日常的な2項目合計指定も、陣形を質問せず全陣形DB比較として扱う。
@@ -140,7 +138,7 @@
     if(/^(?:もう一回|もっかい|同じの|同じので|さっきの条件|このまま|今のまま|今ので|そのまま)(?:で)?(?:もう一回|もっかい)?(?:お願い|やって|検索|探して)?$/.test(t))add(c,'search_current',0.99,'検索して','現在条件を維持して再検索');
     if(/^(?:やっぱ|じゃあ|なら)?\s*([5-9])\s*(?:にして|で|でいこう|でいい)?$/.test(kanjiDigits(t))){var nc=extractCount(t);if(nc)add(c,'change_count',0.96,nc+'因縁 検索して','数字を因縁数として補完');}
     if(e.formation&&/^(?:やっぱ|じゃあ|なら)?\s*(?:鶴翼|鶴|方円|魚鱗|魚|衡軛|衡)(?:に|で)?(?:変えて|変える|して|いこう|いい)?$/.test(t))add(c,'change_formation',0.97,e.formation+' 検索して','陣形変更として補完');
-    if(e.stats[0]&&!e.formation&&!e.count&&!e.basis&&/^(?:やっぱ|じゃあ|なら)\s*.+?(?:に|で)?(?:変えて|して|いこう|いい)?$/.test(S(original).trim())&&!searchish&&!/とは|なに|何/.test(t)){
+    if(e.stats[0]&&!e.formation&&!e.count&&/^(?:やっぱ|じゃあ|なら)\s*.+?(?:に|で)?(?:変えて|して|いこう|いい)?$/.test(S(original).trim())&&!searchish&&!/とは|なに|何/.test(t)){
       var sc=site.priority1?0.91:0.82;add(c,'change_stat',sc,'第1 '+e.stats[0]+' 検索して','現在の第1優先を変更する文脈');
     }
     var secondStatFollowup=!!(e.stats[0]&&site.priority1&&(/^(?:あと|それと|ついでに)\s*.+/.test(original)||/(?:も|もね|もさ).*(?:高|高め|強|重視|優先|欲しい|ほしい|見たい|見る|盛り)/.test(t)));
@@ -149,7 +147,7 @@
     if(/^(?:メイン|第1|1番目)(?:は|を)?\s*(?:やっぱ|やっぱり)?\s*(?:いらない|なし|無し|やめ|外して|消して|解除)$/.test(t))add(c,'clear_p1',0.99,'第1優先解除 検索して','第1優先解除');
 
     // 普通の検索依頼。動詞が省略されていても、検索エンティティが2個以上なら高めに扱う。
-    var entityCount=(e.formation?1:0)+(e.count?1:0)+e.stats.length+(e.basis?1:0);
+    var entityCount=(e.formation?1:0)+(e.count?1:0)+e.stats.length;
     if(!bestish&&((searchish&&hasEntities)||entityCount>=2)){var ss=searchish?0.98:0.96;add(c,'search',ss,searchCanonical(e,site,t),'検索条件を組み立て');}
     if(entityCount===1&&e.count&&/^[5-9](?:因縁|縁|いんえん)?$/.test(kanjiDigits(t)))add(c,'count_only',0.84,e.count+'因縁 検索して','因縁数だけの短縮指定');
     if(!bestish&&!secondStatFollowup&&entityCount===1&&e.stats[0]&&/(?:高い|高め|盛り|重視|優先|強め|伸ばした|欲しい|ほしい)/.test(t))add(c,'stat_search',0.93,'第1 '+e.stats[0]+' 検索して','ステータス優先検索');
@@ -207,11 +205,9 @@
     if(/(?:強化|見聞録|鬼神石|転生).*(?:画面|設定).*(?:開|見せ)|(?:強化画面|強化設定)(?:開|見せ)/.test(t))add(c,'open_enhance',0.96,'強化画面を開いて','強化画面');
 
     // 基準・フィルタ。
-    if(e.basis&&!/(?:いくつ|教えて|見せて|合計|数値)/.test(t))add(c,'basis',0.90,(e.basis==='fullmax'?'検索基準を全MAX込みにして':'検索基準を基礎値にして')+((searchish||e.count||e.stats.length||e.formation)?' 検索して':''),'検索基準');
     if(/等級\s*3以下/.test(t))add(c,'grade3',0.96,'等級3以下 '+(/(?:なし|解除|OFF|オフ|使わない)/i.test(t)?'OFF':'ON')+(searchish?' 検索して':''),'等級3以下');
     var f4m=kanjiDigits(t).match(/文曲[^0-9]{0,8}([0-6])\s*人?/);if(f4m)add(c,'factor4',0.97,'文曲除外'+Number(f4m[1])+'人'+(searchish?' 検索して':''),'文曲除外人数');
     if(/文曲.*(?:なし|解除|0人|ゼロ)/.test(t))add(c,'factor4_clear',0.98,'文曲除外0人'+(searchish?' 検索して':''),'文曲除外解除');
-    if(/(?:第1.*第2|2項目|二項目|両方).*(?:合計|足して|合わせて).*(?:並べ|ソート|優先)/.test(t))add(c,'sum_sort',0.92,'合計ソート ON','合計ソート');
 
     // 保存・共有・復元。
     if(/(?:これ|今の|この編成|この組み合わせ).*(?:覚え|保存|取っと)|(?:覚え|保存).*(?:これ|今の|編成)/.test(t))add(c,'save',0.96,'編成を保存して','編成保存');
@@ -252,5 +248,5 @@
   }
 
   var lexiconCount=STATS.reduce(function(n,x){return n+x.a.length;},0)+FORMS.reduce(function(n,x){return n+x.a.length;},0)+PANELS.reduce(function(n,x){return n+x.a.length;},0)+SEARCH_WORDS.length+APPLY_WORDS.length+INCLUDE_WORDS.length+EXCLUDE_WORDS.length+JOBS.length;
-  window.JINPO_BOT_NLU={version:'2.2.0',infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:41,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t),basis:basis(t)};}};
+  window.JINPO_BOT_NLU={version:'2.2.0',infer:infer,remember:remember,getMemory:loadMemory,clearMemory:clearMemory,compact:compact,lexiconCount:lexiconCount,intentCount:41,debugExtract:function(t){return {clean:removeFillers(t),stats:extractStats(t),formation:extractFormation(t),count:extractCount(t),range:extractRange(t)};}};
 })();

@@ -68,23 +68,9 @@
     var b=document.querySelector('.jinpoFactor4FilterBtn.active[data-factor4-exclude]');
     return Number(b&&b.getAttribute('data-factor4-exclude'))||0;
   }
-  function getSumSort(){
-    try{if(typeof window.__jinpoGetSumPrioritySort==='function')return window.__jinpoGetSumPrioritySort();}catch(e){}
-    return {enabled:false,stat1:'',stat2:'',tiePrefer:'first'};
-  }
   function getRecommendState(){
     try{if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.getRecommendState==='function'){var r=window.JINPO_FAST_SEARCH.getRecommendState()||{};return {active:!!r.active,targetStat:canonicalStat(r.targetStat)||text(r.targetStat),secondaryStat:canonicalStat(r.secondaryStat)||text(r.secondaryStat),formation:canonicalFormation(r.formation)||text(r.formation)};}}catch(e){}
     return {active:false,targetStat:'',secondaryStat:'',formation:''};
-  }
-  function getSearchBasis(){
-    try{if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.getSearchStatMode==='function')return window.JINPO_FAST_SEARCH.getSearchStatMode()==='fullmax'?'fullmax':'base';}catch(e){}
-    var root=q('jinpoSearchStatMode');return root&&root.dataset&&root.dataset.mode==='fullmax'?'fullmax':'base';
-  }
-  function setSearchBasis(mode){
-    mode=String(mode||'').toLowerCase();mode=(mode==='fullmax'||mode==='max'||mode==='allmax')?'fullmax':'base';
-    if(!window.JINPO_FAST_SEARCH||typeof window.JINPO_FAST_SEARCH.setSearchStatMode!=='function')return fail('検索基準の切替機能が準備できていません。');
-    var got=window.JINPO_FAST_SEARCH.setSearchStatMode(mode);
-    return ok('検索基準を'+(got==='fullmax'?'全MAX込み':'基礎値')+'にしました。',{searchBasis:got});
   }
   function getPlacementSlots(){
     var out=[];
@@ -138,13 +124,13 @@
     return Number(b&&b.getAttribute('data-count'))||0;
   }
   function readSiteState(){
-    var p1=getPriority(1),p2=getPriority(2),sum=getSumSort(),rec=getRecommendState();
+    var p1=getPriority(1),p2=getPriority(2),rec=getRecommendState();
     return {
-      formation:getFormation(),count:getCount(),grade3:getGrade3(),searchBasis:getSearchBasis(),
+      formation:getFormation(),count:getCount(),grade3:getGrade3(),
       recommendActive:rec.active,recommendTarget:rec.targetStat,recommendSecondary:rec.secondaryStat,recommendFormation:rec.formation,
       priority1:p1.stat,priority1Min:p1.min,priority1Max:p1.max,
       priority2:p2.stat,priority2Min:p2.min,priority2Max:p2.max,
-      factor4Exclude:getFactor4Exclude(),sumSort:!!sum.enabled,sumTie:sum.tiePrefer==='second'?'second':'first',
+      factor4Exclude:getFactor4Exclude(),
       owned:getOwnedFilters(),excluded:getExcluded(),placement:getPlacementSlots(),
       totals:getTotalsFrom('totalStatResult'),combinedTotals:getTotalsFrom('eiketsuKishinsekiCombinedResult'),
       allMax:!!(q('eiketsuKishinsekiAllMaxIndicator')&&q('eiketsuKishinsekiAllMaxIndicator').classList.contains('show')),
@@ -154,10 +140,10 @@
   function captureSnapshot(){
     var s=readSiteState();
     return {
-      formation:s.formation,count:s.count,grade3:s.grade3,searchBasis:s.searchBasis,
+      formation:s.formation,count:s.count,grade3:s.grade3,
       priority1:s.priority1,priority1Min:s.priority1Min,priority1Max:s.priority1Max,
       priority2:s.priority2,priority2Min:s.priority2Min,priority2Max:s.priority2Max,
-      factor4Exclude:s.factor4Exclude,sumSort:s.sumSort,sumTie:s.sumTie,
+      factor4Exclude:s.factor4Exclude,
       placementSlots:(s.placement||[]).map(function(x){return x&&x.internal_id?x.internal_id:null;}),
       owned:(s.owned||[]).slice(0,3),excluded:(s.excluded||[]).slice(),
       allMax:s.allMax
@@ -217,16 +203,6 @@
     if(defer)await mutateWithoutSearch(async function(){click(btn);});else click(btn);
     return ok('文曲除外人数を'+n+'人にしました。',{factor4Exclude:n});
   }
-  async function setSumSort(enabled,tie,defer){
-    var root=q('jinpoSumPrioritySort');if(!root)return fail('第1・第2合計ソート機能が見つかりません。');
-    var run=async function(){
-      var b=root.querySelector('[data-sum-priority-enabled="'+(enabled?'1':'0')+'"]');if(b&&!b.disabled)click(b);
-      if(enabled&&tie){var t=root.querySelector('[data-sum-tie="'+(tie==='second'?'second':'first')+'"]');if(t&&!t.disabled)click(t);}
-    };
-    if(defer)await mutateWithoutSearch(run);else await run();
-    return ok('第1・第2合計ソートを'+(enabled?'ON':'OFF')+'にしました。',{enabled:!!enabled,tie:tie==='second'?'second':'first'});
-  }
-
   async function applySearch(patch){
     patch=patch||{};var bridge=verifySearchBridge();
     if(!bridge.ok)return fail('陣法検索との接続を確認できませんでした。ページの読み込み完了後にもう一度お試しください。',{bridge:bridge});
@@ -235,23 +211,18 @@
       formation:patch.formation!==undefined?(canonicalFormation(patch.formation)||''):before.formation,
       count:patch.count!==undefined?Number(patch.count)||0:before.count,
       grade3:patch.grade3!==undefined?!!patch.grade3:before.grade3,
-      searchBasis:patch.searchBasis!==undefined?(String(patch.searchBasis).toLowerCase()==='fullmax'?'fullmax':'base'):before.searchBasis,
       priority1:patch.priority1!==undefined?patch.priority1:{stat:before.priority1,min:before.priority1Min,max:before.priority1Max},
       priority2:patch.priority2!==undefined?patch.priority2:{stat:before.priority2,min:before.priority2Min,max:before.priority2Max},
-      factor4Exclude:patch.factor4Exclude!==undefined?Number(patch.factor4Exclude):before.factor4Exclude,
-      sumSort:patch.sumSort!==undefined?!!patch.sumSort:before.sumSort,
-      sumTie:patch.sumTie!==undefined?patch.sumTie:before.sumTie
+      factor4Exclude:patch.factor4Exclude!==undefined?Number(patch.factor4Exclude):before.factor4Exclude
     };
     if(!desired.formation)return fail('陣形が未選択です。衡軛・鶴翼・魚鱗・方円から指定してください。');
     if(!desired.count||desired.count<5||desired.count>9)return fail('因縁数が未選択です。5〜9因縁から指定してください。');
-    var br=setSearchBasis(desired.searchBasis);if(!br.ok)return br;
     var r=setFormation(desired.formation);if(!r.ok)return r;
     setGrade3(desired.grade3);
     r=setPriority(1,desired.priority1||{clear:true});if(!r.ok)return r;
     r=setPriority(2,desired.priority2||{clear:true});if(!r.ok)return r;
     setCountNoSearch(desired.count);
     if(desired.factor4Exclude!==getFactor4Exclude()){r=await setFactor4Exclude(desired.factor4Exclude,true);if(!r.ok)return r;}
-    var sum=getSumSort();if(!!sum.enabled!==!!desired.sumSort||(desired.sumSort&&sum.tiePrefer!==desired.sumTie)){r=await setSumSort(desired.sumSort,desired.sumTie,true);if(!r.ok)return r;}
     if(typeof window.handleDbCountButtonClick!=='function')return fail('既存の陣法検索機能が準備できていません。');
     var ret=window.handleDbCountButtonClick(desired.count);if(ret&&typeof ret.then==='function')await ret;
     await waitUntil(function(){return activeCountFromDom()===desired.count;},1200);
@@ -259,7 +230,6 @@
     var mismatches=[];
     if(activeCountFromDom()!==desired.count)mismatches.push('因縁数');
     if(canonicalFormation(after.formation)!==canonicalFormation(desired.formation))mismatches.push('陣形');
-    if(getSearchBasis()!==desired.searchBasis)mismatches.push('検索基準');
     var p1Desired=desired.priority1&&desired.priority1.stat?canonicalStat(desired.priority1.stat)||text(desired.priority1.stat):'';
     var p2Desired=desired.priority2&&desired.priority2.stat?canonicalStat(desired.priority2.stat)||text(desired.priority2.stat):'';
     if((canonicalStat(p1After.stat)||text(p1After.stat))!==p1Desired)mismatches.push('第1優先');
@@ -313,7 +283,7 @@
   function getResults(limit){
     var buttons=qa('#dbFormationList button[data-unified-db-idx]');var n=Math.max(1,Math.min(Number(limit)||10,50));var out=[];
     buttons.slice(0,n).forEach(function(btn,idx){
-      var tr=btn.closest('tr.dbMainRow')||btn.closest('tr');var cells=tr?qa('td',tr):[];var names=tr?qa('.dbPlacementMini span',tr).map(function(x){return text(x.textContent).replace(/^\d+\.\s*/, '');}):[];var bonds=tr?qa('.dbListBonds .badge',tr).map(function(x){return text(x.textContent);}):[];var statRow=tr&&tr.nextElementSibling&&tr.nextElementSibling.classList.contains('dbStatRow')?tr.nextElementSibling:null;
+      var tr=btn.closest('tr.dbMainRow')||btn.closest('tr');var cells=tr?qa('td',tr):[];var names=tr?qa('.dbPlacementMini span',tr).map(function(x){return text(x.textContent).replace(/^\d+\.\s*/, '');}):[];var bonds=tr?String(tr.getAttribute('data-bond-names')||'').split('|').map(text).filter(Boolean):[];var statRow=tr&&tr.nextElementSibling&&tr.nextElementSibling.classList.contains('dbStatRow')?tr.nextElementSibling:null;
       out.push({rank:idx+1,count:text(cells[1]&&cells[1].textContent||''),formation:text(cells[2]&&cells[2].textContent||''),members:names,bonds:bonds,stats:text(statRow&&statRow.textContent||'').replace(/[\s　]+/g,' ').trim()});
     });
     return out;
@@ -389,7 +359,7 @@
   async function rerunCurrentSearch(){
     var st=readSiteState();
     if(!st.formation||!st.count)return ok('条件を変更しました。検索条件がまだ揃っていないので、続けて陣形と因縁数を選んでください。',{skipped:true,state:st});
-    return applySearch({formation:st.formation,count:st.count,grade3:!!st.grade3,priority1:st.priority1?{stat:st.priority1,min:st.priority1Min,max:st.priority1Max}:{clear:true},priority2:st.priority2?{stat:st.priority2,min:st.priority2Min,max:st.priority2Max}:{clear:true},factor4Exclude:Number(st.factor4Exclude)||0,sumSort:!!st.sumSort,sumTie:st.sumTie||'first'});
+    return applySearch({formation:st.formation,count:st.count,grade3:!!st.grade3,priority1:st.priority1?{stat:st.priority1,min:st.priority1Min,max:st.priority1Max}:{clear:true},priority2:st.priority2?{stat:st.priority2,min:st.priority2Min,max:st.priority2Max}:{clear:true},factor4Exclude:Number(st.factor4Exclude)||0});
   }
 
   async function clearOwnedHeroes(){
@@ -502,7 +472,7 @@
     if(Array.isArray(snap.placementSlots)&&snap.placementSlots.some(Boolean)&&typeof window.applyShareState==='function'){
       try{window.applyShareState({formation:snap.formation,slots:snap.placementSlots});}catch(e){}
     }
-    var patch={formation:snap.formation,count:snap.count,grade3:snap.grade3,searchBasis:snap.searchBasis||'base',priority1:{stat:snap.priority1,min:snap.priority1Min,max:snap.priority1Max},priority2:{stat:snap.priority2,min:snap.priority2Min,max:snap.priority2Max},factor4Exclude:snap.factor4Exclude,sumSort:snap.sumSort,sumTie:snap.sumTie};
+    var patch={formation:snap.formation,count:snap.count,grade3:snap.grade3,priority1:{stat:snap.priority1,min:snap.priority1Min,max:snap.priority1Max},priority2:{stat:snap.priority2,min:snap.priority2Min,max:snap.priority2Max},factor4Exclude:snap.factor4Exclude};
     if(patch.formation&&patch.count)await applySearch(patch);else{if(patch.formation)setFormation(patch.formation);setGrade3(!!patch.grade3);setPriority(1,patch.priority1);setPriority(2,patch.priority2);}
     if(Array.isArray(snap.owned)){
       await clearOwnedHeroes();for(var oi=0;oi<Math.min(3,snap.owned.length);oi++){if(snap.owned[oi])await setOwnedHero(oi+1,snap.owned[oi]);}
@@ -534,7 +504,6 @@
   async function clearSearchFilters(){
     setGrade3(false);setPriority(1,{clear:true});setPriority(2,{clear:true});
     if(getFactor4Exclude()!==0){var fr=await setFactor4Exclude(0,true);if(!fr.ok)return fr;}
-    var ss=getSumSort();if(ss.enabled){var sr=await setSumSort(false,'first',true);if(!sr.ok)return sr;}
     return ok('検索の絞り込み条件を解除しました。',{state:readSiteState()});
   }
   function readCombinedTotalsOnly(){return ok('込み合計を取得しました。',{combined:getTotalsFrom('eiketsuKishinsekiCombinedResult')});}
@@ -543,7 +512,6 @@
     apply_search:applySearch,rerun_search:rerunSearchAction,run_current_search:rerunSearchAction,
     set_formation:setFormationAction,set_bond_count:setBondCountAction,set_grade3:setGrade3Action,set_factor4_exclude:function(a){return setFactor4Exclude(a&&a.count,false);},
     set_priority1:function(a){return setPriorityAction(1,a);},set_priority2:function(a){return setPriorityAction(2,a);},clear_priority1:function(){return setPriority(1,{clear:true});},clear_priority2:function(){return setPriority(2,{clear:true});},clear_priorities:clearPriorities,
-    set_sum_sort:function(a){return setSumSort(!!(a&&a.enabled),a&&a.tie||'first',false);},set_search_basis:function(a){return setSearchBasis(a&&a.mode);},get_search_basis:function(){return ok('検索基準を取得しました。',{searchBasis:getSearchBasis()});},
     reset_search:resetSearchOnly,read_search_status:readSearchStatus,auto_fill:autoFill,
     run_recommended:function(a){return runRecommended(a&&a.stat);},run_specified_simple:runSpecifiedSimple,run_best:runBest,update_recommended:function(a){return updateRecommended(a||{});},get_recommend_state:getRecommendOnly,exit_recommended:exitRecommended,cancel_search:cancelSearch,
     get_results:function(a){return ok('検索結果を取得しました。',{results:getResults(a&&a.limit)});},apply_result:function(a){return applyResult(a&&a.rank);},compare_results:function(a){return compareResults(a&&a.ranks);},sort_results:function(a){return sortResults(a&&a.stat,a&&a.dir);},run_calculation:runCalculation,clear_placement:clearPlacement,
@@ -557,7 +525,7 @@
     read_combined_totals:readCombinedTotalsOnly,apply_top_result:function(){return applyResult(1);},show_top_results:function(a){return ok('上位結果を取得しました。',{results:getResults(a&&a.limit||5)});},
     show_swap_non_down:function(a){return ok('因縁が減らない差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['up','flat'])});},show_swap_up:function(a){return ok('UP差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['up'])});},show_swap_flat:function(a){return ok('FLAT差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['flat'])});},show_swap_down:function(a){return ok('DOWN差替候補を取得しました。',{candidates:getSwapCandidates(a&&a.limit||20,['down'])});},
     max_kenbun:function(){return setEnhancementPanelMax('kenbun');},max_kishin:function(){return setEnhancementPanelMax('kishin');},max_tensei:function(){return setEnhancementPanelMax('tensei');},clear_kenbun:function(){return clearEnhancementPanel('kenbun');},clear_kishin:function(){return clearEnhancementPanel('kishin');},clear_tensei:function(){return clearEnhancementPanel('tensei');},
-    set_fullmax_search:function(){return setSearchBasis('fullmax');},set_base_search:function(){return setSearchBasis('base');},enable_grade3:function(){return setGrade3(true);},disable_grade3:function(){return setGrade3(false);},clear_factor4_exclude:function(){return setFactor4Exclude(0,false);},enable_sum_sort:function(a){return setSumSort(true,a&&a.tie||'first',false);},disable_sum_sort:function(){return setSumSort(false,'first',false);},clear_search_filters:clearSearchFilters,
+    enable_grade3:function(){return setGrade3(true);},disable_grade3:function(){return setGrade3(false);},clear_factor4_exclude:function(){return setFactor4Exclude(0,false);},clear_search_filters:clearSearchFilters,
     clear_owned_filters:clearOwnedHeroes,clear_excluded_filters:clearExcludedHeroes,read_filters:function(){return ok('検索フィルターを取得しました。',{state:readSiteState()});},
     restore_snapshot:function(a){return restoreSnapshot(a&&a.snapshot);},reset_all:resetAll
   };

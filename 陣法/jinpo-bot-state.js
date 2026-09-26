@@ -27,9 +27,7 @@
       priority2Min:v.priority2Min==null||v.priority2Min===''?null:Number(v.priority2Min),
       priority2Max:v.priority2Max==null||v.priority2Max===''?null:Number(v.priority2Max),
       grade3:typeof v.grade3==='boolean'?v.grade3:null,
-      factor4Exclude:Number.isFinite(Number(v.factor4Exclude))?Number(v.factor4Exclude):0,
-      sumSort:!!v.sumSort,
-      sumTie:v.sumTie==='second'?'second':'first'
+      factor4Exclude:Number.isFinite(Number(v.factor4Exclude))?Number(v.factor4Exclude):0
     };
   }
 

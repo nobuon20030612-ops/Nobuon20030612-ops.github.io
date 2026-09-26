@@ -99,8 +99,8 @@ window.JINPO_FORMATION_CONFIG = {
 };
 
 /* jinpo-update-info-from-summary-20260722
- * 陣形ライン右上に「最終更新日 / 最後に追加された英傑」を表示する。
- * 表示内容は追加DBの最新summaryから取得し、jinpo.htmlは変更しない。
+ * 「最終更新 / 追加英傑」はこの1経路だけで描画する。
+ * 陣形ライン枠内ではなく、dbFormationSelectTop の右列上部にある空きスペースへ配置する。
  */
 (function(){
   'use strict';
@@ -114,12 +114,35 @@ window.JINPO_FORMATION_CONFIG = {
     if(document.getElementById(STYLE_ID)) return;
     var style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent =
-      '.formationMiniPanel.jinpoUpdateInfoHost{position:relative !important;}' +
-      '#'+INFO_ID+'{position:absolute;top:9px;right:12px;z-index:6;max-width:68%;' +
-      'font-size:12px;line-height:1.35;color:#d9bf83;white-space:nowrap;overflow:hidden;' +
-      'text-overflow:ellipsis;text-align:right;pointer-events:none;}' +
-      '@media(max-width:760px){#'+INFO_ID+'{font-size:10px;max-width:62%;right:9px;top:10px;}}';
+    style.textContent = [
+      '.dbFormationSelectTop.jinpoUpdateInfoHost{position:relative !important;}',
+      '#'+INFO_ID+'{position:absolute;z-index:32;pointer-events:none;box-sizing:border-box;left:clamp(500px,48%,680px);right:24px;top:10px;height:184px;overflow:visible;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech{position:absolute;right:92px;top:2px;width:min(360px,calc(100% - 96px));padding:14px 18px 15px;box-sizing:border-box;border:3px solid #f59ab0;border-radius:32px;background:linear-gradient(180deg,#fffdf8 0%,#fff4e3 100%);box-shadow:0 8px 16px rgba(0,0,0,.18), inset 0 0 0 2px rgba(255,255,255,.85);text-align:center;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:before{content:"";position:absolute;right:56px;bottom:-18px;width:22px;height:22px;border:3px solid #f59ab0;border-radius:50%;background:linear-gradient(180deg,#fffdf8 0%,#fff4e3 100%);box-shadow:0 4px 8px rgba(0,0,0,.12);}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:after{content:"";position:absolute;right:30px;bottom:-33px;width:12px;height:12px;border:3px solid #f59ab0;border-radius:50%;background:linear-gradient(180deg,#fffdf8 0%,#fff4e3 100%);box-shadow:0 3px 6px rgba(0,0,0,.12);}',
+      '#'+INFO_ID+' .jinpoUpdateInfoLine{display:block;white-space:nowrap;font-weight:1000;letter-spacing:.04em;line-height:1.08;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoDate{font-size:20px;color:#f67093;text-shadow:0 1px 0 #fff;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoHero{margin-top:7px;font-size:19px;color:#f08b2d;text-shadow:0 1px 0 #fff;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoMascot{position:absolute;right:6px;top:82px;display:block;width:auto;height:142px;max-width:130px;object-fit:contain;object-position:right bottom;transform:scaleX(-1);transform-origin:center center;filter:drop-shadow(0 6px 12px rgba(0,0,0,.44));}',
+      '@media(max-width:1500px) and (min-width:901px){',
+      '#'+INFO_ID+'{left:clamp(480px,47%,620px);right:20px;top:8px;height:170px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech{right:84px;top:0;width:min(330px,calc(100% - 88px));padding:12px 15px 13px;border-radius:28px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:before{right:50px;bottom:-16px;width:20px;height:20px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:after{right:27px;bottom:-29px;width:10px;height:10px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoDate{font-size:18px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoHero{font-size:17px;margin-top:6px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoMascot{top:78px;height:130px;max-width:115px;}',
+      '}',
+      '@media(max-width:900px){',
+      '#'+INFO_ID+'{position:relative;left:auto;right:auto;top:auto;width:100%;height:138px;margin:4px 0 8px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech{right:94px;top:6px;width:min(290px,calc(100% - 100px));padding:10px 12px 11px;border-radius:24px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:before{right:46px;bottom:-15px;width:16px;height:16px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoSpeech:after{right:24px;bottom:-26px;width:8px;height:8px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoDate{font-size:16px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoHero{font-size:15px;margin-top:5px;}',
+      '#'+INFO_ID+' .jinpoUpdateInfoMascot{right:4px;top:74px;height:110px;max-width:98px;}',
+      '}'
+    ].join('');
     document.head.appendChild(style);
   }
 
@@ -132,29 +155,47 @@ window.JINPO_FORMATION_CONFIG = {
 
   function latestHeroText(summary){
     if(!summary || typeof summary !== 'object') return '';
+    return String(summary.last_added_hero == null ? '' : summary.last_added_hero).trim();
+  }
 
-    // 「追加英傑」は専用項目だけを表示する。
-    // 組み合わせ件数・修正対象など汎用の target は絶対に表示へ流用しない。
-    var direct = String(summary.last_added_hero == null ? '' : summary.last_added_hero).trim();
-    if(direct) return direct;
+  function ensureUi(host){
+    var el = document.getElementById(INFO_ID);
+    if(el){
+      if(el.parentNode !== host) host.appendChild(el);
+      return el;
+    }
+    el = document.createElement('div');
+    el.id = INFO_ID;
+    el.setAttribute('aria-live','polite');
 
-    return '';
+    var speech = document.createElement('div');
+    speech.className = 'jinpoUpdateInfoSpeech';
+    var date = document.createElement('span');
+    date.className = 'jinpoUpdateInfoLine jinpoUpdateInfoDate';
+    var hero = document.createElement('span');
+    hero.className = 'jinpoUpdateInfoLine jinpoUpdateInfoHero';
+    speech.appendChild(date);
+    speech.appendChild(hero);
+
+    var img = document.createElement('img');
+    img.className = 'jinpoUpdateInfoMascot';
+    img.src = 'assets/jinpo-update-mascot.png';
+    img.alt = '';
+    img.setAttribute('aria-hidden','true');
+
+    el.appendChild(speech);
+    el.appendChild(img);
+    host.appendChild(el);
+    return el;
   }
 
   function render(summary){
-    var panel = document.querySelector('.formationMiniPanel');
-    if(!panel) return false;
+    var host = document.querySelector('#dbCountBrowserCard .dbFormationSelectTop');
+    if(!host) return false;
     ensureStyle();
-    panel.classList.add('jinpoUpdateInfoHost');
+    host.classList.add('jinpoUpdateInfoHost');
 
-    var el = document.getElementById(INFO_ID);
-    if(!el){
-      el = document.createElement('div');
-      el.id = INFO_ID;
-      el.setAttribute('aria-live','polite');
-      panel.appendChild(el);
-    }
-
+    var el = ensureUi(host);
     var dateText = formatDate(summary && summary.updated_at);
     var heroText = latestHeroText(summary);
     if(!dateText && !heroText){
@@ -162,12 +203,11 @@ window.JINPO_FORMATION_CONFIG = {
       return true;
     }
 
-    var parts = [];
-    if(dateText) parts.push('最終更新 ' + dateText);
-    if(heroText) parts.push('追加英傑 ' + heroText);
-    var text = parts.join('　｜　');
-    el.textContent = text;
-    el.title = text;
+    var dateEl = el.querySelector('.jinpoUpdateInfoDate');
+    var heroEl = el.querySelector('.jinpoUpdateInfoHero');
+    if(dateEl) dateEl.textContent = dateText ? ('最終更新 ' + dateText) : '';
+    if(heroEl) heroEl.textContent = heroText ? ('追加英傑　' + heroText) : '';
+    el.title = [dateText ? ('最終更新 ' + dateText) : '', heroText ? ('追加英傑 ' + heroText) : ''].filter(Boolean).join(' / ');
     el.style.display = '';
     return true;
   }
@@ -196,4 +236,3 @@ window.JINPO_FORMATION_CONFIG = {
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, {once:true});
   else setTimeout(boot, 0);
 })();
-

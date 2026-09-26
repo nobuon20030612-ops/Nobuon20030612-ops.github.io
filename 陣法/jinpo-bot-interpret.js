@@ -157,8 +157,8 @@
   function riskyPlan(plan){return !!(plan&&plan.actions&&plan.actions.some(function(a){return ['delete_saved','reset_all','import_json','apply_override_bond_master'].indexOf(a.name)>=0;}));}
   function planCoverage(plan){
     if(!plan)return 0;var n=plan.recognized?0.25:0,p=plan.searchPatch||{};
-    if(p.formation)n+=1;if(p.count)n+=1;if(p.searchBasis)n+=1;if(p.priority1)n+=1;if(p.priority2)n+=1;
-    if(p.grade3!==undefined)n+=0.5;if(p.factor4Exclude!==undefined)n+=0.5;if(p.sumSort!==undefined)n+=0.5;
+    if(p.formation)n+=1;if(p.count)n+=1;if(p.priority1)n+=1;if(p.priority2)n+=1;
+    if(p.grade3!==undefined)n+=0.5;if(p.factor4Exclude!==undefined)n+=0.5;
     if(plan.recommendStat)n+=1.5;n+=(plan.actions||[]).length*1.1;return n;
   }
 

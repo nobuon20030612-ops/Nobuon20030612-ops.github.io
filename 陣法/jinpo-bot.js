@@ -15,7 +15,7 @@
   function capabilities(){return window.JINPO_BOT_CAPABILITIES;}
   function fmtNum(v){return String(v==null?'':v);}
   function conditionLabel(s){
-    s=s||{};var p=[];if(s.formation)p.push(s.formation);if(s.count)p.push(s.count+'因縁');if(s.searchBasis==='fullmax')p.push('全MAX込み基準');if(s.priority1){var x='第1 '+s.priority1;if(s.priority1Min!=null)x+=' '+s.priority1Min+'以上';if(s.priority1Max!=null)x+=' '+s.priority1Max+'以下';p.push(x);}if(s.priority2){var y='第2 '+s.priority2;if(s.priority2Min!=null)y+=' '+s.priority2Min+'以上';if(s.priority2Max!=null)y+=' '+s.priority2Max+'以下';p.push(y);}if(s.grade3)p.push('等級3以下');if(Number(s.factor4Exclude)>0)p.push('文曲除外'+s.factor4Exclude+'人');if(s.sumSort)p.push('第1・第2合計ソート');return p.join(' / ');
+    s=s||{};var p=[];if(s.formation)p.push(s.formation);if(s.count)p.push(s.count+'因縁');if(s.priority1){var x='第1 '+s.priority1;if(s.priority1Min!=null)x+=' '+s.priority1Min+'以上';if(s.priority1Max!=null)x+=' '+s.priority1Max+'以下';p.push(x);}if(s.priority2){var y='第2 '+s.priority2;if(s.priority2Min!=null)y+=' '+s.priority2Min+'以上';if(s.priority2Max!=null)y+=' '+s.priority2Max+'以下';p.push(y);}if(s.grade3)p.push('等級3以下');if(Number(s.factor4Exclude)>0)p.push('文曲除外'+s.factor4Exclude+'人');return p.join(' / ');
   }
   function formatMap(map){
     var order=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];var p=[];order.forEach(function(k){if(map&&map[k]!==undefined&&map[k]!=='')p.push(k+' '+map[k]);});return p.join(' / ');
@@ -157,7 +157,7 @@
 
     var before=actions().readSiteState();
     state().setConditions(before);
-    var recommendPatch=!!(before.recommendActive&&plan.searchPatch&&plan.searchPatch.formation===undefined&&plan.searchPatch.count===undefined&&plan.searchPatch.sumSort===undefined&&plan.searchPatch.sumTie===undefined);
+    var recommendPatch=!!(before.recommendActive&&plan.searchPatch&&plan.searchPatch.formation===undefined&&plan.searchPatch.count===undefined);
     var hasUndo=plan.actions.some(function(a){return a.name==='undo';});
     var nonRestorable=recommendPatch||plan.actions.some(function(a){return isNonRestorableMutation(a.name);});
     var restorable=(!recommendPatch&&!!plan.searchPatch)||!!plan.recommendStat||plan.actions.some(function(a){return isRestorableAction(a.name);});

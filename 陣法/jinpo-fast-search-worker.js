@@ -4,9 +4,8 @@
   var MANIFEST_PATH='data/compact_search_v2/jinpo_unified_search_manifest.json';
   var MANIFEST_RECHECK_MS=60000;
   var manifest=null,manifestPromise=null,manifestCheckedAt=0;
-  var buffers=new Map(),fullmaxBuffers=new Map(),recommendSumBuffers=new Map(),fullmaxRecommendBuffers=new Map(),lruSeq=0,MAX_RAW_CACHE=128*1024*1024;
+  var buffers=new Map(),recommendSumBuffers=new Map(),lruSeq=0,MAX_RAW_CACHE=128*1024*1024;
   var STAT_OFFSETS={'生命':21,'気合':23,'腕力':25,'耐久力':27,'器用さ':29,'知力':31,'魅力':33,'土属性':35,'水属性':37,'火属性':39,'風属性':41};
-  var FULLMAX_STAT_OFFSETS={'生命':0,'気合':2,'腕力':4,'耐久力':6,'器用さ':8,'知力':10,'魅力':12,'土属性':14,'水属性':16,'火属性':18,'風属性':20};
   var FORM_CODE={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'};
   function norm(v){return String(v==null?'':v).trim().replace(/・/g,'').replace(/[\s　]+/g,'');}
   function eikInternalId(id){id=Number(id);return Number.isInteger(id)&&id>0?'EIK_'+String(id).padStart(4,'0'):'';}
@@ -15,7 +14,7 @@
     var s=String(v==null?'':v).trim(),m=s.match(/^EIK_(\d+)$/i);if(m)return Number(m[1]);
     if(/^\d+$/.test(s))return Number(s);return -1;
   }
-  function clearDataBuffers(){buffers.clear();fullmaxBuffers.clear();recommendSumBuffers.clear();fullmaxRecommendBuffers.clear();}
+  function clearDataBuffers(){buffers.clear();recommendSumBuffers.clear();}
   function prepareManifest(m){
     m._bondNameToId=Object.create(null);
     (m.bond_names||[]).forEach(function(n,i){if(n)m._bondNameToId[norm(n)]=i;});
@@ -87,13 +86,12 @@
   function normalFiveSixUnsupported(q){var c=Number(q&&q.count)||0,mode=dbMode(q);if(mode==='grade3')return false;if(mode==='popular')return c===5;return c===5||c===6;}
   function evictIfNeeded(keepType,keepKey){
     var total=0,arr=[];
-    buffers.forEach(function(v,k){total+=v.rawBytes||0;if(!(keepType==='base'&&k===keepKey))arr.push(['base',k,v.last||0,v.rawBytes||0]);});
-    fullmaxBuffers.forEach(function(v,k){total+=v.rawBytes||0;if(!(keepType==='fullmax'&&k===keepKey))arr.push(['fullmax',k,v.last||0,v.rawBytes||0]);});
+    buffers.forEach(function(v,k){total+=v.rawBytes||0;if(!(keepType==='base'&&k===keepKey))arr.push([k,v.last||0,v.rawBytes||0]);});
     if(total<=MAX_RAW_CACHE)return;
-    arr.sort(function(a,b){return a[2]-b[2];});
+    arr.sort(function(a,b){return a[1]-b[1];});
     for(var i=0;i<arr.length&&total>MAX_RAW_CACHE;i++){
-      var map=arr[i][0]==='fullmax'?fullmaxBuffers:buffers,v=map.get(arr[i][1]);
-      if(v){total-=v.rawBytes||0;map.delete(arr[i][1]);}
+      var v=buffers.get(arr[i][0]);
+      if(v){total-=v.rawBytes||0;buffers.delete(arr[i][0]);}
     }
   }
   async function loadLogicalRaw(info,m,token,silent,label,magic,expectedRec){
@@ -128,23 +126,8 @@
     var rows=Math.floor((ab.byteLength-16)/recSize);if(rows!==Number(info.rows||0))throw new Error('compact DB件数不一致 '+rows+' != '+info.rows);
     var obj={ab:ab,dv:dv,rows:rows,recSize:recSize,info:info,rawBytes:ab.byteLength,last:++lruSeq};buffers.set(key,obj);evictIfNeeded('base',key);return obj;
   }
-  function fullmaxInfo(m,q){
-    var c=String(Number(q.count)||0),f=String(q.formation||''),mode=dbMode(q);
-    return m.fullmax_stats&&m.fullmax_stats[mode]&&m.fullmax_stats[mode][c]&&m.fullmax_stats[mode][c][f];
-  }
-  async function loadFullmaxStats(q,token,silent){
-    var m=await loadManifest(),info=fullmaxInfo(m,q);if(!info)throw new Error('全MAX検索ステータスDBなし: '+[q.mode,q.count,q.formation].join('/'));
-    var key=[q.mode||'normal',q.count,q.formation,sourceLabel(info),info.sha256_16||''].join('|'),hit=fullmaxBuffers.get(key);if(hit){hit.last=++lruSeq;return hit;}
-    if(!silent)self.postMessage({type:'progress',token:token,phase:'download',message:'全MAX込み合計DB '+q.formation+' '+q.count+'因縁 読込中',bytes:info.gzip_bytes||0});
-    var ab=await loadLogicalRaw(info,m,token,silent,'全MAX検索DB','JMX1',Number(m.fullmax_stats_record_size||26)),dv=new DataView(ab);
-    if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JMX1')throw new Error('全MAX検索DB magic不一致');
-    var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);if(rec!==Number(m.fullmax_stats_record_size||26)||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('全MAX検索DB構造不一致');
-    var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info,rawBytes:ab.byteLength,last:++lruSeq};fullmaxBuffers.set(key,obj);evictIfNeeded('fullmax',key);return obj;
-  }
-  function fullmaxStatAt(fm,rowIndex,stat){var o=FULLMAX_STAT_OFFSETS[stat];return !fm||o==null?0:fm.dv.getUint16(16+rowIndex*fm.recSize+o,true);}
-  function fullmaxTotalAt(fm,rowIndex){return !fm?0:fm.dv.getUint32(16+rowIndex*fm.recSize+22,true);}
-  function metricStat(dv,base,stat,fm,recSize){if(!fm)return statAt(dv,base,stat);var rowIndex=Math.floor((base-16)/(recSize||52));return fullmaxStatAt(fm,rowIndex,stat);}
-  function metricTotal(dv,base,fm,recSize){if(!fm)return totalAt(dv,base);var rowIndex=Math.floor((base-16)/(recSize||52));return fullmaxTotalAt(fm,rowIndex);}
+  function metricStat(dv,base,stat){return statAt(dv,base,stat);}
+  function metricTotal(dv,base){return totalAt(dv,base);}
   function exactIds(values){return (Array.isArray(values)?values:[]).map(numericHeroId).filter(function(x){return x>0;});}
   function ownedGroups(q){return exactIds(q.ownedInternalIds).map(function(id){return[id];});}
   function excludedIds(q){return exactIds(q.excludedInternalIds);}
@@ -152,48 +135,30 @@
   function hasAnyHero(dv,base,ids){for(var j=0;j<ids.length;j++)if(hasHero(dv,base,ids[j]))return true;return false;}
   function statAt(dv,base,stat){var o=STAT_OFFSETS[stat];return o==null?0:dv.getUint16(base+o,true);}
   function totalAt(dv,base){return dv.getUint32(base+43,true);}function tieAt(dv,base){return dv.getUint32(base+48,true);}
-  function normalizedSumSort(raw){var s1=String(raw&&raw.stat1||''),s2=String(raw&&raw.stat2||'');return {enabled:!!(raw&&raw.enabled&&STAT_OFFSETS[s1]&&STAT_OFFSETS[s2]),stat1:s1,stat2:s2,tiePrefer:(raw&&raw.tiePrefer==='second')?'second':'first'};}
-  function better(dv,a,b,rules,sumSort,fm,recSize){
-    var ss=normalizedSumSort(sumSort);
-    if(ss.enabled){
-      var a1=metricStat(dv,a,ss.stat1,fm,recSize),a2=metricStat(dv,a,ss.stat2,fm,recSize),b1=metricStat(dv,b,ss.stat1,fm,recSize),b2=metricStat(dv,b,ss.stat2,fm,recSize),as=a1+a2,bs=b1+b2;if(as!==bs)return as>bs;
-      var ap=ss.tiePrefer==='second'?a2:a1,bp=ss.tiePrefer==='second'?b2:b1;if(ap!==bp)return ap>bp;
-      var ao=ss.tiePrefer==='second'?a1:a2,bo=ss.tiePrefer==='second'?b1:b2;if(ao!==bo)return ao>bo;
-    }else{for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=metricStat(dv,a,k,fm,recSize),bv=metricStat(dv,b,k,fm,recSize);if(av!==bv)return av>bv;}}
-    var at=metricTotal(dv,a,fm,recSize),bt=metricTotal(dv,b,fm,recSize);if(at!==bt)return at>bt;return tieAt(dv,a)<tieAt(dv,b);
+  function better(dv,a,b,rules){
+    for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=metricStat(dv,a,k),bv=metricStat(dv,b,k);if(av!==bv)return av>bv;}
+    var at=metricTotal(dv,a),bt=metricTotal(dv,b);if(at!==bt)return at>bt;return tieAt(dv,a)<tieAt(dv,b);
   }
-  function worse(dv,a,b,rules,sumSort,fm,recSize){return better(dv,b,a,rules,sumSort,fm,recSize);}
-  function heapPush(heap,off,dv,rules,sumSort,fm,recSize){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules,sumSort,fm,recSize))break;var t=heap[i];heap[i]=heap[p];heap[p]=t;i=p;}}
-  function heapDown(heap,i,dv,rules,sumSort,fm,recSize){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules,sumSort,fm,recSize))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules,sumSort,fm,recSize))w=r;if(w===i)return;var t=heap[i];heap[i]=heap[w];heap[w]=t;i=w;}}
-  function attachFullmaxRow(row,fm,rowIndex){
-    if(!row||!fm)return row;var stats={};Object.keys(FULLMAX_STAT_OFFSETS).forEach(function(k){stats[k]=fullmaxStatAt(fm,rowIndex,k);});row.fullmax_stats=stats;row.fullmax_total=fullmaxTotalAt(fm,rowIndex);row.search_stat_mode='fullmax';return row;
-  }
-  function attachFullmaxFromOffset(row,dv,fmBase){
-    if(!row||!dv)return row;var stats={};Object.keys(FULLMAX_STAT_OFFSETS).forEach(function(k){stats[k]=dv.getUint16(fmBase+FULLMAX_STAT_OFFSETS[k],true);});row.fullmax_stats=stats;row.fullmax_total=dv.getUint32(fmBase+22,true);row.search_stat_mode='fullmax';return row;
-  }
-  function materialize(dv,base,q,m,rowIndex,source,fm){
+  function worse(dv,a,b,rules){return better(dv,b,a,rules);}
+  function heapPush(heap,off,dv,rules){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules))break;var x=heap[i];heap[i]=heap[p];heap[p]=x;i=p;}}
+  function heapDown(heap,i,dv,rules){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules))w=r;if(w===i)return;var x=heap[i];heap[i]=heap[w];heap[w]=x;i=w;}}
+  function materialize(dv,base,q,m,rowIndex,source){
     var names=[],numericIds=[],internalIds=[];
     for(var i=0;i<6;i++){var id=dv.getUint16(base+i*2,true);numericIds.push(id);internalIds.push(eikInternalId(id));names.push((m.hero_names||[])[id]||('英傑#'+id));}
     var count=Number(q.count)||0,bonds=[],bondNumeric=[];for(var b=0;b<count;b++){var bi=dv.getUint8(base+12+b);if(bi){bondNumeric.push(bi);bonds.push((m.bond_names||[])[bi]||String(bi));}}
     var rid='compact_v2_'+(q.mode==='popular'?'pop':(q.mode==='grade3'?'g3':'n'))+'_'+count+'_'+(FORM_CODE[q.formation]||'f')+'_'+tieAt(dv,base).toString(16)+'_'+rowIndex;
     var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='popular'?'選抜人気':(q.mode==='grade3'?'等級3以下ON':'通常'),bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:internalIds.join('|'),eiketsu_numeric_ids:numericIds.join('|'),bond_ids:bonds.join('|'),bond_names:bonds.join('|'),bond_numeric_ids:bondNumeric.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
-    Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);if(fm)attachFullmaxRow(row,fm,rowIndex);return row;
+    Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);return row;
   }
-  function materializeFirst(data,q,m,limit,fm){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,sourceLabel(data.info),fm));return rows;}
+  function materializeFirst(data,q,m,limit){var rows=[],base=16;for(var i=0;i<data.rows&&i<limit;i++,base+=data.recSize)rows.push(materialize(data.dv,base,q,m,i,sourceLabel(data.info)));return rows;}
 
   var RECOMMEND_FORMS=['衡軛','鶴翼','魚鱗','方円'];
   function recommendCounts(mode,m){
     var src=m&&m.datasets&&m.datasets[mode==='popular'?'popular':(mode==='grade3'?'grade3':'normal')]||{},out=[];
     (mode==='grade3'?[5,6,7,8,9]:(mode==='popular'?[6,7,8,9]:[7,8,9])).forEach(function(c){if(src[String(c)])out.push(c);});return out;
   }
-  function rowMetricStat(row,key){
-    if(row&&row.search_stat_mode==='fullmax'&&row.fullmax_stats&&row.fullmax_stats[key]!=null)return Number(row.fullmax_stats[key])||0;
-    return Number(row&&row[key])||0;
-  }
-  function rowMetricTotal(row){
-    if(row&&row.search_stat_mode==='fullmax'&&row.fullmax_total!=null)return Number(row.fullmax_total)||0;
-    return Number(row&&((row.total_score!=null)?row.total_score:row['総合値']))||0;
-  }
+  function rowMetricStat(row,key){return Number(row&&row[key])||0;}
+  function rowMetricTotal(row){return Number(row&&((row.total_score!=null)?row.total_score:row['総合値']))||0;}
   function recommendRowBetter(a,b,target,secondary){
     var av=rowMetricStat(a,target),bv=rowMetricStat(b,target);
     if(secondary){
@@ -224,11 +189,11 @@
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max);
     return {owned:owned,excluded:excluded,thresholds:thresholds,f4max:f4max,noFilters:owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null};
   }
-  function recommendRecordMatches(dv,base,filters,fm,recSize){
+  function recommendRecordMatches(dv,base,filters){
     var oi,ei,ti;for(oi=0;oi<filters.owned.length;oi++)if(!hasAnyHero(dv,base,filters.owned[oi]))return false;
     for(ei=0;ei<filters.excluded.length;ei++)if(hasHero(dv,base,filters.excluded[ei]))return false;
     if(filters.f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>filters.f4max)return false;}
-    for(ti=0;ti<filters.thresholds.length;ti++){var range=filters.thresholds[ti],value=metricStat(dv,base,range.stat,fm,recSize);if(range.min!==null&&value<range.min)return false;if(range.max!==null&&value>range.max)return false;}
+    for(ti=0;ti<filters.thresholds.length;ti++){var range=filters.thresholds[ti],value=metricStat(dv,base,range.stat);if(range.min!==null&&value<range.min)return false;if(range.max!==null&&value>range.max)return false;}
     return true;
   }
   function canUseRecommendSortTop(m,target){
@@ -251,33 +216,6 @@
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-sort-top'};
   }
   function recommendSumInfo(m,mode,target,secondary){return m&&m.recommend_sum_top&&m.recommend_sum_top[mode]&&m.recommend_sum_top[mode][target]&&m.recommend_sum_top[mode][target][secondary];}
-  function fullmaxRecommendInfo(m,mode,target,secondary){
-    if(secondary)return m&&m.fullmax_recommend_sum_top&&m.fullmax_recommend_sum_top[mode]&&m.fullmax_recommend_sum_top[mode][target]&&m.fullmax_recommend_sum_top[mode][target][secondary];
-    return m&&m.fullmax_recommend_top&&m.fullmax_recommend_top[mode]&&m.fullmax_recommend_top[mode][target];
-  }
-  async function loadFullmaxRecommend(m,mode,target,secondary,token){
-    var info=fullmaxRecommendInfo(m,mode,target,secondary);if(!info)return null;
-    var key=[mode,target,secondary||'',info.file||''].join('|'),hit=fullmaxRecommendBuffers.get(key);if(hit)return hit;
-    self.postMessage({type:'progress',token:token,phase:'download',message:'全MAXおすすめTop500 読込中',bytes:info.gzip_bytes||0});
-    var zipped=await cachedFetch(info.file,m.version,info.sha256_16,info.gzip_bytes),ab=await gunzip(zipped),dv=new DataView(ab);
-    if(ab.byteLength<16||String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3))!=='JMR1')throw new Error('全MAXおすすめDB magic不一致');
-    var rec=dv.getUint16(6,true),rows=dv.getUint32(8,true);
-    if(rec!==Number(m.fullmax_recommend_record_size||80)||rows!==Number(info.rows||0)||ab.byteLength!==16+rows*rec)throw new Error('全MAXおすすめDB構造不一致');
-    var obj={ab:ab,dv:dv,rows:rows,recSize:rec,info:info};fullmaxRecommendBuffers.set(key,obj);return obj;
-  }
-  async function recommendFromFullmaxPrecomputed(q,token,m,target,secondary,limit){
-    var mode=dbMode(q),data=await loadFullmaxRecommend(m,mode,target,secondary,token);if(!data)return null;
-    var codeToForm={1:'衡軛',2:'鶴翼',3:'魚鱗',4:'方円'},byForm=Object.create(null),matchedByForm=Object.create(null),counts=recommendCounts(mode,m);
-    for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){var f=RECOMMEND_FORMS[fi],matched=0;for(var ci=0;ci<counts.length;ci++){var full=fullDatasetInfo(m,{mode:mode,count:counts[ci],formation:f});if(full)matched+=Number(full.rows||0);}matchedByForm[f]=matched;byForm[f]=[];}
-    for(var i=0,base=16;i<data.rows;i++,base+=data.recSize){
-      var form=codeToForm[data.dv.getUint8(base)],count=data.dv.getUint8(base+1);if(!form||!count)continue;
-      var baseOff=base+2,fmOff=base+54,mq={mode:mode,count:count,formation:form};
-      var row=materialize(data.dv,baseOff,mq,m,i,sourceLabel(data.info));attachFullmaxFromOffset(row,data.dv,fmOff);row.__recommendTie=tieAt(data.dv,baseOff);byForm[form].push(row);
-    }
-    for(var fj=0;fj<RECOMMEND_FORMS.length;fj++){var ff=RECOMMEND_FORMS[fj];if(byForm[ff].length>limit)byForm[ff].length=limit;}
-    var chosen='',bestRow=null;for(var j=0;j<RECOMMEND_FORMS.length;j++){var f2=RECOMMEND_FORMS[j],list=byForm[f2]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=f2;}}
-    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:data.rows,sourceType:'fullmax-recommend-top'};
-  }
   async function loadRecommendSumTop(m,mode,target,secondary,token){
     var info=recommendSumInfo(m,mode,target,secondary);if(!info)return null;var key=[mode,target,secondary,info.file||''].join('|'),hit=recommendSumBuffers.get(key);if(hit)return hit;
     self.postMessage({type:'progress',token:token,phase:'download',message:'おすすめ合計Top500 読込中',bytes:info.gzip_bytes||0});
@@ -296,64 +234,58 @@
     return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:data.rows,sourceType:'recommend-sum-top'};
   }
   async function recommendFromFull(q,token,m,target,secondary,limit,filters){
-    var mode=dbMode(q),counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0,useFullmax=String(q&&q.statMode||'base')==='fullmax';
+    var mode=dbMode(q),counts=recommendCounts(mode,m),byForm=Object.create(null),matchedByForm=Object.create(null),scanned=0;
     if(filters.owned.some(function(g){return !g.length;}))return {formation:'',rows:[],matched:0,scanned:0,sourceType:'recommend-full'};
     for(var fi=0;fi<RECOMMEND_FORMS.length;fi++){
       var f=RECOMMEND_FORMS[fi],heap=[],matched=0;
       for(var ci=0;ci<counts.length;ci++){
         var c=counts[ci],dataQ={mode:mode,count:c,formation:f,sourceType:'full',sortStat:''};if(!datasetInfo(m,dataQ))continue;
-        var data=await loadData(dataQ,token,false),fm=useFullmax?await loadFullmaxStats(dataQ,token,false):null,dv=data.dv,rec=data.recSize,base=16;
-        if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
+        var data=await loadData(dataQ,token,false),dv=data.dv,rec=data.recSize,base=16;
         scanned+=data.rows;
         for(var idx=0;idx<data.rows;idx++,base+=rec){
-          if(!recommendRecordMatches(dv,base,filters,fm,rec))continue;matched++;
-          var primary=metricStat(dv,base,target,fm,rec),second=secondary?metricStat(dv,base,secondary,fm,rec):0;
-          var item={data:data,fm:fm,dv:dv,base:base,count:c,formation:f,rowIndex:idx,primary:primary,secondary:second,sum:primary+second,total:metricTotal(dv,base,fm,rec),tie:tieAt(dv,base)};
+          if(!recommendRecordMatches(dv,base,filters))continue;matched++;
+          var primary=metricStat(dv,base,target),second=secondary?metricStat(dv,base,secondary):0;
+          var item={data:data,dv:dv,base:base,count:c,formation:f,rowIndex:idx,primary:primary,secondary:second,sum:primary+second,total:metricTotal(dv,base),tie:tieAt(dv,base)};
           if(heap.length<limit)recommendHeapPush(heap,item,secondary);else if(recommendEntryBetter(item,heap[0],secondary)){heap[0]=item;recommendHeapDown(heap,0,secondary);}
         }
       }
       heap.sort(function(a,b){return recommendEntryBetter(a,b,secondary)?-1:(recommendEntryBetter(b,a,secondary)?1:0);});
-      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};var row=materialize(it.dv,it.base,mq,m,it.rowIndex,sourceLabel(it.data.info),it.fm);row.__recommendTie=it.tie;return row;});matchedByForm[f]=matched;
+      byForm[f]=heap.map(function(it){var mq={mode:mode,count:it.count,formation:f};var row=materialize(it.dv,it.base,mq,m,it.rowIndex,sourceLabel(it.data.info));row.__recommendTie=it.tie;return row;});matchedByForm[f]=matched;
     }
     var chosen='',bestRow=null;for(var i=0;i<RECOMMEND_FORMS.length;i++){var form=RECOMMEND_FORMS[i],list=byForm[form]||[];if(!list.length)continue;if(!bestRow||recommendRowBetter(list[0],bestRow,target,secondary)){bestRow=list[0];chosen=form;}}
-    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:useFullmax?'fullmax-recommend-full':'recommend-full'};
+    return {formation:chosen,rows:chosen?(byForm[chosen]||[]):[],matched:chosen?Number(matchedByForm[chosen]||0):0,scanned:scanned,sourceType:'recommend-full'};
   }
+
   async function recommend(q,token){
     var started=performance.now(),m=await loadManifest(),target=String(q&&q.targetStat||'').trim(),secondary=String(q&&q.secondaryStat||'').trim(),limit=Math.max(1,Number(q&&q.limit||500)||500);
     if(STAT_OFFSETS[target]==null)throw new Error('おすすめ陣法のステータスが不正です: '+target);
     if(secondary===target)secondary='';if(secondary&&STAT_OFFSETS[secondary]==null)throw new Error('おすすめ陣法の第2ステータスが不正です: '+secondary);
-    var filters=recommendFilters(q,m),result=null,mode=dbMode(q),useFullmax=String(q&&q.statMode||'base')==='fullmax';
-    if(useFullmax&&filters.noFilters&&fullmaxRecommendInfo(m,mode,target,secondary))result=await recommendFromFullmaxPrecomputed(q,token,m,target,secondary,limit);
-    if(!useFullmax&&filters.noFilters&&secondary&&recommendSumInfo(m,mode,target,secondary))result=await recommendFromSumTop(q,token,m,target,secondary,limit);
-    if(!result&&!useFullmax&&!secondary&&(dbMode(q)==='normal')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
+    var filters=recommendFilters(q,m),result=null,mode=dbMode(q);
+    if(filters.noFilters&&secondary&&recommendSumInfo(m,mode,target,secondary))result=await recommendFromSumTop(q,token,m,target,secondary,limit);
+    if(!result&&!secondary&&(dbMode(q)==='normal')&&filters.noFilters&&canUseRecommendSortTop(m,target))result=await recommendFromSortTop(q,token,m,target,limit);
     if(!result)result=await recommendFromFull(q,token,m,target,secondary,limit,filters);
-    result.ms=performance.now()-started;result.targetStat=target;result.secondaryStat=secondary;result.statMode=useFullmax?'fullmax':'base';return result;
+    result.ms=performance.now()-started;result.targetStat=target;result.secondaryStat=secondary;return result;
   }
 
   async function search(q,token){
     if(normalFiveSixUnsupported(q))throw new Error(q&&q.mode==='popular'?'選抜人気モードは6〜9因縁が検索対象です':'通常5・6因縁は検索対象外です（等級3以下ON専用）');
-    var started=performance.now(),m=await loadManifest(),useFullmax=String(q&&q.statMode||'base')==='fullmax';
-    var loadQ=Object.assign({},q);if(useFullmax){loadQ.sourceType='full';loadQ.sortStat='';}
-    var data=await loadData(loadQ,token,false),fm=useFullmax?await loadFullmaxStats(loadQ,token,false):null,dv=data.dv,rec=data.recSize;
-    if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
+    var started=performance.now(),m=await loadManifest();
+    var data=await loadData(q,token,false),dv=data.dv,rec=data.recSize;
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m);
-    if(owned.some(function(g){return !g.length;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info,statMode:useFullmax?'fullmax':'base'};
+    if(owned.some(function(g){return !g.length;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info};
     var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var minN=Number(r.threshold),maxN=Number(r.maxThreshold),hasMin=r.threshold!==null&&r.threshold!==''&&Number.isFinite(minN),hasMax=r.maxThreshold!==null&&r.maxThreshold!==''&&Number.isFinite(maxN);if(hasMin||hasMax)thresholds.push({stat:String(r.stat),min:hasMin?minN:null,max:hasMax?maxN:null});});
-    var sumSort=normalizedSumSort(q.sumSort);
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
     var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
-
-    /* 基礎値は既存Top/SortTopを利用。全MAX込みはfull dataset + sidecarを正として検索する。 */
     var matchedOverride=null;
-    if(!useFullmax&&q.sourceType!=='full'&&fullInfo&&noFilters){
+    if(q.sourceType!=='full'&&fullInfo&&noFilters){
       var fullRows=Number(fullInfo.rows||0);matchedOverride=fullRows;
       if(q.sourceType==='top'&&rules.length===0){
         var direct=materializeFirst(data,q,m,Math.min(limit,data.rows));
-        return {rows:direct,scanned:fullRows,matched:fullRows,ms:performance.now()-started,info:data.info,sourceType:'top',statMode:'base'};
+        return {rows:direct,scanned:fullRows,matched:fullRows,ms:performance.now()-started,info:data.info,sourceType:'top'};
       }
-    }else if(!useFullmax&&q.sourceType==='top'&&noFilters&&rules.length===0){
+    }else if(q.sourceType==='top'&&noFilters&&rules.length===0){
       var directFallback=materializeFirst(data,q,m,Math.min(limit,data.rows));
-      return {rows:directFallback,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top',statMode:'base'};
+      return {rows:directFallback,scanned:data.rows,matched:data.rows,ms:performance.now()-started,info:data.info,sourceType:'top'};
     }
 
     for(var idx=0;idx<data.rows;idx++,base+=rec){
@@ -361,13 +293,13 @@
       for(var oi=0;oi<owned.length&&ok;oi++)if(!hasAnyHero(dv,base,owned[oi]))ok=false;
       for(var ei=0;ei<excluded.length&&ok;ei++)if(hasHero(dv,base,excluded[ei]))ok=false;
       if(ok&&f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>f4max)ok=false;}
-      for(var ti=0;ti<thresholds.length&&ok;ti++){var range=thresholds[ti],value=metricStat(dv,base,range.stat,fm,rec);if(range.min!==null&&value<range.min)ok=false;if(range.max!==null&&value>range.max)ok=false;}
+      for(var ti=0;ti<thresholds.length&&ok;ti++){var range=thresholds[ti],value=metricStat(dv,base,range.stat);if(range.min!==null&&value<range.min)ok=false;if(range.max!==null&&value>range.max)ok=false;}
       if(!ok)continue;matched++;
-      if(heap.length<limit)heapPush(heap,base,dv,rules,sumSort,fm,rec);else if(better(dv,base,heap[0],rules,sumSort,fm,rec)){heap[0]=base;heapDown(heap,0,dv,rules,sumSort,fm,rec);}
+      if(heap.length<limit)heapPush(heap,base,dv,rules);else if(better(dv,base,heap[0],rules)){heap[0]=base;heapDown(heap,0,dv,rules);}
     }
-    heap.sort(function(a,b){return better(dv,a,b,rules,sumSort,fm,rec)?-1:(better(dv,b,a,rules,sumSort,fm,rec)?1:0);});
-    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),sourceLabel(data.info),fm);});
-    return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:useFullmax?'fullmax-full':(q.sourceType||'full'),statMode:useFullmax?'fullmax':'base'};
+    heap.sort(function(a,b){return better(dv,a,b,rules)?-1:(better(dv,b,a,rules)?1:0);});
+    var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),sourceLabel(data.info));});
+    return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
   }
 
   function exactBondIds(names,m){var out=[];for(var i=0;i<(Array.isArray(names)?names:[]).length;i++){var id=m._bondNameToId[norm(names[i])];if(id==null)return [];out.push(Number(id));}return out;}
@@ -377,18 +309,16 @@
     var count=Number(q.count)||0;if(count<5||count>9)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_count_invalid'};
     if(normalFiveSixUnsupported(q))return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'normal_5_6_not_supported'};
     var bondIds=exactBondIds(q.bondNames,m);if(bondIds.length!==count)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_names_invalid'};
-    var useFullmax=String(q&&q.statMode||'base')==='fullmax';
-    var dataQ={mode:dbMode(q),count:count,formation:String(q.formation||''),sourceType:'full',sortStat:'',statMode:useFullmax?'fullmax':'base'};
-    var data=await loadData(dataQ,token,true),fm=useFullmax?await loadFullmaxStats(dataQ,token,true):null,dv=data.dv,rec=data.recSize,base=16;
-    if(fm&&fm.rows!==data.rows)throw new Error('全MAX検索DBとcompact DBの件数不一致');
+    var dataQ={mode:dbMode(q),count:count,formation:String(q.formation||''),sourceType:'full',sortStat:''};
+    var data=await loadData(dataQ,token,true),dv=data.dv,rec=data.recSize,base=16;
     for(var idx=0;idx<data.rows;idx++,base+=rec){
       /* exact lookupは同じ6人の集合ではなく、1〜6番の配置順まで完全一致させる。
-         文曲使用スロット/全MAX値は配置順で変わり得るため、集合一致は不可。 */
+         文曲使用スロットは配置順で変わり得るため、集合一致は不可。 */
       var heroOk=true;for(var h=0;h<heroIds.length&&heroOk;h++)if(dv.getUint16(base+h*2,true)!==heroIds[h])heroOk=false;
       if(!heroOk)continue;
       var bondOk=true;for(var w=0;w<bondIds.length&&bondOk;w++){var found=false;for(var b=0;b<count;b++){if(dv.getUint8(base+12+b)===bondIds[w]){found=true;break;}}if(!found)bondOk=false;}
       if(!bondOk)continue;
-      return {row:materialize(dv,base,dataQ,m,idx,sourceLabel(data.info),fm),matched:1,scanned:idx+1,ms:performance.now()-started};
+      return {row:materialize(dv,base,dataQ,m,idx,sourceLabel(data.info)),matched:1,scanned:idx+1,ms:performance.now()-started};
     }
     return {row:null,matched:0,scanned:data.rows,ms:performance.now()-started};
   }

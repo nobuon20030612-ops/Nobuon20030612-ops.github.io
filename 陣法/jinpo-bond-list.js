@@ -543,16 +543,16 @@
       'body.jinpo-search-mode-special{background:#f2f2f2 url("assets/jinpo-popular-mode-bg.png") center top/cover no-repeat fixed!important;}',
       'body.jinpo-search-mode-bond56,body.jinpo-bond56-mode{background:#11220a url("assets/jinpo-bond56-mode-bg.png") center top/cover no-repeat fixed!important;}',
       'body.jinpo-search-mode-normal header{border-bottom-color:rgba(220,72,72,.72)!important;box-shadow:0 2px 14px rgba(145,20,20,.14)!important;}',
-      'body.jinpo-search-mode-normal .card,body.jinpo-search-mode-normal .formationMiniPanel,body.jinpo-search-mode-normal .dbPriorityGroup,body.jinpo-search-mode-normal #jinpoSumPrioritySort,body.jinpo-search-mode-normal .jinpoSearchStatMode,body.jinpo-search-mode-normal .dbListBox,body.jinpo-search-mode-normal .formation,body.jinpo-search-mode-normal .totalStatPanel{border-color:rgba(205,70,70,.56)!important;box-shadow:0 0 12px rgba(150,24,24,.10),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-normal .card,body.jinpo-search-mode-normal .formationMiniPanel,body.jinpo-search-mode-normal .dbPriorityGroup,body.jinpo-search-mode-normal .dbListBox,body.jinpo-search-mode-normal .formation,body.jinpo-search-mode-normal .totalStatPanel{border-color:rgba(205,70,70,.56)!important;box-shadow:0 0 12px rgba(150,24,24,.10),0 8px 24px rgba(0,0,0,.22)!important;}',
       'body.jinpo-search-mode-normal select,body.jinpo-search-mode-normal input,body.jinpo-search-mode-normal textarea{border-color:rgba(188,72,72,.62)!important;}',
       'body.jinpo-search-mode-grade3 header{border-bottom-color:rgba(255,255,255,.82)!important;box-shadow:0 2px 14px rgba(255,255,255,.10)!important;}',
-      'body.jinpo-search-mode-grade3 .card,body.jinpo-search-mode-grade3 .formationMiniPanel,body.jinpo-search-mode-grade3 .dbPriorityGroup,body.jinpo-search-mode-grade3 #jinpoSumPrioritySort,body.jinpo-search-mode-grade3 .jinpoSearchStatMode,body.jinpo-search-mode-grade3 .dbListBox,body.jinpo-search-mode-grade3 .formation,body.jinpo-search-mode-grade3 .totalStatPanel{border-color:rgba(245,245,245,.72)!important;box-shadow:0 0 12px rgba(255,255,255,.10),0 8px 24px rgba(0,0,0,.20)!important;}',
+      'body.jinpo-search-mode-grade3 .card,body.jinpo-search-mode-grade3 .formationMiniPanel,body.jinpo-search-mode-grade3 .dbPriorityGroup,body.jinpo-search-mode-grade3 .dbListBox,body.jinpo-search-mode-grade3 .formation,body.jinpo-search-mode-grade3 .totalStatPanel{border-color:rgba(245,245,245,.72)!important;box-shadow:0 0 12px rgba(255,255,255,.10),0 8px 24px rgba(0,0,0,.20)!important;}',
       'body.jinpo-search-mode-grade3 select,body.jinpo-search-mode-grade3 input,body.jinpo-search-mode-grade3 textarea{border-color:rgba(235,235,235,.72)!important;}',
       'body.jinpo-search-mode-bond56 header,body.jinpo-bond56-mode header{border-bottom-color:rgba(96,214,112,.74)!important;box-shadow:0 2px 14px rgba(54,176,82,.12)!important;}',
-      'body.jinpo-search-mode-bond56 .card,body.jinpo-search-mode-bond56 .formationMiniPanel,body.jinpo-search-mode-bond56 .dbPriorityGroup,body.jinpo-search-mode-bond56 #jinpoSumPrioritySort,body.jinpo-search-mode-bond56 .jinpoSearchStatMode,body.jinpo-search-mode-bond56 .dbListBox,body.jinpo-search-mode-bond56 .formation,body.jinpo-search-mode-bond56 .totalStatPanel,body.jinpo-bond56-mode .card,body.jinpo-bond56-mode .formationMiniPanel,body.jinpo-bond56-mode .dbPriorityGroup,body.jinpo-bond56-mode #jinpoSumPrioritySort,body.jinpo-bond56-mode .jinpoSearchStatMode,body.jinpo-bond56-mode .dbListBox,body.jinpo-bond56-mode .formation,body.jinpo-bond56-mode .totalStatPanel{border-color:rgba(82,205,105,.62)!important;box-shadow:0 0 14px rgba(55,190,82,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-bond56 .card,body.jinpo-search-mode-bond56 .formationMiniPanel,body.jinpo-search-mode-bond56 .dbPriorityGroup,body.jinpo-search-mode-bond56 .dbListBox,body.jinpo-search-mode-bond56 .formation,body.jinpo-search-mode-bond56 .totalStatPanel,body.jinpo-bond56-mode .card,body.jinpo-bond56-mode .formationMiniPanel,body.jinpo-bond56-mode .dbPriorityGroup,body.jinpo-bond56-mode .dbListBox,body.jinpo-bond56-mode .formation,body.jinpo-bond56-mode .totalStatPanel{border-color:rgba(82,205,105,.62)!important;box-shadow:0 0 14px rgba(55,190,82,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
       'body.jinpo-search-mode-bond56 select,body.jinpo-search-mode-bond56 input,body.jinpo-search-mode-bond56 textarea,body.jinpo-bond56-mode select,body.jinpo-bond56-mode input,body.jinpo-bond56-mode textarea{border-color:rgba(76,196,98,.66)!important;box-shadow:inset 0 0 8px rgba(50,175,75,.05)!important;}',
       'body.jinpo-search-mode-special header{border-bottom-color:rgba(178,105,222,.76)!important;box-shadow:0 2px 14px rgba(132,64,185,.13)!important;}',
-      'body.jinpo-search-mode-special .card,body.jinpo-search-mode-special .formationMiniPanel,body.jinpo-search-mode-special .dbPriorityGroup,body.jinpo-search-mode-special #jinpoSumPrioritySort,body.jinpo-search-mode-special .jinpoSearchStatMode,body.jinpo-search-mode-special .dbListBox,body.jinpo-search-mode-special .formation,body.jinpo-search-mode-special .totalStatPanel{border-color:rgba(176,102,220,.62)!important;box-shadow:0 0 14px rgba(144,71,195,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
+      'body.jinpo-search-mode-special .card,body.jinpo-search-mode-special .formationMiniPanel,body.jinpo-search-mode-special .dbPriorityGroup,body.jinpo-search-mode-special .dbListBox,body.jinpo-search-mode-special .formation,body.jinpo-search-mode-special .totalStatPanel{border-color:rgba(176,102,220,.62)!important;box-shadow:0 0 14px rgba(144,71,195,.11),0 8px 24px rgba(0,0,0,.22)!important;}',
       'body.jinpo-search-mode-special select,body.jinpo-search-mode-special input,body.jinpo-search-mode-special textarea{border-color:rgba(170,104,210,.66)!important;}',
       'body.jinpo-recommend-active{--jinpo-rec-accent:#ffd463;--jinpo-rec-accent2:#e7bd5c;--jinpo-rec-bg1:#6f2419;--jinpo-rec-bg2:#26100a;--jinpo-rec-text:#fff5d4;--jinpo-rec-soft:rgba(231,189,92,.18);--jinpo-rec-glow:rgba(231,189,92,.46);}',
       'body.jinpo-recommend-active #jinpoRecommendNav{--jinpo-group-accent:var(--jinpo-rec-accent);--jinpo-group-glow:var(--jinpo-rec-glow);--jinpo-group-soft:var(--jinpo-rec-soft);background:linear-gradient(180deg,var(--jinpo-rec-soft),rgba(18,11,6,.68));}',
@@ -602,13 +602,10 @@
       'body.jinpo-selected-grade3-mode::before{content:"";position:fixed;inset:0;z-index:0;background:url("assets/jinpo-popular-mode-bg.png") center top / cover no-repeat;pointer-events:none;opacity:1;}',
       'body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}',
       'body.jinpo-selected-grade3-mode main,body.jinpo-selected-grade3-mode header{background:transparent!important;}',
-      'body.jinpo-selected-grade3-mode .card,body.jinpo-selected-grade3-mode .formationMiniPanel,body.jinpo-selected-grade3-mode .dbPriorityGroup,body.jinpo-selected-grade3-mode #jinpoSumPrioritySort,body.jinpo-selected-grade3-mode .jinpoSearchStatMode{background:linear-gradient(180deg,rgba(23,7,19,.82),rgba(9,3,12,.90))!important;border-color:rgba(255,173,233,.42)!important;box-shadow:0 0 18px rgba(219,114,255,.12),inset 0 0 18px rgba(255,255,255,.03)!important;backdrop-filter:blur(1.5px);}',
+      'body.jinpo-selected-grade3-mode .card,body.jinpo-selected-grade3-mode .formationMiniPanel,body.jinpo-selected-grade3-mode .dbPriorityGroup{background:linear-gradient(180deg,rgba(23,7,19,.82),rgba(9,3,12,.90))!important;border-color:rgba(255,173,233,.42)!important;box-shadow:0 0 18px rgba(219,114,255,.12),inset 0 0 18px rgba(255,255,255,.03)!important;backdrop-filter:blur(1.5px);}',
       '#jinpoBondNavLeft{position:absolute;z-index:8;top:-48px;left:36%;display:flex;align-items:center;justify-content:flex-start;gap:8px;width:max-content;max-width:min(520px,90vw);margin:0;box-sizing:border-box;transform:translateX(-50%);}',
       '#jinpoBondNavRight{display:none!important;}',
       '@media(min-width:761px){body.jinpo-recommend-active #jinpoBondNavRight{padding-right:80px;box-sizing:border-box;}}',
-      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityControls{opacity:.42;pointer-events:none;filter:grayscale(.3);}',
-      'body.jinpo-recommend-active #jinpoSumPrioritySort[data-recommend-mode="1"]{border-color:var(--jinpo-rec-accent) !important;box-shadow:0 0 13px var(--jinpo-rec-soft),inset 0 0 0 1px var(--jinpo-rec-soft);}',
-      '#jinpoSumPrioritySort[data-recommend-mode="1"] .jinpoSumPriorityHeader::after{content:none!important;display:none!important;}',
       '#jinpoRecommendSumGuide{display:none;grid-column:1 / -1;flex:1 1 100%;width:100%;box-sizing:border-box;margin:2px 0 10px 0;padding:14px 20px;border:2px solid var(--jinpo-rec-accent,#ffd463);border-radius:15px;background:linear-gradient(90deg,var(--jinpo-rec-bg2,#26100a),var(--jinpo-rec-bg1,#6f2419),var(--jinpo-rec-bg2,#26100a));color:var(--jinpo-rec-text,#fff5d4);font-size:clamp(18px,1.35vw,25px);font-weight:1000;line-height:1.35;letter-spacing:.025em;text-align:center;box-shadow:0 0 18px var(--jinpo-rec-glow,rgba(231,189,92,.46)),inset 0 0 0 1px var(--jinpo-rec-soft,rgba(231,189,92,.18));text-shadow:0 1px 0 rgba(0,0,0,.55);flex-direction:column;gap:5px;}',
       '#jinpoRecommendSumGuide .jinpoRecommendSumGuideSub{font-size:clamp(14px,1.0vw,18px);font-weight:900;line-height:1.35;opacity:.96;}',
       'body.jinpo-recommend-active #jinpoRecommendSumGuide{display:flex;align-items:center;justify-content:center;}',
@@ -853,14 +850,14 @@
   function ensureRecommendSumGuide(){
     var guide=document.getElementById('jinpoRecommendSumGuide');
     if(guide) return guide;
-    var sum=document.getElementById('jinpoSumPrioritySort');
-    if(!sum||!sum.parentNode) return null;
+    var priorities=document.querySelector('.dbPriorityControls');
+    if(!priorities||!priorities.parentNode) return null;
     guide=document.createElement('div');
     guide.id='jinpoRecommendSumGuide';
     guide.setAttribute('role','status');
     guide.setAttribute('aria-live','polite');
     guide.innerHTML='<span>おすすめ中は第2優先を選ぶと、第1＋第2の合計値が高い順へ自動で切り替わります</span><span class="jinpoRecommendSumGuideSub">※第1・第2優先の数値条件を指定すると、その条件に応じて検索結果も変わります</span>';
-    sum.parentNode.insertBefore(guide,sum);
+    priorities.insertAdjacentElement('afterend',guide);
     return guide;
   }
   function scrollToRecommendResults(stat){
@@ -878,6 +875,21 @@
     var top=target.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0)-offset;
     try{window.scrollTo({top:Math.max(0,top),left:0,behavior:'smooth'});}catch(e){window.scrollTo(0,Math.max(0,top));}
   }
+
+  function mountBondButtonsUnderCost(left,recommend){
+    left=left||document.getElementById('jinpoBondNavLeft');
+    if(!left)return false;
+    var launcher=document.getElementById('jinpoCostCalcLauncher');
+    if(!launcher){
+      if(recommend&&left.parentNode!==recommend)recommend.appendChild(left);
+      return false;
+    }
+    var holder=document.getElementById('jinpoBondButtonsUnderCost');
+    if(!holder){holder=document.createElement('div');holder.id='jinpoBondButtonsUnderCost';launcher.appendChild(holder);}
+    if(left.parentNode!==holder)holder.appendChild(left);
+    return true;
+  }
+  window.__jinpoMountBondButtonsUnderCost=function(){return mountBondButtonsUnderCost(document.getElementById('jinpoBondNavLeft'),document.getElementById('jinpoRecommendNav'));};
   function ensureActions(){
     ensureRecommendSumGuide();
     var back = document.getElementById('jinpoBackBtn');
@@ -1003,15 +1015,6 @@
     if(right&&right.parentNode) right.parentNode.removeChild(right);
     var left = document.getElementById('jinpoBondNavLeft');
     if(!left){left=document.createElement('div');left.id='jinpoBondNavLeft';}
-    if(left.parentNode!==recommend) recommend.appendChild(left);
-    var durabilityBtn=recommend.querySelector('[data-jinpo-recommend-stat="耐久力"]');
-    function positionBondNavLeft(){
-      if(!left||!durabilityBtn)return;
-      var x=durabilityBtn.offsetLeft+(durabilityBtn.offsetWidth/2);
-      if(Number.isFinite(x)&&x>0)left.style.left=x+'px';
-    }
-    requestAnimationFrame(function(){requestAnimationFrame(positionBondNavLeft);});
-    if(!left.__jinpoResizeBound){left.__jinpoResizeBound=true;window.addEventListener('resize',positionBondNavLeft);}
     var allBtn = document.getElementById('jinpoBondAllBtn');
     if(!allBtn){
       allBtn = document.createElement('button');allBtn.type='button';allBtn.id='jinpoBondAllBtn';allBtn.className='jinpoBondNavBtn';allBtn.textContent='因縁一覧';
@@ -1024,6 +1027,7 @@
       activeBtn.addEventListener('click', openActiveModal);
     }
     if(activeBtn.parentNode!==left)left.appendChild(activeBtn);
+    mountBondButtonsUnderCost(left,recommend);
   }
 
   function ensurePopularHeroModal(){
@@ -1839,7 +1843,7 @@
   function installDirectStateResetGuards(){
     if(window.__jinpoDirectStateResetGuardsInstalled) return;
     window.__jinpoDirectStateResetGuardsInstalled=true;
-    /* 陣形変更は編成変更ではないため、適用中候補を消さない。全解除だけ状態を破棄する。 */
+    /* 陣形変更は編成変更ではないため、適用状態を維持する。全解除だけ状態を破棄する。 */
     document.addEventListener('click',function(ev){
       var t=ev && ev.target && ev.target.closest ? ev.target.closest('#clearBtn') : null;
       if(t) clearTransientAppliedDbState();

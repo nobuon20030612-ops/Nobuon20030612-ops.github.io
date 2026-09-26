@@ -15,9 +15,6 @@
     {action:"clear_priority1",label:"第1優先を解除",category:"検索",examples:["第1優先を解除"]},
     {action:"clear_priority2",label:"第2優先を解除",category:"検索",examples:["第2優先を解除"]},
     {action:"clear_priorities",label:"第1・第2優先を解除",category:"検索",examples:["第1・第2優先を解除"]},
-    {action:"set_sum_sort",label:"第1・第2合計ソートを設定",category:"検索",examples:["第1・第2合計ソートを設定"]},
-    {action:"set_search_basis",label:"検索基準を変更",category:"検索",examples:["検索基準を変更"]},
-    {action:"get_search_basis",label:"検索基準を確認",category:"検索",examples:["検索基準を確認"]},
     {action:"reset_search",label:"検索条件をリセット",category:"検索",examples:["検索条件をリセット"]},
     {action:"read_search_status",label:"検索の進行状態を確認",category:"検索",examples:["検索の進行状態を確認"]},
     {action:"auto_fill",label:"先頭6人を仮配置",category:"英傑・配置",examples:["先頭6人を仮配置"]},
@@ -87,13 +84,9 @@
     {action:"clear_kenbun",label:"見聞録解除",category:"強化・数値",examples:["見聞録解除"]},
     {action:"clear_kishin",label:"鬼神石解除",category:"強化・数値",examples:["鬼神石解除"]},
     {action:"clear_tensei",label:"転生解除",category:"強化・数値",examples:["転生解除"]},
-    {action:"set_fullmax_search",label:"全MAX込み基準に変更",category:"検索",examples:["全MAX込み基準に変更"]},
-    {action:"set_base_search",label:"基礎値基準に変更",category:"検索",examples:["基礎値基準に変更"]},
     {action:"enable_grade3",label:"等級3以下ON",category:"検索",examples:["等級3以下ON"]},
     {action:"disable_grade3",label:"等級3以下OFF",category:"検索",examples:["等級3以下OFF"]},
     {action:"clear_factor4_exclude",label:"文曲除外を解除",category:"検索",examples:["文曲除外を解除"]},
-    {action:"enable_sum_sort",label:"合計ソートON",category:"検索",examples:["合計ソートON"]},
-    {action:"disable_sum_sort",label:"合計ソートOFF",category:"検索",examples:["合計ソートOFF"]},
     {action:"clear_search_filters",label:"検索絞込みを解除",category:"検索",examples:["検索絞込みを解除"]},
     {action:"clear_owned_filters",label:"配置英傑条件を解除",category:"英傑・配置",examples:["配置英傑条件を解除"]},
     {action:"clear_excluded_filters",label:"除外英傑条件を解除",category:"英傑・配置",examples:["除外英傑条件を解除"]},
@@ -109,14 +102,14 @@
   function suggest(text){var q=compact(text);if(!q)return null;var qt=tokens(text),scored=[];CATALOG.forEach(function(x){var best=0;x.examples.forEach(function(ex){var c=compact(ex);if(!c)return;if(q===c)best=Math.max(best,1);else if(q.indexOf(c)>=0||c.indexOf(q)>=0)best=Math.max(best,.82);else{var et=tokens(ex),hit=0;qt.forEach(function(t){if(et.some(function(z){return z.indexOf(t)>=0||t.indexOf(z)>=0;}))hit++;});if(qt.length)best=Math.max(best,hit/qt.length*.68);}});if(best>0)scored.push({item:x,score:best});});scored.sort(function(a,b){return b.score-a.score;});if(!scored.length||scored[0].score<.42)return null;var top=scored[0],second=scored[1];if(second&&Math.abs(top.score-second.score)<.07&&top.item.category!==second.item.category)return {ambiguous:true,candidates:scored.slice(0,3).map(function(x){return x.item;})};return {ambiguous:false,action:top.item.action,label:top.item.label,category:top.item.category,confidence:top.score};}
   function friendlyQuestion(text){var s=suggest(text);if(!s)return '検索・英傑・差替・強化・保存など、陣法サイトでできることならかなりラフに話して大丈夫なのですよ。もう少しだけ、したいことを足してもらえますか？';if(s.ambiguous)return '「'+s.candidates.map(function(x){return x.label;}).join('」「')+'」のどれに近いですか？';return '「'+s.label+'」のことですか？ そうなら、そのままもう少しだけ対象や条件を教えてください。';}
   var SAFE_NOARG={
-    rerun_search:1,run_current_search:1,get_search_basis:1,reset_search:1,read_search_status:1,auto_fill:1,
+    rerun_search:1,run_current_search:1,reset_search:1,read_search_status:1,auto_fill:1,
     exit_recommended:1,cancel_search:1,run_calculation:1,clear_placement:1,read_state:1,read_totals:1,read_activated:1,read_placement:1,
     clear_owned_heroes:1,clear_excluded_heroes:1,get_owned_filters:1,get_excluded_filters:1,get_swap_candidates:1,
     all_max:1,clear_all_max:1,open_enhancement:1,list_saved:1,share_url:1,export_json:1,
     scroll_top:1,scroll_result:1,show_all_bonds:1,show_active_bonds:1,read_combined_totals:1,apply_top_result:1,show_top_results:1,
     show_swap_non_down:1,show_swap_up:1,show_swap_flat:1,show_swap_down:1,
     max_kenbun:1,max_kishin:1,max_tensei:1,clear_kenbun:1,clear_kishin:1,clear_tensei:1,
-    set_fullmax_search:1,set_base_search:1,enable_grade3:1,disable_grade3:1,clear_factor4_exclude:1,disable_sum_sort:1,
+    enable_grade3:1,disable_grade3:1,clear_factor4_exclude:1,
     clear_search_filters:1,clear_owned_filters:1,clear_excluded_filters:1,read_filters:1
   };
   var ARG_QUESTION={
@@ -127,8 +120,6 @@
     set_factor4_exclude:'文曲を何人まで除外しますか？ 0〜6人で指定できます。',
     set_priority1:'第1優先は何にしますか？ 生命・気合・腕力・耐久・器用・知力・魅力・土・水・火・風から選べます。',
     set_priority2:'第2優先は何にしますか？',
-    set_sum_sort:'第1・第2の合計ソートを使いますか？ ON/OFFを教えてください。',
-    set_search_basis:'検索基準は「基礎値」と「全MAX込み」のどちらにしますか？',
     run_recommended:'おすすめですね。何を重視しますか？ ステータスを1つ選んでください。',
     run_specified_simple:'指定して探すのですね。まず陣形を教えてください。',
     run_best:'一番高いものを探すのですね。どのステータスを一番高くしたいですか？',
@@ -157,7 +148,6 @@
     open_bond_master_picker:'因縁マスターファイルを選ぶ画面を開く、ということでよいですか？',
     apply_override_bond_master:'選択済みの因縁マスターを適用する、ということでよいですか？',
     reset_bond_master:'標準因縁マスターへ戻す、ということでよいですか？',
-    enable_sum_sort:'合計ソートをONにするのですね。同値時は第1・第2のどちらを優先しますか？',
     restore_snapshot:'一つ前の状態へ戻したい場合は「一つ前に戻して」と言ってください。',
     reset_all:'全解除すると現在の条件や配置がリセットされます。実行するなら「全部解除して」と指定してください。'
   };

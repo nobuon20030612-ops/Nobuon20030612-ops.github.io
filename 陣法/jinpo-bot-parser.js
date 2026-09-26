@@ -23,7 +23,6 @@
     if(/第\s*1|第一/.test(t)&&/とは|意味|なに/.test(t))return'priority1';
     if(/第\s*2|第二/.test(t)&&/とは|意味|なに/.test(t))return'priority2';
     if(/以上|以下/.test(t)&&/優先|絞/.test(t)&&/とは|意味/.test(t))return'range';
-    if(/合計ソート|2項目合計/.test(t)&&/とは|意味/.test(t))return'sum_sort';
     if(/込み合計/.test(t)&&/とは|意味/.test(t))return'included_total';
     if(/全MAX|全マックス/i.test(t)&&/とは|意味/.test(t))return'all_max';
     if(/差替/.test(t)&&/赤|緑|青|色/.test(t)&&/意味|とは/.test(t))return'swap_colors';
@@ -127,7 +126,7 @@
     var resultSort=false;if(/(?:検索結果|結果一覧|一覧).*(?:順|昇順|降順|並べ替|ソート)|(?:高い順|低い順|昇順|降順).*(?:検索結果|結果一覧|一覧)/.test(t)){
       var rss=findStats(t);if(rss.length){plan.actions.push({name:'sort_results',args:{stat:rss[0],dir:/(?:低い順|昇順)/.test(t)?'asc':'desc'}});plan.recognized=true;resultSort=true;}
     }
-    if(!resultSort&&/(?:順|ソート|並べ)/.test(t)&&!/(?:第\s*[12]|合計ソート)/.test(t)){var crs=findStats(t);if(crs.length){plan.actions.push({name:'sort_results',args:{stat:crs[0],dir:/(?:低い|小さい|昇順)/.test(t)?'asc':'desc'}});plan.recognized=true;resultSort=true;}}
+    if(!resultSort&&/(?:順|ソート|並べ)/.test(t)&&!/(?:第\s*[12])/.test(t)){var crs=findStats(t);if(crs.length){plan.actions.push({name:'sort_results',args:{stat:crs[0],dir:/(?:低い|小さい|昇順)/.test(t)?'asc':'desc'}});plan.recognized=true;resultSort=true;}}
     if(/因縁判定(?:して|お願い|実行)?|現在の6人.*(?:判定|計算)/.test(t)){plan.actions.push({name:'run_calculation'});plan.recognized=true;}
 
     if(/込み合計.*(?:いくつ|教えて|確認|は\?|は？)|今の込み合計/.test(t)){plan.actions.push({name:'read_totals'});plan.recognized=true;}
@@ -154,8 +153,6 @@
     if(/おすすめ/.test(t)&&!/とは|意味/.test(t)&&!plan.actions.some(function(a){return a.name==='run_best';})){var rs=findStats(t);if(rs.length){plan.recommendStat=rs[0];plan.recognized=true;}}
 
     var patch={},hasPatch=false;
-    if(/(?:検索基準|基準).*(?:全MAX込み|MAX込み|フルMAX込み|強化込み)|(?:全MAX込み|MAX込み|フルMAX込み|強化込み).*(?:検索|基準)/i.test(t)){patch.searchBasis='fullmax';hasPatch=true;}
-    else if(/(?:検索基準|基準).*(?:基礎値|基礎|素ステ|元ステ)|(?:基礎値|素ステ|元ステ).*(?:検索|基準)/.test(t)){patch.searchBasis='base';hasPatch=true;}
     var form=findFormation(t);if(form){patch.formation=form;hasPatch=true;}
     var cm=t.match(/(?:^|[^0-9])([5-9])\s*因縁/);if(!cm)cm=t.match(/因縁(?:数)?\s*(?:は|=|：|:)?\s*([5-9])/);if(!cm){var cm2=t.match(/^([5-9])(?:因縁)?\s*(?:にして|へ|で|でお願い|お願い)?[。！!]*$/);if(cm2)cm=cm2;}if(!cm&&(form||findStats(t).length||/検索|探して|優先|重視|盛り|おすすめ/.test(t))){var cm3=t.match(/(?:^|[^0-9])([5-9])(?=$|[^0-9])/);if(cm3)cm=cm3;}if(cm){patch.count=Number(cm[1]);hasPatch=true;}
     var g3=t.match(/等級\s*3以下(?:\s*(?:を|は)?\s*(ON|オン|OFF|オフ|解除|使わない|なし|無し))?/i);if(g3){patch.grade3=!(g3[1]&&/(OFF|オフ|解除|使わない|なし|無し)/i.test(g3[1]));hasPatch=true;}
@@ -174,7 +171,6 @@
       var gs=findStats(t);if(gs.length&&(/優先|重視|高い|高め|盛り|特化|メイン|検索|探して|因縁|おすすめ|強め|伸ば/.test(t)||cm||form)){var rg=rangeNear(t,gs[0]);patch.priority1={stat:gs[0],min:rg.min,max:rg.max};hasPatch=true;}
     }
     if(/優先.*(?:全部|全て|すべて).*(?:解除|クリア)/.test(t)){patch.priority1={clear:true};patch.priority2={clear:true};hasPatch=true;}
-    if(/合計ソート|2項目合計/.test(t)&&!/とは|意味/.test(t)){patch.sumSort=!/(OFF|オフ|解除|使わない)/i.test(t);if(/第2.*優先|第二.*優先/.test(t)&&/同点/.test(t))patch.sumTie='second';else if(/第1.*優先|第一.*優先/.test(t)&&/同点/.test(t))patch.sumTie='first';hasPatch=true;}
     var hasRunBest=plan.actions.some(function(a){return a.name==='run_best';});
     if(!hasRunBest&&!plan.recommendStat&&(hasPatch||/検索して|検索お願い|探して/.test(t))){plan.searchPatch=patch;plan.recognized=true;}
     return plan;

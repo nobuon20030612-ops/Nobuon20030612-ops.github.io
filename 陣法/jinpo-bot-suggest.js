@@ -28,12 +28,12 @@
   function setSessionDismissed(v){writeJson(window.sessionStorage,SESSION_KEY,v||{});}
   function parseCount(v){var m=S(v).replace(/,/g,'').match(/\d+/);return m?Number(m[0]):NaN;}
   function signature(st){
-    st=st||{};return [st.formation||'',Number(st.count)||0,st.priority1||'',st.priority1Min==null?'':st.priority1Min,st.priority1Max==null?'':st.priority1Max,st.priority2||'',st.priority2Min==null?'':st.priority2Min,st.priority2Max==null?'':st.priority2Max,st.grade3?'1':'0',Number(st.factor4Exclude)||0,st.sumSort?'1':'0',st.recommendActive?('r:'+S(st.recommendTarget)):''].join('|');
+    st=st||{};return [st.formation||'',Number(st.count)||0,st.priority1||'',st.priority1Min==null?'':st.priority1Min,st.priority1Max==null?'':st.priority1Max,st.priority2||'',st.priority2Min==null?'':st.priority2Min,st.priority2Max==null?'':st.priority2Max,st.grade3?'1':'0',Number(st.factor4Exclude)||0,st.recommendActive?('r:'+S(st.recommendTarget)):''].join('|');
   }
   function specificity(st){
     st=st||{};var n=0;if(st.count)n+=1;if(st.formation)n+=1;if(st.priority1)n+=2;if(st.priority2)n+=2;
     if(st.priority1Min!=null||st.priority1Max!=null)n+=1;if(st.priority2Min!=null||st.priority2Max!=null)n+=1;
-    if(st.grade3)n+=1;if(Number(st.factor4Exclude)>0)n+=1;if(st.sumSort)n+=1;if(st.recommendActive)n+=2;return n;
+    if(st.grade3)n+=1;if(Number(st.factor4Exclude)>0)n+=1;if(st.recommendActive)n+=2;return n;
   }
   function isBroadIntent(text){
     text=S(text).replace(/\s+/g,'');return /全部見|全件|広く|広め|幅広|とりあえず|このまま(?:見|で|検索)|絞らない|絞らなく|たくさん|多めに(?:出|見)|いっぱい(?:出|見)|できるだけ多|候補全部|一覧(?:で)?見/.test(text);
