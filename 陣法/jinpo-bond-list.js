@@ -860,22 +860,6 @@
     priorities.insertAdjacentElement('afterend',guide);
     return guide;
   }
-  function scrollToRecommendResults(stat){
-    try{
-      if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.getRecommendState==='function'){
-        var state=window.JINPO_FAST_SEARCH.getRecommendState();
-        if(!state||!state.active||text(state.targetStat)!==text(stat)) return;
-      }
-    }catch(e){}
-    var target=document.getElementById('dbFormationList')||document.getElementById('jinpoResultSummary')||document.getElementById('dbListStatus');
-    if(!target) return;
-    var fixed=document.getElementById('totalStatPanel')||document.querySelector('.totalStatPanel');
-    var offset=18;
-    try{if(fixed){var h=fixed.getBoundingClientRect().height;if(Number.isFinite(h)&&h>0)offset=h+14;}}catch(e){}
-    var top=target.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop||0)-offset;
-    try{window.scrollTo({top:Math.max(0,top),left:0,behavior:'smooth'});}catch(e){window.scrollTo(0,Math.max(0,top));}
-  }
-
   function mountBondButtonsUnderCost(left,recommend){
     left=left||document.getElementById('jinpoBondNavLeft');
     if(!left)return false;
@@ -918,8 +902,8 @@
         if(syncRuntimeOverrideSearchState()) return;
         if(window.JINPO_FAST_SEARCH&&typeof window.JINPO_FAST_SEARCH.runRecommended==='function'){
           var run=window.JINPO_FAST_SEARCH.runRecommended(stat);
-          /* 検索開始直後ではなく、結果描画完了後に従来と同じ位置へ1回だけ移動する。 */
-          Promise.resolve(run).then(function(){ scrollToRecommendResults(stat); }).catch(function(err){ console.error('おすすめ陣法検索エラー',err); });
+          /* 検索完了時の画面移動は jinpo-fast-search.js の共通1経路だけで行う。 */
+          Promise.resolve(run).catch(function(err){ console.error('おすすめ陣法検索エラー',err); });
         }else{
           console.error('おすすめ陣法検索機能がまだ準備できていません');
         }

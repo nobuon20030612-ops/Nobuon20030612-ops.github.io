@@ -330,6 +330,19 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 }
 </style>
 
+
+<style id="jinpo-desktop-standard-scale-20260926">
+/* PC標準表示倍率：ブラウザ67%時の見え方を、ブラウザ100%でも近い大きさにする。 */
+@supports (zoom: 1) {
+  @media screen and (min-width:901px) {
+    body { zoom:0.67 !important; }
+  }
+  @media screen and (max-width:900px) {
+    body { zoom:1 !important; }
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -3132,11 +3145,12 @@ span.removeAttribute("title");
 });
 });
 }
-window.__jinpoDecorateDbSearchRows = function(rows){
+window.__jinpoDecorateDbSearchRows = function(rows,startIndex){
 try{
 var domRows=Array.prototype.slice.call(document.querySelectorAll('#dbFormationList .dbMainRow'));
+var base=Number(startIndex)||0;
 (rows||[]).forEach(function(dataRow,ri){
-var domRow=domRows[ri];if(!domRow)return;
+var domRow=domRows[base+ri];if(!domRow)return;
 var ids=String(dataRow&&dataRow.eiketsu_internal_ids||'').split('|').map(function(x){return String(x||'').trim();}).filter(Boolean);
 var form=safeText(dataRow&&dataRow.formation||'');
 if(ids.length!==6||!form)return;
@@ -5818,194 +5832,15 @@ body{padding-top:0 !important;}
 <!-- step174: 通常7因縁の条件付き全体検索を分割CSV逐次読込に変更。iPhone Safariの巨大CSV全結合エラー対策。DB/式/倍率変更なし。 -->
 <!-- step175: 等級3以下ON 6因縁の条件付き全体検索を分割CSV逐次読込に変更。iPhone Safariの巨大CSV全結合エラー対策。DB/式/倍率/表示CSS変更なし。 -->
 <!-- worker7: 7因縁の閾値/配置指定検索をWeb Worker化。検索条件・表示仕様は既存step176に合わせ、画面フリーズだけを防止。 -->
-<!-- step182-db-result-hero-name-fit-full-no-layout: 検索結果の配置英傑名を既存セル内で全表示（列幅/行高さ/検索処理は変更しない） -->
-<style id="step182-db-result-hero-name-fit-full-no-layout-style">
-  .dbPlacementMini > span.jinpoHeroNameFitApplied{
-    text-overflow:clip !important;
-  }
-  .dbPlacementMini > span.jinpoHeroNameFitApplied > .jinpoHeroNameFitText{
-    display:inline-block !important;
-    max-width:none !important;
-    white-space:nowrap !important;
-    vertical-align:middle !important;
-    font:inherit !important;
-    transform-origin:left center !important;
-    will-change:transform,font-size !important;
-  }
-</style>
-<script id="step182-db-result-hero-name-fit-full-no-layout-script">
-(function(){
-  if(window.__step182DbResultHeroNameFitFullNoLayout) return;
-  window.__step182DbResultHeroNameFitFullNoLayout = true;
-
-  function ready(fn){
-    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
-    else fn();
-  }
-
-  function directText(el){
-    var out = '';
-    try{
-      Array.prototype.forEach.call(el.childNodes || [], function(n){
-        if(n.nodeType === 3) out += n.nodeValue || '';
-      });
-    }catch(e){}
-    return out;
-  }
-
-  function stripGeneratedLabel(t){
-    return String(t || '').replace(/\s*文曲\s*$/, '');
-  }
-
-  function ensureTextWrap(el){
-    var wrap = el.querySelector(':scope > .jinpoHeroNameFitText');
-    if(wrap) return wrap;
-    var text = stripGeneratedLabel(directText(el));
-    if(!text.trim()) text = stripGeneratedLabel(el.textContent || '');
-    // 既存表示文字をそのまま内側へ移す。外側spanのサイズ・グリッド・行高は変更しない。
-    Array.prototype.slice.call(el.childNodes || []).forEach(function(n){
-      if(n.nodeType === 3) el.removeChild(n);
-    });
-    wrap = document.createElement('b');
-    wrap.className = 'jinpoHeroNameFitText';
-    wrap.textContent = text.trim();
-    el.insertBefore(wrap, el.firstChild);
-    return wrap;
-  }
-
-  var bunkyokuReserveCache = null;
-  function pseudoAfterWidth(el){
-    if(!el || !el.classList || !el.classList.contains('factor4BunkyokuGlow')) return 0;
-    if(bunkyokuReserveCache !== null) return bunkyokuReserveCache;
-    // 文曲ラベルは同じCSSなので、英傑ごとではなく最初の1回だけ実測して再利用する。
-    try{
-      var cs = window.getComputedStyle(el, '::after');
-      var content = cs && cs.content;
-      if(!content || content === 'none' || content === 'normal') return (bunkyokuReserveCache = 0);
-      content = String(content).replace(/^['"]|['"]$/g, '');
-      if(!content) return (bunkyokuReserveCache = 0);
-      var probe = document.createElement('span');
-      probe.textContent = content;
-      probe.style.position = 'fixed';
-      probe.style.left = '-9999px';
-      probe.style.top = '-9999px';
-      probe.style.visibility = 'hidden';
-      probe.style.whiteSpace = 'nowrap';
-      probe.style.fontFamily = cs.fontFamily;
-      probe.style.fontSize = cs.fontSize;
-      probe.style.fontWeight = cs.fontWeight;
-      probe.style.letterSpacing = cs.letterSpacing;
-      probe.style.paddingLeft = cs.paddingLeft;
-      probe.style.paddingRight = cs.paddingRight;
-      probe.style.borderLeft = cs.borderLeft;
-      probe.style.borderRight = cs.borderRight;
-      document.body.appendChild(probe);
-      var w = probe.getBoundingClientRect().width;
-      document.body.removeChild(probe);
-      var ml = parseFloat(cs.marginLeft) || 0;
-      var mr = parseFloat(cs.marginRight) || 0;
-      bunkyokuReserveCache = Math.ceil(w + ml + mr + 2);
-    }catch(e){
-      bunkyokuReserveCache = 34;
-    }
-    return bunkyokuReserveCache;
-  }
-
-  function fitOne(el){
-    if(!el || !el.classList) return;
-    // 検索結果の配置英傑欄だけ。陣形表示・所持カード・9因縁DB自体には触らない。
-    if(!el.matches('.dbPlacementMini > span')) return;
-    var wrap = ensureTextWrap(el);
-    el.classList.add('jinpoHeroNameFitApplied');
-
-    var cellWidth = el.clientWidth || 0;
-    if(cellWidth <= 0) return;
-    var hasBunkyoku = el.classList.contains('factor4BunkyokuGlow');
-    var fitKey = String(cellWidth) + '|' + (hasBunkyoku ? '1' : '0') + '|' + String(wrap.textContent || '');
-    // 同じ幅・同じ名前・同じ文曲状態なら再計測しない。
-    if(el.getAttribute('data-jinpo-fit-key') === fitKey) return;
-
-    var reserve = 5;
-    var elStyle = window.getComputedStyle(el);
-    var innerWidth = Math.max(1, cellWidth - (parseFloat(elStyle.paddingLeft)||0) - (parseFloat(elStyle.paddingRight)||0));
-    var available = Math.max(12, innerWidth - pseudoAfterWidth(el) - reserve);
-
-    // 18pxを上限にし、枠内へ収まる最大フォントサイズを1回の比率計算で決める。
-    // 横方向の強い圧縮は使わず、文字自体を読みやすい大きさに保つ。
-    var baseSize = 18;
-    wrap.style.removeProperty('transform');
-    wrap.style.setProperty('font-size', baseSize + 'px', 'important');
-    var sw = Math.max(1, wrap.scrollWidth);
-    if(sw > available){
-      var fitted = Math.max(1, Math.min(baseSize, baseSize * available / sw));
-      wrap.style.setProperty('font-size', fitted.toFixed(2) + 'px', 'important');
-    }
-    el.setAttribute('data-jinpo-fit-key', fitKey);
-  }
-
-  ready(function(){
-    var target = document.getElementById('dbFormationList');
-    if(!target) return;
-    var timer = null;
-    var observer = null;
-    var runId = 0;
-    var chunkSize = 120;
-
-    function observe(){
-      if(!observer) return;
-      try{
-        observer.observe(target, {childList:true, subtree:true, characterData:true});
-      }catch(e){}
-    }
-
-    function runChunked(){
-      var nodes;
-      try{ nodes = Array.prototype.slice.call(target.querySelectorAll('.dbPlacementMini > span')); }
-      catch(e){ nodes = []; }
-      var id = ++runId;
-      var index = 0;
-
-      function step(){
-        if(id !== runId) return;
-        try{ if(observer) observer.disconnect(); }catch(e){}
-        var end = Math.min(index + chunkSize, nodes.length);
-        for(; index < end; index++) fitOne(nodes[index]);
-        observe();
-        if(index < nodes.length){
-          if(window.requestAnimationFrame) window.requestAnimationFrame(step);
-          else setTimeout(step, 0);
-        }
-      }
-      step();
-    }
-
-    function schedule(delay){
-      if(timer) clearTimeout(timer);
-      timer = setTimeout(function(){ timer = null; runChunked(); }, delay);
-    }
-
-    try{
-      // 自分自身が行うclass/style変更は監視しない。検索結果の追加・文字変更だけを対象にする。
-      observer = new MutationObserver(function(){ schedule(100); });
-      observe();
-    }catch(e){}
-
-    // 初回は描画後に1回。リサイズ中は動かさず、操作が止まってから1回だけ再調整する。
-    schedule(0);
-    window.addEventListener('resize', function(){ schedule(280); }, {passive:true});
-    window.addEventListener('load', function(){ schedule(80); }, {once:true});
-  });
-})();
-</script>
-
-
-
+<!-- 2026-09-26: 検索一覧の英傑名は18px固定。長い名前はセル内でclipし、全文は既存ホバーツールチップで確認する。自動文字幅計測/自動縮小経路は削除。 -->
 <style id="jinpo-hero-name-outline-20260926">
 /* 英傑名の文字表現はこの1経路に統一。枠は検索一覧/陣形ライン各々の既存描画経路で管理する。 */
 #dbFormationList .dbPlacementMini > span{
   font-size:17px !important;
   line-height:1.12 !important;
   white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
 }
 #dbFormationList .dbPlacementMini > span:not(.factor4BunkyokuGlow),
 #dbFormationList .dbPlacementMini > span:not(.factor4BunkyokuGlow) > .jinpoHeroNameFitText,
@@ -7203,6 +7038,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     var box=document.getElementById('eiketsuKishinsekiCombinedResult');
     var mode=document.getElementById('eiketsuKishinsekiCombinedMode');
     if(!panel || !box) return false;
+    if(!hasBonus()){ clearBonusCombinedPanel(); return false; }
     panel.style.display='block';
     box.innerHTML=getStatKeys().map(function(k){
       var v=stats&&stats[k]!=null?stats[k]:'—';
@@ -7234,6 +7070,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
   function recalcBonusCombinedAfterPlacementChange(preferredRow){
     try{ syncGlobalAllMaxForCurrentPlacement(); }catch(e){ console.error('編成変更後の全MAX再同期失敗',e); }
+    if(!hasBonus()){ clearBonusCombinedPanel(); return Promise.resolve(null); }
     return Promise.resolve(loadBonusMultiplierMap()).then(function(){
       var stats=null;
       try{ stats=calculateBonusFormulaStats(currentActivationResultForBonus()); }
@@ -8517,7 +8354,7 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 #formationView .jinpoFactorUseBadge.factor3{color:#9deaff;border-color:#63d8ff;background:#0c2630}
 #formationView .jinpoFactorUseBadge.factor4{color:#ffd6d6;border-color:#ff7272;background:#5a0000;box-shadow:0 0 8px rgba(255,60,60,.45),0 1px 5px rgba(0,0,0,.9)}
 #formationView .jinpoFormationEmptyNotice{position:absolute;left:236px;top:12px;z-index:18;color:#d9c497;font-size:12px;line-height:1.4;white-space:nowrap;pointer-events:none}
-.formationMiniPanel>.jinpoFactorLegend{position:relative;z-index:24;width:194px;padding:6px 8px;margin:-52px 0 8px 14px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none}
+.formationMiniPanel>.jinpoFactorLegend{position:relative;z-index:24;width:194px;padding:6px 8px;margin:-52px 0 8px 14px;border:1px solid rgba(231,189,92,.42);border-radius:9px;background:rgba(5,4,3,.82);box-sizing:border-box;pointer-events:none;transform-origin:left center;transform:scale(var(--jinpo-factor-legend-scale,1))}
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorLegendTitle{margin:0 0 4px;color:#f1d28b;font-size:11px;line-height:1;font-weight:900}
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorLegendBadges{display:flex;align-items:center;justify-content:flex-start;gap:3px;white-space:nowrap}
 .formationMiniPanel>.jinpoFactorLegend .jinpoFactorUseBadge{display:inline-flex;align-items:center;justify-content:center;min-height:14px;padding:2px 5px;border-radius:999px;border:1px solid rgba(231,189,92,.85);background:#15100b;font-size:9px;line-height:1;font-weight:1000;box-sizing:border-box;box-shadow:0 1px 5px rgba(0,0,0,.9);text-shadow:none}
@@ -8543,6 +8380,38 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
   #formationView .jinpoFactorUseBadge{font-size:8px;min-height:12px;padding:1px 4px}
 }
 </style>
+<script id="jinpo-factor-legend-autofit-20260926">
+(function(){
+'use strict';
+if(window.__jinpoFactorLegendAutofitInstalled)return;window.__jinpoFactorLegendAutofitInstalled=true;
+var raf=0;
+function fit(){
+  raf=0;
+  var panel=document.querySelector('.formationMiniPanel');
+  var factor=document.getElementById('jinpoFactorLegend');
+  var moved=document.getElementById('jinpoStatusLegendMoved');
+  if(!panel||!factor||!moved)return;
+  factor.style.setProperty('--jinpo-factor-legend-scale','1');
+  var cs=getComputedStyle(factor);
+  var marginLeft=parseFloat(cs.marginLeft)||0;
+  var gap=8,reserveRight=8;
+  var available=Math.max(100,panel.clientWidth-marginLeft-reserveRight);
+  var factorWidth=factor.offsetWidth||194;
+  var movedWidth=Math.max(moved.scrollWidth||0,moved.offsetWidth||0);
+  var total=factorWidth+gap+movedWidth;
+  var scale=total>available?Math.max(.45,Math.min(1,available/total)):1;
+  factor.style.setProperty('--jinpo-factor-legend-scale',String(scale));
+}
+function schedule(){if(raf)return;raf=requestAnimationFrame(fit);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else setTimeout(schedule,0);
+window.addEventListener('resize',schedule,{passive:true});
+window.addEventListener('orientationchange',function(){setTimeout(schedule,80);},{passive:true});
+var factor=document.getElementById('jinpoFactorLegend');
+if(factor)new MutationObserver(schedule).observe(factor,{childList:true,subtree:true,characterData:true});
+var panel=document.querySelector('.formationMiniPanel');
+if(panel&&window.ResizeObserver)new ResizeObserver(schedule).observe(panel);
+})();
+</script>
 <!-- 2026-08-28 現在適用中英傑 コスト計算 -->
 <style id="jinpo-cost-calculator-style">
 .formationMiniPanel{position:relative !important}
@@ -9292,7 +9161,7 @@ function observe(){
   }
   #jinpoCostOverNoticeImg{
     position:absolute !important;
-    left:-40px !important;
+    left:-80px !important;
     top:0 !important;
     width:auto !important;
     height:142px !important;
@@ -9303,7 +9172,7 @@ function observe(){
   }
   #jinpoCostOverNoticeBubble{
     position:absolute !important;
-    left:72px !important;
+    left:62px !important;
     top:86px !important;
     min-width:142px !important;
     max-width:158px !important;
@@ -9345,7 +9214,7 @@ function observe(){
   #jinpoCostOverNotice{display:none;}
   #jinpoCostClearNotice{
     position:absolute !important;
-    z-index:34 !important;
+    z-index:auto !important;
     left:520px !important;
     top:12px !important;
     width:300px !important;
@@ -9355,7 +9224,7 @@ function observe(){
   }
   #jinpoCostClearNoticeImg{
     position:absolute !important;
-    left:-40px !important;
+    left:-80px !important;
     top:-2px !important;
     width:auto !important;
     height:154px !important;
@@ -9365,10 +9234,12 @@ function observe(){
     transform:scaleX(-1) !important;
     transform-origin:center center !important;
     filter:drop-shadow(0 6px 12px rgba(0,0,0,.40)) !important;
+    z-index:400 !important;
   }
   #jinpoCostClearNoticeBubble{
     position:absolute !important;
-    left:62px !important;
+    z-index:120 !important;
+    left:22px !important;
     top:68px !important;
     min-width:300px !important;
     max-width:220px !important;

@@ -3,7 +3,7 @@
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
   var LIMIT=500,HIT_CAP=100000,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,bond56Worker=null,hitCountWorker=null,bond56Mode=false,seq=0,activeToken=0,activeWorkerToken=0,hitCountSeq=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='',formationRerunSerial=0;
-  var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false;
+  var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false,listRenderSerial=0;
   var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
 
@@ -353,10 +353,64 @@
   function statGridHtml(row){
     return DISPLAY_FIELDS.map(function(f){var active=listSort.key===f.key,v=sortValue(row,f.key);return '<span class="jinpoStatCell jinpoStat-'+f.cls+(active?' jinpoSortActive':'')+'" data-stat-key="'+esc(f.key)+'"><span class="jinpoStatCellName">'+esc(f.label)+(f.key==='総合値'?' ':':')+'</span><span class="jinpoStatCellValue">'+esc(v)+'</span><span class="jinpoCompatSep"> / </span></span>';}).join('');
   }
-  function table(rows,count){
-    return '<table class="dbListTable dbListTwoRow"><thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th></tr><tr class="dbStatSortHeaderRow"><th colspan="4"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead><tbody>'+rows.map(function(row,idx){var mem=members(row),bd=bonds(row),internalIds=String(row&&row.eiketsu_internal_ids||'').split('|'),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'" data-bond-names="'+esc(bd.join('|'))+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){var iid=String(internalIds[i]||'').trim(),gradeClass=isGrade3InternalId(iid)?' class="jinpoGrade3HeroName"':' class="jinpoGrade4HeroName"';return '<span'+gradeClass+' data-hero-internal-id="'+esc(iid)+'">'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="4"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('')+'</tbody></table>';
+  function tableHeadHtml(){
+    return '<thead><tr><th>適用</th><th>因縁数</th><th>陣形</th><th>英傑</th></tr><tr class="dbStatSortHeaderRow"><th colspan="4"><div class="jinpoStatGrid">'+sortFieldHtml()+'</div></th></tr></thead>';
   }
-  function rerenderList(count){var box=q('dbFormationList');if(!box)return;displayRows=sortedRows(activeRows);box.innerHTML=displayRows.length?table(displayRows,count||selectedCount()):'<div class="dbListNote">該当DBなし。陣形・配置英傑・除外英傑・優先条件・文曲除外人数を確認してください。</div>';syncPriorityStatHighlights();try{if(typeof window.__jinpoDecorateDbSearchRows==='function')window.__jinpoDecorateDbSearchRows(displayRows);}catch(e){console.error('検索結果文曲直接表示失敗',e);}/* 文曲表示は直前の直接照合で完了。全500件を再計算する旧二重経路は実行しない。 */}
+  function tableRowsHtml(rows,count,startIndex){
+    var base=Number(startIndex)||0;
+    return (rows||[]).map(function(row,localIdx){var idx=base+localIdx,mem=members(row),bd=bonds(row),internalIds=String(row&&row.eiketsu_internal_ids||'').split('|'),isApplied=!!appliedListRowKey&&stableRowKey(row)===appliedListRowKey,appliedClass=isApplied?' jinpoAppliedRow':'';return '<tr class="dbMainRow'+appliedClass+'" data-bond-names="'+esc(bd.join('|'))+'"><td><button class="applyBtn" data-unified-db-idx="'+idx+'" type="button">'+(isApplied?'適用中':'適用')+'</button></td><td>'+esc(row.bond_count||count)+'</td><td>'+esc(row.formation||'')+'</td><td><div class="dbPlacementMini">'+mem.map(function(m,i){var iid=String(internalIds[i]||'').trim(),gradeClass=isGrade3InternalId(iid)?' class="jinpoGrade3HeroName"':' class="jinpoGrade4HeroName"';return '<span'+gradeClass+' data-hero-internal-id="'+esc(iid)+'">'+esc(i+1)+'. '+esc(m)+'</span>';}).join('')+'</div></td></tr><tr class="dbStatRow'+appliedClass+'"><td colspan="4"><span class="dbListStat jinpoStatGrid">'+statGridHtml(row)+'</span></td></tr>';}).join('');
+  }
+  function rerenderList(count){
+    return new Promise(function(resolve){
+      var box=q('dbFormationList');if(!box){resolve(false);return;}
+      var renderId=++listRenderSerial,currentCount=count||selectedCount();
+      displayRows=sortedRows(activeRows);
+      var rowsSnapshot=displayRows.slice();
+      if(!rowsSnapshot.length){
+        box.innerHTML='<div class="dbListNote">該当DBなし。陣形・配置英傑・除外英傑・優先条件・文曲除外人数を確認してください。</div>';
+        syncPriorityStatHighlights();
+        resolve(true);
+        return;
+      }
+      box.innerHTML='<table class="dbListTable dbListTwoRow">'+tableHeadHtml()+'<tbody></tbody></table>';
+      var tbody=box.querySelector('tbody');if(!tbody){resolve(false);return;}
+      var offset=0,chunkSize=25,settled=false;
+      function finish(ok){if(settled)return;settled=true;resolve(!!ok);}
+      function step(){
+        if(renderId!==listRenderSerial||!tbody.isConnected){finish(false);return;}
+        var end=Math.min(offset+chunkSize,rowsSnapshot.length),chunk=rowsSnapshot.slice(offset,end);
+        try{
+          tbody.insertAdjacentHTML('beforeend',tableRowsHtml(chunk,currentCount,offset));
+          if(typeof window.__jinpoDecorateDbSearchRows==='function')window.__jinpoDecorateDbSearchRows(chunk,offset);
+        }catch(e){console.error('検索結果分割描画失敗',e);finish(false);return;}
+        offset=end;
+        if(offset<rowsSnapshot.length){if(typeof requestAnimationFrame==='function')requestAnimationFrame(step);else setTimeout(step,0);return;}
+        syncPriorityStatHighlights();
+        finish(renderId===listRenderSerial);
+      }
+      if(typeof requestAnimationFrame==='function')requestAnimationFrame(step);else setTimeout(step,0);
+    });
+  }
+  function scrollSearchResults(){
+    var root=q('reachList'),el=root&&root.querySelector(':scope > h3');
+    if(!el)el=q('reachSection')||root;
+    if(!el||typeof el.scrollIntoView!=='function')return;
+    try{el.scrollIntoView({behavior:'auto',block:'start',inline:'nearest'});}catch(e){try{el.scrollIntoView(true);}catch(ignore){}}
+  }
+  function finalizeSearchResults(count,searchToken){
+    /* 25件分割描画完了 → 現在検索か確認 → 1回だけスクロール → 描画反映後に完了。
+       このPromiseが完了するまで検索中表示を維持する。 */
+    return rerenderList(count).then(function(completed){
+      if(!completed)return false;
+      if(searchToken!=null&&(searchToken!==activeToken||window.__jinpoSearchCancelRequested))return false;
+      scrollSearchResults();
+      return new Promise(function(resolve){
+        if(typeof requestAnimationFrame!=='function'){setTimeout(function(){resolve(true);},0);return;}
+        requestAnimationFrame(function(){requestAnimationFrame(function(){resolve(true);});});
+      });
+    });
+  }
+
   function markAppliedRowVisual(btn){
     var box=q('dbFormationList');if(!box||!btn)return;
     var oldMain=box.querySelector('tr.dbMainRow.jinpoAppliedRow'),oldStat=box.querySelector('tr.dbStatRow.jinpoAppliedRow');
@@ -366,13 +420,6 @@
     main.classList.add('jinpoAppliedRow');btn.textContent='適用中';
     var stat=main.nextElementSibling;if(stat&&stat.classList&&stat.classList.contains('dbStatRow'))stat.classList.add('jinpoAppliedRow');
   }
-  function scrollSearchResults(){
-    var el=q('dbFormationList')||q('summary');
-    if(!el||typeof el.scrollIntoView!=='function')return;
-    try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){try{el.scrollIntoView();}catch(ignore){}}
-  }
-  window.__jinpoScrollSearchResults=scrollSearchResults;
-
   var progressOriginalParent=null,progressOriginalNextSibling=null;
   function bringProgressToFrontForPopularMode(){
     var p=q('dbSearchProgress');if(!p)return null;
@@ -456,7 +503,7 @@
     var loadingTarget=secondary?(recommendLabel(target)+'＋'+recommendLabel(secondary)):(recommendLabel(target));
     var loadingSub=secondary?(loadingTarget+'の合計値が高い組み合わせを検索しています'):(loadingTarget+'が高い組み合わせを検索しています');
     box.innerHTML='<div class="jinpoRecommendLoading" role="status" aria-live="polite"><span class="dbSearchSpinner" aria-hidden="true"></span><div class="jinpoRecommendLoadingTitle">おすすめ陣法を検索中…</div><div class="jinpoRecommendLoadingSub">'+esc(loadingSub)+'</div></div>';
-    try{var r=mode==='bond56'?await searchRecommendedBond56(query,target,secondary,myToken):await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var matchedComplete=mode==='bond56'?r.matchedComplete!==false:true;status.textContent='';setSummary(r.matched||0,activeRows.length,matchedComplete);rerenderList(null);return true;
+    try{var r=mode==='bond56'?await searchRecommendedBond56(query,target,secondary,myToken):await searchRecommended(query);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;var formation=String(r&&r.formation||'').trim();recommendState.formation=formation;recommendState.secondaryStat=String(r&&r.secondaryStat||secondary||'');syncRecommendUi();if(formation)applyRecommendedFormation(formation);if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;activeRows=Array.isArray(r&&r.rows)?r.rows:[];updateGlobals(activeRows);displayRows=sortedRows(activeRows);var matchedComplete=mode==='bond56'?r.matchedComplete!==false:true;status.textContent='';setSummary(r.matched||0,activeRows.length,matchedComplete);await finalizeSearchResults(null,myToken);return true;
     }catch(err){
       if(myToken!==activeToken)return true;console.error('おすすめ陣法検索エラー',err);status.textContent='おすすめ陣法の検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">おすすめ陣法の検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;
     }finally{if(myToken===activeToken)hideProgress();}
@@ -482,13 +529,13 @@
       var hit=Number(r.matched||0),complete=mode!=='bond56'||r.matchedComplete!==false;
       function drawStatus(resolvedHit,resolvedComplete){status.textContent=f+' / '+c+'因縁: '+(mode==='bond56'?'専用軽量検索':'高速検索DB')+' / 条件一致 '+hitStatusText(resolvedHit,resolvedComplete)+' / 表示 '+activeRows.length.toLocaleString()+'件（最大'+LIMIT+'件）'+gradeText+f4Text;}
       drawStatus(hit,complete);setSummary(hit,activeRows.length,complete);
-      rerenderList(c);
-      scrollSearchResults();
+      var finalized=finalizeSearchResults(c,myToken);
       if(mode==='bond56'&&!complete&&hit<HIT_CAP){startBond56HitCount(query,myToken,activeRows.length,function(exactHit,exactComplete){if(myToken===activeToken)drawStatus(exactHit,exactComplete);});}
+      return finalized;
     }
     try{
       var r=await search(query);
-      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;acceptResult(r);return true;
+      if(myToken!==activeToken||window.__jinpoSearchCancelRequested)return true;await acceptResult(r);return true;
     }catch(err){if(myToken!==activeToken)return true;console.error('統一コンパクト検索エラー',err);status.textContent='検索中にエラーが発生しました。';setSummary(0,0);box.innerHTML='<div class="dbListNote">検索処理でエラーが発生しました。コンソールを確認してください。</div>';return true;}finally{if(myToken===activeToken)hideProgress();}
   }
 
