@@ -5686,19 +5686,20 @@ body{padding-top:0 !important;}
 
   var current = null;
 
-  function placeTip(ev){
+  function placeTip(){
     if(!current) return;
     var tip = getTip();
-    var x = (ev && typeof ev.clientX === 'number') ? ev.clientX : 0;
-    var y = (ev && typeof ev.clientY === 'number') ? ev.clientY : 0;
+    var targetRect = current.getBoundingClientRect();
+    var tipRect = tip.getBoundingClientRect();
     var pad = 10;
-    var left = x + 14;
-    var top = y + 16;
-    var rect = tip.getBoundingClientRect();
-    if(left + rect.width + pad > window.innerWidth) left = Math.max(pad, window.innerWidth - rect.width - pad);
-    if(top + rect.height + pad > window.innerHeight) top = Math.max(pad, y - rect.height - 12);
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
+    var gap = 6;
+    var left = targetRect.left + (targetRect.width - tipRect.width) / 2;
+    var top = targetRect.bottom + gap;
+    if(left < pad) left = pad;
+    if(left + tipRect.width + pad > window.innerWidth) left = Math.max(pad, window.innerWidth - tipRect.width - pad);
+    if(top + tipRect.height + pad > window.innerHeight) top = Math.max(pad, targetRect.top - tipRect.height - gap);
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
   }
 
   function show(ev){
@@ -5713,9 +5714,9 @@ body{padding-top:0 !important;}
     placeTip(ev);
   }
 
-  function move(ev){
+  function move(){
     if(!current) return;
-    placeTip(ev);
+    placeTip();
   }
 
   function hide(){
@@ -5743,7 +5744,7 @@ body{padding-top:0 !important;}
       var r = el.getBoundingClientRect();
       tip.textContent = text;
       tip.classList.add('isShown');
-      placeTip({clientX:r.left, clientY:r.bottom});
+      placeTip();
     }, true);
     document.addEventListener('focusout', hide, true);
     window.addEventListener('scroll', hide, true);
