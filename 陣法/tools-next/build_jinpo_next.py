@@ -587,7 +587,7 @@ def main():
             "+'@@excluded='+excluded.join(',')",
             "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
             'source:"current_result_db_exact"', 'function lookupReachSwapExactDbRow',
-            'if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];',
+            'if(stat === "生命" || stat === "気合") return [20000,17500,15000,12500,10000,7500,5000,2500];',
             'return [1600,1400,1200,1000,800,600,400,200];',
             'function findHeroByInternalId', 'heroFactor4IdentityKey', 'data-hero-internal-id',
             'Number(a.heroIndex) === rel', 'function activatedLinesText(act)',

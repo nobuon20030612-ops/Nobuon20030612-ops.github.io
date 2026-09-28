@@ -116,7 +116,7 @@
         if(Array.isArray(raw)&&raw.length)return raw.map(Number).filter(Number.isFinite);
       }
     }catch(e){}
-    return (stat==='生命'||stat==='気合')?[20000,18000,16000,14000,12000,10000,8000,6000]:[1600,1400,1200,1000,800,600,400,200];
+    return (stat==='生命'||stat==='気合')?[20000,17500,15000,12500,10000,7500,5000,2500]:[1600,1400,1200,1000,800,600,400,200];
   }
   function backItem(fn){return {label:'← 戻る',kind:'back',onClick:fn};}
   async function directSpecified(formation,stat,min){

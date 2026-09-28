@@ -1605,7 +1605,7 @@
     /* 全検証が通ってから画面状態を一括更新し、途中状態を残さない。 */
     if(formation && sel) sel.value = formation;
     if(next !== null){
-      try{ placement = next; }catch(e){ throw new Error('配置復元に失敗しました'); }
+      try{ placement = next; window.placement = placement; }catch(e){ throw new Error('配置復元に失敗しました'); }
     }
     clearTransientAppliedDbState();
     try{ if(typeof renderSlots === 'function') renderSlots(); }catch(e){}
@@ -1787,23 +1787,7 @@
       window.applyInenMasterRows=guardedApplyInenMasterRows;
       try{ applyInenMasterRows=guardedApplyInenMasterRows; }catch(e){}
     }
-    var applyHero=window.applyEiketsuMasterRows;
-    if(typeof applyHero==='function' && !applyHero.__jinpoSearchSafetyWrapped){
-      function guardedApplyEiketsuMasterRows(){
-        var ok=applyHero.apply(this,arguments);
-        if(ok!==false){
-          clearTransientAppliedDbState();
-          invalidateReachCandidateCacheAfterMasterChange();
-          syncRuntimeOverrideSearchState();
-          scheduleOwnedHeroJobMetaFix();
-        }
-        return ok;
-      }
-      guardedApplyEiketsuMasterRows.__jinpoSearchSafetyWrapped=true;
-      guardedApplyEiketsuMasterRows.__jinpoSearchSafetyOriginal=applyHero;
-      window.applyEiketsuMasterRows=guardedApplyEiketsuMasterRows;
-      try{ applyEiketsuMasterRows=guardedApplyEiketsuMasterRows; }catch(e){}
-    }
+
   }
   function installSavedFormationRefreshGuard(){
     if(window.__jinpoSavedFormationRefreshGuardInstalled) return;

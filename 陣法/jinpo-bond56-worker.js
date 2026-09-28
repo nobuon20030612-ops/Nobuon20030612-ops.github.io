@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  var MANIFEST_PATH='data/bond56_index/bond56_manifest.json';
+  var MANIFEST_PATH='data/bond56_index/bond56_manifest.json',CACHE_PREFIX='jinpo-bond56-index-';
   var STATS=['生命','気合','腕力','耐久力','器用さ','知力','魅力','土属性','水属性','火属性','風属性'];
   var STAT_INDEX=Object.create(null);STATS.forEach(function(s,i){STAT_INDEX[s]=i;});
   var FORM_CODE={'衡軛':'kouyaku','鶴翼':'kakuyoku','魚鱗':'gyorin','方円':'hoen'};
@@ -15,10 +15,21 @@
   function progress(token,message,bytes){self.postMessage({type:'progress',token:token,phase:'bond56',message:message,bytes:Number(bytes||0)});}
   function magic(dv,o){return String.fromCharCode(dv.getUint8(o),dv.getUint8(o+1),dv.getUint8(o+2),dv.getUint8(o+3));}
   async function sha16(ab){var h=new Uint8Array(await crypto.subtle.digest('SHA-256',ab)),s='';for(var i=0;i<8;i++)s+=h[i].toString(16).padStart(2,'0');return s;}
+  function bond56CacheName(version){return CACHE_PREFIX+String(version||'1').replace(/[^a-zA-Z0-9_.-]/g,'_');}
+  async function cleanupOldCaches(version){if(typeof caches==='undefined'||!caches.keys)return;try{var keep=bond56CacheName(version),keys=await caches.keys();for(var i=0;i<keys.length;i++)if(keys[i].indexOf(CACHE_PREFIX)===0&&keys[i]!==keep)await caches.delete(keys[i]);}catch(e){}}
+  async function verifiedGzip(ab,hash,bytes){var n=Number(bytes||0);if(n>0&&ab.byteLength!==n)return false;var h=String(hash||'').trim().toLowerCase();if(!/^[0-9a-f]{16}$/.test(h))throw new Error('5・6因縁manifest SHA-256不正/欠落');return (await sha16(ab))===h;}
+  async function cachedGzipFetch(file,version,hash,bytes){
+    var u=new URL(file,self.location.href);u.searchParams.set('v',String(version||'1'));var cache=null;
+    if(typeof caches!=='undefined'){try{cache=await caches.open(bond56CacheName(version));var hit=await cache.match(u.href);if(hit){var hab=await hit.arrayBuffer();if(await verifiedGzip(hab,hash,bytes))return hab;try{await cache.delete(u.href);}catch(e){}}}catch(e){cache=null;}}
+    async function net(url,mode){var r=await fetch(url,{cache:mode});if(!r.ok)throw new Error(file+' HTTP '+r.status);return r.arrayBuffer();}
+    var ab=await net(u.href,'no-cache');
+    if(!(await verifiedGzip(ab,hash,bytes))){var repair=new URL(u.href);repair.searchParams.set('_repair',String(Date.now()));ab=await net(repair.href,'reload');if(!(await verifiedGzip(ab,hash,bytes)))throw new Error('5・6因縁索引整合性不一致: '+file);}
+    if(cache){try{await cache.put(u.href,new Response(ab));}catch(e){}}return ab;
+  }
   async function gunzip(ab){var u=new Uint8Array(ab,0,Math.min(2,ab.byteLength));if(u.length<2||u[0]!==0x1f||u[1]!==0x8b)return ab;if(typeof DecompressionStream==='undefined')throw new Error('5・6因縁モードにはDecompressionStream(gzip)対応ブラウザが必要です');return new Response(new Blob([ab]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();}
-  async function loadManifest(){if(manifest)return manifest;var r=await fetch(new URL(MANIFEST_PATH,self.location.href).href,{cache:'no-store'});if(!r.ok)throw new Error(MANIFEST_PATH+' HTTP '+r.status);manifest=await r.json();if(!manifest||!manifest.version||!manifest.files)throw new Error('5・6因縁manifest不正');return manifest;}
+  async function loadManifest(){if(manifest)return manifest;var r=await fetch(new URL(MANIFEST_PATH,self.location.href).href,{cache:'no-cache'});if(!r.ok)throw new Error(MANIFEST_PATH+' HTTP '+r.status);manifest=await r.json();if(!manifest||!manifest.version||!manifest.files)throw new Error('5・6因縁manifest不正');cleanupOldCaches(manifest.version);return manifest;}
   function infoParts(info){var p=info&&Array.isArray(info.parts)?info.parts.filter(function(x){return x&&x.file;}):[];return p.length?p:(info&&info.file?[info]:[]);}
-  async function loadRaw(name,token,silent){if(fileCache.has(name))return fileCache.get(name);var m=await loadManifest(),info=m.files[name];if(!info)throw new Error('5・6因縁索引なし: '+name);var parts=infoParts(info);if(!parts.length)throw new Error('5・6因縁manifest file/parts欠落: '+name);if(parts.length===1&&!Array.isArray(info.parts)){if(!silent)progress(token,'5・6因縁モード データ読込中',info.gzip_bytes||0);var r=await fetch(new URL(info.file,self.location.href).href,{cache:'no-store'});if(!r.ok)throw new Error(info.file+' HTTP '+r.status);var z=await r.arrayBuffer();if(Number(info.gzip_bytes||0)&&z.byteLength!==Number(info.gzip_bytes))throw new Error('5・6因縁索引サイズ不一致: '+name);if(String(info.sha256_16||'')!==(await sha16(z)))throw new Error('5・6因縁索引整合性不一致: '+name);if(!silent)progress(token,'5・6因縁モード データ展開中',z.byteLength);var ab=await gunzip(z);if(Number(info.raw_bytes||0)&&ab.byteLength!==Number(info.raw_bytes))throw new Error('5・6因縁索引展開サイズ不一致: '+name);fileCache.set(name,ab);return ab;}var totalRows=Number(info.rows||0),rec=Number(info.record_size||0);if(!totalRows||!rec)throw new Error('5・6因縁分割索引manifest不正: '+name);if(!silent)progress(token,'5・6因縁モード 分割データ読込中',info.gzip_bytes||0);var out=new Uint8Array(16+totalRows*rec),written=0,totalGzip=0,first=false;for(var pi=0;pi<parts.length;pi++){var part=parts[pi],pr=await fetch(new URL(part.file,self.location.href).href,{cache:'no-store'});if(!pr.ok)throw new Error(part.file+' HTTP '+pr.status);var pz=await pr.arrayBuffer();totalGzip+=pz.byteLength;if(Number(part.gzip_bytes||0)&&pz.byteLength!==Number(part.gzip_bytes))throw new Error('5・6因縁partサイズ不一致: '+part.file);if(String(part.sha256_16||'')!==(await sha16(pz)))throw new Error('5・6因縁part整合性不一致: '+part.file);var pab=await gunzip(pz),pdv=new DataView(pab);if(pab.byteLength<16||magic(pdv,0)!=='B56S')throw new Error('5・6因縁part magic不一致: '+part.file);var prows=Number(pdv.getBigUint64(8,true));if(prows!==Number(part.rows||0)||pab.byteLength!==16+prows*rec)throw new Error('5・6因縁part構造不一致: '+part.file);if(!first){out.set(new Uint8Array(pab,0,16),0);first=true;}out.set(new Uint8Array(pab,16),16+written*rec);written+=prows;if(!silent)progress(token,'5・6因縁モード 分割データ '+(pi+1)+'/'+parts.length+' 展開中',pz.byteLength);}if(written!==totalRows)throw new Error('5・6因縁分割索引件数不一致: '+name);if(Number(info.gzip_bytes||0)&&totalGzip!==Number(info.gzip_bytes))throw new Error('5・6因縁分割索引gzipサイズ不一致: '+name);new DataView(out.buffer).setBigUint64(8,BigInt(totalRows),true);if(Number(info.raw_bytes||0)&&out.byteLength!==Number(info.raw_bytes))throw new Error('5・6因縁分割索引展開サイズ不一致: '+name);fileCache.set(name,out.buffer);return out.buffer;}
+  async function loadRaw(name,token,silent){if(fileCache.has(name))return fileCache.get(name);var m=await loadManifest(),info=m.files[name];if(!info)throw new Error('5・6因縁索引なし: '+name);var parts=infoParts(info);if(!parts.length)throw new Error('5・6因縁manifest file/parts欠落: '+name);if(parts.length===1&&!Array.isArray(info.parts)){if(!silent)progress(token,'5・6因縁モード データ読込中',info.gzip_bytes||0);var z=await cachedGzipFetch(info.file,m.version,info.sha256_16,info.gzip_bytes);if(!silent)progress(token,'5・6因縁モード データ展開中',z.byteLength);var ab=await gunzip(z);if(Number(info.raw_bytes||0)&&ab.byteLength!==Number(info.raw_bytes))throw new Error('5・6因縁索引展開サイズ不一致: '+name);fileCache.set(name,ab);return ab;}var totalRows=Number(info.rows||0),rec=Number(info.record_size||0);if(!totalRows||!rec)throw new Error('5・6因縁分割索引manifest不正: '+name);if(!silent)progress(token,'5・6因縁モード 分割データ読込中',info.gzip_bytes||0);var out=new Uint8Array(16+totalRows*rec),written=0,totalGzip=0,first=false;for(var pi=0;pi<parts.length;pi++){var part=parts[pi],pz=await cachedGzipFetch(part.file,m.version,part.sha256_16,part.gzip_bytes);totalGzip+=pz.byteLength;var pab=await gunzip(pz),pdv=new DataView(pab);if(pab.byteLength<16||magic(pdv,0)!=='B56S')throw new Error('5・6因縁part magic不一致: '+part.file);var prows=Number(pdv.getBigUint64(8,true));if(prows!==Number(part.rows||0)||pab.byteLength!==16+prows*rec)throw new Error('5・6因縁part構造不一致: '+part.file);if(!first){out.set(new Uint8Array(pab,0,16),0);first=true;}out.set(new Uint8Array(pab,16),16+written*rec);written+=prows;if(!silent)progress(token,'5・6因縁モード 分割データ '+(pi+1)+'/'+parts.length+' 展開中',pz.byteLength);}if(written!==totalRows)throw new Error('5・6因縁分割索引件数不一致: '+name);if(Number(info.gzip_bytes||0)&&totalGzip!==Number(info.gzip_bytes))throw new Error('5・6因縁分割索引gzipサイズ不一致: '+name);new DataView(out.buffer).setBigUint64(8,BigInt(totalRows),true);if(Number(info.raw_bytes||0)&&out.byteLength!==Number(info.raw_bytes))throw new Error('5・6因縁分割索引展開サイズ不一致: '+name);fileCache.set(name,out.buffer);return out.buffer;}
 
   function buildModelArrays(){
     maxHero=Number(model.maxHeroId||0);maxBond=Number(model.maxBondId||0);var n=(maxHero+1)*11;
@@ -101,12 +112,18 @@
     var ss=q.sumSort||{},s1=STAT_INDEX[String(ss.stat1||'')],s2=STAT_INDEX[String(ss.stat2||'')],sumSort={enabled:!!(ss.enabled&&s1!=null&&s2!=null),s1:s1,s2:s2,preferSecond:ss.tiePrefer==='second'};
     var excluded=new Uint8Array(maxHero+1),ex=(Array.isArray(q.excludedInternalIds)?q.excludedInternalIds:[]).map(numericHeroId).filter(function(x){return x>0&&x<=maxHero;});ex.forEach(function(h){excluded[h]=1;});
     var req=(Array.isArray(q.ownedInternalIds)?q.ownedInternalIds:[]).map(numericHeroId).filter(function(x){return x>0&&x<=maxHero;});req=Array.from(new Set(req));
+    var near=(Array.isArray(q.nearCurrentIds)?q.nearCurrentIds:[]).map(numericHeroId).filter(function(x){return x>0&&x<=maxHero;});near=Array.from(new Set(near));
+    var nearSet=near.length?new Set(near):null,nearFlag=near.length?new Uint8Array(maxHero+1):null,nearMinSame=Math.max(0,Math.min(6,Number(q.nearMinSame||0)||0));if(nearFlag)near.forEach(function(h){nearFlag[h]=1;});
     var f4=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max);
-    return{q:q,count:Number(q.count),form:String(q.formation||''),spec:spec,ranges:rr,minLimit:minLimit,maxLimit:maxLimit,invalidRange:invalidRange,priority:priority,sumSort:sumSort,excluded:excluded,required:req,f4max:Number.isFinite(f4)?f4:null,limit:Math.max(1,Number(q.limit||500)||500),heap:[],heapSemantic:new Map(),matchedSeen:0,matchedSemantic:new Set(),pruned:false,orderedMids:new Map(),orderedTriples:new Map(),heroOrder:null,countOnly:!!q.__countOnly,hitCap:Math.max(1,Number(q.__hitCap||100000)||100000),hitCapReached:false};
+    return{q:q,count:Number(q.count),form:String(q.formation||''),spec:spec,ranges:rr,minLimit:minLimit,maxLimit:maxLimit,invalidRange:invalidRange,priority:priority,sumSort:sumSort,excluded:excluded,required:req,nearSet:nearSet,nearFlag:nearFlag,nearMinSame:nearMinSame,f4max:Number.isFinite(f4)?f4:null,limit:Math.max(1,Number(q.limit||500)||500),heap:[],heapSemantic:new Map(),matchedSeen:0,matchedSemantic:new Set(),pruned:false,orderedMids:new Map(),orderedTriples:new Map(),nearMaskMax:new Map(),heroOrder:null,countOnly:!!q.__countOnly,hitCap:Math.max(1,Number(q.__hitCap||100000)||100000),hitCapReached:false};
   }
   function heroHeuristic(h,ctx){var src=heroBase,o=h*11;if(ctx.spec.kind==='one')return src[o+ctx.spec.idx[0]];if(ctx.spec.kind==='sum')return src[o+ctx.spec.idx[0]]+src[o+ctx.spec.idx[1]];var s=0;for(var i=0;i<11;i++)s+=src[o+i];return s;}
-  function orderedMids(gid,ctx){var hit=ctx.orderedMids.get(gid);if(hit)return hit;var off=core.gOff[gid],n=core.gCnt[gid],a=[];for(var i=0;i<n;i++){var h=core.mids[off+i];if(!ctx.excluded[h])a.push(h);}if(!ctx.countOnly)a.sort(function(x,y){var rx=ctx.required.indexOf(x)>=0?1:0,ry=ctx.required.indexOf(y)>=0?1:0;if(rx!==ry)return ry-rx;var d=heroHeuristic(y,ctx)-heroHeuristic(x,ctx);return d||x-y;});ctx.orderedMids.set(gid,a);return a;}
-  function globalHeroOrder(ctx){if(ctx.heroOrder)return ctx.heroOrder;var a=[];for(var h=1;h<=maxHero;h++)if(model.heroes[h]&&!ctx.excluded[h])a.push(h);if(!ctx.countOnly)a.sort(function(x,y){var rx=ctx.required.indexOf(x)>=0?1:0,ry=ctx.required.indexOf(y)>=0?1:0;if(rx!==ry)return ry-rx;var d=heroHeuristic(y,ctx)-heroHeuristic(x,ctx);return d||x-y;});ctx.heroOrder=a;return a;}
+  function nearCountHeroes(hs,ctx){if(!ctx.nearFlag||ctx.nearMinSame<=0)return 0;var n=0;for(var i=0;i<hs.length;i++)n+=ctx.nearFlag[hs[i]]||0;return n;}
+  function nearCanReachCount(same,remainingSlots,ctx){return !ctx.nearFlag||ctx.nearMinSame<=0||same+Math.max(0,remainingSlots)>=ctx.nearMinSame;}
+  function nearCanReach(hs,remainingSlots,ctx){return nearCanReachCount(nearCountHeroes(hs,ctx),remainingSlots,ctx);}
+  function tripleMaskNearMax(mask,ctx){if(!ctx.nearFlag||ctx.nearMinSame<=0)return 3;var hit=ctx.nearMaskMax.get(mask);if(hit!==undefined)return hit;var s=core.maskOff[mask],e=core.maskOff[mask+1],best=0;for(var p=s;p<e&&best<3;p++){var h=tripleHeroes(core.maskOrder[p]),n=(ctx.nearFlag[h[0]]||0)+(ctx.nearFlag[h[1]]||0)+(ctx.nearFlag[h[2]]||0);if(n>best)best=n;}ctx.nearMaskMax.set(mask,best);return best;}
+  function orderedMids(gid,ctx){var hit=ctx.orderedMids.get(gid);if(hit)return hit;var off=core.gOff[gid],n=core.gCnt[gid],a=[];for(var i=0;i<n;i++){var h=core.mids[off+i];if(!ctx.excluded[h])a.push(h);}if(!ctx.countOnly)a.sort(function(x,y){var rx=ctx.required.indexOf(x)>=0?1:0,ry=ctx.required.indexOf(y)>=0?1:0;if(rx!==ry)return ry-rx;if(ctx.nearFlag&&ctx.nearMinSame>0){var nx=ctx.nearFlag[x]||0,ny=ctx.nearFlag[y]||0;if(nx!==ny)return ny-nx;}var d=heroHeuristic(y,ctx)-heroHeuristic(x,ctx);return d||x-y;});ctx.orderedMids.set(gid,a);return a;}
+  function globalHeroOrder(ctx){if(ctx.heroOrder)return ctx.heroOrder;var a=[];for(var h=1;h<=maxHero;h++)if(model.heroes[h]&&!ctx.excluded[h])a.push(h);if(!ctx.countOnly)a.sort(function(x,y){var rx=ctx.required.indexOf(x)>=0?1:0,ry=ctx.required.indexOf(y)>=0?1:0;if(rx!==ry)return ry-rx;if(ctx.nearFlag&&ctx.nearMinSame>0){var nx=ctx.nearFlag[x]||0,ny=ctx.nearFlag[y]||0;if(nx!==ny)return ny-nx;}var d=heroHeuristic(y,ctx)-heroHeuristic(x,ctx);return d||x-y;});ctx.heroOrder=a;return a;}
   function tripleMaskFor(a,b,c){if(a>b){var t=a;a=b;b=t;}if(b>c){var t2=b;b=c;c=t2;}if(a>b){var t3=a;a=b;b=t3;}var key=(a<<18)|(b<<9)|c,lo=0,hi=core.tc-1;while(lo<=hi){var m=(lo+hi)>>1,v=core.tKey[m];if(v===key)return core.tMask[m];if(v<key)lo=m+1;else hi=m-1;}return -1;}
   var fixedCycleTemplates=null,fixedDisjointTemplates=null;
   function maskKey(lo,hi){return lo.toString(16)+':'+hi.toString(16);}
@@ -138,6 +155,7 @@
   function considerPlacement(p,bsid,baseSums,ctx){
     if(ctx.hitCapReached)return;
     if(!sameSixDistinct(p)||!containsAllRequired(p,ctx.required))return;
+    if(ctx.nearFlag&&ctx.nearMinSame>0){var same=0;for(var ni=0;ni<6;ni++)same+=ctx.nearFlag[p[ni]]||0;if(same<ctx.nearMinSame)return;}
     for(var i=0;i<6;i++)if(ctx.excluded[p[i]])return;
     var sem=semanticComboKey(p,bsid),f4=null,baseVals=null,mv=null;
     if(ctx.countOnly){
@@ -170,9 +188,10 @@
     }
   }
 
-  function parseSkeleton(ab,expectedType,count){var dv=new DataView(ab);if(magic(dv,0)!=='B56S'||dv.getUint16(4,true)!==2||dv.getUint8(6)!==expectedType||dv.getUint8(7)!==count)throw new Error('5・6因縁skeleton形式不一致');var n=Number(dv.getBigUint64(8,true)),rec=expectedType===2?12:(expectedType===3?16:8);if(ab.byteLength!==16+n*rec)throw new Error('5・6因縁skeleton件数不一致');return{dv:dv,n:n,rec:rec,type:expectedType};}
+  function parseSkeleton(ab,expectedType,count){var dv=new DataView(ab);if(magic(dv,0)!=='B56S'||dv.getUint16(4,true)!==2||dv.getUint8(6)!==expectedType||dv.getUint8(7)!==count)throw new Error('5・6因縁skeleton形式不一致');var n=Number(dv.getBigUint64(8,true)),rec=expectedType===2?12:(expectedType===3?16:8);if(ab.byteLength!==16+n*rec)throw new Error('5・6因縁skeleton件数不一致');return{dv:dv,u32:new Uint32Array(ab,16),n:n,rec:rec,type:expectedType};}
   async function loadSkeleton(type,count,token){var prefix=type===2?'cycle2':(type===3?'cycle3':'disjoint'),name=prefix+'_c'+count+'.bin.gz';return parseSkeleton(await loadRaw(name,token,false),type,count);}
   function cycleFixed(type,dv,o){var g1=dv.getUint32(o,true),g2=dv.getUint32(o+4,true),g3=type===3?dv.getUint32(o+8,true):-1,bs=dv.getUint32(o+(type===3?12:8),true);if(type===3)return{g1:g1,g2:g2,g3:g3,bs:bs,A:core.gA[g1],C:core.gB[g1],E:core.gB[g2]};var a1=core.gA[g1],b1=core.gB[g1],a2=core.gA[g2],b2=core.gB[g2],C=(a1===a2||a1===b2)?a1:b1,A=(a1===C)?b1:a1,E=(a2===C)?b2:a2;return{g1:g1,g2:g2,g3:-1,bs:bs,A:A,C:C,E:E};}
+  function cycleFixedAt(data,idx){var w=data.type===3?4:3,u=idx*w,a=core,g1=data.u32[u],g2=data.u32[u+1],g3=data.type===3?data.u32[u+2]:-1,bs=data.u32[u+(data.type===3?3:2)];if(data.type===3)return{g1:g1,g2:g2,g3:g3,bs:bs,A:a.gA[g1],C:a.gB[g1],E:a.gB[g2]};var a1=a.gA[g1],b1=a.gB[g1],a2=a.gA[g2],b2=a.gB[g2],C=(a1===a2||a1===b2)?a1:b1,A=(a1===C)?b1:a1,E=(a2===C)?b2:a2;return{g1:g1,g2:g2,g3:-1,bs:bs,A:A,C:C,E:E};}
   function cycleScratchFor(data,ctx,onePriorityTie,twoPriorityTie,secondaryCapped){
     var key=String(data.type)+':'+String(data.n),s=cycleScratch.get(key);
     if(!s){s={next:new Int32Array(data.n),head:new Int32Array(720886),tieHead:null,secondHead:null,secondCapTotalHead:null};cycleScratch.set(key,s);}
@@ -193,22 +212,24 @@
     var tieHead=onePriorityTie?scratch.tieHead:null;
     var secondHead=twoPriorityTie?scratch.secondHead:null;
     var secondCapTotalHead=secondaryCapped?scratch.secondCapTotalHead:null;
-    var dv=data.dv,rec=data.rec,src=heroBase,lowerSrc=heroBase,inc=data.type===2;
+    var rec=data.rec,src=heroBase,lowerSrc=heroBase,inc=data.type===2,u32=data.u32,words=data.type===3?4:3;
     var needMark=new Uint8Array(11),need=[];
     for(var ri=0;ri<ctx.ranges.length;ri++)needMark[ctx.ranges[ri].si]=1;
     for(var pi=0;pi<ctx.spec.idx.length;pi++)needMark[ctx.spec.idx[pi]]=1;
     if(twoPriorityTie)needMark[secondarySi]=1;
-    if(onePriorityTie||secondaryCapped)for(var ati=0;ati<11;ati++)needMark[ati]=1;
     for(var si0=0;si0<11;si0++)if(needMark[si0])need.push(si0);
-    var gmaxByStat=new Array(11),gminByStat=new Array(11),rateByStat=new Array(11),globalMaxByStat=new Int32Array(11),globalMinByStat=new Int32Array(11),formMul=new Int16Array(11);
-    for(var ni=0;ni<need.length;ni++){var si=need[ni];gmaxByStat[si]=groupMax(si);gminByStat[si]=groupMin(si);rateByStat[si]=bsAgg(si);globalMaxByStat[si]=inc?globalMax(si):0;globalMinByStat[si]=inc?globalMin(si):0;formMul[si]=100+formationBonus(ctx.form,si);}
+    var gmaxByStat=new Array(11),gminByStat=new Array(11),rateByStat=new Array(11),globalMaxByStat=new Int32Array(11),globalMinByStat=new Int32Array(11),formMul=new Int16Array(11),statReady=new Uint8Array(11);
+    function ensureStatData(si){if(statReady[si])return;gmaxByStat[si]=groupMax(si);gminByStat[si]=groupMin(si);rateByStat[si]=bsAgg(si);globalMaxByStat[si]=inc?globalMax(si):0;globalMinByStat[si]=inc?globalMin(si):0;formMul[si]=100+formationBonus(ctx.form,si);statReady[si]=1;}
+    for(var ni=0;ni<need.length;ni++)ensureStatData(need[ni]);
+    function totalUpperBound(A,C,E,g1,g2,g3,bs){var total=0;for(var tsi=0;tsi<11;tsi++){ensureStatData(tsi);var sm=src[A*11+tsi]+src[C*11+tsi]+src[E*11+tsi]+gmaxByStat[tsi][g1]+gmaxByStat[tsi][g2]+globalMaxByStat[tsi];if(g3>=0)sm+=gmaxByStat[tsi][g3];var rw=Math.floor(sm*rateByStat[tsi][bs]/10000),vv=Math.floor(rw*formMul[tsi]/100);if(vv<0)vv=0;else if(vv>65535)vv=65535;var mx=ctx.maxLimit[tsi];if(mx!==null&&vv>mx)vv=mx;total+=vv;}return total>720885?720885:total;}
     var boundVals=new Int32Array(11);
     progress(token,'5・6因縁モード 検索順を構築中',data.n);
-    for(var i=0,o=16;i<data.n;i++,o+=rec){
-      var g1=dv.getUint32(o,true),g2=dv.getUint32(o+4,true),g3=-1,bs,A,C,E;
-      if(data.type===3){g3=dv.getUint32(o+8,true);bs=dv.getUint32(o+12,true);A=core.gA[g1];C=core.gB[g1];E=core.gB[g2];}
-      else{bs=dv.getUint32(o+8,true);var a1=core.gA[g1],b1=core.gB[g1],a2=core.gA[g2],b2=core.gB[g2];C=(a1===a2||a1===b2)?a1:b1;A=(a1===C)?b1:a1;E=(a2===C)?b2:a2;}
+    for(var i=0,wi=0;i<data.n;i++,wi+=words){
+      var g1=u32[wi],g2=u32[wi+1],g3=-1,bs,A,C,E;
+      if(data.type===3){g3=u32[wi+2];bs=u32[wi+3];A=core.gA[g1];C=core.gB[g1];E=core.gB[g2];}
+      else{bs=u32[wi+2];var a1=core.gA[g1],b1=core.gB[g1],a2=core.gA[g2],b2=core.gB[g2];C=(a1===a2||a1===b2)?a1:b1;A=(a1===C)?b1:a1;E=(a2===C)?b2:a2;}
       if(ctx.excluded[A]||ctx.excluded[C]||ctx.excluded[E]||A===C||C===E||A===E)continue;
+      var fixedNearBound=ctx.nearFlag?((ctx.nearFlag[A]||0)+(ctx.nearFlag[C]||0)+(ctx.nearFlag[E]||0)):0;if(!nearCanReachCount(fixedNearBound,3,ctx))continue;
       var ok=true;
       for(var ns=0;ns<need.length;ns++){
         var sidx=need[ns],sum=src[A*11+sidx]+src[C*11+sidx]+src[E*11+sidx]+gmaxByStat[sidx][g1]+gmaxByStat[sidx][g2]+globalMaxByStat[sidx];
@@ -228,17 +249,65 @@
       var ub=0;if(ctx.spec.kind==='one')ub=boundVals[ctx.spec.idx[0]];else if(ctx.spec.kind==='sum')ub=boundVals[ctx.spec.idx[0]]+boundVals[ctx.spec.idx[1]];else{for(var ts=0;ts<11;ts++)ub+=boundVals[ts];}
       if(ub>ctx.spec.max)ub=ctx.spec.max;
       if(onePriorityTie&&ub===primaryCap){
-        var totalUb=0;for(var ti=0;ti<11;ti++)totalUb+=boundVals[ti];if(totalUb>720885)totalUb=720885;next[i]=tieHead[totalUb];tieHead[totalUb]=i;
+        var totalUb=totalUpperBound(A,C,E,g1,g2,g3,bs);next[i]=tieHead[totalUb];tieHead[totalUb]=i;
       }else if(twoPriorityTie&&ub===primaryCap){
         var secUb=boundVals[secondarySi];
-        if(secondaryCapped&&secUb===secondaryCap){var totalUb2=0;for(var ti2=0;ti2<11;ti2++)totalUb2+=boundVals[ti2];if(totalUb2>720885)totalUb2=720885;next[i]=secondCapTotalHead[totalUb2];secondCapTotalHead[totalUb2]=i;}
+        if(secondaryCapped&&secUb===secondaryCap){var totalUb2=totalUpperBound(A,C,E,g1,g2,g3,bs);next[i]=secondCapTotalHead[totalUb2];secondCapTotalHead[totalUb2]=i;}
         else{next[i]=secondHead[secUb];secondHead[secUb]=i;}
       }else{next[i]=head[ub];head[ub]=i;}
     }
     return{data:data,head:head,next:next,tieHead:tieHead,secondHead:secondHead,secondCapTotalHead:secondCapTotalHead,primaryCap:canPrimaryTie?primaryCap:null,secondarySi:secondarySi,secondaryCap:secondaryCapped?secondaryCap:null,tieMode:onePriorityTie?1:(twoPriorityTie?2:0)};
   }
-  function expandCycleRecord(bucket,idx,ctx){if(ctx.hitCapReached)return;var d=bucket.data,dv=d.dv,o=16+idx*d.rec,x=cycleFixed(d.type,dv,o),fixed=[x.A,x.C,x.E],worst=currentWorstPrimary(ctx);if(d.type===3){var l1=orderedMids(x.g1,ctx),l2=orderedMids(x.g2,ctx),l3=orderedMids(x.g3,ctx);for(var i=0;i<l1.length&&!ctx.hitCapReached;i++){var B=l1[i];if(B===x.A||B===x.C||B===x.E)continue;var ub1=branchUbCycle(fixed,[B],[x.g2,x.g3],false,x.bs,ctx);if(ctx.heap.length>=ctx.limit&&ub1<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetCycle(fixed,[B],[x.g2,x.g3],false,x.bs,ctx))continue;for(var j=0;j<l2.length&&!ctx.hitCapReached;j++){var D=l2[j];if(D===x.A||D===x.C||D===x.E||D===B)continue;var ub2=branchUbCycle(fixed,[B,D],[x.g3],false,x.bs,ctx);if(ctx.heap.length>=ctx.limit&&ub2<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetCycle(fixed,[B,D],[x.g3],false,x.bs,ctx))continue;for(var k=0;k<l3.length&&!ctx.hitCapReached;k++){var F=l3[k];if(F===x.A||F===x.C||F===x.E||F===B||F===D)continue;var p=canonicalCycle([x.A,B,x.C,D,x.E,F]),s=placementBaseSums(p);considerPlacement(p,x.bs,s,ctx);}}}}else{var a=orderedMids(x.g1,ctx),b=orderedMids(x.g2,ctx),fill=globalHeroOrder(ctx);for(var ii=0;ii<a.length&&!ctx.hitCapReached;ii++){var B2=a[ii];if(B2===x.A||B2===x.C||B2===x.E)continue;var u1=branchUbCycle(fixed,[B2],[x.g2],true,x.bs,ctx);if(ctx.heap.length>=ctx.limit&&u1<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetCycle(fixed,[B2],[x.g2],true,x.bs,ctx))continue;for(var jj=0;jj<b.length&&!ctx.hitCapReached;jj++){var D2=b[jj];if(D2===x.A||D2===x.C||D2===x.E||D2===B2)continue;var u2=branchUbCycle(fixed,[B2,D2],[],true,x.bs,ctx);if(ctx.heap.length>=ctx.limit&&u2<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetCycle(fixed,[B2,D2],[],true,x.bs,ctx))continue;for(var kk=0;kk<fill.length&&!ctx.hitCapReached;kk++){var F2=fill[kk];if(F2===x.A||F2===x.C||F2===x.E||F2===B2||F2===D2)continue;if(tripleMaskFor(x.A,x.E,F2)>=0)continue;var p2=canonicalCycle([x.A,B2,x.C,D2,x.E,F2]),s2=placementBaseSums(p2);considerPlacement(p2,x.bs,s2,ctx);}}}}
+  function expandCycleRecord(bucket,idx,ctx){
+    if(ctx.hitCapReached)return;
+    var d=bucket.data,x=cycleFixedAt(d,idx),fixed=[x.A,x.C,x.E],nf=ctx.nearFlag,fixedNear=nf?((nf[x.A]||0)+(nf[x.C]||0)+(nf[x.E]||0)):0;
+    if(!nearCanReachCount(fixedNear,3,ctx))return;
+    if(d.type===3){
+      var l1=orderedMids(x.g1,ctx),l2=orderedMids(x.g2,ctx),l3=orderedMids(x.g3,ctx);
+      for(var i=0;i<l1.length&&!ctx.hitCapReached;i++){
+        var B=l1[i];if(B===x.A||B===x.C||B===x.E)continue;var n1=fixedNear+(nf?(nf[B]||0):0);
+        if(!nearCanReachCount(n1,2,ctx))continue;
+        var ub1=branchUbCycle(fixed,[B],[x.g2,x.g3],false,x.bs,ctx);
+        if(ctx.heap.length>=ctx.limit&&ub1<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}
+        if(!branchCanMeetCycle(fixed,[B],[x.g2,x.g3],false,x.bs,ctx))continue;
+        for(var j=0;j<l2.length&&!ctx.hitCapReached;j++){
+          var D=l2[j];if(D===x.A||D===x.C||D===x.E||D===B)continue;var n2=n1+(nf?(nf[D]||0):0);
+          if(!nearCanReachCount(n2,1,ctx))continue;
+          var ub2=branchUbCycle(fixed,[B,D],[x.g3],false,x.bs,ctx);
+          if(ctx.heap.length>=ctx.limit&&ub2<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}
+          if(!branchCanMeetCycle(fixed,[B,D],[x.g3],false,x.bs,ctx))continue;
+          for(var k=0;k<l3.length&&!ctx.hitCapReached;k++){
+            var F=l3[k];if(F===x.A||F===x.C||F===x.E||F===B||F===D)continue;
+            if(!nearCanReachCount(n2+(nf?(nf[F]||0):0),0,ctx))continue;
+            var p=canonicalCycle([x.A,B,x.C,D,x.E,F]),s=placementBaseSums(p);considerPlacement(p,x.bs,s,ctx);
+          }
+        }
+      }
+    }else{
+      var a=orderedMids(x.g1,ctx),b=orderedMids(x.g2,ctx),fill=globalHeroOrder(ctx);
+      for(var ii=0;ii<a.length&&!ctx.hitCapReached;ii++){
+        var B2=a[ii];if(B2===x.A||B2===x.C||B2===x.E)continue;var nn1=fixedNear+(nf?(nf[B2]||0):0);
+        if(!nearCanReachCount(nn1,2,ctx))continue;
+        var u1=branchUbCycle(fixed,[B2],[x.g2],true,x.bs,ctx);
+        if(ctx.heap.length>=ctx.limit&&u1<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}
+        if(!branchCanMeetCycle(fixed,[B2],[x.g2],true,x.bs,ctx))continue;
+        for(var jj=0;jj<b.length&&!ctx.hitCapReached;jj++){
+          var D2=b[jj];if(D2===x.A||D2===x.C||D2===x.E||D2===B2)continue;var nn2=nn1+(nf?(nf[D2]||0):0);
+          if(!nearCanReachCount(nn2,1,ctx))continue;
+          var u2=branchUbCycle(fixed,[B2,D2],[],true,x.bs,ctx);
+          if(ctx.heap.length>=ctx.limit&&u2<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}
+          if(!branchCanMeetCycle(fixed,[B2,D2],[],true,x.bs,ctx))continue;
+          for(var kk=0;kk<fill.length&&!ctx.hitCapReached;kk++){
+            var F2=fill[kk];if(F2===x.A||F2===x.C||F2===x.E||F2===B2||F2===D2)continue;
+            if(!nearCanReachCount(nn2+(nf?(nf[F2]||0):0),0,ctx))continue;
+            if(tripleMaskFor(x.A,x.E,F2)>=0)continue;
+            var p2=canonicalCycle([x.A,B2,x.C,D2,x.E,F2]),s2=placementBaseSums(p2);considerPlacement(p2,x.bs,s2,ctx);
+          }
+        }
+      }
+    }
   }
+
   async function searchCycle(ctx,token){
     var d2=await loadSkeleton(2,ctx.count,token),d3=await loadSkeleton(3,ctx.count,token),b2=buildCycleBucket(d2,ctx,token),b3=buildCycleBucket(d3,ctx,token),max=ctx.spec.max,stopped=false;
     progress(token,'5・6因縁モード 上位候補を検索中',d2.n+d3.n);
@@ -276,12 +345,13 @@
 
   function tripleHeroes(ti){var k=core.tKey[ti];return[k>>>18,(k>>>9)&511,k&511];}
   function tripleHeuristic(ti,ctx){var h=tripleHeroes(ti);return heroHeuristic(h[0],ctx)+heroHeuristic(h[1],ctx)+heroHeuristic(h[2],ctx);}
-  function orderedTriples(mask,ctx){var hit=ctx.orderedTriples.get(mask);if(hit)return hit;var a=[],s=core.maskOff[mask],e=core.maskOff[mask+1];for(var p=s;p<e;p++){var ti=core.maskOrder[p],h=tripleHeroes(ti);if(ctx.excluded[h[0]]||ctx.excluded[h[1]]||ctx.excluded[h[2]])continue;a.push(ti);}if(!ctx.countOnly)a.sort(function(x,y){var d=tripleHeuristic(y,ctx)-tripleHeuristic(x,ctx);if(d)return d;return core.tKey[x]-core.tKey[y];});ctx.orderedTriples.set(mask,a);return a;}
+  function orderedTriples(mask,ctx){var hit=ctx.orderedTriples.get(mask);if(hit)return hit;var a=[],s=core.maskOff[mask],e=core.maskOff[mask+1];for(var p=s;p<e;p++){var ti=core.maskOrder[p],h=tripleHeroes(ti);if(ctx.excluded[h[0]]||ctx.excluded[h[1]]||ctx.excluded[h[2]])continue;a.push(ti);}if(!ctx.countOnly)a.sort(function(x,y){if(ctx.nearSet&&ctx.nearMinSame>0){var nx=nearCountHeroes(tripleHeroes(x),ctx),ny=nearCountHeroes(tripleHeroes(y),ctx);if(nx!==ny)return ny-nx;}var d=tripleHeuristic(y,ctx)-tripleHeuristic(x,ctx);if(d)return d;return core.tKey[x]-core.tKey[y];});ctx.orderedTriples.set(mask,a);return a;}
   function disjoint(a,b){return a[0]!==b[0]&&a[0]!==b[1]&&a[0]!==b[2]&&a[1]!==b[0]&&a[1]!==b[1]&&a[1]!==b[2]&&a[2]!==b[0]&&a[2]!==b[1]&&a[2]!==b[2];}
-  function buildDisjointBucket(data,ctx,token){var key=String(data.n),scratch=disjointScratch.get(key);if(!scratch){scratch={head:new Int32Array(720886),next:new Int32Array(data.n)};disjointScratch.set(key,scratch);}var head=scratch.head,next=scratch.next,dv=data.dv;head.subarray(0,ctx.spec.max+1).fill(-1);next.fill(-2);progress(token,'5・6因縁モード 検索順を構築中',data.n);for(var i=0,o=16;i<data.n;i++,o+=8){var m1=dv.getUint16(o,true),m2=dv.getUint16(o+2,true),bs=dv.getUint32(o+4,true),upper=function(si){var mx=tripleMaskMax(si);return mx[m1]+mx[m2];},lower=function(si){var mn=tripleMaskMin(si);return mn[m1]+mn[m2];};if(!canMeetRangeBounds(upper,lower,bs,ctx.form,ctx))continue;var ub=feasibleUbPrimary(upper,bs,ctx.form,ctx);next[i]=head[ub];head[ub]=i;}return{data:data,head:head,next:next};}
+  function buildDisjointBucket(data,ctx,token){var key=String(data.n),scratch=disjointScratch.get(key);if(!scratch){scratch={head:new Int32Array(720886),next:new Int32Array(data.n)};disjointScratch.set(key,scratch);}var head=scratch.head,next=scratch.next,u32=data.u32;head.subarray(0,ctx.spec.max+1).fill(-1);next.fill(-2);progress(token,'5・6因縁モード 検索順を構築中',data.n);for(var i=0,wi=0;i<data.n;i++,wi+=2){var packed=u32[wi],m1=packed&65535,m2=packed>>>16,bs=u32[wi+1];if(ctx.nearFlag&&ctx.nearMinSame>0&&tripleMaskNearMax(m1,ctx)+tripleMaskNearMax(m2,ctx)<ctx.nearMinSame)continue;var upper=function(si){var mx=tripleMaskMax(si);return mx[m1]+mx[m2];},lower=function(si){var mn=tripleMaskMin(si);return mn[m1]+mn[m2];};if(!canMeetRangeBounds(upper,lower,bs,ctx.form,ctx))continue;var ub=feasibleUbPrimary(upper,bs,ctx.form,ctx);next[i]=head[ub];head[ub]=i;}return{data:data,head:head,next:next};}
   function branchUbDisjoint(h1,m2,bs,ctx){return feasibleUbPrimary(function(si){return sumHeroStat(h1,si)+tripleMaskMax(si)[m2];},bs,ctx.form,ctx);}
   function branchCanMeetDisjoint(h1,m2,bs,ctx){return canMeetRangeBounds(function(si){return sumHeroStat(h1,si)+tripleMaskMax(si)[m2];},function(si){return sumHeroStatMin(h1,si)+tripleMaskMin(si)[m2];},bs,ctx.form,ctx);}
-  function expandDisjoint(bucket,idx,ctx){if(ctx.hitCapReached)return;var dv=bucket.data.dv,o=16+idx*8,m1=dv.getUint16(o,true),m2=dv.getUint16(o+2,true),bs=dv.getUint32(o+4,true),l1=orderedTriples(m1,ctx),l2=orderedTriples(m2,ctx);for(var i=0;i<l1.length&&!ctx.hitCapReached;i++){var h1=tripleHeroes(l1[i]),ub=branchUbDisjoint(h1,m2,bs,ctx);if(ctx.heap.length>=ctx.limit&&ub<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetDisjoint(h1,m2,bs,ctx))continue;for(var j=0;j<l2.length&&!ctx.hitCapReached;j++){if(m1===m2&&l2[j]<=l1[i])continue;var h2=tripleHeroes(l2[j]);if(!disjoint(h1,h2))continue;var p1=h1.concat(h2),p2=h2.concat(h1),p=(function(){for(var k=0;k<6;k++){if(p1[k]<p2[k])return p1;if(p1[k]>p2[k])return p2;}return p1;})(),s=placementBaseSums(p);considerPlacement(p,bs,s,ctx);}}}
+  function expandDisjoint(bucket,idx,ctx){if(ctx.hitCapReached)return;var u32=bucket.data.u32,wi=idx*2,packed=u32[wi],m1=packed&65535,m2=packed>>>16,bs=u32[wi+1],l1=orderedTriples(m1,ctx),l2=orderedTriples(m2,ctx),nf=ctx.nearFlag;for(var i=0;i<l1.length&&!ctx.hitCapReached;i++){var h1=tripleHeroes(l1[i]),n1=nf?((nf[h1[0]]||0)+(nf[h1[1]]||0)+(nf[h1[2]]||0)):0;if(!nearCanReachCount(n1,tripleMaskNearMax(m2,ctx),ctx))continue;var ub=branchUbDisjoint(h1,m2,bs,ctx);if(ctx.heap.length>=ctx.limit&&ub<currentWorstPrimary(ctx)){ctx.pruned=true;continue;}if(!branchCanMeetDisjoint(h1,m2,bs,ctx))continue;for(var j=0;j<l2.length&&!ctx.hitCapReached;j++){if(m1===m2&&l2[j]<=l1[i])continue;var h2=tripleHeroes(l2[j]);if(!nearCanReachCount(n1+(nf?((nf[h2[0]]||0)+(nf[h2[1]]||0)+(nf[h2[2]]||0)):0),0,ctx))continue;if(!disjoint(h1,h2))continue;var p1=h1.concat(h2),p2=h2.concat(h1),p=(function(){for(var k=0;k<6;k++){if(p1[k]<p2[k])return p1;if(p1[k]>p2[k])return p2;}return p1;})(),s=placementBaseSums(p);considerPlacement(p,bs,s,ctx);}}}
+
   async function searchDisjoint(ctx,token){var d=await loadSkeleton(4,ctx.count,token),b=buildDisjointBucket(d,ctx,token);progress(token,'5・6因縁モード 上位候補を検索中',d.n);var stopped=false;for(var score=ctx.spec.max;score>=0;score--){if(ctx.heap.length>=ctx.limit&&score<currentWorstPrimary(ctx)){ctx.pruned=true;stopped=true;break;}for(var i=b.head[score];i>=0;i=b.next[i])expandDisjoint(b,i,ctx);}return{scannedSkeletons:d.n,stopped:stopped};}
 
   function countCycleData(data,ctx){var bucket={data:data};for(var i=0;i<data.n&&!ctx.hitCapReached;i++)expandCycleRecord(bucket,i,ctx);}

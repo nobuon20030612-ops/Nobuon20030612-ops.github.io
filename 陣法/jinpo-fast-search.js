@@ -2,7 +2,7 @@
   'use strict';
   if(window.__jinpoUnifiedSearchInstalled)return;window.__jinpoUnifiedSearchInstalled=true;
 
-  var LIMIT=500,HIT_CAP=100000,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,bond56Worker=null,hitCountWorker=null,bond56Mode=false,seq=0,activeToken=0,activeWorkerToken=0,hitCountSeq=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='',formationRerunSerial=0;
+  var LIMIT=500,HIT_CAP=100000,QUERY_CACHE_GENERATION_RECHECK_MS=60000,worker=null,bond56Worker=null,hitCountWorker=null,hitCountSchedule=null,hitCountScheduleKind='',bond56Mode=false,seq=0,activeToken=0,activeWorkerToken=0,hitCountSeq=0,pending=new Map(),activeRows=[],displayRows=[],queryCache=new Map(),inFlightSearches=new Map(),foregroundRunning=null,foregroundQueued=null,foregroundEpoch=0,selectedExclude=0,manifestProbePromise=null,knownManifestGeneration='',formationRerunSerial=0;
   var listSort={key:'',dir:'desc'},appliedListRowKey='',resultsStaleBySwap=false,listRenderSerial=0;
   var recommendState={active:false,targetStat:'',secondaryStat:'',formation:'',applyingFormation:false,syncingPriority:false};
   window.JINPO_RESULT_LIMIT=LIMIT;
@@ -214,12 +214,31 @@
     if(x){if(complete===false||hit>=HIT_CAP||hit>shown)x.textContent='件（上位最大500件）';else x.textContent='件（すべて表示）';}
   }
   function setSummarySearching(){ensureEnhancementUi();var h=q('jinpoResultHitValue'),hs=q('jinpoResultHitSuffix'),s=q('jinpoResultShownValue'),x=q('jinpoResultShownSuffix');if(h)h.textContent='検索中';if(hs)hs.textContent='';if(s)s.textContent='—';if(x)x.textContent='件';}
-  function cancelHitCountWorker(){try{if(hitCountWorker){hitCountWorker.terminate();hitCountWorker=null;}}catch(e){}hitCountSeq++;}
+  function cancelHitCountWorker(){
+    try{
+      if(hitCountSchedule!==null){
+        if(hitCountScheduleKind==='idle'&&typeof cancelIdleCallback==='function')cancelIdleCallback(hitCountSchedule);
+        else clearTimeout(hitCountSchedule);
+        hitCountSchedule=null;hitCountScheduleKind='';
+      }
+      if(hitCountWorker){hitCountWorker.terminate();hitCountWorker=null;}
+    }catch(e){}
+    hitCountSeq++;
+  }
   function startBond56HitCount(query,myToken,shown,onResolved){
-    cancelHitCountWorker();var localSeq=hitCountSeq,localWorker=new Worker('jinpo-bond56-worker.js');hitCountWorker=localWorker;
-    localWorker.onmessage=function(ev){var m=ev.data||{};if(m.type==='progress')return;if(localWorker!==hitCountWorker||localSeq!==hitCountSeq){try{localWorker.terminate();}catch(e){}return;}if(m.type==='done'&&myToken===activeToken&&!window.__jinpoSearchCancelRequested){var r=m.result||{},hit=Math.max(0,Number(r.matched)||0),complete=r.matchedComplete!==false;setSummary(hit,shown,complete);if(typeof onResolved==='function')onResolved(hit,complete);}try{localWorker.terminate();}catch(e){}if(hitCountWorker===localWorker)hitCountWorker=null;};
-    localWorker.onerror=function(){try{localWorker.terminate();}catch(e){}if(hitCountWorker===localWorker)hitCountWorker=null;};
-    var cq=Object.assign({},query,{hitCap:HIT_CAP});localWorker.postMessage({type:'countHits',token:localSeq,query:cq});
+    /* 正確HIT件数は一覧表示後の補助情報。即時に巨大5/6索引を別Workerで再走査すると
+       次の操作・業物判定とCPU/メモリ/展開処理が競合するため、アイドル時に1経路で開始する。 */
+    cancelHitCountWorker();var localSeq=hitCountSeq;
+    var launch=function(){
+      hitCountSchedule=null;hitCountScheduleKind='';
+      if(localSeq!==hitCountSeq||myToken!==activeToken||window.__jinpoSearchCancelRequested)return;
+      var localWorker=new Worker('jinpo-bond56-worker.js');hitCountWorker=localWorker;
+      localWorker.onmessage=function(ev){var m=ev.data||{};if(m.type==='progress')return;if(localWorker!==hitCountWorker||localSeq!==hitCountSeq){try{localWorker.terminate();}catch(e){}return;}if(m.type==='done'&&myToken===activeToken&&!window.__jinpoSearchCancelRequested){var r=m.result||{},hit=Math.max(0,Number(r.matched)||0),complete=r.matchedComplete!==false;setSummary(hit,shown,complete);if(typeof onResolved==='function')onResolved(hit,complete);}try{localWorker.terminate();}catch(e){}if(hitCountWorker===localWorker)hitCountWorker=null;};
+      localWorker.onerror=function(){try{localWorker.terminate();}catch(e){}if(hitCountWorker===localWorker)hitCountWorker=null;};
+      var cq=Object.assign({},query,{hitCap:HIT_CAP});localWorker.postMessage({type:'countHits',token:localSeq,query:cq});
+    };
+    if(typeof requestIdleCallback==='function'){hitCountScheduleKind='idle';hitCountSchedule=requestIdleCallback(launch,{timeout:1600});}
+    else{hitCountScheduleKind='timer';hitCountSchedule=setTimeout(launch,700);}
   }
 
   function bindWorker(w){w.onmessage=function(ev){var m=ev.data||{},p=pending.get(m.token);if(!p)return;if(m.type==='progress'){if(p.showProgress&&m.token===activeWorkerToken&&!window.__jinpoSearchCancelRequested)showProgress(m.message||'検索DB読込中',m.bytes||0);return;}pending.delete(m.token);if(m.type==='error')p.reject(new Error(m.message||'統一検索エラー'));else p.resolve(m.result||{});};return w;}
@@ -241,7 +260,7 @@
     if(rs.length)return{type:'full',sortStat:''};
     return{type:'top',sortStat:''};
   }
-  function keyFor(x){return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,x.rules.map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,x.limit]);}
+  function keyFor(x){var ss=x.sumSort||{};return JSON.stringify([x.mode,x.count,x.formation,x.sourceType,x.sortStat,x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,x.limit,x.nearCurrentIds||[],x.nearMinSame||0,!!ss.enabled,ss.stat1||'',ss.stat2||'',ss.tiePrefer||'']);}
   function rememberQueryResult(k,r){
     var generation=String(r&&r.manifestVersion||'');
     if(generation&&knownManifestGeneration&&generation!==knownManifestGeneration)queryCache.clear();
@@ -294,6 +313,11 @@
   function search(query){
     if(query&&query.mode==='bond56')return requestWorker('search',query,true);
     return sharedSearchRequest(keyFor(query),'search',query);
+  }
+  function searchSilent(query){
+    if(query&&query.mode==='bond56')return requestWorker('search',query,false);
+    var k=keyFor(query);
+    return getValidatedCachedResult(k).then(function(cached){if(cached)return cached;return requestWorker('search',query,false).then(function(r){return rememberQueryResult(k,r);});});
   }
   function recommendKeyFor(x){
     return 'recommend|'+JSON.stringify([x.mode,x.targetStat,x.secondaryStat||'',x.ownedInternalIds,x.ownedNames,x.excludedInternalIds,(x.rules||[]).map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),x.factor4Max,x.limit]);
@@ -634,7 +658,7 @@
       return ret;
     };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,searchRecommended:searchRecommended,renderCurrent:renderCurrent,rerunForFormationChange:rerunForFormationChange,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isBond56Mode:function(){return bond56On();},setBond56Mode:function(on){return setBond56Mode(on);},selectBond56Mode:function(on){return selectBond56Mode(on);},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,cancelHitCount:function(){cancelHitCountWorker();return true;},clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
+    window.JINPO_FAST_SEARCH={search:search,searchSilent:searchSilent,searchRecommended:searchRecommended,renderCurrent:renderCurrent,rerunForFormationChange:rerunForFormationChange,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isBond56Mode:function(){return bond56On();},setBond56Mode:function(on){return setBond56Mode(on);},selectBond56Mode:function(on){return selectBond56Mode(on);},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},getMode:function(){return unifiedDbMode();},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,getDisplayRows:function(){return displayRows.slice();},getActiveRows:function(){return activeRows.slice();},getAppliedRow:function(){var rid='';try{rid=String(window.selectedDbResultId||((typeof selectedDbResultId!=='undefined')?selectedDbResultId:'')||'').trim();}catch(e){}var row=null;if(rid){row=displayRows.find(function(r){return String(r&&(r.result_id||r.id)||'').trim()===rid;})||null;}if(!row&&appliedListRowKey){row=displayRows.find(function(r){return stableRowKey(r)===appliedListRowKey;})||null;}return row;},applyRow:function(row){if(!row)return false;cancelHitCountWorker();appliedListRowKey=stableRowKey(row);var idx=-1;for(var i=0;i<displayRows.length;i++){if(stableRowKey(displayRows[i])===appliedListRowKey){idx=i;break;}}if(idx>=0){var btn=document.querySelector('#dbFormationList button[data-unified-db-idx="'+idx+'"]');if(btn)markAppliedRowVisual(btn);}try{if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function')window.__jinpoScrollToRecommendSearchTopOnce('auto');}catch(e){}var run=function(){try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);return true;},cancelHitCount:function(){cancelHitCountWorker();return true;},clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
       exitRecommendMode();bond56Mode=false;document.body.classList.remove('jinpo-bond56-mode','jinpo-bond56-formation-unselected');selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';

@@ -350,7 +350,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 <style id="jinpo-priority-text-size-single-source-20260927">
 /* 優先ソート関連の文字サイズはこの1経路のみ。
    見出し・ステータス・案内は検索一覧の「陣形」と同じ22px。
-   数値条件だけは8列の枠内へ確実に収めるため18px固定。 */
+   数値条件は「20000以上」のように改行せず、既存の縦幅のまま枠内へ収める。 */
 .dbPriorityButtonGroup > label,
 .dbPriorityButtonGroup .jinpoPriorityTitleRow > label,
 .dbPriorityStatChoice,
@@ -358,19 +358,33 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 #jinpoRecommendSumGuide{font-size:22px !important;}
 
 .dbPriorityValueChoice{
-  font-size:18px !important;
-  padding-left:2px !important;
-  padding-right:2px !important;
+  font-size:14px !important;
+  padding:8px 1px !important;
   display:flex !important;
+  flex-direction:row !important;
   align-items:center !important;
   justify-content:center !important;
-  gap:1px !important;
+  gap:0 !important;
+  white-space:nowrap !important;
+  line-height:1.1 !important;
+  letter-spacing:-0.04em !important;
+}
+.dbPriorityValueChoice .jinpoPriorityValueNumber,
+.dbPriorityValueChoice .jinpoPriorityValueRange{
+  display:inline !important;
+  width:auto !important;
+  flex:0 0 auto !important;
+  text-align:center !important;
+  line-height:1.1 !important;
+  white-space:nowrap !important;
 }
 .dbPriorityValueChoice .jinpoPriorityValueNumber{
   color:#fff !important;
+  font-size:1em !important;
 }
 .dbPriorityValueChoice .jinpoPriorityValueRange{
   color:#000 !important;
+  font-size:1em !important;
   -webkit-text-stroke:0 !important;
   text-shadow:none !important;
 }
@@ -637,6 +651,11 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   <section class="formationMiniPanel">
   <h2>陣形ライン</h2>
   <div id="formationView" class="formation"></div>
+  <div id="jinpoHagumonoGuideNotice" aria-hidden="true" hidden>
+    <div id="jinpoHagumonoGuideArrow" aria-hidden="true"></div>
+    <div id="jinpoHagumonoGuideBubble">刮目せよ！！</div>
+    <img id="jinpoHagumonoGuideImg" src="assets/jinpo-hagumono-guide.png" alt="" aria-hidden="true">
+  </div>
   <div id="jinpoAppliedBondCountBanner" class="jinpoAppliedBondCountBanner" aria-live="polite" aria-label="適用中の因縁数" hidden><img id="jinpoAppliedBondCountBannerImg" src="" alt=""></div>
   <div id="jinpoStatusLegend" class="jinpoStatusLegend jinpoStatusLegendPlaceholder" aria-hidden="true">
     <span class="jinpoStatusLegendItem jinpoStatusLegendGrade4"><span class="jinpoStatusLegendWhiteFrame" aria-hidden="true"></span><span class="jinpoStatusLegendText">＝等級4</span></span>
@@ -690,6 +709,14 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 <section class="card" id="reachSection">
   <h2></h2>
   <div id="reachList"></div>
+  <div id="jinpoHagumonoPhraseNotice" aria-hidden="true" hidden>
+    <img id="jinpoHagumonoPhraseImg" src="assets/jinpo-hagumono-guide-miko.png" alt="" aria-hidden="true">
+    <div id="jinpoHagumonoPhraseBubble"><span>能力向上のみとは！！</span><span>般若波羅・・・</span></div>
+  </div>
+  <div id="jinpoHagumonoFilterNotice" aria-hidden="true" hidden>
+    <div id="jinpoHagumonoFilterBubble"><span>業物は選択モード内が検索対象！</span><span>大業物は全英傑が検索対象！</span></div>
+    <img id="jinpoHagumonoFilterImg" src="assets/jinpo-hagumono-filter-guide.png" alt="" aria-hidden="true">
+  </div>
 </section>
   <div id="dbListStatus" class="dbListNote">DB読込後に表示。</div>
   <div id="dbSearchProgress" class="dbSearchProgressPanel" aria-live="polite">
@@ -833,37 +860,6 @@ if(!("火属性" in out)) out["火属性"] = String(out["火"] ?? "").trim();
 if(!("風属性" in out)) out["風属性"] = String(out["風"] ?? "").trim();
 return out;
 });
-}
-function validateInternalMaster(rows){
-const errors = [];
-const ids = new Set();
-rows.forEach((r, idx)=>{
-const line = idx + 2;
-if(!r.internal_id) errors.push(`${line}行目 internal_idなし`);
-if(r.internal_id && ids.has(r.internal_id)) errors.push(`${line}行目 internal_id重複: ${r.internal_id}`);
-if(r.internal_id) ids.add(r.internal_id);
-if(!r["英傑名"]) errors.push(`${line}行目 英傑名なし`);
-["因子1","因子2","因子3","因子4"].forEach(k=>{
-if(!(k in r)) errors.push(`${line}行目 ${k}列なし`);
-});
-});
-return errors;
-}
-function applyEiketsuMasterRows(rows, label){
-const errors = validateInternalMaster(rows);
-const box = document.getElementById("overrideMasterStatus");
-if(errors.length){
-box.innerHTML = `<span style="color:#ff8a8a">適用不可</span><br>${errors.slice(0,20).map(esc).join("<br>")}`;
-return false;
-}
-eiketsuMaster = rows;
-placement = {};
-renderSlots();
-renderFormation(null);
-renderSavedFormations();
-document.getElementById("status").innerHTML = `internal_id英傑 <b>${eiketsuMaster.length}</b>件 / 因縁 <b>${inenMaster.length}</b>件 読込完了`;
-box.innerHTML = `適用中: ${esc(label)} / 英傑 ${rows.length}件`;
-return true;
 }
 function validateInenMaster(rows){
 const errors = [];
@@ -1626,6 +1622,7 @@ if(!item) return;
 const byId = new Map(eiketsuMaster.map(e=>[e.internal_id,e]));
 placement = {};
 item.members.forEach(m=>placement[m.slot] = byId.get(m.internal_id) || null);
+try{ window.placement = placement; }catch(e){}
 formationSelect.value = item.formationName;
 renderSlots();
 renderFormation(null);
@@ -1659,6 +1656,7 @@ if(!id) return;
 const hero = eiketsuMaster.find(e=>e.internal_id===String(id));
 if(hero) placement[idx+1] = hero;
 });
+try{ window.placement = placement; }catch(e){}
 }
 renderSlots();
 calculate();
@@ -2192,7 +2190,7 @@ renderDbStatButtons();
 function dbThresholdValuesForStat(stat){
 if(!stat) return [];
 /* 優先ソートの表示ボタンと検索用selectは必ず同じ正式値を使う。 */
-if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];
+if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000,4000,2000];
 return [1600,1400,1200,1000,800,600,400,200];
 }
 function populateDbPriorityControls(){
@@ -2575,23 +2573,6 @@ try{
 renderRealtimeTotalStats({activated:[]});
 }
 document.getElementById("calcBtn").addEventListener("click", calculate);
-const applyOverrideMasterBtnEl = document.getElementById("applyOverrideMasterBtn");
-if(applyOverrideMasterBtnEl){ applyOverrideMasterBtnEl.addEventListener("click", async ()=>{
-const file = document.getElementById("overrideMasterFile").files[0];
-if(!file){ return; }
-try{
-const rows = await readOverrideCsvFile(file);
-applyEiketsuMasterRows(rows, file.name);
-}catch(e){
-document.getElementById("overrideMasterStatus").innerHTML = `<span style="color:#ff8a8a">読込失敗: ${esc(e.message)}</span>`;
-}
-}); }
-const resetOverrideMasterBtnEl = document.getElementById("resetOverrideMasterBtn");
-if(resetOverrideMasterBtnEl){ resetOverrideMasterBtnEl.addEventListener("click", ()=>{
-applyEiketsuMasterRows(standardEiketsuMaster.slice(), "標準マスター");
-const overrideMasterStatusEl = document.getElementById("overrideMasterStatus");
-if(overrideMasterStatusEl) overrideMasterStatusEl.textContent = "標準マスター使用中";
-}); }
 document.getElementById("applyOverrideInenBtn").addEventListener("click", async ()=>{
 const file = document.getElementById("overrideInenFile").files[0];
 if(!file){ return; }
@@ -2616,7 +2597,7 @@ renderRealtimeTotalStats({activated:[]});
 const autoFillBtn = document.getElementById("autoFillBtn");
 if(autoFillBtn){ autoFillBtn.remove(); }
 document.getElementById("clearBtn").addEventListener("click", ()=>{
-placement = {}; renderSlots(); renderFormation(null); clearAppliedDbRowDisplay();   document.getElementById("reachList").innerHTML=""; document.getElementById("lineDetails").innerHTML=""; if(document.getElementById("statIncreaseResult")) document.getElementById("statIncreaseResult").innerHTML=""; document.getElementById("totalStatResult").innerHTML=""; if(document.getElementById("totalEffectMini")) document.getElementById("totalEffectMini").innerHTML=""; if(document.getElementById("bondValuePanel")) document.getElementById("bondValuePanel").innerHTML="";
+placement = {}; try{ window.placement = placement; }catch(e){} renderSlots(); renderFormation(null); clearAppliedDbRowDisplay();   document.getElementById("reachList").innerHTML=""; document.getElementById("lineDetails").innerHTML=""; if(document.getElementById("statIncreaseResult")) document.getElementById("statIncreaseResult").innerHTML=""; document.getElementById("totalStatResult").innerHTML=""; if(document.getElementById("totalEffectMini")) document.getElementById("totalEffectMini").innerHTML=""; if(document.getElementById("bondValuePanel")) document.getElementById("bondValuePanel").innerHTML="";
 });
 function handleFormationSelectionChanged(event){
 syncFormationSelectToCanonical();
@@ -3348,103 +3329,7 @@ setupJinpoBackButton();
 })();
 </script>
 
-<script id="priority-dropdown-verified-final-fix">
-/* 2026-05-20: 第1〜3優先ソートの上下プルダウン復旧。
-2026-05-28: 生命/気合のみ下段を20000〜5000（1000刻み）に変更。
-対象: dbPriorityStat1〜3 / dbPriorityValue1〜3 の表示と選択肢のみ。 */
-(function(){
-var PRIORITY_STATS_FINAL = ["生命","気合","腕力","耐久力","器用さ","知力","魅力","土属性","水属性","火属性","風属性"];
-var PRIORITY_LABELS_FINAL = {
-"生命":"生命",
-"気合":"気合",
-"腕力":"腕力",
-"耐久力":"耐久",
-"器用さ":"器用",
-"知力":"知力",
-"魅力":"魅力",
-"土属性":"土",
-"水属性":"水",
-"火属性":"火",
-"風属性":"風"
-};
-function escPriorityFinal(v){
-return String(v == null ? "" : v).replace(/[&<>\"']/g,function(ch){
-return {"&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;","'":"&#39;"}[ch] || ch;
-});
-}
-function priorityValuesFinal(stat){
-/* 表示ボタン仕様: 生命/気合=2000刻み、その他=200刻み。検索用selectも完全一致させる。 */
-if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000];
-return [1600,1400,1200,1000,800,600,400,200];
-}
-function buildStatOptionsFinal(current){
-var html='<option value="">指定なし</option>';
-PRIORITY_STATS_FINAL.forEach(function(stat){
-html += '<option value="'+escPriorityFinal(stat)+'">'+escPriorityFinal(PRIORITY_LABELS_FINAL[stat] || stat)+'</option>';
-});
-return html;
-}
-function buildValueOptionsFinal(stat){
-var html='<option value="">上限なし</option>';
-priorityValuesFinal(stat).forEach(function(v){ html += '<option value="'+v+'">'+v+'以上</option>'; });
-return html;
-}
-function fillOnePriorityFinal(i){
-var statSel=document.getElementById('dbPriorityStat'+i);
-var valSel=document.getElementById('dbPriorityValue'+i);
-if(statSel){
-var oldStat=statSel.value || "";
-statSel.innerHTML=buildStatOptionsFinal(oldStat);
-if(oldStat && PRIORITY_STATS_FINAL.indexOf(oldStat) !== -1) statSel.value=oldStat;
-}
-if(valSel){
-var oldVal=valSel.value || "";
-var currentStatForValue = statSel ? (statSel.value || "") : "";
-var allowedValues = priorityValuesFinal(currentStatForValue);
-valSel.innerHTML=buildValueOptionsFinal(currentStatForValue);
-if(oldVal && allowedValues.indexOf(Number(oldVal)) !== -1) valSel.value=oldVal;
-}
-}
-function fillPriorityFinal(){
-for(var i=1;i<=3;i++) fillOnePriorityFinal(i);
-}
-function bindPriorityFinal(){
-for(var i=1;i<=3;i++){
-(function(n){
-var statSel=document.getElementById('dbPriorityStat'+n);
-var valSel=document.getElementById('dbPriorityValue'+n);
-if(statSel && statSel.dataset.priorityFinalBound !== '1'){
-statSel.dataset.priorityFinalBound='1';
-statSel.addEventListener('change',function(){
-fillOnePriorityFinal(n);
-try{ if(typeof renderDbStatButtons === 'function') renderDbStatButtons(); }catch(e){}
-});
-}
-if(valSel && valSel.dataset.priorityFinalBound !== '1'){
-valSel.dataset.priorityFinalBound='1';
-valSel.addEventListener('change',function(){
-try{ if(typeof renderDbFormationList === 'function') renderDbFormationList(); }catch(e){}
-});
-}
-})(i);
-}
-}
-function installPriorityFinal(){
-try{ window.DB_PRIORITY_LABELS = PRIORITY_LABELS_FINAL; }catch(e){}
-try{ dbThresholdValuesForStat = function(stat){ return priorityValuesFinal(stat); }; }catch(e){}
-try{ updateDbPriorityValueOptions = function(i){ fillOnePriorityFinal(i); }; }catch(e){}
-try{ populateDbPriorityControls = function(){ fillPriorityFinal(); }; }catch(e){}
-fillPriorityFinal();
-bindPriorityFinal();
-}
-if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installPriorityFinal);
-else installPriorityFinal();
-window.addEventListener('load', installPriorityFinal);
-setTimeout(installPriorityFinal,0);
-setTimeout(installPriorityFinal,250);
-setTimeout(installPriorityFinal,1000);
-})();
-</script>
+
 
 
 
@@ -4243,203 +4128,6 @@ window.bindHardRequireFormation = bindHardRequireFormation;
 
 
 
-<script id="reach-candidate-fallback-fix-20260525">
-/* リーチ表示復旧専用:
-   - 式・倍率・一覧表示仕様は変更しない
-   - 既存 result.reach が空の時だけ、現在配置から1人差し替え候補を再探索する
-   - 既存リーチ候補が出る場合は既存処理を優先する
-*/
-(function(){
-  if(window.__reachCandidateFallbackFix20260525) return;
-  window.__reachCandidateFallbackFix20260525 = true;
-
-  var originalBuildReachOnlyCandidates = (typeof buildReachOnlyCandidates === "function") ? buildReachOnlyCandidates : null;
-
-  function reachFixHeroName(h){
-    try{ if(typeof heroName === "function") return heroName(h) || ""; }catch(e){}
-    return h && (h["英傑名"] || h["名前"] || h.name || "") || "";
-  }
-  function reachFixFactors(h){
-    try{ if(typeof cleanHeroFactors === "function") return cleanHeroFactors(h) || []; }catch(e){}
-    return [h&&h["因子1"],h&&h["因子2"],h&&h["因子3"],h&&h["因子4"]]
-      .map(function(v){return String(v==null?"":v).trim();})
-      .filter(Boolean);
-  }
-  function reachFixSet(result){
-    return new Set(((result && result.activated) || []).map(function(a){
-      return String(a && a.name || "").trim();
-    }).filter(Boolean));
-  }
-  function reachFixOwnedLock(){
-    try{ if(typeof ownedHeroReachLockState === "function") return ownedHeroReachLockState(); }catch(e){}
-    return {ids:new Set(), names:new Set()};
-  }
-  function reachFixOwnedLocked(hero, lock){
-    try{ if(typeof isOwnedReachLockedHero === "function") return isOwnedReachLockedHero(hero, lock); }catch(e){}
-    return false;
-  }
-  function reachFixOwnedKeep(testPlacement, lock){
-    try{ if(typeof placementKeepsOwnedReachHeroes === "function") return placementKeepsOwnedReachHeroes(testPlacement, lock); }catch(e){}
-    return true;
-  }
-  function reachFixDbRow(testPlacement, testResult){
-    try{ if(typeof findResultDbRowForPlacementState === "function") return findResultDbRowForPlacementState(testPlacement, testResult); }catch(e){}
-    return null;
-  }
-  function reachFixCalculate(testPlacement){
-    try{
-      var sel = document.getElementById("formationSelect");
-      var form = sel ? String(sel.value || "").trim() : "";
-      if(!form || !window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return null;
-      return window.JinpoActivationEngine.calculateFormation(testPlacement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-    }catch(e){
-      console.error("リーチ候補再探索失敗", e);
-      return null;
-    }
-  }
-
-  function buildReachFallbackCandidates(result){
-    if(!result || !Array.isArray(result.activated)) return [];
-    if(typeof placement === "undefined" || !placement) return [];
-    if(!Array.isArray(eiketsuMaster) || !eiketsuMaster.length) return [];
-
-    var currentCount = result.activated.length;
-    var currentNames = reachFixSet(result);
-    var usedIds = new Set([1,2,3,4,5,6].map(function(s){
-      return placement[s] && placement[s].internal_id;
-    }).filter(Boolean).map(String));
-    var ownedLock = reachFixOwnedLock();
-    var rows = [];
-    var seen = new Set();
-    var perSlotLimit = 120;
-
-    for(var slot=1; slot<=6; slot++){
-      var beforeHero = placement[slot];
-      var slotRows = 0;
-      if(!beforeHero) continue;
-      if(reachFixOwnedLocked(beforeHero, ownedLock)) continue;
-
-      for(var i=0; i<eiketsuMaster.length; i++){
-        var cand = eiketsuMaster[i];
-        if(!cand || !cand.internal_id) continue;
-        if(String(cand.internal_id) === String(beforeHero.internal_id || "")) continue;
-        if(usedIds.has(String(cand.internal_id))) continue;
-
-        var testPlacement = Object.assign({}, placement);
-        testPlacement[slot] = cand;
-        if(!reachFixOwnedKeep(testPlacement, ownedLock)) continue;
-
-        var testResult = reachFixCalculate(testPlacement);
-        if(!testResult || !Array.isArray(testResult.activated)) continue;
-
-        var nextCount = testResult.activated.length;
-        if(nextCount < currentCount) continue;
-
-        var nextNames = reachFixSet(testResult);
-        var added = Array.from(nextNames).filter(function(n){ return !currentNames.has(n); });
-        var removed = Array.from(currentNames).filter(function(n){ return !nextNames.has(n); });
-        var kept = Array.from(nextNames).filter(function(n){ return currentNames.has(n); });
-        var sameSet = added.length === 0 && removed.length === 0;
-
-        if(nextCount === currentCount && !sameSet && !added.length && !removed.length) continue;
-
-        var key = slot + "|" + String(beforeHero.internal_id || "") + "|" + String(cand.internal_id || "") + "|" + Array.from(nextNames).sort().join(",");
-        if(seen.has(key)) continue;
-        seen.add(key);
-
-        var dbRow = reachFixDbRow(testPlacement, testResult);
-        rows.push({
-          kind: nextCount > currentCount ? "因縁増加" : (sameSet ? "同因縁数・同じ因縁" : "同因縁数・因縁変更"),
-          slot: slot,
-          beforeId: beforeHero.internal_id,
-          afterId: cand.internal_id,
-          before: reachFixHeroName(beforeHero),
-          after: reachFixHeroName(cand),
-          from: currentCount,
-          to: nextCount,
-          added: added,
-          removed: removed,
-          kept: kept,
-          sameSet: sameSet,
-          hasDbStats: !!dbRow,
-          dbStatusText: dbRow ? "DB登録あり" : "登録外・計算対象",
-          plusText: "",
-          minusText: ""
-        });
-
-        slotRows++;
-        if(slotRows >= perSlotLimit) break;
-      }
-    }
-
-    rows.sort(function(a,b){
-      if(a.to !== b.to) return b.to - a.to;
-      if(a.kind !== b.kind) return a.kind === "因縁増加" ? -1 : 1;
-      return a.slot - b.slot;
-    });
-    return rows.slice(0,120);
-  }
-
-  var fixedBuildReachOnlyCandidates = function(result){
-    var rows = [];
-    if(originalBuildReachOnlyCandidates){
-      try{ rows = originalBuildReachOnlyCandidates.apply(this, arguments) || []; }catch(e){ rows = []; }
-    }
-    var fallbackRows = buildReachFallbackCandidates(result) || [];
-    if(rows && rows.length){
-      var seenMerge = new Set();
-      return rows.concat(fallbackRows).filter(function(r){
-        var key = [r.slot,r.beforeId,r.afterId,r.from,r.to,(r.added||[]).join("|"),(r.removed||[]).join("|")].join("||");
-        if(seenMerge.has(key)) return false;
-        seenMerge.add(key);
-        return true;
-      }).slice(0,120);
-    }
-    return fallbackRows;
-  };
-
-  try{
-    buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
-    window.buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
-  }catch(e){
-    window.buildReachOnlyCandidates = fixedBuildReachOnlyCandidates;
-  }
-
-  var reachAfterFixTimer = null;
-  function refreshReachAfterFix(){
-    try{
-      var sel = document.getElementById("formationSelect");
-      var form = sel ? String(sel.value || "").trim() : "";
-      if(!form || typeof placement === "undefined" || typeof inenMaster === "undefined") return;
-      if(!window.JinpoActivationEngine || typeof window.JinpoActivationEngine.calculateFormation !== "function") return;
-      var result = window.JinpoActivationEngine.calculateFormation(placement, form, inenMaster, window.JINPO_FORMATION_CONFIG);
-      if(typeof window.renderReachSlotOnlyUi === "function") window.renderReachSlotOnlyUi(result);
-    }catch(e){ console.error("リーチ復旧再描画失敗", e); }
-  }
-  function scheduleReachAfterFix(delay){
-    clearTimeout(reachAfterFixTimer);
-    reachAfterFixTimer = setTimeout(refreshReachAfterFix, delay || 0);
-  }
-
-  document.addEventListener("click", function(ev){
-    var btn = ev.target && ev.target.closest ? ev.target.closest(".__jinpo_disabled_reach_after_fix_click_guard__") : null;
-    if(!btn) return;
-    scheduleReachAfterFix(0);
-  }, true);
-
-  document.addEventListener("change", function(ev){
-    var t = ev.target;
-    if(!t) return;
-    if(t.id === "formationSelect" || /slot|formation/i.test(String(t.id || ""))){
-      scheduleReachAfterFix(0);
-    }
-  }, true);
-
-  document.addEventListener("DOMContentLoaded", function(){
-    scheduleReachAfterFix(0);
-  });
-})();
-</script>
 
 
 <script id="final-reach-and-5-6-apply-cause-fix-20260525">
@@ -4918,7 +4606,7 @@ window.bindHardRequireFormation = bindHardRequireFormation;
 #step66ReachModal .step66Head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #5c421f;background:#1b130b;}
 #step66ReachModal .step66Title{font-weight:800;color:#ffe1a1;}
 #step66ReachModal .step66Close{border:1px solid #d7ad54;border-radius:9px;background:#4a160f;color:#fff0bf;font-weight:800;padding:8px 16px;cursor:pointer;}
-#step66ReachModal .step66Body{padding:12px;overflow:auto;}
+#step66ReachModal .step66Body{padding:12px;overflow-y:auto;overflow-x:hidden;}
 #step66ReachModal .step66Grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
 #step66ReachModal .step66HeroBtn{text-align:left;color:#f4ead2;border-radius:10px;padding:9px;cursor:pointer;transition:filter .14s ease,box-shadow .14s ease,transform .14s ease;}
 #step66ReachModal .step66HeroBtn:hover{filter:brightness(1.14);transform:translateY(-1px);}
@@ -5167,7 +4855,10 @@ window.bindHardRequireFormation = bindHardRequireFormation;
   }
   function openModal(slot){
     candidateMap=buildMap();
-    var m=ensureModal(),body=m.querySelector('.step66Body'),p=placementObj(),curHero=p&&p[Number(slot)],cur=hName(curHero)||'',curCost=hCostLabel(curHero),list=candidateMap[slot]||[];
+    var m=ensureModal(),titleEl=m.querySelector('.step66Title'),body=m.querySelector('.step66Body'),p=placementObj(),curHero=p&&p[Number(slot)],cur=hName(curHero)||'',curCost=hCostLabel(curHero),list=candidateMap[slot]||[];
+    m.classList.remove('jinpoHagumonoMode','jinpoHagumonoTwoMode');
+    var normalBox=m.querySelector('.step66Box');if(normalBox)normalBox.style.width='';
+    if(titleEl){titleEl.textContent='差し替え英傑を選択';titleEl.classList.remove('jinpoHagumonoModalTitle');}
     var html='<div class="small" style="margin-bottom:6px">'+esc(slot)+'番 '+esc(curCost)+esc(cur)+' と差し替える英傑を選択してください。</div>'+legendHtml();
     if(!list.length){html+='<p class="small">選択可能な英傑がありません。</p>';}
     else{html+='<div class="step66Grid">';list.forEach(function(c){var css=c.level==='up'?'step66Up':(c.level==='flat'?'step66Flat':'step66Down');var label=c.level==='up'?'UP':(c.level==='flat'?'FLAT':'DOWN');var f4meta=c.usesFactor4?'<span class="step66BunkyokuMeta">文曲</span>':'',heroTag=c.popular?'<div class="step66PopularBadge">選抜人気</div>':'',grade3BtnClass=c.grade3?' step66Grade3HeroBtn':'',gradeBadgeClass=c.grade3?'step66Grade3LikeBadge':'step66Grade4Badge',gradeBadgeText=c.grade3?'等級3以下':'等級４',gradeLayoutClass=c.grade3?'':' step66Grade4Compact',detailHtml='<div class="step66Grade4Rows'+gradeLayoutClass+'"><div class="step66HeroName">'+esc(c.costLabel)+esc(c.after)+'</div><div class="step66HeroMeta"><span class="step66HeroMetaMain"><span class="step66DeltaLabel">'+label+'</span>因縁数 '+esc(c.from)+' → '+esc(c.to)+'</span>'+f4meta+'</div><div class="'+gradeBadgeClass+'">'+gradeBadgeText+'</div></div>';html+='<button type="button" class="step66HeroBtn '+css+grade3BtnClass+'" data-step66-candidate="'+esc(c.storeId)+'">'+heroTag+detailHtml+'</button>';});html+='</div>';}
@@ -6154,7 +5845,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 @media(prefers-reduced-motion:reduce){.eiketsuKishinsekiAllMaxIndicator,.eiketsuKishinsekiGlobalMaxArrow{animation:none!important}}
 .jinpoGlobalAllMaxLoading{z-index:50001!important;pointer-events:none;isolation:isolate!important;opacity:1!important;visibility:visible!important}.jinpoGlobalAllMaxLoading.active{display:block!important}.jinpoGlobalAllMaxLoading.active>*{position:relative;z-index:1;visibility:visible!important;opacity:1!important}.jinpoGlobalAllMaxLoading .dbSearchProgressMeta{grid-template-columns:1fr!important}
 
-.eiketsuKishinsekiModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:1000000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow:auto}.eiketsuKishinsekiModalBackdrop.open{display:flex}
+.eiketsuKishinsekiModalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:1000000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow-y:auto;overflow-x:hidden}.eiketsuKishinsekiModalBackdrop.open{display:flex}
 .eiketsuKishinsekiModal{width:min(1180px,calc(100vw - 20px));max-height:calc(100vh - 20px);overflow:hidden;background:#10140f;border:2px solid #596045;border-radius:4px;box-shadow:0 16px 42px rgba(0,0,0,.72),0 0 0 2px rgba(200,180,80,.18),inset 0 0 0 1px rgba(255,255,255,.05);box-sizing:border-box;color:#f7f7f1;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;position:relative}.eiketsuKishinsekiModal:before,.eiketsuKishinsekiModal:after{content:"";position:absolute;left:8px;right:8px;height:1px;background:linear-gradient(90deg,transparent,#d1b95b,transparent);pointer-events:none}.eiketsuKishinsekiModal:before{top:6px}.eiketsuKishinsekiModal:after{bottom:6px}
 .eiketsuKishinsekiHeader{height:56px;display:flex;align-items:center;justify-content:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#121911,#0b100b);position:relative}.eiketsuKishinsekiHeader strong{color:#ffe64f;font-size:28px;letter-spacing:.08em;text-shadow:0 2px 0 #000,0 0 8px rgba(255,220,50,.3)}.eiketsuKishinsekiHeaderActions{position:absolute;right:10px;top:9px;display:flex;gap:8px}.eiketsuKishinsekiApplyBtn,.eiketsuKishinsekiCloseBtn,.eiketsuKishinsekiResetBtn{background:linear-gradient(#3e442e,#171c14)!important;border:1px solid #89915f!important;color:#f4ffe9!important;border-radius:6px!important;padding:7px 10px!important;font-weight:900!important;font-family:system-ui,"Yu Gothic",sans-serif!important}.eiketsuKishinsekiApplyBtn{background:linear-gradient(#5f9224,#2b5315)!important;border-color:#9deb71!important;color:#f4ffe9!important}
 .eiketsuKishinsekiBody{display:grid;grid-template-columns:200px 1fr;min-height:0;background:#0c110c}.eiketsuKishinsekiSide{border-right:1px solid rgba(255,255,255,.12);background:linear-gradient(90deg,#11160f,#0b0f0b);padding:54px 8px 14px}.eiketsuKishinsekiTab{display:block;width:100%;min-height:38px;margin:0 0 6px 0;text-align:left;white-space:nowrap!important;background:linear-gradient(90deg,#2f5612 0,#203714 70%,transparent 100%)!important;border:0!important;border-radius:0!important;color:#fff!important;font-size:24px!important;line-height:1!important;font-weight:900!important;text-shadow:0 2px 0 #000!important;padding:7px 10px!important;font-family:"Yu Mincho","Hiragino Mincho ProN",serif!important;box-shadow:none!important}.eiketsuKishinsekiTab:not(.active){background:linear-gradient(90deg,rgba(55,55,48,.72) 0,rgba(31,33,28,.62) 70%,transparent 100%)!important;color:#e8e8df!important}.eiketsuKishinsekiMain{padding:14px 18px 10px;display:flex;flex-direction:column;min-width:0}.eiketsuKishinsekiSubTitle{text-align:center;font-size:28px;line-height:1;color:#d6d0a0;text-shadow:0 2px 0 #000;margin:0 0 8px}.eiketsuKishinsekiRows{display:grid;gap:4px}.eiketsuKishinsekiRow{display:grid;grid-template-columns:124px 96px 1fr 46px 46px;gap:6px;align-items:center;min-height:27px}.eiketsuKishinsekiName{font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 0 #000;white-space:nowrap;line-height:1}.eiketsuKishinsekiValue{font-size:20px;color:#f0f0e7;text-shadow:0 2px 0 #000;white-space:nowrap}.eiketsuKishinsekiChoices{display:grid;grid-template-columns:repeat(10,16px);gap:4px;align-items:center}.eiketsuKishinsekiChoices.kishinChoices{grid-template-columns:repeat(25,13px);gap:3px}.eiketsuKishinsekiChoice{position:relative;width:16px;height:22px}.kishinChoices .eiketsuKishinsekiChoice{width:13px;height:20px}.eiketsuKishinsekiChoice input{position:absolute;opacity:0;pointer-events:none}.eiketsuKishinsekiChoice span{display:block;width:16px;height:22px;border:2px solid #343a33;border-radius:4px;background:#0d100d;box-sizing:border-box;cursor:pointer;box-shadow:inset 0 0 3px rgba(255,255,255,.08)}.kishinChoices .eiketsuKishinsekiChoice span{width:13px;height:20px}
@@ -7340,7 +7031,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     {value:"火属性", label:"火"},
     {value:"風属性", label:"風"}
   ];
-  var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000];
+  var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000,4000,2000];
   var NORMAL_VALUES = [1600,1400,1200,1000,800,600,400,200];
   var recommendLock = {active:false,targetStat:""};
   var recommendPrimaryConfirmPending = false;
@@ -8520,7 +8211,7 @@ if(panel&&window.ResizeObserver)new ResizeObserver(schedule).observe(panel);
 .jinpoCostAppliedHero{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f7e8c5;font-size:12px;line-height:1.45;font-weight:700}
 #jinpoCostCalcOverlay{position:fixed;inset:0;z-index:1000005;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.72);box-sizing:border-box}
 #jinpoCostCalcOverlay.open{display:flex}
-#jinpoCostCalcModal{width:min(1040px,calc(100vw - 44px));max-height:calc(100vh - 44px);overflow:auto;border:2px solid #e7bd5c;border-radius:18px;background:linear-gradient(180deg,#2a160d 0%,#100a07 100%);box-shadow:0 0 38px rgba(231,189,92,.5);color:#fff4d5;padding:18px;box-sizing:border-box}
+#jinpoCostCalcModal{width:min(1040px,calc(100vw - 44px));max-height:calc(100vh - 44px);overflow-y:auto;overflow-x:hidden;border:2px solid #e7bd5c;border-radius:18px;background:linear-gradient(180deg,#2a160d 0%,#100a07 100%);box-shadow:0 0 38px rgba(231,189,92,.5);color:#fff4d5;padding:18px;box-sizing:border-box}
 .jinpoCostModalHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid rgba(231,189,92,.38);padding-bottom:13px;margin-bottom:16px}
 .jinpoCostTitleWrap{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .jinpoCostTitle{font-size:22px;font-weight:900;color:#ffe1a1}
@@ -8756,11 +8447,11 @@ body.jinpo-bond56-mode #ownedHeroControl .ownedHeroSlotBtn{opacity:1!important;f
 .jinpoCommonHeroPickerHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(217,180,93,.45)}
 .jinpoCommonHeroPickerHead strong{font-size:22px}.jinpoCommonHeroPickerActions{display:flex;gap:8px;align-items:center}
 .jinpoCommonHeroPickerActions button{font-weight:900;border-radius:9px;padding:8px 13px;cursor:pointer;border:1px solid #d9b45d;background:#23170c;color:#fff4d5}
-#jinpoCommonHeroClear{display:none}.jinpoCommonHeroPickerBody{padding:14px;overflow:auto}
+#jinpoCommonHeroClear{display:none}.jinpoCommonHeroPickerBody{padding:14px;overflow-y:auto;overflow-x:hidden}
 .jinpoCommonHeroSearchRow{display:grid;grid-template-columns:minmax(280px,1fr) 180px 220px;gap:9px;margin-bottom:8px}
 #jinpoCommonHeroSearch,#jinpoCommonHeroJob,#jinpoCommonHeroFactor{min-height:43px;border-radius:9px;border:1px solid rgba(217,180,93,.58);background:#080706;color:#fff4d5;padding:8px 11px;font-size:16px;box-sizing:border-box}
 .jinpoCommonHeroSearchHelp{font-size:13px;color:#e8d3a0;margin:0 0 10px}.jinpoCommonHeroSearchStatus{font-size:13px;color:#9fd8ff;margin-left:8px}
-.jinpoCommonPinnedArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 14px 12px;flex:0 0 auto;max-height:250px;overflow:auto;border-bottom:2px solid rgba(217,180,93,.48);background:linear-gradient(180deg,rgba(43,25,12,.98),rgba(23,14,9,.96));box-shadow:0 6px 16px rgba(0,0,0,.26)}
+.jinpoCommonPinnedArea{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 14px 12px;flex:0 0 auto;max-height:250px;overflow-y:auto;overflow-x:hidden;border-bottom:2px solid rgba(217,180,93,.48);background:linear-gradient(180deg,rgba(43,25,12,.98),rgba(23,14,9,.96));box-shadow:0 6px 16px rgba(0,0,0,.26)}
 .jinpoCommonPinnedArea:empty{display:none}
 #jinpoCommonHeroGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .jinpoCommonHeroCard{display:block;text-align:left;width:100%;min-width:0;background:rgba(47,33,20,.82);border:1px solid rgba(217,180,93,.34);border-radius:10px;padding:9px 10px;color:#fff4d5;cursor:pointer;position:relative}
@@ -9541,6 +9232,1101 @@ body.jinpo-recommend-active #jinpoRecommendSearchNotice{display:block;}
   #jinpoRecommendSearchNoticeImg{left:0;top:8px;height:146px;max-width:112px;}
   #jinpoRecommendSearchNoticeBubble{left:102px;top:54px;width:min(248px,calc(100% - 108px));min-height:84px;font-size:18px;padding:10px 12px;}
 }
+</style>
+
+
+<style id="jinpo-hagumono-guide-notice-style-20260927">
+@keyframes jinpoHagumonoGuideArrowBounce{
+  0%{transform:translateY(0)}
+  50%{transform:translateY(8px)}
+  100%{transform:translateY(0)}
+}
+@keyframes jinpoHagumonoGuideArrowRainbow{
+  0%{filter:drop-shadow(0 0 6px rgba(255,60,170,.70)) drop-shadow(0 0 14px rgba(115,220,255,.52))}
+  50%{filter:drop-shadow(0 0 10px rgba(255,235,100,.86)) drop-shadow(0 0 22px rgba(210,85,255,.62))}
+  100%{filter:drop-shadow(0 0 7px rgba(120,255,160,.78)) drop-shadow(0 0 18px rgba(255,90,90,.56))}
+}
+.formationMiniPanel{position:relative !important;}
+#jinpoHagumonoGuideNotice{
+  position:absolute !important;
+  left:0;
+  top:0;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:12050;
+  width:390px;
+  height:198px;
+  display:none;
+  pointer-events:none;
+  overflow:visible;
+}
+body.jinpo-hagumono-guide-active #jinpoHagumonoGuideNotice{display:block;}
+#jinpoHagumonoGuideNotice[hidden]{display:none !important;}
+#jinpoHagumonoGuideImg{
+  position:absolute;
+  right:0;
+  bottom:0;
+  z-index:4;
+  height:min(168px,24vh);
+  width:auto;
+  max-width:48%;
+  object-fit:contain;
+  object-position:right bottom;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.52));
+}
+#jinpoHagumonoGuideBubble{
+  position:absolute;
+  right:120px;
+  bottom:72px;
+  width:190px;
+  min-height:76px;
+  padding:13px 16px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:25px;
+  line-height:1.04;
+  font-weight:1000;
+  letter-spacing:.04em;
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+  z-index:3;
+  color:#241300;
+  text-shadow:0 1px 0 #fff8d8,0 0 10px rgba(255,255,255,.62);
+  background:radial-gradient(circle at 50% 42%,#fffdf5 0%,#fff8a0 24%,#ffd54f 49%,#ffa216 73%,#ff5b0a 100%);
+  border:4px solid #fff6c2;
+  box-shadow:0 0 0 4px rgba(67,20,0,.78),0 0 24px rgba(255,176,68,.54),0 9px 22px rgba(0,0,0,.34);
+  clip-path:polygon(0% 48%,10% 36%,4% 22%,20% 22%,14% 4%,31% 14%,34% 0%,47% 14%,59% 0%,66% 16%,85% 5%,81% 24%,100% 28%,90% 45%,100% 62%,82% 69%,90% 89%,69% 82%,61% 100%,46% 84%,30% 100%,21% 81%,4% 86%,11% 65%);
+}
+#jinpoHagumonoGuideArrow{
+  position:absolute;
+  right:320px;
+  bottom:50px;
+  width:48px;
+  height:58px;
+  z-index:2;
+  display:block;
+  background:linear-gradient(180deg,#ff355e 0%,#ffbe3b 17%,#f7ff5d 34%,#60ff8c 52%,#4de4ff 68%,#7886ff 84%,#ff67da 100%);
+  clip-path:polygon(50% 100%,0 46%,22% 46%,22% 0,78% 0,78% 46%,100% 46%);
+  animation:jinpoHagumonoGuideArrowBounce 1.15s ease-in-out infinite,jinpoHagumonoGuideArrowRainbow 1.45s linear infinite;
+}
+/* 追加指定人物：差し替え候補枠の左上に固定。見出し・業物ボタンとは重ならない。 */
+#reachSection{position:relative !important;}
+#jinpoHagumonoPhraseNotice{
+  position:absolute;
+  left:18px;
+  top:24px;
+  z-index:30;
+  display:none;
+  width:372px;
+  height:142px;
+  box-sizing:border-box;
+  align-items:flex-end;
+  justify-content:flex-start;
+  gap:10px;
+  pointer-events:none;
+}
+body.jinpo-hagumono-guide-active #jinpoHagumonoPhraseNotice{display:flex;}
+#jinpoHagumonoPhraseNotice[hidden]{display:none !important;}
+#jinpoHagumonoPhraseImg{
+  flex:0 0 auto;
+  display:block;
+  width:auto;
+  height:132px;
+  max-width:116px;
+  object-fit:contain;
+  object-position:left bottom;
+  filter:drop-shadow(0 7px 14px rgba(0,0,0,.42));
+}
+#jinpoHagumonoPhraseBubble{
+  flex:0 0 238px;
+  width:238px;
+  min-height:90px;
+  padding:12px 14px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  text-align:center;
+  z-index:3;
+  color:transparent;
+  text-shadow:none;
+  background:linear-gradient(135deg,#e0f7ff 0%,#f4e7ff 22%,#fff6b8 54%,#ffd3ea 100%);
+  border:4px solid #fff7ff;
+  box-shadow:0 0 0 4px rgba(144,99,165,.34),0 0 20px rgba(149,225,255,.30),0 0 18px rgba(255,200,235,.24),0 7px 18px rgba(0,0,0,.28);
+  clip-path:polygon(0% 48%,10% 36%,4% 22%,20% 22%,14% 4%,31% 14%,34% 0%,47% 14%,59% 0%,66% 16%,85% 5%,81% 24%,100% 28%,90% 45%,100% 62%,82% 69%,90% 89%,69% 82%,61% 100%,46% 84%,30% 100%,21% 81%,4% 86%,11% 65%);
+}
+#jinpoHagumonoPhraseBubble span{display:block;width:100%;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;background-image:none;-webkit-background-clip:border-box;background-clip:border-box;color:#e53935;font-weight:1000;-webkit-text-stroke:1.15px rgba(66,49,78,.76);paint-order:stroke fill;text-shadow:0 0 2px rgba(255,255,255,.98),0 0 6px rgba(255,255,255,.72),0 2px 2px rgba(58,38,64,.42);filter:drop-shadow(0 1px 0 rgba(255,255,255,.70));}
+#jinpoHagumonoPhraseBubble span:first-child{font-size:20px;line-height:1.05;font-weight:1000;letter-spacing:.02em;}
+#jinpoHagumonoPhraseBubble span:last-child{font-size:18px;line-height:1.05;font-weight:1000;letter-spacing:.08em;}
+/* 追加指定人物：差し替え候補枠の右上に重ねる。枠のレイアウト寸法は変更しない。 */
+#jinpoHagumonoFilterNotice{
+  position:absolute;
+  right:18px;
+  top:18px;
+  bottom:auto;
+  z-index:31;
+  display:none;
+  width:490px;
+  height:142px;
+  box-sizing:border-box;
+  align-items:flex-start;
+  justify-content:flex-end;
+  gap:10px;
+  pointer-events:none;
+}
+body.jinpo-hagumono-guide-active #jinpoHagumonoFilterNotice{display:flex;}
+#jinpoHagumonoFilterNotice[hidden]{display:none !important;}
+#jinpoHagumonoFilterImg{
+  flex:0 0 auto;
+  display:block;
+  width:auto;
+  height:132px;
+  max-width:116px;
+  object-fit:contain;
+  object-position:right bottom;
+  filter:drop-shadow(0 7px 14px rgba(0,0,0,.48));
+}
+#jinpoHagumonoFilterBubble{
+  position:relative;
+  flex:0 0 356px;
+  width:356px;
+  min-height:90px;
+  padding:12px 14px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  text-align:center;
+  color:#7cff91;
+  background:#050806;
+  border:3px solid #66e883;
+  border-radius:22px;
+  box-shadow:0 0 0 2px rgba(0,38,12,.76),0 0 18px rgba(80,255,125,.28),0 7px 18px rgba(0,0,0,.42);
+  overflow:visible;
+}
+#jinpoHagumonoFilterBubble::before{
+  content:"";
+  position:absolute;
+  right:-18px;
+  bottom:24px;
+  width:0;
+  height:0;
+  border-top:12px solid transparent;
+  border-bottom:12px solid transparent;
+  border-left:18px solid #66e883;
+}
+#jinpoHagumonoFilterBubble::after{
+  content:"";
+  position:absolute;
+  right:-13px;
+  bottom:27px;
+  width:0;
+  height:0;
+  border-top:9px solid transparent;
+  border-bottom:9px solid transparent;
+  border-left:14px solid #050806;
+}
+#jinpoHagumonoFilterBubble span{
+  display:block;
+  width:100%;
+  white-space:nowrap;
+  word-break:keep-all;
+  overflow-wrap:normal;
+  color:#7cff91;
+  font-weight:1000;
+  -webkit-text-stroke:.8px rgba(0,38,12,.88);
+  paint-order:stroke fill;
+  text-shadow:0 0 5px rgba(112,255,143,.48),0 2px 2px rgba(0,0,0,.9);
+}
+#jinpoHagumonoFilterBubble span:first-child{font-size:20px;line-height:1.05;letter-spacing:.01em;}
+#jinpoHagumonoFilterBubble span:last-child{font-size:18px;line-height:1.05;letter-spacing:.04em;}
+@media(max-width:1300px){
+  #jinpoHagumonoGuideNotice{width:360px;height:184px;}
+  #jinpoHagumonoGuideImg{height:156px;max-width:47%;}
+  #jinpoHagumonoGuideBubble{right:110px;bottom:68px;width:176px;min-height:70px;font-size:22px;padding:12px 14px;}
+  #jinpoHagumonoGuideArrow{right:294px;bottom:48px;width:44px;height:54px;}
+  #jinpoHagumonoPhraseNotice{left:14px;top:22px;width:342px;height:132px;gap:9px;}
+  #jinpoHagumonoPhraseImg{height:122px;max-width:106px;}
+  #jinpoHagumonoPhraseBubble{flex-basis:220px;width:220px;max-width:none;min-height:82px;padding:11px 12px;}
+  #jinpoHagumonoPhraseBubble span:first-child{font-size:19px;}
+  #jinpoHagumonoPhraseBubble span:last-child{font-size:17px;}
+  #jinpoHagumonoFilterNotice{right:14px;top:14px;bottom:auto;width:454px;height:132px;gap:9px;}
+  #jinpoHagumonoFilterImg{height:122px;max-width:106px;}
+  #jinpoHagumonoFilterBubble{flex-basis:332px;width:332px;min-height:82px;padding:11px 12px;}
+  #jinpoHagumonoFilterBubble span:first-child{font-size:18px;}
+  #jinpoHagumonoFilterBubble span:last-child{font-size:18px;}
+}
+@media(max-width:900px){
+  #jinpoHagumonoGuideNotice{right:4px;width:300px;height:156px;}
+  #jinpoHagumonoGuideImg{height:128px;max-width:46%;}
+  #jinpoHagumonoGuideBubble{right:92px;bottom:56px;width:148px;min-height:56px;font-size:18px;padding:10px;}
+  #jinpoHagumonoGuideArrow{right:246px;bottom:40px;width:36px;height:44px;}
+  #jinpoHagumonoPhraseNotice{left:10px;top:18px;width:300px;height:116px;gap:8px;}
+  #jinpoHagumonoPhraseImg{height:106px;max-width:92px;}
+  #jinpoHagumonoPhraseBubble{flex-basis:194px;width:194px;min-height:68px;padding:9px 10px;}
+  #jinpoHagumonoPhraseBubble span:first-child{font-size:17px;}
+  #jinpoHagumonoPhraseBubble span:last-child{font-size:15px;letter-spacing:.04em;}
+  #jinpoHagumonoFilterNotice{right:10px;top:10px;bottom:auto;width:388px;height:116px;gap:8px;}
+  #jinpoHagumonoFilterImg{height:106px;max-width:92px;}
+  #jinpoHagumonoFilterBubble{flex-basis:280px;width:280px;min-height:68px;padding:9px 10px;}
+  #jinpoHagumonoFilterBubble span:first-child{font-size:15px;}
+  #jinpoHagumonoFilterBubble span:last-child{font-size:15px;}
+}
+</style>
+
+<style id="jinpo-hagumono-swap-20260927">
+@keyframes jinpoHagumonoPinkFlow{
+  0%{background-position:0 0,0% 50%;box-shadow:0 0 12px rgba(255,80,180,.46),0 0 22px rgba(255,120,220,.24),inset 0 0 10px rgba(255,255,255,.07)}
+  50%{background-position:0 0,100% 50%;box-shadow:0 0 19px rgba(255,60,190,.72),0 0 34px rgba(255,130,230,.38),inset 0 0 14px rgba(255,255,255,.12)}
+  100%{background-position:0 0,200% 50%;box-shadow:0 0 12px rgba(255,100,205,.54),0 0 24px rgba(255,55,160,.28),inset 0 0 10px rgba(255,255,255,.07)}
+}
+@keyframes jinpoHagumonoRainbowFlow{
+  0%{background-position:0 0,0% 50%;box-shadow:0 0 12px rgba(255,80,80,.52),0 0 24px rgba(80,180,255,.28),inset 0 0 10px rgba(255,255,255,.08)}
+  50%{background-position:0 0,100% 50%;box-shadow:0 0 18px rgba(90,235,255,.62),0 0 34px rgba(255,90,220,.34),inset 0 0 14px rgba(255,255,255,.12)}
+  100%{background-position:0 0,200% 50%;box-shadow:0 0 12px rgba(255,230,80,.56),0 0 24px rgba(120,255,150,.30),inset 0 0 10px rgba(255,255,255,.08)}
+}
+#reachList .jinpoHagumonoBar{
+  width:100%;box-sizing:border-box;display:flex;justify-content:center;align-items:center;gap:14px;
+  margin:-2px 0 10px 0;padding:0 4px;min-height:54px;flex-wrap:wrap;
+}
+#reachList .jinpoHagumonoJudgeStatus{
+  display:none;
+  width:max-content;max-width:calc(100% - 24px);
+  margin:2px auto 12px;
+  padding:12px 30px;
+  box-sizing:border-box;
+  border:3px solid rgba(107,224,255,.72);
+  border-radius:999px;
+  background:rgba(0,12,18,.88);
+  color:#b9f4ff;
+  font-size:24px;line-height:1.15;font-weight:1000;letter-spacing:.06em;
+  text-shadow:0 0 8px rgba(169,239,255,.45);
+  box-shadow:0 0 14px rgba(77,213,255,.32),0 0 28px rgba(77,213,255,.16);
+  pointer-events:none;
+  white-space:nowrap;
+}
+#reachList .jinpoHagumonoJudgeStatus.active{display:block;}
+#reachList .jinpoHagumonoJudgeStatus.error{
+  display:block;border-color:rgba(255,100,100,.72);color:#ffb1b1;background:rgba(34,0,0,.82);
+}
+#reachList .jinpoHagumonoJudgeDot{display:inline-block;margin-left:5px;animation:jinpoHagumonoJudgePulse .9s ease-in-out infinite alternate;}
+@keyframes jinpoHagumonoJudgePulse{from{opacity:.35}to{opacity:1}}
+body #reachList .jinpoHagumonoBtn{
+  display:none;align-items:center;justify-content:center;min-width:164px;min-height:52px;
+  padding:11px 24px !important;border:3px solid transparent !important;border-radius:13px !important;
+  background:linear-gradient(#030303,#030303) padding-box,
+             linear-gradient(90deg,#ff5aad,#ff83ca,#ffc0e3,#ff7fc7,#ff3fa0,#ff8bd0,#ff5aad) border-box !important;
+  background-size:100% 100%,320% 100% !important;
+  color:#fff !important;font-size:24px !important;line-height:1 !important;font-weight:1000 !important;letter-spacing:.08em !important;
+  text-shadow:0 1px 0 #000,0 0 8px rgba(255,255,255,.34) !important;
+  cursor:pointer !important;animation:jinpoHagumonoPinkFlow 2.0s linear infinite !important;
+  transform:translateZ(0);isolation:isolate;
+}
+body #reachList .jinpoHagumonoBtn.jinpoDaigyomonoBtn{
+  background:linear-gradient(#030303,#030303) padding-box,
+             linear-gradient(90deg,#ff3030,#ffb52e,#fff35a,#51ef70,#40dfff,#6b7dff,#cf5cff,#ff4dad,#ff3030) border-box !important;
+  background-size:100% 100%,320% 100% !important;
+  animation:jinpoHagumonoRainbowFlow 2.2s linear infinite !important;
+}
+body #reachList .jinpoHagumonoBtn.jinpoHagumonoAvailable{display:inline-flex !important;}
+body #reachList .jinpoHagumonoBtn:hover,
+body #reachList .jinpoHagumonoBtn:focus-visible{filter:brightness(1.20);transform:translateY(-1px) scale(1.025);outline:none !important;}
+#step66ReachModal .step66Title.jinpoHagumonoModalTitle{color:#fff !important;text-shadow:0 0 10px rgba(120,220,255,.62),0 0 16px rgba(255,90,220,.38);}
+/* 業物カード本体は通常の差し替え英傑カードと同じサイズ・背景・余白をそのまま使用する。
+   業物固有なのは外側の発光枠だけ。 */
+#step66ReachModal.jinpoHagumonoMode .step66Box{
+  width:min(1500px,98vw);
+}
+#step66ReachModal .step66Grid.jinpoHagumonoGrid{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:8px;
+}
+body #step66ReachModal .step66HeroBtn.jinpoHagumonoHeroCard{
+  position:relative;
+  isolation:isolate;
+  overflow:visible !important;
+  width:max-content;
+  min-width:220px;
+  max-width:calc(98vw - 52px);
+  flex:0 0 auto;
+  box-sizing:border-box;
+}
+/* 業物カードも通常差し替えカードの内部配置を基準にする。
+   ただし情報量が多い時だけ第1列を横へ広げ、等級欄との重なりを禁止する。 */
+#step66ReachModal .jinpoHagumonoHeroCard > .step66Grade4Rows{
+  grid-template-columns:max-content 72px !important;
+  width:max-content;
+  min-width:100%;
+}
+#step66ReachModal .jinpoHagumonoHeroCard > .step66Grade4Rows.step66Grade4Compact{
+  grid-template-columns:max-content 56px !important;
+}
+@keyframes jinpoHagumonoCardFrameFlow{
+  0%{background-position:0% 50%;filter:drop-shadow(0 0 5px rgba(255,83,180,.58)) drop-shadow(0 0 10px rgba(255,135,210,.32))}
+  50%{background-position:100% 50%;filter:drop-shadow(0 0 8px rgba(255,83,180,.80)) drop-shadow(0 0 15px rgba(255,135,210,.48))}
+  100%{background-position:200% 50%;filter:drop-shadow(0 0 5px rgba(255,83,180,.58)) drop-shadow(0 0 10px rgba(255,135,210,.32))}
+}
+@keyframes jinpoDaigyomonoCardFrameFlow{
+  0%{background-position:0% 50%;filter:drop-shadow(0 0 6px rgba(255,80,80,.52)) drop-shadow(0 0 10px rgba(80,180,255,.32))}
+  50%{background-position:100% 50%;filter:drop-shadow(0 0 9px rgba(90,235,255,.68)) drop-shadow(0 0 15px rgba(255,90,220,.46))}
+  100%{background-position:200% 50%;filter:drop-shadow(0 0 6px rgba(255,230,80,.56)) drop-shadow(0 0 10px rgba(120,255,150,.34))}
+}
+body #step66ReachModal .step66HeroBtn.jinpoHagumonoLocalCard::before,
+body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  padding:3px;
+  border-radius:13px;
+  pointer-events:none;
+  z-index:3;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+}
+body #step66ReachModal .step66HeroBtn.jinpoHagumonoLocalCard::before{
+  background:linear-gradient(90deg,#ff4fa9,#ff82ca,#ffc5e7,#ff78c2,#ff4fa9);
+  background-size:200% 100%;
+  animation:jinpoHagumonoCardFrameFlow 1.8s linear infinite;
+}
+body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
+  background:linear-gradient(90deg,#ff3030,#ffb52e,#fff35a,#51ef70,#40dfff,#6b7dff,#cf5cff,#ff4dad,#ff3030);
+  background-size:300% 100%;
+  animation:jinpoDaigyomonoCardFrameFlow 2.2s linear infinite;
+}
+#step66ReachModal .jinpoHagumonoHeroCard .step66HeroName{color:#ffe1a1 !important;text-shadow:none !important;}
+#step66ReachModal .jinpoHagumonoHeroCard .jinpoHagumonoGain{color:#d9c9a6;font-weight:800;}
+#step66ReachModal .jinpoHagumonoHeroCard .jinpoHagumonoSub{
+  display:inline !important;margin:0 0 0 6px !important;color:#d9c9a6;font-size:11px;line-height:1.35;white-space:nowrap !important;
+}
+#step66ReachModal .jinpoHagumonoSummary{margin:0 0 8px;padding:6px 8px;border:1px solid rgba(231,189,92,.28);border-radius:8px;background:rgba(0,0,0,.18);font-size:12px;font-weight:800;color:#d9c9a6;}
+@media(max-width:1100px){body #reachList .jinpoHagumonoBtn{min-width:152px;font-size:22px !important;padding:11px 18px !important;}}
+@media(max-width:900px){
+  #reachList .jinpoHagumonoBar{justify-content:center;gap:10px;padding:0 8px;}
+  body #reachList .jinpoHagumonoBtn{min-width:160px;min-height:56px;font-size:22px !important;padding:12px 18px !important;}
+}
+</style>
+<script id="jinpo-hagumono-swap-20260927-script">
+(function(){
+  'use strict';
+  if(window.__jinpoHagumonoFourWay20260927) return;
+  window.__jinpoHagumonoFourWay20260927=true;
+
+  var state={
+    localOne:false,localTwo:false,allOne:false,allTwo:false,
+    precheckSeq:0,candidates:[],candidateById:{},
+    applyWrapInstalled:false,reachWrapInstalled:false,lastAppliedRow:null,
+    allSearchCache:new Map(),precheckPayloads:Object.create(null),
+    judging:false,judgeError:false
+  };
+  var observer=null,priorityTimer=0;
+
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];});}
+  function num(v){var n=Number(v);return Number.isFinite(n)?n:0;}
+  function rowId(row){return String(row&&(row.result_id||row.id)||'').trim();}
+  function rowIds(row){return String(row&&row.eiketsu_internal_ids||'').split('|').map(function(x){return String(x||'').trim();}).filter(Boolean);}
+  function rowNames(row){return String(row&&(row.eiketsu_names||row.eiketsu_ids)||'').split('|').map(function(x){return String(x||'').trim();});}
+  function currentPlacement(){try{if(typeof placement!=='undefined'&&placement)return placement;}catch(e){}return window.placement||null;}
+  function currentFormation(){try{var el=document.getElementById('formationSelect');return String(el&&el.value||'').trim();}catch(e){return'';}}
+  function currentIds(){var p=currentPlacement(),out=[];for(var i=1;i<=6;i++){var h=p&&p[i],id=String(h&&(h.internal_id||h.id)||'').trim();if(!id)return[];out.push(id);}return out;}
+  function priorityState(){var s1=document.getElementById('dbPriorityStat1'),s2=document.getElementById('dbPriorityStat2'),p1=String(s1&&s1.value||'').trim(),p2=String(s2&&s2.value||'').trim();if(p2===p1)p2='';return {p1:p1,p2:p2};}
+  function fastApi(){return window.JINPO_FAST_SEARCH||null;}
+  function rowsSnapshot(){var api=fastApi();try{return api&&typeof api.getDisplayRows==='function'?api.getDisplayRows():[];}catch(e){return[];}}
+  function currentMode(){var api=fastApi();try{if(api&&typeof api.getMode==='function')return String(api.getMode()||'');}catch(e){}if(document.body&&document.body.classList.contains('jinpo-bond56-mode'))return 'bond56';if(document.body&&document.body.classList.contains('jinpo-selected-grade3-mode'))return 'popular';try{if(typeof grade3Cost6OnlyEnabled!=='undefined'&&grade3Cost6OnlyEnabled)return 'grade3';}catch(e){}return 'normal';}
+  function sameIds(a,b){if(!Array.isArray(a)||!Array.isArray(b)||a.length!==6||b.length!==6)return false;for(var i=0;i<6;i++)if(String(a[i])!==String(b[i]))return false;return true;}
+  function diffSlots(baseIds,testIds,maxDiff){if(!Array.isArray(baseIds)||!Array.isArray(testIds)||baseIds.length!==6||testIds.length!==6)return[];var out=[];for(var i=0;i<6;i++){if(String(baseIds[i])!==String(testIds[i])){out.push(i+1);if(maxDiff&&out.length>maxDiff)return out;}}return out;}
+  function findCurrentRow(rows){
+    var ids=currentIds(),form=currentFormation(),saved=state.lastAppliedRow;
+    if(saved){var savedIds=rowIds(saved),savedForm=String(saved&&saved.formation||'').trim();if((ids.length!==6||sameIds(ids,savedIds))&&(!form||savedForm===form))return saved;}
+    var api=fastApi(),row=null;
+    try{if(api&&typeof api.getAppliedRow==='function')row=api.getAppliedRow();}catch(e){}
+    if(row){var appliedIds=rowIds(row),appliedForm=String(row&&row.formation||'').trim();if((ids.length!==6||sameIds(ids,appliedIds))&&(!form||appliedForm===form))return row;}
+    var rid='';try{rid=String(window.selectedDbResultId||((typeof selectedDbResultId!=='undefined')?selectedDbResultId:'')||'').trim();}catch(e){}
+    if(rid){for(var i=0;i<rows.length;i++){var rr=rows[i];if(rowId(rr)!==rid)continue;var rrIds=rowIds(rr),rrForm=String(rr&&rr.formation||'').trim();if((ids.length!==6||sameIds(ids,rrIds))&&(!form||rrForm===form))return rr;}}
+    if(ids.length!==6)return null;
+    for(var j=0;j<rows.length;j++){var r=rows[j];if(form&&String(r&&r.formation||'').trim()!==form)continue;if(sameIds(ids,rowIds(r)))return r;}
+    return null;
+  }
+  function metric(row,pri){var a=num(row&&row[pri.p1]);if(pri.p2)return a+num(row&&row[pri.p2]);return a;}
+  function validContext(){
+    var pri=priorityState();if(!pri.p1)return null;
+    var rows=rowsSnapshot();if(!rows.length)return null;
+    var current=findCurrentRow(rows);if(!current)return null;
+    var ids=rowIds(current);if(ids.length!==6)ids=currentIds();if(ids.length!==6)return null;
+    var recActive=false,api=fastApi();try{if(api&&typeof api.getRecommendState==='function')recActive=!!api.getRecommendState().active;}catch(e){}
+    return {pri:pri,rows:rows,current:current,ids:ids,form:String(current&&current.formation||currentFormation()).trim(),currentMetric:metric(current,pri),mode:currentMode(),recommendActive:recActive};
+  }
+  function betterRow(row,ctx,diffCount){
+    if(!row||!ctx)return null;
+    if(ctx.form&&String(row.formation||'').trim()!==ctx.form)return null;
+    var ids=rowIds(row);if(ids.length!==6)return null;
+    var slots=diffSlots(ctx.ids,ids,diffCount);if(slots.length!==diffCount)return null;
+    var m=metric(row,ctx.pri);if(!(m>ctx.currentMetric))return null;
+    return {slots:slots,ids:ids,metric:m};
+  }
+  function ensureButtons(){
+    var root=document.getElementById('reachList');if(!root)return null;
+    var bar=root.querySelector('.jinpoHagumonoBar');
+    if(!bar){bar=document.createElement('div');bar.className='jinpoHagumonoBar';var h=root.querySelector('h3');if(h&&h.nextSibling)root.insertBefore(bar,h.nextSibling);else if(h)root.appendChild(bar);else root.insertBefore(bar,root.firstChild);}
+    var defs=[
+      ['jinpoHagumono1Btn','業物・壱','jinpoHagumonoBtn','現在モード内の1人差し替え上昇候補を表示','localOne'],
+      ['jinpoHagumono2Btn','業物・弐','jinpoHagumonoBtn','現在モード内の2人差し替え上昇候補を表示','localTwo'],
+      ['jinpoDaigyomono1Btn','大業物・壱','jinpoHagumonoBtn jinpoDaigyomonoBtn','全英傑対象の1人差し替え上昇候補を表示','allOne'],
+      ['jinpoDaigyomono2Btn','大業物・弐','jinpoHagumonoBtn jinpoDaigyomonoBtn','全英傑対象の2人差し替え上昇候補を表示','allTwo']
+    ];
+    defs.forEach(function(d){
+      var b=bar.querySelector('#'+d[0]);
+      if(!b){
+        b=document.createElement('button');b.type='button';b.id=d[0];b.className=d[2];b.textContent=d[1];b.setAttribute('aria-label',d[3]);bar.appendChild(b);
+      }
+      if(!b.__jinpoHagumonoClickBound){
+        b.__jinpoHagumonoClickBound=true;
+        b.addEventListener('click',onHagumonoButtonClick,false);
+      }
+      var on=!!state[d[4]];b.classList.toggle('jinpoHagumonoAvailable',on);b.hidden=!on;
+    });
+    var status=root.querySelector('.jinpoHagumonoJudgeStatus');
+    if(!status){status=document.createElement('div');status.className='jinpoHagumonoJudgeStatus';status.setAttribute('aria-live','polite');status.setAttribute('aria-atomic','true');if(bar.nextSibling)root.insertBefore(status,bar.nextSibling);else root.appendChild(status);}
+    status.classList.toggle('active',!!state.judging&&!state.judgeError);
+    status.classList.toggle('error',!!state.judgeError);
+    status.innerHTML=state.judgeError?'業物判定失敗':(state.judging?'業物判定中・判定に数分かかる事があります':'');
+    try{ if(typeof window.__jinpoSyncHagumonoGuideNotice==='function') window.__jinpoSyncHagumonoGuideNotice(); }catch(e){}
+    return bar;
+  }
+  function setAllAvailability(v){state.localOne=!!v.localOne;state.localTwo=!!v.localTwo;state.allOne=!!v.allOne;state.allTwo=!!v.allTwo;ensureButtons();}
+  function setKindAvailable(kind,diffCount,on){var key=(kind==='all'?'all':'local')+(diffCount===2?'Two':'One');state[key]=!!on;ensureButtons();}
+  function setJudging(on,isError){state.judging=!!on;state.judgeError=!!isError;ensureButtons();}
+  function watchReach(){var root=document.getElementById('reachList');if(!root)return;if(observer)observer.disconnect();observer=new MutationObserver(function(){ensureButtons();});observer.observe(root,{childList:true,subtree:false});ensureButtons();}
+
+  function afterScrollFinished(cb){
+    var start=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),last=window.pageYOffset||document.documentElement.scrollTop||0,stable=0;
+    function tick(){var now=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),y=window.pageYOffset||document.documentElement.scrollTop||0;if(Math.abs(y-last)<0.5)stable++;else stable=0;last=y;if(stable>=3||now-start>650){cb();return;}if(typeof requestAnimationFrame==='function')requestAnimationFrame(tick);else setTimeout(tick,24);}
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(tick);else setTimeout(tick,30);
+  }
+
+  function heroMaster(){try{if(Array.isArray(eiketsuMaster))return eiketsuMaster;}catch(e){}return Array.isArray(window.eiketsuMaster)?window.eiketsuMaster:[];}
+  function heroById(id){id=String(id||'').trim();var rows=heroMaster();for(var i=0;i<rows.length;i++){var h=rows[i],hid=String(h&&(h.internal_id||h.id)||'').trim();if(hid===id)return h;}return null;}
+  function heroName(h,fallback){try{if(typeof window.heroName==='function')return window.heroName(h)||fallback||'';}catch(e){}return String(h&&(h['英傑名']||h['名前']||h.name)||fallback||'');}
+  function heroCost(h){var v=Number(h&&(h['コスト']!=null?h['コスト']:h.cost));return Number.isFinite(v)?v:null;}
+  function isPopular(h){try{return !!(window.JINPO_POPULAR_SELECTION&&typeof window.JINPO_POPULAR_SELECTION.isSelectedHero==='function'&&window.JINPO_POPULAR_SELECTION.isSelectedHero(h));}catch(e){return false;}}
+  function labelStat(s){var map={'耐久力':'耐久','器用さ':'器用','土属性':'土','水属性':'水','火属性':'火','風属性':'風'};return map[s]||s;}
+  function resolvedHeroName(id,fallback){var h=heroById(id);return heroName(h,fallback)||fallback||String(id||'');}
+  function candidateSignature(item){return (item&&item.changes||[]).map(function(c){return String(c.slot)+'|'+String(c.afterId);}).join('||');}
+  function collectFromRows(diffCount,ctx,rows){
+    var count=diffCount===2?2:1,currentNames=rowNames(ctx.current),dedupe=new Map();rows=Array.isArray(rows)?rows:[];
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i],hit=betterRow(row,ctx,count);if(!hit)continue;
+      var names=rowNames(row),changes=[],keyParts=[];
+      for(var j=0;j<hit.slots.length;j++){
+        var slot=hit.slots[j],afterId=String(hit.ids[slot-1]||'').trim();if(!afterId){changes=[];break;}
+        var beforeId=String(ctx.ids[slot-1]||'').trim(),afterFallback=String(names[slot-1]||'').trim(),beforeFallback=String(currentNames[slot-1]||'').trim();
+        changes.push({slot:slot,beforeId:beforeId,beforeName:resolvedHeroName(beforeId,beforeFallback),afterId:afterId,afterName:resolvedHeroName(afterId,afterFallback)});keyParts.push(slot+'|'+afterId);
+      }
+      if(changes.length!==count)continue;
+      var key=keyParts.join('||');
+      var item={row:row,changes:changes,metric:hit.metric,p1Value:num(row[ctx.pri.p1]),p2Value:ctx.pri.p2?num(row[ctx.pri.p2]):0,currentP1:num(ctx.current[ctx.pri.p1]),currentP2:ctx.pri.p2?num(ctx.current[ctx.pri.p2]):0,bondCount:num(row.bond_count||row.ic),currentBondCount:num(ctx.current.bond_count||ctx.current.ic),diffCount:count};
+      var prev=dedupe.get(key);if(!prev||item.metric>prev.metric)dedupe.set(key,item);
+    }
+    var list=Array.from(dedupe.values());
+    list.sort(function(a,b){if(b.metric!==a.metric)return b.metric-a.metric;if(b.p1Value!==a.p1Value)return b.p1Value-a.p1Value;if(ctx.pri.p2&&b.p2Value!==a.p2Value)return b.p2Value-a.p2Value;var as=a.changes.map(function(x){return x.slot;}).join('-'),bs=b.changes.map(function(x){return x.slot;}).join('-');if(as!==bs)return as.localeCompare(bs);return a.changes.map(function(x){return x.afterName;}).join('|').localeCompare(b.changes.map(function(x){return x.afterName;}).join('|'),'ja');});
+    return {ctx:ctx,list:list,diffCount:count};
+  }
+  /* 業物系は「現在表示中の因縁数」ではなく、選択中モードが対象にする因縁数全体を検索する。 */
+  function relevantCounts(ctx){
+    var mode=String(ctx&&ctx.mode||'normal');
+    if(mode==='grade3')return [5,6,7,8,9];
+    if(mode==='popular')return [6,7,8,9];
+    if(mode==='bond56')return [5,6];
+    return [7,8,9];
+  }
+  /* 7因縁以上／5・6因縁は元から全英傑対象なので「業物」だけ。
+     等級3以下／選抜人気では現在モード対象の業物＋全英傑の大業物を使う。 */
+  function hagumonoModeKinds(mode){
+    mode=String(mode||'normal');
+    return {local:true,all:!(mode==='normal'||mode==='bond56')};
+  }
+  function currentRules(ctx){var raw=[];try{if(typeof getDbPriorityRules==='function')raw=getDbPriorityRules()||[];}catch(e){}var out=[];[ctx.pri.p1,ctx.pri.p2].filter(Boolean).forEach(function(stat){var r=raw.find(function(x){return x&&String(x.stat||'')===stat;});out.push(r?{stat:stat,threshold:r.threshold,maxThreshold:r.maxThreshold}:{stat:stat,threshold:null,maxThreshold:null});});return out;}
+  function factor4Max(){try{var f=window.JINPO_FACTOR4_FILTER;if(f&&typeof f.getSelected==='function'&&Number(f.getSelected())>0&&typeof f.getAllowedFactor4Users==='function')return Number(f.getAllowedFactor4Users());}catch(e){}return null;}
+
+  function payloadKey(kind,diffCount){return (kind==='all'?'all':'local')+(diffCount===2?'Two':'One');}
+  function clearPrecheckPayloads(){state.precheckPayloads=Object.create(null);}
+  function contextSignature(ctx){
+    if(!ctx)return '';
+    var rs=currentRules(ctx),f4=factor4Max();
+    return JSON.stringify([String(ctx.mode||''),String(ctx.form||''),(ctx.ids||[]).map(String),String(ctx.pri&&ctx.pri.p1||''),String(ctx.pri&&ctx.pri.p2||''),num(ctx.currentMetric),!!ctx.recommendActive,rs.map(function(r){return [String(r.stat||''),r.threshold==null?null:Number(r.threshold),r.maxThreshold==null?null:Number(r.maxThreshold)];}),f4==null?null:Number(f4)]);
+  }
+  function storePrecheckPayload(kind,diffCount,ctx,payload){
+    var key=payloadKey(kind,diffCount),sig=contextSignature(ctx),list=payload&&Array.isArray(payload.list)?payload.list:[];
+    state.precheckPayloads[key]={sig:sig,payload:payload};
+    setKindAvailable(kind,diffCount,list.length>0);
+  }
+  function currentStoredPayload(kind,diffCount,ctx){
+    var hit=state.precheckPayloads[payloadKey(kind,diffCount)];
+    if(!hit||!ctx||hit.sig!==contextSignature(ctx)||!hit.payload||!Array.isArray(hit.payload.list)||!hit.payload.list.length)return null;
+    return hit.payload;
+  }
+
+  /* 業物・大業物の候補検索は、この1経路だけで配置英傑／除外英傑を無視する。
+     nearCurrentIds は「現在の6人から1人/2人だけ差し替える」判定なので維持する。 */
+  function hagumonoQuery(ctx,count,diffCount,kind){
+    var nearMin=diffCount===2?4:5,rules=currentRules(ctx),f4=factor4Max(),sum={enabled:!!ctx.pri.p2,stat1:ctx.pri.p1,stat2:ctx.pri.p2||'',tiePrefer:'first'};
+    var queryMode=kind==='all'?((count===5||count===6)?'bond56':'normal'):String(ctx.mode||'normal');
+    var q={mode:queryMode,count:count,formation:ctx.form,ownedInternalIds:[],excludedInternalIds:[],rules:rules,sumSort:sum,factor4Max:f4,nearCurrentIds:ctx.ids.slice(),nearMinSame:nearMin,limit:500};
+    if(queryMode==='bond56'){q.priorityStats=ctx.pri.p2?[]:[ctx.pri.p1];return q;}
+    q.sourceType='full';q.sortStat='';return q;
+  }
+  function searchCacheKey(q){return JSON.stringify([q.mode,q.count,q.formation,q.sourceType||'',q.sortStat||'',q.priorityStats||[],q.ownedInternalIds||[],q.excludedInternalIds||[],q.nearCurrentIds||[],q.nearMinSame||0,(q.rules||[]).map(function(r){return[r.stat,r.threshold,r.maxThreshold];}),q.factor4Max==null?null:q.factor4Max,q.sumSort||null,q.limit||0]);}
+  function silentSearchCached(q){
+    var key=searchCacheKey(q),hit=state.allSearchCache.get(key);if(hit)return hit;
+    var api=fastApi(),fn=api&&(api.searchSilent||api.search);if(typeof fn!=='function')return Promise.resolve({rows:[]});
+    var pr=Promise.resolve(fn.call(api,q)).catch(function(e){state.allSearchCache.delete(key);throw e;});state.allSearchCache.set(key,pr);if(state.allSearchCache.size>16){var first=state.allSearchCache.keys().next().value;if(first!==key)state.allSearchCache.delete(first);}return pr;
+  }
+  async function fetchHagumonoRows(ctx,diffCount,kind){
+    var counts=relevantCounts(ctx),out=[];
+    for(var i=0;i<counts.length;i++){
+      var r=await silentSearchCached(hagumonoQuery(ctx,counts[i],diffCount,kind));
+      if(r&&Array.isArray(r.rows))out=out.concat(r.rows);
+    }
+    return out;
+  }
+  async function collectRawHagumonoCandidates(kind,diffCount,ctx){
+    ctx=ctx||validContext();var count=diffCount===2?2:1;if(!ctx)return {ctx:null,list:[],diffCount:count,kind:kind};
+    var rows=await fetchHagumonoRows(ctx,count,kind),p=collectFromRows(count,ctx,rows);p.kind=kind;return p;
+  }
+  async function collectHagumonoCandidates(kind,diffCount,ctx,localPayload){
+    ctx=ctx||validContext();var count=diffCount===2?2:1;if(!ctx)return {ctx:null,list:[],diffCount:count,kind:kind};
+    var kinds=hagumonoModeKinds(ctx.mode);
+    if(kind==='all'&&!kinds.all)return {ctx:ctx,list:[],diffCount:count,kind:kind};
+    var p=await collectRawHagumonoCandidates(kind,count,ctx);
+    /* 大業物を使う2モードだけ、業物に実際に出る同一候補を除外する。 */
+    if(kind==='all'&&kinds.all){
+      var local=localPayload||await collectRawHagumonoCandidates('local',count,ctx),localSet=new Set();
+      (local.list||[]).forEach(function(item){localSet.add(candidateSignature(item));});
+      if(localSet.size)p.list=p.list.filter(function(item){return !localSet.has(candidateSignature(item));});
+    }
+    return p;
+  }
+
+  function isTransientPrecheckAbort(e){return !!(e&&(e.jinpoCancelled||e.jinpoSuperseded));}
+
+  async function runPrecheck(seq){
+    if(seq!==state.precheckSeq)return;
+    setJudging(true,false);
+    var ctx=validContext();
+    clearPrecheckPayloads();
+    setAllAvailability({localOne:false,localTwo:false,allOne:false,allTwo:false});
+    if(!ctx||seq!==state.precheckSeq){if(seq===state.precheckSeq)setJudging(false,false);return;}
+    var sig=contextSignature(ctx);
+    function stillCurrent(){var now=validContext();return seq===state.precheckSeq&&!!now&&contextSignature(now)===sig;}
+    try{
+      var kinds=hagumonoModeKinds(ctx.mode);
+      /* Worker 内の索引/一時バッファを安全に共有するため、壱→弐は直列で判定する。
+         壱の候補が確定した時点でボタンだけ先に表示し、弐の判定中は状態表示を継続する。 */
+      var local1=await collectRawHagumonoCandidates('local',1,ctx);if(!stillCurrent())return;storePrecheckPayload('local',1,ctx,local1);
+      var local2=await collectRawHagumonoCandidates('local',2,ctx);if(!stillCurrent())return;storePrecheckPayload('local',2,ctx,local2);
+      if(kinds.all){
+        var a1=await collectHagumonoCandidates('all',1,ctx,local1);if(!stillCurrent())return;storePrecheckPayload('all',1,ctx,a1);
+        var a2=await collectHagumonoCandidates('all',2,ctx,local2);if(!stillCurrent())return;storePrecheckPayload('all',2,ctx,a2);
+      }else{
+        setKindAvailable('all',1,false);setKindAvailable('all',2,false);
+      }
+      if(seq===state.precheckSeq)setJudging(false,false);
+    }catch(e){
+      if(seq===state.precheckSeq&&isTransientPrecheckAbort(e)){
+        clearPrecheckPayloads();setAllAvailability({localOne:false,localTwo:false,allOne:false,allTwo:false});setJudging(true,false);
+        clearTimeout(priorityTimer);priorityTimer=setTimeout(function(){if(seq===state.precheckSeq)runPrecheck(seq);},220);
+        return;
+      }
+      if(seq===state.precheckSeq){clearPrecheckPayloads();setAllAvailability({localOne:false,localTwo:false,allOne:false,allTwo:false});setJudging(false,true);}
+      console.error('業物・大業物候補の事前判定失敗',e);
+    }
+  }
+  function resetAvailabilityAndPayloads(){clearPrecheckPayloads();setAllAvailability({localOne:false,localTwo:false,allOne:false,allTwo:false});}
+  function schedulePrecheckAfterScroll(){var seq=++state.precheckSeq;resetAvailabilityAndPayloads();setJudging(true,false);afterScrollFinished(function(){runPrecheck(seq);});}
+  function schedulePriorityRefresh(delay){clearTimeout(priorityTimer);var seq=++state.precheckSeq;resetAvailabilityAndPayloads();setJudging(true,false);priorityTimer=setTimeout(function(){runPrecheck(seq);},delay==null?300:delay);}
+
+  function kindLabel(kind,diffCount){return kind==='all'?(diffCount===2?'大業物・弐':'大業物・壱'):(diffCount===2?'業物・弐':'業物・壱');}
+  function ensureModal(){var m=document.getElementById('step66ReachModal');if(m)return m;m=document.createElement('div');m.id='step66ReachModal';m.innerHTML='<div class="step66Box" role="dialog" aria-modal="true"><div class="step66Head"><div class="step66Title">差し替え英傑を選択</div><button type="button" class="step66Close" data-step66-close="1">閉じる</button></div><div class="step66Body"></div></div>';document.body.appendChild(m);return m;}
+  function closeModal(){var m=document.getElementById('step66ReachModal');if(m)m.classList.remove('step66Open');}
+  function hagumonoLevel(c){
+    var delta=num(c&&c.bondCount)-num(c&&c.currentBondCount);
+    if(delta>0)return {key:'up',label:'UP',css:'step66Up'};
+    if(delta===0)return {key:'flat',label:'FLAT',css:'step66Flat'};
+    return {key:'down',label:'DOWN',css:'step66Down'};
+  }
+  function hagumonoLegendHtml(){
+    return '<div class="step66ReachLegend jinpoHagumonoLegend" aria-label="業物候補の因縁数変化の色説明"><span class="step66ReachLegendItem step66ReachLegendUp"><span class="step66ReachLegendDot"></span>赤＝UP</span><span class="step66ReachLegendItem step66ReachLegendFlat"><span class="step66ReachLegendDot"></span>緑＝FLAT</span><span class="step66ReachLegendItem step66ReachLegendDown"><span class="step66ReachLegendDot"></span>青＝DOWN</span></div>';
+  }
+  function heroInfoHtml(change,c,ctx,label,showSwapName){
+    var h=heroById(change.afterId),name=heroName(h,change.afterName),cost=heroCost(h),costLabel=cost==null?'':'['+cost+']',grade3=cost!=null&&cost<=6,gradeBadgeClass=grade3?'step66Grade3LikeBadge':'step66Grade4Badge',gradeBadgeText=grade3?'等級3以下':'等級４',layoutClass=grade3?'':' step66Grade4Compact',popular=isPopular(h)?'<div class="step66PopularBadge">選抜人気</div>':'';
+    var primaryText=labelStat(ctx.pri.p1)+' '+c.currentP1.toLocaleString()+' → '+c.p1Value.toLocaleString(),secondaryText=ctx.pri.p2?(' / '+labelStat(ctx.pri.p2)+' '+c.currentP2.toLocaleString()+' → '+c.p2Value.toLocaleString()):'';
+    var gain=c.metric-ctx.currentMetric,metricText=ctx.pri.p2?('合計 '+ctx.currentMetric.toLocaleString()+' → '+c.metric.toLocaleString()):primaryText,bondText='因縁数 '+c.currentBondCount+' → '+c.bondCount+' / ',levelLabel=hagumonoLevel(c).label;
+    var heroLine=showSwapName?(String(change.slot)+'番 '+String(change.beforeName||'')+' → '+costLabel+name):(costLabel+name);
+    var detail='<div class="step66Grade4Rows'+layoutClass+'"><div class="step66HeroName">'+esc(heroLine)+'</div><div class="step66HeroMeta"><span class="step66HeroMetaMain"><span class="step66DeltaLabel">'+levelLabel+'</span><span class="jinpoHagumonoGain">'+esc(metricText)+'（+'+esc(gain.toLocaleString())+'）</span><span class="jinpoHagumonoSub">'+esc(bondText+(ctx.pri.p2?(primaryText+secondaryText):''))+'</span></span></div><div class="'+gradeBadgeClass+'">'+gradeBadgeText+'</div></div>';
+    return popular+detail;
+  }
+  function twoSwapHeroRowHtml(change,side){
+    var after=side==='after',id=after?change.afterId:change.beforeId,fallback=after?change.afterName:change.beforeName,h=heroById(id),name=heroName(h,fallback),cost=heroCost(h),costLabel=cost==null?'':'['+cost+']',grade3=cost!=null&&cost<=6,gradeBadgeClass=grade3?'step66Grade3LikeBadge':'step66Grade4Badge',gradeBadgeText=grade3?'等級3以下':'等級４';
+    var popular=isPopular(h)?'<span class="jinpoOgyomonoPopularMini">選抜人気</span>':'';
+    return '<div class="jinpoOgyomonoHeroSection"><div class="step66HeroName">'+esc(costLabel)+esc(name)+popular+'</div><div class="'+gradeBadgeClass+'">'+gradeBadgeText+'</div></div>';
+  }
+  function twoSwapSharedMetaHtml(c,ctx,side){
+    var after=side==='after',primaryBefore=labelStat(ctx.pri.p1)+' '+c.currentP1.toLocaleString(),primaryAfter=labelStat(ctx.pri.p1)+' '+c.currentP1.toLocaleString()+' → '+c.p1Value.toLocaleString(),secondaryBefore=ctx.pri.p2?(' / '+labelStat(ctx.pri.p2)+' '+c.currentP2.toLocaleString()):'',secondaryAfter=ctx.pri.p2?(' / '+labelStat(ctx.pri.p2)+' '+c.currentP2.toLocaleString()+' → '+c.p2Value.toLocaleString()):'';
+    var gain=c.metric-ctx.currentMetric,main=after?(ctx.pri.p2?('合計 '+ctx.currentMetric.toLocaleString()+' → '+c.metric.toLocaleString()+'（+'+gain.toLocaleString()+'）'):(primaryAfter+'（+'+gain.toLocaleString()+'）')):(ctx.pri.p2?('合計 '+ctx.currentMetric.toLocaleString()):primaryBefore);
+    var sub=after?('因縁数 '+c.currentBondCount+' → '+c.bondCount+(ctx.pri.p2?(' / '+primaryAfter+secondaryAfter):'')):('因縁数 '+c.currentBondCount+(ctx.pri.p2?(' / '+primaryBefore+secondaryBefore):''));
+    var label=after?hagumonoLevel(c).label:'差し替え前';
+    return '<div class="jinpoOgyomonoSharedMeta '+(after?'jinpoOgyomonoAfterMeta':'jinpoOgyomonoBeforeMeta')+'"><span class="step66DeltaLabel">'+esc(label)+'</span><span class="jinpoOgyomonoSharedMain">'+esc(main)+'</span><span class="jinpoOgyomonoSharedSub">'+esc(sub)+'</span></div>';
+  }
+  function twoSwapCombinedHtml(c,ctx){
+    var levelClass=hagumonoLevel(c).css,changes=c&&Array.isArray(c.changes)?c.changes:[];
+    if(changes.length<2)return '';
+    return '<div class="jinpoOgyomonoPairList">'
+      +'<div class="jinpoOgyomonoSide jinpoOgyomonoBeforeSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+twoSwapHeroRowHtml(changes[0],'before')+twoSwapHeroRowHtml(changes[1],'before')+'</div>'+twoSwapSharedMetaHtml(c,ctx,'before')+'</div>'
+      +'<div class="jinpoOgyomonoPairArrow" aria-hidden="true">→</div>'
+      +'<div class="jinpoOgyomonoSide jinpoOgyomonoAfterSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+twoSwapHeroRowHtml(changes[0],'after')+twoSwapHeroRowHtml(changes[1],'after')+'</div>'+twoSwapSharedMetaHtml(c,ctx,'after')+'</div>'
+      +'</div>';
+  }
+  function fitHagumonoNoWrap(root){
+    if(!root) return;
+    var modal=root.closest('#step66ReachModal'),box=modal&&modal.querySelector('.step66Box');
+    root.querySelectorAll('.jinpoHagumonoHeroCard .step66HeroName,.jinpoHagumonoHeroCard .step66HeroMetaMain').forEach(function(el){el.style.fontSize='';});
+    if(!box) return;
+    box.style.removeProperty('width');
+    box.style.removeProperty('max-width');
+    var bodyZoom=parseFloat(window.getComputedStyle(document.body).zoom)||1;
+    var twoMode=!!(modal&&modal.classList.contains('jinpoHagumonoTwoMode'));
+    if(twoMode){
+      /* PC の body zoom 後でも実表示が画面幅いっぱいになるよう逆算する。
+         2列本体は同幅カードで収め、文字縮小は比較情報が実幅を超えた時だけに限定する。 */
+      var viewportWidth=Math.max(900,Math.floor((window.innerWidth/bodyZoom)-36));
+      box.style.setProperty('width',viewportWidth+'px','important');
+      box.style.setProperty('max-width',viewportWidth+'px','important');
+      var fitTwoModeMeta=function(){
+        root.querySelectorAll('.jinpoOgyomonoSharedMeta').forEach(function(meta){
+          var label=meta.querySelector('.step66DeltaLabel'),sub=meta.querySelector('.jinpoOgyomonoSharedSub');
+          meta.style.removeProperty('font-size');
+          if(label)label.style.removeProperty('font-size');
+          if(sub)sub.style.removeProperty('font-size');
+          var base=parseFloat(window.getComputedStyle(meta).fontSize)||15;
+          var labelBase=label?(parseFloat(window.getComputedStyle(label).fontSize)||16):16;
+          var subBase=sub?(parseFloat(window.getComputedStyle(sub).fontSize)||14):14;
+          var scale=1,minScale=.80;
+          while(meta.scrollWidth>meta.clientWidth+1&&scale>minScale){
+            scale=Math.max(minScale,scale-.01);
+            meta.style.setProperty('font-size',(base*scale)+'px','important');
+            if(label)label.style.setProperty('font-size',(labelBase*scale)+'px','important');
+            if(sub)sub.style.setProperty('font-size',(subBase*scale)+'px','important');
+          }
+        });
+      };
+      if(typeof requestAnimationFrame==='function')requestAnimationFrame(fitTwoModeMeta);else setTimeout(fitTwoModeMeta,0);
+      return;
+    }
+    var applyWidth=function(){
+      var needed=Math.ceil(root.scrollWidth+28);
+      var maxWidth=Math.floor(window.innerWidth*.98);
+      var current=Math.ceil(parseFloat(window.getComputedStyle(box).width)||0);
+      if(needed>current)box.style.width=Math.min(maxWidth,needed)+'px';
+    };
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(applyWidth);else setTimeout(applyWidth,0);
+  }
+  function renderCandidates(payload){
+    var ctx=payload.ctx,list=payload.list,diffCount=payload.diffCount===2?2:1,kind=payload.kind==='all'?'all':'local',label=kindLabel(kind,diffCount),m=ensureModal(),title=m.querySelector('.step66Title'),body=m.querySelector('.step66Body');
+    m.classList.add('jinpoHagumonoMode');
+    m.classList.toggle('jinpoHagumonoTwoMode',diffCount===2);
+    var hagumonoBox=m.querySelector('.step66Box');if(hagumonoBox){hagumonoBox.style.removeProperty('width');hagumonoBox.style.removeProperty('max-width');}
+    if(title){title.textContent=label+'｜差し替え英傑候補';title.classList.add('jinpoHagumonoModalTitle');}
+    state.candidates=list;state.candidateById={};
+    if(!ctx||!list.length){body.innerHTML='<p class="small">現在適用中の組み合わせよりステータスが上昇する'+diffCount+'人差し替え候補はありません。</p>';m.classList.add('step66Open');setKindAvailable(kind,diffCount,false);return;}
+    var criterion=ctx.pri.p2?(labelStat(ctx.pri.p1)+'＋'+labelStat(ctx.pri.p2)+' 合計'):labelStat(ctx.pri.p1),gridClass=diffCount===2?'step66Grid jinpoOgyomonoGrid':'step66Grid jinpoHagumonoGrid';
+    var scopeText=kind==='all'?'現在モードの業物対象を除外した全英傑候補':'現在モード内候補';
+    var html='<div class="jinpoHagumonoSummary">'+esc(scopeText)+'｜判定基準：'+esc(criterion)+'｜現在 '+esc(ctx.currentMetric.toLocaleString())+' → より高い候補のみ表示｜'+esc(list.length)+'件</div>'+hagumonoLegendHtml()+'<div class="'+gridClass+'">';
+    list.forEach(function(c,idx){
+      var stateId=(kind==='all'?'daigyo_':'gyo_')+(diffCount===2?'2_':'1_')+idx;state.candidateById[stateId]=c;
+      var glowClass=kind==='all'?' jinpoDaigyomonoCard':' jinpoHagumonoLocalCard',levelClass=hagumonoLevel(c).css;
+      if(diffCount===1){var h=heroById(c.changes[0].afterId),cost=heroCost(h),gradeBtn=(cost!=null&&cost<=6)?' step66Grade3HeroBtn':'';html+='<button type="button" class="step66HeroBtn '+levelClass+gradeBtn+' jinpoHagumonoHeroCard'+glowClass+'" data-hagumono-candidate="'+esc(stateId)+'">'+heroInfoHtml(c.changes[0],c,ctx,label,true)+'</button>';}
+      else{html+='<button type="button" class="step66HeroBtn '+levelClass+' jinpoHagumonoHeroCard jinpoOgyomonoHeroCard'+glowClass+'" data-hagumono-candidate="'+esc(stateId)+'">'+twoSwapCombinedHtml(c,ctx)+'</button>';}
+    });
+    html+='</div>';body.innerHTML=html;m.classList.add('step66Open');fitHagumonoNoWrap(body);
+  }
+  function openHagumonoLoadingModal(kind,diffCount){
+    var m=ensureModal(),title=m.querySelector('.step66Title'),body=m.querySelector('.step66Body');
+    m.classList.add('jinpoHagumonoMode');
+    m.classList.toggle('jinpoHagumonoTwoMode',diffCount===2);
+    if(title){title.textContent=kindLabel(kind,diffCount)+'｜差し替え英傑候補';title.classList.add('jinpoHagumonoModalTitle');}
+    if(body)body.innerHTML='<div class="jinpoHagumonoSummary">候補を表示中です…</div>';
+    m.classList.add('step66Open');
+    return m;
+  }
+  function renderHagumonoPayloadSafely(payload,kind,count){
+    try{renderCandidates(payload);return true;}
+    catch(e){
+      var m=ensureModal(),body=m.querySelector('.step66Body');
+      if(body)body.innerHTML='<p class="small">候補表示に失敗しました。もう一度お試しください。</p>';
+      m.classList.add('step66Open');
+      console.error('業物候補の描画失敗',e);
+      return false;
+    }
+  }
+  async function openFullSearch(kind,diffCount){
+    var count=diffCount===2?2:1,key=payloadKey(kind,count),hit=state.precheckPayloads[key],payload=hit&&hit.payload;
+    /* ボタン押下は必ず即時にモーダルを開いて反応を見せる。
+       候補データは事前判定で保存した同一データを最優先で使用し、別検索経路は作らない。 */
+    openHagumonoLoadingModal(kind,count);
+    if(payload&&Array.isArray(payload.list)&&payload.list.length){
+      if(typeof requestAnimationFrame==='function')requestAnimationFrame(function(){renderHagumonoPayloadSafely(payload,kind,count);});
+      else setTimeout(function(){renderHagumonoPayloadSafely(payload,kind,count);},0);
+      return;
+    }
+    setJudging(true,false);
+    try{
+      var ctx=validContext();
+      if(!ctx){closeModal();setKindAvailable(kind,count,false);setJudging(false,false);return;}
+      var refreshed=await collectHagumonoCandidates(kind,count,ctx);
+      if(!refreshed||!Array.isArray(refreshed.list)||!refreshed.list.length){delete state.precheckPayloads[key];closeModal();setKindAvailable(kind,count,false);setJudging(false,false);return;}
+      storePrecheckPayload(kind,count,ctx,refreshed);setJudging(false,false);renderHagumonoPayloadSafely(refreshed,kind,count);
+    }catch(e){
+      var m=ensureModal(),body=m.querySelector('.step66Body');
+      if(body)body.innerHTML='<p class="small">候補検索に失敗しました。もう一度お試しください。</p>';
+      m.classList.add('step66Open');
+      setJudging(false,true);console.error('業物候補の表示再判定失敗',e);
+    }
+  }
+  function applyCandidate(id){var c=state.candidateById[id];if(!c)return;state.lastAppliedRow=c.row;closeModal();resetAvailabilityAndPayloads();var api=fastApi();if(api&&typeof api.applyRow==='function'){api.applyRow(c.row);return;}try{if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function')window.__jinpoScrollToRecommendSearchTopOnce('auto');}catch(e){}var run=function(){try{if(typeof window.applyDbFormationRow==='function')window.applyDbFormationRow(c.row);}catch(e){console.error('業物候補適用失敗',e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);}
+
+  function installApplyHooks(){
+    if(!state.applyWrapInstalled&&typeof window.applyDbFormationRow==='function'){
+      var oldApply=window.applyDbFormationRow;window.applyDbFormationRow=function(){var a=arguments&&arguments[0];if(a&&rowIds(a).length===6)state.lastAppliedRow=a;var ret=oldApply.apply(this,arguments);schedulePrecheckAfterScroll();return ret;};window.applyDbFormationRow.__jinpoHagumonoWrapped=true;state.applyWrapInstalled=true;
+    }
+    if(!state.reachWrapInstalled&&typeof window.applyReachSwapCandidate==='function'){
+      var oldReach=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){state.lastAppliedRow=null;var ret=oldReach.apply(this,arguments);schedulePrecheckAfterScroll();return ret;};window.applyReachSwapCandidate.__jinpoHagumonoWrapped=true;state.reachWrapInstalled=true;
+    }
+  }
+
+  function onHagumonoButtonClick(ev){
+    var b=ev&&ev.currentTarget;
+    if(!b)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if(b.id==='jinpoHagumono1Btn')openFullSearch('local',1);
+    else if(b.id==='jinpoHagumono2Btn')openFullSearch('local',2);
+    else if(b.id==='jinpoDaigyomono1Btn')openFullSearch('all',1);
+    else if(b.id==='jinpoDaigyomono2Btn')openFullSearch('all',2);
+  }
+
+  document.addEventListener('click',function(ev){
+    var cand=ev.target&&ev.target.closest?ev.target.closest('[data-hagumono-candidate]'):null;if(cand){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();applyCandidate(cand.getAttribute('data-hagumono-candidate'));return;}
+    var clear=ev.target&&ev.target.closest?ev.target.closest('#clearBtn,#dbFilterResetBtn'):null;if(clear){state.lastAppliedRow=null;state.precheckSeq++;resetAvailabilityAndPayloads();setJudging(false,false);}
+  },true);
+  document.addEventListener('change',function(ev){var t=ev.target;if(!t)return;if(t.id==='formationSelect'||t.id==='dbPriorityStat1'||t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'||t.id==='dbPriorityMax1'||t.id==='dbPriorityMax2'){schedulePriorityRefresh(180);}},true);
+  document.addEventListener('click',function(ev){
+    var modeBtn=ev.target&&ev.target.closest?ev.target.closest('#jinpoModeNormalBtn,#jinpoModeGrade3Btn,#jinpoModeBond56Btn,#jinpoSpecialModeBtn,button[data-factor4-exclude]'):null;
+    if(modeBtn)setTimeout(function(){schedulePriorityRefresh(0);},0);
+  },true);
+  window.addEventListener('jinpo:recommend-state',function(){schedulePriorityRefresh(120);});
+  window.addEventListener('jinpo:recommend-priority-sync',function(){schedulePriorityRefresh(120);});
+  window.addEventListener('jinpo:bond56-mode',function(){schedulePriorityRefresh(0);});
+  window.addEventListener('jinpo:selected-grade3-mode',function(){schedulePriorityRefresh(0);});
+
+  function install(){installApplyHooks();watchReach();ensureButtons();setTimeout(function(){installApplyHooks();schedulePriorityRefresh(0);},250);setTimeout(installApplyHooks,1200);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+  window.__jinpoHagumono={precheck:function(){schedulePrecheckAfterScroll();},collectOne:function(){return collectHagumonoCandidates('local',1);},collectTwo:function(){return collectHagumonoCandidates('local',2);},collectGreatOne:function(){return collectHagumonoCandidates('all',1);},collectGreatTwo:function(){return collectHagumonoCandidates('all',2);},refreshButton:function(){schedulePriorityRefresh(0);}};
+})();
+</script>
+
+
+
+<script id="jinpo-hagumono-guide-notice-script-20260927">
+(function(){
+  'use strict';
+  if(window.__jinpoHagumonoGuideNoticeInstalled) return;
+  window.__jinpoHagumonoGuideNoticeInstalled=true;
+  var positionRaf=0;
+
+  function anyVisible(){
+    var root=document.getElementById('reachList');
+    if(!root) return false;
+    var btns=root.querySelectorAll('#jinpoHagumono1Btn,#jinpoHagumono2Btn,#jinpoDaigyomono1Btn,#jinpoDaigyomono2Btn');
+    for(var i=0;i<btns.length;i++){
+      var b=btns[i];
+      if(!b.hidden && b.classList.contains('jinpoHagumonoAvailable')) return true;
+    }
+    return false;
+  }
+  function documentOffset(el){
+    var x=0,y=0,node=el;
+    while(node){
+      x+=Number(node.offsetLeft)||0;
+      y+=Number(node.offsetTop)||0;
+      node=node.offsetParent;
+    }
+    return {left:x,top:y};
+  }
+  function positionRightGuide(){
+    positionRaf=0;
+    var guide=document.getElementById('jinpoHagumonoGuideNotice');
+    var panel=document.querySelector('.formationMiniPanel');
+    var form=document.getElementById('formationView');
+    if(!guide||!panel||!form) return false;
+
+    /* 刮目ガイドは1経路のみ。body直下のdocument絶対座標に置くことで、
+       おすすめ表示のstacking contextより前へ出しつつ、fixed追従はさせない。 */
+    if(guide.parentNode!==document.body) document.body.appendChild(guide);
+
+    var pr=panel.getBoundingClientRect();
+    var scaleY=(panel.offsetHeight>0&&pr.height>0)?pr.height/panel.offsetHeight:1;
+    if(!Number.isFinite(scaleY)||scaleY<=0) scaleY=1;
+    var maxBottomCss=0;
+    form.querySelectorAll('.fslot').forEach(function(card){
+      var r=card.getBoundingClientRect();
+      if(r.width&&r.height) maxBottomCss=Math.max(maxBottomCss,(r.bottom-pr.top)/scaleY);
+    });
+    var localTop=Math.max(0,Math.ceil(maxBottomCss+12));
+    var origin=documentOffset(panel);
+    var guideW=guide.offsetWidth||390;
+    var left=Math.max(origin.left,origin.left+panel.offsetWidth-guideW-8);
+    guide.style.left=Math.round(left)+'px';
+    guide.style.top=Math.round(origin.top+localTop)+'px';
+    return true;
+  }
+  function schedulePosition(){
+    if(positionRaf) cancelAnimationFrame(positionRaf);
+    positionRaf=requestAnimationFrame(positionRightGuide);
+  }
+  function sync(){
+    var on=anyVisible();
+    var guide=document.getElementById('jinpoHagumonoGuideNotice');
+    var phrase=document.getElementById('jinpoHagumonoPhraseNotice');
+    var filterNotice=document.getElementById('jinpoHagumonoFilterNotice');
+    if(!on){
+      if(guide){guide.hidden=true;guide.style.visibility='';}
+      if(phrase) phrase.hidden=true;
+      if(filterNotice) filterNotice.hidden=true;
+      document.body.classList.remove('jinpo-hagumono-guide-active');
+      return;
+    }
+
+    /* 初回だけ元DOM位置に一瞬描画されるのを防ぐ。
+       先に不可視状態でbody直下へ移動・座標確定し、最後にだけ可視化する。 */
+    if(guide){
+      if(guide.parentNode!==document.body) document.body.appendChild(guide);
+      guide.style.visibility='hidden';
+    }
+    document.body.classList.add('jinpo-hagumono-guide-active');
+    if(guide){
+      guide.hidden=false;
+      positionRightGuide();
+      guide.style.visibility='';
+    }
+    if(phrase) phrase.hidden=false;
+    if(filterNotice) filterNotice.hidden=false;
+  }
+  window.__jinpoSyncHagumonoGuideNotice=sync;
+  window.addEventListener('resize',schedulePosition,{passive:true});
+  window.addEventListener('orientationchange',schedulePosition,{passive:true});
+  window.addEventListener('jinpo:recommend-state',schedulePosition);
+  var form=document.getElementById('formationView');
+  if(form && typeof MutationObserver==='function'){
+    new MutationObserver(schedulePosition).observe(form,{childList:true,subtree:false,attributes:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync,{once:true});
+  else sync();
+})();
+</script>
+
+<style id="jinpo-swap-modal-wide-nowrap-20260927">
+/* モーダル共通ルール：横スクロール・文字改行は禁止。
+   通常の差し替えカード本体の幅・余白・内部グリッドは元の step66 定義をそのまま使う。 */
+#step66ReachModal .step66Body{
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+#step66ReachModal .step66Title,
+#step66ReachModal .step66Close,
+#step66ReachModal .step66Body,
+#step66ReachModal .step66Body *{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+}
+#step66ReachModal .step66Grade3LikeBadge{
+  white-space:nowrap !important;
+}
+#step66ReachModal .jinpoHagumonoSummary{
+  overflow:hidden !important;
+  text-overflow:clip !important;
+  font-size:12px !important;
+}
+</style>
+
+
+<style id="jinpo-two-swap-paired-cards-20260927">
+/* 業物・弐／大業物・弐：2人分を上下2区画の1枚カードに統合。
+   左=差し替え前2人、右=差し替え後2人。共通文言は各側1回だけ大きく表示する。 */
+#step66ReachModal .step66Grid.jinpoOgyomonoGrid{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  grid-auto-flow:row !important;
+  justify-content:center !important;
+  align-items:start !important;
+  gap:8px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:2510px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  box-sizing:border-box !important;
+}
+#step66ReachModal .jinpoOgyomonoHeroCard{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding:5px !important;
+  background:transparent !important;
+  border-color:transparent !important;
+  box-sizing:border-box !important;
+}
+#step66ReachModal .jinpoOgyomonoPairList{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) !important;
+  align-items:start !important;
+  column-gap:3px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+#step66ReachModal .jinpoOgyomonoSide{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  align-items:start !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+#step66ReachModal .jinpoOgyomonoCombinedCard{
+  position:relative !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  padding:0 !important;
+  box-sizing:border-box !important;
+  border-radius:9px !important;
+  overflow:hidden !important;
+  color:#f4ead2 !important;
+  text-align:left !important;
+}
+#step66ReachModal .jinpoOgyomonoCombinedCard.step66Up{border:2px solid #e25353 !important;background:rgba(125,25,25,.42) !important;}
+#step66ReachModal .jinpoOgyomonoCombinedCard.step66Flat{border:2px solid #50b56c !important;background:rgba(25,100,48,.38) !important;}
+#step66ReachModal .jinpoOgyomonoCombinedCard.step66Down{border:2px solid #4f91df !important;background:rgba(24,70,125,.42) !important;}
+#step66ReachModal .jinpoOgyomonoHeroSection{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 62px !important;
+  align-items:center !important;
+  column-gap:4px !important;
+  min-height:48px !important;
+  padding:6px 5px !important;
+  box-sizing:border-box !important;
+}
+#step66ReachModal .jinpoOgyomonoHeroSection + .jinpoOgyomonoHeroSection{
+  border-top:2px solid rgba(255,255,255,.28) !important;
+}
+#step66ReachModal .jinpoOgyomonoHeroSection .step66HeroName{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+  color:#ffe1a1 !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+#step66ReachModal .jinpoOgyomonoHeroSection .step66Grade3LikeBadge,
+#step66ReachModal .jinpoOgyomonoHeroSection .step66Grade4Badge{
+  grid-column:2 !important;
+  grid-row:1 !important;
+  align-self:stretch !important;
+  min-width:62px !important;
+  min-height:36px !important;
+  padding:2px !important;
+  border-radius:7px !important;
+  white-space:nowrap !important;
+}
+#step66ReachModal .jinpoOgyomonoHeroSection .step66Grade4Badge{font-size:14px !important;}
+#step66ReachModal .jinpoOgyomonoHeroSection .step66Grade3LikeBadge{font-size:13px !important;}
+#step66ReachModal .jinpoOgyomonoPopularMini{
+  display:inline-block !important;
+  margin-left:7px !important;
+  padding:2px 5px !important;
+  border:1px solid #ffe16a !important;
+  border-radius:5px !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  color:#fff6b7 !important;
+  background:rgba(143,16,85,.78) !important;
+  white-space:nowrap !important;
+  vertical-align:middle !important;
+}
+#step66ReachModal .jinpoOgyomonoPairArrow{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:22px !important;
+  min-width:22px !important;
+  height:98px !important;
+  color:#fff6a8 !important;
+  font-size:25px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  text-shadow:0 0 8px rgba(255,230,100,.36) !important;
+}
+#step66ReachModal .jinpoOgyomonoSharedMeta{
+  display:flex !important;
+  width:100% !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:3px !important;
+  margin-top:6px !important;
+  min-height:30px !important;
+  padding:5px !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  border-radius:7px !important;
+  background:rgba(0,0,0,.28) !important;
+  color:#f2e4c6 !important;
+  font-size:15px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  overflow-wrap:normal !important;
+}
+#step66ReachModal .jinpoOgyomonoSharedMeta .step66DeltaLabel{
+  flex:0 0 auto !important;
+  font-size:16px !important;
+  font-weight:1000 !important;
+}
+#step66ReachModal .jinpoOgyomonoSharedMain{flex:0 0 auto !important;color:#f4ead2 !important;}
+#step66ReachModal .jinpoOgyomonoSharedSub{flex:0 0 auto !important;color:#d9c9a6 !important;font-size:14px !important;}
+#step66ReachModal .jinpoOgyomonoBeforeMeta .step66DeltaLabel{color:#ffb3b3 !important;}
+
+/* 2人差し替え時は差し替え前／後を同幅に固定し、候補2枚がモーダル内へ収まる幅で中央2列表示。
+   1920～2048px級では文字サイズを維持し、狭い画面で比較情報だけ必要最小限に縮める。 */
+#step66ReachModal.jinpoHagumonoTwoMode{padding-left:4px !important;padding-right:4px !important;}
+#step66ReachModal.jinpoHagumonoTwoMode .step66Head{padding:10px 12px !important;}
+#step66ReachModal.jinpoHagumonoTwoMode .step66Body{padding:8px !important;}
+#step66ReachModal.jinpoHagumonoTwoMode .step66Box{border-radius:12px !important;}
 </style>
 
 </body>

@@ -135,13 +135,18 @@
   function hasAnyHero(dv,base,ids){for(var j=0;j<ids.length;j++)if(hasHero(dv,base,ids[j]))return true;return false;}
   function statAt(dv,base,stat){var o=STAT_OFFSETS[stat];return o==null?0:dv.getUint16(base+o,true);}
   function totalAt(dv,base){return dv.getUint32(base+43,true);}function tieAt(dv,base){return dv.getUint32(base+48,true);}
-  function better(dv,a,b,rules){
-    for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=metricStat(dv,a,k),bv=metricStat(dv,b,k);if(av!==bv)return av>bv;}
+  function better(dv,a,b,rules,sumSort){
+    if(sumSort&&sumSort.enabled&&sumSort.stat1&&sumSort.stat2){
+      var a1=metricStat(dv,a,sumSort.stat1),a2=metricStat(dv,a,sumSort.stat2),b1=metricStat(dv,b,sumSort.stat1),b2=metricStat(dv,b,sumSort.stat2),as=a1+a2,bs=b1+b2;
+      if(as!==bs)return as>bs;if(a1!==b1)return a1>b1;if(a2!==b2)return a2>b2;
+    }else{
+      for(var i=0;i<rules.length;i++){var k=rules[i]&&rules[i].stat;if(!k)continue;var av=metricStat(dv,a,k),bv=metricStat(dv,b,k);if(av!==bv)return av>bv;}
+    }
     var at=metricTotal(dv,a),bt=metricTotal(dv,b);if(at!==bt)return at>bt;return tieAt(dv,a)<tieAt(dv,b);
   }
-  function worse(dv,a,b,rules){return better(dv,b,a,rules);}
-  function heapPush(heap,off,dv,rules){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules))break;var x=heap[i];heap[i]=heap[p];heap[p]=x;i=p;}}
-  function heapDown(heap,i,dv,rules){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules))w=r;if(w===i)return;var x=heap[i];heap[i]=heap[w];heap[w]=x;i=w;}}
+  function worse(dv,a,b,rules,sumSort){return better(dv,b,a,rules,sumSort);}
+  function heapPush(heap,off,dv,rules,sumSort){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules,sumSort))break;var x=heap[i];heap[i]=heap[p];heap[p]=x;i=p;}}
+  function heapDown(heap,i,dv,rules,sumSort){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules,sumSort))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules,sumSort))w=r;if(w===i)return;var x=heap[i];heap[i]=heap[w];heap[w]=x;i=w;}}
   function materialize(dv,base,q,m,rowIndex,source){
     var names=[],numericIds=[],internalIds=[];
     for(var i=0;i<6;i++){var id=dv.getUint16(base+i*2,true);numericIds.push(id);internalIds.push(eikInternalId(id));names.push((m.hero_names||[])[id]||('英傑#'+id));}
@@ -273,7 +278,9 @@
     var data=await loadData(q,token,false),dv=data.dv,rec=data.recSize;
     var owned=ownedGroups(q,m),excluded=excludedIds(q,m);
     if(owned.some(function(g){return !g.length;}))return {rows:[],scanned:data.rows,matched:0,ms:performance.now()-started,info:data.info};
+    var nearIds=exactIds(q.nearCurrentIds||[]),nearMinSame=Math.max(0,Math.min(6,Number(q.nearMinSame||0)||0)),nearSet=nearIds.length?new Set(nearIds):null;
     var rawRules=Array.isArray(q.rules)?q.rules:[],rules=[],thresholds=[];rawRules.forEach(function(r){if(!r||!r.stat)return;rules.push({stat:String(r.stat)});var minN=Number(r.threshold),maxN=Number(r.maxThreshold),hasMin=r.threshold!==null&&r.threshold!==''&&Number.isFinite(minN),hasMax=r.maxThreshold!==null&&r.maxThreshold!==''&&Number.isFinite(maxN);if(hasMin||hasMax)thresholds.push({stat:String(r.stat),min:hasMin?minN:null,max:hasMax?maxN:null});});
+    var rawSum=q.sumSort||{},sumSort={enabled:!!(rawSum.enabled&&STAT_OFFSETS[String(rawSum.stat1||'')]!=null&&STAT_OFFSETS[String(rawSum.stat2||'')]!=null),stat1:String(rawSum.stat1||''),stat2:String(rawSum.stat2||'')};
     var f4max=(q.factor4Max===null||q.factor4Max===undefined||q.factor4Max==='')?null:Number(q.factor4Max),limit=Math.max(1,Number(q.limit||500)||500),heap=[],matched=0,base=16;
     var fullInfo=fullDatasetInfo(m,q),noFilters=owned.length===0&&excluded.length===0&&thresholds.length===0&&f4max===null;
     var matchedOverride=null;
@@ -290,14 +297,15 @@
 
     for(var idx=0;idx<data.rows;idx++,base+=rec){
       var ok=true;
+      if(nearSet&&nearMinSame>0){var same=0;for(var ni=0;ni<6;ni++)if(nearSet.has(dv.getUint16(base+ni*2,true)))same++;if(same<nearMinSame)ok=false;}
       for(var oi=0;oi<owned.length&&ok;oi++)if(!hasAnyHero(dv,base,owned[oi]))ok=false;
       for(var ei=0;ei<excluded.length&&ok;ei++)if(hasHero(dv,base,excluded[ei]))ok=false;
       if(ok&&f4max!==null){var f4=dv.getUint8(base+47);if(f4===255||f4>f4max)ok=false;}
       for(var ti=0;ti<thresholds.length&&ok;ti++){var range=thresholds[ti],value=metricStat(dv,base,range.stat);if(range.min!==null&&value<range.min)ok=false;if(range.max!==null&&value>range.max)ok=false;}
       if(!ok)continue;matched++;
-      if(heap.length<limit)heapPush(heap,base,dv,rules);else if(better(dv,base,heap[0],rules)){heap[0]=base;heapDown(heap,0,dv,rules);}
+      if(heap.length<limit)heapPush(heap,base,dv,rules,sumSort);else if(better(dv,base,heap[0],rules,sumSort)){heap[0]=base;heapDown(heap,0,dv,rules,sumSort);}
     }
-    heap.sort(function(a,b){return better(dv,a,b,rules)?-1:(better(dv,b,a,rules)?1:0);});
+    heap.sort(function(a,b){return better(dv,a,b,rules,sumSort)?-1:(better(dv,b,a,rules,sumSort)?1:0);});
     var rows=heap.map(function(off){return materialize(dv,off,q,m,Math.floor((off-16)/rec),sourceLabel(data.info));});
     return {rows:rows,scanned:(matchedOverride===null?data.rows:Number(fullInfo&&fullInfo.rows||data.rows)),matched:(matchedOverride===null?matched:matchedOverride),ms:performance.now()-started,info:data.info,sourceType:q.sourceType||'full'};
   }
