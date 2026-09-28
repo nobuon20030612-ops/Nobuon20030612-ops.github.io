@@ -360,7 +360,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 #jinpoRecommendSumGuide{font-size:22px !important;}
 
 .dbPriorityValueChoice{
-  font-size:14px !important;
+  font-size:18px !important;
   padding:8px 1px !important;
   display:flex !important;
   flex-direction:row !important;
@@ -2192,7 +2192,7 @@ renderDbStatButtons();
 function dbThresholdValuesForStat(stat){
 if(!stat) return [];
 /* 優先ソートの表示ボタンと検索用selectは必ず同じ正式値を使う。 */
-if(stat === "生命" || stat === "気合") return [20000,18000,16000,14000,12000,10000,8000,6000,4000,2000];
+if(stat === "生命" || stat === "気合") return [16000,14000,12000,10000,8000,6000,4000,2000];
 return [1600,1400,1200,1000,800,600,400,200];
 }
 function populateDbPriorityControls(){
@@ -7033,7 +7033,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     {value:"火属性", label:"火"},
     {value:"風属性", label:"風"}
   ];
-  var LARGE_VALUES = [20000,18000,16000,14000,12000,10000,8000,6000,4000,2000];
+  var LARGE_VALUES = [20000,17500,15000,12500,10000,7500,5000,2500];
   var NORMAL_VALUES = [1600,1400,1200,1000,800,600,400,200];
   var recommendLock = {active:false,targetStat:""};
   var recommendPrimaryConfirmPending = false;
@@ -10365,5 +10365,21 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
 </style>
 
 
+
+<style id="jinpo-active-bond-card-compact-v4">
+/* 現在発動中因縁：左側の陣形カードのみ、全4陣形共通で追加小型化。 */
+#jinpoActiveBondModal .jinpoBondFormationDiagram .jinpoBondDiagramSlot{
+  width:108px !important;
+  height:58px !important;
+  min-height:58px !important;
+}
+@media(max-width:760px){
+  #jinpoActiveBondModal .jinpoBondFormationDiagram .jinpoBondDiagramSlot{
+    width:86px !important;
+    height:50px !important;
+    min-height:50px !important;
+  }
+}
+</style>
 </body>
 </html>
