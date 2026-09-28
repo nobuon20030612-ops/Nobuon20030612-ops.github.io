@@ -5638,7 +5638,10 @@ body{padding-top:0 !important;}
     tip = document.createElement('div');
     tip.id = 'jinpoHeroNameHoverFullTip';
     tip.setAttribute('role','tooltip');
-    document.body.appendChild(tip);
+    /* body はPC表示で zoom:0.67 のため、fixed座標のツールチップを body 配下に置くと
+       getBoundingClientRect() のビューポート座標と表示座標がずれる。
+       zoom の影響を受けない html 直下へ1個だけ配置する。 */
+    document.documentElement.appendChild(tip);
     return tip;
   }
 
