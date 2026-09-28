@@ -587,8 +587,7 @@ def main():
             "+'@@excluded='+excluded.join(',')",
             "(!grade3||hCost(h)<=6)", '__jinpoGetExcludedHeroInternalIds', 'function excludedIdSet66',
             'source:"current_result_db_exact"', 'function lookupReachSwapExactDbRow',
-            'if(stat === "生命" || stat === "気合") return [20000,17500,15000,12500,10000,7500,5000,2500];',
-            'return [1600,1400,1200,1000,800,600,400,200];',
+            # 優先ソート閾値は下段の構文監査で検証する（空白・改行だけの変更では落とさない）。
             'function findHeroByInternalId', 'heroFactor4IdentityKey', 'data-hero-internal-id',
             'Number(a.heroIndex) === rel', 'function activatedLinesText(act)',
             'return lookupPromise;', 'swapApplySeq=0', 'Promise.resolve(ret).catch',
@@ -680,6 +679,18 @@ def main():
         for frag in fragments:
             if frag not in texts[name]:
                 fail(f'検索/適用/差替の確定済み回帰ガード欠落: {name}: {frag}', report)
+    # 優先ソート閾値の現行仕様を意味で監査する。
+    # 生命・気合: 20000から2500刻みの8種類 / その他: 1600から200刻みの8種類。
+    # ソース整形（空白・改行）の差だけでは回帰ガードを落とさない。
+    priority_threshold_match = re.search(
+        r'if\s*\(\s*stat\s*===\s*["\']生命["\']\s*\|\|\s*stat\s*===\s*["\']気合["\']\s*\)'
+        r'\s*return\s*\[\s*20000\s*,\s*17500\s*,\s*15000\s*,\s*12500\s*,\s*10000\s*,\s*7500\s*,\s*5000\s*,\s*2500\s*\]\s*;'
+        r'.*?return\s*\[\s*1600\s*,\s*1400\s*,\s*1200\s*,\s*1000\s*,\s*800\s*,\s*600\s*,\s*400\s*,\s*200\s*\]\s*;',
+        index_text, re.S
+    )
+    if not priority_threshold_match:
+        fail('優先ソート閾値仕様が不一致: 生命・気合=20000〜2500(2500刻み)／その他=1600〜200(200刻み)', report)
+
 
     # 見聞録の職業判定は、過去に確定した通り英傑マスタ「職業」列を直接見る。
     hero_job_match = re.search(r'function\s+heroJob\s*\(hero\)\s*\{(?P<body>.*?)\n\s*\}', index_text, re.S)
