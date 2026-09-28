@@ -517,7 +517,7 @@
     style.textContent = [
       '#jinpoBondNavActions{width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:-4px 0 10px 0;box-sizing:border-box;}',
       '#jinpoRecommendSearchOrderRow{display:grid;grid-template-columns:132px minmax(0,1fr) 132px;align-items:center;gap:8px;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 8px 0;}',
-      '#jinpoRecommendSearchOrderNote{display:block;grid-column:2;min-width:0;width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:8px 14px 6px;color:#ffe27a;font-size:clamp(24px,2vw,34px);font-weight:1000;line-height:1.25;letter-spacing:.035em;text-align:center;white-space:nowrap;pointer-events:none;text-shadow:-1px -1px 0 rgba(0,0,0,.95),1px -1px 0 rgba(0,0,0,.95),-1px 1px 0 rgba(0,0,0,.95),1px 1px 0 rgba(0,0,0,.95),0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.85);}',
+      '#jinpoRecommendSearchOrderNote{display:block;grid-column:2;min-width:0;width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:6px 8px 5px;color:#ffe27a;font-size:clamp(30px,2.65vw,44px);font-weight:1000;line-height:1.12;letter-spacing:.012em;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;text-shadow:-1px -1px 0 rgba(0,0,0,.95),1px -1px 0 rgba(0,0,0,.95),-1px 1px 0 rgba(0,0,0,.95),1px 1px 0 rgba(0,0,0,.95),0 0 6px rgba(255,255,220,.88),0 0 14px rgba(255,215,74,.82),0 0 24px rgba(255,181,32,.50),0 2px 0 rgba(0,0,0,.85);}',
       '#jinpoRecommendSearchOrderRow #jinpoBackBtn.jinpoBackBtn{grid-column:3;justify-self:end;margin:0 !important;}',
       '#jinpoRecommendNav{--jinpo-group-accent:#ffd463;--jinpo-group-glow:rgba(255,202,58,.52);--jinpo-group-soft:rgba(255,232,155,.14);position:relative;display:flex;align-items:center;gap:5px;flex:1 1 720px;min-width:0;flex-wrap:nowrap;padding:6px 7px;border:4px solid var(--jinpo-group-accent);border-radius:14px;background:linear-gradient(180deg,rgba(84,48,8,.38),rgba(24,13,4,.58));box-shadow:0 0 16px 2px var(--jinpo-group-glow),0 0 34px rgba(255,184,39,.34),inset 0 0 0 1px rgba(255,239,183,.22),inset 0 0 16px var(--jinpo-group-soft);box-sizing:border-box;isolation:isolate;animation:jinpoRecommendGroupGlow 1.65s ease-in-out infinite alternate;}',
       'body.jinpo-search-mode-normal{background:#120d09 url("assets/jinpo-normal-mode-bg.png") center top/cover no-repeat fixed!important;}',
@@ -899,7 +899,7 @@
     if(!searchOrderNote){
       searchOrderNote=document.createElement('div');
       searchOrderNote.id='jinpoRecommendSearchOrderNote';
-      searchOrderNote.textContent='おすすめ検索は【全陣形 】で高い順検索になります';
+      searchOrderNote.textContent='おすすめ検索は【全陣形】で高い順検索になります';
     }
     var searchOrderRow=document.getElementById('jinpoRecommendSearchOrderRow');
     if(!searchOrderRow){
