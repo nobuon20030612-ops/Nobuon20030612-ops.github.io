@@ -2943,8 +2943,19 @@ const factorUseHtml=jinpoFactorUseBadgesHtml(jinpoCleanFactorUseMap[s]);
 div.className = "fslot" + (h ? "" : " emptySlot") + (h ? (cleanIsGrade3Hero(h) ? " jinpoGrade3HeroCard" : " jinpoGrade4HeroCard") : "") + (factorUseHtml ? " factorUseBadgesReady" : "");
 div.style.left = p.x + "px";
 div.style.top = p.y + "px";
-div.innerHTML = `<strong>${s}</strong><br><span class="jinpoFormationHeroName">${cleanEsc(cleanHeroName(h))}</span><br><span class="small jinpoFormationFactorLine">${cleanHeroFactorsHtml(h)}</span>${factorUseHtml}`;
+div.innerHTML = `<span class="jinpoFormationSlotNo">${s}</span><span class="jinpoFormationHeroName">${cleanEsc(cleanHeroName(h))}</span><br><span class="small jinpoFormationFactorLine">${cleanHeroFactorsHtml(h)}</span>${factorUseHtml}`;
 root.appendChild(div);
+/* 英傑名は20pxを基準にし、カード枠を超える場合だけ必要量まで縮小する。 */
+const __heroName=div.querySelector('.jinpoFormationHeroName');
+if(__heroName){
+const __heroBase=Math.max(1,parseFloat(getComputedStyle(__heroName).fontSize)||20);
+const __heroAvailable=Math.max(1,__heroName.clientWidth||0);
+const __heroNeeded=Math.max(1,__heroName.scrollWidth||0);
+if(__heroNeeded>__heroAvailable+0.5){
+const __heroFit=Math.max(12,Math.min(__heroBase,__heroBase*__heroAvailable/__heroNeeded));
+__heroName.style.setProperty('font-size',__heroFit.toFixed(2)+'px','important');
+}
+}
 /* 最長因子でも1行を維持する。枠幅だけで足りない場合は、この因子文字列だけを必要量まで縮小する。 */
 const __factorLine=div.querySelector('.small');
 if(__factorLine){
@@ -8689,8 +8700,27 @@ function observe(){
   box-sizing:border-box !important;
   line-height:1.08 !important;
 }
-#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot strong{
-  font-size:15px !important;
+#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .jinpoFormationSlotNo{
+  position:absolute !important;
+  left:9px !important;
+  top:9px !important;
+  margin:0 !important;
+  font-size:16px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+}
+#dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .jinpoFormationHeroName{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  padding:0 3px 0 23px !important;
+  box-sizing:border-box !important;
+  font-size:20px !important;
+  line-height:1.05 !important;
+  font-weight:1000 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
 }
 #dbCountBrowserCard .dbFormationSelectTop>.formationMiniPanel #formationView .fslot .small{
   display:block !important;
