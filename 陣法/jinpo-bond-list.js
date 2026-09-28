@@ -20,16 +20,16 @@
      判定ラインは JINPO_FORMATION_CONFIG の activeLines を正本とし、ここでは表示座標だけを保持する。 */
   var ACTIVE_FORMATION_VIEW = {
     '衡軛': {
-      slots:{1:{x:32,y:18},4:{x:68,y:18},2:{x:32,y:50},5:{x:68,y:50},3:{x:32,y:82},6:{x:68,y:82}}
+      slots:{1:{x:32,y:18},4:{x:68,y:18},2:{x:32,y:50},5:{x:68,y:50},3:{x:32,y:80},6:{x:68,y:80}}
     },
     '鶴翼': {
-      slots:{1:{x:18,y:18},4:{x:82,y:18},2:{x:30,y:50},5:{x:70,y:50},3:{x:24,y:82},6:{x:76,y:82}}
+      slots:{1:{x:18,y:18},4:{x:82,y:18},2:{x:30,y:50},5:{x:70,y:50},3:{x:24,y:80},6:{x:76,y:80}}
     },
     '魚鱗': {
-      slots:{1:{x:50,y:8},6:{x:30,y:48},2:{x:70,y:48},5:{x:16,y:86},4:{x:50,y:86},3:{x:84,y:86}}
+      slots:{1:{x:50,y:12},6:{x:30,y:48},2:{x:70,y:48},5:{x:16,y:84},4:{x:50,y:84},3:{x:84,y:84}}
     },
     '方円': {
-      slots:{2:{x:50,y:10},1:{x:30,y:36},3:{x:70,y:36},6:{x:30,y:66},4:{x:70,y:66},5:{x:50,y:90}}
+      slots:{2:{x:50,y:13},1:{x:30,y:36},3:{x:70,y:36},6:{x:30,y:64},4:{x:70,y:64},5:{x:50,y:85}}
     }
   };
 
@@ -658,10 +658,10 @@
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine{opacity:.10;filter:none;}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine.is-hover{stroke:#ffd75c;stroke-width:6;opacity:1;filter:drop-shadow(0 0 7px #ffcf45) drop-shadow(0 0 13px rgba(255,102,56,.70));}',
       /* 2026-09-28: 発動中因縁モーダル左側カードを全4陣形共通で約8%小型化。PCのbody zoom(.67)を含む実表示で確認する。 */
-      '.jinpoBondDiagramSlot{position:absolute;width:132px;min-height:74px;box-sizing:border-box;padding:6px 5px;border:1px solid #80602b;border-radius:10px;background:#18110b;color:#f4ead2;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
-      '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:13px;line-height:1.05;}',
-      '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:11px;font-weight:800;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;color:#cdbb96;line-height:1.16;max-height:19px;overflow:hidden;}',
+      '.jinpoBondDiagramSlot{position:absolute;width:92px;height:50px;min-height:50px;box-sizing:border-box;padding:3px 4px;border:1px solid #80602b;border-radius:9px;background:#18110b;color:#f4ead2;text-align:center;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
+      '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:11px;line-height:1;}',
+      '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:9px;font-weight:800;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:6.5px;color:#cdbb96;line-height:1.05;max-height:14px;overflow:hidden;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadges{display:flex;align-items:center;justify-content:center;gap:2px;min-height:12px;margin:1px 0;white-space:nowrap;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadges[hidden]{display:none!important;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadge{display:inline-flex;align-items:center;justify-content:center;min-height:11px;padding:1px 3px;border-radius:999px;border:1px solid rgba(231,189,92,.75);font-size:7px;line-height:1;font-weight:1000;box-sizing:border-box;}',
@@ -685,7 +685,7 @@
       '.jinpoBondActiveNoLine{color:#bba985;font-weight:700;}',
       '.jinpoBondActiveCard .jinpoBondFactors{margin-top:4px;}',
       '@media(max-width:900px){#jinpoActiveBondModal{height:96vh}#jinpoActiveBondModal .jinpoActiveBondModalBody{flex:1;min-height:0;overflow:hidden}.jinpoBondActiveLayout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;box-sizing:border-box}.jinpoBondFormationDiagram{height:min(410px,40vh);min-height:min(410px,40vh)}.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;align-self:stretch}.jinpoBondActiveCards{flex:1;min-height:0;max-height:none;overflow:auto}}',
-      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:104px;min-height:64px;padding:4px 3px}.jinpoBondDiagramSlot strong{font-size:11px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:9px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:7px;max-height:16px}.jinpoBondDiagramSlot .jinpoBondUseBadges{min-height:10px;margin:1px 0}.jinpoBondDiagramSlot .jinpoBondUseBadge{min-height:9px;padding:1px 2px;font-size:6.5px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
+      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:78px;height:44px;min-height:44px;padding:2px 3px}.jinpoBondDiagramSlot strong{font-size:11px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:9px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:7px;max-height:16px}.jinpoBondDiagramSlot .jinpoBondUseBadges{min-height:10px;margin:1px 0}.jinpoBondDiagramSlot .jinpoBondUseBadge{min-height:9px;padding:1px 2px;font-size:6.5px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
       '@media(max-width:560px){.jinpoBondModalHeader{padding:11px 10px}.jinpoBondModalHeader h3{font-size:18px}#jinpoBondModalClose{min-width:92px;height:40px;padding:0 10px;gap:6px;font-size:13px}#jinpoBondModalClose .jinpoBondCloseIcon{width:20px;height:20px;font-size:18px}}',
       '.jinpoBondTable{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:14px;}',
       '.jinpoBondTable th{position:sticky;top:0;z-index:2;padding:10px 8px;text-align:left;background:#171008;color:#d9bd82;border-bottom:1px solid #80602b;}',
@@ -1249,7 +1249,7 @@
     for(var slot=1;slot<=6;slot++){
       var pos = cfg.slots[slot];
       if(!pos) continue;
-      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+slot+'" style="left:'+pos.x+'%;top:'+pos.y+'%;transform:translate(-50%,-50%) scale(.82);transform-origin:center center;">'+
+      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+slot+'" style="left:'+pos.x+'%;top:'+pos.y+'%;transform:translate(-50%,-50%);">'+
         '<strong>'+slot+'</strong><div class="jinpoBondSlotHero">'+esc(currentHeroName(slot))+'</div>'+
         renderActiveFactorUseBadges(null)+
         '<div class="jinpoBondSlotFactors">'+renderCurrentHeroFactors(slot)+'</div></div>';
