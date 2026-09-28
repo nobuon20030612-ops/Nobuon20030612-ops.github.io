@@ -253,45 +253,27 @@
     var html=renderActiveFactorUseBadgeContents(useSet);
     return '<div class="jinpoBondUseBadges" aria-label="使用因子"'+(html?'':' hidden')+'>'+html+'</div>';
   }
-  function cssPositionPercent(raw,total){
-    var v = text(raw);
-    if(!v) return null;
-    if(/%$/.test(v)){
-      var pct = parseFloat(v);
-      return Number.isFinite(pct) ? pct : null;
-    }
-    var px = parseFloat(v);
-    if(!Number.isFinite(px) || !Number.isFinite(total) || total <= 0) return null;
-    return px / total * 100;
-  }
-  function liveFormationSlotPositions(){
-    var root = document.getElementById('formationView');
-    if(!root) return null;
-    var rect = root.getBoundingClientRect ? root.getBoundingClientRect() : null;
-    var width = Number((rect && rect.width) || root.clientWidth || 0);
-    var height = Number((rect && rect.height) || root.clientHeight || 0);
-    if(width <= 0 || height <= 0) return null;
-    var slots = {};
-    Array.prototype.forEach.call(root.querySelectorAll('.fslot'),function(el){
-      var strong = el.querySelector('strong');
-      var slot = Number(text(strong && strong.textContent));
-      if(!slot || slot < 1 || slot > 6) return;
-      var x = cssPositionPercent(el.style.left,width);
-      var y = cssPositionPercent(el.style.top,height);
-      if(x == null || y == null) return;
-      slots[slot] = {x:x,y:y};
+  function scaledActiveFormationSlots(slots){
+    /*
+     * 発動中因縁モーダルは専用の陣形座標を正本にする。
+     * 形・各枠の相対配置・ライン構成は変えず、中心(50,50)を基準に全体を同率で縮小して
+     * カードとラインが黒い表示枠の内側へ収まるようにする。
+     */
+    var scale = 0.96, out = {};
+    Object.keys(slots || {}).forEach(function(key){
+      var p = slots[key] || {}, x = Number(p.x), y = Number(p.y);
+      if(!Number.isFinite(x) || !Number.isFinite(y)) return;
+      out[key] = {x:50 + (x-50)*scale, y:50 + (y-50)*scale};
     });
-    for(var i=1;i<=6;i++) if(!slots[i]) return null;
-    return slots;
+    return out;
   }
   function activeFormationConfig(){
     var formation = currentFormationName();
     var view = ACTIVE_FORMATION_VIEW[formation];
     if(!view) return null;
-    var liveSlots = liveFormationSlotPositions();
     var config = window.JINPO_FORMATION_CONFIG && window.JINPO_FORMATION_CONFIG[formation];
     var lines = config && Array.isArray(config.activeLines) ? config.activeLines : [];
-    return {slots:liveSlots || view.slots,lines:lines};
+    return {slots:scaledActiveFormationSlots(view.slots),lines:lines};
   }
 
   function syncFormationUiState(){
@@ -651,7 +633,7 @@
       '#jinpoBondSearch{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #87662f;border-radius:10px;background:#0d0906;color:#f6ecd8;font-size:16px;outline:none;}',
       '#jinpoBondSearch:focus{border-color:#e7bd5c;box-shadow:0 0 0 2px rgba(231,189,92,.16);}',
       '.jinpoBondModalBody{padding:0 16px 16px;overflow:auto;}',
-      '#jinpoActiveBondModalBackdrop{position:fixed;inset:0;z-index:10060;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;}',
+      '#jinpoActiveBondModalBackdrop{position:fixed;inset:0;z-index:2147483645;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.74);box-sizing:border-box;isolation:isolate;}',
       '#jinpoActiveBondModalBackdrop.is-open{display:flex;}',
       '#jinpoActiveBondModal{width:min(1180px,98vw);max-height:96vh;display:flex;flex-direction:column;border:2px solid #c69a49;border-radius:16px;background:linear-gradient(180deg,#22170d,#100b07);color:#f4ead2;box-shadow:0 0 32px rgba(0,0,0,.75),0 0 22px rgba(231,189,92,.18);overflow:hidden;}',
       '.jinpoActiveBondModalHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(231,189,92,.34);background:rgba(95,59,20,.30);}',
@@ -663,7 +645,7 @@
       '#jinpoActiveBondModalClose:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.38),0 0 9px rgba(241,196,92,.24);}',
       '#jinpoActiveBondModalClose:focus-visible{outline:3px solid rgba(255,218,112,.50);outline-offset:3px;}',
       '.jinpoActiveBondModalBody{padding:12px 14px 14px;overflow:hidden;flex:1;min-height:0;}',
-      '.jinpoBondActiveLayout{display:grid;grid-template-columns:minmax(540px,1.45fr) minmax(350px,.85fr);gap:14px;align-items:start;min-height:0;}',
+      '.jinpoBondActiveLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:14px;align-items:start;min-height:0;}',
       '.jinpoBondFormationPanel,.jinpoBondActiveListPanel{border:1px solid rgba(231,189,92,.30);border-radius:14px;background:rgba(10,7,4,.58);overflow:hidden;}',
       '.jinpoBondFormationHead,.jinpoBondActiveListHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(231,189,92,.24);background:rgba(90,55,19,.20);}',
       '.jinpoBondFormationHead strong,.jinpoBondActiveListHead strong{color:#ffe1a1;font-size:16px;}',
@@ -674,13 +656,14 @@
       '.jinpoBondDiagramLine.is-active{stroke:#e7bd5c;opacity:.72;filter:drop-shadow(0 0 4px rgba(231,189,92,.56));}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine{opacity:.10;filter:none;}',
       '.jinpoBondFormationDiagram.is-highlighting .jinpoBondDiagramLine.is-hover{stroke:#ffd75c;stroke-width:6;opacity:1;filter:drop-shadow(0 0 7px #ffcf45) drop-shadow(0 0 13px rgba(255,102,56,.70));}',
-      '.jinpoBondDiagramSlot{position:absolute;transform:translate(-50%,-50%);width:144px;min-height:80px;box-sizing:border-box;padding:7px 6px;border:1px solid #80602b;border-radius:11px;background:#18110b;color:#f4ead2;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
-      '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:14px;}',
-      '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-      '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:9px;color:#cdbb96;line-height:1.2;max-height:22px;overflow:hidden;}',
-      '.jinpoBondDiagramSlot .jinpoBondUseBadges{display:flex;align-items:center;justify-content:center;gap:2px;min-height:14px;margin:2px 0 1px;white-space:nowrap;}',
+      /* 2026-09-28: 発動中因縁モーダル左側カードを全4陣形共通で約8%小型化。PCのbody zoom(.67)を含む実表示で確認する。 */
+      '.jinpoBondDiagramSlot{position:absolute;width:132px;min-height:74px;box-sizing:border-box;padding:6px 5px;border:1px solid #80602b;border-radius:10px;background:#18110b;color:#f4ead2;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.34);transition:border-color .14s ease,box-shadow .14s ease,filter .14s ease,opacity .14s ease;z-index:2;}',
+      '.jinpoBondDiagramSlot strong{color:#ffe1a1;font-size:13px;line-height:1.05;}',
+      '.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:11px;font-weight:800;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+      '.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;color:#cdbb96;line-height:1.16;max-height:19px;overflow:hidden;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadges{display:flex;align-items:center;justify-content:center;gap:2px;min-height:12px;margin:1px 0;white-space:nowrap;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadges[hidden]{display:none!important;}',
-      '.jinpoBondDiagramSlot .jinpoBondUseBadge{display:inline-flex;align-items:center;justify-content:center;min-height:13px;padding:1px 4px;border-radius:999px;border:1px solid rgba(231,189,92,.75);font-size:8px;line-height:1;font-weight:1000;box-sizing:border-box;}',
+      '.jinpoBondDiagramSlot .jinpoBondUseBadge{display:inline-flex;align-items:center;justify-content:center;min-height:11px;padding:1px 3px;border-radius:999px;border:1px solid rgba(231,189,92,.75);font-size:7px;line-height:1;font-weight:1000;box-sizing:border-box;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor1{color:#baf7b7;border-color:#70d878;background:#12351a;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor2{color:#ffe47a;border-color:#e7bd5c;background:#35250d;}',
       '.jinpoBondDiagramSlot .jinpoBondUseBadge.factor3{color:#9deaff;border-color:#63d8ff;background:#0c2630;}',
@@ -700,8 +683,8 @@
       '.jinpoBondActiveLine{margin:4px 0 7px;color:#ffd75c;font-size:14px;font-weight:900;letter-spacing:.02em;}',
       '.jinpoBondActiveNoLine{color:#bba985;font-weight:700;}',
       '.jinpoBondActiveCard .jinpoBondFactors{margin-top:4px;}',
-      '@media(max-width:980px){#jinpoActiveBondModal{height:96vh}#jinpoActiveBondModal .jinpoActiveBondModalBody{flex:1;min-height:0;overflow:hidden}.jinpoBondActiveLayout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;box-sizing:border-box}.jinpoBondFormationDiagram{height:min(410px,40vh);min-height:min(410px,40vh)}.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;align-self:stretch}.jinpoBondActiveCards{flex:1;min-height:0;max-height:none;overflow:auto}}',
-      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:112px;min-height:70px;padding:5px 4px}.jinpoBondDiagramSlot strong{font-size:12px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:10px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:8px;max-height:18px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
+      '@media(max-width:900px){#jinpoActiveBondModal{height:96vh}#jinpoActiveBondModal .jinpoActiveBondModalBody{flex:1;min-height:0;overflow:hidden}.jinpoBondActiveLayout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%;min-height:0;box-sizing:border-box}.jinpoBondFormationDiagram{height:min(410px,40vh);min-height:min(410px,40vh)}.jinpoBondActiveListPanel{display:flex;flex-direction:column;min-height:0;align-self:stretch}.jinpoBondActiveCards{flex:1;min-height:0;max-height:none;overflow:auto}}',
+      '@media(max-width:760px){.jinpoBondActiveLayout{gap:10px}.jinpoBondFormationDiagram{height:min(340px,38vh);min-height:min(340px,38vh);margin:6px}.jinpoBondDiagramSlot{width:104px;min-height:64px;padding:4px 3px}.jinpoBondDiagramSlot strong{font-size:11px}.jinpoBondDiagramSlot .jinpoBondSlotHero{font-size:9px}.jinpoBondDiagramSlot .jinpoBondSlotFactors{font-size:7px;max-height:16px}.jinpoBondDiagramSlot .jinpoBondUseBadges{min-height:10px;margin:1px 0}.jinpoBondDiagramSlot .jinpoBondUseBadge{min-height:9px;padding:1px 2px;font-size:6.5px}.jinpoBondFormationHint{font-size:10px}.jinpoBondActiveCardNo{flex-basis:32px;width:32px;height:32px;font-size:18px}.jinpoBondActiveCardName{font-size:15px}}',
       '@media(max-width:560px){.jinpoBondModalHeader{padding:11px 10px}.jinpoBondModalHeader h3{font-size:18px}#jinpoBondModalClose{min-width:92px;height:40px;padding:0 10px;gap:6px;font-size:13px}#jinpoBondModalClose .jinpoBondCloseIcon{width:20px;height:20px;font-size:18px}}',
       '.jinpoBondTable{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:14px;}',
       '.jinpoBondTable th{position:sticky;top:0;z-index:2;padding:10px 8px;text-align:left;background:#171008;color:#d9bd82;border-bottom:1px solid #80602b;}',
@@ -1261,10 +1244,11 @@
       }
     });
     var slotHtml = '';
+    /* 左側陣形カードの縮小はこの実DOM生成経路だけで行う。別CSS上書き経路は持たせない。 */
     for(var slot=1;slot<=6;slot++){
       var pos = cfg.slots[slot];
       if(!pos) continue;
-      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+slot+'" style="left:'+pos.x+'%;top:'+pos.y+'%;">'+
+      slotHtml += '<div class="jinpoBondDiagramSlot" data-slot="'+slot+'" style="left:'+pos.x+'%;top:'+pos.y+'%;transform:translate(-50%,-50%) scale(.82);transform-origin:center center;">'+
         '<strong>'+slot+'</strong><div class="jinpoBondSlotHero">'+esc(currentHeroName(slot))+'</div>'+
         renderActiveFactorUseBadges(null)+
         '<div class="jinpoBondSlotFactors">'+renderCurrentHeroFactors(slot)+'</div></div>';

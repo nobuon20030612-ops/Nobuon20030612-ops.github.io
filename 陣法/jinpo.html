@@ -8126,7 +8126,7 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 })();
 </script>
 
-<script src="jinpo-bond-list.js?v=20260829-active-hoen-correct-v1"></script>
+<script src="jinpo-bond-list.js?v=20260928-active-card-scale-v5"></script>
 
 
 
@@ -9545,12 +9545,6 @@ body #reachList .jinpoHagumonoBtn:focus-visible{filter:brightness(1.20);transfor
 #step66ReachModal.jinpoHagumonoMode .step66Box{
   width:min(1500px,98vw);
 }
-#step66ReachModal .step66Grid.jinpoHagumonoGrid{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:stretch;
-  gap:8px;
-}
 body #step66ReachModal .step66HeroBtn.jinpoHagumonoHeroCard{
   position:relative;
   isolation:isolate;
@@ -9627,7 +9621,7 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
     precheckSeq:0,candidates:[],candidateById:{},
     applyWrapInstalled:false,reachWrapInstalled:false,lastAppliedRow:null,
     allSearchCache:new Map(),precheckPayloads:Object.create(null),
-    judging:false,judgeError:false
+    judging:false,judgeError:false,renderSeq:0
   };
   var observer=null,priorityTimer=0;
 
@@ -9867,14 +9861,6 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
   function hagumonoLegendHtml(){
     return '<div class="step66ReachLegend jinpoHagumonoLegend" aria-label="業物候補の因縁数変化の色説明"><span class="step66ReachLegendItem step66ReachLegendUp"><span class="step66ReachLegendDot"></span>赤＝UP</span><span class="step66ReachLegendItem step66ReachLegendFlat"><span class="step66ReachLegendDot"></span>緑＝FLAT</span><span class="step66ReachLegendItem step66ReachLegendDown"><span class="step66ReachLegendDot"></span>青＝DOWN</span></div>';
   }
-  function heroInfoHtml(change,c,ctx,label,showSwapName){
-    var h=heroById(change.afterId),name=heroName(h,change.afterName),cost=heroCost(h),costLabel=cost==null?'':'['+cost+']',grade3=cost!=null&&cost<=6,gradeBadgeClass=grade3?'step66Grade3LikeBadge':'step66Grade4Badge',gradeBadgeText=grade3?'等級3以下':'等級４',layoutClass=grade3?'':' step66Grade4Compact',popular=isPopular(h)?'<div class="step66PopularBadge">選抜人気</div>':'';
-    var primaryText=labelStat(ctx.pri.p1)+' '+c.currentP1.toLocaleString()+' → '+c.p1Value.toLocaleString(),secondaryText=ctx.pri.p2?(' / '+labelStat(ctx.pri.p2)+' '+c.currentP2.toLocaleString()+' → '+c.p2Value.toLocaleString()):'';
-    var gain=c.metric-ctx.currentMetric,metricText=ctx.pri.p2?('合計 '+ctx.currentMetric.toLocaleString()+' → '+c.metric.toLocaleString()):primaryText,bondText='因縁数 '+c.currentBondCount+' → '+c.bondCount+' / ',levelLabel=hagumonoLevel(c).label;
-    var heroLine=showSwapName?(String(change.slot)+'番 '+String(change.beforeName||'')+' → '+costLabel+name):(costLabel+name);
-    var detail='<div class="step66Grade4Rows'+layoutClass+'"><div class="step66HeroName">'+esc(heroLine)+'</div><div class="step66HeroMeta"><span class="step66HeroMetaMain"><span class="step66DeltaLabel">'+levelLabel+'</span><span class="jinpoHagumonoGain">'+esc(metricText)+'（+'+esc(gain.toLocaleString())+'）</span><span class="jinpoHagumonoSub">'+esc(bondText+(ctx.pri.p2?(primaryText+secondaryText):''))+'</span></span></div><div class="'+gradeBadgeClass+'">'+gradeBadgeText+'</div></div>';
-    return popular+detail;
-  }
   function twoSwapHeroRowHtml(change,side){
     var after=side==='after',id=after?change.afterId:change.beforeId,fallback=after?change.afterName:change.beforeName,h=heroById(id),name=heroName(h,fallback),cost=heroCost(h),costLabel=cost==null?'':'['+cost+']',grade3=cost!=null&&cost<=6,gradeBadgeClass=grade3?'step66Grade3LikeBadge':'step66Grade4Badge',gradeBadgeText=grade3?'等級3以下':'等級４';
     var popular=isPopular(h)?'<span class="jinpoOgyomonoPopularMini">選抜人気</span>':'';
@@ -9889,11 +9875,13 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
   }
   function twoSwapCombinedHtml(c,ctx){
     var levelClass=hagumonoLevel(c).css,changes=c&&Array.isArray(c.changes)?c.changes:[];
-    if(changes.length<2)return '';
+    if(!changes.length)return '';
+    var beforeRows=changes.map(function(change){return twoSwapHeroRowHtml(change,'before');}).join('');
+    var afterRows=changes.map(function(change){return twoSwapHeroRowHtml(change,'after');}).join('');
     return '<div class="jinpoOgyomonoPairList">'
-      +'<div class="jinpoOgyomonoSide jinpoOgyomonoBeforeSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+twoSwapHeroRowHtml(changes[0],'before')+twoSwapHeroRowHtml(changes[1],'before')+'</div>'+twoSwapSharedMetaHtml(c,ctx,'before')+'</div>'
+      +'<div class="jinpoOgyomonoSide jinpoOgyomonoBeforeSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+beforeRows+'</div>'+twoSwapSharedMetaHtml(c,ctx,'before')+'</div>'
       +'<div class="jinpoOgyomonoPairArrow" aria-hidden="true">→</div>'
-      +'<div class="jinpoOgyomonoSide jinpoOgyomonoAfterSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+twoSwapHeroRowHtml(changes[0],'after')+twoSwapHeroRowHtml(changes[1],'after')+'</div>'+twoSwapSharedMetaHtml(c,ctx,'after')+'</div>'
+      +'<div class="jinpoOgyomonoSide jinpoOgyomonoAfterSide"><div class="jinpoOgyomonoCombinedCard '+levelClass+'">'+afterRows+'</div>'+twoSwapSharedMetaHtml(c,ctx,'after')+'</div>'
       +'</div>';
   }
   function fitHagumonoNoWrap(root){
@@ -9940,29 +9928,67 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
     };
     if(typeof requestAnimationFrame==='function')requestAnimationFrame(applyWidth);else setTimeout(applyWidth,0);
   }
+  function hagumonoCandidateButtonHtml(c,idx,kind,diffCount,ctx){
+    var stateId=(kind==='all'?'daigyo_':'gyo_')+(diffCount===2?'2_':'1_')+idx;
+    state.candidateById[stateId]=c;
+    var glowClass=kind==='all'?' jinpoDaigyomonoCard':' jinpoHagumonoLocalCard',levelClass=hagumonoLevel(c).css;
+    return '<button type="button" class="step66HeroBtn '+levelClass+' jinpoHagumonoHeroCard jinpoOgyomonoHeroCard'+glowClass+'" data-hagumono-candidate="'+esc(stateId)+'">'+twoSwapCombinedHtml(c,ctx)+'</button>';
+  }
+  function startHagumonoLazyRender(body,grid,list,kind,diffCount,ctx){
+    var seq=++state.renderSeq,rendered=0,batchSize=24,busy=false;
+    var status=body.querySelector('.jinpoHagumonoRenderStatus');
+    if(body.__jinpoHagumonoLazyScrollHandler){
+      body.removeEventListener('scroll',body.__jinpoHagumonoLazyScrollHandler);
+      body.__jinpoHagumonoLazyScrollHandler=null;
+    }
+    function updateStatus(){
+      if(status) status.textContent='表示 '+rendered+' / '+list.length+'件';
+    }
+    function appendBatch(){
+      if(busy||seq!==state.renderSeq||rendered>=list.length)return;
+      busy=true;
+      var end=Math.min(list.length,rendered+batchSize),html='';
+      for(var i=rendered;i<end;i++) html+=hagumonoCandidateButtonHtml(list[i],i,kind,diffCount,ctx);
+      grid.insertAdjacentHTML('beforeend',html);
+      rendered=end;busy=false;updateStatus();fitHagumonoNoWrap(body);
+    }
+    function ensureViewportFilled(){
+      if(seq!==state.renderSeq)return;
+      appendBatch();
+      if(rendered<list.length && body.scrollHeight<=body.clientHeight+40){
+        if(typeof requestAnimationFrame==='function')requestAnimationFrame(ensureViewportFilled);else setTimeout(ensureViewportFilled,0);
+      }
+    }
+    function onScroll(){
+      if(seq!==state.renderSeq||rendered>=list.length)return;
+      if(body.scrollTop+body.clientHeight>=body.scrollHeight-700){
+        if(typeof requestAnimationFrame==='function')requestAnimationFrame(appendBatch);else setTimeout(appendBatch,0);
+      }
+    }
+    body.__jinpoHagumonoLazyScrollHandler=onScroll;
+    body.addEventListener('scroll',onScroll,{passive:true});
+    updateStatus();
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(ensureViewportFilled);else setTimeout(ensureViewportFilled,0);
+  }
   function renderCandidates(payload){
     var ctx=payload.ctx,list=payload.list,diffCount=payload.diffCount===2?2:1,kind=payload.kind==='all'?'all':'local',label=kindLabel(kind,diffCount),m=ensureModal(),title=m.querySelector('.step66Title'),body=m.querySelector('.step66Body');
     m.classList.add('jinpoHagumonoMode');
-    m.classList.toggle('jinpoHagumonoTwoMode',diffCount===2);
+    m.classList.add('jinpoHagumonoTwoMode');
     var hagumonoBox=m.querySelector('.step66Box');if(hagumonoBox){hagumonoBox.style.removeProperty('width');hagumonoBox.style.removeProperty('max-width');}
     if(title){title.textContent=label+'｜差し替え英傑候補';title.classList.add('jinpoHagumonoModalTitle');}
     state.candidates=list;state.candidateById={};
-    if(!ctx||!list.length){body.innerHTML='<p class="small">現在適用中の組み合わせよりステータスが上昇する'+diffCount+'人差し替え候補はありません。</p>';m.classList.add('step66Open');setKindAvailable(kind,diffCount,false);return;}
-    var criterion=ctx.pri.p2?(labelStat(ctx.pri.p1)+'＋'+labelStat(ctx.pri.p2)+' 合計'):labelStat(ctx.pri.p1),gridClass=diffCount===2?'step66Grid jinpoOgyomonoGrid':'step66Grid jinpoHagumonoGrid';
+    if(!ctx||!list.length){++state.renderSeq;body.innerHTML='<p class="small">現在適用中の組み合わせよりステータスが上昇する'+diffCount+'人差し替え候補はありません。</p>';m.classList.add('step66Open');setKindAvailable(kind,diffCount,false);return;}
+    var criterion=ctx.pri.p2?(labelStat(ctx.pri.p1)+'＋'+labelStat(ctx.pri.p2)+' 合計'):labelStat(ctx.pri.p1);
     var scopeText=kind==='all'?'現在モードの業物対象を除外した全英傑候補':'現在モード内候補';
-    var html='<div class="jinpoHagumonoSummary">'+esc(scopeText)+'｜判定基準：'+esc(criterion)+'｜現在 '+esc(ctx.currentMetric.toLocaleString())+' → より高い候補のみ表示｜'+esc(list.length)+'件</div>'+hagumonoLegendHtml()+'<div class="'+gridClass+'">';
-    list.forEach(function(c,idx){
-      var stateId=(kind==='all'?'daigyo_':'gyo_')+(diffCount===2?'2_':'1_')+idx;state.candidateById[stateId]=c;
-      var glowClass=kind==='all'?' jinpoDaigyomonoCard':' jinpoHagumonoLocalCard',levelClass=hagumonoLevel(c).css;
-      if(diffCount===1){var h=heroById(c.changes[0].afterId),cost=heroCost(h),gradeBtn=(cost!=null&&cost<=6)?' step66Grade3HeroBtn':'';html+='<button type="button" class="step66HeroBtn '+levelClass+gradeBtn+' jinpoHagumonoHeroCard'+glowClass+'" data-hagumono-candidate="'+esc(stateId)+'">'+heroInfoHtml(c.changes[0],c,ctx,label,true)+'</button>';}
-      else{html+='<button type="button" class="step66HeroBtn '+levelClass+' jinpoHagumonoHeroCard jinpoOgyomonoHeroCard'+glowClass+'" data-hagumono-candidate="'+esc(stateId)+'">'+twoSwapCombinedHtml(c,ctx)+'</button>';}
-    });
-    html+='</div>';body.innerHTML=html;m.classList.add('step66Open');fitHagumonoNoWrap(body);
+    body.innerHTML='<div class="jinpoHagumonoSummary">'+esc(scopeText)+'｜判定基準：'+esc(criterion)+'｜現在 '+esc(ctx.currentMetric.toLocaleString())+' → より高い候補のみ表示｜'+esc(list.length)+'件</div>'+hagumonoLegendHtml()+'<div class="step66Grid jinpoOgyomonoGrid"></div><div class="jinpoHagumonoRenderStatus" aria-live="polite"></div>';
+    m.classList.add('step66Open');
+    startHagumonoLazyRender(body,body.querySelector('.jinpoOgyomonoGrid'),list,kind,diffCount,ctx);
   }
   function openHagumonoLoadingModal(kind,diffCount){
+    ++state.renderSeq;
     var m=ensureModal(),title=m.querySelector('.step66Title'),body=m.querySelector('.step66Body');
     m.classList.add('jinpoHagumonoMode');
-    m.classList.toggle('jinpoHagumonoTwoMode',diffCount===2);
+    m.classList.add('jinpoHagumonoTwoMode');
     if(title){title.textContent=kindLabel(kind,diffCount)+'｜差し替え英傑候補';title.classList.add('jinpoHagumonoModalTitle');}
     if(body)body.innerHTML='<div class="jinpoHagumonoSummary">候補を表示中です…</div>';
     m.classList.add('step66Open');
@@ -10167,12 +10193,19 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
   text-overflow:clip !important;
   font-size:12px !important;
 }
+#step66ReachModal .jinpoHagumonoRenderStatus{
+  padding:8px 6px 2px !important;
+  text-align:center !important;
+  color:#d9c9a6 !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+}
 </style>
 
 
 <style id="jinpo-two-swap-paired-cards-20260927">
-/* 業物・弐／大業物・弐：2人分を上下2区画の1枚カードに統合。
-   左=差し替え前2人、右=差し替え後2人。共通文言は各側1回だけ大きく表示する。 */
+/* 業物・壱／弐・大業物・壱／弐：候補表示は同じレイアウトを共用。
+   左=差し替え前、右=差し替え後。壱は1人、弐は2人を同じカード構造で表示する。 */
 #step66ReachModal .step66Grid.jinpoOgyomonoGrid{
   display:grid !important;
   grid-template-columns:repeat(2,minmax(0,1fr)) !important;
@@ -10321,13 +10354,14 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
 #step66ReachModal .jinpoOgyomonoSharedSub{flex:0 0 auto !important;color:#d9c9a6 !important;font-size:14px !important;}
 #step66ReachModal .jinpoOgyomonoBeforeMeta .step66DeltaLabel{color:#ffb3b3 !important;}
 
-/* 2人差し替え時は差し替え前／後を同幅に固定し、候補2枚がモーダル内へ収まる幅で中央2列表示。
+/* 業物候補は壱／弐とも差し替え前／後を同幅に固定し、候補2枚がモーダル内へ収まる幅で中央2列表示。
    1920～2048px級では文字サイズを維持し、狭い画面で比較情報だけ必要最小限に縮める。 */
 #step66ReachModal.jinpoHagumonoTwoMode{padding-left:4px !important;padding-right:4px !important;}
 #step66ReachModal.jinpoHagumonoTwoMode .step66Head{padding:10px 12px !important;}
 #step66ReachModal.jinpoHagumonoTwoMode .step66Body{padding:8px !important;}
 #step66ReachModal.jinpoHagumonoTwoMode .step66Box{border-radius:12px !important;}
 </style>
+
 
 </body>
 </html>
