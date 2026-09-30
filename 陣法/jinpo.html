@@ -7724,6 +7724,19 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 #eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiClearBtn{
   width:100% !important;min-width:0 !important;padding-left:3px !important;padding-right:3px !important;font-size:clamp(11px,.9vw,14px) !important;
 }
+
+/* 2026-10-01: 鬼神石の配置英傑名を省略せず表示。
+   メイン側の各表示サイズは変更せず、増加分を左サイド枠とモーダル全幅へ同量追加する。
+   右端位置を維持するため、増加幅の半分だけモーダル全体を左へ寄せる。 */
+@media(min-width:1101px){
+  #eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+    width:min(1692px,calc(100vw - 20px)) !important;
+    transform:translateX(-76px) !important;
+  }
+  #eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+    grid-template-columns:340px minmax(0,1fr) !important;
+  }
+}
 </style>
 
 <style id="current-applied-list-row-highlight-user-request">
