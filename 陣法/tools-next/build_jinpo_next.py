@@ -542,15 +542,18 @@ def main():
     if not popular_layer_match or not re.search(r'position\s*:\s*relative',popular_layer_match.group('body')) or not re.search(r'z-index\s*:\s*1',popular_layer_match.group('body')):
         fail('選抜人気背景の前面化対象がheader/mainへ限定されていません', report)
     # 現行仕様：旧 #jinpoScrollTopBtn の fixed 配置は廃止済み。
-    # 上へ戻る操作は #jinpoBackBtn をおすすめ検索順序行の右端に配置する。
+    # おすすめ検索の旧テキスト行 (#jinpoRecommendSearchOrderRow / Note) も廃止済み。
+    # 上へ戻る操作は #jinpoBackBtn を現行バナーヘッダー (#jinpoRecommendHeaderRow) の右端に配置する。
     if '#jinpoScrollTopBtn' in bond_list_text or 'ensureScrollTopButton' in bond_list_text:
         fail('廃止済みの上へ戻るfixed経路が復活しています', report)
     if 'formation-free-space' in index_text:
         fail('廃止済みの因縁数称号の空き領域逃避経路が復活しています', report)
     if '#dbFormationList .dbListBonds{' in index_text or '#dbFormationList .dbListStat{' in index_text:
         fail('廃止済みの検索結果強制改行CSSが復活しています', report)
+    if '#jinpoRecommendSearchOrderRow{' in bond_list_text or '#jinpoRecommendSearchOrderNote{' in bond_list_text:
+        fail('廃止済みのおすすめ検索旧テキスト表示CSSが復活しています', report)
     back_layout_match=re.search(
-        r'#jinpoRecommendSearchOrderRow\s+#jinpoBackBtn\.jinpoBackBtn\s*\{(?P<body>[^}]*)\}',
+        r'#jinpoRecommendHeaderRow\s+#jinpoBackBtn\.jinpoBackBtn\s*\{(?P<body>[^}]*)\}',
         bond_list_text,re.S
     )
     if not back_layout_match or not re.search(r'grid-column\s*:\s*3',back_layout_match.group('body')) or not re.search(r'justify-self\s*:\s*end',back_layout_match.group('body')):
@@ -610,7 +613,7 @@ def main():
             'jinpoRecommendModeBadge', 'jinpoRecommendModeNotice', 'jinpoRecommendSumGuide',
             'function applyRecommendTheme(active,targetStat)', 'function updateRecommendDecor(detail)',
             'function ensureRecommendSumGuide()', "notice.id='jinpoRecommendModeNotice'", "guide.id='jinpoRecommendSumGuide'",
-            'jinpoRecommendSearchOrderNote',
+            'jinpoRecommendHeaderRow', 'jinpoRecommendHeaderImageWrap', 'jinpoRecommendHeaderImage',
             "['生命','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力']",
             "['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']",
         ],
