@@ -694,6 +694,66 @@ def main():
     if not priority_threshold_match:
         fail('優先ソート閾値仕様が不一致: 生命・気合=20000〜2500(2500刻み)／その他=1600〜200(200刻み)', report)
 
+    # 生命・気合は5桁値のため、「以上/以下」だけを小さくする現行UI契約を監査する。
+    # ボタン全体や数値部分の文字サイズ変更ではなく、data-statで生命/気合に限定する。
+    if "b.setAttribute('data-stat',currentStat);" not in index_text:
+        fail('生命・気合の数値条件ボタンにdata-stat連携がありません', report)
+    large_range_style = re.search(
+        r'\.dbPriorityValueChoice\[data-stat=["\']生命["\']\]\s+\.jinpoPriorityValueRange\s*,'
+        r'.*?\.dbPriorityValueChoice\[data-stat=["\']気合["\']\]\s+\.jinpoPriorityValueRange\s*\{(?P<body>[^}]*)\}',
+        index_text, re.S
+    )
+    if not large_range_style:
+        fail('生命・気合の「以上/以下」専用縮小CSSがありません', report)
+    size_match = re.search(r'font-size\s*:\s*([0-9.]+)em', large_range_style.group('body'))
+    if not size_match or float(size_match.group(1)) >= 1.0:
+        fail('生命・気合の「以上/以下」が数値部分より小さく設定されていません', report)
+
+    # 鬼神石の配置英傑名は省略記号を出さず、右側UIの大きさを維持するため
+    # モーダル全体と左列だけを拡張する。固定値そのものではなく下限で監査する。
+    # 同一セレクタに旧基準値と後段の現行上書きが共存するため、
+    # CSSの実効順序どおり最後のルールを監査対象にする。
+    kishin_modal_matches = list(re.finditer(
+        r'#eiketsuKishinsekiModalBackdrop\[data-panel=["\']kishin["\']\]\s+\.eiketsuKishinsekiModal\s*\{(?P<body>[^}]*)\}',
+        index_text, re.S
+    ))
+    kishin_body_matches = list(re.finditer(
+        r'#eiketsuKishinsekiModalBackdrop\[data-panel=["\']kishin["\']\]\s+\.eiketsuKishinsekiBody\s*\{(?P<body>[^}]*)\}',
+        index_text, re.S
+    ))
+    kishin_slot_matches = list(re.finditer(
+        r'#eiketsuKishinsekiModalBackdrop\[data-panel=["\']kishin["\']\]\s+\.eiketsuKishinsekiJobBtn\[data-slot\]\s*\{(?P<body>[^}]*)\}',
+        index_text, re.S
+    ))
+    kishin_modal = kishin_modal_matches[-1] if kishin_modal_matches else None
+    kishin_body = kishin_body_matches[-1] if kishin_body_matches else None
+    kishin_slot = kishin_slot_matches[-1] if kishin_slot_matches else None
+    modal_width = re.search(r'width\s*:\s*min\(\s*([0-9]+)px', kishin_modal.group('body')) if kishin_modal else None
+    side_width = re.search(r'grid-template-columns\s*:\s*([0-9]+)px\s+minmax\(0,1fr\)', kishin_body.group('body')) if kishin_body else None
+    if not modal_width or int(modal_width.group(1)) < 1780:
+        fail('鬼神石モーダル全体の横幅が英傑名全表示に必要な幅へ拡張されていません', report)
+    if not side_width or int(side_width.group(1)) < 420:
+        fail('鬼神石の左英傑欄が全名表示に必要な幅へ拡張されていません', report)
+    if not kishin_modal or not re.search(r'transform\s*:\s*translateX\(\s*-121px\s*\)', kishin_modal.group('body')):
+        fail('鬼神石の右側位置維持用の左シフトが失われています', report)
+    if not kishin_slot or not re.search(r'white-space\s*:\s*nowrap', kishin_slot.group('body')) \
+            or not re.search(r'overflow\s*:\s*visible', kishin_slot.group('body')) \
+            or not re.search(r'text-overflow\s*:\s*clip', kishin_slot.group('body')):
+        fail('鬼神石の配置英傑名に省略表示経路が残っています', report)
+    # 右側UIは固定仕様。英傑名対応で右側のサイズ・配分を変えない。
+    right_side_fixed_fragments = [
+        'grid-template-columns:132px 76px minmax(455px,1fr) 82px 64px 64px !important;',
+        'grid-template-columns:minmax(54px,.8fr) minmax(44px,.55fr) minmax(0,3.4fr) minmax(48px,.7fr) minmax(44px,.58fr) minmax(44px,.58fr) !important;',
+        'font-size:clamp(12px,1.05vw,16px) !important;padding-right:0 !important',
+        'width:100% !important;min-width:0 !important;padding-left:3px !important;padding-right:3px !important;font-size:clamp(11px,.9vw,14px) !important;'
+    ]
+    for fragment in right_side_fixed_fragments:
+        if fragment not in index_text:
+            fail('鬼神石の右側UI固定サイズ・配分が変更されています: ' + fragment, report)
+    report['kishin_right_side_unchanged_guard'] = True
+    report['priority_large_value_suffix_guard'] = True
+    report['kishin_full_hero_name_guard'] = True
+
 
     # 見聞録の職業判定は、過去に確定した通り英傑マスタ「職業」列を直接見る。
     hero_job_match = re.search(r'function\s+heroJob\s*\(hero\)\s*\{(?P<body>.*?)\n\s*\}', index_text, re.S)
