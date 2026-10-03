@@ -6187,6 +6187,31 @@ body.eiketsuKishinsekiViewportLock{overflow:hidden!important}
   will-change:transform!important;
 }
 .eiketsuKishinsekiSide,.eiketsuKishinsekiMain{overflow:hidden!important}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+  width:min(1780px,calc(100vw - 28px));
+  min-width:1780px!important;
+  transform:translateX(-121px);
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+  grid-template-columns:420px minmax(0,1fr);
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiJobBtn[data-slot]{
+  white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRow{
+  grid-template-columns:132px 76px minmax(455px,1fr) 82px 64px 64px !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiName{
+  font-size:clamp(12px,1.05vw,16px) !important;padding-right:0 !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiValue{
+  width:100% !important;min-width:0 !important;padding-left:3px !important;padding-right:3px !important;font-size:clamp(11px,.9vw,14px) !important;
+}
+@media(max-width:1780px){
+  #eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiRow{
+    grid-template-columns:minmax(54px,.8fr) minmax(44px,.55fr) minmax(0,3.4fr) minmax(48px,.7fr) minmax(44px,.58fr) minmax(44px,.58fr) !important;
+  }
+}
 </style>
 
 <style id="eiketsu-kishinseki-combined-total-style">
