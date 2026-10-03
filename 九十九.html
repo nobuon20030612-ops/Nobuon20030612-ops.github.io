@@ -566,7 +566,7 @@ th.priority-sort-col{
 }
 
 
-/* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
+/* ===== 九十九一覧 列幅：番号・入手だけを単一路線で調整 ===== */
 #table, #selectedTable, #searchResultTable{
   width:100% !important;
   table-layout:auto !important;
@@ -576,18 +576,36 @@ th.priority-sort-col{
 #searchResultTable th, #searchResultTable td{
   white-space:nowrap !important;
 }
-#table th:first-child, #table td:first-child,
-#selectedTable th:first-child, #selectedTable td:first-child,
-#searchResultTable th:first-child, #searchResultTable td:first-child{
-  width:42px !important;
+.tsukumo-number-col{
+  width:32px !important;
+  min-width:32px !important;
+  max-width:32px !important;
+  padding-left:2px !important;
+  padding-right:2px !important;
 }
-#table th:nth-child(14), #table td:nth-child(14),
-#selectedTable th:nth-child(14), #selectedTable td:nth-child(14),
-#searchResultTable th:nth-child(14), #searchResultTable td:nth-child(14){
-  width:70px !important;
-  max-width:70px !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+.tsukumo-acquisition-col{
+  width:150px !important;
+  min-width:150px !important;
+  max-width:150px !important;
+  padding-left:2px !important;
+  padding-right:2px !important;
+  font-size:9px !important;
+  vertical-align:middle !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+#table th.tsukumo-acquisition-col,
+#selectedTable th.tsukumo-acquisition-col,
+#searchResultTable th.tsukumo-acquisition-col{
+  white-space:nowrap !important;
+}
+#table td.tsukumo-acquisition-col,
+#selectedTable td.tsukumo-acquisition-col,
+#searchResultTable td.tsukumo-acquisition-col{
+  white-space:normal !important;
+  line-height:1.2 !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
 }
 
 /* ===== 最下部の固定ズームボタン重なり回避 ===== */
@@ -1559,7 +1577,7 @@ function renderSearchResults(sortedList){
   wrap.classList.remove("hidden");
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th class="tsukumo-number-col" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>九十九の力</th>`;
   stats.forEach(s=>{
     const activePriorityCol=prioritySortStats.includes(s);
@@ -1567,7 +1585,7 @@ function renderSearchResults(sortedList){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th class="tsukumo-acquisition-col">入手</th>`;
   html+="</tr>";
 
   matches.forEach(d=>{
@@ -1575,7 +1593,7 @@ function renderSearchResults(sortedList){
     const rep=(replaceTarget==d["番号"])?"replaceTarget":"";
 
     html+=`<tr class="${sel} ${rep}" data-row-id="${d["番号"]}" onclick="toggle('${d["番号"]}', this)">`;
-    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html+=`<td class="tsukumo-number-col">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
       const activePriorityCol=prioritySortStats.includes(s);
       const cls=activePriorityCol?"priority-sort-col":"";
@@ -1584,7 +1602,7 @@ function renderSearchResults(sortedList){
         :`color:${statColors[s]}`;
       html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
     });
-    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html+=`<td class="tsukumo-acquisition-col" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
     html+="</tr>";
   });
 
@@ -1629,7 +1647,7 @@ function render(){
   colIndexMap["入手"]=14;
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th class="tsukumo-number-col" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>九十九の力</th>`;
   stats.forEach(s=>{
     const activePriorityCol=prioritySortStats.includes(s);
@@ -1637,7 +1655,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th class="tsukumo-acquisition-col">入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -1647,7 +1665,7 @@ function render(){
 
     html+=`<tr class="${sel} ${rep} ${exc}" data-row-id="${d["番号"]}" onclick="toggle('${d["番号"]}', this)">`;
 
-    html+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html+=`<td class="tsukumo-number-col">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
       const activePriorityCol=prioritySortStats.includes(s);
       const cls=activePriorityCol?"priority-sort-col":"";
@@ -1656,7 +1674,7 @@ function render(){
         :`color:${statColors[s]}`;
       html+=`<td class="${cls}" style="${style}">${getVal(d,s)}</td>`;
     });
-    html+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html+=`<td class="tsukumo-acquisition-col" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
     html+="</tr>";
   });
 
@@ -1670,9 +1688,9 @@ function render(){
     table.className="";
   }
 
-  let html2="<tr><th style='width:42px; white-space:nowrap;'>番号</th><th>九十九の力</th>";
+  let html2="<tr><th class='tsukumo-number-col'>番号</th><th>九十九の力</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
-  html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html2+=`<th class="tsukumo-acquisition-col">入手</th>`;
   html2+="</tr>";
 
   getJoranTsukumoIISelectedRows().forEach(({id,d,specialIndex})=>{
@@ -1680,11 +1698,11 @@ function render(){
 
     html2+=`<tr class="${rep}" onclick="removeSelectedFromSummary('${id}')" title="クリックで選択解除">`;
 
-    html2+=`<td style="width:42px; white-space:nowrap;">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
+    html2+=`<td class="tsukumo-number-col">${d["番号"]}</td><td>${d["九十九の力"]||""}</td>`;
     stats.forEach(s=>{
       html2+=`<td style="color:${statColors[s]}">${getSelectedDisplayVal(d,s,specialIndex)}</td>`;
     });
-    html2+=`<td style="white-space:nowrap;" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
+    html2+=`<td class="tsukumo-acquisition-col" title="${escapeAttr(d["入手"]||"")}">${d["入手"]||""}</td>`;
 
     html2+="</tr>";
   });
