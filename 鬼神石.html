@@ -499,7 +499,7 @@ th.priority-sort-col{
 }
 
 
-/* ===== 3ツール共通列幅：鬼神石の元仕様を基準 ===== */
+/* ===== 3ツール共通列幅：番号を縮小し、入手を全文表示 ===== */
 #table, #selectedTable{
   width:100% !important;
   table-layout:auto !important;
@@ -510,14 +510,18 @@ th.priority-sort-col{
 }
 #table th:first-child, #table td:first-child,
 #selectedTable th:first-child, #selectedTable td:first-child{
-  width:42px !important;
+  width:32px !important;
 }
 #table th:nth-child(14), #table td:nth-child(14),
 #selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
-  width:70px !important;
-  max-width:70px !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  width:150px !important;
+  max-width:150px !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  font-size:9px !important;
+  line-height:1.25 !important;
 }
 
 /* ===== 九十九と同仕様：鬼神の力 名前検索 ===== */
@@ -579,14 +583,18 @@ th.priority-sort-col{
 }
 #kishinSearchResultTable th:first-child,
 #kishinSearchResultTable td:first-child{
-  width:42px !important;
+  width:32px !important;
 }
 #kishinSearchResultTable th:nth-child(14),
 #kishinSearchResultTable td:nth-child(14){
-  width:70px !important;
-  max-width:70px !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  width:150px !important;
+  max-width:150px !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  font-size:9px !important;
+  line-height:1.25 !important;
 }
 
 /* ===== 九十九と同仕様：右下固定ズーム操作 ===== */
@@ -1405,7 +1413,7 @@ function renderKishinSearchResults(){
   colIndexMap["入手"]=14;
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setKishinSearchSort('番号')">番号${getKishinSearchArrow('番号')}</th>`;
+  html+=`<th onclick="setKishinSearchSort('番号')">番号${getKishinSearchArrow('番号')}</th>`;
   html+=`<th>鬼神の力</th>`;
   stats.forEach(s=>{
     const cls=(kishinSearchSortKey===s)?"priority-sort-col":"";
@@ -1414,7 +1422,7 @@ function renderKishinSearchResults(){
       :` style="color:${statColors[s]}"`;
     html+=`<th class="${cls}"${style} onclick="setKishinSearchSort('${s}')">${s}${getKishinSearchArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th>入手</th>`;
   html+="</tr>";
 
   matches.forEach(d=>{
@@ -1553,7 +1561,7 @@ function render(){
   colIndexMap["入手"]=14;
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>鬼神の力</th>`;
   stats.forEach(s=>{
     const activePriorityCol=prioritySortStats.includes(s);
@@ -1561,7 +1569,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th>入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -1593,9 +1601,9 @@ function render(){
     table.className="";
   }
 
-  let html2="<tr><th style='width:42px; white-space:nowrap;'>番号</th><th>鬼神の力</th>";
+  let html2="<tr><th>番号</th><th>鬼神の力</th>";
   stats.forEach(s=>html2+=`<th>${s}</th>`);
-  html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html2+=`<th>入手</th>`;
   html2+="</tr>";
 
   selected.forEach(id=>{
