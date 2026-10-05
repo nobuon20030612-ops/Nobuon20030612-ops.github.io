@@ -458,14 +458,18 @@ th.priority-sort-col{
 }
 #table th:first-child, #table td:first-child,
 #selectedTable th:first-child, #selectedTable td:first-child{
-  width:42px !important;
+  width:32px !important;
 }
 #table th:nth-child(14), #table td:nth-child(14),
 #selectedTable th:nth-child(14), #selectedTable td:nth-child(14){
-  width:70px !important;
-  max-width:70px !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+  width:180px !important;
+  max-width:180px !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  font-size:9px !important;
+  line-height:1.25 !important;
 }
 
 /* ===== 九十九・鬼神石同仕様：魔導の力検索 ===== */
@@ -523,13 +527,19 @@ th.priority-sort-col{
   white-space:nowrap;
 }
 #madouSearchResultTable th:first-child,
-#madouSearchResultTable td:first-child{width:42px;}
+#madouSearchResultTable td:first-child{
+  width:32px !important;
+}
 #madouSearchResultTable th:nth-child(14),
 #madouSearchResultTable td:nth-child(14){
-  width:70px;
-  max-width:70px;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  width:180px !important;
+  max-width:180px !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:anywhere !important;
+  font-size:9px !important;
+  line-height:1.25 !important;
 }
 
 /* ===== 九十九・鬼神石同仕様：右下固定倍率 ===== */
@@ -1318,7 +1328,7 @@ function renderMadouSearchResults(){
   colIndexMap["入手"]=14;
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setMadouSearchSort('番号')">番号${getMadouSearchArrow('番号')}</th>`;
+  html+=`<th onclick="setMadouSearchSort('番号')">番号${getMadouSearchArrow('番号')}</th>`;
   html+=`<th>魔導の力</th>`;
   stats.forEach(s=>{
     const cls=(madouSearchSortKey===s)?"priority-sort-col":"";
@@ -1327,7 +1337,7 @@ function renderMadouSearchResults(){
       :` style="color:${statColors[s]}"`;
     html+=`<th class="${cls}"${style} onclick="setMadouSearchSort('${s}')">${s}${getMadouSearchArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th>入手</th>`;
   html+="</tr>";
 
   matches.forEach(d=>{
@@ -1476,7 +1486,7 @@ function render(){
   colIndexMap["入手"]=14;
 
   let html="<tr>";
-  html+=`<th style="width:42px; white-space:nowrap;" onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
+  html+=`<th onclick="setSort('番号')">番号${getArrow('番号')}</th>`;
   html+=`<th>魔導の力</th>`;
   stats.forEach(s=>{
     const activePriorityCol=prioritySortStats.includes(s);
@@ -1484,7 +1494,7 @@ function render(){
     const style=activePriorityCol?` style="--priority-col-color:${statColors[s]};color:${statColors[s]}"`:"";
     html+=`<th class="${cls}"${style} onclick="setSort('${s}')">${s}${getArrow(s)}</th>`;
   });
-  html+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html+=`<th>入手</th>`;
   html+="</tr>";
 
   list.forEach(d=>{
@@ -1519,11 +1529,11 @@ function render(){
     table.className="";
   }
 
-  let html2="<tr><th style='width:42px; white-space:nowrap;'>番号</th><th>魔導の力</th>";
+  let html2="<tr><th>番号</th><th>魔導の力</th>";
 
   stats.forEach(s=>html2+=`<th>${s}</th>`);
 
-  html2+=`<th style='width:70px; white-space:nowrap;'>入手</th>`;
+  html2+=`<th>入手</th>`;
 
   html2+="</tr>";
 
