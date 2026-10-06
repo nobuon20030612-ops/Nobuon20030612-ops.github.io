@@ -568,8 +568,11 @@
       '#jinpoModeSelectHeader .jinpoModeSelectArrow::after{content:"";position:absolute;left:50%;top:38px;transform:translateX(-50%);width:0;height:0;border-left:39px solid transparent;border-right:39px solid transparent;border-top:46px solid #ff35b6;filter:drop-shadow(0 6px 0 #b80072);}',
       '#jinpoModeSelectHeader .jinpoModeSelectText{display:inline-flex;align-items:center;justify-content:center;padding:5px 18px 7px;border:2px solid rgba(255,143,224,.76);border-radius:999px;background:linear-gradient(180deg,rgba(255,120,214,.95),rgba(48,8,35,.98));color:#ffe7ff;font-size:31px;font-weight:1000;line-height:1;letter-spacing:.08em;white-space:nowrap;text-shadow:0 0 8px rgba(255,255,255,.88),0 0 16px rgba(255,118,216,.72),0 2px 0 rgba(0,0,0,.78);box-shadow:0 0 18px rgba(255,106,214,.44),inset 0 0 12px rgba(255,255,255,.12);}',
       '@keyframes jinpoModeSelectArrowFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}',
-      '#jinpoModeButtonGroup{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:start;flex:1 1 1120px;min-width:0;max-width:100%;box-sizing:border-box;}',
+      '#jinpoModeButtonGroup{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto auto;gap:8px;align-items:start;flex:1 1 1120px;min-width:0;max-width:100%;box-sizing:border-box;}',
       '.jinpoModeChoiceWrap{position:relative;min-width:0;padding-top:27px;box-sizing:border-box;}',
+      '#jinpoModeButtonGroup [data-jinpo-mode-wrap="special"]{grid-column:4;grid-row:1 / span 2;align-self:start;}',
+      '#jinpoRecommendSearchTitleSlot{position:relative;grid-column:1 / span 3;grid-row:2;z-index:3;display:flex;align-items:center;justify-content:center;justify-self:stretch;align-self:start;width:100%;min-width:0;margin:-4px 0 4px;overflow:visible;box-sizing:border-box;line-height:0;pointer-events:none;}',
+      '#jinpoRecommendSearchTitleImage{display:block;width:44%;height:auto;max-width:620px;max-height:none;object-fit:contain;object-position:center center;transform:translateX(48%);pointer-events:none;user-select:none;-webkit-user-drag:none;}',
       '#jinpoPopularHeroListBtn{display:block;width:100%;margin:8px 0 0;padding:10px 12px;border:2px solid #f3d18d;border-radius:12px;background:linear-gradient(180deg,#5b2a76,#241033);color:#fff4d5;font-size:18px;font-weight:1000;line-height:1.2;letter-spacing:.04em;text-align:center;box-shadow:0 0 14px rgba(191,111,255,.34),inset 0 0 10px rgba(255,255,255,.08);cursor:pointer;transition:filter .14s ease,transform .14s ease,box-shadow .14s ease;}',
       '#jinpoPopularHeroListBtn:hover,#jinpoPopularHeroListBtn:focus-visible{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 0 18px rgba(219,126,255,.44),inset 0 0 10px rgba(255,255,255,.12);outline:none;}',
       '.jinpoModeChoiceLabel{position:absolute;left:50%;top:-6px;z-index:4;display:none;transform:translateX(-50%);min-width:124px;padding:6px 18px;border:3px solid #fff1a6;border-radius:999px;background:linear-gradient(180deg,#b83d22,#5b0e09);color:#fffbdc;font-size:22px;font-weight:1000;line-height:1.05;letter-spacing:.08em;text-align:center;white-space:nowrap;text-shadow:0 0 8px #fff,0 0 16px #ffd45c,0 2px 2px #000;box-shadow:0 0 12px rgba(255,255,255,.86),0 0 26px rgba(255,201,62,.82);pointer-events:none;}',
@@ -582,7 +585,7 @@
       '#jinpoSpecialModeBtn{overflow:visible;}',
       '@media(max-width:1250px){#jinpoModeButtonGroup{flex-basis:100%}}',
       '/* 2026-09-29: 761-1100pxでおすすめ検索文字を縮小していた競合ルールを削除。PC/タブレットは上の単一サイズ経路を使用する。 */',
-      '@media(max-width:760px){#jinpoModeSelectHeader{gap:8px;margin:0 0 4px}#jinpoModeSelectHeader .jinpoModeSelectArrow{flex-basis:68px;width:68px;height:70px}#jinpoModeSelectHeader .jinpoModeSelectArrow::before{width:22px;height:32px}#jinpoModeSelectHeader .jinpoModeSelectArrow::after{top:29px;border-left-width:28px;border-right-width:28px;border-top-width:34px}#jinpoModeSelectHeader .jinpoModeSelectText{font-size:22px;padding:4px 12px 6px}#jinpoModeButtonGroup{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.jinpoModeChoiceWrap{padding-top:33px}.jinpoModeChoiceLabel{font-size:16px;min-width:100px;padding:4px 12px;top:-2px}#jinpoPopularHeroListBtn{font-size:14px;padding:8px 8px}}',
+      '@media(max-width:760px){#jinpoModeSelectHeader{gap:8px;margin:0 0 4px}#jinpoModeSelectHeader .jinpoModeSelectArrow{flex-basis:68px;width:68px;height:70px}#jinpoModeSelectHeader .jinpoModeSelectArrow::before{width:22px;height:32px}#jinpoModeSelectHeader .jinpoModeSelectArrow::after{top:29px;border-left-width:28px;border-right-width:28px;border-top-width:34px}#jinpoModeSelectHeader .jinpoModeSelectText{font-size:22px;padding:4px 12px 6px}#jinpoModeButtonGroup{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;gap:7px}#jinpoModeButtonGroup [data-jinpo-mode-wrap="special"]{grid-column:auto;grid-row:auto}.jinpoModeChoiceWrap{padding-top:33px}.jinpoModeChoiceLabel{font-size:16px;min-width:100px;padding:4px 12px;top:-2px}#jinpoRecommendSearchTitleSlot{display:none}#jinpoPopularHeroListBtn{font-size:14px;padding:8px 8px}}',
       '@media(max-width:430px){#jinpoModeButtonGroup{grid-template-columns:1fr}}',
       'body.jinpo-selected-grade3-mode{background:#10000d url("assets/jinpo-popular-mode-bg.png") center top/cover no-repeat fixed!important;position:relative;isolation:isolate;}',
       'body.jinpo-selected-grade3-mode > header,body.jinpo-selected-grade3-mode > main{position:relative;z-index:1;}',
@@ -995,6 +998,19 @@
         popularListBtn.addEventListener('click',function(ev){ev.preventDefault();openPopularHeroModal();});
       }
       if(popularListBtn.parentNode!==specialWrap) specialWrap.appendChild(popularListBtn);
+      var recommendSearchTitleSlot=document.getElementById('jinpoRecommendSearchTitleSlot');
+      if(!recommendSearchTitleSlot){
+        recommendSearchTitleSlot=document.createElement('div');
+        recommendSearchTitleSlot.id='jinpoRecommendSearchTitleSlot';
+        recommendSearchTitleSlot.setAttribute('aria-hidden','true');
+        var recommendSearchTitleImage=document.createElement('img');
+        recommendSearchTitleImage.id='jinpoRecommendSearchTitleImage';
+        recommendSearchTitleImage.src='assets/jinpo-recommend-search-title.png';
+        recommendSearchTitleImage.alt='';
+        recommendSearchTitleImage.draggable=false;
+        recommendSearchTitleSlot.appendChild(recommendSearchTitleImage);
+      }
+      if(recommendSearchTitleSlot.parentNode!==modeGroup) modeGroup.appendChild(recommendSearchTitleSlot);
     }
     syncModeSelectorState();
     var right = document.getElementById('jinpoBondNavRight');
