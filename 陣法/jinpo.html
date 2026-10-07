@@ -390,6 +390,10 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   -webkit-text-stroke:0 !important;
   text-shadow:none !important;
 }
+.dbPriorityValueChoice[data-stat="生命"] .jinpoPriorityValueRange,
+.dbPriorityValueChoice[data-stat="気合"] .jinpoPriorityValueRange{
+  font-size:.72em !important;
+}
 </style>
 
   <link rel="icon" type="image/png" href="../favicon.png?v=2">
@@ -7128,6 +7132,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         var b=document.createElement('button');
         b.type='button';
         b.className='dbPriorityValueChoice'+(selected?' active':'');
+        b.setAttribute('data-stat',currentStat);
         var num=document.createElement('span');
         num.className='jinpoPriorityValueNumber';
         num.textContent=String(v);
@@ -7632,13 +7637,23 @@ body.jinpoFormationSelected #ownedHeroControl .ownedHeroSlotBtn{
 
 <style id="kenbun-kishin-fit-window-20260924">
 /* 2026-09-24: 見聞録・鬼神石だけをウィンドウ幅へ収め、右端の項目名/MAX/解除まで常時表示する。 */
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiModal,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiModal{
   width:min(1540px,calc(100vw - 20px)) !important;
 }
-#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiBody,
-#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiModal{
+  width:min(1780px,calc(100vw - 20px)) !important;
+  transform:translateX(-121px) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiBody{
   grid-template-columns:clamp(116px,14vw,188px) minmax(0,1fr) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiBody{
+  grid-template-columns:420px minmax(0,1fr) !important;
+}
+#eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiJobBtn[data-slot]{
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
 }
 #eiketsuKishinsekiModalBackdrop[data-panel="kenbun"] .eiketsuKishinsekiSide,
 #eiketsuKishinsekiModalBackdrop[data-panel="kishin"] .eiketsuKishinsekiSide{
