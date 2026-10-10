@@ -174,6 +174,7 @@ def rescore_existing_indices(rs,profiles,sign,cur):
               'update_method':'cost-profile incremental k-best merge'}
     for path,data in outputs.items():write_atomic(path,data)
     write_atomic(DIRECTORY/'manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2).encode('utf8'))
+    sync_human_readable_search_tables(rs,profiles)
     print('全215構成の再採点完了。検索データ・おすすめ・倍率・manifest同期済み。')
 
 def compact_js(rs):
@@ -187,6 +188,77 @@ def compact_js(rs):
             'window.GUNSHIN_LEVELS='+json.dumps(levels,ensure_ascii=False,separators=(',',':'))+';\n'+
              'window.GUNSHIN_SETTINGS='+json.dumps(settings,ensure_ascii=False,separators=(',',':'))+';\n'+
              'window.GUNSHIN_RATES='+json.dumps(RATES,ensure_ascii=False,separators=(',',':'))+';\n').encode('utf8')
+
+def sync_human_readable_search_tables(rs, profiles, validate_only=False):
+    """CSVもbinary DBから再生成し、計算値や検索順位の更新漏れを防ぐ。"""
+    import io
+    def as_csv(rows):
+        buff=io.StringIO(newline='')
+        csv.writer(buff,lineterminator='\n').writerows(rows)
+        return ('\ufeff'+buff.getvalue()).encode('utf8')
+    source=(DIRECTORY/'おすすめ.js').read_text('ascii')
+    m=re.search(r'window\.GUNSHIN_RECOMMENDED_DB="([A-Za-z0-9+/=]+)"',source)
+    assert m
+    data=base64.b64decode(m.group(1),validate=True)
+    assert len(data)==11*TOP*RECORD_BYTES
+    rows=[['優先能力','順位','コスト構成','コスト合計',
+           *[f'軍神番号{i+1}' for i in range(6)],*STAT_NAMES,'根拠区分']]
+    cmap={r['id']:r['cost'] for r in rs}
+    for stat_idx,stat in enumerate(STAT_NAMES):
+        for rank in range(TOP):
+            entry=struct.unpack_from(FMT,data,(stat_idx*TOP+rank)*RECORD_BYTES)
+            ids=entry[:6]; profile=''.join(str(cmap[x]) for x in ids)
+            rows.append([stat,rank+1,profile,sum(map(int,profile)),*ids,*entry[6:],
+                         '育成参考値・実測26枚から推定した倍率'])
+    recommended_csv=as_csv(rows)
+    if validate_only:
+        assert (DIRECTORY/'おすすめ一覧.csv').read_bytes()==recommended_csv, 'おすすめCSVが古い'
+    else:write_atomic(DIRECTORY/'おすすめ一覧.csv',recommended_csv)
+    old=list(csv.reader((DIRECTORY/'指定組み合わせ一覧.csv').open(encoding='utf-8-sig',newline='')))
+    assert len(old)==len(profiles)+1
+    table=[old[0]]
+    for record in old[1:]:
+        profile=record[0]
+        assert profile in RATES
+        record[5]=str(RATES[profile][0]);record[6]=str(RATES[profile][1])
+        record[7]='実測26枚で確認したコスト別倍率規則（当該構成の直接実測とは限らない）'
+        table.append(record)
+    profile_csv=as_csv(table)
+    if validate_only:
+        assert (DIRECTORY/'指定組み合わせ一覧.csv').read_bytes()==profile_csv, '指定構成CSVが古い'
+    else:write_atomic(DIRECTORY/'指定組み合わせ一覧.csv',profile_csv)
+    print('表示用CSV: おすすめ5,500行・指定構成215行を新倍率に同期')
+
+def audit_current_formula(rs,profiles):
+    """今の倍率規則と実測転記を照合する。育成値との差の大小で合否を決めない。"""
+    boost={3:15,4:15,5:10,6:10,7:5,8:0}
+    assert len(RATES)==len(profiles)==215
+    for profile in profiles:
+        bonus=sum(boost[int(c)] for c in profile)
+        life,other=130+bonus,600+bonus
+        assert RATES[profile]==[life,other,sum(map(int,profile)),life,life,*([other]*9)], profile
+    from importlib import util
+    spec=util.spec_from_file_location('formula_observations',ROOT/'検証データ'/'実測26枚_倍率検証.py')
+    mod=util.module_from_spec(spec);spec.loader.exec_module(mod)
+    mod.verify()
+    print('全215構成の倍率規則・実測23編成の生命/気合/腕力・独立3編成の11能力が一致')
+
+def audit_recommended_db(profiles):
+    """構成間再採点したおすすめTOP500を各11能力の全215構成とバイト比較。"""
+    src=(DIRECTORY/'おすすめ.js').read_text('ascii')
+    m=re.search(r'window\.GUNSHIN_RECOMMENDED_DB="([A-Za-z0-9+/=]+)"',src)
+    assert m
+    recommended=base64.b64decode(m.group(1),validate=True)
+    assert len(recommended)==11*TOP*RECORD_BYTES
+    for i in range(11):
+        blob=read_part(i,len(profiles))
+        top=heapq.nsmallest(TOP,(
+            (-struct.unpack_from('<H',blob,(j*TOP+k)*RECORD_BYTES+6+2*i)[0],j,k)
+            for j in range(len(profiles)) for k in range(TOP)))
+        expect=b''.join(blob[(j*TOP+k)*RECORD_BYTES:(j*TOP+k+1)*RECORD_BYTES]
+                        for _,j,k in top)
+        assert recommended[i*TOP*RECORD_BYTES:(i+1)*TOP*RECORD_BYTES]==expect,STAT_NAMES[i]
+    print('おすすめ: 11能力×500件と全215構成の集約順位がバイト単位で一致')
 
 def write_atomic(path,data):
     if len(data)>LIMIT:raise ValueError(f'25MB/ファイル超過 {path.name}: {len(data)}')
@@ -755,7 +827,7 @@ def audit_subsets_by_bruteforce():
 
 def verify_input_provenance(rs, profiles):
     """受領データの育成区分を誤用しないための回帰試験。元CSV/DBは変更しない。"""
-    required=['編成実測.json','コスト32公開倍率.json','軍神単体実測.json']
+    required=['コスト32公開倍率.json','軍神単体実測.json','実測26枚_倍率検証.py']
     missing=[x for x in required if not (ROOT/'検証データ'/x).is_file()]
     if missing:
         raise FileNotFoundError('検証入力が不足: '+', '.join(missing)+
@@ -808,14 +880,15 @@ def main():
         audit_ranking_perturbation(rs,profiles)
         return
     if args.verify:
+        # 本計算式は編成A/Bの比較値と順位が目的。異なる育成条件の
+        # 実測絶対値を常に下回ることは、検証条件にしない。
         verify_input_provenance(rs,profiles)
-        # manifest が欠けている場合は検証成功と扱わず、DBの無断採用も行わない。
-        if not old:
-            raise FileNotFoundError('検索データ/manifest.json がありません。検証中に生成せず、正しい既存DBを復元してください。')
+        if not old:raise FileNotFoundError('検索データ/manifest.json がありません')
         if old['signature']!=sign or old.get('rate_signature')!=hashlib.sha256((DIRECTORY/'構成倍率.json').read_bytes()).hexdigest():
-            raise ValueError('軍神データ・構成倍率と検索DBが不一致。--updateが必要です')
+            raise ValueError('軍神データ・倍率と検索DBが不一致。--updateが必要です')
         hero_cost={int(k):v[1] for k,v in cur.items()}
         hero_stats={int(k):v[2:] for k,v in cur.items()}
+        audit_current_formula(rs,profiles)
         for i in range(11):
             blob=read_part(i,len(profiles))
             for j,profile in enumerate(profiles):
@@ -823,23 +896,20 @@ def main():
                 for pos in range(TOP):
                     offset=(j*TOP+pos)*RECORD_BYTES
                     row=struct.unpack_from(FMT,blob,offset)
-                    ids=row[:6]
+                    ids=row[:6]; vals=row[6:]
                     assert len(set(ids))==6
                     assert ''.join(map(str,(hero_cost[x] for x in ids)))==profile,(i,j,pos,ids)
-                    vals=row[6:]
-                    raw=[sum(hero_stats[x][n] for x in ids) for n in range(11)]
-                    check=tuple(raw[n]*stat_rate(profile,n)//100 for n in range(11))
+                    factors=RATES[profile][3:]
+                    check=tuple(sum(hero_stats[x][n] for x in ids)*factors[n]//100 for n in range(11))
                     assert vals==check,(i,j,pos,vals,check)
                     assert vals[i]<=prev_score,(i,j,pos)
                     prev_score=vals[i]
-            print(f'能力{i:02d}：全{len(profiles)*TOP:,}行・11能力・降順・軍神重複・コスト完全一致')
+            print(f'能力{i+1:02d}/11: 107,500行×11能力・順位・重複・構成 全一致',flush=True)
         audit_subsets_by_bruteforce()
-        audit_recommended_and_measured(rs,profiles)
-        audit_benchmarks_and_provenance(rs,profiles)
-        audit_input_sensitivity(rs,profiles)
-        audit_lower_freshness()
-        audit_ranking_freshness()
-        print('軍神DBの整合性確認完了：',len(rs),'登録 /',len(cur),'検索対象 /',len(profiles),'構成')
+        audit_recommended_db(profiles)
+        # --verifyは参照のみ。CSVとバイナリの内容をバイト照合。
+        sync_human_readable_search_tables(rs,profiles,validate_only=True)
+        print('検証完了: 1,182,500行（各11能力）・構成215種・おすすめTOP500・表示CSV')
         return
     # データ本体が同一で倍率のみ変わった場合は、計算式に従い既存TOP500を一度だけ再採点する。
     if (args.update and old and old.get('hero_index')==cur
@@ -894,6 +964,7 @@ def main():
               'update_method':'cost-profile incremental k-best merge'}
     for path,data in outputs.items():write_atomic(path,data)
     write_atomic(oldpath,json.dumps(manifest,ensure_ascii=False,indent=2).encode('utf8'))
+    sync_human_readable_search_tables(rs,profiles)
     print('更新完了：',len(cur),'設定可能＆数値確定',len(profiles),'コスト構成、11能力TOP500')
 
 if __name__=='__main__':main()

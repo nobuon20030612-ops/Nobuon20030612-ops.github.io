@@ -291,8 +291,8 @@
             <div class="manual-hint">軍神を手動で組み合わせ</div>
             <div class="manual-controls"><span class="manual-label">手動</span><button type="button" class="manual-open" id="openGodSettings">軍神設定</button></div>
             <button type="button" class="manual-list-open" id="openGodList">軍神一覧</button>
-            <button type="button" class="god-list-clear" id="clearExcludedGods" disabled>除外全解除</button>
             <button type="button" class="manual-list-open" id="openExcludedGods">除外軍神<span class="excluded-god-count" id="excludedGodCount">0人</span></button>
+            <button type="button" class="god-list-clear" id="clearExcludedGods" disabled>除外全解除</button>
           </div>
         </aside>
         <div class="god-compare-placement is-unavailable" id="godComparePlacement">
@@ -704,11 +704,11 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  const getComposition=ids=>ids.map(heroCost).sort((a,b)=>b-a).join('');
  const totalFor=ids=>STAT_NAMES.map((_,i)=>ids.reduce((sum,id)=>sum+(heroById.get(Number(id))?.[i+3]||0),0));
  const containsUnmeasured=ids=>ids.some(id=>!hasNumericStats(heroById.get(Number(id))));
- // 2系列×1～5柱のゲーム内「元能力合計→能力上昇」から逆算した実効倍率（％）。
- // 元能力は奉納物込みでも、同じ画面の元能力合計を使うことで倍率を照合できる。
- // 検証したコスト構成は4,44,644,6644,66644。未検証構成にも参考近似として適用する。
- // 人数ボーナス／低コストボーナスの内訳は未分離。6柱の215構成別倍率は変更しない。
- const COUNT_BONUS_RATES={1:[115,310],2:[135,350],3:[150,400],4:[165,470],5:[180,560]};
+ // ゲーム画面26枚から照合した人数別基本倍率と、各柱のコスト別追加補正。
+ // 生命・気合とその他9能力を区別し、編成に含む各柱の追加％を合算する。
+ // 6柱は検索DBと同じ構成倍率を使用。計算結果は端数切捨て。
+ const COUNT_BONUS_RATES={1:[100,300],2:[105,320],3:[110,360],4:[115,420],5:[120,500],6:[130,600]};
+ const COST_BONUS_RATES={3:15,4:15,5:10,6:10,7:5,8:0};
  const boostedFor=ids=>{
    if(!ids.length)return STAT_NAMES.map(()=>0);
    // 固定Lvなど11能力が未確定の軍神を含む場合は数値を作らない。
@@ -718,8 +718,10 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      const rate=COMPOSITION_RATES[getComposition(ids)];
      return rate?raw.map((v,i)=>Math.floor(v*rate[i+3]/100)):STAT_NAMES.map(()=>null);
    }
-   const rate=COUNT_BONUS_RATES[ids.length];
-   return rate?raw.map((v,i)=>Math.floor(v*rate[i<2?0:1]/100)):raw;
+   const base=COUNT_BONUS_RATES[ids.length];
+   if(!base)return STAT_NAMES.map(()=>null);
+   const extra=ids.reduce((sum,id)=>sum+(COST_BONUS_RATES[heroCost(id)]??0),0);
+   return raw.map((v,i)=>Math.floor(v*(base[i<2?0:1]+extra)/100));
  };
  const readableStat=v=>v===null||v===undefined?'—':numberFormat.format(v);
  // 「能力上昇」はゲーム画面の左右2列順。内部のSTAT_NAMES・計算値の並びは変えない。
@@ -1188,7 +1190,10 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  document.getElementById('openGodSettings').addEventListener('click',showGodModal);
  document.getElementById('closeGodSettings').addEventListener('click',closeGodModal);
  document.getElementById('applyGodSettings').addEventListener('click',applyDraft);
- document.getElementById('clearAllGods').addEventListener('click',()=>applySet([],'全解除'));
+ document.getElementById('clearAllGods').addEventListener('click',()=>{
+  if(!appliedGodIds.length)return;
+  showGunshinConfirm('全解除','適用中の軍神セットをすべて解除しますか？',()=>applySet([],'全解除'));
+});
 
  // 比較モーダルは独立した選択状態。適用中軍神は変更しない。
  const compareModal=document.getElementById('godCompareModal');
