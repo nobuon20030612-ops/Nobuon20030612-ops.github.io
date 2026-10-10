@@ -399,6 +399,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   <style id="jinpo-search-limit-notice-style">
 /* 第1・第2優先ソートの下に配置する検索上限の案内。表示のみ。 */
 #jinpoSearchLimitNotice{
+  grid-column:1 / -1;
   width:100%;
   box-sizing:border-box;
   margin:8px 0 12px;
@@ -752,6 +753,29 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     <div class="jinpoSearchLimitLine">検索表示は上位500件まで、ステータス毎の並べ替えは検索表示中の500件が対象です。</div>
     <div class="jinpoSearchLimitLine">全組合せから探す場合は <span class="jinpoSearchLimitPill">ソート検索</span> を最大2つまで利用して絞込みしてください。</div>
   </div>
+  <script id="jinpo-search-limit-after-priority-guide">
+  (function(){
+    'use strict';
+    var banner = document.getElementById('jinpoSearchLimitNotice');
+    var host = document.getElementById('dbCountBrowserCard');
+    if (!banner || !host) return;
+
+    // 既存の赤色説明欄（jinpo-bond-list.js が生成）の直後に配置。
+    function positionNotice(){
+      var guide = document.getElementById('jinpoRecommendSumGuide');
+      if (!guide || !host.contains(guide)) return false;
+      if (guide.nextElementSibling !== banner) guide.insertAdjacentElement('afterend', banner);
+      return true;
+    }
+    if (positionNotice()) return;
+    var observer = new MutationObserver(function(){
+      if (positionNotice()) observer.disconnect();
+    });
+    observer.observe(host, {childList:true});
+    document.addEventListener('DOMContentLoaded', positionNotice, {once:true});
+    window.addEventListener('load', positionNotice, {once:true});
+  })();
+  </script>
   <div class="dbListControls">
 
   </div>
