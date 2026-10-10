@@ -462,6 +462,7 @@ const NON_SELECTABLE_GOD_IDS=new Set(Object.keys(GROWTH_ONLY_GODS).map(Number));
  function cancelGunshinLoading(){
    if(activeLoading.has('search')){
      ++searchToken;
+     stopExactPrioritySearch();
      currentRows=[];
      document.getElementById('resultsFeedback').textContent='検索を中止しました。';
      renderSearchResults();
@@ -525,10 +526,7 @@ const items = [...document.querySelectorAll('.total-item')];
 const STAT_THEME_ACCENTS={生命力:'#f7f7f2',気合:'#bceafc',腕力:'#ff8587',耐久力:'#81adff',器用さ:'#83dda3',知力:'#ffe56c',魅力:'#dda2f4',土属性:'#ffebb0',水属性:'#74ddf4',火属性:'#ffafae',風属性:'#b2eab7'};
  const TOP_COUNT=500;
  const PROFILE_KEYS=Object.keys(COMPOSITION_RATES).sort().reverse();
- const PROFILE_INDEX=new Map(PROFILE_KEYS.map((k,i)=>[k,i]));
  const RECORD_BYTES=28;
- const perStatBinary=new Map(); // 第1～第4優先に必要な最大4能力を保持
- const loadingStatScripts=new Map();
   function readBase64(binary){
    const text=atob(binary), bytes=new Uint8Array(text.length);
    for(let i=0;i<text.length;i++)bytes[i]=text.charCodeAt(i);
@@ -547,43 +545,6 @@ const STAT_THEME_ACCENTS={生命力:'#f7f7f2',気合:'#bceafc',腕力:'#ff8587',
    if(recommendedBytes.length!==11*TOP_COUNT*RECORD_BYTES)throw new Error('おすすめ検索用DBが読み込まれていません');
    const offset=statIndex*TOP_COUNT*RECORD_BYTES;
    return Array.from({length:TOP_COUNT},(_,i)=>rowAt(recommendedBytes,offset,i));
- }
- async function inflateCombinationData(encoded){
-   if(typeof DecompressionStream==='undefined')throw new Error('このブラウザは圧縮検索データに対応していません。新しいChromeまたはEdgeをご利用ください。');
-   const compressed=readBase64(encoded);
-   const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate'));
-   const bytes=new Uint8Array(await new Response(stream).arrayBuffer());
-   if(bytes.length!==215*TOP_COUNT*RECORD_BYTES)throw new Error('検索DBのサイズが不正です');
-   return bytes;
- }
- function loadCompositionData(statIndex){
-   if(perStatBinary.has(statIndex))return Promise.resolve(perStatBinary.get(statIndex));
-   if(loadingStatScripts.has(statIndex))return loadingStatScripts.get(statIndex);
-   const loader=new Promise((resolve,reject)=>{
-     const decode=async()=>{
-       try{
-         const encoded=window.GUNSHIN_PRECOMPUTED&&window.GUNSHIN_PRECOMPUTED[statIndex];
-         if(!encoded)throw new Error('該当する能力の事前検索データが見つかりません');
-         const bytes=await inflateCombinationData(encoded);
-         if(perStatBinary.size>=4){
-            const oldKey=perStatBinary.keys().next().value;
-            perStatBinary.delete(oldKey);
-          }
-          perStatBinary.set(statIndex,bytes);
-         delete window.GUNSHIN_PRECOMPUTED[statIndex];
-         resolve(bytes);
-       }catch(err){reject(err);}
-     };
-     const existing=window.GUNSHIN_PRECOMPUTED&&window.GUNSHIN_PRECOMPUTED[statIndex];
-     if(existing){decode();return;}
-     const script=document.createElement('script');
-     script.src='検索データ/組合せ_'+String(statIndex).padStart(2,'0')+'.js';
-     script.onload=()=>{script.remove();decode();};
-     script.onerror=()=>{script.remove();reject(new Error('検索データを読み込めません。軍神フォルダ全体を配置してください。'));};
-     document.head.appendChild(script);
-   }).finally(()=>loadingStatScripts.delete(statIndex));
-   loadingStatScripts.set(statIndex,loader);
-   return loader;
  }
  const PRIORITY_LABELS=['生命','気合','腕力','耐久','器用','知力','魅力','土','水','火','風'];
  const PRIORITY_STEPS_LIFE=[7500,7000,6500,6000,5500,5000,4500,4000];
@@ -611,72 +572,181 @@ const STAT_THEME_ACCENTS={生命力:'#f7f7f2',気合:'#bceafc',腕力:'#ff8587',
    if(!active.length)return row.values[STAT_NAMES.indexOf(currentStat||'腕力')];
    return active.reduce((sum,r)=>sum+row.values[STAT_NAMES.indexOf(r.stat)],0);
  }
- function sortPriorityRows(rows){
+function exactSearchCore(data, progress) {
+  'use strict';
+  const {heroes, profiles, indices, limits, excluded, top = 500} = data;
+  const excludeSet = new Set(excluded);
+  const byCost = new Map();
+  for (const god of heroes) {
+    if (excludeSet.has(god[0])) continue;
+    const cost = god[2];
+    if (!byCost.has(cost)) byCost.set(cost, []);
+    byCost.get(cost).push(god);
+  }
+  const idToCost = new Map(heroes.map(g=>[g[0],g[2]]));
+  const combinations = new Map(), scoredChoices = new Map();
+  // All subsets of a fixed cost and cardinality, not merely the first 500.
+  function rawChoices(cost, need) {
+    const key = cost + ':' + need;
+    if (combinations.has(key)) return combinations.get(key);
+    const gods = byCost.get(cost) || [];
+    const arr = [], selected = [], values = Array(11).fill(0);
+    function build(start, left) {
+      if (!left) { arr.push({ids: selected.slice(), raw: values.slice()}); return; }
+      for (let j = start; j <= gods.length - left; j++) {
+        const g = gods[j]; selected.push(g[0]);
+        for (let s = 0; s < 11; s++) values[s] += g[s + 3];
+        build(j + 1, left - 1);
+        for (let s = 0; s < 11; s++) values[s] -= g[s + 3];
+        selected.pop();
+      }
+    }
+    if (gods.length >= need) build(0, need);
+    combinations.set(key, arr);
+    return arr;
+  }
+  function sortedChoices(cost, need, rates) {
+    const key = [cost,need,...indices.map(i=>rates[i + 3])].join(':');
+    if (scoredChoices.has(key)) return scoredChoices.get(key);
+    const choices = rawChoices(cost, need).map(c => ({ids: c.ids, raw: c.raw,
+      weight: indices.reduce((sum,i) => sum + c.raw[i] * rates[i+3], 0)}));
+    choices.sort((a,b) => b.weight-a.weight);
+    scoredChoices.set(key, choices);
+    return choices;
+  }
+  // Best 500 across all compositions; root always holds the worst admitted row.
+  const results=[];
+  function better(a,b){
+    if(a.score!==b.score)return a.score>b.score;
+    for(const i of indices){if(a.values[i]!==b.values[i])return a.values[i]>b.values[i];}
+    if(a.key!==b.key)return a.key<b.key;
+    return a.ids.join(',')<b.ids.join(',');
+  }
+  const worse=(a,b)=>better(b,a);
+  function addResult(row) {
+    if(results.length===top&&!better(row,results[0]))return;
+    if(results.length<top){
+      let i=results.push(row)-1;
+      while(i>0){const p=(i-1)>>1;if(!worse(results[i],results[p]))break;
+        [results[i],results[p]]=[results[p],results[i]];i=p;}
+      return;
+    }
+    results[0]=row;
+    for(let i=0;;){const l=2*i+1,r=l+1;let worst=i;
+      if(l<top&&worse(results[l],results[worst]))worst=l;
+      if(r<top&&worse(results[r],results[worst]))worst=r;
+      if(worst===i)break;
+      [results[worst],results[i]]=[results[i],results[worst]];i=worst;
+    }
+  }
+  let explored = 0, visited = 0;
+  for (let profileNo = 0; profileNo < profiles.length; profileNo++) {
+    const [profileKey, rates] = profiles[profileNo];
+    const counts = new Map();
+    for (const digit of profileKey) counts.set(+digit, (counts.get(+digit)||0)+1);
+    const groups = [];
+    let feasible=true;
+    for (const [cost,need] of counts) {
+      const choices=sortedChoices(cost,need,rates);
+      if (!choices.length) {feasible=false;break;}
+      const min = limits.map(l=>Infinity), max=limits.map(l=>-Infinity);
+      for (const choice of choices) {
+        for(let k=0;k<limits.length;k++){
+          const val=choice.raw[limits[k].i];
+          if(val<min[k])min[k]=val;
+          if(val>max[k])max[k]=val;
+        }
+      }
+      groups.push({choices,min,max,highest:choices[0].weight});
+    }
+    if (!feasible) continue;
+    // Choose the shortest choice list first; score-based upper bounds stay valid.
+    groups.sort((a,b)=>a.choices.length-b.choices.length);
+    const n=groups.length;
+    const suffixBest=Array(n+1).fill(0);
+    const suffixMin=Array.from({length:n+1},()=>Array(limits.length).fill(0));
+    const suffixMax=Array.from({length:n+1},()=>Array(limits.length).fill(0));
+    for(let d=n-1;d>=0;d--){
+      suffixBest[d]=suffixBest[d+1]+groups[d].highest;
+      for(let k=0;k<limits.length;k++){
+        suffixMin[d][k]=suffixMin[d+1][k]+groups[d].min[k];
+        suffixMax[d][k]=suffixMax[d+1][k]+groups[d].max[k];
+      }
+    }
+    const current=Array(11).fill(0), chosen=[];
+    function feasibleLimits(next){
+      for(let k=0;k<limits.length;k++){
+        const l=limits[k],rate=rates[l.i+3],raw=current[l.i];
+        if(l.min!==null&&(raw+suffixMax[next][k])*rate < l.min*100)return false;
+        if(l.max!==null&&(raw+suffixMin[next][k])*rate >= (l.max+1)*100)return false;
+      }
+      return true;
+    }
+    if (!feasibleLimits(0))continue;
+    function dfs(depth,scoreRaw){
+      visited++;
+      if(results.length===top&&scoreRaw+suffixBest[depth]<results[0].score*100)return;
+      if(depth===n){
+        explored++;
+        const values=current.map((raw,i)=>Math.floor(raw*rates[i+3]/100));
+        for(const l of limits){const v=values[l.i];if((l.min!==null&&v<l.min)||(l.max!==null&&v>l.max))return;}
+        const score=indices.reduce((sum,i)=>sum+values[i],0);
+        const ids=chosen.flat(),row={ids,values,key:profileKey,cost:ids.reduce((s,id)=>s+idToCost.get(id),0),score};
+        addResult(row);return;
+      }
+      const group=groups[depth];
+      for(const choice of group.choices){
+        const weight=scoreRaw+choice.weight;
+        if(results.length===top&&weight+suffixBest[depth+1]<results[0].score*100)break;
+        for(let i=0;i<11;i++)current[i]+=choice.raw[i];
+        if(feasibleLimits(depth+1)){
+          chosen.push(choice.ids);dfs(depth+1,weight);chosen.pop();
+        }
+        for(let i=0;i<11;i++)current[i]-=choice.raw[i];
+      }
+    }
+    dfs(0,0);
+    if (progress&&profileNo%8===0) progress(Math.round((profileNo+1)*100/profiles.length));
+  }
+  results.sort((a,b)=>better(a,b)?-1:better(b,a)?1:0);
+  return {rows:results, explored, visited, exact:true};
+}
+
+ // 無条件の単一能力以外は、全215コスト構成を直接探索する。
+ // 除外・以上・以下も探索の途中で枝刈りし、部分的なTOP500に依存しない。
+ // 別スレッド処理なので大量検索中もモーダルとキャンセルが反応する。
+ let activeExactWorker=null,activeExactAbort=null;
+ function stopExactPrioritySearch(){
+   if(activeExactWorker){activeExactWorker.terminate();activeExactWorker=null;}
+   if(activeExactAbort){const abort=activeExactAbort;activeExactAbort=null;abort();}
+ }
+ function exactPriorityRows(token){
    const indices=priorityRules.filter(r=>r.stat).map(r=>STAT_NAMES.indexOf(r.stat));
    if(!indices.length)indices.push(STAT_NAMES.indexOf(currentStat||'腕力'));
-   return rows.sort((a,b)=>priorityScore(b)-priorityScore(a)||
-      indices.reduce((tie,k)=>tie||(b.values[k]-a.values[k]),0)||a.key.localeCompare(b.key));
- }
- async function combinedPriorityRows(token){
-   const primary=STAT_NAMES.indexOf(priorityRules[0].stat||currentStat);
-   const sources=[...new Set([primary,...priorityRules.slice(1).filter(r=>r.stat).map(r=>STAT_NAMES.indexOf(r.stat))])];
-   const buffers=await Promise.all(sources.map(loadCompositionData));
-   if(token!==searchToken)return [];
-   const indices=priorityRules.filter(r=>r.stat).map(r=>STAT_NAMES.indexOf(r.stat));
-   if(!indices.length)indices.push(primary);
-   const limits=priorityRules.filter(r=>r.stat).map(r=>({i:STAT_NAMES.indexOf(r.stat),min:r.min,max:r.max}));
-   const seen=new Set(),heap=[];
-   function better(a,b){
-     if(a.score!==b.score)return a.score>b.score;
-     for(const k of indices)if(a.values[k]!==b.values[k])return a.values[k]>b.values[k];
-     return a.key.localeCompare(b.key)<0;
-   }
-   const worse=(a,b)=>better(b,a);
-   function admit(row){
-     if(heap.length>=500&&!better(row,heap[0]))return;
-     if(heap.length<500){
-       let i=heap.push(row)-1;
-       while(i>0){const parent=(i-1)>>1;if(!worse(heap[i],heap[parent]))break;[heap[i],heap[parent]]=[heap[parent],heap[i]];i=parent;}
-       return;
-     }
-     heap[0]=row;
-     for(let i=0;;){
-       const a=i*2+1,b=a+1;let low=i;
-       if(a<heap.length&&worse(heap[a],heap[low]))low=a;
-       if(b<heap.length&&worse(heap[b],heap[low]))low=b;
-       if(low===i)break;
-       [heap[i],heap[low]]=[heap[low],heap[i]];i=low;
-     }
-   }
-   for(const buf of buffers){
-     const view=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);
-     for(let profile=0;profile<PROFILE_KEYS.length;profile++){
-       if(profile%12===0){await new Promise(resolve=>setTimeout(resolve,0));if(token!==searchToken)return [];}
-       const block=PROFILE_INDEX.get(PROFILE_KEYS[profile])*TOP_COUNT*RECORD_BYTES;
-       for(let j=0;j<TOP_COUNT;j++){
-         const start=block+j*RECORD_BYTES,base=start+6;
-         let valid=true;
-         for(const rule of limits){
-           const v=view.getUint16(base+2*rule.i,true);
-           if((rule.min!==null&&v<rule.min)||(rule.max!==null&&v>rule.max)){valid=false;break;}
-         }
-         if(!valid)continue;
-         let excluded=false;
-         for(let k=0;k<6;k++)if(excludedGodIds.has(buf[start+k])){excluded=true;break;}
-         if(excluded)continue;
-         const signature=Array.from(buf.subarray(start,start+6)).sort((a,b)=>a-b).join(',');
-         if(seen.has(signature))continue;
-         seen.add(signature);
-         let score=0;
-         for(const k of indices)score+=view.getUint16(base+2*k,true);
-         if(heap.length>=500&&score<heap[0].score)continue;
-         const row=rowAt(buf,block,j);row.score=score;
-         admit(row);
-       }
-     }
-   }
-   if(token===searchToken)indexedMatchCount=seen.size;
-   return sortPriorityRows(heap);
+   const limits=priorityRules.filter(r=>r.stat&&(r.min!==null||r.max!==null))
+     .map(r=>({i:STAT_NAMES.indexOf(r.stat),min:r.min,max:r.max}));
+   const payload={heroes:HERO_ROWS.filter(g=>selectableGod(g)&&hasNumericStats(g)),
+     profiles:PROFILE_KEYS.map(key=>[key,COMPOSITION_RATES[key]]),indices,limits,
+     excluded:[...excludedGodIds],top:TOP_COUNT};
+   const source='self.onmessage=e=>{try{const result=('+exactSearchCore.toString()+')(e.data,p=>self.postMessage({progress:p}));self.postMessage({result});}catch(error){self.postMessage({error:String(error)});}}';
+   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+   let worker;
+   try{worker=new Worker(url);}finally{URL.revokeObjectURL(url);}
+   activeExactWorker=worker;
+   return new Promise((resolve,reject)=>{
+     const done=()=>{worker.terminate();if(activeExactWorker===worker){activeExactWorker=null;activeExactAbort=null;}};
+     activeExactAbort=()=>{reject(new Error('検索を中止しました。'));};
+     worker.onmessage=event=>{
+       if(token!==searchToken){done();return;}
+       const msg=event.data;
+       if(msg.progress!==undefined){
+         document.getElementById('resultsFeedback').textContent='全構成を検索中… '+msg.progress+'%';
+       }else if(msg.error){done();reject(new Error(msg.error));}
+       else if(msg.result){done();resolve(msg.result.rows);}
+     };
+     worker.onerror=event=>{done();reject(new Error('検索処理に失敗しました：'+event.message));};
+     worker.postMessage(payload);
+   });
  }
   // 検索状態と適用状態は別。セットを書き換える経路は applySet だけ。
  let currentStat='',currentRows=[],searchToken=0,indexedMatchCount=0;
@@ -879,6 +949,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  }
  async function showQuery(stat,autoScroll=false){
    if(!STAT_NAMES.includes(stat))return;
+   stopExactPrioritySearch();
    const token=++searchToken;
    currentStat=stat;currentRows=[];
    beginLoading('search');
@@ -888,12 +959,12 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    try{
      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
      if(token!==searchToken)return;
-     const filterActive=priorityRules.some(r=>r.stat&&(r.min!==null||r.max!==null))||priorityRules.slice(1).some(r=>r.stat)||excludedGodIds.size>0;
+     const exact=priorityRules.some(r=>r.stat&&(r.min!==null||r.max!==null))||priorityRules.slice(1).some(r=>r.stat)||excludedGodIds.size>0;
      const queryIndex=STAT_NAMES.indexOf(priorityRules[0].stat||stat);
-     const pool=filterActive?await combinedPriorityRows(token):recommendRows(queryIndex);
+     const pool=exact?await exactPriorityRows(token):recommendRows(queryIndex);
      if(token!==searchToken)return;
-     currentRows=pool.filter(notExcludedRow);
-     document.getElementById('resultHitCount').textContent=filterActive?numberFormat.format(indexedMatchCount):numberFormat.format(PROFILE_KEYS.length*TOP_COUNT);
+     currentRows=pool;
+     document.getElementById('resultHitCount').textContent=pool.length===TOP_COUNT?'500+':String(pool.length);
      const feedback=document.getElementById('resultsFeedback');
      const statNames=(priorityRules[0].stat||stat)+priorityRules.slice(1).filter(r=>r.stat).map(r=>'＋'+r.stat).join('');
      const line=document.createElement('span');
@@ -903,7 +974,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      line.append(
        document.createTextNode(statNames+' の'),
        totalLabel,
-       document.createTextNode('が高い順：'+currentRows.length+'件を表示'+(filterActive?'（上位500件から絞込み・指定優先合計降順）':''))
+       document.createTextNode('が高い順：'+currentRows.length+'件を表示'+(exact?'（全215構成から条件一致の合計値上位を直接検索）':''))
      );
      feedback.replaceChildren(line);
      renderSearchResults();renderTotals();
