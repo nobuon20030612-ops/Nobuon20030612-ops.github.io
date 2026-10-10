@@ -102,6 +102,14 @@ body {
     grid-template-columns: repeat(4, auto);
 }
 
+/* 軍神検索ボタンを陣法ボタンの真上に配置 */
+.gunshin-row {
+    grid-template-columns: repeat(4, clamp(120px, 16vw, 220px));
+}
+.gunshin-row .imgbtn {
+    grid-column: 4;
+}
+
 .top-row {
     grid-template-columns: repeat(4, auto);
 }
@@ -189,6 +197,10 @@ body {
         width: 24vw;
     }
 
+    .gunshin-row {
+        grid-template-columns: repeat(4, 26vw);
+    }
+
   }
 </style>
 <link rel="manifest" href="manifest.json">
@@ -204,6 +216,13 @@ body {
 <p class="sr-only">
 たいらの野望は、信長の野望オンラインの九十九・鬼神石・家臣計算機などをまとめた攻略サイトです。
 </p>
+
+<!-- 軍神検索（陣法の真上の新しい段） -->
+<div class="middle top-extra-row gunshin-row">
+    <button class="imgbtn" onclick="location.href='軍神/gunshin.html'">
+        <img decoding="async" loading="eager" src="軍神ボタン.png" alt="軍神検索">
+    </button>
+</div>
 
 <!-- 最上段 -->
 <div class="middle top-extra-row">
