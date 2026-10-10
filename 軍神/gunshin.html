@@ -145,7 +145,7 @@
 .god-list-content .god-cost-group summary::before{width:27px;height:27px;font-size:22px}
 .god-list-content .god-choose{font-size:clamp(20px,2.1vw,33px);line-height:1.39;padding:5px 9px;border-left-width:4px}
 .god-list-content .god-growth-group{--cost-outline:#d6b8f4}
-.god-rank-preview{display:block;overflow:hidden;padding:10px 11px!important}
+.god-rank-preview{display:block;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;padding:10px 11px!important}
 .god-rank-focused-body{width:100%;min-width:0}
 .god-rank-focused-body .god-portrait{flex:none;min-height:0;width:min(100%,420px,max(185px,calc(69dvh - 366px)));margin:0 auto 4px}
 .god-rank-focused-body .god-preview-grid{width:calc(100% - clamp(26px,6vw,100px));margin:4px auto;gap:clamp(1px,.3dvh,5px) 18px}.god-rank-focused-body .god-preview-stat,.god-rank-focused-body .god-preview-stat span,.god-rank-focused-body .god-preview-stat b{font-size:clamp(14px,min(1.75vw,2.4dvh),26px)}
@@ -605,12 +605,22 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  const getComposition=ids=>ids.map(heroCost).sort((a,b)=>b-a).join('');
  const totalFor=ids=>STAT_NAMES.map((_,i)=>ids.reduce((sum,id)=>sum+(heroById.get(Number(id))?.[i+3]||0),0));
  const containsUnmeasured=ids=>ids.some(id=>!hasNumericStats(heroById.get(Number(id))));
+ // 2系列×1～5柱のゲーム内「元能力合計→能力上昇」から逆算した実効倍率（％）。
+ // 元能力は奉納物込みでも、同じ画面の元能力合計を使うことで倍率を照合できる。
+ // 検証したコスト構成は4,44,644,6644,66644。未検証構成にも参考近似として適用する。
+ // 人数ボーナス／低コストボーナスの内訳は未分離。6柱の215構成別倍率は変更しない。
+ const COUNT_BONUS_RATES={1:[115,310],2:[135,350],3:[150,400],4:[165,470],5:[180,560]};
  const boostedFor=ids=>{
-   // 固定Lv50で実測未確定の軍神を含む場合、架空の合計を表示しない。
+   if(!ids.length)return STAT_NAMES.map(()=>0);
+   // 固定Lvなど11能力が未確定の軍神を含む場合は数値を作らない。
    if(containsUnmeasured(ids))return STAT_NAMES.map(()=>null);
-   const raw=totalFor(ids),rate=ids.length===6?COMPOSITION_RATES[getComposition(ids)]:null;
-   // 6柱は検索DBと同じ11能力別倍率を使用。1～5柱は人数別倍率が未確定のため基礎合計を表示。
-   return rate?raw.map((v,i)=>Math.floor(v*rate[i+3]/100)):raw;
+   const raw=totalFor(ids);
+   if(ids.length===6){
+     const rate=COMPOSITION_RATES[getComposition(ids)];
+     return rate?raw.map((v,i)=>Math.floor(v*rate[i+3]/100)):STAT_NAMES.map(()=>null);
+   }
+   const rate=COUNT_BONUS_RATES[ids.length];
+   return rate?raw.map((v,i)=>Math.floor(v*rate[i<2?0:1]/100)):raw;
  };
  const readableStat=v=>v===null||v===undefined?'—':numberFormat.format(v);
  // 「能力上昇」はゲーム画面の左右2列順。内部のSTAT_NAMES・計算値の並びは変えない。
@@ -658,7 +668,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      item.classList.toggle('is-selected',STAT_NAMES[i]===currentStat);
    });
    document.getElementById('sumState').textContent=appliedGodIds.length?
-     '適用中の軍神'+appliedGodIds.length+'柱／'+(containsUnmeasured(appliedGodIds)?'能力未確認を含むため合計算出不可':appliedGodIds.length===6?'6柱ボーナス参考値':'ボーナスなしの基礎合計'):
+     '適用中の軍神'+appliedGodIds.length+'柱／'+(containsUnmeasured(appliedGodIds)?'能力未確認を含むため合計算出不可':appliedGodIds.length===6?'6柱ボーナス参考値':'1～5柱ボーナス推定値'):
      '軍神未適用（検索だけでは能力値を反映しません）';
  }
 
