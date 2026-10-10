@@ -396,6 +396,44 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 }
 </style>
 
+  <style id="jinpo-search-limit-notice-style">
+/* 第1・第2優先ソートの下に配置する検索上限の案内。表示のみ。 */
+#jinpoSearchLimitNotice{
+  width:100%;
+  box-sizing:border-box;
+  margin:8px 0 12px;
+  padding:12px 16px;
+  border:3px solid #f1c27e;
+  border-radius:22px;
+  background:linear-gradient(108deg,#5f1b10 0%,#521727 52%,#4b174c 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,240,188,.18),0 0 10px rgba(228,161,90,.25);
+  color:#fff0d0;
+  text-align:center;
+  font-size:clamp(18px,2vw,36px);
+  font-weight:900;
+  line-height:1.7;
+}
+#jinpoSearchLimitNotice .jinpoSearchLimitLine{
+  white-space:nowrap;
+}
+#jinpoSearchLimitNotice .jinpoSearchLimitPill{
+  display:inline-block;
+  vertical-align:middle;
+  margin:0 7px;
+  padding:2px 13px 3px;
+  border:2px solid #a7e7ff;
+  border-radius:999px;
+  background:linear-gradient(110deg,#08baf0,#7658ee);
+  box-shadow:inset 0 0 7px rgba(255,255,255,.55),0 0 8px rgba(38,164,255,.4);
+  color:#fff;
+  line-height:1.2;
+}
+@media(max-width:900px){
+  #jinpoSearchLimitNotice{font-size:15px;padding:9px 10px;}
+  #jinpoSearchLimitNotice .jinpoSearchLimitLine{white-space:normal;}
+}
+</style>
+
   <link rel="icon" type="image/png" href="../favicon.png?v=2">
 </head>
 <body>
@@ -709,6 +747,10 @@ body.jinpoOpeningLocked{overflow:hidden!important}
       <select id="dbPriorityStat3" tabindex="-1"></select>
       <select id="dbPriorityValue3" tabindex="-1"></select>
     </div>
+  </div>
+  <div id="jinpoSearchLimitNotice" role="note" aria-label="検索結果とソート検索のご案内">
+    <div class="jinpoSearchLimitLine">検索表示は上位500件まで、ステータス毎の並べ替えは検索表示中の500件が対象です。</div>
+    <div class="jinpoSearchLimitLine">全組合せから探す場合は <span class="jinpoSearchLimitPill">ソート検索</span> を最大2つまで利用して絞込みしてください。</div>
   </div>
   <div class="dbListControls">
 

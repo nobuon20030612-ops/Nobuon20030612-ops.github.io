@@ -914,21 +914,23 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    });
    adjusted.forEach(([name,size])=>name.style.fontSize=size+'px');
  }
- // 検索結果500件は表の中だけスクロール。ページ本体の最下端は第3・第4優先ソートが残る位置にする。
- // body の zoom:0.67 にも対応するため、実画面座標で計測して高さだけを割り戻す。
+ // 検索一覧は見出しと組合せ5件分だけを表示し、6件目以降は一覧内でスクロールする。
+ // 各組合せは軍神名行＋能力行の2行なので、実際の行高から5件分を計測する。
  function fitResultsScrollablePane(){
    const pane=document.querySelector('.gunshin-table-wrap');
-   const third=document.querySelector('.gunshin-priority-group[data-priority="2"]');
-   if(!pane||!third)return;
+   if(!pane)return;
    pane.style.removeProperty('height');
-   if(!document.querySelector('#gunshinResultRows .list-main-row'))return;
+   const groups=Array.from(document.querySelectorAll('#gunshinResultRows .list-main-row')).slice(0,5);
+   if(!groups.length)return;
    const zoom=parseFloat(getComputedStyle(document.body).zoom)||1;
-   const paneBox=pane.getBoundingClientRect();
-   const paneTop=paneBox.top+window.scrollY;
-   const afterPane=Math.max(0,document.documentElement.scrollHeight-(paneBox.bottom+window.scrollY));
-   const limit=Math.max(0,third.getBoundingClientRect().top+window.scrollY-12);
-   const visibleHeight=limit+window.innerHeight-paneTop-afterPane;
-   pane.style.height=Math.max(220,Math.ceil(visibleHeight/zoom))+'px';
+   const header=pane.querySelector('thead');
+   let height=header?header.getBoundingClientRect().height:0;
+   groups.forEach(row=>{
+     height+=row.getBoundingClientRect().height;
+     const stats=row.nextElementSibling;
+     if(stats?.classList.contains('list-stat-row'))height+=stats.getBoundingClientRect().height;
+   });
+   pane.style.height=Math.ceil((height+2)/zoom)+'px';
  }
  function scheduleResultGodNamesFit(){
    if(resultNameFitFrame)cancelAnimationFrame(resultNameFitFrame);
