@@ -87,38 +87,19 @@ body {
     transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.middle {
+.button-grid {
     display: grid;
-    gap: 4vw;
+    grid-template-columns: repeat(5, clamp(120px, 16vw, 220px));
+    column-gap: clamp(8px, 2vw, 32px);
+    row-gap: 3vh;
     align-items: center;
     justify-content: center;
 }
 
-.middle.tools-row {
-    grid-template-columns: repeat(4, auto);
+/* 1・2・4行目の右端ボタン。間の3列は何も配置しない。 */
+.button-grid .right-column {
+    grid-column: 5;
 }
-
-.top-extra-row {
-    grid-template-columns: repeat(4, auto);
-}
-
-/* 軍神検索ボタンを陣法ボタンの真上に配置 */
-.gunshin-row {
-    grid-template-columns: repeat(4, clamp(120px, 16vw, 220px));
-}
-.gunshin-row .imgbtn {
-    grid-column: 4;
-}
-
-.top-row {
-    grid-template-columns: repeat(4, auto);
-}
-
-
-.bottom-row {
-    grid-template-columns: repeat(4, auto);
-}
-
 
 .imgbtn:hover img {
     transform: scale(1.05);
@@ -181,24 +162,16 @@ body {
         background-position: center top;
     }
 
-    .middle {
-        gap: 3vw;
-        justify-content: center;
-        flex-wrap: wrap;
+    .button-grid {
+        grid-template-columns: repeat(5, 18vw);
+        column-gap: 1.5vw;
+        row-gap: 4vh;
     }
 
     .imgbtn img {
-        width: 26vw;
+        width: 18vw;
         min-width: 0;
         max-width: none;
-    }
-
-    .middle.tools-row .imgbtn img {
-        width: 24vw;
-    }
-
-    .gunshin-row {
-        grid-template-columns: repeat(4, 26vw);
     }
 
   }
@@ -217,100 +190,77 @@ body {
 たいらの野望は、信長の野望オンラインの九十九・鬼神石・家臣計算機などをまとめた攻略サイトです。
 </p>
 
-<!-- 軍神検索（陣法の真上の新しい段） -->
-<div class="middle top-extra-row gunshin-row">
+<!-- ボタン配置：6行×5列（1・2・4行目の2～4列は空白） -->
+<div class="button-grid">
+    <!-- 1行目 -->
     <button class="imgbtn" onclick="location.href='軍神/gunshin.html'">
-        <img decoding="async" loading="eager" src="軍神ボタン.png" alt="軍神検索">
-    </button>
-</div>
-
-<!-- 最上段 -->
-<div class="middle top-extra-row">
-    <button class="imgbtn" onclick="location.href='鎮魂符.html'">
-        <img decoding="async" loading="eager" fetchpriority="high" src="鎮魂符画像.webp" alt="鎮魂符">
-    </button>
-    <button class="imgbtn" onclick="location.href='ルーレット.html'">
-        <img decoding="async" loading="eager" fetchpriority="high" src="ルーレットボタン.webp" alt="ルーレット">
-    </button>
-    <button class="imgbtn" onclick="location.href='トーナメント.html'">
-        <img decoding="async" loading="eager" fetchpriority="high" src="トーナメントボタン.webp" alt="トーナメント">
-    </button>
+            <img decoding="async" loading="eager" src="軍神ボタン.png" alt="軍神検索">
+        </button>
+    <button class="imgbtn right-column" onclick="location.href='家臣計算機.html'">
+            <img decoding="async" loading="lazy" src="kashin.webp" alt="家臣計算機">
+        </button>
+    <!-- 2行目 -->
     <button class="imgbtn" onclick="location.href='陣法/jinpo.html'">
-        <img decoding="async" loading="eager" fetchpriority="high" src="陣法.webp" alt="陣法">
-    </button>
-</div>
-
-<!-- 上段 -->
-<div class="middle top-row">
-      <button class="imgbtn" onclick="location.href='英傑一覧.html'">
-        <img decoding="async" loading="lazy" src="英傑一覧.webp" alt="英傑一覧">
-    </button>
-    <button class="imgbtn" onclick="location.href='shuugou.html'">
-        <img decoding="async" loading="lazy" src="btn_shuugou.webp" alt="徒党登録">
-    </button>
-    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" rel="noopener" class="imgbtn">
-        <img decoding="async" loading="lazy" src="koushiki.webp" alt="信長の野望オンライン公式サイト">
-    </a>
-
-    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" rel="noopener" class="imgbtn">
-        <img decoding="async" loading="lazy" src="wiki.webp" alt="信長の野望オンライン攻略Wiki">
-    </a>
-</div>
-
-<!-- 2段目 -->
-<div class="middle tools-row">
-    <button class="imgbtn" onclick="location.href='能力計算機.html'">
-        <img decoding="async" loading="lazy" src="nouryoku.webp" alt="能力計算">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='家臣計算機.html'">
-        <img decoding="async" loading="lazy" src="kashin.webp" alt="家臣計算機">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
-        <img decoding="async" loading="lazy" src="shichiseitensei.webp" alt="七星転生">
-    </button>
-
-    <button class="imgbtn" onclick="location.href='shokuryou.html'">
-        <img decoding="async" loading="lazy" src="shokuryou.webp" alt="食料">
-    </button>
-</div>
-
-<!-- 3段目 -->
-<div class="middle tools-row">
-    <button class="imgbtn nopush" onclick="location.href='seikai.html'">
-        <img decoding="async" loading="lazy" src="seikai.webp" alt="星海の荒石">
-    </button>
-
+            <img decoding="async" loading="eager" fetchpriority="high" src="陣法.webp" alt="陣法">
+        </button>
+    <button class="imgbtn right-column" onclick="location.href='能力計算機.html'">
+            <img decoding="async" loading="lazy" src="nouryoku.webp" alt="能力計算">
+        </button>
+    <!-- 3行目 -->
+    <button class="imgbtn" onclick="location.href='英傑一覧.html'">
+            <img decoding="async" loading="lazy" src="英傑一覧.webp" alt="英傑一覧">
+        </button>
     <button class="imgbtn" onclick="location.href='鬼神石.html'">
-        <img decoding="async" loading="lazy" src="kishinseki.webp" alt="鬼神石">
-    </button>
-
+            <img decoding="async" loading="lazy" src="kishinseki.webp" alt="鬼神石">
+        </button>
     <button class="imgbtn" onclick="location.href='九十九.html'">
-        <img decoding="async" loading="lazy" src="tsukumogami.webp" alt="九十九">
-    </button>
-
+            <img decoding="async" loading="lazy" src="tsukumogami.webp" alt="九十九">
+        </button>
     <button class="imgbtn" onclick="location.href='魔導結晶.html'">
-        <img decoding="async" loading="lazy" src="madoukesshou.webp" alt="魔導結晶">
-    </button>
-</div>
-
-<!-- 下段 -->
-<div class="middle bottom-row">
+            <img decoding="async" loading="lazy" src="madoukesshou.webp" alt="魔導結晶">
+        </button>
+    <button class="imgbtn nopush" onclick="location.href='seikai.html'">
+            <img decoding="async" loading="lazy" src="seikai.webp" alt="星海の荒石">
+        </button>
+    <!-- 4行目 -->
+    <button class="imgbtn" onclick="location.href='鎮魂符.html'">
+            <img decoding="async" loading="eager" fetchpriority="high" src="鎮魂符画像.webp" alt="鎮魂符">
+        </button>
+    <button class="imgbtn right-column" onclick="location.href='shokuryou.html'">
+            <img decoding="async" loading="lazy" src="shokuryou.webp" alt="食料">
+        </button>
+    <!-- 5行目 -->
     <button class="imgbtn nopush" onclick="location.href='counter.html'">
-        <img decoding="async" loading="lazy" src="counter.webp" alt="カウンター">
-    </button>
-
+            <img decoding="async" loading="lazy" src="counter.webp" alt="カウンター">
+        </button>
+    <button class="imgbtn" onclick="location.href='shichiseitensei.html'">
+            <img decoding="async" loading="lazy" src="shichiseitensei.webp" alt="七星転生">
+        </button>
+    <button class="imgbtn" onclick="location.href='トーナメント.html'">
+            <img decoding="async" loading="eager" fetchpriority="high" src="トーナメントボタン.webp" alt="トーナメント">
+        </button>
+    <button class="imgbtn" onclick="location.href='shuugou.html'">
+            <img decoding="async" loading="lazy" src="btn_shuugou.webp" alt="徒党登録">
+        </button>
+    <button class="imgbtn" onclick="location.href='ルーレット.html'">
+            <img decoding="async" loading="eager" fetchpriority="high" src="ルーレットボタン.webp" alt="ルーレット">
+        </button>
+    <!-- 6行目 -->
     <button class="imgbtn nopush" onclick="playVideo()">
-        <img decoding="async" loading="lazy" src="nopush.webp" alt="動画再生">
-    </button>
-
+            <img decoding="async" loading="lazy" src="nopush.webp" alt="動画再生">
+        </button>
+    <a href="https://www.gamecity.ne.jp/nol/index.htm" target="_blank" rel="noopener" class="imgbtn">
+            <img decoding="async" loading="lazy" src="koushiki.webp" alt="信長の野望オンライン公式サイト">
+        </a>
+    <a href="https://wiki.ohmynobu.net/nol/" target="_blank" rel="noopener" class="imgbtn">
+            <img decoding="async" loading="lazy" src="wiki.webp" alt="信長の野望オンライン攻略Wiki">
+        </a>
     <a href="https://www.youtube.com/@%E3%81%9F%E3%81%84%E3%82%89%E3%81%AEzzz" target="_blank" class="imgbtn youtube">
-        <img decoding="async" loading="lazy" src="youtube_btn.webp" alt="YouTube">
-    </a>
-<button class="imgbtn nopush" onclick="location.href='okuraban.html'">
-        <img decoding="async" loading="lazy" src="btn_okuraban.webp" alt="御蔵番拡張">
-    </button>
+            <img decoding="async" loading="lazy" src="youtube_btn.webp" alt="YouTube">
+        </a>
+    <button class="imgbtn nopush" onclick="location.href='okuraban.html'">
+            <img decoding="async" loading="lazy" src="btn_okuraban.webp" alt="御蔵番拡張">
+        </button>
 </div>
 
 <div id="videoOverlay">
