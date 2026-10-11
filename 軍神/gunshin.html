@@ -762,7 +762,7 @@ function exactSearchCore(data, progress) {
  }
   // 検索状態と適用状態は別。セットを書き換える経路は applySet だけ。
  let currentStat='',currentRows=[],searchToken=0,indexedMatchCount=0,localSortStat='';
- let appliedGodIds=[],draftGodIds=[],focusedGodId=19,targetSlot=-1,modalLastFocus=null;
+ let appliedGodIds=[],draftGodIds=[],focusedGodId=null,targetSlot=-1,modalLastFocus=null;
  const EXTRA_GUNSHIN_META=Object.fromEntries(Object.entries(GROWTH_ONLY_GODS).map(([id,g])=>
   [id,[g.equipment,g.acquisition]]));
 const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
@@ -1054,7 +1054,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  });
 
  function showGodModal(){
-   draftGodIds=appliedGodIds.slice();targetSlot=-1;focusedGodId=draftGodIds[0]||19;
+   draftGodIds=appliedGodIds.slice();targetSlot=-1;focusedGodId=null;
    modalLastFocus=document.activeElement;
    document.getElementById('godSettingsModal').setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
    drawDraft();document.getElementById('applyGodSettings').focus();
@@ -1084,7 +1084,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  }
  function drawCostGroups(){drawCostGroupsFor(document.getElementById('godCostList'),draftGodIds,focusedGodId,targetSlot);}
 
- let focusedRankId=19,rankModalLastFocus=null,rankModalMode='list';
+ let focusedRankId=null,rankModalLastFocus=null,rankModalMode='list';
  const rankSource=window.GUNSHIN_RANKS||{};
  // 通常軍神も育成専用4柱も、軍神一覧の11能力欄にはランクだけを表示する。
  // 4柱の数値(base)は記録として保持するが、そこからランクを推定しない。
@@ -1131,6 +1131,11 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  }
  const rankCardSizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(fitFocusedRankCardName):null;
  function drawRankFocused(){
+    if(focusedRankId===null){
+      if(rankCardSizeObserver)rankCardSizeObserver.disconnect();
+      document.getElementById('godRankFocused').replaceChildren();
+      return;
+    }
    const source=rankEntry(focusedRankId);if(!source)return;
    const god=heroById.get(focusedRankId)||RANK_ONLY_GODS[focusedRankId]||[focusedRankId,source[0],source[1]];
    // 軍神設定と同じカードと11能力表示のHTML/CSSを共用する。
@@ -1158,6 +1163,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  function openRankModal(mode='list'){
    rankModalLastFocus=document.activeElement;
    rankModalMode=mode==='exclude'?'exclude':'list';
+    focusedRankId=null;
    const modal=document.getElementById('godListModal');
    modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
    updateRankModalState();rankGroups();drawRankFocused();document.getElementById('closeGodList').focus();
@@ -1234,7 +1240,11 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  }
  window.addEventListener('resize',fitSettingsPreviewPortrait);
  function drawFocused(){
-   const god=heroById.get(focusedGodId)||HERO_ROWS[0],id=god[0];
+    if(focusedGodId===null){
+      document.getElementById('godFocusedDisplay').replaceChildren();
+      return;
+    }
+   const god=heroById.get(focusedGodId),id=god[0];
    const fixed=anyFixedInfo(id),numeric=hasNumericStats(god);
    const verifiedRanks=(!numeric?(window.GUNSHIN_RANKS?.[String(id)]?.slice(2)||[]):[]);
    const order=[0,1,2,7,3,8,4,9,5,10,6];
@@ -1263,7 +1273,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    id=Number(id);const god=heroById.get(id);if(!god)return;
    focusedGodId=id;if(!selectableGod(god)||excludedGodIds.has(id)){drawFocused();return;}
    const existing=draftGodIds.indexOf(id);
-   if(existing>=0){draftGodIds.splice(existing,1);targetSlot=-1;drawDraft();return;}
+   if(existing>=0){draftGodIds.splice(existing,1);targetSlot=-1;focusedGodId=null;drawDraft();return;}
    const replaced=targetSlot>=0&&targetSlot<draftGodIds.length?draftGodIds[targetSlot]:null;
    if(groupCost(draftGodIds)-(replaced?heroCost(replaced):0)+god[2]>32)return;
    if(replaced){draftGodIds[targetSlot]=id;}
@@ -1281,7 +1291,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  godList.addEventListener('click',ev=>{const btn=ev.target.closest('[data-pick-god]');if(btn&&btn.getAttribute('aria-disabled')!=='true')selectGod(btn.dataset.pickGod);});
  document.getElementById('godDraftSlots').addEventListener('click',ev=>{
    const remove=ev.target.closest('[data-remove-slot]');
-   if(remove){draftGodIds.splice(Number(remove.dataset.removeSlot),1);targetSlot=-1;drawDraft();return;}
+   if(remove){const removedId=draftGodIds.splice(Number(remove.dataset.removeSlot),1)[0];if(focusedGodId===removedId)focusedGodId=null;targetSlot=-1;drawDraft();return;}
    const focus=ev.target.closest('[data-focus-slot]');
    if(focus){targetSlot=Number(focus.dataset.focusSlot);if(draftGodIds[targetSlot])focusedGodId=draftGodIds[targetSlot];drawDraft();}
  });
@@ -1296,7 +1306,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  // 比較モーダルは独立した選択状態。適用中軍神は変更しない。
  const compareModal=document.getElementById('godCompareModal');
  const comparePicker=document.getElementById('compareGodCostList');
- let compareGodIds=[],compareTargetSlot=-1,compareFocusedId=19,compareLastFocus=null;
+ let compareGodIds=[],compareTargetSlot=-1,compareFocusedId=null,compareLastFocus=null;
  const isCompareOpen=()=>compareModal.getAttribute('aria-hidden')==='false';
  function compareStatHtml(values,difference){
    return ABILITY_DISPLAY_ORDER.map(i=>{
@@ -1379,6 +1389,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  function openCompareModal(){
    if(!appliedGodIds.length)return;
    compareLastFocus=document.activeElement;
+   compareGodIds=[];compareTargetSlot=-1;compareFocusedId=null;
    compareModal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
    renderCompare();document.getElementById('closeGodCompare').focus();
  }
@@ -1392,7 +1403,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    if(!selectableGod(god)||excludedGodIds.has(id))return;
    compareFocusedId=id;
    const current=compareGodIds.indexOf(id);
-   if(current>=0){compareGodIds.splice(current,1);compareTargetSlot=-1;renderCompare();return;}
+   if(current>=0){compareGodIds.splice(current,1);compareTargetSlot=-1;compareFocusedId=null;renderCompare();return;}
    const old=compareTargetSlot>=0&&compareTargetSlot<compareGodIds.length?compareGodIds[compareTargetSlot]:null;
    const newCost=groupCost(compareGodIds)-(old?heroCost(old):0)+god[2];
    if(newCost>maxCost)return;
