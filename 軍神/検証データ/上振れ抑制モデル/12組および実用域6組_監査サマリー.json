@@ -1,0 +1,60 @@
+{
+  "モデル識別用12組": {
+    "prefix": "三モデル12組_倍率±1.5pp識別",
+    "plan_sha256": "a6fcabd787c2a0e198dc407078383f646ebbd1d93f2dcdf0f9f1f308cdb8db6f",
+    "prediction_sha256": "cc33611f646ac77e65e2451c2bf37c654c3c5c44d184bd1de80391a6783fbca4",
+    "site_data_sha256": "5dfde73d7763e3bd462beb9376651f0038b689427def7085bb7af30f574d3003",
+    "pairs": 12,
+    "model_prediction_rows": 132,
+    "value_recalculations": 1188,
+    "unique_configurations": 24,
+    "max_cost_histogram": {
+      "23": 3,
+      "29": 2,
+      "28": 2,
+      "26": 2,
+      "27": 1,
+      "22": 1,
+      "20": 1
+    },
+    "ground_truth_entries": 0
+  },
+  "コスト32実用域6組": {
+    "prefix": "コスト32実用域6組",
+    "plan_sha256": "f946689b85e721ea374cce43edb628f4ec272702c23a6dbaef8e74f16ce1a1bf",
+    "prediction_sha256": "434453ccd217d367abca3a2a363e7d4cc0144106974dc7890f5ac1f54b42c4c7",
+    "site_data_sha256": "5dfde73d7763e3bd462beb9376651f0038b689427def7085bb7af30f574d3003",
+    "pairs": 6,
+    "model_prediction_rows": 66,
+    "value_recalculations": 594,
+    "unique_configurations": 12,
+    "max_cost_histogram": {
+      "32": 6
+    },
+    "ground_truth_entries": 0
+  },
+  "全81条件_倍率独立±1.5pp": 81,
+  "候補1,780組内の最適化最少組数": 12,
+  "研究に含める1,780組目": {
+    "A": [
+      13,
+      57,
+      106,
+      90,
+      102,
+      53
+    ],
+    "B": [
+      57,
+      106,
+      90,
+      102,
+      53,
+      99
+    ]
+  },
+  "本番データ変更": 0,
+  "補正採用": 0,
+  "育成同条件の新規ゲーム内実測": 0,
+  "上振れ抑制のゲーム精度": "未確定。条件ごとの区間分離は実測による予測正答の証明ではない。"
+}

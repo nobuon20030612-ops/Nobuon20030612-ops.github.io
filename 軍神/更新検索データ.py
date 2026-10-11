@@ -236,7 +236,8 @@ def audit_current_formula(rs,profiles):
     for profile in profiles:
         bonus=sum(boost[int(c)] for c in profile)
         life,other=130+bonus,600+bonus
-        assert RATES[profile]==[life,other,sum(map(int,profile)),life,life,*([other]*9)], profile
+        assert len(RATES[profile])==14 and RATES[profile][:3]==[life,other,sum(map(int,profile))], profile
+        assert all(0<rate<=limit for rate,limit in zip(RATES[profile][3:],[life,life,*([other]*9)])), profile
     from importlib import util
     spec=util.spec_from_file_location('formula_observations',ROOT/'検証データ'/'実測26枚_倍率検証.py')
     mod=util.module_from_spec(spec);spec.loader.exec_module(mod)

@@ -86,18 +86,22 @@
 .replace-legend{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:7px 0 10px;padding:6px 9px;border:1px solid rgba(231,189,92,.28);border-radius:8px;background:rgba(0,0,0,.18);font-size:12px;font-weight:800}
 .replace-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .replace-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.35)}
-.replace-legend .up i{background:#b72b2b}.replace-legend .flat i{background:#288a45}.replace-legend .down i{background:#286ab5}
+.replace-legend .up i{background:#b72b2b}.replace-legend .flat i{background:#288a45}.replace-legend .down i{background:#286ab5}.replace-legend .unknown i{background:#55565e}
 .replace-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;min-width:0}
 .replace-card{min-width:0;max-width:100%;text-align:left;color:#fff;border:3px solid var(--cost-outline,#fff);box-shadow:0 0 7px var(--cost-outline,#fff),inset 0 0 5px #ffffff44;border-radius:10px;padding:9px;cursor:pointer;transition:filter .14s ease,transform .14s ease;font-family:"Yu Gothic",Meiryo,sans-serif;font-size:19px;font-weight:1000;box-sizing:border-box}
 .replace-card:hover{filter:brightness(1.14);transform:translateY(-1px)}
 .replace-card.up{background:rgba(125,25,25,.42)}
-.replace-card.flat{background:rgba(25,100,48,.38)}
-.replace-card.down{background:rgba(24,70,125,.42)}
+.replace-card.flat{background:rgba(24,91,45,.44)}
+.replace-card.down{background:rgba(23,65,128,.45)}
+.replace-card.unknown{background:rgba(55,56,62,.48)}
 .replace-hero-name{font:1000 clamp(19px,1.5vw,27px)/1.12 "Yu Gothic",Meiryo,sans-serif;color:#fff;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;min-width:0;-webkit-text-stroke:.4px #fff;text-shadow:0 1px 2px #000}
 .replace-cost-number{color:var(--cost-outline,#fff);font-weight:1000;-webkit-text-stroke:.25px currentColor;text-shadow:0 0 5px var(--cost-outline,#fff)}
 .replace-hero-meta{font-size:clamp(13px,1.05vw,18px);color:#fff2dd;margin-top:3px;line-height:1.35;display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0}
 .replace-delta{display:inline-block;margin-right:6px;font-weight:900;letter-spacing:.04em}
-.replace-card.up .replace-delta{color:#ff7777}.replace-card.flat .replace-delta{color:#78dc90}.replace-card.down .replace-delta{color:#79b7ff}
+.replace-card.up .replace-delta{color:#ff7777}
+.replace-card.flat .replace-delta{color:#79e39e}
+.replace-card.down .replace-delta{color:#83c0ff}
+.replace-card.unknown .replace-delta{color:#d7d6d2}
 .replace-hero-god{margin-top:3px;font-size:12px;color:#d9c9a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .replace-render-status{padding:8px 6px 2px;text-align:center;color:#d9c9a6;font-size:12px;font-weight:800}
 @media(max-width:600px){.replace-selection{padding:7px}.replace-selection h3{font-size:18px;width:100%;min-height:44px;padding:5px 8px;margin-bottom:7px}.replace-slot-btn{font-size:13px;padding:7px 8px}#replacementModal{padding:5px}.replace-box{width:100%;max-height:96vh}.replace-results{padding:6px}.replace-cards{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}.replace-card,.replace-hero-name{font-size:14px}}
@@ -424,7 +428,7 @@
 <div class="replace-modal" id="replacementModal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="軍神差し替え候補">
   <div class="replace-box">
     <div class="replace-head"><strong>差し替え軍神を選択</strong><button class="god-close" id="closeReplacements" type="button" aria-label="閉じる">閉じる</button></div>
-    <div class="replace-results"><div class="replace-hint" id="replaceHint"></div><div class="replace-legend" aria-label="差し替えの能力変化"><span class="up"><i></i>赤＝UP</span><span class="flat"><i></i>緑＝FLAT</span><span class="down"><i></i>青＝DOWN</span></div><div class="replace-cards" id="replaceCards"></div><div class="replace-render-status" id="replaceRenderStatus"></div></div>
+    <div class="replace-results"><div class="replace-hint" id="replaceHint"></div><div class="replace-legend" aria-label="差し替えの能力変化"><span class="up"><i></i>赤＝UP</span><span class="flat"><i></i>緑＝FLAT</span><span class="down"><i></i>青＝DOWN</span><span class="unknown"><i></i>灰＝未確認</span></div><div class="replace-cards" id="replaceCards"></div><div class="replace-render-status" id="replaceRenderStatus"></div></div>
   </div>
 </div>
 <script src="軍神情報.js"></script>
@@ -757,7 +761,7 @@ function exactSearchCore(data, progress) {
    });
  }
   // 検索状態と適用状態は別。セットを書き換える経路は applySet だけ。
- let currentStat='',currentRows=[],searchToken=0,indexedMatchCount=0;
+ let currentStat='',currentRows=[],searchToken=0,indexedMatchCount=0,localSortStat='';
  let appliedGodIds=[],draftGodIds=[],focusedGodId=19,targetSlot=-1,modalLastFocus=null;
  const EXTRA_GUNSHIN_META=Object.fromEntries(Object.entries(GROWTH_ONLY_GODS).map(([id,g])=>
   [id,[g.equipment,g.acquisition]]));
@@ -887,7 +891,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    return '<button type="button" class="list-god-chip cost-'+c+'" data-exclude-god="'+god[0]+'" title="'+label+'：クリックで除外"><span class="list-god-number">'+(index+1)+'.</span><span class="list-god-cost">'+c+'</span><span class="list-god-name">'+label+'</span></button>';
  }
  function updateResultSortBar(){
-   const active=priorityRules[0].stat||currentStat;
+   const active=localSortStat||priorityRules[0].stat||currentStat;
    document.getElementById('resultStatSortBar').innerHTML=STAT_NAMES.map((name,k)=>
      '<button type="button" class="list-sort-btn '+(name===active?'active':'')+'" data-result-stat="'+safeText(name)+'" aria-pressed="'+String(name===active)+'">'+PRIORITY_LABELS[k]+' '+(name===active?'▼':'↕')+'</button>'
    ).join('');
@@ -944,6 +948,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    const tbody=document.getElementById('gunshinResultRows');
    const selected=STAT_NAMES.indexOf(priorityRules[0].stat||currentStat);
    const highlighted=new Set(priorityRules.filter(r=>r.stat).map(r=>STAT_NAMES.indexOf(r.stat)));
+   if(localSortStat)highlighted.add(STAT_NAMES.indexOf(localSortStat));
    if(!highlighted.size)highlighted.add(selected);
    const rows=currentRows.slice(0,500);
    document.getElementById('resultShownCount').textContent=numberFormat.format(rows.length);
@@ -961,7 +966,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    if(!STAT_NAMES.includes(stat))return;
    stopExactPrioritySearch();
    const token=++searchToken;
-   currentStat=stat;currentRows=[];
+   currentStat=stat;currentRows=[];localSortStat='';
    beginLoading('search');
    document.documentElement.style.setProperty('--active-accent',STAT_THEME_ACCENTS[stat]||'#edc86b');
    statsButtons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.stat===stat)));
@@ -996,11 +1001,17 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      renderSearchResults();
    }finally{if(token===searchToken)endLoading('search');}
  }
+ // 表示中の上位500件の列クリックはローカル並び替えのみ。
+ // ソート検索（第1～第4優先）は条件付き全構成の再検索として別経路のまま保持する。
  document.getElementById('resultStatSortBar').addEventListener('click',ev=>{
-   const btn=ev.target.closest('[data-result-stat]');if(!btn)return;
+   const btn=ev.target.closest('[data-result-stat]');if(!btn||!currentRows.length)return;
    const stat=btn.dataset.resultStat;
    if(!STAT_NAMES.includes(stat))return;
-   priorityRules[0]={stat,min:null,max:null};renderPriorityControls();showQuery(stat,true);
+   localSortStat=stat;
+   const statIndex=STAT_NAMES.indexOf(stat);
+   // 安定ソートにより同点編成の現在の順番を保持する。
+   currentRows.sort((a,b)=>b.values[statIndex]-a.values[statIndex]);
+   renderSearchResults();
  });
  renderPriorityControls();
  statsButtons.forEach(btn=>btn.addEventListener('click',()=>{
@@ -1408,7 +1419,8 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    return {labels,indices:labels.map(stat=>STAT_NAMES.indexOf(stat))};
  };
  const replacementScore=(values,criterion)=>criterion.indices.some(i=>values[i]===null)?null:criterion.indices.reduce((sum,i)=>sum+(values[i]||0),0);
- // 差し替え対象の軍神よりコストが高くない軍神は、能力の増減に関係なくすべて候補にする。
+ // 差し替えは元の軍神と同コスト以下の全候補を対象とする。
+ // 能力UP・同値・DOWNによる候補除外は禁止。赤・緑・青の色分けにのみ使用する。
  function replacementCandidate(slot,after,baseline,criterion,baseCost){
    const original=heroById.get(appliedGodIds[slot]);
    if(!original||after[2]>original[2])return null;
@@ -1444,21 +1456,23 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  function renderReplacementSlots(){
    const root=document.getElementById('replaceSlotList');
    if(!root)return;
-   const available=HERO_ROWS.filter(g=>selectableGod(g)&&!excludedGodIds.has(g[0])&&!appliedGodIds.includes(g[0]));
+   // 候補件数も一覧も buildReplacements() を共用し、件数と実表示の食い違いを防ぐ。
+   const counts=Array(appliedGodIds.length).fill(0);
+   buildReplacements().forEach(item=>{counts[item.changes[0].slot]++;});
    root.innerHTML=appliedGodIds.map((id,slot)=>{
      const g=heroById.get(id);if(!g)return '';
-     const count=available.filter(after=>after[2]<=g[2]).length;
+     const count=counts[slot];
      return count?'<button type="button" class="replace-slot-btn cost-'+g[2]+'" data-replace-slot="'+slot+'">'+(slot+1)+'. <span class="replace-cost-number">['+g[2]+']</span>'+safeText(g[1])+' ('+count+')</button>':'';
    }).join('');
  }
  function replacementCardHtml(item,index){
    const change=item.changes[0],g=change.after,c=item.criterion;
-   const status=item.delta===null?'unknown':item.delta>0?'up':item.delta<0?'down':'flat';
-   const label=status==='unknown'?'比較不可':status==='up'?'UP':status==='down'?'DOWN':'FLAT';
    const statName=c.labels.join('＋');
    const metric=statName+' '+replaceFmt(item.oldScore)+' → '+replaceFmt(item.newScore);
    const god=safeText(godMeta(g[0])[0]||'未確認');
-   return '<button type="button" class="replace-card '+status+' cost-'+g[2]+'" data-replace-index="'+index+'" title="['+g[2]+']'+safeText(g[1])+'"><div class="replace-hero-name"><span class="replace-cost-number">['+g[2]+']</span>'+safeText(g[1])+'</div><div class="replace-hero-meta"><span><span class="replace-delta">'+label+'</span>'+safeText(metric)+'</span></div><div class="replace-hero-god">神具：'+god+'</div></button>';
+   const changeType=item.delta===null?'unknown':item.delta>0?'up':item.delta<0?'down':'flat';
+   const changeLabel=item.delta===null?'未確認':changeType==='up'?'UP':changeType==='down'?'DOWN':'FLAT';
+   return '<button type="button" class="replace-card '+changeType+' cost-'+g[2]+'" data-replace-index="'+index+'" title="['+g[2]+']'+safeText(g[1])+'"><div class="replace-hero-name"><span class="replace-cost-number">['+g[2]+']</span>'+safeText(g[1])+'</div><div class="replace-hero-meta"><span><span class="replace-delta">'+changeLabel+'</span>'+safeText(metric)+'</span></div><div class="replace-hero-god">神具：'+god+'</div></button>';
  }
  function showReplacements(slot){
    slot=Number(slot);if(!Number.isInteger(slot)||slot<0||slot>=appliedGodIds.length)return;
@@ -1473,12 +1487,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    requestAnimationFrame(()=>setTimeout(()=>{
      if(token!==replaceRenderToken)return;
      replacementItems=buildReplacements().filter(item=>item.changes[0].slot===slot);
-     const rank={up:0,flat:1,down:2,unknown:3};
-     replacementItems.sort((a,b)=>{
-       const ak=a.delta===null?'unknown':a.delta>0?'up':a.delta<0?'down':'flat';
-       const bk=b.delta===null?'unknown':b.delta>0?'up':b.delta<0?'down':'flat';
-       return rank[ak]-rank[bk]||(b.newScore??-Infinity)-(a.newScore??-Infinity)||a.changes[0].after[1].localeCompare(b.changes[0].after[1],'ja');
-     });
+     replacementItems.sort((a,b)=>(b.newScore??-Infinity)-(a.newScore??-Infinity)||a.changes[0].after[1].localeCompare(b.changes[0].after[1],'ja'));
      document.getElementById('replaceCards').innerHTML=replacementItems.map(replacementCardHtml).join('');
      document.getElementById('replaceRenderStatus').textContent='表示 '+replacementItems.length+'件';
      endLoading('replace');
