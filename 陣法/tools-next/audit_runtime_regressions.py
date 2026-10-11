@@ -11,12 +11,13 @@ import struct
 import subprocess
 import sys
 import tempfile
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from factor4_optimizer import minimal_factor4_mask
 from formation_spec import LINES
 from rebuild_all_compact import read_manifest_entry, manifest_parts, manifest_entry_source
-
 ROOT=Path(__file__).resolve().parents[1]
 REPO=ROOT.parent
 HTML=ROOT/'jinpo.html'
@@ -27,7 +28,6 @@ SAVE_JS=ROOT/'jinpo-internal-save.js'
 MANIFEST=ROOT/'data'/'compact_search_v2'/'jinpo_unified_search_manifest.json'
 WORKFLOW=REPO/'.github'/'workflows'/'jinpo-next.yml'
 MOJIBAKE=('\ufffd','\u7e3a','\u7e67','\u8b41','\u00c3','\u00c2')
-
 
 def fail(msg):
     print('FAIL:',msg,file=sys.stderr); raise SystemExit(1)
@@ -42,7 +42,6 @@ def read_text(path:Path):
 
 def csv_rows(path:Path):
     with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
-
 def validate_js_syntax():
     checked=0
     for path in sorted(ROOT.glob('jinpo*.js')):
@@ -64,15 +63,39 @@ def validate_js_syntax():
         inline+=1
     return checked,inline
 
-def validate_html_integration():
-    text=read_text(HTML)
+class ScriptSourceParser(HTMLParser):
+    """HTMLの実在scriptタグのsrcのみ収集（JS文字列・コメントは数えない）。"""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.sources=[]
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() != 'script': return
+        attr=dict(attrs)
+        src=attr.get('src')
+        if src:
+            self.sources.append(src)
+
+def validate_script_source_order(text):
+    parser=ScriptSourceParser()
+    parser.feed(text)
+    parser.close()
     order=['jinpo-formation-config.js','jinpo-activation-engine.js','jinpo-internal-save.js','jinpo-fast-search.js','jinpo-bond-list.js']
+    names=[urlsplit(src).path.rsplit('/',1)[-1] for src in parser.sources]
     positions=[]
     for name in order:
-        p=text.find(name)
-        if p<0: fail(f'必須script読込なし: {name}')
-        positions.append(p)
-    if positions!=sorted(positions): fail('script読込順序不正')
+        matches=[i for i,actual in enumerate(names) if actual==name]
+        if not matches: fail(f'必須script読込なし: {name}')
+        if len(matches)>1: fail(f'必須script重複読込: {name} ({len(matches)}件)')
+        positions.append(matches[0])
+    if positions!=sorted(positions):
+        actual=[name for _,name in sorted(zip(positions,order))]
+        fail('script読込順序不正: '+' → '.join(actual))
+    return True
+
+def validate_html_integration():
+    text=read_text(HTML)
+    validate_script_source_order(text)
     for id_ in ('formationSelect','formationView','dbFormationList','dbCountButtons','totalStatResult'):
         if f'id="{id_}"' not in text and f"id='{id_}'" not in text: fail(f'必須UI ID欠落: {id_}')
     return True
@@ -175,7 +198,6 @@ process.stdout.write('PASS');
 '''
     cp=subprocess.run(['node','-e',node,str(SAVE_JS)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     if cp.returncode or 'PASS' not in cp.stdout: fail('保存機能行動テストFAIL: '+cp.stderr.strip())
-
 def validate_manifest():
     m=json.loads(MANIFEST.read_text(encoding='utf-8'))
     if set(m.get('datasets',{}))!={'normal','grade3','popular'}: fail('検索DB mode不正')
@@ -195,7 +217,6 @@ def validate_manifest():
                     if path.stat().st_size>25_000_000: fail(f'25MB超過: {part["file"]}')
                 checked+=1
     return checked
-
 def validate_workflow():
     if not WORKFLOW.exists(): fail('更新済みGitHub Actions workflowがありません')
     text=read_text(WORKFLOW)
@@ -207,7 +228,6 @@ def validate_workflow():
         if name not in calls: fail(f'workflow監査工程不足: {name}')
     if 'data/jinpo_formation_spec.json' not in text: fail('workflow監視対象に陣形正本がありません')
     return len(calls)
-
 def main():
     for path in (HTML,FORMATION_JS,ACTIVATION_JS,BOND_JS,SAVE_JS,ROOT/'tools-next'/'factor4_optimizer.py',ROOT/'tools-next'/'rebuild_all_compact.py'):
         read_text(path)
