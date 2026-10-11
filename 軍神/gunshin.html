@@ -791,6 +791,9 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  // 6柱は検索DBと同じ構成倍率を使用。計算結果は端数切捨て。
  const COUNT_BONUS_RATES={1:[100,300],2:[105,320],3:[110,360],4:[115,420],5:[120,500],6:[130,600]};
  const COST_BONUS_RATES={3:15,4:15,5:10,6:10,7:5,8:0};
+ // ゲーム画面でコスト構成を直接照合できた1～5柱のみ、能力別の暫定安全倍率を採用。
+ // 他の構成には従来の人数＋コスト別の倍率を適用する。
+ const PARTIAL_PROFILE_RATES={"4":[115,114,315,315,315,315,315,309,311,309,309],"44":[135,134,350,350,350,349,350,347,348,333,331],"644":[150,149,400,400,400,392,400,391,400,389,399],"6644":[165,164,469,470,470,464,470,468,470,443,461],"66644":[180,179,559,560,560,560,560,560,560,542,559]};
  const boostedFor=ids=>{
    if(!ids.length)return STAT_NAMES.map(()=>0);
    // 固定Lvなど11能力が未確定の軍神を含む場合は数値を作らない。
@@ -800,6 +803,9 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      const rate=COMPOSITION_RATES[getComposition(ids)];
      return rate?raw.map((v,i)=>Math.floor(v*rate[i+3]/100)):STAT_NAMES.map(()=>null);
    }
+   // 画面実測を超えた（または同値だった）構成は、11能力を同じ係数経路で再計算。
+   const checked=PARTIAL_PROFILE_RATES[getComposition(ids)];
+   if(checked)return raw.map((v,i)=>Math.floor(v*checked[i]/100));
    const base=COUNT_BONUS_RATES[ids.length];
    if(!base)return STAT_NAMES.map(()=>null);
    const extra=ids.reduce((sum,id)=>sum+(COST_BONUS_RATES[heroCost(id)]??0),0);
