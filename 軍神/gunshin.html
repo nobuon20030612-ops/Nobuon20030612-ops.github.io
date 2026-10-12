@@ -272,8 +272,9 @@
 .placement-count-badge{grid-column:1;min-width:0;width:100%;box-sizing:border-box;display:block;align-self:center;justify-self:stretch;text-align:center;white-space:nowrap;letter-spacing:-.045em;line-height:1.16;font:1000 clamp(18px,5vw,75px) 'Yu Gothic',Meiryo,sans-serif;color:#fff5c4;text-shadow:0 0 4px #ff2eab,0 0 14px #ff00b9,1px 2px 2px #240019;filter:drop-shadow(0 0 8px #fc23d9);animation:placement-count-pulse 1.4s ease-in-out infinite}
 .placement-count-badge[hidden],.comparison-mode-banner[hidden],.compare-commit-button[hidden]{display:none!important}
 @keyframes placement-count-pulse{0%,100%{transform:scale(.93);filter:drop-shadow(0 0 6px #e821e5)}50%{transform:scale(1.08);filter:drop-shadow(0 0 20px #fbe248)}}
-@media(max-width:1100px){.recommend-display{grid-template-columns:minmax(100px,1fr) minmax(0,65%) 0}.placement-count-badge{font-size:clamp(14px,5vw,60px)}}
-@media(max-width:600px){.recommend-display{gap:3px;grid-template-columns:minmax(75px,1fr) minmax(0,75%) 0}.placement-count-badge{letter-spacing:-.07em}}
+@media(max-width:1100px){.recommend-display{grid-template-columns:minmax(100px,1fr) minmax(0,65%) 0}.recommend-display #recommendSearchTitle{transform:translateX(calc(-50% + 22.4vw))}.placement-count-badge{font-size:clamp(14px,5vw,60px)}}
+@media(max-width:900px){.recommend-display #recommendSearchTitle{transform:translateX(-17.5vw)}}
+@media(max-width:600px){.recommend-display{gap:3px;grid-template-columns:minmax(75px,1fr) minmax(0,75%) 0}.recommend-display #recommendSearchTitle{transform:translateX(-12.5vw)}.placement-count-badge{letter-spacing:-.07em}}
 .comparison-mode-banner{display:flex;justify-content:center;align-items:center;gap:20px;min-height:64px;margin:0 0 10px;padding:9px 12px;border:3px solid #e6a3ff;border-radius:15px;background:linear-gradient(95deg,#250b48,#5b157a,#270b62);box-shadow:0 0 18px #b555fcaa;color:#fff3fc;text-shadow:0 0 8px #f492ff;font:1000 clamp(18px,2.2vw,35px) 'Yu Gothic',Meiryo,sans-serif}
 .comparison-mode-banner button{white-space:nowrap;color:#f5eaff;background:#452063;border:2px solid #f3c2ff;border-radius:10px;font:800 clamp(12px,1.1vw,19px) sans-serif;padding:8px 16px}
 body.comparison-search-mode{--active-accent:#cf7cff!important}
