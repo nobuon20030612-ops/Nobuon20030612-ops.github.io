@@ -165,6 +165,11 @@
 /* 80柱チェックリストのみ：クリックで完了色を切替。右プレビューは既存のホバー経路を共用。 */
 .god-list-modal.is-checklist-mode .god-rank-list-choose{cursor:pointer;display:flex;align-items:center;flex-wrap:nowrap;gap:4px;white-space:nowrap}
 .god-list-modal.is-checklist-mode .god-close{margin-left:0}
+/* チェックリストだけ：上部のタイトル位置へ完了数を移動し、右上に専用全解除を設置。 */
+.god-list-modal.is-checklist-mode .checklist-completed{margin-left:0}
+.god-list-modal.is-checklist-mode #clearGodChecklist{margin-left:auto}
+.god-list-modal .checklist-completed[hidden]{display:none}
+.god-list-modal #clearGodChecklist[hidden],.god-list-modal #godRankModalTitle[hidden]{display:none}
 .god-list-modal.is-checklist-mode .god-rank-list-choose .checklist-god-label{font-size:1em;color:#f5dca4;flex:0 0 auto;white-space:nowrap}
 .god-list-modal.is-checklist-mode .god-rank-list-choose.is-checklisted,
 .god-list-modal.is-checklist-mode .god-rank-list-choose.is-checklisted:hover,
@@ -451,7 +456,7 @@ body.comparison-search-mode .military-head{border-color:#cf89f4}
   </div>
 </div>
 <div id="godListModal" class="god-modal god-list-modal" role="dialog" aria-modal="true" aria-label="軍神一覧" aria-hidden="true">
-  <div class="god-modal-head"><strong class="god-modal-title" id="godRankModalTitle">軍神一覧</strong><span class="checklist-completed" id="checklistCompleted" role="status" aria-live="polite" hidden>0柱 完了</span><button type="button" class="god-close" id="closeGodList" aria-label="一覧を閉じる">閉じる</button></div>
+  <div class="god-modal-head"><strong class="god-modal-title" id="godRankModalTitle">軍神一覧</strong><span class="checklist-completed" id="checklistCompleted" role="status" aria-live="polite" hidden>0柱 完了</span><button type="button" class="god-close" id="clearGodChecklist" hidden>全解除</button><button type="button" class="god-close" id="closeGodList" aria-label="一覧を閉じる">閉じる</button></div>
   <div class="god-list-content"><div class="god-pick-panel"><h2 id="godRankListHeading">軍神一覧</h2><div id="godRankCostList"></div></div><div class="god-preview-panel god-rank-preview" id="godRankFocused"></div></div>
 </div>
 <div id="gunshinLoading" class="gunshin-loading" role="dialog" aria-modal="true" aria-labelledby="gunshinLoadingTitle" aria-hidden="true">
@@ -1358,6 +1363,8 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    modal.setAttribute('aria-label',heading);
    updateChecklistCompleted();
    document.getElementById('godRankModalTitle').textContent=heading;
+   document.getElementById('godRankModalTitle').hidden=checklist;
+   document.getElementById('clearGodChecklist').hidden=!checklist;
    document.getElementById('godRankListHeading').textContent=heading;
    updateExcludedCount();
  }
@@ -1420,6 +1427,16 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  document.getElementById('openGodChecklist').addEventListener('click',()=>openRankModal('checklist'));
  document.getElementById('openExcludedGods').addEventListener('click',()=>openRankModal('exclude'));
  document.getElementById('closeGodList').addEventListener('click',closeRankModal);
+ document.getElementById('clearGodChecklist').addEventListener('click',()=>{
+   if(!checklistGodIds.size)return;
+   checklistGodIds.clear();
+   saveChecklist();
+   rankList.querySelectorAll('.god-rank-list-choose.is-checklisted').forEach(button=>{
+     button.classList.remove('is-checklisted');
+     button.setAttribute('aria-pressed','false');
+   });
+   updateChecklistCompleted();
+ });
  document.getElementById('clearExcludedGods').addEventListener('click',()=>{
    if(!excludedGodIds.size)return;
    showGunshinConfirm('除外全解除','除外軍神'+excludedGodIds.size+'体をすべて解除しますか？',()=>{excludedGodIds.clear();saveExcludedGods();syncExcludedResults();});
