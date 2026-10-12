@@ -644,7 +644,7 @@ function exactSearchCore(data, progress) {
   const requiredCost=new Map();
   for(const id of required){
     const god=heroes.find(h=>h[0]===id);
-    if(!god||excludeSet.has(id))return {rows:[],explored:0,visited:0,exact:true};
+    if(!god||excludeSet.has(id))return {rows:[],count:0,explored:0,visited:0,exact:true};
     if(!requiredCost.has(god[2]))requiredCost.set(god[2],[]);
     requiredCost.get(god[2]).push(god);
   }
@@ -705,7 +705,8 @@ function exactSearchCore(data, progress) {
       [results[worst],results[i]]=[results[i],results[worst]];i=worst;
     }
   }
-  let explored = 0, visited = 0;
+  let explored = 0, visited = 0, totalMatches = 0;
+  const countCap=100000;
   for (let profileNo = 0; profileNo < profiles.length; profileNo++) {
     const [profileKey, rates] = profiles[profileNo];
     const counts = new Map();
@@ -774,10 +775,57 @@ function exactSearchCore(data, progress) {
       }
     }
     dfs(0,0);
+    // 件数はTOP500の探索枝刈りとは独立に数える。10万件で打ち切る。
+    if(totalMatches<countCap){
+      if(!limits.length){
+        let ways=1;
+        for(const group of groups)ways*=group.choices.length;
+        totalMatches=Math.min(countCap,totalMatches+ways);
+      }else{
+        const rawTotals=Array(limits.length).fill(0);
+        const remainingWays=Array(n+1).fill(1);
+        const countChoices=groups.map(group=>{
+          const merged=new Map();
+          for(const choice of group.choices){
+            const values=limits.map(l=>choice.raw[l.i]),key=values.join(',');
+            const prior=merged.get(key);
+            if(prior)prior.mult++;
+            else merged.set(key,{values,mult:1});
+          }
+          return [...merged.values()];
+        });
+        for(let d=n-1;d>=0;d--)
+          remainingWays[d]=Math.min(countCap,remainingWays[d+1]*groups[d].choices.length);
+        function countMatching(depth,mult){
+          if(totalMatches>=countCap)return;
+          let guaranteed=true;
+          for(let k=0;k<limits.length;k++){
+            const l=limits[k],rate=rates[l.i+3];
+            const minimum=(rawTotals[k]+suffixMin[depth][k])*rate;
+            const maximum=(rawTotals[k]+suffixMax[depth][k])*rate;
+            if((l.min!==null&&maximum<l.min*100)||
+               (l.max!==null&&minimum>=(l.max+1)*100))return;
+            if((l.min!==null&&minimum<l.min*100)||
+               (l.max!==null&&maximum>=(l.max+1)*100))guaranteed=false;
+          }
+          if(guaranteed){
+            totalMatches=Math.min(countCap,totalMatches+mult*remainingWays[depth]);return;
+          }
+          if(depth===n){totalMatches=Math.min(countCap,totalMatches+mult);return;}
+          for(const choice of countChoices[depth]){
+            for(let k=0;k<limits.length;k++)rawTotals[k]+=choice.values[k];
+            countMatching(depth+1,mult*choice.mult);
+            for(let k=0;k<limits.length;k++)rawTotals[k]-=choice.values[k];
+            if(totalMatches>=countCap)break;
+          }
+        }
+        countMatching(0,1);
+      }
+    }
     if (progress&&profileNo%8===0) progress(Math.round((profileNo+1)*100/profiles.length));
   }
   results.sort((a,b)=>better(a,b)?-1:better(b,a)?1:0);
-  return {rows:results, explored, visited, exact:true};
+  return {rows:results, count:totalMatches, explored, visited, exact:true};
 }
 
  // 無条件の単一能力以外は、全215コスト構成を直接探索する。
@@ -810,7 +858,7 @@ function exactSearchCore(data, progress) {
        if(msg.progress!==undefined){
          document.getElementById('resultsFeedback').textContent='全構成を検索中… '+msg.progress+'%';
        }else if(msg.error){done();reject(new Error(msg.error));}
-       else if(msg.result){done();resolve(msg.result.rows);}
+       else if(msg.result){done();resolve(msg.result);}
      };
      worker.onerror=event=>{done();reject(new Error('検索処理に失敗しました：'+event.message));};
      worker.postMessage(payload);
@@ -1024,6 +1072,33 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    markAppliedRow();
    scheduleResultGodNamesFit();
  }
+ // 条件指定なしの全検索件数は、コスト構成ごとの組合せ数から正確に計算する。
+ function unfilteredMatchCount(){
+   const counts=new Map();
+   for(const god of HERO_ROWS){
+     if(!selectableGod(god)||!hasNumericStats(god))continue;
+     counts.set(god[2],(counts.get(god[2])||0)+1);
+   }
+   function choose(n,k){
+     if(n<k)return 0;
+     let ways=1;
+     for(let i=1;i<=k;i++)ways=ways*(n-i+1)/i;
+     return Math.round(ways);
+   }
+   let total=0;
+   for(const key of PROFILE_KEYS){
+     const needed=new Map();
+     for(const digit of key)needed.set(+digit,(needed.get(+digit)||0)+1);
+     let ways=1;
+     for(const [cost,number] of needed)ways*=choose(counts.get(cost)||0,number);
+     total+=ways;
+     if(total>=100000)return 100000;
+   }
+   return total;
+ }
+ function displayMatchCount(count){
+   return count>=100000?'10万以上':Number(count).toLocaleString('ja-JP');
+ }
  async function showQuery(stat,autoScroll=false){
    if(!STAT_NAMES.includes(stat))return;
    stopExactPrioritySearch();
@@ -1038,10 +1113,10 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
      if(token!==searchToken)return;
      const exact=priorityRules.some(r=>r.stat&&(r.min!==null||r.max!==null))||priorityRules.slice(1).some(r=>r.stat)||excludedGodIds.size>0||placementGodIds.length>0;
      const queryIndex=STAT_NAMES.indexOf(priorityRules[0].stat||stat);
-     const pool=exact?await exactPriorityRows(token):recommendRows(queryIndex);
+     const searchResult=exact?await exactPriorityRows(token):{rows:recommendRows(queryIndex),count:unfilteredMatchCount()};
      if(token!==searchToken)return;
-     currentRows=pool;
-     document.getElementById('resultHitCount').textContent=pool.length===TOP_COUNT?'500+':String(pool.length);
+     currentRows=searchResult.rows;
+     document.getElementById('resultHitCount').textContent=displayMatchCount(searchResult.count);
      const feedback=document.getElementById('resultsFeedback');
      const statNames=(priorityRules[0].stat||stat)+priorityRules.slice(1).filter(r=>r.stat).map(r=>'＋'+r.stat).join('');
      const line=document.createElement('span');
