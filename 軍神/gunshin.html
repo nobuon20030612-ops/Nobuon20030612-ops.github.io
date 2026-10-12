@@ -52,7 +52,8 @@
 .gunshin-results-table .list-main-row.is-applied td,.gunshin-results-table .list-main-row.is-applied+.list-stat-row td{background:#55351f}
 .list-comp{text-align:center;color:#f3d477;font-weight:900;white-space:nowrap;padding:2px 5px!important}.result-composition-code{display:inline-flex;justify-content:center;align-items:center;max-width:100%;min-height:52px;padding:4px 8px;border:3px solid #dba64b;border-radius:12px;background:linear-gradient(#5c351a,#241811);box-shadow:0 0 10px #e9b94a55;color:#fff4bf;font:1000 clamp(22px,2vw,35px)/1 "Yu Gothic",Meiryo,sans-serif;letter-spacing:.012em;white-space:nowrap;font-variant-numeric:tabular-nums}
 .list-god-chips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;width:100%}
-.list-god-chip{display:block;min-width:0;width:100%;height:49px;padding:4px 6px;border:2px solid var(--cost-outline,#e0c79b);border-radius:9px;background:linear-gradient(#393029,#171412);color:#f3f5f8;text-align:left;font:1000 clamp(18px,1.42vw,27px)/1.1 "Yu Gothic",Meiryo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:inset 0 0 3px #ffffff55,0 0 6px #d4bda077;cursor:pointer;-webkit-text-stroke:.25px #fff;paint-order:stroke fill}
+.list-god-chip{display:flex;align-items:center;min-width:0;width:100%;height:49px;padding:4px 6px;border:2px solid var(--cost-outline,#e0c79b);border-radius:9px;background:linear-gradient(#393029,#171412);color:#f3f5f8;text-align:left;font:1000 clamp(18px,1.42vw,27px)/1.1 "Yu Gothic",Meiryo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:inset 0 0 3px #ffffff55,0 0 6px #d4bda077;cursor:pointer;-webkit-text-stroke:.25px #fff;paint-order:stroke fill}
+.list-god-number,.list-god-cost{flex:0 0 auto}.list-god-name{display:block!important;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;text-align:left}
 .list-god-chip:hover{background:#5b3f25;box-shadow:inset 0 0 0 1px #ffe8aa,0 0 7px #ffda8b}
 .list-god-cost{display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:1px 3px;margin-right:5px;border:2px solid var(--cost-outline);border-radius:5px;color:var(--cost-outline);font-size:1.1em;font-weight:1000;line-height:1.12;background:#130f0b;box-shadow:0 0 4px var(--cost-outline)}.list-god-number{color:#fff8eb;margin-right:3px}
 /* PCの67%全体表示下でも検索結果の軍神名を大きく読みやすく表示する。長い名称の収め方は fitResultGodNames の1経路で処理する。 */
@@ -204,7 +205,7 @@
 .gunshin-confirm-body{padding:34px 28px 26px;text-align:center}.gunshin-confirm-body p{margin:0 0 36px;color:#fff4e4;font-size:clamp(19px,1.85vw,30px);font-weight:1000}
 .gunshin-confirm-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.gunshin-confirm-actions button{min-width:0;padding:14px 10px;border:3px solid #eac878;border-radius:16px;background:linear-gradient(#4a4137,#17120e);color:#fff1c7;font-size:clamp(22px,1.9vw,32px);font-weight:1000;white-space:nowrap}.gunshin-confirm-actions #gunshinConfirmYes{background:linear-gradient(#a52c22,#63120d)}
 @media(max-width:600px){.gunshin-confirm-box{border-radius:16px}.gunshin-confirm-head{padding:12px}.gunshin-confirm-body{padding:22px 13px 13px}.gunshin-confirm-actions{gap:8px}.gunshin-confirm-actions button{padding:10px}}
- #openExcludedGods{position:relative;padding-right:75px}.excluded-god-count{position:absolute;right:9px;top:50%;transform:translateY(-50%);padding:4px 7px;border:1px solid #ffe3a0;border-radius:6px;color:#fff1c8;background:#61251a;font:900 clamp(12px,1vw,17px)/1 sans-serif;white-space:nowrap}
+ #openExcludedGods,.placement-launch{position:relative;padding-right:75px}.excluded-god-count{position:absolute;right:9px;top:50%;transform:translateY(-50%);padding:4px 7px;border:1px solid #ffe3a0;border-radius:6px;color:#fff1c8;background:#61251a;font:900 clamp(12px,1vw,17px)/1 sans-serif;white-space:nowrap}
 
 
 /* 比較が未適用の間だけ、キャラクターと青い案内をボタン上に表示する。 */
@@ -335,7 +336,7 @@ body.comparison-search-mode .military-head{border-color:#cf89f4}
           <div class="manual-box">
             <div class="manual-hint">軍神を手動で組み合わせ</div>
             <div class="manual-controls"><span class="manual-label">手動</span><button type="button" class="manual-open" id="openGodSettings">軍神設定</button></div>
-            <button type="button" class="manual-list-open placement-launch" id="openPlacementGods">配置軍神</button>
+            <button type="button" class="manual-list-open placement-launch" id="openPlacementGods">配置軍神<span class="excluded-god-count" id="placementGodCount">0人</span></button>
             <button type="button" class="manual-list-open" id="openExcludedGods">除外軍神<span class="excluded-god-count" id="excludedGodCount">0人</span></button>
             <button type="button" class="god-list-clear" id="clearExcludedGods" disabled>除外全解除</button>
           </div>
@@ -949,7 +950,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  function costChip(god,index){
    if(!god)return '';
    const c=god[2],label=safeText(god[1]);
-   return '<button type="button" class="list-god-chip cost-'+c+'" data-exclude-god="'+god[0]+'" title="'+label+'：クリックで除外"><span class="list-god-number">'+(index+1)+'.</span><span class="list-god-cost">'+c+'</span><span class="list-god-name">'+label+'</span></button>';
+   return '<button type="button" class="list-god-chip cost-'+c+'" data-exclude-god="'+god[0]+'" title="'+label+'"><span class="list-god-number">'+(index+1)+'.</span><span class="list-god-cost">'+c+'</span><span class="list-god-name">'+label+'</span></button>';
  }
  function updateResultSortBar(){
    const active=localSortStat||priorityRules[0].stat||currentStat;
@@ -1130,7 +1131,26 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    document.getElementById('godSettingsModal').setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');
    if(modalLastFocus&&modalLastFocus.isConnected)modalLastFocus.focus();
  }
- function drawCostGroupsFor(target,ids,focusId,slot,maxCount=6){
+ // 軍神設定・配置指定では、残りを埋めて6柱／コスト32以内にできる選択だけを許可する。
+  function completionCandidates(){
+    return HERO_ROWS.filter(g=>selectableGod(g)&&!excludedGodIds.has(g[0]))
+      .sort((a,b)=>a[2]-b[2]||a[0]-b[0]);
+  }
+  function canCompleteSix(ids,candidates){
+    if(ids.length>6||new Set(ids).size!==ids.length)return false;
+    const remaining=6-ids.length;
+    let total=groupCost(ids);
+    if(total>maxCost)return false;
+    const selected=new Set(ids);
+    let filled=0;
+    for(const god of candidates){
+      if(selected.has(god[0]))continue;
+      total+=god[2];
+      if(++filled===remaining)return total<=maxCost;
+    }
+    return remaining===0;
+  }
+  function drawCostGroupsFor(target,ids,focusId,slot,maxCount=6,enforceCompletion=false){
    const grouped=new Map();
    HERO_ROWS.slice().sort((a,b)=>b[2]-a[2]||a[0]-b[0]).forEach(h=>{
      if(!grouped.has(h[2]))grouped.set(h[2],[]);grouped.get(h[2]).push(h);
@@ -1138,18 +1158,21 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    const openStates={};target.querySelectorAll('.god-cost-group').forEach(d=>{openStates[d.dataset.cost]=d.open;});
    const activeCost=groupCost(ids);
    const replaced=slot>=0&&slot<ids.length?heroCost(ids[slot]):0;
-   target.innerHTML=[...grouped].map(([cost,rows])=>
+    const candidates=enforceCompletion?completionCandidates():null;
+    target.innerHTML=[...grouped].map(([cost,rows])=>
      '<details class="god-cost-group" data-cost="'+cost+'" '+(openStates[cost]===false?'':'open')+'><summary>コスト '+cost+'</summary><div class="god-cost-list">'+
      rows.map(h=>{
        const selected=ids.includes(h[0]);
-       const insufficient=!selected&&(activeCost-replaced+cost>maxCost||(ids.length>=maxCount&&replaced===0));
+       const candidateIds=selected?ids:(replaced?ids.map((id,i)=>i===slot?h[0]:id):[...ids,h[0]]);
+        const insufficient=!selected&&(activeCost-replaced+cost>maxCost||(ids.length>=maxCount&&replaced===0)||
+          (enforceCompletion&&!canCompleteSix(candidateIds,candidates)));
        const filtered=excludedGodIds.has(h[0]);
        const excluded=filtered||!selectableGod(h);
        return '<button class="god-choose '+(focusId===h[0]?'is-focused ':'')+(selected?'is-draft-selected ':'')+((insufficient||excluded)?'is-unavailable':'')+'" type="button" data-pick-god="'+h[0]+'"'+((insufficient||excluded)?' aria-disabled="true"':'')+' title="'+safeText(h[1])+(filtered?'：除外中':excluded?'：能力未確認':insufficient?'：残りコスト不足':'')+'">'+(selected?'<span class="picked-mark">●</span>':'')+safeText(h[1])+'</button>';
      }).join('')+'</div></details>'
    ).join('');
  }
- function drawCostGroups(){drawCostGroupsFor(document.getElementById('godCostList'),draftGodIds,focusedGodId,targetSlot,settingsMode==='placement'?5:6);}
+ function drawCostGroups(){drawCostGroupsFor(document.getElementById('godCostList'),draftGodIds,focusedGodId,targetSlot,settingsMode==='placement'?5:6,true);}
 
  let focusedRankId=null,rankModalLastFocus=null,rankModalMode='list';
  // チェックリストの記録は一覧・除外状態と独立。初回は未選択。
@@ -1380,7 +1403,9 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    if(existing>=0){draftGodIds.splice(existing,1);targetSlot=-1;focusedGodId=null;drawDraft();return;}
    const replaced=targetSlot>=0&&targetSlot<draftGodIds.length?draftGodIds[targetSlot]:null;
    if(groupCost(draftGodIds)-(replaced?heroCost(replaced):0)+god[2]>32)return;
-   if(replaced){draftGodIds[targetSlot]=id;}
+    const proposed=replaced?draftGodIds.map((oldId,i)=>i===targetSlot?id:oldId):[...draftGodIds,id];
+    if(!canCompleteSix(proposed,completionCandidates()))return;
+    if(replaced){draftGodIds[targetSlot]=id;}
    else if(draftGodIds.length<(settingsMode==='placement'?5:6)){draftGodIds.push(id);}
    else return;
    targetSlot=-1;drawDraft();
@@ -1413,8 +1438,40 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
  document.getElementById('closeGodSettings').addEventListener('click',closeGodModal);
  document.getElementById('applyGodSettings').addEventListener('click',applyDraft);
  document.getElementById('clearAllGods').addEventListener('click',()=>{
-  if(!appliedGodIds.length)return;
-  showGunshinConfirm('全解除','適用中の軍神セットをすべて解除しますか？',()=>applySet([],'全解除'));
+  const hasSelections=appliedGodIds.length||placementGodIds.length||excludedGodIds.size||checklistGodIds.size||
+    compareGodIds.length||pendingCompareIds?.length||draftGodIds.length||comparisonSearchMode||
+    priorityRules.some(rule=>rule.stat||rule.min!==null||rule.max!==null)||currentStat||localSortStat||currentRows.length;
+  if(!hasSelections)return;
+  showGunshinConfirm('全解除','すべての軍神・配置指定・除外・チェックリスト・比較用選択・検索条件を解除しますか？',()=>{
+    // 進行中の検索が解除後の条件を再び反映しないよう、中断してから状態を戻す。
+    ++searchToken;
+    stopExactPrioritySearch();
+    activeLoading.delete('search');
+    updateLoading();
+    if(comparisonSearchMode)leaveComparisonSearchMode();
+    excludedGodIds.clear();saveExcludedGods();
+    checklistGodIds.clear();saveChecklist();updateChecklistCompleted();
+    placementGodIds=[];updatePlacementCount();
+    pendingCompareIds=null;
+    compareGodIds=[];compareFocusedId=null;compareTargetSlot=-1;
+    draftGodIds=[];focusedGodId=null;targetSlot=-1;
+    focusedRankId=null;
+    priorityRules.forEach((_,i)=>priorityRules[i]={stat:'',min:null,max:null});
+    renderPriorityControls();
+    currentStat='';localSortStat='';currentRows=[];
+    document.documentElement.style.removeProperty('--active-accent');
+    statsButtons.forEach(button=>button.setAttribute('aria-pressed','false'));
+    document.getElementById('resultHitCount').textContent='—';
+    document.getElementById('resultsFeedback').textContent='能力ボタンを選ぶと検索結果を表示します。軍神セットは適用するまで変更されません。';
+    document.getElementById('resultModeNotice').textContent='';
+    applySet([],'全解除');
+    renderSearchResults();
+    if(document.getElementById('godSettingsModal').getAttribute('aria-hidden')==='false')drawDraft();
+    if(document.getElementById('godListModal').getAttribute('aria-hidden')==='false'){
+      rankGroups();drawRankFocused();updateRankModalState();
+    }
+    if(isCompareOpen())renderCompare();
+  });
 });
 
  // 比較モーダルは独立した選択状態。適用中軍神は変更しない。
@@ -1557,6 +1614,7 @@ const GUNSHIN_META={...(window.GUNSHIN_META||{}),...EXTRA_GUNSHIN_META};
    while(range.getBoundingClientRect().width>max&&size>9){size-=1;el.style.fontSize=size+'px';}
  }
  function updatePlacementCount(){
+   document.getElementById('placementGodCount').textContent=placementGodIds.length+'人';
    const badge=document.getElementById('placementCountBadge');
    badge.hidden=placementGodIds.length===0;
    badge.textContent=placementGodIds.length+'柱配置指定中！！';
