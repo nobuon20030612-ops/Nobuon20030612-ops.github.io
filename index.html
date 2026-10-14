@@ -53,7 +53,7 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
 }
 
 body {
@@ -61,7 +61,10 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 3vh;
+    gap: 0;
+    box-sizing: border-box;
+    height: 100dvh;
+    padding: clamp(3px, 0.8vh, 8px) 0;
 
     background-image: url("bg.webp");
     background-repeat: no-repeat;
@@ -80,23 +83,30 @@ body {
 }
 
 .imgbtn img {
-    width: 16vw;
-    max-width: 220px;
-    min-width: 120px; /* ←ここだけ変更 */
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: calc((100dvh - 70px) / 6);
+    object-fit: contain;
     display: block;
     transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .button-grid {
     display: grid;
-    grid-template-columns: repeat(5, clamp(120px, 16vw, 220px));
-    column-gap: clamp(8px, 2vw, 32px);
-    row-gap: 3vh;
+    grid-template-columns: repeat(5, minmax(0, min(16vw, 220px)));
+    column-gap: clamp(4px, 2vw, 32px);
+    row-gap: clamp(2px, 1vh, 10px);
     align-items: center;
     justify-content: center;
 }
 
-/* 1・2・4行目の右端ボタン。間の3列は何も配置しない。 */
+/* 1・2・4行目の右端ボタン。2行目のみ4列目にも配置する。 */
+.button-grid .before-right {
+    grid-column: 4;
+}
+
 .button-grid .right-column {
     grid-column: 5;
 }
@@ -153,28 +163,11 @@ body {
 }
 
 @media (max-width: 600px) {
-    body {
-        justify-content: flex-start;
-        padding-top: 12vh;
-        gap: 4vh;
-
-        background-size: cover;
-        background-position: center top;
-    }
-
     .button-grid {
-        grid-template-columns: repeat(5, 18vw);
+        grid-template-columns: repeat(5, minmax(0, 18vw));
         column-gap: 1.5vw;
-        row-gap: 4vh;
     }
-
-    .imgbtn img {
-        width: 18vw;
-        min-width: 0;
-        max-width: none;
-    }
-
-  }
+}
 </style>
 <link rel="manifest" href="manifest.json">
 </head>
@@ -190,7 +183,7 @@ body {
 たいらの野望は、信長の野望オンラインの九十九・鬼神石・家臣計算機などをまとめた攻略サイトです。
 </p>
 
-<!-- ボタン配置：6行×5列（1・2・4行目の2～4列は空白） -->
+<!-- ボタン配置：6行×5列（2行目4列目に食料計算機、4行目5列目に荒石） -->
 <div class="button-grid">
     <!-- 1行目 -->
     <button class="imgbtn" onclick="location.href='軍神/gunshin.html'">
@@ -202,6 +195,9 @@ body {
     <!-- 2行目 -->
     <button class="imgbtn" onclick="location.href='陣法/jinpo.html'">
             <img decoding="async" loading="eager" fetchpriority="high" src="陣法.webp" alt="陣法">
+        </button>
+    <button class="imgbtn before-right" onclick="location.href='shokuryou.html'">
+            <img decoding="async" loading="lazy" src="shokuryou.webp" alt="食料計算機">
         </button>
     <button class="imgbtn right-column" onclick="location.href='能力計算機.html'">
             <img decoding="async" loading="lazy" src="nouryoku.webp" alt="能力計算">
@@ -226,8 +222,8 @@ body {
     <button class="imgbtn" onclick="location.href='鎮魂符.html'">
             <img decoding="async" loading="eager" fetchpriority="high" src="鎮魂符画像.webp" alt="鎮魂符">
         </button>
-    <button class="imgbtn right-column" onclick="location.href='shokuryou.html'">
-            <img decoding="async" loading="lazy" src="shokuryou.webp" alt="食料">
+    <button class="imgbtn right-column" onclick="location.href='荒石.html'">
+            <img decoding="async" loading="lazy" src="荒石ボタン.png" alt="荒石">
         </button>
     <!-- 5行目 -->
     <button class="imgbtn nopush" onclick="location.href='counter.html'">
