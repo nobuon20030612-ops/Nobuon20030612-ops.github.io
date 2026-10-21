@@ -124,28 +124,83 @@ jobs:
 
       - name: 監査済み生成物だけコミット
         if: steps.diff.outputs.changed == 'true'
+        id: publish
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -- \
-            "陣法/data/jinpo_eiketsu_master.csv" \
-            "陣法/data/jinpo_latest_update_summary.json" \
-            "陣法/data/compact_search_v2" \
-            "陣法/data/bond56_index" \
-            "陣法/tools-next/hero_internal_id_map.json"
+          # リモートが先行していた場合は、古い生成物をrebase/強制pushせず、
+          # 最新mainで最初から再監査・再生成する（競合時最大3回）。
+          rebuild_on_latest_main() {
+            local latest_commit="$1"
+            git reset --hard "$latest_commit"
+            git clean -fd -- \
+              "陣法/data/compact_search_v2" \
+              "陣法/data/bond56_index" \
+              "陣法/data/jinpo_latest_update_summary.json" \
+              "陣法/tools-next/hero_internal_id_map.json"
+            rm -rf -- "陣法/_jinpo-next-report"
 
-          if git diff --cached --quiet; then
-            echo "コミット対象の差分なし"
-            exit 0
-          fi
+            python "陣法/tools-next/audit_source_provenance.py"
+            python "陣法/tools-next/sync_eiketsu_master.py"
+            python "陣法/tools-next/audit_tairano_spec.py"
+            JINPO_PROVENANCE_AUDIT_READY=1 JINPO_MASTER_SYNC_READY=1 \
+              python "陣法/tools-next/build_jinpo_next.py"
+            python "陣法/tools-next/audit_compact_stats.py"
+            python "陣法/tools-next/audit_runtime_regressions.py"
 
-          git commit -m "chore(陣法): 英傑一覧から検索DBを完全再生成"
-          git push
+            tracked_reports="$(git ls-files -- '陣法/_jinpo-next-report/**')"
+            if [ -n "$tracked_reports" ]; then
+              echo "陣法/_jinpo-next-report が追跡対象になっています。" >&2
+              printf '%s\n' "$tracked_reports" >&2
+              exit 1
+            fi
+            rm -rf -- "陣法/_jinpo-next-report"
+            python "陣法/tools-next/guard_publish_changes.py"
+          }
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            remote_commit="$(git rev-parse refs/remotes/origin/main)"
+            if [ "$(git rev-parse HEAD)" != "$remote_commit" ]; then
+              echo "mainに新しい更新を検出。最新版で再生成（${attempt}/3）"
+              rebuild_on_latest_main "$remote_commit"
+            fi
+
+            git add -- \
+              "陣法/data/jinpo_eiketsu_master.csv" \
+              "陣法/data/jinpo_latest_update_summary.json" \
+              "陣法/data/compact_search_v2" \
+              "陣法/data/bond56_index" \
+              "陣法/tools-next/hero_internal_id_map.json"
+
+            if git diff --cached --quiet; then
+              echo "コミット対象の差分なし"
+              echo "published=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            git commit -m "chore(陣法): 英傑一覧から検索DBを完全再生成"
+            if git push origin HEAD:main; then
+              echo "published=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            # 認証・権限・ネットワーク障害を競合と誤認して成功扱いしない。
+            git fetch origin main
+            updated_remote="$(git rev-parse refs/remotes/origin/main)"
+            if [ "$updated_remote" = "$remote_commit" ]; then
+              echo "リモート更新以外の理由でpushに失敗。公開を停止します。" >&2
+              exit 1
+            fi
+          done
+          echo "mainの更新が続いたため、3回の再生成後もpushできませんでした。" >&2
+          exit 1
 
       - name: GitHub Pages 再ビルド要求
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.publish.outputs.published == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
