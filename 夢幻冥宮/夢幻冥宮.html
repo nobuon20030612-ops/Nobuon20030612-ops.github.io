@@ -58,6 +58,18 @@
     font: 800 clamp(26px, 4vw, 34px) "Yu Gothic", "Meiryo", sans-serif; letter-spacing: .12em;
   }
   .home-button:hover { filter: brightness(1.12); }
+  /* 参考動画までの３ボタンを短い画面でも隠さず全表示する。スクロールは追加しない。 */
+  @media (max-height: 660px) {
+    .home-stack { gap: clamp(4px, 1.25dvh, 8px); }
+    .home-caution { padding: clamp(6px, 1.6dvh, 10px) 12px; }
+    .home-caution-title { margin-bottom: 4px; font-size: clamp(16px, 4.5dvh, 24px); }
+    .home-caution-text { font-size: clamp(12px, 3.25dvh, 18px); line-height: 1.35; }
+    .home-button {
+      min-height: clamp(46px, 10.5dvh, 66px);
+      padding: clamp(5px, 1.5dvh, 10px) 12px;
+      font-size: clamp(21px, 5.2dvh, 29px);
+    }
+  }
   .guide-modal[hidden] { display: none; }
   .guide-modal {
     position: fixed; inset: 0; z-index: 880; display: flex; align-items: center; justify-content: center;
@@ -66,6 +78,31 @@
   .guide-modal-image {
     display: block; width: 100%; height: 100%; object-fit: contain;
   }
+  .reference-video-modal[hidden] { display: none; }
+  .reference-video-modal {
+    position: fixed; inset: 0; z-index: 890;
+    display: flex; align-items: center; justify-content: center;
+    padding: 72px 12px 12px; background: rgba(0, 0, 0, .96);
+    overflow: hidden;
+  }
+  .reference-video-frame {
+    flex: 1; min-width: 0; min-height: 0; height: 100%; width: 100%;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
+  }
+  .reference-video-player {
+    display: block; flex: none; width: auto; height: auto;
+    max-width: 100%; max-height: 100%; aspect-ratio: 16 / 9;
+    background: #000; object-fit: contain; cursor: pointer;
+  }
+  .reference-video-close {
+    position: absolute; top: 12px; right: clamp(12px, 2vw, 30px); z-index: 1;
+    min-width: 100px; padding: 11px 22px;
+    border: 1px solid #dbaa77; border-radius: 6px;
+    color: #fff; background: #642c43; cursor: pointer;
+    font: 700 clamp(17px, 2vw, 23px) "Yu Gothic", "Meiryo", sans-serif;
+  }
+  .reference-video-close:hover { filter: brightness(1.12); }
+  .reference-video-player:focus-visible, .reference-video-close:focus-visible { outline: 2px solid #fff0ab; }
   .damage-entry-modal[hidden] { display: none; }
   .damage-entry-modal {
     position: fixed; inset: 0; z-index: 900; display: flex; align-items: center;
@@ -75,7 +112,7 @@
   }
   .panel {
     height: calc(100dvh - 20px); display: flex; flex-direction: column;
-    width: min(790px, 100%); min-height: 0;
+    width: min(910px, 100%); min-height: 0;
     border: none; border-radius: 13px;
     background: transparent;
     box-shadow: none;
@@ -106,7 +143,7 @@
   }
   #damageForm { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .input-area { margin: 0 20px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .table-head, .member-row { display: grid; grid-template-columns: 38px minmax(0, 1.9fr) minmax(0, .7fr); gap: 10px; align-items: center; }
+  .table-head, .member-row { display: grid; grid-template-columns: 38px minmax(0, 2.05fr) minmax(0, .7fr); gap: 10px; align-items: center; }
   .role-cell { display: flex; gap: 6px; align-items: center; min-width: 0; height: 100%; white-space: nowrap; overflow: hidden; }
   .role-character { flex: 0 0 clamp(34px, 4vw, 52px); width: clamp(34px, 4vw, 52px); height: 100%; max-height: 68px; object-fit: contain; visibility: hidden; }
   .role-character.is-visible { visibility: visible; }
@@ -483,6 +520,13 @@
     .actions { padding: 8px 10px 10px; }
     .search-button { min-height: 40px; font-size: 16px; }
   }
+  @media (max-width: 620px) and (max-height: 500px) {
+    .home-stack { gap: 4px; }
+    .home-caution { padding: 5px 10px; }
+    .home-caution-title { margin-bottom: 3px; font-size: clamp(15px, 4.3dvh, 21px); }
+    .home-caution-text { font-size: clamp(11px, 3.1dvh, 15px); line-height: 1.25; }
+    .home-button { min-height: clamp(42px, 13dvh, 58px); padding: 5px 10px; font-size: clamp(19px, 6dvh, 23px); }
+  }
 </style>
 </head>
 <body>
@@ -495,11 +539,20 @@
     </section>
     <button type="button" id="openGuide" class="home-button">ガイド</button>
     <button type="button" id="openDamageEntry" class="home-button">火力検証</button>
+    <button type="button" id="openReferenceVideo" class="home-button">参考動画</button>
   </div>
 </main>
 <div id="guideModal" class="guide-modal" role="dialog" aria-modal="true" aria-label="火力検証ガイド" hidden>
   <button type="button" id="closeGuide" class="close-button">閉じる</button>
   <img src="./夢幻冥宮ガイド.png" alt="夢幻冥宮 火力検証 かんたんガイド" class="guide-modal-image">
+</div>
+<div id="referenceVideoModal" class="reference-video-modal" role="dialog" aria-modal="true" aria-label="参考動画" hidden>
+  <button type="button" id="closeReferenceVideo" class="reference-video-close">閉じる</button>
+  <div class="reference-video-frame">
+    <video id="referenceVideo" class="reference-video-player" src="./【信長の野望online】夢幻冥宮：参考動画.mp4"
+      preload="metadata" muted playsinline webkit-playsinline disablepictureinpicture disableremoteplayback
+      tabindex="0" aria-label="参考動画。クリックで一時停止・再生、終了後は最初から再生"></video>
+  </div>
 </div>
 <div id="damageEntryModal" class="damage-entry-modal" role="dialog" aria-modal="true" aria-label="ダメージ入力" hidden>
   <section class="panel">
@@ -15753,7 +15806,18 @@
   const inputs = [...document.querySelectorAll('.damage-input')];
   const roleSelects = [...document.querySelectorAll('.role-cell select')];
   function fitDetailedRoleText(role) {
+    // 画面幅が狭い場合のみ、長い役割名を一行に収める。
     role.style.removeProperty('font-size');
+    if (!role.classList.contains('detailed-role') || role.clientWidth <= 0) return;
+    const style = getComputedStyle(role);
+    const canvas = fitDetailedRoleText.canvas || (fitDetailedRoleText.canvas = document.createElement('canvas'));
+    const context = canvas.getContext('2d');
+    context.font = style.font;
+    const textWidth = context.measureText(role.value).width;
+    const availableWidth = role.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - (role.disabled ? 18 : 28);
+    if (availableWidth > 0 && textWidth > availableWidth) {
+      role.style.fontSize = `${Math.max(9, parseFloat(style.fontSize) * availableWidth / textWidth).toFixed(2)}px`;
+    }
   }
   function fitAllDetailedRoles() {
     roleSelects.forEach(fitDetailedRoleText);
@@ -15877,6 +15941,10 @@
   const guideModal = document.getElementById('guideModal');
   const guideOpenButton = document.getElementById('openGuide');
   const guideCloseButton = document.getElementById('closeGuide');
+  const referenceVideoModal = document.getElementById('referenceVideoModal');
+  const referenceVideoOpenButton = document.getElementById('openReferenceVideo');
+  const referenceVideoCloseButton = document.getElementById('closeReferenceVideo');
+  const referenceVideo = document.getElementById('referenceVideo');
   const entryModal = document.getElementById('damageEntryModal');
   const entryOpenButton = document.getElementById('openDamageEntry');
   const entryCloseButton = document.getElementById('closeDamageEntry');
@@ -15888,6 +15956,41 @@
   guideCloseButton.addEventListener('click', () => {
     guideModal.hidden = true;
     guideOpenButton.focus();
+  });
+  function playReferenceVideo() {
+    const attempt = referenceVideo.play();
+    if (attempt && typeof attempt.catch === 'function') {
+      attempt.catch(error => console.error('参考動画の再生に失敗しました:', error));
+    }
+  }
+  function toggleReferenceVideo() {
+    if (referenceVideo.ended) {
+      referenceVideo.currentTime = 0;
+      playReferenceVideo();
+    } else if (referenceVideo.paused) {
+      playReferenceVideo();
+    } else {
+      referenceVideo.pause();
+    }
+  }
+  referenceVideoOpenButton.addEventListener('click', () => {
+    referenceVideoModal.hidden = false;
+    referenceVideo.currentTime = 0;
+    playReferenceVideo();
+    referenceVideo.focus();
+  });
+  referenceVideoCloseButton.addEventListener('click', () => {
+    referenceVideo.pause();
+    referenceVideo.currentTime = 0;
+    referenceVideoModal.hidden = true;
+    referenceVideoOpenButton.focus();
+  });
+  referenceVideo.addEventListener('click', toggleReferenceVideo);
+  referenceVideo.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleReferenceVideo();
+    }
   });
 
   entryOpenButton.addEventListener('click', () => {
