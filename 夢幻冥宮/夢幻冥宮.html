@@ -106,15 +106,128 @@
   }
   #damageForm { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .input-area { margin: 0 20px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .table-head, .member-row { display: grid; grid-template-columns: 38px minmax(0, 1.4fr) minmax(0, .85fr); gap: 10px; align-items: center; }
-  .role-cell { display: flex; gap: 6px; align-items: center; min-width: 0; height: 100%; }
+  .table-head, .member-row { display: grid; grid-template-columns: 38px minmax(0, 1.9fr) minmax(0, .7fr); gap: 10px; align-items: center; }
+  .role-cell { display: flex; gap: 6px; align-items: center; min-width: 0; height: 100%; white-space: nowrap; overflow: hidden; }
   .role-character { flex: 0 0 clamp(34px, 4vw, 52px); width: clamp(34px, 4vw, 52px); height: 100%; max-height: 68px; object-fit: contain; visibility: hidden; }
   .role-character.is-visible { visibility: visible; }
-  .role-cell select { flex: 1; min-width: 0; }
+  .action-config-button {
+    flex: 0 0 clamp(70px, 7vw, 96px); min-width: 0; height: 100%; min-height: 40px;
+    padding: 0 7px; border: 1px solid #8fd9ff; border-radius: 8px;
+    background: linear-gradient(180deg, #1f7fdb 0%, #1643b8 42%, #0f276f 100%);
+    color: #ecf9ff; font: 900 clamp(11px, 1.65vh, 15px)/1 "Yu Gothic", "Meiryo", sans-serif;
+    letter-spacing: .04em; text-shadow: 0 1px 3px rgba(0,0,0,.72);
+    box-shadow: inset 0 1px rgba(255,255,255,.4), 0 0 10px rgba(90,191,255,.35);
+    cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    animation: action-button-pulse 1.9s ease-in-out infinite alternate;
+  }
+  .action-config-button:hover { filter: brightness(1.15); }
+  .action-config-button.is-hidden { display: none; }
+  @keyframes action-button-pulse {
+    from { transform: scale(.97); box-shadow: inset 0 1px rgba(255,255,255,.35), 0 0 6px rgba(90,191,255,.28); }
+    to { transform: scale(1.03); box-shadow: inset 0 1px rgba(255,255,255,.45), 0 0 14px rgba(90,191,255,.55); }
+  }
+  .role-cell select { flex: 1; min-width: 0; white-space: nowrap; }
+  .role-cell select.detailed-role { font-size: inherit; letter-spacing: normal; padding-left: 12px; padding-right: 12px; }
+  .damage-cell { position: relative; min-width: 0; height: 100%; }
+  /* 行動設定：元画面の構成（番号／技能アイコン／技能と対象／条件）をスクロールなしで再現 */
+  .action-setting-modal[hidden] { display: none; }
+  .action-setting-modal {
+    position: fixed; inset: 0; z-index: 940; display: flex; align-items: center; justify-content: center;
+    padding: clamp(2px, .8vh, 10px); background: rgba(4,0,5,.97); overflow: hidden;
+  }
+  .action-setting-box {
+    width: min(1100px, 100%); height: 100%; min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid #504c33; border-radius: 7px;
+    background: #11080e; box-shadow: 0 0 24px rgba(0,0,0,.9);
+  }
+  .action-setting-topbar {
+    position: relative; flex: none; min-height: clamp(40px,5.1vh,60px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px clamp(82px,11vw,108px);
+  }
+  .action-setting-title {
+    color: #c6c18d; margin: 0; white-space: nowrap;
+    font: 900 clamp(19px,2.6vh,32px)/1.1 "Yu Mincho", "Hiragino Mincho ProN", serif;
+    letter-spacing: .11em; text-shadow: 0 1px 4px #000;
+  }
+  .action-setting-close {
+    position: absolute; right: clamp(6px,1.1vw,14px); top: 50%; transform: translateY(-50%);
+    min-width: clamp(68px,9vw,94px); height: clamp(30px,4vh,44px);
+    padding: 0 8px; color: #fff; background: #642c43;
+    border: 1px solid #dbaa77; border-radius: 7px; cursor: pointer;
+    font: 900 clamp(13px,1.8vh,21px)/1 "Yu Gothic", "Meiryo", sans-serif;
+  }
+  .action-setting-close:hover { filter: brightness(1.15); }
+  .action-setting-table {
+    flex: 1; min-height: 0; overflow: hidden;
+    display: grid; grid-template-rows: repeat(var(--action-count, 6), minmax(0,1fr));
+    padding: 0 clamp(6px,1.2vw,16px) clamp(6px,.8vh,12px);
+  }
+  .action-setting-row {
+    display: grid; align-items: center; min-width: 0; min-height: 0;
+    grid-template-columns: clamp(25px,3.5vw,45px) clamp(36px,7.6vh,86px) minmax(0, .92fr) minmax(0, 1.22fr);
+    column-gap: clamp(5px,1.1vw,16px);
+    padding: 1px clamp(4px,.6vw,8px);
+    border-top: 1px solid rgba(255,255,255,.18); color: #f6f2ee;
+    font: 800 clamp(13px,min(2.4vw,3.2vh),31px)/1.12 "Yu Mincho", "Hiragino Mincho ProN", "Meiryo", serif;
+    white-space: nowrap;
+  }
+  .action-setting-row:first-child { border-top: 1px solid #686b0a; }
+  .action-setting-row:last-child { border-bottom: 1px solid #686b0a; }
+  .action-setting-number { text-align: center; font-variant-numeric: tabular-nums; }
+  .action-setting-icon {
+    height: min(7.2vh,75px); width: auto; max-height: calc(100% - 2px);
+    max-width: 100%; aspect-ratio: 1; object-fit: contain; display: block;
+    border: 1px solid #806038; background: #080808;
+  }
+  .action-setting-icon.is-empty { border: 1px solid #25320a; background: #000; }
+  .action-setting-skill, .action-setting-condition { min-width: 0; overflow: hidden; }
+  .action-setting-skill { display: flex; flex-direction: column; justify-content: center; gap: clamp(1px,.3vh,3px); }
+  .action-setting-name, .action-setting-target, .action-setting-condition { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+  .action-setting-condition { align-self: center; }
+  .action-setting-box[data-lines="14"] .action-setting-row {
+    font-size: clamp(13px,min(2.05vw,2.75vh),26px);
+    grid-template-columns: clamp(25px,3.5vw,45px) clamp(32px,5.1vh,61px) minmax(0,.92fr) minmax(0,1.22fr);
+  }
+  .action-setting-box[data-lines="14"] .action-setting-icon { height: min(5.2vh,58px); }
+  @media (max-width:620px) {
+    .action-setting-row { column-gap: 3px; padding-inline: 2px;
+      grid-template-columns: 18px clamp(27px,6vh,48px) minmax(0,.95fr) minmax(0,1.1fr);
+      font-size: clamp(10px,min(2.3vw,2.5vh),17px); }
+    .action-setting-box[data-lines="14"] .action-setting-row { font-size: clamp(9px,min(2.2vw,2vh),15px);
+      grid-template-columns: 18px clamp(23px,4.7vh,42px) minmax(0,.95fr) minmax(0,1.1fr); }
+    .action-setting-icon { height: min(6vh,49px); }
+    .action-setting-box[data-lines="14"] .action-setting-icon { height: min(4.8vh,42px); }
+  }
+  .damage-change-hint {
+    display: none; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #fff2a8; font: 800 clamp(16px, 2.3vh, 20px)/1.25 "Yu Gothic", "Meiryo", sans-serif;
+    text-shadow: 1px 1px 0 #150819, -1px 1px 0 #150819, 1px -1px 0 #150819, -1px -1px 0 #150819;
+    pointer-events: none; white-space: nowrap;
+  }
+  .damage-change-hint.is-visible { display: block; }
+  /* 攻撃役の未入力欄のみ「変更可能」と0の間へ小さな入力案内を表示。 */
+  .damage-input-prompt {
+    display: none; position: absolute; top: 50%; right: 27px;
+    z-index: 1; pointer-events: none; white-space: nowrap;
+    padding: 2px 7px; border: 2px solid #fff09e; border-radius: 8px;
+    background: linear-gradient(180deg, #f55b28, #a41438 85%);
+    color: #fffde6; font: 900 clamp(12px, 1.8vh, 17px)/1.2 "Yu Gothic", "Meiryo", sans-serif;
+    box-shadow: inset 0 1px 2px #ffe9b0, 0 0 8px #ff963b;
+    transform: translateY(-50%);
+    animation: damage-input-prompt-pulse 1.8s ease-in-out infinite alternate;
+  }
+  .damage-cell:has(.damage-input:not(:disabled):placeholder-shown) .damage-input-prompt { display: block; }
+  @keyframes damage-input-prompt-pulse {
+    from { transform: translateY(-50%) translateX(-1px) scale(.96); box-shadow: inset 0 1px 2px #ffe9b0, 0 0 5px #ff963b; }
+    to { transform: translateY(-50%) translateX(1px) scale(1.045); box-shadow: inset 0 1px 2px #ffe9b0, 0 0 14px #ffd44b; }
+  }
+  @media (prefers-reduced-motion: reduce) { .damage-input-prompt { animation: none; } }
   #memberRows { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(7, minmax(0, 1fr)); gap: 6px; }
   .table-head { padding: 0 7px 6px; color: #fff6a9; text-align: center; font-size: 18px; font-weight: 900; flex: none; white-space: nowrap; text-shadow: 1px 1px 0 #150819, -1px 1px 0 #150819, 1px -1px 0 #150819, -1px -1px 0 #150819; }
   .member-row { margin-bottom: 0; min-height: 0; position: relative; }
-  .member-row:has(.damage-input:placeholder-shown)::after {
+  .member-row:has(.damage-input:not(:disabled):placeholder-shown)::after {
     content: "0"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     color: #fff2a8; font: 800 clamp(16px, 2.3vh, 20px)/1.25 "Yu Gothic", "Meiryo", sans-serif;
     text-shadow: 1px 1px 0 #150819, -1px 1px 0 #150819, 1px -1px 0 #150819, -1px -1px 0 #150819;
@@ -128,9 +241,12 @@
   }
   select { cursor: pointer; }
   select option { background: #1d1527; color: #fff; }
+  select:disabled { opacity: 1; color: #fffdf4; -webkit-text-fill-color: #fffdf4; }
+  #memberRows .role-cell select:disabled { -webkit-appearance: none; appearance: none; background-image: none; cursor: default; }
   select:focus-visible, .damage-input:focus-visible, button:focus-visible { outline: 2px solid #fff0ab; }
   .damage-input { text-align: right; font-variant-numeric: tabular-nums; cursor: pointer; }
   .damage-input:placeholder-shown { text-align: left; }
+  .damage-input:not(:disabled)::placeholder { font-size: clamp(13px, 1.8vh, 16px); }
   .damage-input::placeholder { color: #fff2a8; opacity: 1; text-shadow: 1px 1px 0 #150819, -1px 1px 0 #150819, 1px -1px 0 #150819, -1px -1px 0 #150819; }
   .actions { padding: clamp(10px, 1.4vh, 14px) 20px clamp(10px, 1.5vh, 16px); flex: none; }
   .search-button {
@@ -356,10 +472,13 @@
     .table-head, .member-row { grid-template-columns: 22px minmax(0, 1.5fr) minmax(0, .85fr); gap: 5px; }
     .role-cell { gap: 3px; }
     .role-character { flex-basis: clamp(22px, 5.3vw, 32px); width: clamp(22px, 5.3vw, 32px); }
+    .action-config-button { flex-basis: clamp(46px, 11vw, 62px); min-height: 0; padding: 0 2px; font-size: clamp(8px, 2vw, 11px); border-radius: 5px; }
     #memberRows { gap: 4px; }
     .member-number { font-size: 17px; }
     select, .damage-input { min-height: 0; font-size: 14px; padding: 0 6px; }
-    .member-row:has(.damage-input:placeholder-shown)::after { right: 6px; font-size: 14px; }
+    .member-row:has(.damage-input:not(:disabled):placeholder-shown)::after { right: 6px; font-size: 14px; }
+    .damage-input:not(:disabled)::placeholder { font-size: clamp(9px, 2.5vw, 12px); }
+    .damage-input-prompt { right: 20px; padding: 1px 3px; font-size: clamp(9px, 2.4vw, 12px); border-width: 1px; border-radius: 5px; }
     .table-head { font-size: 14px; padding-bottom: 4px; }
     .actions { padding: 8px 10px 10px; }
     .search-button { min-height: 40px; font-size: 16px; }
@@ -398,6 +517,15 @@
       </div>
       <div class="actions"><button type="submit" class="search-button">撃破可能階を検索</button></div>
     </form>
+  </section>
+</div>
+<div id="actionSettingModal" class="action-setting-modal" role="dialog" aria-modal="true" aria-label="行動設定" hidden>
+  <section id="actionSettingBox" class="action-setting-box" data-lines="6">
+    <div class="action-setting-topbar">
+      <h2 class="action-setting-title">行動設定</h2>
+      <button type="button" id="closeActionSetting" class="action-setting-close">閉じる</button>
+    </div>
+    <div id="actionSettingTable" class="action-setting-table"></div>
   </section>
 </div>
 <div id="resultModal" class="modal" role="dialog" aria-modal="true" aria-label="撃破可能階" hidden>
@@ -15468,19 +15596,78 @@
   // 役割名・対応画像はここだけで管理する。
   const roleOptions = [
     ['攻撃役', '攻撃役.png'],
+    ['盾役【道場娘まり(和装)】or【甲斐姫(鷹爪)】など', '左へ突き進む女剣士.png'],
     ['付与役', '付与役.png'],
-    ['獅子役　【能楽】', '獅子役.png'],
-    ['痺れ役　【真田昌幸】or【荒木村重】', '痺れ役.png'],
-    ['プレイヤー１', 'プレイヤー.png'],
-    ['プレイヤー２', 'プレイヤー.png'],
-    ['プレイヤー３', 'プレイヤー.png'],
-    ['プレイヤー４', 'プレイヤー.png'],
-    ['プレイヤー５', 'プレイヤー.png'],
-    ['プレイヤー６', 'プレイヤー.png'],
-    ['プレイヤー７', 'プレイヤー.png']
+    ['獅子役【能楽】', '獅子役.png'],
+    ['痺れ役【真田昌幸】or【荒木村重】など', '痺れ役.png'],
+    ['プレイヤー１【戦闘操作無し】', 'プレイヤー.png'],
+    ['プレイヤー２【戦闘操作無し】', 'プレイヤー.png']
   ];
-  const initialRoles = ['プレイヤー１', '攻撃役', '攻撃役', '攻撃役', '付与役', '獅子役　【能楽】', '痺れ役　【真田昌幸】or【荒木村重】'];
+  const actionSettingData = {
+    '攻撃役': {
+      lines: [
+        [1, '【待機】', '自身', '自身　指示状態　あり', 'standby', '待'],
+        [2, '【待機】', '自身', '戦闘開始1秒以下', 'standby', '待'],
+        [3, '【龍王爆砕撃】', '最大生命　降順', '無条件', 'attack', '攻'],
+        [4, '【待機】', '自身', '無条件', 'standby', '待'],
+        [5, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [6, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [7, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [8, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [9, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [10, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [11, '【憤怒の拳】', '自身', '無条件', 'rage', '拳'],
+        [12, '【憤怒の心】', '', '', 'heart', '心'],
+        [13, '【剛健忍耐・弐】', '', '', 'buff', '剛'],
+        [14, '【攻勢闘争・弐】', '', '', 'buff', '攻']
+      ]
+    },
+    '盾役【道場娘まり(和装)】or【甲斐姫(鷹爪)】など': {
+      lines: [
+        [1, '【待機】', '自身', '自身　指示状態　あり', 'standby', '待'],
+        [2, '【秘剣烈風斬】', '最大生命　降順', '戦闘開始10秒以下', 'shield', '盾'],
+        [3, '【待機】', '自身', '無条件', 'standby', '待'],
+        [4, '【車懸の陣】', '', '', 'formation', '陣'],
+        [5, '未設定', '', '', 'empty', ''],
+        [6, '未設定', '', '', 'empty', '']
+      ]
+    },
+    '付与役': {
+      lines: [
+        [1, '【待機】', '自身', '自身　指示状態　あり', 'standby', '待'],
+        [2, '【無明合縦陣】', '味方全体', '戦闘開始10秒以下', 'buff', '付'],
+        [3, '【待機】', '自身', '無条件', 'standby', '待'],
+        [4, '未設定', '', '', 'empty', ''],
+        [5, '未設定', '', '', 'empty', ''],
+        [6, '未設定', '', '', 'empty', '']
+      ]
+    },
+    '獅子役【能楽】': {
+      lines: [
+        [1, '【待機】', '自身', '自身　指示状態　あり', 'standby', '待'],
+        [2, '【名人太郎の舞】', '味方全体', '戦闘開始10秒以下', 'buff', '舞'],
+        [3, '【待機】', '自身', '無条件', 'standby', '待'],
+        [4, '【早拍子】', '', '', 'formation', '早'],
+        [5, '【獅子の謡】', '', '', 'lion', '獅'],
+        [6, '未設定', '', '', 'empty', '']
+      ]
+    },
+    '痺れ役【真田昌幸】or【荒木村重】など': {
+      lines: [
+        [1, '【待機】', '自身', '自身　指示状態　あり', 'standby', '待'],
+        [2, '【待機】', '自身', '戦闘開始2秒以下', 'standby', '待'],
+        [3, '【清寂封魔光】', '敵全体', '戦闘開始10秒以下', 'stun', '封'],
+        [4, '【待機】', '自身', '無条件', 'standby', '待'],
+        [5, '未設定', '', '', 'empty', '']
+      ]
+    }
+  };
+  const initialRoles = ['プレイヤー１【戦闘操作無し】', '攻撃役', '攻撃役', '盾役【道場娘まり(和装)】or【甲斐姫(鷹爪)】など', '付与役', '獅子役【能楽】', '痺れ役【真田昌幸】or【荒木村重】など'];
+  const fixedRoleRows = new Map([[1, initialRoles[0]], [6, initialRoles[5]], [7, initialRoles[6]]]);
+  const fixedRoleLabels = new Set(fixedRoleRows.values());
+  const actionButtonRows = new Set([2, 3, 4, 5, 7]);
   const rowContainer = document.getElementById('memberRows');
+  const actionButtons = [];
   for (let n = 1; n <= 7; n++) {
     const row = document.createElement('div');
     row.className = 'member-row';
@@ -15491,11 +15678,9 @@
     const role = document.createElement('select');
     role.id = `memberRole${n}`;
     role.setAttribute('aria-label', `${n}人目の役割`);
-    const empty = document.createElement('option');
-    empty.value = '';
-    empty.textContent = '選択自由　➡➡➡　ダメージ入力だけでも可';
-    role.appendChild(empty);
     roleOptions.forEach(([label, image]) => {
+      const fixedRole = fixedRoleRows.get(n);
+      if (fixedRole ? label !== fixedRole : fixedRoleLabels.has(label)) return;
       const option = document.createElement('option');
       option.value = label;
       option.textContent = label;
@@ -15509,7 +15694,19 @@
     character.className = 'role-character';
     character.alt = '';
     character.setAttribute('aria-hidden', 'true');
+
+    const actionButton = document.createElement('button');
+    actionButton.type = 'button';
+    actionButton.className = 'action-config-button';
+    actionButton.textContent = '行動設定';
+    actionButton.dataset.row = String(n);
+    actionButton.hidden = !actionButtonRows.has(n);
+    actionButtons.push(actionButton);
+
     role.addEventListener('change', () => {
+      role.classList.toggle('detailed-role', role.value.startsWith('盾役') || role.value.startsWith('痺れ役'));
+      role.title = role.value;
+      fitDetailedRoleText(role);
       const file = role.selectedOptions[0]?.dataset.characterImage;
       if (file) {
         character.src = './画像/' + file;
@@ -15518,9 +15715,14 @@
         character.removeAttribute('src');
         character.classList.remove('is-visible');
       }
+      const hasActionSetting = Boolean(actionSettingData[role.value]);
+      actionButton.classList.toggle('is-hidden', !hasActionSetting || !actionButtonRows.has(n));
+      actionButton.hidden = !actionButtonRows.has(n) || !hasActionSetting;
+      actionButton.dataset.role = role.value;
     });
-    roleCell.append(character, role);
+    roleCell.append(character, actionButton, role);
     role.value = initialRoles[n - 1];
+    if (fixedRoleRows.has(n)) role.disabled = true;
     role.dispatchEvent(new Event('change'));
 
     const damage = document.createElement('input');
@@ -15530,14 +15732,145 @@
     damage.readOnly = true;
     damage.inputMode = 'none';
     damage.autocomplete = 'off';
-    damage.placeholder = '⇦変更可能';
+    damage.placeholder = '';
     damage.setAttribute('aria-label', `${n}人目のダメージ`);
+    const damageCell = document.createElement('div');
+    damageCell.className = 'damage-cell';
+    const changeHint = document.createElement('span');
+    changeHint.className = 'damage-change-hint';
+    changeHint.textContent = '⇦変更可能';
+    changeHint.setAttribute('aria-hidden', 'true');
+    const inputPrompt = document.createElement('span');
+    inputPrompt.className = 'damage-input-prompt';
+    inputPrompt.textContent = '入力';
+    inputPrompt.setAttribute('aria-hidden', 'true');
+    damageCell.append(damage, changeHint, inputPrompt);
 
-    row.append(number, roleCell, damage);
+    row.append(number, roleCell, damageCell);
     rowContainer.append(row);
   }
 
   const inputs = [...document.querySelectorAll('.damage-input')];
+  const roleSelects = [...document.querySelectorAll('.role-cell select')];
+  function fitDetailedRoleText(role) {
+    role.style.removeProperty('font-size');
+  }
+  function fitAllDetailedRoles() {
+    roleSelects.forEach(fitDetailedRoleText);
+  }
+  window.addEventListener('resize', fitAllDetailedRoles);
+  const onePersonRoles = roleOptions
+    .map(([label]) => label)
+    .filter(label => label.startsWith('プレイヤー２') || label.startsWith('獅子役') || label.startsWith('痺れ役'));
+  function syncRoleAndDamageInputs() {
+    const attackCount = roleSelects.filter(role => role.value === '攻撃役').length;
+    roleSelects.forEach((role, index) => {
+      [...role.options].forEach(option => {
+        if (option.value === '攻撃役') {
+          option.disabled = attackCount >= 3 && role.value !== '攻撃役';
+        } else if (onePersonRoles.includes(option.value)) {
+          option.disabled = roleSelects.some((other, otherIndex) =>
+            otherIndex !== index && other.value === option.value);
+        }
+      });
+      const damage = inputs[index];
+      const canAttack = role.value === '攻撃役';
+      const isFixedRow = fixedRoleRows.has(index + 1);
+      damage.disabled = !canAttack;
+      damage.placeholder = canAttack ? '⇦変更可能' : '';
+      damage.parentElement.querySelector('.damage-change-hint')
+        .classList.toggle('is-visible', !canAttack && !isFixedRow);
+      if (!canAttack) damage.value = '';
+    });
+  }
+  roleSelects.forEach(role => role.addEventListener('change', syncRoleAndDamageInputs));
+  syncRoleAndDamageInputs();
+
+  const actionSettingModal = document.getElementById('actionSettingModal');
+  const actionSettingBox = document.getElementById('actionSettingBox');
+  const actionSettingTable = document.getElementById('actionSettingTable');
+  const closeActionSetting = document.getElementById('closeActionSetting');
+
+  // 提供されたゲーム画面にある技能アイコンをそのまま切り出して使用する。
+  const actionIconFiles = {
+    '【待機】': '待機.png',
+    '【龍王爆砕撃】': '攻撃.png',
+    '【憤怒の拳】': '憤怒.png',
+    '【憤怒の心】': '憤怒心.png',
+    '【剛健忍耐・弐】': '剛健.png',
+    '【攻勢闘争・弐】': '攻勢.png',
+    '【秘剣烈風斬】': '秘剣.png',
+    '【車懸の陣】': '車懸.png',
+    '【無明合縦陣】': '無明.png',
+    '【名人太郎の舞】': '名人太郎.png',
+    '【早拍子】': '早拍子.png',
+    '【獅子の謡】': '獅子の謡.png',
+    '【清寂封魔光】': '清寂.png'
+  };
+  function renderActionSetting(roleName) {
+    const config = actionSettingData[roleName];
+    if (!config) return;
+    const lines = config.lines;
+    actionSettingBox.dataset.lines = String(lines.length);
+    actionSettingTable.style.setProperty('--action-count', String(lines.length));
+    actionSettingTable.replaceChildren();
+    lines.forEach(([number, skill, target, condition]) => {
+      const row = document.createElement('div');
+      row.className = 'action-setting-row';
+      const numberElement = document.createElement('span');
+      numberElement.className = 'action-setting-number';
+      numberElement.textContent = String(number);
+
+      const iconFile = actionIconFiles[skill];
+      let icon;
+      if (iconFile) {
+        icon = document.createElement('img');
+        icon.className = 'action-setting-icon';
+        icon.src = './画像/行動設定/' + iconFile;
+        icon.alt = '';
+        icon.setAttribute('aria-hidden', 'true');
+      } else {
+        icon = document.createElement('span');
+        icon.className = 'action-setting-icon is-empty';
+        icon.setAttribute('aria-hidden', 'true');
+      }
+
+      const skillBlock = document.createElement('div');
+      skillBlock.className = 'action-setting-skill';
+      const skillText = document.createElement('div');
+      skillText.className = 'action-setting-name';
+      skillText.textContent = skill;
+      skillBlock.appendChild(skillText);
+      if (target) {
+        const targetText = document.createElement('div');
+        targetText.className = 'action-setting-target';
+        targetText.textContent = target;
+        skillBlock.appendChild(targetText);
+      }
+      const conditionText = document.createElement('div');
+      conditionText.className = 'action-setting-condition';
+      conditionText.textContent = condition || '';
+      row.append(numberElement, icon, skillBlock, conditionText);
+      actionSettingTable.appendChild(row);
+    });
+  }
+
+  actionButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const roleName = button.dataset.role || '';
+      if (!actionSettingData[roleName]) return;
+      renderActionSetting(roleName);
+      actionSettingModal.hidden = false;
+      closeActionSetting.focus();
+    });
+  });
+  closeActionSetting.addEventListener('click', () => {
+    actionSettingModal.hidden = true;
+  });
+  actionSettingModal.addEventListener('click', event => {
+    if (event.target === actionSettingModal) actionSettingModal.hidden = true;
+  });
+
   const modal = document.getElementById('resultModal');
   const closeButton = document.getElementById('closeModal');
   const searchButton = document.querySelector('.search-button');
@@ -15560,6 +15893,7 @@
   entryOpenButton.addEventListener('click', () => {
     entryModal.hidden = false;
     entryOpenButton.hidden = true;
+    fitAllDetailedRoles();
     entryCloseButton.focus();
   });
   entryCloseButton.addEventListener('click', () => {
@@ -15575,24 +15909,20 @@
     return value.toLocaleString('ja-JP');
   }
   function currentTotal() {
-    // ダメージ入力がある人数で、30ウェイト内の攻撃回数を決定する。
-    const attacks = inputs.map(input => {
+    // 役割が攻撃役で、かつダメージ欄に値がある人数で攻撃回数を決定する。
+    const attacks = inputs.map((input, index) => {
+      if (roleSelects[index].value !== '攻撃役') return 0n;
       const digits = toDigits(input.value);
       return digits ? BigInt(digits) : 0n;
     }).filter(damage => damage > 0n);
     const count = attacks.length;
     if (count === 0) return 0n;
-    if (count === 1) return attacks[0] * 4n; // 1人のみ7ウェイト×4回
-    if (count === 2) return (attacks[0] + attacks[1]) * 3n;
-    if (count === 3) return (attacks[0] + attacks[1] + attacks[2]) * 2n;
-    if (count === 4) {
-      // 4人のときだけ高ダメージ順の上位2人を各2回、残りを各1回。
-      const descending = [...attacks].sort((a, b) => a > b ? -1 : a < b ? 1 : 0);
-      return descending.reduce((sum, damage, index) => sum + damage * (index < 2 ? 2n : 1n), 0n);
-    }
-    // 5人は入力欄の上から1人目を2回、6人は全員1回、7人は上から6人のみ各1回。
-    return attacks.slice(0, 6).reduce((sum, damage, index) =>
-      sum + damage * (count === 5 && index === 0 ? 2n : 1n), 0n);
+    if (count === 1) return attacks[0] * 5n;
+    if (count === 2) return (attacks[0] + attacks[1]) * 5n;
+    // 3人のときは1人をランダムに選んで4回、ほかの2人は3回攻撃。
+    const fourAttackIndex = Math.floor(Math.random() * 3);
+    return attacks.reduce((sum, damage, index) =>
+      sum + damage * (index === fourAttackIndex ? 4n : 3n), 0n);
   }
 
   // 家臣計算機の数値入力操作：７つの桁それぞれに上下矢印・直接入力。
@@ -15647,6 +15977,7 @@
     });
   }
   function openDamageDigitModal(input) {
+    if (input.disabled) return;
     activeDamageInput = input;
     digitMember.textContent = `${inputs.indexOf(input) + 1}人目`;
     renderDamageDigits();
