@@ -1,20 +1,25 @@
 {
   "schema": "jinpo-next-phase2-auto-update/v2",
   "source_file": "source-next/英傑一覧.csv",
-  "updated_at": "2026-10-07",
-  "last_added_hero": "上泉信綱(野望)",
+  "updated_at": "2026-10-21",
+  "last_added_hero": "井伊直虎(薔薇)",
   "new_registration_only": true,
   "new_heroes": [
     {
-      "番号": 394,
-      "internal_id": "EIK_0402",
-      "英傑名": "上泉信綱(野望)"
+      "番号": 395,
+      "internal_id": "EIK_0403",
+      "英傑名": "井伊直政(薔薇)"
+    },
+    {
+      "番号": 396,
+      "internal_id": "EIK_0404",
+      "英傑名": "井伊直虎(薔薇)"
     }
   ],
   "changed_existing": [],
   "generation": {
-    "full_records": 2531904,
-    "seconds": 107.169,
+    "full_records": 2819090,
+    "seconds": 148.631,
     "full_regeneration": true,
     "generation_mode": "full_current_source_only",
     "source_of_truth_only": true
