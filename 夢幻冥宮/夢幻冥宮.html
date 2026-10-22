@@ -58,7 +58,7 @@
     font: 800 clamp(26px, 4vw, 34px) "Yu Gothic", "Meiryo", sans-serif; letter-spacing: .12em;
   }
   .home-button:hover { filter: brightness(1.12); }
-  /* 参考動画までの３ボタンを短い画面でも隠さず全表示する。スクロールは追加しない。 */
+  /* トップの４ボタンを短い画面でも隠さず全表示する。 */
   @media (max-height: 660px) {
     .home-stack { gap: clamp(4px, 1.25dvh, 8px); }
     .home-caution { padding: clamp(6px, 1.6dvh, 10px) 12px; }
@@ -527,6 +527,135 @@
     .home-caution-text { font-size: clamp(11px, 3.1dvh, 15px); line-height: 1.25; }
     .home-button { min-height: clamp(42px, 13dvh, 58px); padding: 5px 10px; font-size: clamp(19px, 6dvh, 23px); }
   }
+  .crystal-modal[hidden], .crystal-results[hidden], .crystal-error[hidden] { display: none; }
+  .crystal-modal {
+    position: fixed; inset: 0; z-index: 895; display: flex;
+    align-items: center; justify-content: center; padding: 10px;
+    background: linear-gradient(rgba(7, 0, 12, .50), rgba(7, 0, 12, .50)),
+      url("./画像/Snapshot_150.PNG") center center / 100% 100% no-repeat;
+    overflow: hidden;
+  }
+  .crystal-panel {
+    position: relative; width: min(1120px, 100%); height: calc(100dvh - 20px);
+    min-height: 0; display: flex; flex-direction: column;
+    border: 0; padding: 0; background: transparent; box-shadow: none;
+    color: #fff8e7; overflow: hidden;
+  }
+  .crystal-heading { display: flex; justify-content: flex-end; padding: clamp(10px,1.6vh,14px) 20px; flex: none; }
+  #closeCrystalTool {
+    padding: clamp(8px,1.4dvh,13px) clamp(16px,2.4vw,25px);
+    font-size: clamp(18px,2.9dvh,27px);
+  }
+  .crystal-main {
+    flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start; gap: clamp(9px, 2dvh, 21px);
+    padding: 0 20px clamp(12px, 3dvh, 24px);
+    text-shadow: 0 2px 5px #000, 0 0 9px #000;
+  }
+  .crystal-title {
+    margin: 0; color: #fff0a3; text-align: center;
+    font: 900 clamp(32px, 5.8dvh, 56px)/1.2 "Yu Gothic", "Meiryo", sans-serif;
+  }
+  #crystalForm {
+    flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column;
+    gap: clamp(7px,1.5dvh,14px);
+  }
+  .crystal-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(10px,2vw,20px); }
+  .crystal-input-group { display: grid; gap: 8px; min-width: 0; }
+  .crystal-input-group label { color: #fff2ac; font-weight: 900; font-size: clamp(19px,3.1dvh,28px); }
+  .crystal-input-group input {
+    width: 100%; min-width: 0; height: clamp(52px,8.5dvh,76px); padding: 0 16px;
+    border: 1px solid #c58a72; border-radius: 7px;
+    background: #160c20; color: #fffdf4;
+    font: 800 clamp(26px,4.2dvh,38px) "Yu Gothic", "Meiryo", sans-serif;
+    font-variant-numeric: tabular-nums; text-shadow: none;
+    cursor: pointer;
+  }
+  #crystalDigitControls { grid-template-columns: repeat(5, minmax(0,88px)); }
+  #crystalDigitModal .damage-digit-box { width: min(690px, calc(100vw - 24px)); }
+  #crystalDigitModal .damage-digit-top-close { min-width: 94px; height: 42px; font-size: 19px; }
+  #crystalDigitModal .damage-digit-stat-name { font-size: clamp(25px,4.5dvh,36px); }
+  #crystalDigitModal .damage-digit-step-col {
+    grid-template-rows: clamp(36px,6.6dvh,54px) clamp(55px,9dvh,78px) clamp(36px,6.6dvh,54px);
+  }
+  #crystalDigitModal .damage-digit-arrow { font-size: clamp(26px,4.5dvh,38px); }
+  #crystalDigitModal .damage-digit-input { font-size: clamp(32px,5.6dvh,48px); }
+  #crystalDigitModal .damage-digit-clear,
+  #crystalDigitModal .damage-digit-apply { padding: 12px 26px; font-size: 22px; }
+  .crystal-actions {
+    display: grid; grid-template-columns: minmax(0, .38fr) minmax(0, .62fr);
+    gap: clamp(8px,1.6vw,18px); margin-top: auto; flex: none;
+  }
+  .crystal-reset {
+    min-width: 0; min-height: clamp(58px,9dvh,84px); padding: 8px 10px;
+    border: 1px solid #ffdd93; border-radius: 9px; cursor: pointer;
+    background: linear-gradient(#604454, #372031); color: #fff6d8;
+    box-shadow: inset 0 1px rgba(255,255,255,.22), 0 4px 16px rgba(0,0,0,.4);
+    font: 800 clamp(20px,3.2dvh,30px) "Yu Gothic", "Meiryo", sans-serif;
+  }
+  .crystal-reset:hover { filter: brightness(1.16); }
+  .crystal-submit {
+    margin-top: 0; flex: none; min-height: clamp(58px,9dvh,84px);
+    font-size: clamp(24px,4dvh,37px);
+  }
+  .crystal-input-group input:focus-visible { outline: 2px solid #fff0ab; outline-offset: 2px; }
+  .crystal-error { margin: 0; color: #ffd5d5; font-weight: 900; text-align: center; }
+  .crystal-results {
+    flex: 1; min-height: 0; display: grid; align-content: center;
+    justify-items: center; gap: clamp(9px,1.7dvh,18px);
+    width: min(900px,100%); align-self: center; text-align: center;
+  }
+  .crystal-result-label { margin: 0; color: #fff2ac; font-size: clamp(22px,3.4dvh,33px); font-weight: 900; }
+  .crystal-result-floor {
+    margin: 0; color: #fff5bc;
+    font: 900 clamp(40px,8.2dvh,78px)/1.2 "Yu Gothic", "Meiryo", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  .crystal-result-numbers { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+  .crystal-metric span { display: block; font-size: clamp(21px,3.2dvh,30px); font-weight: 900; }
+  .crystal-metric strong {
+    display: block; margin-top: 3px; color: #fff2ac;
+    font: 900 clamp(42px,8dvh,74px)/1.2 "Yu Gothic", "Meiryo", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 560px) {
+    .crystal-modal { padding: 6px; }
+    .crystal-panel { height: calc(100dvh - 12px); }
+    .crystal-heading { padding: 8px 12px; }
+    .crystal-main { padding: 0 12px 10px; gap: clamp(7px,1.5dvh,12px); }
+    .crystal-inputs { grid-template-columns: 1fr; gap: 8px; }
+    .crystal-input-group { gap: 3px; }
+    .crystal-result-numbers { gap: 8px; }
+    .crystal-reset { font-size: clamp(17px,3dvh,23px); }
+    .crystal-result-label { font-size: clamp(18px,3.2dvh,26px); }
+    .crystal-result-floor { font-size: clamp(32px,6.8dvh,58px); }
+    .crystal-metric span { font-size: clamp(16px,2.8dvh,22px); }
+    .crystal-metric strong { font-size: clamp(33px,6.3dvh,55px); }
+    #crystalDigitControls { grid-template-columns: repeat(5, minmax(0,1fr)); }
+    #crystalDigitModal .damage-digit-step-col { grid-template-rows: 38px 57px 38px; gap: 4px; }
+    #crystalDigitModal .damage-digit-input { font-size: 32px; }
+    #crystalDigitModal .damage-digit-arrow { font-size: 27px; }
+    #crystalDigitModal .damage-digit-clear,
+    #crystalDigitModal .damage-digit-apply { font-size: 18px; padding: 10px 18px; }
+  }
+  @media (max-height: 510px) {
+    .crystal-heading { padding-top: 3px; padding-bottom: 3px; }
+    .crystal-main { gap: 5px; padding-bottom: 3px; }
+    .crystal-title { font-size: 25px; }
+    .crystal-input-group label { font-size: 15px; }
+    .crystal-input-group input { height: 39px; font-size: 20px; }
+    .crystal-reset { min-height: 43px; padding: 6px; font-size: 16px; }
+    .crystal-submit { min-height: 43px; padding: 6px; font-size: 19px; }
+    .crystal-result-label, .crystal-metric span { font-size: 15px; }
+    .crystal-result-floor { font-size: 29px; }
+    .crystal-metric strong { font-size: 31px; }
+    #closeCrystalTool { font-size: 16px; padding: 4px 10px; }
+    #crystalDigitModal .damage-digit-step-col { grid-template-rows: 25px 36px 25px; }
+    #crystalDigitModal .damage-digit-arrow { font-size: 19px; }
+    #crystalDigitModal .damage-digit-input { font-size: 24px; }
+    #crystalDigitModal .damage-digit-clear,
+    #crystalDigitModal .damage-digit-apply { font-size: 15px; padding: 6px 12px; }
+  }
 </style>
 </head>
 <body>
@@ -540,6 +669,7 @@
     <button type="button" id="openGuide" class="home-button">ガイド</button>
     <button type="button" id="openDamageEntry" class="home-button">火力検証</button>
     <button type="button" id="openReferenceVideo" class="home-button">参考動画</button>
+    <button type="button" id="openCrystalTool" class="home-button">晶石受取検索</button>
   </div>
 </main>
 <div id="guideModal" class="guide-modal" role="dialog" aria-modal="true" aria-label="火力検証ガイド" hidden>
@@ -552,6 +682,54 @@
     <video id="referenceVideo" class="reference-video-player" src="./【信長の野望online】夢幻冥宮：参考動画.mp4"
       preload="metadata" muted playsinline webkit-playsinline disablepictureinpicture disableremoteplayback
       tabindex="0" aria-label="参考動画。クリックで一時停止・再生、終了後は最初から再生"></video>
+  </div>
+</div>
+<div id="crystalModal" class="crystal-modal" role="dialog" aria-modal="true" aria-labelledby="crystalModalTitle" hidden>
+  <section class="crystal-panel">
+    <div class="crystal-heading">
+      <button type="button" id="closeCrystalTool" class="entry-close-button">閉じる</button>
+    </div>
+    <div class="crystal-main">
+      <h2 id="crystalModalTitle" class="crystal-title">晶石受取検索</h2>
+      <form id="crystalForm" novalidate>
+        <div class="crystal-inputs">
+          <div class="crystal-input-group">
+            <label for="crystalStartFloor">初回報酬 未受取開始階</label>
+            <input id="crystalStartFloor" type="text" inputmode="none" autocomplete="off" readonly required>
+          </div>
+          <div class="crystal-input-group">
+            <label for="crystalMaxFloor">クリア最上階</label>
+            <input id="crystalMaxFloor" type="text" inputmode="none" autocomplete="off" readonly required>
+          </div>
+        </div>
+        <p id="crystalError" class="crystal-error" role="alert" hidden></p>
+        <div id="crystalResults" class="crystal-results" aria-live="polite" hidden>
+          <p class="crystal-result-label">この階でまとめて受け取る</p>
+          <p id="crystalBestRange" class="crystal-result-floor"></p>
+          <div class="crystal-result-numbers">
+            <div class="crystal-metric"><span>封神の晶石</span><strong id="crystalBestCrystals"></strong></div>
+            <div class="crystal-metric"><span>残る封神の鉱石</span><strong id="crystalBestRemainder"></strong></div>
+          </div>
+        </div>
+        <div class="crystal-actions">
+          <button type="button" id="crystalResetAll" class="crystal-reset">クリア</button>
+          <button type="submit" class="crystal-submit search-button">検索</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+<div id="crystalDigitModal" class="damage-digit-modal" role="dialog" aria-modal="true" aria-label="階数入力" hidden>
+  <div class="damage-digit-box">
+    <button type="button" id="crystalDigitTopClose" class="damage-digit-top-close">閉じる</button>
+    <div class="damage-digit-context">
+      <div id="crystalDigitTitle" class="damage-digit-stat-name"></div>
+    </div>
+    <div id="crystalDigitControls" class="damage-digit-step-grid"></div>
+    <div class="damage-digit-actions">
+      <button type="button" id="crystalDigitClear" class="damage-digit-clear">消去</button>
+      <button type="button" id="crystalDigitApply" class="damage-digit-apply">反映</button>
+    </div>
   </div>
 </div>
 <div id="damageEntryModal" class="damage-entry-modal" role="dialog" aria-modal="true" aria-label="ダメージ入力" hidden>
@@ -16227,6 +16405,220 @@
   closeButton.addEventListener('click', () => {
     modal.hidden = true;
     searchButton.focus();
+  });
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  // 報酬CSVの1～10,000階と完全一致する法則。10,001階以降は同じ規則が続く仮定。
+  const maxSupportedFloor = 100000;
+  const orePrefix = new Float64Array(maxSupportedFloor + 1);
+  for (let floor = 1; floor <= maxSupportedFloor; floor++) {
+    const ore = floor % 10 === 0 ? 0 : Math.floor(Math.sqrt((floor + 8) / 4));
+    orePrefix[floor] = orePrefix[floor - 1] + ore;
+  }
+
+  const modal = document.getElementById('crystalModal');
+  const openButton = document.getElementById('openCrystalTool');
+  const closeButton = document.getElementById('closeCrystalTool');
+  const form = document.getElementById('crystalForm');
+  const startInput = document.getElementById('crystalStartFloor');
+  const maxInput = document.getElementById('crystalMaxFloor');
+  const results = document.getElementById('crystalResults');
+  const error = document.getElementById('crystalError');
+  const numberText = value => value.toLocaleString('ja-JP');
+
+  function calculate(start, end) {
+    const ore = orePrefix[end] - orePrefix[start - 1];
+    // 公式の「一度に1,000個超」を厳密に扱い、ちょうど1,000個は未変換にする。
+    const crystals = ore > 1000 ? Math.floor(ore / 1000) : 0;
+    const remainder = crystals ? ore % 1000 : ore;
+    return { end, ore, crystals, remainder };
+  }
+
+  function setText(id, value) {
+    document.getElementById(id).textContent = value;
+  }
+
+  function parseFloor(input) {
+    const value = String(input.value).trim();
+    if (!/^\d+$/.test(value)) return null;
+    const floor = Number(value);
+    return Number.isSafeInteger(floor) && floor >= 1 && floor <= maxSupportedFloor ? floor : null;
+  }
+
+  // ダメージ入力と同じ桁別の数値入力モーダル（５桁）。
+  const digitModal = document.getElementById('crystalDigitModal');
+  const digitControls = document.getElementById('crystalDigitControls');
+  const digitTitle = document.getElementById('crystalDigitTitle');
+  const maxDigitFloor = 99999;
+  let activeFloorInput = null;
+
+  function floorDigitValue() {
+    return Math.min(maxDigitFloor, Number(activeFloorInput?.value) || 0);
+  }
+  function floorDigitArray() {
+    return String(floorDigitValue()).padStart(5, '0').split('').map(Number);
+  }
+  function renderFloorDigits() {
+    const value = floorDigitValue();
+    digitControls.replaceChildren();
+    floorDigitArray().forEach((digit, index) => {
+      const col = document.createElement('div');
+      col.className = 'damage-digit-step-col';
+      const up = document.createElement('button');
+      up.type = 'button'; up.className = 'damage-digit-arrow'; up.textContent = '⇧';
+      up.disabled = digit >= 9 || value + 10 ** (4 - index) > maxDigitFloor;
+      up.setAttribute('aria-label', `${5 - index}桁の位を増やす`);
+      up.addEventListener('click', () => stepFloorDigit(index, 1));
+      const number = document.createElement('input');
+      number.type = 'tel'; number.inputMode = 'numeric'; number.pattern = '[0-9]*';
+      number.maxLength = 1; number.autocomplete = 'off'; number.spellcheck = false;
+      number.lang = 'en'; number.className = 'damage-digit-input';
+      number.value = String(digit);
+      number.dataset.digitIndex = String(index);
+      number.setAttribute('aria-label', `${5 - index}桁の位`);
+      number.addEventListener('focus', () => number.select());
+      number.addEventListener('keydown', event => {
+        if (event.isComposing || event.key === 'Process') { event.preventDefault(); return; }
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+        if (!/^[0-9]$/.test(event.key)) event.preventDefault();
+      });
+      number.addEventListener('beforeinput', event => {
+        if (event.isComposing || (event.inputType && event.inputType.includes('Composition'))) {
+          event.preventDefault(); return;
+        }
+        if (typeof event.data === 'string' && event.data && !/^[0-9]$/.test(event.data)) event.preventDefault();
+      });
+      number.addEventListener('input', () => {
+        const normalized = String(number.value || '')
+          .replace(/[０-９]/g, c => String(c.charCodeAt(0) - 0xFF10))
+          .replace(/[^0-9]/g, '').slice(-1);
+        changeFloorDigit(index, normalized ? Number(normalized) : 0);
+        const next = digitControls.querySelector(`[data-digit-index="${index}"]`);
+        if (next) { next.focus(); next.select(); }
+      });
+      const down = document.createElement('button');
+      down.type = 'button'; down.className = 'damage-digit-arrow'; down.textContent = '⇩';
+      down.disabled = digit <= 0;
+      down.setAttribute('aria-label', `${5 - index}桁の位を減らす`);
+      down.addEventListener('click', () => stepFloorDigit(index, -1));
+      col.append(up, number, down);
+      digitControls.append(col);
+    });
+  }
+  function changeFloorDigit(index, digit) {
+    if (!activeFloorInput) return;
+    const digits = floorDigitArray();
+    digits[index] = Math.max(0, Math.min(9, digit));
+    const value = Number(digits.join(''));
+    if (value > maxDigitFloor) { renderFloorDigits(); return; }
+    activeFloorInput.value = value ? String(value) : '';
+    activeFloorInput.dispatchEvent(new Event('input', { bubbles: true }));
+    renderFloorDigits();
+  }
+  function stepFloorDigit(index, delta) {
+    changeFloorDigit(index, floorDigitArray()[index] + delta);
+  }
+  function openFloorDigitModal(input) {
+    activeFloorInput = input;
+    digitTitle.textContent = input === startInput ? '初回報酬 未受取開始階' : 'クリア最上階';
+    renderFloorDigits();
+    digitModal.hidden = false;
+    document.getElementById('crystalDigitTopClose').focus();
+  }
+  function closeFloorDigitModal() {
+    if (!activeFloorInput) return;
+    const target = activeFloorInput;
+    activeFloorInput = null;
+    digitModal.hidden = true;
+    target.focus();
+  }
+  [startInput, maxInput].forEach(input => {
+    input.addEventListener('click', () => openFloorDigitModal(input));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault(); openFloorDigitModal(input);
+      }
+    });
+  });
+  document.getElementById('crystalDigitTopClose').addEventListener('click', closeFloorDigitModal);
+  document.getElementById('crystalDigitApply').addEventListener('click', closeFloorDigitModal);
+  document.getElementById('crystalDigitClear').addEventListener('click', () => {
+    if (!activeFloorInput) return;
+    activeFloorInput.value = '';
+    activeFloorInput.dispatchEvent(new Event('input', { bubbles: true }));
+    closeFloorDigitModal();
+  });
+  digitModal.addEventListener('click', event => {
+    if (event.target === digitModal) closeFloorDigitModal();
+  });
+
+  function search() {
+    const start = parseFloor(startInput);
+    const maximum = parseFloor(maxInput);
+    if (start === null || maximum === null || start > maximum) {
+      error.textContent = '初回報酬 未受取開始階とクリア最上階を、1～100,000の整数で入力してください。開始階は最上階以下にしてください。';
+      error.hidden = false;
+      results.hidden = true;
+      return;
+    }
+    error.hidden = true;
+
+    let best = null;
+    for (let end = start; end <= maximum; end++) {
+      const current = calculate(start, end);
+      if (!best || current.crystals > best.crystals ||
+        (current.crystals === best.crystals && current.remainder < best.remainder)) {
+        best = current;
+      }
+    }
+
+    setText('crystalBestRange', `${numberText(best.end)}階`);
+    setText('crystalBestCrystals', `${numberText(best.crystals)}個`);
+    setText('crystalBestRemainder', `${numberText(best.remainder)}個`);
+    results.hidden = false;
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    search();
+  });
+  const clearPreviousResult = () => {
+    results.hidden = true;
+    error.hidden = true;
+  };
+  startInput.addEventListener('input', clearPreviousResult);
+  maxInput.addEventListener('input', clearPreviousResult);
+  document.getElementById('crystalResetAll').addEventListener('click', () => {
+    form.reset();
+    startInput.value = '';
+    maxInput.value = '';
+    setText('crystalBestRange', '');
+    setText('crystalBestCrystals', '');
+    setText('crystalBestRemainder', '');
+    error.textContent = '';
+    clearPreviousResult();
+  });
+  function close() {
+    modal.hidden = true;
+    openButton.focus();
+  }
+  openButton.addEventListener('click', () => {
+    form.reset();
+    clearPreviousResult();
+    modal.hidden = false;
+    closeButton.focus();
+  });
+  closeButton.addEventListener('click', close);
+  modal.addEventListener('click', event => {
+    if (event.target === modal) close();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !digitModal.hidden) closeFloorDigitModal();
+    else if (event.key === 'Escape' && !modal.hidden) close();
   });
 })();
 </script>
