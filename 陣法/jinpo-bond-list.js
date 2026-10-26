@@ -609,7 +609,7 @@
       '.jinpoBondNavBtn{min-height:38px;padding:7px 14px;border-radius:12px;border:2px solid #b99043;background:linear-gradient(#5e4020,#35230f);color:#fff1c9;font-size:15px;font-weight:900;line-height:1;box-shadow:0 0 12px rgba(231,189,92,.20);cursor:pointer;white-space:nowrap;}',
       '#jinpoPopularHeroModalBackdrop{position:fixed;inset:0;z-index:10055;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.76);box-sizing:border-box;}',
       '#jinpoPopularHeroModalBackdrop.is-open{display:flex;}',
-      '#jinpoPopularHeroModal{width:min(1440px,96vw);max-height:96vh;display:flex;flex-direction:column;border:2px solid #d9a84a;border-radius:16px;background:linear-gradient(180deg,#24150d,#110a07);color:#f7ead0;box-shadow:0 0 34px rgba(0,0,0,.76),0 0 22px rgba(205,139,255,.20);overflow:hidden;}',
+      '#jinpoPopularHeroModal{width:min(2048px,98vw);max-height:96vh;max-height:96dvh;display:flex;flex-direction:column;border:2px solid #d9a84a;border-radius:16px;background:linear-gradient(180deg,#24150d,#110a07);color:#f7ead0;box-shadow:0 0 34px rgba(0,0,0,.76),0 0 22px rgba(205,139,255,.20);overflow:hidden;}',
       '.jinpoPopularHeroModalHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(231,189,92,.34);background:rgba(89,34,109,.36);}',
       '.jinpoPopularHeroModalHeader h3{margin:0;font-size:20px;color:#ffd8ff;}',
       '.jinpoPopularHeroModalCount{font-size:12px;color:#e1c7ef;}',
@@ -617,7 +617,8 @@
       '#jinpoPopularHeroModalClose:hover{filter:brightness(1.16);border-color:#f1c45c;box-shadow:0 2px 0 rgba(0,0,0,.42),0 0 16px rgba(241,196,92,.34);}',
       '#jinpoPopularHeroModalClose:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.38),0 0 9px rgba(241,196,92,.24);}',
       '#jinpoPopularHeroModalClose:focus-visible{outline:3px solid rgba(255,218,112,.50);outline-offset:3px;}',
-      '.jinpoPopularHeroModalBody{padding:14px 16px 16px;overflow:visible;}',
+      '.jinpoPopularHeroModalBody{display:flex;align-items:center;justify-content:center;min-height:0;padding:8px;overflow:hidden;}',
+      '.jinpoPopularHeroReferenceImage{display:block;width:auto;height:auto;max-width:100%;max-height:calc(96vh - 86px);max-height:calc(96dvh - 86px);object-fit:contain;}',
       '.jinpoPopularHeroList{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px;}',
       '.jinpoPopularHeroItem{display:flex;align-items:center;gap:9px;min-height:48px;padding:8px 10px;border:1px solid rgba(220,166,255,.28);border-radius:12px;background:linear-gradient(180deg,rgba(66,27,83,.46),rgba(18,10,22,.88));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);box-sizing:border-box;}',
       '.jinpoPopularHeroIndex{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:999px;border:1px solid rgba(255,225,162,.72);background:linear-gradient(180deg,#6a4016,#37200c);color:#fff0c7;font-size:13px;font-weight:1000;}',
@@ -1065,18 +1066,8 @@
     if(!backdrop||!body) return;
     backdrop.classList.add('is-open');
     backdrop.setAttribute('aria-hidden','false');
-    body.innerHTML='<div class="jinpoPopularHeroModalError">読込中...</div>';
-    if(count) count.textContent='';
-    loadPopularSelectedHeroes().then(function(list){
-      body.innerHTML='<div class="jinpoPopularHeroList">'+list.map(function(item){
-        return '<div class="jinpoPopularHeroItem"><span class="jinpoPopularHeroIndex">'+item.index+'</span><span class="jinpoPopularHeroName">'+esc(item.name)+'</span></div>';
-      }).join('')+'</div>';
-      if(count) count.textContent=list.length+'名';
-    }).catch(function(err){
-      console.error('選抜人気英傑一覧読込エラー',err);
-      body.innerHTML='<div class="jinpoPopularHeroModalError">選抜人気英傑一覧を読み込めませんでした。</div>';
-      if(count) count.textContent='';
-    });
+    body.innerHTML='<img class="jinpoPopularHeroReferenceImage" src="assets/jinpo-popular-heroes-20.png" width="2048" height="1024" alt="選抜人気英傑20名の顔画像・番号・名前の一覧" decoding="async">';
+    if(count) count.textContent='20名';
   }
 
   function ensureModal(){
