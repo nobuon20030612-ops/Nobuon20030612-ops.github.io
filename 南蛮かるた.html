@@ -369,6 +369,16 @@ html,body{width:100%;height:100%;overflow:hidden!important}
   cursor:pointer;
 }
 .rules-guide-button:hover,.rules-guide-button:focus-visible{filter:brightness(1.2)}
+.number-tips-guide-button{
+  position:absolute;left:580px;top:259px;width:327px;height:41px;z-index:6;
+  border:2px solid #f6d67f;border-radius:6px;
+  background:linear-gradient(#257a75,#10534e 60%,#09312f);
+  color:#fff8dc;font:900 21px "Yu Gothic",Meiryo,sans-serif;
+  text-shadow:0 1px 2px #062a29;
+  box-shadow:inset 0 1px 3px #d9fff9,0 0 9px #f5d76ba8,0 2px 4px #0008;
+  cursor:pointer;
+}
+.number-tips-guide-button:hover,.number-tips-guide-button:focus-visible{filter:brightness(1.2)}
 .rules-guide-overlay{background:rgba(18,10,4,.22)}
 .rules-guide-dialog{
   width:864px;height:626px;overflow:hidden;padding:13px 17px 16px;
@@ -529,6 +539,7 @@ html,body{width:100%;height:100%;overflow:hidden!important}
         <div id="score-stamps" class="score-stamps" aria-hidden="true"></div>
         <div id="parent-cards" class="parent-cards" aria-label="親の札"></div>
         <button type="button" class="no-bet-button" id="no-bet" hidden>掛け金なしで進める</button>
+        <button type="button" class="number-tips-guide-button" id="number-tips-guide-open">数字別の狙い目</button>
         <button type="button" class="rules-guide-button" id="rules-guide-open">ルール</button>
         <button type="button" class="odds-guide-button" id="odds-guide-open">倍率役一覧</button>
         <section class="odds-board" aria-label="勝負の倍率一覧">
@@ -619,6 +630,14 @@ html,body{width:100%;height:100%;overflow:hidden!important}
                 </section>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="overlay odds-guide-overlay" id="number-tips-guide" role="dialog" aria-modal="true" aria-labelledby="number-tips-guide-title" hidden>
+          <div class="odds-guide-dialog">
+            <h2 id="number-tips-guide-title">数字別の狙い目</h2>
+            <button type="button" class="odds-guide-close" data-close="number-tips-guide" aria-label="閉じる">閉じる</button>
+            <img src="南蛮かるた・上級の確率と狙い目(1).png" alt="南蛮かるた上級の数字1～10別の確率と特殊役の狙い目">
           </div>
         </section>
 
@@ -1265,6 +1284,7 @@ function init(){
   document.getElementById("draw-choice-no").addEventListener("click",()=>chooseAdditionalDraw(false));
   document.getElementById("odds-guide-open").addEventListener("click",()=>{openOverlay(document.getElementById("odds-guide"));playSound("click");});
   document.getElementById("rules-guide-open").addEventListener("click",()=>{openOverlay(document.getElementById("rules-guide"));playSound("click");});
+  document.getElementById("number-tips-guide-open").addEventListener("click",()=>{openOverlay(document.getElementById("number-tips-guide"));playSound("click");});
   document.getElementById("bet-cancel").addEventListener("click",()=>{setBetDraft(0);playSound("click");});
   document.getElementById("sound-toggle").addEventListener("click",event=>{
     soundEnabled=!soundEnabled;
