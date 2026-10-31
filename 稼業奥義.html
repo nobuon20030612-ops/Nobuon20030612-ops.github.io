@@ -3,7 +3,7 @@
 <title>入魂・鍛錬奥義｜ゲーム画面再現・解析</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{background:#0b100c;color:#eaeae5;font-family:"Noto Serif CJK JP","Yu Mincho","Hiragino Mincho ProN",serif;-webkit-font-smoothing:antialiased}
-#viewport{position:fixed;inset:0;overflow:hidden;display:flex;justify-content:center;align-items:center}#scene{position:absolute;left:50%;top:50%;width:1543px;height:1152px;transform-origin:center center;overflow:hidden;background:#111812;box-shadow:0 0 0 1px #393727,0 8px 48px #000a;user-select:none}
+#viewport{position:fixed;inset:0;overflow:hidden;display:flex;justify-content:center;align-items:center}#scene{position:absolute;left:50%;top:50%;width:1543px;height:1152px;transform-origin:center center;overflow:hidden;visibility:hidden;background:#111812;box-shadow:0 0 0 1px #393727,0 8px 48px #000a;user-select:none}
 #scene::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.08;background:radial-gradient(ellipse at 50% 40%,transparent 20%,#000 90%);z-index:10}
 #topline{position:absolute;left:0;right:0;top:0;height:30px;background:linear-gradient(#141611 0%,#5d593d 11%,#292e20 18%,#0b0d0a 30%,#141713 88%,transparent);border-top:2px solid #8a8051;box-shadow:0 2px 7px #0008;z-index:9}
 #status{font-weight:500;-webkit-text-stroke:.2px #c2c2bc;position:absolute;left:9px;top:74px;width:235px;font-size:40px;line-height:1.19;letter-spacing:0;white-space:nowrap;color:#dddcd3;text-shadow:2px 2px 2px #000,0 0 2px #c3c6be;z-index:2}
@@ -2366,4 +2366,4 @@ document.querySelector('#finish').addEventListener('click',()=>{document.querySe
   refresh();
 })();
 </script>
-<script>function fitExactGame(){const rail=Math.min(135,Math.max(100,innerWidth*.15));const s=Math.max(.1,Math.min((innerWidth-rail-8)/1543,(innerHeight-44)/1152));const scene=document.querySelector('#scene');scene.style.left='calc(50% + '+(rail/2)+'px)';scene.style.transform='translate(-50%,-50%) scale('+s+')';document.documentElement.style.setProperty('--mode-rail-width',rail+'px');}window.addEventListener('resize',fitExactGame);fitExactGame();</script></body></html>
+<script>function fitExactGame(){const rail=Math.min(135,Math.max(100,innerWidth*.15));const s=Math.max(.1,Math.min((innerWidth-rail-8)/1543,(innerHeight-44)/1152));const scene=document.querySelector('#scene');scene.style.left='calc(50% + '+(rail/2)+'px)';scene.style.transform='translate(-50%,-50%) scale('+s+')';document.documentElement.style.setProperty('--mode-rail-width',rail+'px');scene.style.visibility='visible';}window.addEventListener('resize',fitExactGame);fitExactGame();</script></body></html>
