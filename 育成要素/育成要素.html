@@ -3,6 +3,8 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"/>
+<style id="ikPreload">html{background:#000}html:not(.ik-ready) body{visibility:hidden}</style>
+<script>setTimeout(function(){document.documentElement.classList.add('ik-ready')},5000)</script>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>育成要素｜たいらの野望</title>
 <style>
@@ -9299,7 +9301,8 @@ if(document.readyState==='loading'){
  document.addEventListener('DOMContentLoaded',initialize,{once:true});
  document.addEventListener('DOMContentLoaded',initializeGender,{once:true});
  document.addEventListener('DOMContentLoaded',refreshBondData,{once:true});
-}else{initialize();initializeGender();refreshBondData();}
+ document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(()=>document.documentElement.classList.add('ik-ready')),{once:true});
+}else{initialize();initializeGender();refreshBondData();document.documentElement.classList.add('ik-ready');}
 document.addEventListener('click',event=>{if(event.target?.id==='ikPickerApply')applyBondPicker()},true);
 })();
 </script>
