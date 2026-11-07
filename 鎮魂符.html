@@ -961,6 +961,228 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
 .status-detail-list > * { zoom:var(--status-scale, 1); }
 </style>
   <link rel="icon" type="image/png" href="favicon.png?v=2">
+<style id="number-modal-style">
+/* ===== 数値入力モーダル共通仕様：家臣計算機と同じ見た目／通常入力・付与数値入力だけ ===== */
+.nouryoku-number-modal{
+  position:fixed;
+  inset:0;
+  z-index:1000400;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  box-sizing:border-box;
+  background:rgba(0,0,0,.78);
+}
+.nouryoku-number-modal.hidden{display:none;}
+
+.nouryoku-shared-digit-box{
+  --nouryoku-active-color:#ffd0d0;
+  position:relative;
+  width:min(460px, calc(100vw - 32px));
+  min-width:0;
+  max-height:calc(100vh - 32px);
+  overflow:auto;
+  box-sizing:border-box;
+  padding:54px 18px 16px;
+  border:3px solid var(--nouryoku-active-color);
+  border-radius:10px;
+  background:#060606;
+  color:#fff;
+  box-shadow:
+    0 0 16px var(--nouryoku-active-color),
+    0 0 30px rgba(255,255,255,0.08),
+    inset 0 0 18px rgba(255,255,255,0.025);
+}
+/* 家臣計算機の通常入力モーダルと同じ幅 */
+#nouryokuNumberModal .nouryoku-shared-digit-box{
+  width:min(540px, calc(100vw - 32px));
+}
+.nouryoku-digit-top-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  min-width:78px;
+  height:34px;
+  padding:0 14px;
+  border:2px solid #ff4f5f;
+  border-radius:6px;
+  background:#260006;
+  color:#ffd0d5;
+  font-size:15px;
+  font-weight:900;
+  line-height:30px;
+  cursor:pointer;
+  box-shadow:0 0 8px rgba(255,79,95,.75);
+  z-index:2;
+}
+.nouryoku-digit-top-close:hover{
+  color:#fff;
+  border-color:#ff9da8;
+  background:#52000d;
+  box-shadow:0 0 14px rgba(255,79,95,.95);
+  filter:brightness(1.15);
+}
+.nouryoku-digit-context{
+  text-align:center;
+  font-weight:900;
+  line-height:1.25;
+}
+.nouryoku-digit-frame-name{
+  font-size:27px;
+  color:#fff;
+  margin-bottom:6px;
+}
+.nouryoku-digit-row-name{
+  font-size:22px;
+  color:#ddd;
+  margin-bottom:7px;
+}
+.nouryoku-digit-stat-name{
+  font-size:28px;
+  color:var(--nouryoku-active-color);
+  text-shadow:0 0 10px currentColor;
+  margin-bottom:16px;
+}
+.nouryoku-digit-step-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 70px);
+  justify-content:center;
+  gap:12px;
+  margin:4px auto 14px;
+}
+.nouryoku-digit-step-grid.digits-2{
+  grid-template-columns:repeat(2,70px);
+}
+.nouryoku-digit-step-grid.digits-3{
+  grid-template-columns:repeat(3,70px);
+  gap:12px;
+}
+.nouryoku-digit-step-grid.digits-5{
+  grid-template-columns:repeat(5,70px);
+  gap:10px;
+}
+.nouryoku-digit-step-grid.digits-6{
+  grid-template-columns:repeat(6,58px);
+  gap:7px;
+}
+.nouryoku-digit-step-col{
+  display:grid;
+  grid-template-rows:44px 58px 44px;
+  gap:6px;
+  min-width:0;
+}
+.nouryoku-digit-arrow{
+  width:100%;
+  height:44px;
+  padding:0;
+  border:2px solid var(--nouryoku-active-color);
+  border-radius:7px;
+  background:#101010;
+  color:var(--nouryoku-active-color);
+  font-size:28px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:inset 0 0 8px rgba(255,255,255,0.035),0 0 8px var(--nouryoku-active-color);
+}
+.nouryoku-digit-arrow:hover:not(:disabled){
+  color:#fff;
+  background:#1b1b1b;
+  filter:brightness(1.2);
+  box-shadow:0 0 14px var(--nouryoku-active-color);
+}
+.nouryoku-digit-arrow:disabled{
+  opacity:.28;
+  cursor:default;
+  filter:none;
+  box-shadow:none;
+}
+.nouryoku-digit-input{
+  width:100%;
+  height:58px;
+  box-sizing:border-box;
+  padding:0;
+  border:2px solid var(--nouryoku-active-color);
+  border-radius:7px;
+  outline:none;
+  background:#000;
+  color:var(--nouryoku-active-color);
+  font-size:36px;
+  font-weight:900;
+  line-height:58px;
+  text-align:center;
+  text-shadow:0 0 9px currentColor;
+  caret-color:var(--nouryoku-active-color);
+  ime-mode:disabled;
+}
+.nouryoku-digit-input:focus{
+  color:#fff;
+  border-color:#fff;
+  box-shadow:0 0 14px var(--nouryoku-active-color), inset 0 0 10px rgba(255,255,255,0.08);
+}
+.nouryoku-digit-help{
+  margin:0 0 10px;
+  color:#aaa;
+  font-size:12px;
+  line-height:1.45;
+  text-align:center;
+}
+.nouryoku-digit-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.nouryoku-digit-clear-btn,
+.nouryoku-digit-close-btn{
+  padding:9px 18px;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  border-radius:6px;
+}
+.nouryoku-digit-clear-btn{
+  background:#111;
+  color:#ddd;
+  border:1px solid #666;
+}
+.nouryoku-digit-close-btn{
+  background:#111;
+  color:var(--nouryoku-active-color);
+  border:2px solid var(--nouryoku-active-color);
+  box-shadow:0 0 10px var(--nouryoku-active-color);
+}
+.nouryoku-digit-clear-btn:hover,
+.nouryoku-digit-close-btn:hover{
+  color:#fff;
+  filter:brightness(1.2);
+}
+
+@media (max-width:620px){
+  .nouryoku-shared-digit-box{padding:52px 10px 12px;}
+  .nouryoku-digit-top-close{top:8px;right:8px;min-width:72px;height:32px;font-size:14px;line-height:28px;}
+  .nouryoku-digit-frame-name{font-size:23px;}
+  .nouryoku-digit-row-name{font-size:19px;}
+  .nouryoku-digit-stat-name{font-size:24px;margin-bottom:12px;}
+  .nouryoku-digit-step-grid{grid-template-columns:repeat(4, minmax(54px,64px));gap:7px;}
+  .nouryoku-digit-step-grid.digits-5{grid-template-columns:repeat(5,minmax(44px,56px));gap:5px;}
+  .nouryoku-digit-step-grid.digits-6{grid-template-columns:repeat(6,minmax(38px,48px));gap:4px;}
+  .nouryoku-digit-input{font-size:31px;}
+  .nouryoku-digit-arrow{font-size:25px;}
+}
+
+/* 数値入力：押す入力形式をやめて、いつもの入力モーダルを開く */
+.digit-value-picker .digit-value-head{cursor:pointer;}
+.digit-value-picker .digit-value-current{cursor:pointer;border:1px solid rgba(133,255,52,.55);border-radius:8px;padding:2px 10px;box-shadow:0 0 8px rgba(133,255,52,.25);}
+.digit-value-picker .digit-value-head:hover .digit-value-current{border-color:#9cff25;box-shadow:0 0 12px rgba(133,255,52,.6);}
+.digit-value-picker.value-locked .digit-value-head{cursor:default;}
+.digit-value-picker.value-locked .digit-value-current{cursor:default;}
+.nouryoku-digit-step-grid.digits-dec{grid-template-columns:70px 70px 26px 70px;justify-content:center;gap:12px;margin:4px auto 14px;}
+.nouryoku-digit-spacer{min-width:0;}
+@media (max-width:620px){.nouryoku-digit-step-grid.digits-dec{grid-template-columns:minmax(54px,64px) minmax(54px,64px) 16px minmax(54px,64px);gap:7px;}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1026,11 +1248,6 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
         <div class="job-grid" id="primaryJobs"></div>
         <div class="digit-value-picker" data-target="primary">
           <div class="digit-value-head">数値 <span class="digit-value-current" id="primaryManualValue"><span class="digit-current-plus">＋</span><span class="digit-current-box place-10">0</span><span class="digit-current-box place-1">0</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">0</span></span></div>
-          <div class="digit-row">
-            <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="primary" data-place="10"></div></div>
-            <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="primary" data-place="1"></div></div>
-            <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="primary" data-place="0.1"></div></div>
-          </div>
         </div>
         <p class="note">侍・僧・神職・陰陽師・忍者・鍛冶屋・薬師・傾奇者・光・闇・遊技者の11種類から選択します。遊技者を選ぶと＋200で固定されます。</p>
       </div>
@@ -1040,11 +1257,6 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
         <div class="job-grid" id="addon1Jobs"></div>
         <div class="digit-value-picker" data-target="addon1">
           <div class="digit-value-head">数値 <span class="digit-value-current" id="addon1ManualValue"><span class="digit-current-plus">＋</span><span class="digit-current-box place-10">0</span><span class="digit-current-box place-1">0</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">0</span></span></div>
-          <div class="digit-row">
-            <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="addon1" data-place="10"></div></div>
-            <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="addon1" data-place="1"></div></div>
-            <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="addon1" data-place="0.1"></div></div>
-          </div>
         </div>
         <div class="locked hidden-future">
           <div class="job-grid" id="addon3Jobs"></div>
@@ -1056,11 +1268,6 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
         <div class="job-grid" id="addon2Jobs"></div>
         <div class="digit-value-picker" data-target="addon2">
           <div class="digit-value-head">数値 <span class="digit-value-current" id="addon2ManualValue"><span class="digit-current-plus">＋</span><span class="digit-current-box place-10">0</span><span class="digit-current-box place-1">0</span><span class="digit-current-dot">.</span><span class="digit-current-box place-decimal">0</span></span></div>
-          <div class="digit-row">
-            <div class="digit-group"><div class="digit-title">十の位</div><div class="digit-options" data-target="addon2" data-place="10"></div></div>
-            <div class="digit-group"><div class="digit-title">一の位</div><div class="digit-options" data-target="addon2" data-place="1"></div></div>
-            <div class="digit-group"><div class="digit-title">小数点以下</div><div class="digit-options" data-target="addon2" data-place="0.1"></div></div>
-          </div>
         </div>
       </div>
     </div>
@@ -1137,7 +1344,7 @@ const SKILL_LIST_DATA = [
   {job:'光', name:'光明の祝福', need:'最大気合の約１６％', desc:'味方全体の生命力を回復し、防御力・知力・魅力を上昇させる。'},
   {job:'闇', name:'暗闇の加護', need:'最大気合の約２０％', desc:'味方全体の気合を回復し、攻撃力と器用さを上昇させる。'},
   {job:'遊技者', name:'一天地六', need:'不明', desc:'敵の1〜6体の対象にダメージを与える。与ダメージ・攻撃回数・攻撃対象はランダム。'},
-  {job:'薔薇騎士', name:'術滅の印', need:'不明', item:'未確認', desc:'味方単体に連続行動不能耐性と選択した属性の術無効状態を付与し、反射結界を張る。'}
+  {job:'薔薇騎士', name:'術滅の印', need:'最大気合の約１５％', item:'なし', desc:'味方単体に連続行動不能耐性と選択した属性の術無効状態を付与し、反射結界を張る。'}
 ];
 const STORAGE_KEY = 'chinkonfu-equips-v1';
 const BASE_JOBS = ['侍','僧','神職','陰陽師','忍者','鍛冶屋','薬師','傾奇者'];
@@ -2056,5 +2263,116 @@ document.addEventListener('DOMContentLoaded', init);
 })();
 </script>
 
+
+<div id="nouryokuNumberModal" class="nouryoku-number-modal hidden no-capture" aria-hidden="true">
+  <div id="nouryokuNumberBox" class="nouryoku-shared-digit-box">
+    <button type="button" class="nouryoku-digit-top-close" onclick="closeNouryokuNumberModal()" aria-label="数値入力モーダルを閉じる">閉じる</button>
+    <div id="nouryokuNumberContext" class="nouryoku-digit-context"></div>
+    <div id="nouryokuNumberControls"></div>
+  </div>
+</div>
+<script id="number-modal-script">
+let nouryokuNumberTarget = '';
+const NUM_TARGET_TITLES = {primary:'メイン', addon1:'2枠目', addon2:'3枠目'};
+function normalizeSharedOneDigit(value){return String(value == null ? "" : value).replace(/[^0-9]/g,"").slice(-1);}
+function guardSharedDigitKeyDown(event){
+  if(!event) return;
+  if(event.isComposing || event.key === "Process"){ event.preventDefault(); return; }
+  if(event.ctrlKey || event.metaKey || event.altKey) return;
+  const allowed = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
+  if(allowed.includes(event.key)) return;
+  if(!/^[0-9]$/.test(event.key)) event.preventDefault();
+}
+function guardSharedDigitBeforeInput(event){
+  if(!event) return;
+  if(event.isComposing || (event.inputType && event.inputType.toLowerCase().includes("composition"))){ event.preventDefault(); return; }
+  if(event.inputType && event.inputType.startsWith("delete")) return;
+  if(typeof event.data === "string" && event.data !== "" && !/^[0-9]$/.test(event.data)) event.preventDefault();
+}
+function getNouryokuNumberDigits(){
+  const d = getValueDigits(getDraftValue(nouryokuNumberTarget));
+  return [d[10], d[1], d[0.1]];
+}
+function applyNouryokuNumberDigits(digits){
+  if(!nouryokuNumberTarget) return;
+  setDraftValue(nouryokuNumberTarget, digits[0] * 10 + digits[1] + digits[2] / 10);
+}
+function renderNouryokuNumberModal(){
+  const controls = document.getElementById("nouryokuNumberControls");
+  const context = document.getElementById("nouryokuNumberContext");
+  if(!controls || !context || !nouryokuNumberTarget) return;
+  const job = draftJobOf(nouryokuNumberTarget);
+  context.innerHTML =
+    `<div class="nouryoku-digit-frame-name">${NUM_TARGET_TITLES[nouryokuNumberTarget] || '数値入力'}</div>` +
+    `<div class="nouryoku-digit-stat-name">${job ? escapeHtml(job) : '数値'}</div>`;
+  const digits = getNouryokuNumberDigits();
+  const cols = [0,1,'gap',2];
+  let html = `<div class="nouryoku-digit-step-grid digits-dec">`;
+  cols.forEach(i => {
+    if(i === 'gap'){ html += `<div class="nouryoku-digit-spacer"></div>`; return; }
+    const digit = digits[i];
+    const label = i === 0 ? '十の位' : i === 1 ? '一の位' : '小数点以下';
+    html += `<div class="nouryoku-digit-step-col">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepNouryokuNumberDigit(${i},1)" ${digit>=9?"disabled":""} aria-label="${label}を増やす">⇧</button>`;
+    html += `<input class="nouryoku-digit-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" lang="en" value="${digit}" data-nouryoku-number-index="${i}" onfocus="this.select()" onkeydown="guardSharedDigitKeyDown(event)" onbeforeinput="guardSharedDigitBeforeInput(event)" oninput="setNouryokuNumberDigitInput(this,${i})" aria-label="${label}">`;
+    html += `<button type="button" class="nouryoku-digit-arrow" onclick="stepNouryokuNumberDigit(${i},-1)" ${digit<=0?"disabled":""} aria-label="${label}を減らす">⇩</button>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  html += `<div class="nouryoku-digit-help">数字部分は直接入力できます。半角数字0～9以外とIME変換入力は受け付けません。</div>`;
+  html += `<div class="nouryoku-digit-actions">`;
+  html += `<button type="button" class="nouryoku-digit-clear-btn" onclick="clearNouryokuNumberValue()">このマスを0にする</button>`;
+  html += `<button type="button" class="nouryoku-digit-close-btn" onclick="closeNouryokuNumberModal()">反映</button>`;
+  html += `</div>`;
+  controls.innerHTML = html;
+}
+function openNouryokuNumberModal(target){
+  if(!state.draft) return;
+  if(fixedValueFor(draftJobOf(target)) !== null) return;
+  nouryokuNumberTarget = target;
+  const modal = document.getElementById("nouryokuNumberModal");
+  renderNouryokuNumberModal();
+  if(modal){ modal.classList.remove("hidden"); modal.setAttribute("aria-hidden","false"); }
+}
+function closeNouryokuNumberModal(){
+  const modal = document.getElementById("nouryokuNumberModal");
+  if(modal){ modal.classList.add("hidden"); modal.setAttribute("aria-hidden","true"); }
+  nouryokuNumberTarget = '';
+}
+function stepNouryokuNumberDigit(index,delta){
+  if(!nouryokuNumberTarget) return;
+  const digits = getNouryokuNumberDigits();
+  const current = digits[index] || 0;
+  const next = Math.max(0,Math.min(9,current + (delta > 0 ? 1 : -1)));
+  if(next === current) return;
+  digits[index] = next;
+  applyNouryokuNumberDigits(digits);
+  renderNouryokuNumberModal();
+}
+function setNouryokuNumberDigitInput(input,index){
+  if(!input || !nouryokuNumberTarget) return;
+  const t = normalizeSharedOneDigit(input.value);
+  const digits = getNouryokuNumberDigits();
+  digits[index] = t === "" ? 0 : Number(t);
+  applyNouryokuNumberDigits(digits);
+  renderNouryokuNumberModal();
+  const next = document.querySelector(`#nouryokuNumberControls [data-nouryoku-number-index="${index}"]`);
+  if(next){ next.focus(); try{next.select();}catch(e){} }
+}
+function clearNouryokuNumberValue(){
+  if(!nouryokuNumberTarget) return;
+  applyNouryokuNumberDigits([0,0,0]);
+  closeNouryokuNumberModal();
+}
+document.querySelectorAll('.digit-value-picker').forEach(holder => {
+  const target = holder.dataset.target;
+  const head = holder.querySelector('.digit-value-head');
+  if(!head) return;
+  head.addEventListener('click', () => openNouryokuNumberModal(target));
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && nouryokuNumberTarget){ e.stopPropagation(); closeNouryokuNumberModal(); }
+}, true);
+</script>
 </body>
 </html>
