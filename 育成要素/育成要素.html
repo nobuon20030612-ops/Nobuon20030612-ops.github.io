@@ -9963,10 +9963,63 @@ background:rgba(0,0,0,.30)!important}
   return vals[0]+Math.max(vals[2],vals[3],vals[4],vals[5],vals[6]);
  }
  let cur=0;
+ function ikKeyCanvas2D(video,canvas,p){
+  const W=1280,H=720;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  if(!ctx)return null;
+  const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
+  const wm=new Float32Array(W*H);
+  for(let y=0;y<H;y++){
+   const v=(y+.5)/H,iy=ss(p.box[1]-p.edge[1],p.box[1],v)*(1-ss(p.box[3],p.box[3]+p.edge[1],v));
+   for(let x=0;x<W;x++){const u=(x+.5)/W;wm[y*W+x]=iy*ss(p.box[0]-p.edge[0],p.box[0],u)*(1-ss(p.box[2],p.box[2]+p.edge[0],u));}
+  }
+  const st={on:false};let last=-1;
+  const draw=()=>{
+   if(!st.on)return;
+   if(video.readyState>=2&&video.videoWidth&&video.currentTime!==last){
+    last=video.currentTime;
+    try{
+     ctx.drawImage(video,0,0,W,H);
+     const im=ctx.getImageData(0,0,W,H),d=im.data;
+     for(let i=0,j=0;i<d.length;i+=4,j++){
+      const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,m=Math.max(r,g,b),w=wm[j];
+      const aIn=ss(.02,.10,m),aOut=Math.min(1,m*1.25),a=aOut+(aIn-aOut)*w;
+      if(a<=0.001){d[i+3]=0;continue;}
+      const k=(m>0.001?aOut/m:0),f=(aIn+(k-aIn)*(1-w))/a;
+      d[i]=Math.min(255,r*255*f);d[i+1]=Math.min(255,g*255*f);d[i+2]=Math.min(255,b*255*f);d[i+3]=a*255;
+     }
+     ctx.putImageData(im,0,0);
+    }catch(e){st.onfail&&st.onfail();return;}
+   }
+   requestAnimationFrame(draw);
+  };
+  st.start=()=>{if(!st.on){st.on=true;requestAnimationFrame(draw);}};
+  st.stop=()=>{st.on=false;};
+  return st;
+ }
+ let ikNoGL=false;
  function ikKeyCanvas(video,canvas,p){
-  if(canvas._ik)return canvas._ik;
+  if(canvas._st)return canvas._st;
+  let st=null;
+  if(!ikNoGL){
+   st=ikKeyCanvasGL(video,canvas,p);
+   if(st){st.canvas=canvas;st.onfail=()=>{ikNoGL=true;st.stop();canvas.remove();if(window.ikRefreshFigure)window.ikRefreshFigure();};}
+   else ikNoGL=true;
+  }
+  if(!st){
+   let c=canvas;
+   if(canvas.getContext&&canvas._usedGL){const f=canvas.cloneNode(false);canvas.replaceWith(f);c=f;}
+   st=ikKeyCanvas2D(video,c,p);
+   if(st){st.canvas=c;st.onfail=()=>{st.stop();st.bad=true;if(window.ikRefreshFigure)window.ikRefreshFigure();};}
+  }
+  if(st)st.canvas._st=st;
+  return st;
+ }
+ function ikKeyCanvasGL(video,canvas,p){
   const gl=canvas.getContext('webgl',{premultipliedAlpha:true,alpha:true,antialias:false});
   if(!gl)return null;
+  canvas._usedGL=true;
   const vs='attribute vec2 a;varying vec2 uv;void main(){uv=vec2(a.x*0.5+0.5,0.5-a.y*0.5);gl_Position=vec4(a,0.,1.);}';
   const fs='precision mediump float;varying vec2 uv;uniform sampler2D t;uniform vec4 box;uniform vec2 ed;'
    +'void main(){vec3 c=texture2D(t,uv).rgb;float m=max(c.r,max(c.g,c.b));'
@@ -9994,14 +10047,15 @@ background:rgba(0,0,0,.30)!important}
    if(video.readyState>=2&&video.videoWidth){
     if(canvas.width!==video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;gl.viewport(0,0,canvas.width,canvas.height);}
     gl.bindTexture(gl.TEXTURE_2D,tex);
-    try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);}catch(e){}
+    try{gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);}catch(e){st.onfail&&st.onfail();return;}
+    if(gl.getError()!==0||gl.isContextLost()){st.onfail&&st.onfail();return;}
     gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
    }
    requestAnimationFrame(draw);
   };
   st.start=()=>{if(!st.on){st.on=true;requestAnimationFrame(draw);}};
   st.stop=()=>{st.on=false;};
-  canvas._ik=st;return st;
+  return st;
  }
  function updateFigureVideo(){
   const slot=document.getElementById('ikFigureSlot');
@@ -10033,15 +10087,19 @@ background:rgba(0,0,0,.30)!important}
     slot.appendChild(cv);
    }
    if(cv){
-    const st=keyed?ikKeyCanvas(v,cv,c.key):null;
+    let st=keyed?ikKeyCanvas(v,cv,c.key):null;
+    if(st&&st.bad)st=null;
+    if(st&&st.canvas!==cv){cv=st.canvas;}
     cv.hidden=!keyed||!st;
-    if(st){if(keyed)st.start();else st.stop();}
-    else if(cv._ik)cv._ik.stop();
+    if(st){st.start();}
+    else if(cv._st)cv._st.stop();
     v.classList.toggle('ik-keyed',keyed&&!!st);
+    v.classList.toggle('ik-fallback',keyed&&!st);
    }
    img.classList.toggle('ik-video-on',want);
   }
  }
+ window.ikRefreshFigure=()=>updateFigureVideo();
  function updateBg(){
   updateFigureVideo();
   if(!bgv||!bgSrc||!cur)return;
@@ -10408,12 +10466,13 @@ background:rgba(0,0,0,.30)!important}
 #ikuseiApp #ikFigureVideo{position:absolute;left:50%;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;z-index:1;bottom:-19.4%;height:138.8%;clip-path:inset(5.6% 0 0 0)}
 #ikuseiApp #ikFigureVideo[data-rank="5"]{bottom:-18.4%;height:115%;clip-path:inset(3% 0 0 0)}
 #ikuseiApp #ikFigureVideoM{position:absolute;left:50%;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;z-index:1;bottom:-11%;height:122%;clip-path:inset(7% 0 0 0)}
-#ikuseiApp #ikFigureVideoM[data-rank="5"]{bottom:-16%;height:133%;clip-path:inset(11% 0 0 0)}
+#ikuseiApp #ikFigureVideoM[data-rank="5"]{bottom:-14.5%;height:120%;clip-path:none;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 12%,#000 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 12%,#000 100%);mask-composite:intersect}
 #ikuseiApp .ik-figure-video[hidden]{display:none!important}
 #ikuseiApp .ik-figure-video{mix-blend-mode:screen}
 #ikuseiApp .ik-figure-video[data-rank="5"]{mix-blend-mode:normal}
+#ikuseiApp .ik-figure-video[data-rank="5"].ik-fallback{mix-blend-mode:screen}
 #ikuseiApp #ikFigureCanvas{position:absolute;left:50%;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;z-index:1;bottom:-18.4%;height:115%;clip-path:inset(3% 0 0 0)}
-#ikuseiApp #ikFigureCanvasM{position:absolute;left:50%;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;z-index:1;bottom:-16%;height:133%;clip-path:inset(11% 0 0 0)}
+#ikuseiApp #ikFigureCanvasM{position:absolute;left:50%;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;z-index:1;bottom:-14.5%;height:120%;clip-path:none;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 12%,#000 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%),linear-gradient(to bottom,transparent 0,#000 12%,#000 100%);mask-composite:intersect}
 #ikuseiApp .ik-figure-video.ik-keyed{opacity:0!important}
 
 #ikuseiApp .ik-stage{z-index:auto!important}
