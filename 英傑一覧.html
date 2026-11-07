@@ -467,7 +467,7 @@ function renderEiketsuSearchResults(){
   const query=input.value.trim();
   if(!query){ wrap.classList.add("hidden"); tableEl.innerHTML=""; countEl.textContent="0"; return; }
   const queryHira=toHira(query);
-  const matches=baseData.filter(d=>String(cellValue(d,"名前")||"").includes(query)||(queryHira&&getReading(d).includes(queryHira)));
+  const matches=baseData.filter(d=>String(cellValue(d,"名前")||"").includes(query)||(queryHira&&(queryHira.length===1?getReading(d).startsWith(queryHira):getReading(d).includes(queryHira))));
   matches.sort((a,b)=>{
     const key=eiketsuSearchSortKey;
     if(isNumericColumn(key)){
