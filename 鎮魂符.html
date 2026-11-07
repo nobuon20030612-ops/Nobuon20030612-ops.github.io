@@ -949,6 +949,11 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
 .soul-bar-cells { left:0; right:0; background:repeating-linear-gradient(90deg, transparent 0, transparent calc(12.5% - 3px), #6f6f6e calc(12.5% - 3px), #6f6f6e 12.5%); }
 .soul-row.is-full .soul-name { color:#fff; text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000; }
 .soul-row.is-full .soul-value { color:#fff; text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000; }
+.soul-gauge-panel.compact { gap:2px 10px; padding:0 2px; }
+.soul-gauge-panel.compact .soul-row { min-height:0; height:var(--soul-row-h); padding:0; }
+.soul-gauge-panel.compact .soul-head { position:absolute; left:0; right:0; top:0; bottom:0; align-items:center; padding:0 8px; z-index:2; }
+.soul-gauge-panel.compact .soul-name, .soul-gauge-panel.compact .soul-value { font-size:calc(var(--soul-row-h) * .52); color:#fff; text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000; }
+.soul-gauge-panel.compact .soul-bar { position:absolute; left:0; right:0; top:2px; bottom:2px; height:auto; margin:0; opacity:.6; }
 
 /* ===== 左の合計一覧を下まで長くし、スクロールなしで表示 ===== */
 .side-total-panel { bottom:clamp(12px, 1.6vh, 20px) !important; max-height:none !important; overflow-y:auto; overflow-x:hidden; }
@@ -1182,6 +1187,8 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
 .nouryoku-digit-step-grid.digits-dec{grid-template-columns:70px 70px 26px 70px;justify-content:center;gap:12px;margin:4px auto 14px;}
 .nouryoku-digit-spacer{min-width:0;}
 @media (max-width:620px){.nouryoku-digit-step-grid.digits-dec{grid-template-columns:minmax(54px,64px) minmax(54px,64px) 16px minmax(54px,64px);gap:7px;}}
+.navi-head { color:#ffd27a; font-size:clamp(19px, 1.95vh, 26px); margin-top:8px; text-shadow:0 2px 2px #000, 0 0 7px rgba(255,200,90,.35); }
+.navi-row { color:#e8f6d8; font-size:clamp(15px, 1.55vh, 21px); line-height:1.3; margin-top:3px; padding-left:.4em; overflow-wrap:anywhere; text-shadow:0 2px 2px #000; }
 </style>
 </head>
 <body>
@@ -1470,6 +1477,252 @@ function collectActiveEffects(jobLevels) {
   }
   return { stats, skills, effects };
 }
+/* 200到達ナビ：合計が175以上200未満の職について、どの部位をどの魂力枠にどの職を何以上で入れ替えれば200になるかを出す */
+const NAVI_MAXV = 44.9;   /* 1枠の最大：初期値の最大19.9（散）＋鍛錬5回の最大25.0 */
+const NAVI_CAP_Y = 36.9;  /* 遊技者の②の最大：初期値の最大11.9＋鍛錬の最大25.0 */
+function naviCombos(arr, k) {
+  const out = [];
+  (function rec(start, cur) {
+    if (cur.length === k) { out.push(cur.slice()); return; }
+    for (let i = start; i < arr.length; i++) { cur.push(arr[i]); rec(i + 1, cur); cur.pop(); }
+  })(0, []);
+  return out;
+}
+function chinkoNaviCompute() {
+  const r1 = v => Math.round(v * 10) / 10;
+  const up1 = v => Math.ceil(r1(v) * 10 - 1e-9) / 10;
+  const entries = [];
+  for (const pos of POSITIONS) {
+    /* 入力中のモーダルがあれば、その途中の内容を反映（リアルタイム） */
+    const eq = (state.activePos === pos && state.draft) ? state.draft : (state.equips[pos] || emptyEquip());
+    const fallback = Number(eq.level) || 0;
+    const slots = [
+      { job:eq.primary, val:normalizeValue(eq.primaryLevel, fallback) },
+      { job:(eq.addons || [])[0] || '', val:normalizeValue((eq.addonLevels || [])[0], 0) },
+      { job:(eq.addons || [])[1] || '', val:normalizeValue((eq.addonLevels || [])[1], 0) }
+    ];
+    slots.forEach((sl, si) => entries.push({ pos, si, job:sl.job, val:sl.val }));
+  }
+  const totals = new Map();
+  for (const e of entries) if (e.job) totals.set(e.job, r1((totals.get(e.job) || 0) + e.val));
+  const protectedJobs = [];
+  for (const [j, t] of totals) if (t >= 200) protectedJobs.push(j);
+  const targets = [];
+  for (const [job, total] of totals) {
+    if (fixedValueFor(job) !== null) continue;
+    if (total < 175 || total >= 200) continue;
+    targets.push({ job, total, need:up1(200 - total) });
+  }
+  /* 部位の集合Sを丸ごと入れ替えて、職の集合Kをすべて200にし、すでに200以上の職も200以上に保てるか */
+  const planFor = (S, K, limit) => {
+    const ownOf = j => r1(entries.filter(e => S.includes(e.pos) && e.job === j).reduce((a, e) => a + e.val, 0));
+    const restOf = j => r1((totals.get(j) || 0) - ownOf(j));
+    const needs = new Map();
+    for (const j of K) needs.set(j, up1(200 - restOf(j)));
+    let needY = false;
+    for (const k of protectedJobs) {
+      if (needs.has(k)) continue;
+      const rest = restOf(k);
+      if (rest >= 200) continue;
+      if (fixedValueFor(k) === 200) needY = true; else needs.set(k, up1(200 - rest));
+    }
+    const gpList = needY ? S.slice() : [null];
+    for (const gp of gpList) {
+      const free = [];
+      const supplies = [];
+      for (const pos of S) {
+        if (pos === gp) {
+          supplies.push({ pos, slot:'魂力①（メイン）', job:'遊技者', val:200, fixed:true });
+          free.push({ pos, slot:'魂力②（2枠目）', cap:NAVI_CAP_Y, order:1 });
+        } else {
+          free.push({ pos, slot:'魂力①（メイン）', cap:NAVI_MAXV, order:0 });
+          free.push({ pos, slot:'魂力②（2枠目）', cap:NAVI_MAXV, order:1 });
+        }
+      }
+      let ok = true;
+      const list = Array.from(needs).sort((x, y) => y[1] - x[1]);
+      for (const [j, nd] of list) {
+        const isLD = (j === '光' || j === '闇');
+        const capJ = limit === Infinity ? (isLD ? 55 : NAVI_MAXV) : limit;
+        /* 1枠が上限を超えないよう、必要な数を複数の部位に平均的に分ける */
+        const p = Math.max(1, Math.ceil(nd / capJ - 1e-9));
+        const T = Math.round(nd * 10);
+        const pieces = [];
+        for (let i = 0; i < p; i++) pieces.push((Math.floor(T / p) + (i < T % p ? 1 : 0)) / 10);
+        const used = new Set();
+        for (const piece of pieces) {
+          const capOf = x => (x.order === 0 && isLD) ? 55 : x.cap;
+          const keepOf = x => entries.some(e => e.pos === x.pos && e.si === x.order && e.job === j && e.val >= piece) ? 1 : 0;
+          let best = -1;
+          free.forEach((f, i) => {
+            if (f.taken || used.has(f.pos) || capOf(f) < piece) return;
+            if (best < 0) { best = i; return; }
+            const g = free[best];
+            if (keepOf(f) !== keepOf(g)) { if (keepOf(f) > keepOf(g)) best = i; return; }
+            if (f.order !== g.order) { if (f.order < g.order) best = i; return; }
+            if (capOf(f) > capOf(g)) best = i;
+          });
+          if (best < 0) { ok = false; break; }
+          const f = free[best];
+          f.taken = true; used.add(f.pos);
+          supplies.push({ pos:f.pos, slot:f.slot, job:j, val:piece, req:piece });
+        }
+        if (!ok) break;
+      }
+      if (!ok) continue;
+      if (!S.every(pos => supplies.some(sv => sv.pos === pos))) continue;
+      for (const sv of supplies) {
+        const si = sv.slot.startsWith('魂力①') ? 0 : 1;
+        const ex = entries.find(e => e.pos === sv.pos && e.si === si && e.job === sv.job);
+        if (ex && (sv.fixed || ex.val >= sv.val)) { sv.keep = true; sv.val = ex.val; }
+      }
+      const lost = [];
+      const removedJobs = new Set(entries.filter(e => S.includes(e.pos) && e.job).map(e => e.job));
+      for (const j of removedJobs) {
+        const removed = ownOf(j);
+        const given = r1(supplies.filter(sv => sv.job === j).reduce((a, sv) => a + sv.val, 0));
+        if (removed - given > 0.05) lost.push({ job:j, val:r1(removed - given) });
+      }
+      const parts = S.map(pos => {
+        const mine = entries.filter(e => e.pos === pos && e.job);
+        return { pos, nowSegs: mine.map(e => '魂力' + '①②③'[e.si] + ' ' + e.job + (e.val >= 200 ? '200' : e.val.toFixed(1))), now: mine.length ? mine.map(e => e.si + e.job + e.val.toFixed(1)).join('|') : '空欄' };
+      });
+      return {
+        parts, supplies, lost,
+        lostSum: lost.reduce((a, l) => a + l.val, 0),
+        supSum: supplies.filter(sv => !sv.fixed).reduce((a, sv) => a + sv.req, 0),
+        maxVal: Math.max(0, ...supplies.filter(sv => !sv.fixed).map(sv => sv.req))
+      };
+    }
+    return null;
+  };
+  /* 職の組み合わせ（1職・2職・3職…）ごとに案を1つに絞る：
+     入替える部位が少ない順に、1枠30以下で収まる案を探す（30を超えるなら部位を増やして平均的に分ける）。
+     そのうち数値が最も小さい案を選び、同じ数値の案はまとめて出す。 */
+  const groups = {};
+  for (let k = 1; k <= targets.length; k++) {
+    groups[k] = [];
+    for (const KT of naviCombos(targets, k)) {
+      const K = KT.map(t => t.job);
+      let plans = [];
+      let size = 0;
+      outer:
+      for (const limit of [30, Infinity]) {
+        for (let sz = 1; sz <= 4; sz++) {
+          const found = [];
+          for (const S of naviCombos(POSITIONS, sz)) {
+            const pl = planFor(S, K, limit);
+            if (pl) found.push(pl);
+          }
+          if (!found.length) continue;
+          const minMax = Math.min(...found.map(x => x.maxVal));
+          let cand = found.filter(x => Math.abs(x.maxVal - minMax) < 1e-9);
+          const minSum = Math.min(...cand.map(x => x.supSum));
+          cand = cand.filter(x => Math.abs(x.supSum - minSum) < 1e-9);
+          plans = cand; size = sz;
+          break outer;
+        }
+      }
+      let extra = 0;
+      /* 2か所以上の入替は組み合わせが多いので、失うものが最も少ない1案だけを出す（同じ数値の組み合わせの数は注記） */
+      if (size >= 2 && plans.length > 1) {
+        extra = plans.length - 1;
+        plans = [plans.slice().sort((x, y) => x.lostSum - y.lostSum)[0]];
+      }
+      /* 1か所の入替で中身がまったく同じ案は、部位をまとめて1案にする */
+      if (size === 1) {
+        const grouped = [];
+        for (const pl of plans) {
+          const key = pl.parts[0].now + '|' + pl.supplies.map(x => x.slot + x.job + x.req).join(',');
+          const g = grouped.find(x => x.key === key);
+          if (g) g.plan.parts.push(pl.parts[0]); else grouped.push({ key, plan:{ parts:[pl.parts[0]], supplies:pl.supplies, lost:pl.lost, lostSum:pl.lostSum, supSum:pl.supSum, maxVal:pl.maxVal, same:true } });
+        }
+        plans = grouped.map(g => g.plan);
+      }
+      groups[k].push({ K, totals:KT, plans:plans.slice(0, 8), more:Math.max(0, plans.length - 8), extra, size:plans.length ? size : 0 });
+    }
+  }
+  return { targets, groups };
+}
+function chinkoNaviPlanHtml(pl, no) {
+  const segs = arr => arr.map(t => '<span class="nv-seg' + (t.chg ? ' nv-chg' : '') + '">' + escapeHtml(t.text) + '</span>').join('<span class="nv-plus">＋</span>');
+  const fmt = v => v >= 200 ? '200' : v.toFixed(1);
+  const supSegs = pos => pl.supplies.filter(x => x.pos === pos).sort((a, b) => a.slot < b.slot ? -1 : 1).map(x => ({
+    text: x.slot.slice(0, 3) + ' ' + x.job + (x.keep ? fmt(x.val) : x.fixed ? '200' : ' ' + x.val.toFixed(1) + '以上'),
+    chg: !x.keep
+  }));
+  const one = (label, p) => '<div class="navi-item"><div class="navi-pos">' + escapeHtml(label) + '</div>'
+    + '<div class="navi-row-now">' + (p.nowSegs.length ? segs(p.nowSegs.map(t => ({ text:t }))) : '<span class="nv-seg">空欄</span>') + '</div>'
+    + '<div class="navi-row-new">' + segs(supSegs(p.pos)) + '</div></div>';
+  let h = '<div class="navi-plan"><div class="navi-no">案' + no + '</div>';
+  if (pl.same && pl.parts.length > 1) h += one(pl.parts.map(p => p.pos).join('・') + ' のどれか1か所', pl.parts[0]);
+  else for (const p of pl.parts) h += one(p.pos, p);
+  if (pl.lost.length) h += '<div class="navi-line navi-lost">失う：' + escapeHtml(pl.lost.map(l => l.job + ' −' + l.val.toFixed(1)).join('・')) + '</div>';
+  h += '</div>';
+  return h;
+}
+let naviCurrentK = 1;
+function chinkoNaviModalBodyHtml(k) {
+  const nv = chinkoNaviCompute();
+  if (!nv.targets.length) return '<div class="navi-empty">合計が175以上200未満の職がありません</div>';
+  const gs = nv.groups[k] || [];
+  let h = '';
+  for (const g of gs) {
+    h += '<div class="navi-job"><div class="navi-job-head">' + g.totals.map(t => escapeHtml(t.job) + ' +' + t.total.toFixed(1)).join('　＋　') + '　→　' + (g.K.length > 1 ? '同時に200' : '200') + '</div>';
+    if (!g.plans.length) h += '<div class="navi-empty">4か所までの入替では届きません</div>';
+    else {
+      if (g.size >= 2) h += '<div class="navi-note">1枠が30を超えないよう、' + g.size + 'か所に分けて上げる案です</div>';
+      h += g.plans.map((pl, i) => chinkoNaviPlanHtml(pl, i + 1)).join('');
+      if (g.extra) h += '<div class="navi-note">部位の組み合わせが違うだけの同じ数値の案が、ほか ' + g.extra + ' 通りあります</div>';
+      if (g.more) h += '<div class="navi-note">ほか ' + g.more + ' 案も同じ数値です</div>';
+    }
+    h += '</div>';
+  }
+  return h || '<div class="navi-empty">該当する組み合わせがありません</div>';
+}
+function chinkoNaviInnerHtml() {
+  const nv = chinkoNaviCompute();
+  if (!nv.targets.length) return '';
+  let html = '<div class="side-total-sub">200到達ナビ</div>';
+  for (const t of nv.targets) html += '<div class="navi-head">' + escapeHtml(t.job) + ' +' + t.total.toFixed(1) + '　あと ' + t.need.toFixed(1) + '</div>';
+  for (let k = 1; k <= nv.targets.length; k++) {
+    const any = (nv.groups[k] || []).some(g => g.plans.length);
+    html += '<button type="button" class="navi-open-btn' + (any ? '' : ' navi-btn-dim') + '" onclick="openNaviModal(' + k + ')">' + (k === 1 ? '1職ずつ200にする案' : k + '職を同時に200にする案') + '</button>';
+  }
+  return html;
+}
+function chinkoNaviHtml() {
+  const inner = chinkoNaviInnerHtml();
+  refreshNaviModal();
+  return '<div id="naviSide">' + inner + '</div>';
+}
+/* 鎮魂符の入力中（保存前）でもナビをその場で更新する */
+function liveNavi() {
+  const el = document.getElementById('naviSide');
+  if (el) { el.innerHTML = chinkoNaviInnerHtml(); if (typeof fitSideTotalPanel === 'function') fitSideTotalPanel(); }
+  refreshNaviModal();
+}
+function refreshNaviModal() {
+  const m = document.getElementById('naviModal');
+  if (!m || m.classList.contains('hidden')) return;
+  const body = document.getElementById('naviModalBody');
+  if (body) body.innerHTML = chinkoNaviModalBodyHtml(naviCurrentK);
+}
+function openNaviModal(k) {
+  const m = document.getElementById('naviModal');
+  if (!m) return;
+  naviCurrentK = k || 1;
+  const t = document.getElementById('naviModalTitle');
+  if (t) t.textContent = '200到達ナビ：' + (naviCurrentK === 1 ? '1職ずつ' : naviCurrentK + '職を同時に');
+  const body = document.getElementById('naviModalBody');
+  if (body) body.innerHTML = chinkoNaviModalBodyHtml(naviCurrentK);
+  m.classList.remove('hidden'); m.setAttribute('aria-hidden', 'false');
+}
+function closeNaviModal() {
+  const m = document.getElementById('naviModal');
+  if (!m) return;
+  m.classList.add('hidden'); m.setAttribute('aria-hidden', 'true');
+}
 function renderSideTotalPanel(jobLevels) {
   const panel = $('#sideTotalEffects');
   if (!panel) return;
@@ -1482,7 +1735,9 @@ function renderSideTotalPanel(jobLevels) {
   let html = '<div class="side-total-title">合計一覧</div>';
   if (!active.stats.size && !active.skills.length) {
     html += '<div class="side-total-empty">+25以上で有効内容を表示します</div>';
+    html += chinkoNaviHtml();
     panel.innerHTML = html;
+    fitSideTotalPanel();
     return;
   }
   if (active.stats.size) {
@@ -1497,6 +1752,7 @@ function renderSideTotalPanel(jobLevels) {
       html += `<div class="side-skill-row">${escapeHtml(skill.job)}：${escapeHtml(String(skill.raw || '').replace(/^技能[：:]/, ''))}</div>`;
     }
   }
+  html += chinkoNaviHtml();
   panel.innerHTML = html;
   fitSideTotalPanel();
 }
@@ -1589,27 +1845,56 @@ function layoutSoulPanel() {
   const stage = $('.equip-stage');
   const total = $('.total.screen-actions');
   if (!panel || !stage || !total) return;
+  /* ページが隠れている・大きさが取れない最中の計算では、ゲージを消さずに前の状態を保つ */
+  if (!stage.offsetHeight || !total.offsetHeight || !stage.offsetWidth) return;
   const n = panel.querySelectorAll('.soul-row').length;
   if (!n) { panel.style.display = 'none'; return; }
   const gap = 8;
   /* 枠・人型・背景の線の一番下から、リセットの上までを使う（stage全体の下端ではなく、実際に見えている部分の下） */
   let contentBottom = 0;
   stage.querySelectorAll('.slot, .bg-lines, .silhouette').forEach(el => { contentBottom = Math.max(contentBottom, el.offsetTop + el.offsetHeight); });
-  const top = stage.offsetTop + Math.min(stage.offsetHeight, contentBottom) + gap;
-  const height = total.offsetTop - gap - top;
-  if (height < 34) { panel.style.display = 'none'; return; }
+  /* 画面が低くて空きが足りないときは、枠全体を少し縮めてゲージの場所を作る（最大で0.8倍まで） */
+  stage.style.transform = ''; stage.style.marginBottom = '';
+  const want = Math.min(150, Math.ceil(n / (n <= 2 ? 1 : 2)) * 44);
+  const cbH = Math.min(stage.offsetHeight, contentBottom);
+  const freeNow = total.offsetTop - gap - (stage.offsetTop + cbH + gap);
+  let sc = 1;
+  if (freeNow < want) {
+    sc = Math.max(0.8, 1 - (want - freeNow) / cbH);
+    stage.style.transformOrigin = 'top center';
+    stage.style.transform = 'scale(' + sc.toFixed(4) + ')';
+    stage.style.marginBottom = (-(stage.offsetHeight * (1 - sc))).toFixed(1) + 'px';
+  }
+  let top = stage.offsetTop + cbH * sc + gap;
+  let height = total.offsetTop - gap - top;
+  /* 画面が低くて空きが少ないときは、すき間を詰めて「バーに文字を重ねた小型表示」にする（消さない） */
+  let compact = false;
+  if (height < 34) {
+    let top2 = top - gap + 3;
+    let h2 = total.offsetTop - 3 - top2;
+    /* 空きが足りなくても消さない：最低の高さを確保し、リセットの直上に重ねて出す */
+    if (h2 < 16) { h2 = 16; top2 = total.offsetTop - 3 - h2; }
+    compact = true; top = top2; height = h2;
+  }
+  panel.classList.toggle('compact', compact);
   panel.style.display = 'grid';
   panel.style.top = top + 'px';
   panel.style.height = height + 'px';
   /* 空きスペースに合わせて、行の大きさと列数を決める（収まらない分はスクロール） */
-  const cols = (height / n >= 44) ? 1 : 2;
+  const cols = compact ? Math.min(n, 4) : ((height / n >= 44) ? 1 : 2);
   const rows = Math.ceil(n / cols);
-  const rowH = Math.max(34, Math.min(64, Math.floor((height - (rows - 1) * 2) / rows)));
+  const rowH = compact ? Math.max(14, Math.min(30, Math.floor((height - (rows - 1) * 2) / rows)))
+                       : Math.max(34, Math.min(64, Math.floor((height - (rows - 1) * 2) / rows)));
   panel.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
   panel.style.setProperty('--soul-row-h', rowH + 'px');
   panel.style.alignContent = (rows * rowH <= height) ? 'center' : 'start';
 }
 window.addEventListener('resize', () => layoutSoulPanel());
+/* 別ページから戻った・タブに戻った・モーダルを閉じたときにも配置を取り直す */
+window.addEventListener('pageshow', () => { layoutSoulPanel(); setTimeout(layoutSoulPanel, 200); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { layoutSoulPanel(); setTimeout(layoutSoulPanel, 200); } });
+window.addEventListener('focus', () => layoutSoulPanel());
+document.addEventListener('click', () => setTimeout(layoutSoulPanel, 50), true);
 document.addEventListener('DOMContentLoaded', () => {
   const main = $('.main');
   if (main && typeof ResizeObserver === 'function') new ResizeObserver(() => layoutSoulPanel()).observe(main);
@@ -1816,6 +2101,7 @@ function renderDraft() {
     if (kind === 'addon3') btn.disabled = true;
   }
   renderUnlockPreview();
+  liveNavi();
 }
 function draftAdjustedJobLevels() {
   const levels = new Map();
@@ -1862,6 +2148,8 @@ function closeModal() {
   $('#modalBackdrop').classList.remove('open');
   $('#modalBackdrop').setAttribute('aria-hidden','true');
   state.activePos = null; state.draft = null;
+  liveNavi();
+  layoutSoulPanel();
 }
 function saveDraft() {
   if (!state.activePos || !state.draft) return;
@@ -2264,6 +2552,45 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 
 
+<style id="navi-modal-style">
+.navi-open-btn{margin:8px 0 2px;padding:6px 14px;font:inherit;font-size:clamp(16px,1.7vh,22px);color:#fff3b8;background:rgba(255,200,90,.14);border:1px solid rgba(255,210,122,.6);border-radius:8px;cursor:pointer}
+.navi-open-btn{display:block}
+.navi-btn-dim{opacity:.55}
+.navi-open-btn:hover{background:rgba(255,200,90,.28)}
+#naviModal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);padding:14px}
+#naviModal.hidden{display:none}
+#naviModal .navi-box{width:min(1100px,98vw);max-height:96vh;display:flex;flex-direction:column;border:1px solid rgba(255,210,122,.5);border-radius:12px;background:linear-gradient(135deg,rgba(5,10,9,.99),rgba(23,22,15,.98));box-shadow:0 0 30px rgba(255,200,90,.3);padding:12px 16px}
+#naviModal .navi-box-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px;margin-bottom:8px}
+#naviModal .navi-box-title{font-size:30px;color:#f4d987;text-shadow:0 2px #000}
+#naviModal .navi-close{font:inherit;font-size:22px;padding:6px 20px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.4);border-radius:8px;cursor:pointer}
+#naviModalBody{overflow:auto;padding-right:6px}
+#naviModal .navi-job{margin-bottom:18px}
+#naviModal .navi-job-head{font-size:30px;color:#ffd27a;margin:4px 0 8px;text-shadow:0 2px #000}
+#naviModal .navi-note{font-size:20px;color:#9fe8ff;margin:0 0 8px}
+#naviModal .navi-empty{font-size:22px;color:#e8f6d8;padding:6px 0}
+#naviModal .navi-no{position:absolute;top:8px;right:12px;font-size:22px;color:#fff3b8;border:1px solid rgba(255,243,184,.7);border-radius:6px;padding:0 12px;background:rgba(255,255,255,.06)}
+#naviModal .navi-plan{position:relative;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(255,255,255,.04);padding:8px 12px;margin-bottom:10px}
+#naviModal .navi-plan-title{font-size:24px;color:#fff3b8;margin-bottom:4px}
+#naviModal .navi-line{font-size:22px;line-height:1.5;color:#e8f6d8;overflow-wrap:anywhere}
+#naviModal .navi-new{color:#c9ff7a}
+#naviModal .navi-tag{display:inline-block;min-width:1.6em;margin-right:8px;padding:0 6px;font-size:18px;border-radius:5px;background:rgba(255,255,255,.14);text-align:center}
+#naviModal .navi-plus{margin:0 .5em;color:#fff3b8}
+#naviModal .navi-item{margin-bottom:6px}
+#naviModal .navi-pos{font-size:24px;color:#fff3b8}
+#naviModal .navi-row-now,#naviModal .navi-row-new{font-size:22px;line-height:1.5;color:#fff;padding-left:1em}
+#naviModal .navi-row-new{color:#fff}
+#naviModal .nv-chg{color:#ff2a2a;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 -1px 0 #fff,0 1px 0 #fff,-1px 0 0 #fff,1px 0 0 #fff}
+#naviModal .nv-seg{display:inline-block;white-space:nowrap}
+#naviModal .nv-plus{margin:0 .6em;color:#fff3b8}
+#naviModal .nv-arrow{margin-right:.5em;color:#fff3b8}
+#naviModal .navi-lost{color:#ff9a8a;margin-top:2px}
+</style>
+<div id="naviModal" class="hidden no-capture" aria-hidden="true" onclick="if(event.target===this)closeNaviModal()">
+  <div class="navi-box">
+    <div class="navi-box-head"><div class="navi-box-title" id="naviModalTitle">200到達ナビ</div><button type="button" class="navi-close" onclick="closeNaviModal()">閉じる</button></div>
+    <div id="naviModalBody"></div>
+  </div>
+</div>
 <div id="nouryokuNumberModal" class="nouryoku-number-modal hidden no-capture" aria-hidden="true">
   <div id="nouryokuNumberBox" class="nouryoku-shared-digit-box">
     <button type="button" class="nouryoku-digit-top-close" onclick="closeNouryokuNumberModal()" aria-label="数値入力モーダルを閉じる">閉じる</button>
@@ -2338,6 +2665,7 @@ function closeNouryokuNumberModal(){
   const modal = document.getElementById("nouryokuNumberModal");
   if(modal){ modal.classList.add("hidden"); modal.setAttribute("aria-hidden","true"); }
   nouryokuNumberTarget = '';
+  if (typeof layoutSoulPanel === 'function') layoutSoulPanel();
 }
 function stepNouryokuNumberDigit(index,delta){
   if(!nouryokuNumberTarget) return;
