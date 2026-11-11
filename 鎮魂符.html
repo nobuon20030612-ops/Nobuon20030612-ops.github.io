@@ -1473,7 +1473,7 @@ body::before,body::after{background:none!important}
     <div class="rsm-head"><div class="rsm-title" id="rscTitle"></div><button type="button" class="rsc-x" id="rscClose">閉じる</button></div>
     <div class="rsm-sub">この職業を除外するか、現在の値以外の＋値に変えて再検索します（他の条件はそのままです）。</div>
     <div class="rsm-lv" id="rscLv"></div>
-    <div class="rsm-actions"><button type="button" id="rscFree">指定なしに戻す</button><button type="button" class="ok" id="rscExcl">この職業を除外する</button></div>
+    <div class="rsm-actions"><button type="button" class="ok" id="rscExcl">この職業を除外する</button></div>
   </div>
 </div>
 <div id="rsSkillModal" class="hidden no-capture" aria-hidden="true" role="dialog" aria-modal="true">
@@ -3487,7 +3487,6 @@ cModal.addEventListener('click', function(e){
   var lv = e.target.closest('.rsm-lvb');
   if (lv) { state.preset = null; state.picks[cJob] = Number(lv.getAttribute('data-clv')); delete state.excluded[cJob]; closeChipModal(); render(false); return; }
   if (e.target.closest('#rscExcl')) { delete state.picks[cJob]; state.excluded[cJob] = true; closeChipModal(); render(false); return; }
-  if (e.target.closest('#rscFree')) { state.preset = null; delete state.picks[cJob]; delete state.excluded[cJob]; closeChipModal(); render(false); }
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !cModal.classList.contains('hidden')) { e.stopPropagation(); closeChipModal(); } }, true);
 function resetAllSearch(){
