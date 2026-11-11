@@ -1236,6 +1236,10 @@ body::before,body::after{background:none!important}
 .req-search-bar{display:grid;grid-template-columns:minmax(120px,1.35fr) repeat(11,minmax(0,1fr)) minmax(130px,1.6fr);gap:clamp(3px,.5vw,9px);align-items:center;margin:6px 8px 4px;padding:22px 9px 8px;border:2px solid rgba(133,255,52,.55);border-radius:14px;background:rgba(0,0,0,.5);box-shadow:0 0 14px rgba(133,255,52,.28),inset 0 0 18px rgba(0,0,0,.6);position:relative;z-index:5}
 .rs-label{display:grid;place-items:center;min-height:40px;padding:3px 6px;border:2px solid #f6a39a;border-radius:9px;background:linear-gradient(#b24238,#511815);color:#ffd6df;white-space:nowrap;font-weight:900;font-size:clamp(16px,1.3vw,23px);line-height:1.02;overflow:hidden}
 .rs-stat{position:relative;min-width:0;height:40px;padding:3px 2px;border:2px solid transparent;border-radius:9px;color:#211411;font:inherit;font-size:clamp(14px,1.15vw,20px);font-weight:900;line-height:1.02;white-space:nowrap;overflow:visible;cursor:pointer}
+.rs-presets{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 0}
+.rs-preset{min-width:0;height:40px;padding:3px 16px;border:2px solid currentColor;border-radius:9px;background:rgba(10,8,24,.78);font:inherit;font-size:clamp(14px,1.15vw,20px);font-weight:900;white-space:nowrap;cursor:pointer;text-shadow:none}
+.rs-preset:hover{filter:brightness(1.25)}
+.rs-preset[aria-pressed=true]{box-shadow:0 0 0 2px rgba(133,255,52,.9),0 0 16px rgba(133,255,52,.9)}
 .rs-stat:hover{filter:brightness(1.15)}
 .rs-stat[aria-pressed=true]{border-color:#fff2b2;box-shadow:0 0 0 2px rgba(133,255,52,.9),0 0 16px rgba(133,255,52,.9)}
 .rs-stat[aria-pressed=true]::before{content:"選択中";position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);font:900 clamp(13px,1.1vw,18px)/1 "Yu Gothic",Meiryo,sans-serif;color:#fffdf4;text-shadow:0 1px 2px #000,0 0 8px rgba(133,255,52,.9);white-space:nowrap;pointer-events:none}
@@ -1392,6 +1396,7 @@ body::before,body::after{background:none!important}
     <div class="rs-step rs-step2"><div class="rs-stephead"><span class="rs-stepno">STEP2</span><span class="rs-steptitle">上限値</span></div><button type="button" class="rs-pick" id="rsLimitBtn">数値を入力</button><span class="rs-stepnote rs-required">必須項目</span></div>
   </div>
   <div class="rs-step rs-step3"><div class="rs-stephead"><span class="rs-stepno">STEP3</span><span class="rs-steptitle">検索</span></div><div class="rs-statrow"><button type="button" class="rs-stat" data-stat="生命力" aria-pressed="false">生命</button><button type="button" class="rs-stat" data-stat="気合" aria-pressed="false">気合</button><button type="button" class="rs-stat" data-stat="腕力" aria-pressed="false">腕力</button><button type="button" class="rs-stat" data-stat="耐久力" aria-pressed="false">耐久</button><button type="button" class="rs-stat" data-stat="器用さ" aria-pressed="false">器用</button><button type="button" class="rs-stat" data-stat="知力" aria-pressed="false">知力</button><button type="button" class="rs-stat" data-stat="魅力" aria-pressed="false">魅力</button><button type="button" class="rs-stat" data-stat="土属性" aria-pressed="false">土</button><button type="button" class="rs-stat" data-stat="水属性" aria-pressed="false">水</button><button type="button" class="rs-stat" data-stat="火属性" aria-pressed="false">火</button><button type="button" class="rs-stat" data-stat="風属性" aria-pressed="false">風</button></div></div>
+  <div class="rs-presets" id="rsPresets"><button type="button" class="rs-preset" data-preset="0" style="color:#ff5a5a" aria-pressed="false">物理アタッカー</button><button type="button" class="rs-preset" data-preset="1" style="color:#ffe040" aria-pressed="false">術アタッカー</button><button type="button" class="rs-preset" data-preset="2" style="color:#5fe05f" aria-pressed="false">回復</button><button type="button" class="rs-preset" data-preset="3" style="color:#5aa8ff" aria-pressed="false">盾</button><button type="button" class="rs-preset" data-preset="4" style="color:#c08cff" aria-pressed="false">付与</button><button type="button" class="rs-preset" data-preset="5" style="color:#ffffff" aria-pressed="false">サポート</button></div>
 </div>
 <div class="app">
   <div class="topbar"></div>
@@ -2780,6 +2785,9 @@ document.addEventListener('DOMContentLoaded', init);
     app.style.height = naturalH + 'px';
     var vp = viewportSize();
     var ideal = Math.min(1, vp.w / naturalW, Math.max(320, vp.h) / (naturalH + barH));
+    /* 窓の幅いっぱいに合わせて拡大する（最大2倍。縦は必要に応じてスクロール） */
+    var wideFit = Math.min(2, (vp.w - 18) / naturalW); /* 縦スクロールバーの分の余裕を引く */
+    if (wideFit > ideal) ideal = wideFit;
     var zoom = Math.max(MIN_ZOOM, ideal);
     app.style.setProperty('--app-fit-zoom', String(zoom));
     [searchBar, searchRes].forEach(function(el){ if (el) el.style.zoom = String(zoom); });
@@ -3160,10 +3168,38 @@ function totalsOf(plan) {
 }
 
 /* ===== 画面 ===== */
-var state = { limit:null, limit2:20, limitL:30, picks:{}, excluded:{}, rules:[0,1].map(function(){ return { stat:'', min:null, max:null }; }), sortStat:'' };
+var state = { limit:null, limit2:20, limitL:30, picks:{}, excluded:{}, rules:[0,1].map(function(){ return { stat:'', min:null, max:null }; }), sortStat:'', preset:null };
 var bar = document.getElementById('reqSearchBar');
 var box = document.getElementById('reqSearchResults');
 var lastRes = [];
+var PRESETS = [
+ { name:'物理アタッカー', combos:[{'忍者':200,'神職':200},{'忍者':200,'鍛冶屋':200}], stats:['腕力','魅力'] },
+ { name:'術アタッカー', combos:[{'陰陽師':200,'神職':200},{'陰陽師':200,'鍛冶屋':200}], stats:['知力','魅力'] },
+ { name:'回復', combos:[{'薬師':200,'僧':200},{'薬師':200,'神職':200}], stats:['知力','魅力'] },
+ { name:'盾', combos:[{'鍛冶屋':200}], stats:['耐久力','魅力'] },
+ { name:'付与', combos:[{'神職':200,'薬師':175}], stats:['知力'] },
+ { name:'サポート', combos:[{'侍':200,'神職':200}], stats:['知力','魅力'] }
+];
+function presetSearch(){
+  var P = PRESETS[state.preset], seen = {}, all = [];
+  P.combos.forEach(function(c){
+    if (Object.keys(c).some(function(j){ return state.excluded[j]; })) return;
+    search(state.rules, c).forEach(function(e){
+      var sig = e.picks.map(function(q){ return q.job + q.L; }).sort().join(',');
+      if (seen[sig]) return; seen[sig] = 1; all.push(e);
+    });
+  });
+  all.sort(function(x, y){ return lexCmp(x, y) || (x.mx - y.mx); });
+  return all.slice(0, 500);
+}
+function syncPresetBtns(){ Array.prototype.forEach.call(document.querySelectorAll('.rs-preset'), function(b){ b.setAttribute('aria-pressed', String(state.preset !== null && Number(b.getAttribute('data-preset')) === state.preset)); }); }
+document.getElementById('rsPresets').addEventListener('click', function(e){
+  var b = e.target.closest('.rs-preset'); if (!b) return;
+  var P = PRESETS[Number(b.getAttribute('data-preset'))];
+  state.preset = Number(b.getAttribute('data-preset')); state.picks = {};
+  state.rules = [0,1].map(function(i){ return { stat:P.stats[i] || '', min:null, max:null }; });
+  render(true);
+});
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function fmt(v){ return v >= 200 ? '200' : v.toFixed(1); }
 function chip(job, L){ return '<span class="rsr-chip rsr-chip-btn" role="button" tabindex="0" data-cjob="' + esc(job) + '" data-clv="' + L + '" style="background:' + JOB_COLOR[job] + '">' + esc(job) + ' ' + L + '</span>'; }
@@ -3222,6 +3258,7 @@ function renderSortBar(){
 }
 
 function render(doScroll) {
+  syncPresetBtns();
   var first = state.rules[0].stat;
   Array.prototype.forEach.call(bar.querySelectorAll('.rs-stat'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-stat') === first ? 'true' : 'false'); });
     var sb = document.getElementById('rsSkillBtn');
@@ -3247,12 +3284,12 @@ function render(doScroll) {
   }
   applyLimit();
   var t0 = Date.now();
-  lastRes = search(state.rules, state.picks);
+  lastRes = state.preset !== null ? presetSearch() : search(state.rules, state.picks);
   var ms = Date.now() - t0;
   var act = state.rules.filter(function(r){ return r.stat; });
   document.getElementById('rsrCount').textContent = lastRes.length;
   var cond = act.map(function(r, x){ return '第' + (x + 1) + '：' + STAT_LABEL[r.stat] + (r.min !== null ? ' ' + r.min.toLocaleString() + '以上' : '') + (r.max !== null ? ' ' + r.max.toLocaleString() + '以下' : ''); }).join(' ／ ');
-  setFeedback('1枠 ① <span class="hl">' + f1(state.limit) + '</span>／② <span class="hl">' + f1(state.limit2) + '</span> 以下／光闇 <span class="hl">' + f1(state.limitL) + '</span> 以下　' + esc(cond) + (pj.length ? '　指定：' + esc(pj.map(function(j){ return j + state.picks[j]; }).join('・')) : '') + (exl.length ? '　除外：' + esc(exl.join('・')) : '') + '　<span class="hl">' + lastRes.length + '</span>件', false);
+  setFeedback('1枠 ① <span class="hl">' + f1(state.limit) + '</span>／② <span class="hl">' + f1(state.limit2) + '</span> 以下／光闇 <span class="hl">' + f1(state.limitL) + '</span> 以下　' + esc(cond) + (state.preset !== null ? '　おすすめ：' + esc(PRESETS[state.preset].name) : '') + (pj.length ? '　指定：' + esc(pj.map(function(j){ return j + state.picks[j]; }).join('・')) : '') + (exl.length ? '　除外：' + esc(exl.join('・')) : '') + '　<span class="hl">' + lastRes.length + '</span>件', false);
   state.sortStat = ''; renderSortBar();
   drawList();
   if (doScroll) requestAnimationFrame(scrollToResults);
@@ -3296,12 +3333,13 @@ bar.addEventListener('click', function(e){
   var b = e.target.closest('.rs-stat');
   if (b) {
     var k = b.getAttribute('data-stat');
-    if (state.rules[0].stat !== k) state.rules[0] = { stat:k, min:null, max:null };
+    state.preset = null; if (state.rules[0].stat !== k) state.rules[0] = { stat:k, min:null, max:null };
     render(true);
   }
 });
 document.getElementById('rsPriority').addEventListener('click', function(e){
   var btn = e.target.closest('button'); if (!btn) return;
+  state.preset = null;
   if (btn.hasAttribute('data-pclear')) { state.rules[Number(btn.getAttribute('data-pclear'))] = { stat:'', min:null, max:null }; }
   else if (btn.hasAttribute('data-pstat')) {
     var i = Number(btn.getAttribute('data-pstat')), st = btn.getAttribute('data-stat');
@@ -3345,7 +3383,7 @@ grid.addEventListener('click', function(e){
 function closeModal(){ modal.classList.add('hidden'); modal.setAttribute('aria-hidden', 'true'); }
 document.getElementById('rsmClear').addEventListener('click', function(){ draft = {}; drawModal(); });
 document.getElementById('rsmOk').addEventListener('click', function(){
-  state.picks = {}; JOBS.forEach(function(j){ if (draft[j]) { state.picks[j] = draft[j]; delete state.excluded[j]; } });
+  state.preset = null; state.picks = {}; JOBS.forEach(function(j){ if (draft[j]) { state.picks[j] = draft[j]; delete state.excluded[j]; } });
   closeModal(); render(!!state.rules[0].stat && state.limit !== null);
 });
 modal.addEventListener('click', function(e){ if (e.target === modal) closeModal(); });
@@ -3445,13 +3483,13 @@ box.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key ===
 cModal.addEventListener('click', function(e){
   if (e.target === cModal || e.target.closest('#rscClose')) { closeChipModal(); return; }
   var lv = e.target.closest('.rsm-lvb');
-  if (lv) { state.picks[cJob] = Number(lv.getAttribute('data-clv')); delete state.excluded[cJob]; closeChipModal(); render(false); return; }
+  if (lv) { state.preset = null; state.picks[cJob] = Number(lv.getAttribute('data-clv')); delete state.excluded[cJob]; closeChipModal(); render(false); return; }
   if (e.target.closest('#rscExcl')) { delete state.picks[cJob]; state.excluded[cJob] = true; closeChipModal(); render(false); return; }
-  if (e.target.closest('#rscFree')) { delete state.picks[cJob]; delete state.excluded[cJob]; closeChipModal(); render(false); }
+  if (e.target.closest('#rscFree')) { state.preset = null; delete state.picks[cJob]; delete state.excluded[cJob]; closeChipModal(); render(false); }
 });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !cModal.classList.contains('hidden')) { e.stopPropagation(); closeChipModal(); } }, true);
 function resetAllSearch(){
-  state.limit = null; state.limit2 = 20; state.limitL = 30; state.picks = {}; state.excluded = {}; state.sortStat = '';
+  state.limit = null; state.limit2 = 20; state.limitL = 30; state.picks = {}; state.excluded = {}; state.sortStat = ''; state.preset = null;
   state.rules = state.rules.map(function(){ return { stat:'', min:null, max:null }; });
   closeModal(); closeLimitModal(); closeChipModal(); render(false);
 }
