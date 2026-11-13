@@ -976,6 +976,14 @@ html .modal-backdrop.fit-scroll-needed .modal .actions{
 .status-detail-list .status-effect-row .need { white-space:nowrap; }
 </style>
   <link rel="icon" type="image/png" href="favicon.png?v=2">
+<style id="slot-hover-style">
+#slotHoverTip{position:fixed;z-index:200;display:none;pointer-events:none;min-width:240px;padding:12px 18px;border:3px solid #7dff7a;border-radius:12px;background:rgba(8,6,16,.96);box-shadow:0 0 22px rgba(125,255,122,.55),0 6px 24px rgba(0,0,0,.7);color:#fff;font-family:"Yu Gothic",Meiryo,sans-serif}
+#slotHoverTip .sht-row{display:flex;align-items:baseline;gap:12px;font-weight:900;font-size:clamp(26px,2.4vw,40px);line-height:1.35;white-space:nowrap}
+#slotHoverTip .sht-pos{font-weight:900;font-size:clamp(24px,2.2vw,36px);line-height:1.3;color:#7dff7a;border-bottom:2px solid rgba(255,255,255,.3);margin-bottom:4px;padding-bottom:2px}
+#slotHoverTip .sht-no{color:#ffd86b}
+#slotHoverTip .sht-job{flex:1}
+#slotHoverTip .sht-val{color:#fff4b0;text-align:right}
+</style>
 <style id="number-modal-style">
 /* ===== 数値入力モーダル共通仕様：家臣計算機と同じ見た目／通常入力・付与数値入力だけ ===== */
 .nouryoku-number-modal{
@@ -1445,10 +1453,6 @@ body::before,body::after{background:none!important}
       <div class="slot-name name-foot">足</div><button class="slot empty" data-pos="足"><span class="label">足</span><span class="content">空欄</span></button>
     </div>
     <div class="soul-gauge-panel" id="soulGaugePanel" aria-label="登録した鎮魂符の魂の合計"></div>
-    <div class="total screen-actions no-capture">
-      <button class="screen-action reset" type="button" id="resetAll">リセット</button>
-      <button class="screen-action" type="button" id="saveScreen">保存</button>
-    </div>
   </main>
   <section class="status">
     <div class="status-detail-list" id="statusDetails"></div>
@@ -2060,6 +2064,37 @@ function renderSlots() {
   renderSoulGauges();
 }
 
+/* ===== 枠にマウスを乗せたとき、①②③の内容を大きく表示する（③は入っているときだけ） ===== */
+(function(){
+  var tip = document.createElement('div');
+  tip.id = 'slotHoverTip'; tip.className = 'no-capture'; tip.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(tip);
+  var cur = null;
+  function hide(){ tip.style.display = 'none'; cur = null; }
+  function show(btn, anchor){
+    var pos = btn.getAttribute('data-pos'), eq = state.equips[pos];
+    if (!eq || !eq.primary) { hide(); return; }
+    var fallback = Number(eq.level) || 0;
+    var al = Array.isArray(eq.addonLevels) ? eq.addonLevels : [fallback, fallback, fallback];
+    var rows = [['①', eq.primary, normalizeValue(eq.primaryLevel, fallback)]];
+    (eq.addons || []).forEach(function(job, i){ if (job) rows.push([i === 0 ? '②' : '③', job, normalizeValue(al[i], 0)]); });
+    tip.innerHTML = '<div class="sht-pos">' + escapeHtml(pos) + '</div>' + rows.map(function(r){ return '<div class="sht-row"><span class="sht-no">' + r[0] + '</span><span class="sht-job">' + escapeHtml(r[1]) + '</span><span class="sht-val">＋' + formatValue(r[2]) + '</span></div>'; }).join('');
+    tip.style.display = 'block'; cur = anchor;
+    var b = anchor.getBoundingClientRect(), t = tip.getBoundingClientRect(), gap = 10;
+    var x = b.left + b.width / 2 - t.width / 2, y = b.top - t.height - gap;
+    if (y < 6) y = b.bottom + gap;
+    x = Math.max(6, Math.min(x, window.innerWidth - t.width - 6));
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  document.addEventListener('mouseover', function(e){
+    var anchor = e.target.closest && e.target.closest('.slot[data-pos]'), btn = anchor;
+    if (anchor && btn) { if (anchor !== cur) show(btn, anchor); } else if (cur) hide();
+  });
+  document.addEventListener('mouseleave', hide);
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+})();
+
 /* ===== 登録した鎮魂符ごとの「魂」の合計をゲージで表示（リセットの上） =====
    マス目は8個で、200がMAX。数値は200を超えてもそのまま表示する。 */
 function rawJobLevels() {
@@ -2096,7 +2131,8 @@ function renderSoulGauges() {
 function layoutSoulPanel() {
   const panel = $('#soulGaugePanel');
   const stage = $('.equip-stage');
-  const total = $('.total.screen-actions');
+  const mainEl = $('.main');
+  const total = mainEl ? { offsetTop: mainEl.clientHeight - 14, offsetHeight: 1 } : null; /* 下のボタンを無くしたので、画面の下端までを使う */
   if (!panel || !stage || !total) return;
   /* ページが隠れている・大きさが取れない最中の計算では、ゲージを消さずに前の状態を保つ */
   if (!stage.offsetHeight || !total.offsetHeight || !stage.offsetWidth) return;
@@ -2723,7 +2759,6 @@ function init() {
   $('#closeModal').addEventListener('click', closeModal);
   $('#saveSlot').addEventListener('click', saveDraft);
   $('#clearSlot').addEventListener('click', clearActiveSlot);
-  $('#resetAll').addEventListener('click', resetAllSlots);
   $('#fullResetBtn').addEventListener('click', () => {
     openConfirm('選択項目を初期化しますか？', 'はい', () => {
       for (const pos of POSITIONS) state.equips[pos] = null;
@@ -2732,7 +2767,6 @@ function init() {
       window.scrollTo({ top:0, behavior:'smooth' });
     }, 'reset');
   });
-  $('#saveScreen').addEventListener('click', saveScreenImage);
   $('#openRequiemAboutTop').addEventListener('click', openRequiemAbout);
   $('#closeRequiemAbout').addEventListener('click', closeRequiemAbout);
   $('#openBonusList').addEventListener('click', openBonusList);
