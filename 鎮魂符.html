@@ -1236,13 +1236,19 @@ body::before,body::after{background:none!important}
 .req-search-bar{display:grid;grid-template-columns:minmax(120px,1.35fr) repeat(11,minmax(0,1fr)) minmax(130px,1.6fr);gap:clamp(3px,.5vw,9px);align-items:center;margin:6px 8px 4px;padding:22px 9px 8px;border:2px solid rgba(133,255,52,.55);border-radius:14px;background:rgba(0,0,0,.5);box-shadow:0 0 14px rgba(133,255,52,.28),inset 0 0 18px rgba(0,0,0,.6);position:relative;z-index:5}
 .rs-label{display:grid;place-items:center;min-height:40px;padding:3px 6px;border:2px solid #f6a39a;border-radius:9px;background:linear-gradient(#b24238,#511815);color:#ffd6df;white-space:nowrap;font-weight:900;font-size:clamp(16px,1.3vw,23px);line-height:1.02;overflow:hidden}
 .rs-stat{position:relative;min-width:0;height:40px;padding:3px 2px;border:2px solid transparent;border-radius:9px;color:#211411;font:inherit;font-size:clamp(14px,1.15vw,20px);font-weight:900;line-height:1.02;white-space:nowrap;overflow:visible;cursor:pointer}
-.rs-presets{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0 0}
+.rs-presets{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px 0 0}
 .rs-preset{min-width:0;height:40px;padding:3px 16px;border:2px solid currentColor;border-radius:9px;background:rgba(10,8,24,.78);font:inherit;font-size:clamp(14px,1.15vw,20px);font-weight:900;white-space:nowrap;cursor:pointer;text-shadow:none}
 .rs-preset:hover{filter:brightness(1.25)}
 .rs-preset[aria-pressed=true]{box-shadow:0 0 0 2px rgba(133,255,52,.9),0 0 16px rgba(133,255,52,.9)}
 .rs-stat:hover{filter:brightness(1.15)}
 .rs-stat[aria-pressed=true]{border-color:#fff2b2;box-shadow:0 0 0 2px rgba(133,255,52,.9),0 0 16px rgba(133,255,52,.9)}
 .rs-stat[aria-pressed=true]::before{content:"選択中";position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);font:900 clamp(13px,1.1vw,18px)/1 "Yu Gothic",Meiryo,sans-serif;color:#fffdf4;text-shadow:0 1px 2px #000,0 0 8px rgba(133,255,52,.9);white-space:nowrap;pointer-events:none}
+/* 選択中の表示：赤い枠・赤い札・拡縮で目立たせる */
+@keyframes rsSelPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes rsSelTag{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.22)}}
+.rs-stat[aria-pressed=true],.rs-preset[aria-pressed=true]{border:3px solid #ff2a2a!important;box-shadow:0 0 0 2px #fff,0 0 18px 4px rgba(255,40,40,.95)!important;animation:rsSelPulse 1s ease-in-out infinite;z-index:2}
+.rs-stat[aria-pressed=true]::before,.rs-preset[aria-pressed=true]::before{content:"選択中";position:absolute;bottom:calc(100% - 9px);left:50%;transform:translateX(-50%);padding:3px 10px;border-radius:999px;background:#e01616;border:2px solid #fff;font:900 clamp(15px,1.3vw,22px)/1.1 "Yu Gothic",Meiryo,sans-serif;color:#fff;text-shadow:0 1px 2px #000;white-space:nowrap;pointer-events:none;animation:rsSelTag 1s ease-in-out infinite;z-index:3}
+.rs-preset{position:relative}
 .rs-stat[aria-pressed=true][data-rank="2"]::before{content:"第二";color:#ffe9a8}.rs-stat[aria-pressed=true][data-rank="1"]::before{content:"第一"}.rs-stat[data-rank="2"]{box-shadow:0 0 0 2px rgba(255,200,80,.95),0 0 14px rgba(255,200,80,.9)!important}
 .rs-stat[data-stat=生命力]{background:#f9f9f7}.rs-stat[data-stat=気合]{background:#bbeafc}.rs-stat[data-stat=腕力]{background:#d74647;color:#fff}.rs-stat[data-stat=耐久力]{background:#326ad1;color:#fff}.rs-stat[data-stat=器用さ]{background:#44a365;color:#fff}.rs-stat[data-stat=知力]{background:#f9dc49}.rs-stat[data-stat=魅力]{background:#9853b1;color:#fff}.rs-stat[data-stat=土属性]{background:#fff0ae}.rs-stat[data-stat=水属性]{background:#6bcee9}.rs-stat[data-stat=火属性]{background:#f0aeae}.rs-stat[data-stat=風属性]{background:#b2e4b6}
 .rs-skill{min-width:0;height:40px;padding:3px 8px;border:2px solid #e6c15a;border-radius:9px;background:linear-gradient(#5a4310,#241a06);color:#ffeaa8;font:inherit;font-size:clamp(13px,1.05vw,18px);font-weight:900;line-height:1.1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1300,7 +1306,9 @@ body::before,body::after{background:none!important}
 .rsr-apply:hover{filter:brightness(1.18);box-shadow:0 0 14px rgba(255,110,110,.85)}
 .rsr-more{padding:10px;text-align:center;color:#ffe877;font-weight:900;font-size:clamp(16px,1.4vw,22px)}
 .rsr-chiphint{margin-left:auto;align-self:center;font-size:clamp(20px,1.8vw,28px);font-weight:900;color:#ffe877}
-.rsr-exrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0;padding:6px 8px;border:1px dashed rgba(255,138,138,.6);border-radius:8px;color:#ffb0b0;font-weight:900}
+.rsr-exrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0;padding:6px 8px;border:4px dashed rgba(255,138,138,.95);border-radius:8px;color:#ffb0b0;font-weight:900;animation:rsExBlink 1s ease-in-out infinite}
+@keyframes rsExBlink{0%,100%{border-color:rgba(255,138,138,.95);box-shadow:0 0 10px rgba(255,90,90,.8)}50%{border-color:rgba(255,138,138,.1);box-shadow:0 0 0 rgba(255,90,90,0)}}
+.rsr-exchip{animation:rsReq 1s ease-in-out infinite}
 #rsSkillModal .rsm-box{width:min(920px,96vw);max-height:94vh;overflow:auto;border:1px solid rgba(255,210,122,.5);border-radius:12px;background:linear-gradient(135deg,rgba(5,10,9,.99),rgba(23,22,15,.98));box-shadow:0 0 30px rgba(255,200,90,.3);padding:14px 18px}
 #rsSkillModal .rsm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px;margin-bottom:10px}
 #rsSkillModal .rsc-x{flex:none;font:inherit;font-size:clamp(15px,1.4vw,19px);font-weight:900;padding:8px 14px;border:2px solid rgba(255,255,255,.35);border-radius:9px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;text-shadow:none}
@@ -2891,7 +2899,7 @@ var SLOTS_ALL = 16, SLOTS_FIRST = 8;
 var capN1 = 44.9, capN2 = 44.9, capL = 55; /* ①枠・②枠それぞれの上限（通常の職）と、光・闇の上限 */ /* 1枠の上限：通常 19.9＋5×回数、光・闇 30＋5×回数 */
 var SCOL = {'生命力':'#f9f9f7','気合':'#bbeafc','腕力':'#d74647','耐久力':'#326ad1','器用さ':'#44a365','知力':'#f9dc49','魅力':'#9853b1','土属性':'#fff0ae','水属性':'#6bcee9','火属性':'#f0aeae','風属性':'#b2e4b6','攻撃力':'#f4f1e2'};
 var STAT_BTN = [['生命力','生命'],['気合','気合'],['腕力','腕力'],['耐久力','耐久'],['器用さ','器用'],['知力','知力'],['魅力','魅力'],['土属性','土'],['水属性','水'],['火属性','火'],['風属性','風']];
-var STAT_MAX = {'生命力':18600,'気合':9900,'腕力':2000,'耐久力':1750,'器用さ':800,'知力':3020,'魅力':1470,'土属性':1000,'水属性':1000,'火属性':1000,'風属性':1000};
+var STAT_MAX = {'生命力':20000,'気合':9900,'腕力':2000,'耐久力':2000,'器用さ':2000,'知力':2000,'魅力':2000,'土属性':2000,'水属性':2000,'火属性':2000,'風属性':2000};
 function stepsFor(k){ if (k === '気合') k = '生命力'; /* 気合の選択項目は生命と同じ */
   var M = STAT_MAX[k], raw = M / 8, unit = Math.pow(10, Math.floor(Math.log10(raw))), st = 0;
   [1,2,2.5,5,10].some(function(f){ if (f * unit >= raw - 1e-9) { st = f * unit; return true; } });
@@ -3262,7 +3270,7 @@ function renderSortBar(){
 function render(doScroll) {
   syncPresetBtns();
   var first = state.rules[0].stat;
-  Array.prototype.forEach.call(bar.querySelectorAll('.rs-stat'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-stat') === first ? 'true' : 'false'); });
+  Array.prototype.forEach.call(bar.querySelectorAll('.rs-stat'), function(b){ b.setAttribute('aria-pressed', (state.preset === null && b.getAttribute('data-stat') === first) ? 'true' : 'false'); });
     var sb = document.getElementById('rsSkillBtn');
   var pj = JOBS.filter(function(j){ return state.picks[j]; });
   var exl = JOBS.filter(function(j){ return state.excluded[j]; });
@@ -3335,6 +3343,7 @@ bar.addEventListener('click', function(e){
   var b = e.target.closest('.rs-stat');
   if (b) {
     var k = b.getAttribute('data-stat');
+    if (state.preset !== null) state.rules = [{ stat:k, min:null, max:null }, { stat:'', min:null, max:null }]; /* おすすめ検索から手動に切り替えたときは、おすすめ側の第2優先を引き継がない */
     state.preset = null; if (state.rules[0].stat !== k) state.rules[0] = { stat:k, min:null, max:null };
     render(true);
   }
