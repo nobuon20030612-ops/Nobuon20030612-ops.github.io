@@ -1375,6 +1375,8 @@ body::before,body::after{background:none!important}
 .rsr-feedback.warn{background:linear-gradient(90deg,#6b0a0a,#c01818 52%,#6b0a0a)}
 .rsr-sortbar{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;margin:6px 0 10px}
 .rsr-sortbtn{min-width:0;height:38px;padding:0 1px;border:2px solid #75634d;border-radius:10px;background:linear-gradient(#241913,#100d0b);color:#fff2df;font:inherit;font-size:clamp(13px,1.2vw,22px);font-weight:900;white-space:nowrap;cursor:pointer}
+.rsr-sortdef{grid-column:1 / span 2}
+.rsr-sortbreak{grid-column:3 / -1}
 .rsr-sortbtn.active{border-color:#f68990;background:linear-gradient(#712329,#350e15);box-shadow:inset 0 0 12px #f04b5899,0 0 11px #f8888870}
 .rsr-val2{opacity:.92}.rsr-stats .hi{color:#fff;font-weight:900}.rsr-stats .hi b{color:inherit}
 
@@ -1468,6 +1470,8 @@ body::before,body::after{background:none!important}
   <div class="rsp-controls" id="rsPriority">
     <div class="rsp-group"><div class="rsp-cap">第1優先ソート <button type="button" class="rsp-clear" data-pclear="0">解除</button></div><div class="rsp-stats" id="rspStat0"></div><div class="rsp-vals" id="rspVal0"></div></div>
     <div class="rsp-group"><div class="rsp-cap">第2優先ソート <button type="button" class="rsp-clear" data-pclear="1">解除</button></div><div class="rsp-stats" id="rspStat1"></div><div class="rsp-vals" id="rspVal1"></div></div>
+    <div class="rsp-group"><div class="rsp-cap">第1優先ソート（2通り目） <button type="button" class="rsp-clear" data-pclear="2">解除</button></div><div class="rsp-stats" id="rspStat2"></div><div class="rsp-vals" id="rspVal2"></div></div>
+    <div class="rsp-group"><div class="rsp-cap">第2優先ソート（2通り目） <button type="button" class="rsp-clear" data-pclear="3">解除</button></div><div class="rsp-stats" id="rspStat3"></div><div class="rsp-vals" id="rspVal3"></div></div>
   </div>
   <div class="rsr-feedback" id="rsrFeedback" role="status"></div>
   <div class="rsr-sortbar" id="rsrSortBar" aria-label="能力別の並び替え"></div>
@@ -3212,28 +3216,74 @@ function totalsOf(plan) {
 }
 
 /* ===== 画面 ===== */
-var state = { limit:null, limit2:20, limitL:30, picks:{}, excluded:{}, rules:[0,1].map(function(){ return { stat:'', min:null, max:null }; }), sortStat:'', preset:null };
+var state = { limit:null, limit2:20, limitL:30, picks:{}, excluded:{}, rules:[0,1].map(function(){ return { stat:'', min:null, max:null }; }), sortStat:'', preset:null, rules2:[0,1].map(function(){ return { stat:'', min:null, max:null }; }) };
 var bar = document.getElementById('reqSearchBar');
 var box = document.getElementById('reqSearchResults');
 var lastRes = [];
 var PRESETS = [
- { name:'物理アタッカー', combos:[{'忍者':200,'神職':200},{'忍者':200,'鍛冶屋':200}], stats:['腕力','魅力'] },
- { name:'術アタッカー', combos:[{'陰陽師':200,'神職':200},{'陰陽師':200,'鍛冶屋':200}], stats:['知力','魅力'] },
- { name:'回復', combos:[{'薬師':200,'僧':200},{'薬師':200,'神職':200}], stats:['知力','魅力'] },
- { name:'盾', combos:[{'鍛冶屋':200},{'鍛冶屋':200,'僧':200},{'鍛冶屋':200,'神職':150}], stats:['耐久力','魅力'] },
- { name:'付与', combos:[{'神職':200,'薬師':175}], stats:['知力'] },
+ { name:'物理アタッカー', stats:['腕力','魅力'], stats2:['腕力','器用さ'], opts:[
+    { c:{'忍者':200,'神職':200}, s:['腕力','魅力'] }, { c:{'忍者':200,'鍛冶屋':200}, s:['腕力','魅力'] },
+    { c:{'忍者':200,'神職':200}, s:['腕力','器用さ'] }, { c:{'忍者':200,'鍛冶屋':200}, s:['腕力','器用さ'] } ] },
+ { name:'術アタッカー', stats:['知力','魅力'], stats2:['知力','耐久力'], opts:[
+    { c:{'陰陽師':200,'神職':200}, s:['知力','魅力'] }, { c:{'陰陽師':200,'鍛冶屋':200}, s:['知力','魅力'] },
+    { c:{'陰陽師':200,'鍛冶屋':200}, s:['知力','耐久力'] } ] },
+ { name:'回復', stats:['知力','魅力'], stats2:['知力','耐久力'], opts:[
+    { c:{'薬師':200,'僧':200}, s:['知力','魅力'] }, { c:{'薬師':200,'神職':200}, s:['知力','魅力'] },
+    { c:{'薬師':200,'鍛冶屋':175}, s:['知力','耐久力'] } ] },
+ { name:'盾', combos:[{'鍛冶屋':200},{'鍛冶屋':200,'僧':200},{'鍛冶屋':200,'神職':150},{'鍛冶屋':200,'神職':175}], stats:['耐久力','魅力'] },
+ { name:'付与', stats:['知力','魅力'], opts:(function(){
+    var o = [{ c:{'神職':200,'薬師':175}, s:['知力'] }];
+    [{'神職':175,'鍛冶屋':175},{'神職':200},{'神職':200,'鍛冶屋':175}].forEach(function(c){
+      [['知力','魅力'],['知力'],['魅力']].forEach(function(s){ o.push({ c:c, s:s }); });
+    });
+    return o; })() },
  { name:'サポート', combos:[{'侍':200,'神職':200}], stats:['知力','魅力'] }
 ];
+function getR(i){ return i < 2 ? state.rules[i] : state.rules2[i - 2]; }
+function setR(i, v){ if (i < 2) state.rules[i] = v; else state.rules2[i - 2] = v; }
+/* 1通り目の検索結果のあとに、2通り目（第1・第2優先ソートをもう1組指定したとき）の結果を続けて表示する */
+function runSearch(){
+  var both = !!state.rules2[0].stat;
+  var A = search(state.rules, state.picks), cap = both ? 250 : 500;
+  var ra = state.rules.filter(function(r){ return r.stat; });
+  A = A.slice(0, cap); A.forEach(function(e){ e.rs = ra; });
+  if (!both) return A;
+  var seen = {}; A.forEach(function(e){ seen[e.picks.map(function(q){ return q.job + q.L; }).sort().join(',')] = e; });
+  var rb = state.rules2.filter(function(r){ return r.stat; });
+  var extra = rb.filter(function(r){ return !ra.some(function(q){ return q.stat === r.stat; }); });
+  var B = search(state.rules2, state.picks).filter(function(e){
+    var g = e.picks.map(function(q){ return q.job + q.L; }).sort().join(',');
+    if (seen[g]) { var a = seen[g]; if (extra.length && a.rs === ra) { a.rs = ra.concat(extra); a.vals = a.vals.concat(extra.map(function(r){ return statTotal(a, r.stat); })); } return false; } /* 両方にある構成は、2通り目の数値も見出しに足す */
+    seen[g] = e; return true; }).slice(0, cap);
+  B.forEach(function(e){ e.rs = rb; });
+  return A.concat(B);
+}
 function presetSearch(){
-  var P = PRESETS[state.preset], seen = {}, all = [];
-  P.combos.forEach(function(c){
-    if (Object.keys(c).some(function(j){ return state.excluded[j]; })) return;
-    search(state.rules, c).forEach(function(e){
+  var P = PRESETS[state.preset], seen = {}, all = [], pool = [], disp = state.rules.filter(function(r){ return r.stat; });
+  var dispB = state.rules2.filter(function(r){ return r.stat; });
+  var opts = P.opts || P.combos.map(function(c){ return { c:c, s:P.stats }; });
+  opts.forEach(function(o){
+    if (Object.keys(o.c).some(function(j){ return state.excluded[j]; })) return;
+    var rules = [0,1].map(function(i){ return { stat:o.s[i] || '', min:null, max:null }; }), n = 0;
+    search(rules, o.c).forEach(function(e){
       var sig = e.picks.map(function(q){ return q.job + q.L; }).sort().join(',');
-      if (seen[sig]) return; seen[sig] = 1; all.push(e);
+      var inB = dispB.length && P.stats2 && o.s.join() === P.stats2.join() && o.s.join() !== P.stats.join();
+      if (seen[sig]) { var d = seen[sig]; if (inB) d.inB = true; else d.inA = true; return; }
+      e.inA = !inB; e.inB = !!inB; seen[sig] = e;
+      all.push(e); if (P.opts && n++ < 60) pool.push(e);
     });
   });
-  all.sort(function(x, y){ return lexCmp(x, y) || (x.mx - y.mx); });
+  all.forEach(function(e){
+    /* 1通り目・2通り目の両方に出る構成は、両方の優先ステータスを見出しに出す。並び順は1通り目の第1・第2優先 */
+    var rs = (e.inB && !e.inA) ? dispB : (e.inB && e.inA ? disp.concat(dispB.filter(function(r){ return !disp.some(function(q){ return q.stat === r.stat; }); })) : disp);
+    e.rs = rs; e.vals = rs.map(function(r){ return statTotal(e, r.stat); });
+    e.sv = (e.inB && !e.inA ? dispB : disp).map(function(r){ return statTotal(e, r.stat); });
+  });
+  all.sort(function(x, y){ var gx = (x.inB && !x.inA) ? 1 : 0, gy = (y.inB && !y.inA) ? 1 : 0; if (gx !== gy) return gx - gy; for (var i = 0; i < x.sv.length; i++) if (y.sv[i] !== x.sv[i]) return y.sv[i] - x.sv[i]; return (x.mx - y.mx); });
+  if (P.opts && all.length > 500) { /* 選択肢ごとの上位60件は必ず残し、残りを第1・第2優先の順で埋める */
+    var keep = new Set(pool); all.forEach(function(e){ if (keep.size < 500) keep.add(e); });
+    all = all.filter(function(e){ return keep.has(e); });
+  }
   return all.slice(0, 500);
 }
 function syncPresetBtns(){ Array.prototype.forEach.call(document.querySelectorAll('.rs-preset'), function(b){ b.setAttribute('aria-pressed', String(state.preset !== null && Number(b.getAttribute('data-preset')) === state.preset)); }); }
@@ -3242,6 +3292,7 @@ document.getElementById('rsPresets').addEventListener('click', function(e){
   var P = PRESETS[Number(b.getAttribute('data-preset'))];
   state.preset = Number(b.getAttribute('data-preset')); state.picks = {};
   state.rules = [0,1].map(function(i){ return { stat:P.stats[i] || '', min:null, max:null }; });
+  state.rules2 = [0,1].map(function(i){ return { stat:(P.stats2 && P.stats2[i]) || '', min:null, max:null }; });
   render(true);
 });
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -3258,9 +3309,10 @@ function statTotal(plan, k){ var t = 0; plan.picks.forEach(function(p){ t += sta
 function planHtml(plan, i) {
   var al = allocate(plan);
   var tot = totalsOf(plan);
-  var act = state.rules.filter(function(r){ return r.stat; });
+  var act = [], seenS = {}; /* 1通り目・2通り目で指定したステータスを、重複なしで全部出す */
+  state.rules.concat(state.rules2).forEach(function(r){ if (r.stat && !seenS[r.stat]) { seenS[r.stat] = 1; act.push(r); } });
   var h = '<div class="rsr-plan"><div class="rsr-plan-head"><button type="button" class="rsr-apply" data-ai="' + i + '">適用</button>'
-    + act.map(function(r, x){ return '<span class="rsr-val' + (x ? ' rsr-val2' : '') + '" style="color:' + SCOL[r.stat] + '"><small style="color:' + SCOL[r.stat] + '">' + esc(STAT_LABEL[r.stat]) + '</small>+' + plan.vals[x].toLocaleString() + '</span>'; }).join('')
+    + act.map(function(r, x){ return '<span class="rsr-val' + (x ? ' rsr-val2' : '') + '" style="color:' + SCOL[r.stat] + '"><small style="color:' + SCOL[r.stat] + '">' + esc(STAT_LABEL[r.stat]) + '</small>+' + (tot[r.stat] || 0).toLocaleString() + '</span>'; }).join('')
     + '<span class="rsr-use">使用枠 ' + al.used + '/' + al.cap + (al.rose ? '　＋　憑依符 ' + al.rose + '枚' : '') + '</span></div>';
   h += '<div class="rsr-jobs">' + plan.picks.map(function(p){ return chip(p.job, p.L); }).join('') + '<span class="rsr-chiphint">←クリックで除外or変更</span></div>';
   h += '<div class="rsr-parts">' + al.parts.map(function(p){
@@ -3279,14 +3331,14 @@ function planHtml(plan, i) {
   /* 並べ替えバーの各ボタンの真下に、そのステータスの上昇値が来るように同じ11列で並べる */
   h += '<div class="rsr-statgrid">' + STAT_BTN.map(function(x){
     var v = tot[x[0]] || 0;
-    return '<div class="rsr-statcell' + (hi[x[0]] ? ' hi' : '') + (v ? '' : ' zero') + '" style="color:' + SCOL[x[0]] + '"><span class="l">' + x[1] + '</span><b>' + (v ? '+' + v.toLocaleString() : '―') + '</b></div>';
+    return '<div class="rsr-statcell' + (hi[x[0]] ? ' hi' : '') + (v ? '' : ' zero') + '" style="color:' + SCOL[x[0]] + '"><span class="l">' + x[1] + '</span><b>' + '+' + v.toLocaleString() + '</b></div>';
   }).join('') + '</div>';
   if (tot['攻撃力']) h = h.replace('<span class="rsr-use">', '<span class="rsr-use" style="color:' + SCOL['攻撃力'] + '">攻撃力 +' + tot['攻撃力'].toLocaleString() + '</span><span class="rsr-use">');
   return h + '</div>';
 }
 
 function renderPriority(){
-  state.rules.forEach(function(r, i){
+  [0,1,2,3].map(getR).forEach(function(r, i){
     var sb = document.getElementById('rspStat' + i), vb = document.getElementById('rspVal' + i);
     sb.innerHTML = STAT_BTN.map(function(x){ return '<button type="button" class="rsp-btn' + (x[0] === r.stat ? ' active' : '') + '" data-pstat="' + i + '" data-stat="' + x[0] + '" aria-pressed="' + (x[0] === r.stat) + '">' + x[1] + '</button>'; }).join('');
     if (!r.stat) { vb.innerHTML = ''; return; }
@@ -3297,8 +3349,8 @@ function renderPriority(){
   });
 }
 function renderSortBar(){
-  var active = state.sortStat || state.rules[0].stat;
-  document.getElementById('rsrSortBar').innerHTML = STAT_BTN.map(function(x){ return '<button type="button" class="rsr-sortbtn' + (x[0] === active ? ' active' : '') + '" data-sortstat="' + x[0] + '">' + x[1] + ' ' + (x[0] === active ? '▼' : '↕') + '</button>'; }).join('');
+  var active = state.sortStat; /* 何も押していないときは「初期並び順」が選ばれた状態 */
+  document.getElementById('rsrSortBar').innerHTML = '<button type="button" class="rsr-sortbtn rsr-sortdef' + (!active ? ' active' : '') + '" data-sortstat="">初期並び順 ' + (!active ? '▼' : '↕') + '</button><span class="rsr-sortbreak"></span>' + STAT_BTN.map(function(x){ return '<button type="button" class="rsr-sortbtn' + (x[0] === active ? ' active' : '') + '" data-sortstat="' + x[0] + '">' + x[1] + ' ' + (x[0] === active ? '▼' : '↕') + '</button>'; }).join('');
 }
 
 function render(doScroll) {
@@ -3328,11 +3380,13 @@ function render(doScroll) {
   }
   applyLimit();
   var t0 = Date.now();
-  lastRes = state.preset !== null ? presetSearch() : search(state.rules, state.picks);
+  lastRes = state.preset !== null ? presetSearch() : runSearch();
   var ms = Date.now() - t0;
   var act = state.rules.filter(function(r){ return r.stat; });
   document.getElementById('rsrCount').textContent = lastRes.length;
-  var cond = act.map(function(r, x){ return '第' + (x + 1) + '：' + STAT_LABEL[r.stat] + (r.min !== null ? ' ' + r.min.toLocaleString() + '以上' : '') + (r.max !== null ? ' ' + r.max.toLocaleString() + '以下' : ''); }).join(' ／ ');
+  var act2 = state.rules2.filter(function(r){ return r.stat; });
+  var cond2 = act2.map(function(r, x){ return '第' + (x + 1) + '：' + STAT_LABEL[r.stat] + (r.min !== null ? ' ' + r.min.toLocaleString() + '以上' : '') + (r.max !== null ? ' ' + r.max.toLocaleString() + '以下' : ''); }).join(' ／ ');
+  var cond = act.map(function(r, x){ return '第' + (x + 1) + '：' + STAT_LABEL[r.stat] + (r.min !== null ? ' ' + r.min.toLocaleString() + '以上' : '') + (r.max !== null ? ' ' + r.max.toLocaleString() + '以下' : ''); }).join(' ／ ') + (cond2 ? '　＋　2通り目 ' + cond2 : '');
   setFeedback('1枠 ① <span class="hl">' + f1(state.limit) + '</span>／② <span class="hl">' + f1(state.limit2) + '</span> 以下／光闇 <span class="hl">' + f1(state.limitL) + '</span> 以下　' + esc(cond) + (state.preset !== null ? '　おすすめ：' + esc(PRESETS[state.preset].name) : '') + (pj.length ? '　指定：' + esc(pj.map(function(j){ return j + state.picks[j]; }).join('・')) : '') + (exl.length ? '　除外：' + esc(exl.join('・')) : '') + '　<span class="hl">' + lastRes.length + '</span>件', false);
   state.sortStat = ''; renderSortBar();
   drawList();
@@ -3342,6 +3396,12 @@ var drawToken = 0, curList = [];
 function drawList(){
   var body = document.getElementById('rsrBody');
   var list = lastRes.slice();
+  if (!state.sortStat) {
+    /* 絞込みに指定したステータス（1通り目・2通り目）の合計が高い順に、上から並べる */
+    var seenS = {}, keys = [];
+    state.rules.concat(state.rules2).forEach(function(r){ if (r.stat && !seenS[r.stat]) { seenS[r.stat] = 1; keys.push(r.stat); } });
+    if (keys.length) list = list.map(function(e, i){ var t = totalsOf(e), v = 0; keys.forEach(function(k){ v += (t[k] || 0); }); return { e:e, i:i, v:v }; }).sort(function(x, y){ return (y.v - x.v) || (x.i - y.i); }).map(function(o){ return o.e; });
+  }
   if (state.sortStat) {
     list = list.map(function(e, i){ return { e:e, i:i, v:statTotal(e, state.sortStat) }; }).sort(function(x, y){ return (y.v - x.v) || (x.i - y.i); }).map(function(o){ return o.e; });
   }
@@ -3385,13 +3445,13 @@ bar.addEventListener('click', function(e){
 document.getElementById('rsPriority').addEventListener('click', function(e){
   var btn = e.target.closest('button'); if (!btn) return;
   state.preset = null;
-  if (btn.hasAttribute('data-pclear')) { state.rules[Number(btn.getAttribute('data-pclear'))] = { stat:'', min:null, max:null }; }
+  if (btn.hasAttribute('data-pclear')) { setR(Number(btn.getAttribute('data-pclear')), { stat:'', min:null, max:null }); }
   else if (btn.hasAttribute('data-pstat')) {
     var i = Number(btn.getAttribute('data-pstat')), st = btn.getAttribute('data-stat');
-    state.rules[i] = state.rules[i].stat === st ? { stat:'', min:null, max:null } : { stat:st, min:null, max:null };
+    setR(i, getR(i).stat === st ? { stat:'', min:null, max:null } : { stat:st, min:null, max:null });
   } else if (btn.hasAttribute('data-prange')) {
     var i2 = Number(btn.getAttribute('data-prange')), kd = btn.getAttribute('data-kind'), v = Number(btn.getAttribute('data-value'));
-    state.rules[i2][kd] = state.rules[i2][kd] === v ? null : v;
+    getR(i2)[kd] = getR(i2)[kd] === v ? null : v;
   } else return;
   render(false);
 });
@@ -3535,6 +3595,7 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !cMo
 function resetAllSearch(){
   state.limit = null; state.limit2 = 20; state.limitL = 30; state.picks = {}; state.excluded = {}; state.sortStat = ''; state.preset = null;
   state.rules = state.rules.map(function(){ return { stat:'', min:null, max:null }; });
+  state.rules2 = state.rules2.map(function(){ return { stat:'', min:null, max:null }; });
   closeModal(); closeLimitModal(); closeChipModal(); render(false);
 }
 window.reqSearch = {resetAll:resetAllSearch,  search:search, allocate:allocate, state:state, render:render };
