@@ -1,81 +1,81 @@
 {
   "schema": "tairano-bond56-index/v1",
-  "version": "bond56-auto-dd393c6564b6c5cb",
+  "version": "bond56-auto-7904688c781c82d9",
   "files": {
     "bond56_model.json.gz": {
       "file": "data/bond56_index/bond56_model.json.gz",
-      "gzip_bytes": 41394,
-      "raw_bytes": 103908,
-      "sha256_16": "2ffa14c742d79750"
+      "gzip_bytes": 41626,
+      "raw_bytes": 104419,
+      "sha256_16": "113b02cc9f9708b1"
     },
     "bond56_core.bin.gz": {
       "file": "data/bond56_index/bond56_core.bin.gz",
-      "gzip_bytes": 2910063,
-      "raw_bytes": 11765988,
-      "sha256_16": "97f87ef2c13f516a"
+      "gzip_bytes": 2979366,
+      "raw_bytes": 12059004,
+      "sha256_16": "e1d13a3e43f59566"
     },
     "bondsets.bin.gz": {
       "file": "data/bond56_index/bondsets.bin.gz",
-      "gzip_bytes": 1316872,
-      "raw_bytes": 6116332,
-      "sha256_16": "f7754de0c5fe0c0b"
+      "gzip_bytes": 1358236,
+      "raw_bytes": 6301580,
+      "sha256_16": "773cbd627a6a17db"
     },
     "cycle2_c5.bin.gz": {
       "file": "data/bond56_index/cycle2_c5.bin.gz",
-      "gzip_bytes": 1528227,
-      "raw_bytes": 5110564,
-      "sha256_16": "e5565521f92bec06"
+      "gzip_bytes": 1623821,
+      "raw_bytes": 5425276,
+      "sha256_16": "0e001f3d19b52822"
     },
     "cycle2_c6.bin.gz": {
       "file": "data/bond56_index/cycle2_c6.bin.gz",
-      "gzip_bytes": 62376,
-      "raw_bytes": 211372,
-      "sha256_16": "a34a74e58d79bd03"
+      "gzip_bytes": 68291,
+      "raw_bytes": 231484,
+      "sha256_16": "316f0560e6246d47"
     },
     "cycle3_c5.bin.gz": {
-      "rows": 6864580,
-      "gzip_bytes": 28110067,
-      "raw_bytes": 109833296,
-      "sha256_16": "ced7d5ced2cdd818",
+      "rows": 7230952,
+      "gzip_bytes": 29657764,
+      "raw_bytes": 115695248,
+      "sha256_16": "86839444e092cb11",
       "record_size": 16,
       "sharded": true,
       "part_count": 2,
       "parts": [
         {
           "file": "data/bond56_index/cycle3_c5_part001.bin.gz",
-          "rows": 3432290,
-          "gzip_bytes": 13786308,
-          "raw_bytes": 54916656,
-          "sha256_16": "3fda2cda850c8076",
+          "rows": 3615476,
+          "gzip_bytes": 14595412,
+          "raw_bytes": 57847632,
+          "sha256_16": "3234a2fc0208fe58",
           "record_size": 16
         },
         {
           "file": "data/bond56_index/cycle3_c5_part002.bin.gz",
-          "rows": 3432290,
-          "gzip_bytes": 14323759,
-          "raw_bytes": 54916656,
-          "sha256_16": "f50ee074a815bf2e",
+          "rows": 3615476,
+          "gzip_bytes": 15062352,
+          "raw_bytes": 57847632,
+          "sha256_16": "6ff84e446dfe4c6a",
           "record_size": 16
         }
       ]
     },
     "cycle3_c6.bin.gz": {
       "file": "data/bond56_index/cycle3_c6.bin.gz",
-      "gzip_bytes": 4489277,
-      "raw_bytes": 16668304,
-      "sha256_16": "894c2fdd0c0cb830"
+      "gzip_bytes": 4773478,
+      "raw_bytes": 17728272,
+      "sha256_16": "8b077ed3ed906c76"
     },
     "disjoint_c5.bin.gz": {
       "file": "data/bond56_index/disjoint_c5.bin.gz",
-      "gzip_bytes": 412023,
-      "raw_bytes": 843176,
-      "sha256_16": "b944f7a7b938ae0f"
+      "gzip_bytes": 422379,
+      "raw_bytes": 864080,
+      "sha256_16": "f4ce473d4d76b3ef"
     },
     "disjoint_c6.bin.gz": {
       "file": "data/bond56_index/disjoint_c6.bin.gz",
-      "gzip_bytes": 61304,
-      "raw_bytes": 130536,
-      "sha256_16": "5564c1fe122409c1"
+      "gzip_bytes": 62567,
+      "raw_bytes": 132984,
+      "sha256_16": "05402e48ee5e2634"
     }
   }
 }
