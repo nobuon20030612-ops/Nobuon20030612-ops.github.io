@@ -1,25 +1,25 @@
 {
   "schema": "jinpo-next-phase2-auto-update/v2",
   "source_file": "source-next/英傑一覧.csv",
-  "updated_at": "2026-10-21",
-  "last_added_hero": "井伊直虎(薔薇)",
+  "updated_at": "2026-11-19",
+  "last_added_hero": "長野業正(抜擢)",
   "new_registration_only": true,
   "new_heroes": [
     {
-      "番号": 395,
-      "internal_id": "EIK_0403",
-      "英傑名": "井伊直政(薔薇)"
+      "番号": 397,
+      "internal_id": "EIK_0405",
+      "英傑名": "早川殿(抜擢)"
     },
     {
-      "番号": 396,
-      "internal_id": "EIK_0404",
-      "英傑名": "井伊直虎(薔薇)"
+      "番号": 398,
+      "internal_id": "EIK_0406",
+      "英傑名": "長野業正(抜擢)"
     }
   ],
   "changed_existing": [],
   "generation": {
-    "full_records": 2819090,
-    "seconds": 148.631,
+    "full_records": 3205256,
+    "seconds": 168.164,
     "full_regeneration": true,
     "generation_mode": "full_current_source_only",
     "source_of_truth_only": true
