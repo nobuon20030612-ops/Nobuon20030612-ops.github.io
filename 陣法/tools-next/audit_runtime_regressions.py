@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from rebuild_all_compact import decode_bond_ids
 import csv
 import gzip
 import html as htmlmod
@@ -166,7 +167,7 @@ def validate_factor4_optimizer():
                     if len(rec)!=52: fail(f'文曲監査DB長不正: {src}')
                     if i%step!=0: continue
                     p6=struct.unpack_from('<6H',rec,0)
-                    bids=tuple(x for x in rec[12:21] if x)
+                    bids=decode_bond_ids(rec,0,int(count),m)
                     if not bids: fail(f'成立DBなのに因縁0: {src} row={i}')
                     a=minimal_factor4_mask(p6,form,bids,LINES,heroes,bonds,cache)
                     b=brute_factor4(p6,form,bids,heroes,bonds)

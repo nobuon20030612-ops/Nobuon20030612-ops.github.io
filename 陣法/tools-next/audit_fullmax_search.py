@@ -67,7 +67,7 @@ def parse_recommend(info:dict,pstat:str,sstat:str|None,refs:dict):
     grouped=defaultdict(list)
     for i in range(rows):
         off=16+i*rec;form=FORM_CODE.get(raw[off]);count=int(raw[off+1])
-        if not form or count<5 or count>9:raise RuntimeError(f'おすすめform/count不正: {info["file"]} row={i}')
+        if not form or count<5:raise RuntimeError(f'おすすめform/count不正: {info["file"]} row={i}')
         base=bytes(raw[off+2:off+54]);fm=bytes(raw[off+54:off+80]);tie=struct.unpack_from('<I',base,48)[0]
         stats=struct.unpack_from('<11H',fm,0);total=struct.unpack_from('<I',fm,22)[0]
         grouped[form].append((stats,total,tie,count))

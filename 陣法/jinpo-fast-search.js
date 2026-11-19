@@ -328,7 +328,7 @@
   function lookupExactState(opts){
     opts=opts||{};var c=Number(opts.count||0),f=String(opts.formation||form()||''),mode=opts.mode||unifiedDbMode();
     var heroInternalIds=Array.isArray(opts.heroInternalIds)?opts.heroInternalIds:[],bondNames=Array.isArray(opts.bondNames)?opts.bondNames:[];
-    if(c<5||c>9||!f||heroInternalIds.length!==6||bondNames.length!==c)return Promise.resolve({row:null,matched:0,reason:'invalid_lookup_state'});
+    if(!Number.isInteger(c)||c<5||!f||heroInternalIds.length!==6||bondNames.length!==c)return Promise.resolve({row:null,matched:0,reason:'invalid_lookup_state'});
     return requestWorker('lookupExact',{mode:mode,count:c,formation:f,heroInternalIds:heroInternalIds,bondNames:bondNames},false);
   }
 
@@ -540,7 +540,7 @@
     if(recommendState.applyingFormation)return true;
     ensureEnhancementUi();setSwapStale(false);var myToken=++activeToken,c=Number(opts.count||selectedCount()),f=form(),box=q('dbFormationList'),status=q('dbListStatus');if(!box||!status)return true;
     if(!opts.preserveListSort)listSort={key:'',dir:'desc'};
-    if(c<5||c>9){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
+    if(!countAvailable(c)){hideProgress();activeRows=[];displayRows=[];updateGlobals([]);setSummary(0,0);return true;}setCount(c);
     if(!f){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='陣形を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';return true;}
     if(bond56On()&&(c!==5&&c!==6)){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='5・6因縁モードでは5因縁または6因縁を選択してください。';setSummary(0,0);box.innerHTML='<div class="dbListNote">5・6因縁モード中は7〜9因縁検索を利用できません。</div>';return true;}
     if(popularOn()&&c===5){hideProgress();setCount(null);renderUnifiedCountButtons();activeRows=[];displayRows=[];updateGlobals([]);status.textContent='選抜人気モードは6〜9因縁が検索対象です。';setSummary(0,0);box.innerHTML='<div class="dbListNote">選抜人気モードでは6因縁・7因縁・8因縁・9因縁を検索できます。</div>';return true;}
@@ -566,7 +566,7 @@
 
   function rerunForFormationChange(count){
     var serial=++formationRerunSerial,c=Number(count||selectedCount()||0);
-    if(c<5||c>9||!form())return Promise.resolve(true);
+    if(!countAvailable(c)||!form())return Promise.resolve(true);
     setCount(c);
     // 同じ change にぶら下がる全同期処理が完了した後、新しい陣形で検索を1回だけ実行する。
     return Promise.resolve().then(function(){
@@ -575,13 +575,38 @@
     });
   }
 
+  var extendedManifestDatasets={};
+  function availableExtendedCounts(mode){
+    var ds=extendedManifestDatasets[mode]||{};
+    return Object.keys(ds).map(Number).filter(function(n){return Number.isInteger(n)&&n>=10&&Object.values(ds[String(n)]||{}).some(function(info){return Number(info&&info.rows)>0;});}).sort(function(a,b){return a-b;});
+  }
+  function countAvailable(c,mode){return Number.isInteger(c)&&c>=5&&(c<=9||availableExtendedCounts(mode||unifiedDbMode()).includes(c));}
+  async function refreshExtendedCounts(){
+    try{
+      var res=await fetch('data/compact_search_v2/jinpo_unified_search_manifest.json',{cache:'no-store'});
+      if(!res.ok)throw new Error('検索DB manifest HTTP '+res.status);
+      var m=await res.json();if(!m.version||!m.datasets)throw new Error('検索DB manifest不正');
+      var before=JSON.stringify(availableExtendedCounts(unifiedDbMode()));
+      extendedManifestDatasets=m.datasets;
+      if(before!==JSON.stringify(availableExtendedCounts(unifiedDbMode())))renderUnifiedCountButtons();
+    }catch(err){console.warn('拡張因縁の利用可否を確認できません',err);}
+  }
+  function extendedCountButtons(c,locked){
+    var counts=availableExtendedCounts(unifiedDbMode());
+    if(!counts.length)return '<div class="jinpoTenBondVisual"><img class="jinpoTenBondGuideImage" src="assets/jinpo-ten-bond-guide.png" alt="" aria-hidden="true" draggable="false"><button class="dbCountBtn jinpoTenBondPlaceholder'+(locked?' recommendModeLocked':'')+'" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button></div>';
+    return counts.map(function(n,i){
+      var disabled=locked||!form();
+      var button='<button class="dbCountBtn '+(c===n?'active':'')+(disabled?' recommendModeLocked':'')+'" data-count="'+n+'" type="button"'+(disabled?' disabled aria-disabled="true"':'')+'>'+n+'因縁</button>';
+      return i===0?'<div class="jinpoTenBondVisual">'+button+'</div>':button;
+    }).join('');
+  }
   function renderUnifiedCountButtons(){
     var box=q('dbCountButtons');if(!box)return;var c=recommendState.active?0:selectedCount(),g=gradeOn(),b56=bond56On(),popular=popularOn();
-    if(popular&&c===5){setCount(null);c=0;}
+    if((popular&&c===5)||(c>=10&&!countAvailable(c))){setCount(null);c=0;}
     box.classList.add('dbCountButtonBar');
     var recommendLocked=!!recommendState.active;
     box.innerHTML=      [5,6,7,8,9].map(function(n){var popularLocked=popular&&n===5,locked=recommendLocked||(b56&&n>=7)||popularLocked;var title=recommendLocked?'おすすめ陣法使用中は通常の因縁数検索を利用できません':((b56&&n>=7)?'5・6因縁モード中は7〜9因縁検索を利用できません':(popularLocked?'選抜人気モードは6〜9因縁が検索対象です':''));return '<button class="dbCountBtn '+(c===n?'active':'')+(locked?' recommendModeLocked':'')+'" data-count="'+n+'" type="button"'+(locked?' disabled aria-disabled="true" title="'+title+'"':'')+'>'+n+'因縁</button>';}).join('')+
-      '<div class="jinpoTenBondVisual"><img class="jinpoTenBondGuideImage" src="assets/jinpo-ten-bond-guide.png" alt="" aria-hidden="true" draggable="false"><button class="dbCountBtn jinpoTenBondPlaceholder'+(recommendLocked||b56?' recommendModeLocked':'')+'" type="button" disabled aria-disabled="true" title="10因縁は現在利用できません">10因縁</button></div>';
+      extendedCountButtons(c,recommendLocked||b56);
     box.style.setProperty('display','grid','important');box.style.setProperty('grid-template-columns','repeat(3, minmax(0, 1fr))','important');box.style.setProperty('grid-auto-rows','auto','important');box.style.setProperty('gap','10px','important');box.style.setProperty('width','420px','important');box.style.setProperty('min-width','420px','important');box.style.setProperty('max-width','420px','important');
     syncBond56Ui();syncBond56FormationGuide();
     Array.prototype.forEach.call(box.querySelectorAll('button'),function(btn){btn.style.setProperty('width','100%','important');btn.style.setProperty('min-width','0','important');btn.style.setProperty('height','52px','important');btn.style.setProperty('display','flex','important');btn.style.setProperty('align-items','center','important');btn.style.setProperty('justify-content','center','important');btn.style.setProperty('box-sizing','border-box','important');btn.style.setProperty('font-size','15px','important');btn.style.setProperty('white-space','nowrap','important');});
@@ -632,7 +657,7 @@
   document.addEventListener('change',function(ev){var t=ev.target;if(!t||t.id!=='formationSelect')return;Promise.resolve().then(syncBond56FormationGuide);},true);
   document.addEventListener('change',function(ev){if(!recommendState.active||recommendState.applyingFormation||recommendState.syncingPriority)return;var t=ev.target;if(!t)return;if(t.id==='formationSelect'){exitRecommendMode();return;}if(t.id==='dbPriorityStat1'){var nextTarget=String(t.value||'').trim();if(!validRecommendStat(nextTarget)){prepareRecommendPriority(recommendState.targetStat,false);return;}if(nextTarget===String(recommendState.targetStat||''))return;Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:nextTarget});});return;}if(t.id==='dbPriorityStat2'||t.id==='dbPriorityValue1'||t.id==='dbPriorityValue2'||t.id==='dbPriorityMax1'||t.id==='dbPriorityMax2'){Promise.resolve().then(function(){if(recommendState.active&&!recommendState.syncingPriority)renderRecommended({targetStat:recommendState.targetStat});});}},true);
 
-  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/[5-9]/)?.[0]||0);if(c<5||c>9)return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(recommendState.active||b.disabled)return;if(bond56On()&&c>6)return;if(popularOn()&&c===5)return;if(!bond56On())exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
+  document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbCountButtons .dbCountBtn'):null;if(!b)return;var c=Number(b.getAttribute('data-count')||String(b.textContent||'').match(/\d+/)?.[0]||0);if(!countAvailable(c))return;ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(recommendState.active||b.disabled)return;if(bond56On()&&c>6)return;if(popularOn()&&c===5)return;if(!bond56On())exitRecommendMode();setCount(c);renderUnifiedCountButtons();renderCurrent({count:c,forceNormal:true});},true);
   document.addEventListener('click',function(ev){
     var sortBtn=ev.target&&ev.target.closest?ev.target.closest('button[data-list-sort]'):null;
     if(sortBtn){ev.preventDefault();var key=sortBtn.getAttribute('data-list-sort')||'';if(!key)return;if(listSort.key===key)listSort.dir=listSort.dir==='desc'?'asc':'desc';else listSort={key:key,dir:'desc'};rerenderList(selectedCount());return;}
@@ -649,7 +674,7 @@
   document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('#dbSearchProgressCancel'):null;if(!b)return;ev.preventDefault();activeToken++;window.__jinpoSearchCancelRequested=true;cancelWorkerRequests();hideProgress();var st=q('dbListStatus'),box=q('dbFormationList');if(st)st.textContent='検索を中止しました。';setSummary(0,0);if(box)box.innerHTML='<div class="dbListNote">検索を中止しました。条件を選び直すと再検索できます。</div>';},true);
 
 
-  function install(){ensureEnhancementUi();ensureFactor4Controls();ensureBond56Style();ensureCancelButton();syncBond56Ui();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){c=Number(c)||0;if(bond56On()&&c>6)return Promise.resolve(true);if(popularOn()&&c===5)return Promise.resolve(true);if(!bond56On())exitRecommendMode();setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c,forceNormal:true});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
+  function install(){refreshExtendedCounts();document.addEventListener('visibilitychange',function(){if(!document.hidden)refreshExtendedCounts();});ensureEnhancementUi();ensureFactor4Controls();ensureBond56Style();ensureCancelButton();syncBond56Ui();window.__jinpoUnifiedRenderCountButtons=renderUnifiedCountButtons;window.renderDbCountButtons=renderUnifiedCountButtons;try{renderDbCountButtons=renderUnifiedCountButtons;}catch(e){}renderUnifiedCountButtons();window.renderDbFormationList=function(){return renderCurrent({count:selectedCount()});};window.handleDbCountButtonClick=function(c){c=Number(c)||0;if(!countAvailable(c)||!form())return Promise.resolve(true);if(bond56On()&&c>6)return Promise.resolve(true);if(popularOn()&&c===5)return Promise.resolve(true);if(!bond56On())exitRecommendMode();setCount(c);renderUnifiedCountButtons();return renderCurrent({count:c,forceNormal:true});};try{renderDbFormationList=window.renderDbFormationList;handleDbCountButtonClick=window.handleDbCountButtonClick;}catch(e){}
     if(typeof window.applyReachSwapCandidate==='function'&&!window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped){var prevReachApply=window.applyReachSwapCandidate;window.applyReachSwapCandidate=function(){
       appliedListRowKey='';
       var beforeKey=currentPlacementKey(),ret=prevReachApply.apply(this,arguments),afterKey=currentPlacementKey();
@@ -658,7 +683,7 @@
       return ret;
     };window.applyReachSwapCandidate.__jinpoListAppliedStateClearWrapped=true;}
     window.JINPO_FACTOR4_FILTER={getSelected:function(){return selectedExclude;},getAllowedFactor4Users:function(){return 6-selectedExclude;},reset:function(){selectedExclude=0;syncFactor4();},render:function(){return renderCurrent({count:selectedCount()});},reloadIndex:function(){return Promise.resolve(true);}};
-    window.JINPO_FAST_SEARCH={search:search,searchSilent:searchSilent,searchRecommended:searchRecommended,renderCurrent:renderCurrent,rerunForFormationChange:rerunForFormationChange,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isBond56Mode:function(){return bond56On();},setBond56Mode:function(on){return setBond56Mode(on);},selectBond56Mode:function(on){return selectBond56Mode(on);},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},getMode:function(){return unifiedDbMode();},exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,getDisplayRows:function(){return displayRows.slice();},getActiveRows:function(){return activeRows.slice();},getAppliedRow:function(){var rid='';try{rid=String(window.selectedDbResultId||((typeof selectedDbResultId!=='undefined')?selectedDbResultId:'')||'').trim();}catch(e){}var row=null;if(rid){row=displayRows.find(function(r){return String(r&&(r.result_id||r.id)||'').trim()===rid;})||null;}if(!row&&appliedListRowKey){row=displayRows.find(function(r){return stableRowKey(r)===appliedListRowKey;})||null;}return row;},applyRow:function(row){if(!row)return false;cancelHitCountWorker();appliedListRowKey=stableRowKey(row);var idx=-1;for(var i=0;i<displayRows.length;i++){if(stableRowKey(displayRows[i])===appliedListRowKey){idx=i;break;}}if(idx>=0){var btn=document.querySelector('#dbFormationList button[data-unified-db-idx="'+idx+'"]');if(btn)markAppliedRowVisual(btn);}try{if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function')window.__jinpoScrollToRecommendSearchTopOnce('auto');}catch(e){}var run=function(){try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);return true;},cancelHitCount:function(){cancelHitCountWorker();return true;},clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
+    window.JINPO_FAST_SEARCH={search:search,searchSilent:searchSilent,searchRecommended:searchRecommended,renderCurrent:renderCurrent,rerunForFormationChange:rerunForFormationChange,runRecommended:function(stat){return renderRecommended({targetStat:stat});},isBond56Mode:function(){return bond56On();},setBond56Mode:function(on){return setBond56Mode(on);},selectBond56Mode:function(on){return selectBond56Mode(on);},isRecommendMode:function(){return !!recommendState.active;},getRecommendState:function(){return {active:!!recommendState.active,targetStat:String(recommendState.targetStat||''),secondaryStat:String(recommendState.secondaryStat||''),formation:String(recommendState.formation||'')};},getMode:function(){return unifiedDbMode();},getExtendedCounts:availableExtendedCounts,exitRecommendMode:function(){exitRecommendMode();renderUnifiedCountButtons();return true;},lookupExactState:lookupExactState,getDisplayRows:function(){return displayRows.slice();},getActiveRows:function(){return activeRows.slice();},getAppliedRow:function(){var rid='';try{rid=String(window.selectedDbResultId||((typeof selectedDbResultId!=='undefined')?selectedDbResultId:'')||'').trim();}catch(e){}var row=null;if(rid){row=displayRows.find(function(r){return String(r&&(r.result_id||r.id)||'').trim()===rid;})||null;}if(!row&&appliedListRowKey){row=displayRows.find(function(r){return stableRowKey(r)===appliedListRowKey;})||null;}return row;},applyRow:function(row){if(!row)return false;cancelHitCountWorker();appliedListRowKey=stableRowKey(row);var idx=-1;for(var i=0;i<displayRows.length;i++){if(stableRowKey(displayRows[i])===appliedListRowKey){idx=i;break;}}if(idx>=0){var btn=document.querySelector('#dbFormationList button[data-unified-db-idx="'+idx+'"]');if(btn)markAppliedRowVisual(btn);}try{if(typeof window.__jinpoScrollToRecommendSearchTopOnce==='function')window.__jinpoScrollToRecommendSearchTopOnce('auto');}catch(e){}var run=function(){try{if(typeof applyDbFormationRow==='function')applyDbFormationRow(row);}catch(e){console.error(e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);return true;},cancelHitCount:function(){cancelHitCountWorker();return true;},clear:function(){queryCache.clear();cancelWorkerRequests();},resetAll:function(){
       activeToken++;window.__jinpoSearchCancelRequested=true;queryCache.clear();cancelWorkerRequests();hideProgress();
       exitRecommendMode();bond56Mode=false;document.body.classList.remove('jinpo-bond56-mode','jinpo-bond56-formation-unselected');selectedExclude=0;listSort={key:'',dir:'desc'};appliedListRowKey='';setSwapStale(false);activeRows=[];displayRows=[];setCount(null);updateGlobals([]);syncFactor4();renderUnifiedCountButtons();setSummary(0,0);
       var status=q('dbListStatus'),box=q('dbFormationList');if(status)status.textContent='陣形を選択してください。';if(box)box.innerHTML='<div class="dbListNote">陣形選択後、5〜9因縁ボタンで一覧を表示します。</div>';

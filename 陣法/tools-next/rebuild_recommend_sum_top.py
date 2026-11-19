@@ -56,7 +56,7 @@ def metadata(path: Path, raw: bytes, rows: int) -> dict:
 
 def load_formation(m: dict, mode: str, formation: str):
     rec_parts=[]; count_parts=[]; stats_parts=[]; total_parts=[]; tie_parts=[]; source_rows=0
-    for count in MODE_COUNTS[mode]:
+    for count in sorted(map(int,m['datasets'][mode])):
         info = (((m.get('datasets') or {}).get(mode) or {}).get(str(count)) or {}).get(formation)
         if not info or int(info.get('rows',0) or 0) <= 0:
             continue

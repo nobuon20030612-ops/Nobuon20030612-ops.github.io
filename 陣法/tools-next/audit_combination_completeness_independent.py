@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import csv,gzip,json,struct,time
+from rebuild_all_compact import decode_bond_ids
+import csv,gzip,json,struct,time,itertools
 from collections import defaultdict
 from pathlib import Path
 from rebuild_all_compact import read_manifest_entry
@@ -47,7 +48,7 @@ def read_db_semantic(mode,count,form,manifest):
     for i in range(n):
         off=16+i*REC
         ids=struct.unpack_from('<6H',raw,off)
-        active=tuple(raw[off+12:off+12+count])
+        active=decode_bond_ids(raw,off,count,manifest)
         key=(tuple(sorted(ids)),active_mask_from_record(active))
         out.add(key); exact+=1
     return out,exact
@@ -81,6 +82,14 @@ def gen_disjoint(allowed,triples_by_mask,targets):
                 s1=set(t1); start=i+1 if same else 0
                 for t2 in L2[start:]:
                     if s1.isdisjoint(t2): outs[n].add((tuple(sorted(t1+t2)),u))
+    # 独立監査: 片側のみの成立も10因縁以上で検査する。
+    active_triples={t for group in triples_by_mask.values() for t in group}
+    for mask,group in triples_by_mask.items():
+        n=mask.bit_count()
+        if n<10 or n not in outs: continue
+        for t in group:
+            for other in itertools.combinations(sorted(set(allowed)-set(t)),3):
+                if other not in active_triples: outs[n].add((tuple(sorted(t+other)),mask))
     return outs
 
 def gen_cycle(allowed,pair_groups,triple_mask,targets):
@@ -162,19 +171,28 @@ def gen_cycle(allowed,pair_groups,triple_mask,targets):
                             used=fixed|{F,B}
                             for D in zero(C,E):
                               if D not in used:add(u,(A,B,C,D,E,F))
+    # 独立監査: 高因縁の1ラインと残りの全配置を照合する。
+    for t,mask in triple_mask.items():
+        n=mask.bit_count()
+        if n<10 or n not in outs: continue
+        for A,B,C in itertools.permutations(t):
+            for D,E,F in itertools.permutations(sorted(aset-set(t)),3):
+                if not tmask(C,D,E) and not tmask(A,E,F): add(mask,(A,B,C,D,E,F))
     return outs
 
 def compare_mode(core,mode,allowed,targets,manifest):
     started=time.time();pg,tbm,tm=build_filtered(core,allowed)
+    targets=set(targets)|set(range(10,3*max((v.bit_count() for v in tm.values()),default=0)+1))
     dis=gen_disjoint(allowed,tbm,targets)
     cyc=gen_cycle(allowed,pg,tm,targets)
     result={}
     for count in sorted(targets):
       for form in ('衡軛','鶴翼','魚鱗','方円'):
-        if str(count) not in manifest['datasets'].get(mode,{}): continue
-        if form not in manifest['datasets'][mode][str(count)]: continue
-        got,nrows=read_db_semantic(mode,count,form,manifest)
         exp=dis[count] if FORM_FAMILY[form]=='disjoint' else cyc[count]
+        if form not in manifest['datasets'].get(mode,{}).get(str(count),{}):
+            if not exp: continue
+            got,nrows=set(),0
+        else: got,nrows=read_db_semantic(mode,count,form,manifest)
         missing=exp-got; extra=got-exp
         result[f'{mode}/{count}/{form}']={
           'rows':nrows,'db_semantic_unique':len(got),'independent_expected':len(exp),

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from rebuild_all_compact import decode_bond_ids
 import csv,gzip,heapq,itertools,json,struct,sys,time
 from collections import defaultdict
 from pathlib import Path
@@ -119,8 +120,8 @@ def main():
         fm_raw=read_fullmax(fm_info,rows)
         for i in range(rows):
             off=16+i*REC;ids=struct.unpack_from('<6H',raw,off)
-            active=tuple(raw[off+12:off+12+count])
-            rest=raw[off+12+count:off+21]
+            active=decode_bond_ids(raw,off,count,m)
+            rest=raw[off+12+count:off+21] if count<=9 else raw[off+16:off+21]
             # build_jinpo_next.pyで従来別走査していた全件構造/意味監査をここへ統合する。
             # これにより安全性を落とさず、220万件のPython全走査を1回にする。
             if len(set(ids))!=6:

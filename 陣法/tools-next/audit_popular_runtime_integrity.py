@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from rebuild_all_compact import decode_bond_ids
 
 import json
 import struct
@@ -45,10 +46,10 @@ def main():
     cycle_maps = {}
 
     popular = (manifest.get('datasets') or {}).get('popular') or {}
-    if set(popular) != {'6','7','8','9'}:
+    if {c for c in popular if int(c)<10} != {'6','7','8','9'}:
         raise RuntimeError(f'選抜人気manifest因縁数不正: {sorted(popular)}')
 
-    for count_s in ('6','7','8','9'):
+    for count_s in sorted(popular,key=int):
         count = int(count_s)
         forms = popular[count_s]
         if set(forms) != {'衡軛','鶴翼','魚鱗','方円'}:
@@ -68,8 +69,8 @@ def main():
             for i in range(nrows):
                 off = 16 + i * REC
                 ids = struct.unpack_from('<6H', raw, off)
-                active = tuple(raw[off+12:off+12+count])
-                rest = raw[off+12+count:off+21]
+                active=decode_bond_ids(raw,off,count,manifest)
+                rest=raw[off+12+count:off+21] if count<=9 else raw[off+16:off+21]
                 if len(set(ids)) != 6 or any(b == 0 for b in active) or len(set(active)) != count or any(rest) or any(h not in heroes for h in ids):
                     local['structure_errors'] += 1
                     continue

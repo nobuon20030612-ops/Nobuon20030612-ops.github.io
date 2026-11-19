@@ -94,15 +94,19 @@ def main():
     eligible = grade3 | selected
 
     pair_groups, triples_by_mask, triple_mask = build_current_popular_core(master_rows, rows(BONDS), eligible)
-    disjoint = gen_disjoint(sorted(eligible), triples_by_mask, TARGETS)
-    cycle = gen_cycle(sorted(eligible), pair_groups, triple_mask, TARGETS)
+    targets=set(TARGETS)|set(range(10,3*max((v.bit_count() for v in triple_mask.values()),default=0)+1))
+    disjoint = gen_disjoint(sorted(eligible), triples_by_mask, targets)
+    cycle = gen_cycle(sorted(eligible), pair_groups, triple_mask, targets)
 
     datasets = {}
     mismatch = 0
-    for count in sorted(TARGETS):
+    for count in sorted(targets):
         for form in FORMS:
-            got, nrows = read_db_semantic('popular', count, form, manifest)
             expected = disjoint[count] if FORM_FAMILY[form] == 'disjoint' else cycle[count]
+            if form not in manifest['datasets']['popular'].get(str(count),{}):
+                if not expected: continue
+                got,nrows=set(),0
+            else: got,nrows=read_db_semantic('popular', count, form, manifest)
             missing_set = expected - got
             extra_set = got - expected
             duplicate_semantic = nrows - len(got)

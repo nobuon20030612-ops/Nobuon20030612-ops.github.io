@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
-from rebuild_all_compact import read_manifest_entry, manifest_entry_source
+from rebuild_all_compact import read_manifest_entry, manifest_entry_source, decode_bond_ids
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'data' / 'compact_search_v2'
@@ -124,7 +124,8 @@ def main():
                             raise RuntimeError(f'未知英傑ID: {src} row={start + int(bad[0])}')
                     base = heroes[p].sum(axis=1, dtype=np.int64)
 
-                    bids = block['bond_ids'][:, :count].astype(np.intp, copy=False)
+                    bids = (block['bond_ids'][:, :count].astype(np.intp, copy=False) if count <= 9 else
+                            np.asarray([decode_bond_ids(raw,16+i*REC,count,manifest) for i in range(start,end)], dtype=np.intp))
                     if bids.size:
                         if int(bids.max()) >= len(bond_valid):
                             raise RuntimeError(f'未知因縁ID: {int(bids.max())}')
@@ -150,7 +151,7 @@ def main():
                     if bad_indices.size and len(first) < 20:
                         for local in bad_indices[:20 - len(first)]:
                             row = start + int(local)
-                            bb = [int(x) for x in block['bond_ids'][local, :count] if int(x)]
+                            bb = [int(x) for x in bids[local] if int(x)]
                             first.append({
                                 'file': src,
                                 'row': row,

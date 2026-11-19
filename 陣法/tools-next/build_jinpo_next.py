@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from rebuild_all_compact import decode_bond_ids
 import csv, json, sys, hashlib, gzip, struct, subprocess, shutil, tempfile, re, os
 from pathlib import Path
 from rebuild_all_compact import read_manifest_entry, manifest_parts, manifest_entry_source
@@ -184,7 +185,7 @@ def main():
     if not generator.exists(): fail('完全再生成スクリプトがありません', report)
     cp = subprocess.run([sys.executable, str(generator)], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if cp.returncode != 0:
-        fail('5～9因縁 完全再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
+        fail('因縁 完全再生成FAIL: ' + (cp.stderr.strip() or cp.stdout.strip()), report)
     generation_report_path = REPORT_DIR/'generation_report.json'
     if not generation_report_path.exists(): fail('組み合わせ生成レポートがありません', report)
     generation_report = json.loads(generation_report_path.read_text(encoding='utf-8'))
@@ -192,6 +193,7 @@ def main():
     if generation_report.get('source_of_truth_only') is not True:
         fail('完全再生成が現行正本限定になっていません', report)
     report['generation'] = {
+        'extended_bond_check': generation_report.get('extended_bond_check'),
         'full_records': generation_report.get('full_records'),
         'seconds': generation_report.get('seconds'),
         'full_regeneration': True,
@@ -213,6 +215,7 @@ def main():
     if int(popular_report.get('selected_image_heroes') or 0) != 20:
         fail('選抜人気画像指定英傑件数が20ではありません', report)
     report['popular_search'] = {
+        'extended_bond_check': popular_report.get('extended_bond_check'),
         'selected_image_heroes': popular_report.get('selected_image_heroes'),
         'grade3_heroes': popular_report.get('grade3_heroes'),
         'popular_heroes': popular_report.get('popular_heroes'),
@@ -374,13 +377,13 @@ def main():
     expected_dataset_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}, 'popular': {'6','7','8','9'}}
     for mode, expected in expected_dataset_counts.items():
         actual = set(manifest.get('datasets', {}).get(mode, {}).keys())
-        if actual != expected:
+        if {c for c in actual if int(c)<10} != expected:
             fail(f'現行因縁数構成不一致: datasets/{mode}: {sorted(actual)}', report)
     expected_derived_counts = {'normal': {'7','8','9'}, 'grade3': {'5','6','7','8','9'}}
     for section in ('top', 'sort_top'):
         for mode, expected in expected_derived_counts.items():
             actual = set(manifest.get(section, {}).get(mode, {}).keys())
-            if actual != expected:
+            if actual != set(manifest['datasets'][mode]):
                 fail(f'現行因縁数構成不一致: {section}/{mode}: {sorted(actual)}', report)
 
     if int(manifest.get('top_limit', 0)) != 500 or int(manifest.get('sort_top_limit', 0)) != 500:
@@ -921,8 +924,8 @@ def main():
                 hero_ids = struct.unpack_from('<6H', raw, off)
                 if len(set(hero_ids)) != 6:
                     fail(f'compact DB 1編成内の英傑重複: {label}: row={idx}', report)
-                active_bonds = tuple(raw[off+12:off+12+count])
-                rest_bonds = raw[off+12+count:off+21]
+                active_bonds=decode_bond_ids(raw,off,count,manifest)
+                rest_bonds=raw[off+12+count:off+21] if count<=9 else raw[off+16:off+21]
                 if any(b == 0 for b in active_bonds) or len(set(active_bonds)) != count:
                     fail(f'compact DB 発動因縁の欠損/重複: {label}: row={idx}', report)
                 if any(rest_bonds):

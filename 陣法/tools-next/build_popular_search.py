@@ -83,28 +83,34 @@ def main():
     rac.MODE_CODE['popular'] = 3
 
     generator = Generator(eligible, heroes, bonds, coef, formation_bonus_pct)
+    rac.bind_extended_sets(generator, manifest)
+    targets = set(COUNTS) | generator.extended_targets()
     temp_dir = REPORT_DIR / 'popular_candidates'
     temp_dir.mkdir(parents=True, exist_ok=True)
     datasets = {}
     try:
-        cycle = generator.generate_cycle(set(COUNTS))
+        cycle = generator.generate_cycle(targets)
         cycle_files = {}
-        for count in COUNTS:
+        for count in sorted(targets):
             p = temp_dir / f'popular_c{count}_cycle.tmp'
             cycle_files[count] = (p, dump_candidates(cycle[count], p))
         del cycle
         release_memory()
 
-        disjoint = generator.generate_disjoint(set(COUNTS))
+        disjoint = generator.generate_disjoint(targets)
         disjoint_files = {}
-        for count in COUNTS:
+        for count in sorted(targets):
             p = temp_dir / f'popular_c{count}_disjoint.tmp'
             disjoint_files[count] = (p, dump_candidates(disjoint[count], p))
         del disjoint
         release_memory()
+        report['extended_bond_check']={'upper_bound':generator.extended_upper_bound(),'counts':{str(c):{'衡軛':disjoint_files[c][1],'鶴翼':disjoint_files[c][1],'魚鱗':cycle_files[c][1],'方円':cycle_files[c][1]} for c in sorted(generator.extended_targets())}}
 
-        for count in COUNTS:
+        for count in sorted(targets):
             for forms, (candidate_path, rows) in ((FAMILIES[0], disjoint_files[count]), (FAMILIES[1], cycle_files[count])):
+                if count>=10 and not (cycle_files[count][1] or disjoint_files[count][1]):
+                    candidate_path.unlink(missing_ok=True); continue
+                rac.register_count(manifest,'popular',count)
                 pair = write_family_pair(manifest, generator, 'popular', count, forms, candidate_path, rows)
                 for form, val in pair.items():
                     datasets[f'popular/{count}/{form}'] = val
@@ -129,7 +135,7 @@ def main():
         'selected_image_heroes': len(selected),
         'grade3_heroes': len(grade3),
         'popular_heroes': len(eligible),
-        'search_counts': list(COUNTS),
+        'search_counts': sorted(map(int,manifest['datasets']['popular'])),
         'selected_hero_ids': cfg.get('selected_hero_ids', []),
         'datasets': datasets,
         'full_records': sum(int(v['rows']) for v in datasets.values()),

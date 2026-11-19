@@ -155,7 +155,7 @@
     if(rerun===false) return;
     var count=0;
     try{ count=Number(typeof selectedDbListBondCount!=='undefined'?selectedDbListBondCount:window.selectedDbListBondCount)||0; }catch(e){}
-    if(count>=5&&count<=9){
+    if(count>=5&&(count<=9||(window.JINPO_FAST_SEARCH&&window.JINPO_FAST_SEARCH.getExtendedCounts&&window.JINPO_FAST_SEARCH.getExtendedCounts(window.JINPO_FAST_SEARCH.getMode()).includes(count)))){
       try{
         if(typeof window.handleDbCountButtonClick==='function'){
           var run=window.handleDbCountButtonClick(count);
@@ -491,7 +491,7 @@
     var count = 0;
     try{ count = Number(typeof selectedDbListBondCount !== 'undefined' ? selectedDbListBondCount : window.selectedDbListBondCount) || 0; }catch(e){}
     try{ if(typeof renderDbCountButtons === 'function') renderDbCountButtons(); }catch(e){}
-    if(count >= 5 && count <= 9){
+    if(count >= 5 && (count <= 9 || (window.JINPO_FAST_SEARCH && window.JINPO_FAST_SEARCH.getExtendedCounts && window.JINPO_FAST_SEARCH.getExtendedCounts(window.JINPO_FAST_SEARCH.getMode()).includes(count)))){
       try{
         if(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.renderCurrent === 'function'){
           var run = window.JINPO_FAST_SEARCH.renderCurrent({count:count,forceNormal:true});

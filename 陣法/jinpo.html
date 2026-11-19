@@ -497,7 +497,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
       var v = btn.getAttribute(attrs[i]);
       if(v != null && v !== '') return toNum(v);
     }
-    var m = String(btn.textContent || '').match(/([5-9])\s*因縁/);
+    var m = String(btn.textContent || '').match(/(\d+)\s*因縁/);
     return m ? toNum(m[1]) : 0;
   }
   function hasFormation(){
@@ -532,9 +532,9 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     var c = countOf(btn);
     var recommendActive = false;
     try{ recommendActive = !!(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isRecommendMode === 'function' && window.JINPO_FAST_SEARCH.isRecommendMode()); }catch(e){}
-    if(c >= 5 && c <= 9 && recommendActive) return true;
-    if(c >= 5 && c <= 9 && !formed) return true;
-    if(b56 && c >= 7 && c <= 9) return true;
+    if(c >= 5 && recommendActive) return true;
+    if(c >= 5 && !formed) return true;
+    if(b56 && c >= 7) return true;
     if(popular && c === 5) return true;
     if((c === 5 || c === 6) && formed && !grade3On() && !b56 && !popular) return true;
     return false;
@@ -548,13 +548,13 @@ body.jinpoOpeningLocked{overflow:hidden!important}
     if(!box) return;
     qsa('button, [role="button"]', box).forEach(function(btn){
       var c = countOf(btn);
-      if((c >= 5 && c <= 9 && !formed) || (b56 && c >= 7 && c <= 9) || (popular && c === 5) || ((c === 5 || c === 6) && formed && !g3 && !b56 && !popular)){
+      if((c >= 5 && !formed) || (b56 && c >= 7) || (popular && c === 5) || ((c === 5 || c === 6) && formed && !g3 && !b56 && !popular)){
         btn.classList.remove('active');
       }
     });
     try{
       var cur = toNum(window.selectedDbListBondCount);
-      if((cur >= 5 && cur <= 9 && !formed) || (b56 && cur >= 7 && cur <= 9) || (popular && cur === 5) || ((cur === 5 || cur === 6) && formed && !g3 && !b56 && !popular)) window.selectedDbListBondCount = null;
+      if((cur >= 5 && !formed) || (b56 && cur >= 7) || (popular && cur === 5) || ((cur === 5 || cur === 6) && formed && !g3 && !b56 && !popular)) window.selectedDbListBondCount = null;
     }catch(e){}
   }
   function setLock(btn, locked){
@@ -1381,7 +1381,7 @@ if(!window.JINPO_FAST_SEARCH || typeof window.JINPO_FAST_SEARCH.lookupExactState
 const ids=[1,2,3,4,5,6].map(s=>String(nextPlacement[s]?.internal_id || "").trim());
 const bondNames=(nextResult?.activated || []).map(a=>String(a?.name || "").trim()).filter(Boolean);
 const count=bondNames.length;
-if(ids.some(x=>!x) || count<5 || count>9) return Promise.resolve(null);
+if(ids.some(x=>!x) || count<5) return Promise.resolve(null);
 const grade3 = (typeof grade3Cost6OnlyEnabled !== "undefined") ? !!grade3Cost6OnlyEnabled : !!window.grade3Cost6OnlyEnabled;
 const bond56 = !!(window.JINPO_FAST_SEARCH && typeof window.JINPO_FAST_SEARCH.isBond56Mode === "function" && window.JINPO_FAST_SEARCH.isBond56Mode());
 return window.JINPO_FAST_SEARCH.lookupExactState({mode:bond56?"bond56":(grade3?"grade3":"normal"),count:count,formation:String(formationSelect.value||""),heroInternalIds:ids,bondNames:bondNames}).then(r=>r&&r.row?r.row:null);
@@ -2703,7 +2703,7 @@ if(window.JINPO_APPLIED_CANDIDATE && typeof window.JINPO_APPLIED_CANDIDATE.refre
 window.JINPO_APPLIED_CANDIDATE.refresh("formation-calculated");
 }
 }catch(e){ console.error("陣形変更後の適用状態同期失敗", e); }
-if(activeBondCount >= 5 && activeBondCount <= 9){
+if(activeBondCount >= 5){
 selectedDbListBondCount = activeBondCount;
 window.selectedDbListBondCount = activeBondCount;
 renderDbCountButtons();
@@ -3347,7 +3347,7 @@ setTimeout(boot,1000);
   user-select:none !important;
   -webkit-user-drag:none !important;
 }
-#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.jinpoTenBondPlaceholder{
+#dbCountBrowserCard .dbFormationSelectTop>#dbCountButtons.dbCountButtonBar>.jinpoTenBondVisual>.dbCountBtn{
   position:relative !important;
   z-index:1 !important;
   width:100% !important;
@@ -9822,10 +9822,9 @@ body #step66ReachModal .step66HeroBtn.jinpoDaigyomonoCard::before{
   /* 業物系は「現在表示中の因縁数」ではなく、選択中モードが対象にする因縁数全体を検索する。 */
   function relevantCounts(ctx){
     var mode=String(ctx&&ctx.mode||'normal');
-    if(mode==='grade3')return [5,6,7,8,9];
-    if(mode==='popular')return [6,7,8,9];
-    if(mode==='bond56')return [5,6];
-    return [7,8,9];
+    var base=mode==='grade3'?[5,6,7,8,9]:mode==='popular'?[6,7,8,9]:mode==='bond56'?[5,6]:[7,8,9];
+    var extra=window.JINPO_FAST_SEARCH&&window.JINPO_FAST_SEARCH.getExtendedCounts?window.JINPO_FAST_SEARCH.getExtendedCounts(mode):[];
+    return base.concat(extra);
   }
   /* 7因縁以上／5・6因縁は元から全英傑対象なので「業物」だけ。
      等級3以下／選抜人気では現在モード対象の業物＋全英傑の大業物を使う。 */

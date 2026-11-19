@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from rebuild_all_compact import decode_bond_ids
 
 import csv
 import gzip
@@ -148,7 +149,7 @@ def build_sidecars(m: dict, heroes, bonds, coef, formation_bonus_pct):
                 for i in range(rows):
                     off=16+i*BASE_REC
                     placement=struct.unpack_from('<6H',raw,off)
-                    bond_ids=tuple(int(x) for x in raw[off+12:off+12+count] if x)
+                    bond_ids=decode_bond_ids(raw,off,count,m)
                     f4mask=minimal_factor4_mask(placement,form,bond_ids,LINES,heroes,bonds,assign_cache)
                     vals,total=calc_fullmax_stats(placement,f4mask,bond_ids,form,heroes,coef,formation_bonus_pct)
                     dst=16+i*FULLMAX_REC
@@ -214,7 +215,7 @@ def build_recommend(m: dict, fullmax_section: dict):
         pair_payloads={(p,s):bytearray() for p in STATS for s in STATS if s!=p}
         for form in FORMS:
             rec_parts=[];fm_parts=[];count_parts=[];total_parts=[];tie_parts=[];source_rows=0
-            for count in MODE_COUNTS[mode]:
+            for count in sorted(map(int,m['datasets'][mode])):
                 c=str(count)
                 base_info=(((m.get('datasets') or {}).get(mode) or {}).get(c) or {}).get(form)
                 fm_info=(((fullmax_section.get(mode) or {}).get(c) or {}).get(form))
@@ -274,6 +275,7 @@ def fingerprint_manifest(m: dict) -> str:
                 for secondary,e in secondaries.items():parts.append(f'{section}/{mode}/{primary}/{secondary}:{e.get("sha256_16","")}')
     for mode,stats in (m.get('fullmax_recommend_top') or {}).items():
         for stat,e in stats.items():parts.append(f'fullmax_recommend_top/{mode}/{stat}:{e.get("sha256_16","")}')
+    if len(m.get('extended_bond_sets',[]))>1: parts.append('extended_bond_sets:'+json.dumps(m['extended_bond_sets'],separators=(',',':')))
     return hashlib.sha256('\n'.join(sorted(parts)).encode()).hexdigest()[:12]
 
 

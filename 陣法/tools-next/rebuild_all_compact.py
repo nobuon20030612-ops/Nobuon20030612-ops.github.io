@@ -34,6 +34,32 @@ MAX_PUBLISH_BYTES = 25_000_000
 SHARD_TARGET_BYTES = 24_000_000
 
 
+def decode_bond_ids(raw, off, count, manifest):
+    if count <= 9:
+        return tuple(raw[off+12:off+12+count])
+    index = struct.unpack_from('<I', raw, off+12)[0]
+    table = manifest.get('extended_bond_sets', [])
+    if not 0 < index < len(table):
+        raise RuntimeError(f'拡張因縁ID不正: {index}')
+    ids = tuple(table[index])
+    if len(ids) != count or len(set(ids)) != count or any(raw[off+16:off+21]):
+        raise RuntimeError('拡張因縁レコード構造不正')
+    return ids
+
+
+def bind_extended_sets(generator, manifest):
+    generator.extended_sets = manifest.setdefault('extended_bond_sets', [[]])
+    generator.extended_index = {tuple(b): i for i,b in enumerate(generator.extended_sets)}
+
+
+def register_count(manifest, mode, count):
+    forms = manifest['datasets'].setdefault(mode, {}).setdefault(str(count), {})
+    for form in LINES:
+        code = FORM_FILE_CODE[form]
+        prefix = 'popular/' if mode == 'popular' else ''
+        forms.setdefault(form, {'file': f'data/compact_search_v2/{prefix}jinpo_{mode}_c{count}_{code}_v2.bin.gz'})
+
+
 def manifest_parts(info: dict) -> list[dict]:
     parts=info.get('parts') if isinstance(info,dict) else None
     if isinstance(parts,list) and parts:
@@ -321,6 +347,26 @@ class Generator:
             mask |= self.triple_mask(p[ln[0]],p[ln[1]],p[ln[2]])
         return mask
 
+    def extended_upper_bound(self):
+        # 3本のラインにおける和集合の厳密な上限。9で打ち切らない。
+        max_triple = max((m.bit_count() for m in self.tm.values()), default=0)
+        return min(len(self.bonds), 3*max_triple)
+
+    def extended_targets(self):
+        return set(range(10, self.extended_upper_bound()+1))
+
+    def encode_bond_ids(self, record, ids):
+        ids = tuple(ids)
+        if len(ids) <= 9:
+            record[12:12+len(ids)] = bytes(ids)
+        else:
+            index = self.extended_index.get(ids)
+            if index is None:
+                index = len(self.extended_sets)
+                self.extended_sets.append(list(ids))
+                self.extended_index[ids] = index
+            struct.pack_into('<I', record, 12, index)
+
     def generate_cycle(self, targets: set[int]):
         outs = {t:{} for t in targets}
         max_target = max(targets)
@@ -417,6 +463,16 @@ class Generator:
                                     for D in self.zero_candidates(C,E):
                                         if D in used: continue
                                         add(n,A,B,C,D,E,F,mask)
+        # 将来1本のラインだけで10因縁以上になる正本も漏らさない。
+        # 現行の5～9因縁の列挙には一切影響させない。
+        for triple,mask in self.tm.items():
+            n=mask.bit_count()
+            if n<10 or n not in outs: continue
+            remaining=[h for h in self.ids if h not in triple]
+            for A,B,C in itertools.permutations(triple):
+                for D,E,F in itertools.permutations(remaining,3):
+                    if self.triple_mask(C,D,E) or self.triple_mask(E,F,A): continue
+                    add(n,A,B,C,D,E,F,mask)
         return outs
 
     def generate_disjoint(self, targets: set[int]):
@@ -452,6 +508,17 @@ class Generator:
                         old = outs[n].get(key)
                         if old is None or p < old:
                             outs[n][key] = p
+        # 片方のラインのみで10因縁以上が成立する場合も対象にする。
+        for triple,mask in self.tm.items():
+            n=mask.bit_count()
+            if n<10 or n not in outs: continue
+            remaining=[h for h in self.ids if h not in triple]
+            for other in itertools.combinations(remaining,3):
+                if self.tm.get(other,0): continue
+                p=min(triple+other,other+triple)
+                key=(tuple(sorted(p)),mask)
+                old=outs[n].get(key)
+                if old is None or p<old: outs[n][key]=p
         return outs
 
     def bond_ids(self,mask):
@@ -477,8 +544,7 @@ class Generator:
         vals,total = self.calc_stats(p,bond_ids,form)
         r = bytearray(REC)
         struct.pack_into('<6H',r,0,*p)
-        for i,bid in enumerate(bond_ids):
-            r[12+i] = bid
+        self.encode_bond_ids(r,bond_ids)
         for i,v in enumerate(vals):
             struct.pack_into('<H',r,21+2*i,v)
         struct.pack_into('<I',r,43,total)
@@ -499,7 +565,7 @@ class Generator:
         vals,total=self.apply_formation_bonus(normal_raw,form)
         r=bytearray(REC)
         struct.pack_into('<6H',r,0,*p)
-        for i,bid in enumerate(bids): r[12+i]=bid
+        self.encode_bond_ids(r,bids)
         for i,v in enumerate(vals): struct.pack_into('<H',r,21+2*i,v)
         struct.pack_into('<I',r,43,total)
         r[47]=int(f4mask).bit_count()
@@ -771,6 +837,7 @@ def main():
     manifest=fresh_manifest()
     heroes,grade3,bonds,bond_names,coef,formation_bonus_pct=load_model()
     report={
+        'extended_bond_check':{},
         'status':'RUNNING',
         'generation_mode':'full_current_source_only',
         'full_regeneration':True,
@@ -799,21 +866,27 @@ def main():
     print('STAGE normal generator',flush=True)
     normal=Generator(sorted(heroes),heroes,bonds,coef,formation_bonus_pct)
     print('STAGE normal cycle',flush=True)
-    cycle=normal.generate_cycle({7,8,9})
+    bind_extended_sets(normal,manifest)
+    normal_targets={7,8,9}|normal.extended_targets()
+    cycle=normal.generate_cycle(normal_targets)
     cycle_files={}
-    for count in (7,8,9):
+    for count in sorted(normal_targets):
         path=temp_dir/f'normal_c{count}_cycle.tmp'
         cycle_files[count]=(path,dump_candidates(cycle[count],path))
     del cycle; release_memory()
     print('STAGE normal disjoint',flush=True)
-    disjoint=normal.generate_disjoint({7,8,9})
+    disjoint=normal.generate_disjoint(normal_targets)
     disjoint_files={}
-    for count in (7,8,9):
+    for count in sorted(normal_targets):
         path=temp_dir/f'normal_c{count}_disjoint.tmp'
         disjoint_files[count]=(path,dump_candidates(disjoint[count],path))
     del disjoint; release_memory()
-    for count in (7,8,9):
+    report['extended_bond_check']['normal']={'upper_bound':normal.extended_upper_bound(), 'counts':{str(c):{'衡軛':disjoint_files[c][1],'鶴翼':disjoint_files[c][1],'魚鱗':cycle_files[c][1],'方円':cycle_files[c][1]} for c in sorted(normal.extended_targets())}}
+    for count in sorted(normal_targets):
         for forms,(path,rows) in ((families[0],disjoint_files[count]),(families[1],cycle_files[count])):
+            if count>=10 and not (cycle_files[count][1] or disjoint_files[count][1]):
+                path.unlink(missing_ok=True); continue
+            register_count(manifest,'normal',count)
             print('WRITE','normal',count,forms,rows,flush=True)
             pair=write_family_pair(manifest,normal,'normal',count,forms,path,rows)
             for form,val in pair.items(): report['datasets'][f'normal/{count}/{form}']=val
@@ -823,21 +896,27 @@ def main():
     print('STAGE grade3 generator',flush=True)
     grade=Generator(grade3,heroes,bonds,coef,formation_bonus_pct)
     print('STAGE grade3 cycle',flush=True)
-    cycle=grade.generate_cycle({5,6,7,8,9})
+    bind_extended_sets(grade,manifest)
+    grade_targets={5,6,7,8,9}|grade.extended_targets()
+    cycle=grade.generate_cycle(grade_targets)
     cycle_files={}
-    for count in (5,6,7,8,9):
+    for count in sorted(grade_targets):
         path=temp_dir/f'grade3_c{count}_cycle.tmp'
         cycle_files[count]=(path,dump_candidates(cycle[count],path))
     del cycle; release_memory()
     print('STAGE grade3 disjoint',flush=True)
-    disjoint=grade.generate_disjoint({5,6,7,8,9})
+    disjoint=grade.generate_disjoint(grade_targets)
     disjoint_files={}
-    for count in (5,6,7,8,9):
+    for count in sorted(grade_targets):
         path=temp_dir/f'grade3_c{count}_disjoint.tmp'
         disjoint_files[count]=(path,dump_candidates(disjoint[count],path))
     del disjoint; release_memory()
-    for count in (5,6,7,8,9):
+    report['extended_bond_check']['grade3']={'upper_bound':grade.extended_upper_bound(), 'counts':{str(c):{'衡軛':disjoint_files[c][1],'鶴翼':disjoint_files[c][1],'魚鱗':cycle_files[c][1],'方円':cycle_files[c][1]} for c in sorted(grade.extended_targets())}}
+    for count in sorted(grade_targets):
         for forms,(path,rows) in ((families[0],disjoint_files[count]),(families[1],cycle_files[count])):
+            if count>=10 and not (cycle_files[count][1] or disjoint_files[count][1]):
+                path.unlink(missing_ok=True); continue
+            register_count(manifest,'grade3',count)
             print('WRITE','grade3',count,forms,rows,flush=True)
             pair=write_family_pair(manifest,grade,'grade3',count,forms,path,rows)
             for form,val in pair.items(): report['datasets'][f'grade3/{count}/{form}']=val

@@ -147,10 +147,17 @@
   function worse(dv,a,b,rules,sumSort){return better(dv,b,a,rules,sumSort);}
   function heapPush(heap,off,dv,rules,sumSort){heap.push(off);var i=heap.length-1;while(i>0){var p=(i-1)>>1;if(!worse(dv,heap[i],heap[p],rules,sumSort))break;var x=heap[i];heap[i]=heap[p];heap[p]=x;i=p;}}
   function heapDown(heap,i,dv,rules,sumSort){for(;;){var l=i*2+1,r=l+1,w=i;if(l<heap.length&&worse(dv,heap[l],heap[w],rules,sumSort))w=l;if(r<heap.length&&worse(dv,heap[r],heap[w],rules,sumSort))w=r;if(w===i)return;var x=heap[i];heap[i]=heap[w];heap[w]=x;i=w;}}
+  function recordBondIds(dv,base,count,m){
+    if(count<=9){var out=[];for(var b=0;b<count;b++){var bi=dv.getUint8(base+12+b);if(bi)out.push(bi);}return out;}
+    var index=dv.getUint32(base+12,true),ids=(m.extended_bond_sets||[])[index];
+    if(!index||!Array.isArray(ids)||ids.length!==count||new Set(ids).size!==count)throw new Error('拡張因縁ID不正: '+index);
+    for(var i=16;i<21;i++)if(dv.getUint8(base+i)!==0)throw new Error('拡張因縁レコード構造不正');
+    return ids;
+  }
   function materialize(dv,base,q,m,rowIndex,source){
     var names=[],numericIds=[],internalIds=[];
     for(var i=0;i<6;i++){var id=dv.getUint16(base+i*2,true);numericIds.push(id);internalIds.push(eikInternalId(id));names.push((m.hero_names||[])[id]||('英傑#'+id));}
-    var count=Number(q.count)||0,bonds=[],bondNumeric=[];for(var b=0;b<count;b++){var bi=dv.getUint8(base+12+b);if(bi){bondNumeric.push(bi);bonds.push((m.bond_names||[])[bi]||String(bi));}}
+    var count=Number(q.count)||0,bondNumeric=recordBondIds(dv,base,count,m),bonds=bondNumeric.map(function(bi){return (m.bond_names||[])[bi]||String(bi);});
     var rid='compact_v2_'+(q.mode==='popular'?'pop':(q.mode==='grade3'?'g3':'n'))+'_'+count+'_'+(FORM_CODE[q.formation]||'f')+'_'+tieAt(dv,base).toString(16)+'_'+rowIndex;
     var row={result_id:rid,record_type:'COMPACT_SEARCH_V2',source_file:source,formation:String(q.formation||''),grade3_flag:q.mode==='popular'?'選抜人気':(q.mode==='grade3'?'等級3以下ON':'通常'),bond_count:count,eiketsu_ids:names.join('|'),eiketsu_names:names.join('|'),eiketsu_internal_ids:internalIds.join('|'),eiketsu_numeric_ids:numericIds.join('|'),bond_ids:bonds.join('|'),bond_names:bonds.join('|'),bond_numeric_ids:bondNumeric.join('|'),stat_status:'ステータス計算済み',calc_source:'COMPACT_SEARCH_V2'};
     Object.keys(STAT_OFFSETS).forEach(function(k){row[k]=statAt(dv,base,k);});row['総合値']=totalAt(dv,base);row.total_score=row['総合値'];row.factor4_usage_count=dv.getUint8(base+47);return row;
@@ -160,7 +167,7 @@
   var RECOMMEND_FORMS=['衡軛','鶴翼','魚鱗','方円'];
   function recommendCounts(mode,m){
     var src=m&&m.datasets&&m.datasets[mode==='popular'?'popular':(mode==='grade3'?'grade3':'normal')]||{},out=[];
-    (mode==='grade3'?[5,6,7,8,9]:(mode==='popular'?[6,7,8,9]:[7,8,9])).forEach(function(c){if(src[String(c)])out.push(c);});return out;
+    (mode==='grade3'?[5,6,7,8,9]:(mode==='popular'?[6,7,8,9]:[7,8,9])).forEach(function(c){if(src[String(c)])out.push(c);});Object.keys(src).map(Number).filter(function(c){return Number.isInteger(c)&&c>=10;}).sort(function(a,b){return a-b;}).forEach(function(c){out.push(c);});return out;
   }
   function rowMetricStat(row,key){return Number(row&&row[key])||0;}
   function rowMetricTotal(row){return Number(row&&((row.total_score!=null)?row.total_score:row['総合値']))||0;}
@@ -314,17 +321,18 @@
   async function lookupExact(q,token){
     var started=performance.now(),m=await loadManifest();
     var heroIds=exactIds(q.heroInternalIds);if(heroIds.length!==6)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'hero_internal_ids_invalid'};
-    var count=Number(q.count)||0;if(count<5||count>9)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_count_invalid'};
+    var count=Number(q.count)||0;if(!Number.isInteger(count)||count<5)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_count_invalid'};
     if(normalFiveSixUnsupported(q))return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'normal_5_6_not_supported'};
     var bondIds=exactBondIds(q.bondNames,m);if(bondIds.length!==count)return {row:null,matched:0,scanned:0,ms:performance.now()-started,reason:'bond_names_invalid'};
     var dataQ={mode:dbMode(q),count:count,formation:String(q.formation||''),sourceType:'full',sortStat:''};
+    if(!datasetInfo(m,dataQ))return {row:null,matched:0,scanned:0,reason:'dataset_unavailable'};
     var data=await loadData(dataQ,token,true),dv=data.dv,rec=data.recSize,base=16;
     for(var idx=0;idx<data.rows;idx++,base+=rec){
       /* exact lookupは同じ6人の集合ではなく、1〜6番の配置順まで完全一致させる。
          文曲使用スロットは配置順で変わり得るため、集合一致は不可。 */
       var heroOk=true;for(var h=0;h<heroIds.length&&heroOk;h++)if(dv.getUint16(base+h*2,true)!==heroIds[h])heroOk=false;
       if(!heroOk)continue;
-      var bondOk=true;for(var w=0;w<bondIds.length&&bondOk;w++){var found=false;for(var b=0;b<count;b++){if(dv.getUint8(base+12+b)===bondIds[w]){found=true;break;}}if(!found)bondOk=false;}
+      var actual=recordBondIds(dv,base,count,m),bondOk=bondIds.every(function(bid){return actual.includes(bid);});
       if(!bondOk)continue;
       return {row:materialize(dv,base,dataQ,m,idx,sourceLabel(data.info)),matched:1,scanned:idx+1,ms:performance.now()-started};
     }
