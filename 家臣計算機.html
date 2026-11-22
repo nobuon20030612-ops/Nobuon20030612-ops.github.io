@@ -2379,7 +2379,7 @@ body{
 }
 .fuyo-stage-choice-item{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
   gap:5px;
   min-width:0;
 }
@@ -3305,8 +3305,8 @@ function makeRightFuyoRowTotal(rowKey){const total=makeKashinFuyoTotal();KASHIN_
 function makeRightTenroTotal(){const total=makeKashinFuyoTotal();if(!rightFuyoTenroEnabled)return total;KASHIN_ALL_STATS.forEach(stat=>total[stat]=getRightTenroStatValue(stat));return total;}
 function cloneRightFuyoTotal(source){const total=makeKashinFuyoTotal();KASHIN_ALL_STATS.forEach(stat=>total[stat]=Number(source?.[stat])||0);return total;}
 function clearRightFuyoRows(rowKeys){rowKeys.forEach(rowKey=>KASHIN_ALL_STATS.forEach(stat=>delete rightFuyoManualValues[rightFuyoValueKey(rowKey,stat)]));}
-function getRightNoLimitForStat(stat,limits){const source=limits||rightFuyoNoLimits;return (stat==="生命"||stat==="気合")?(Number(source.lifeKi)||0):(Number(source.ability)||0);}
-function areRightNoLimitsReady(){return !!(rightFuyoNoLimitSet.lifeKi&&rightFuyoNoLimitSet.ability);}
+function getRightNoLimitForStat(stat,limits){return Infinity;}
+function areRightNoLimitsReady(){return true;}
 function getRightNoStage3Rows(){
   if(rightFuyoNoStage3Type==="付与石"&&areRightNoLimitsReady())return [
     {key:"right_no_slot1_fuyo",title:"付与枠1"},
@@ -3527,13 +3527,8 @@ function renderRightFuyoStageArea(){
     html+=`</div></div></div></section>`;
   }else if(rightFuyoWorkflowStep===3){
     html+=`<section class="fuyo-stage-card active"><div class="fuyo-stage-head"><div class="fuyo-stage-title">工程③　付与</div><div class="fuyo-stage-head-right"><span class="fuyo-stage-guide">神秘石は使用しません</span><button type="button" class="fuyo-stage-skip" onclick="resetRightFuyoNoStage3Only(event)">リセット</button></div></div><div class="fuyo-stage-choice-row">`;
-    ["付与石","双晶石"].forEach(type=>{const selected=rightFuyoNoStage3Type===type?" selected":"";const applied=rightFuyoNoStage3AppliedType===type?" applied":"";html+=`<div class="fuyo-stage-choice-item"><button type="button" class="fuyo-stage-choice-btn${selected}" onclick="selectRightFuyoNoStage3Type('${type}',event)">${type}</button><button type="button" class="fuyo-stage-apply-btn${applied}" onclick="applyRightFuyoNoStage3Type('${type}',event)">${rightFuyoNoStage3AppliedType===type?"適用中":"適用"}</button></div>`;});
+    ["付与石","双晶石"].forEach(type=>{const selected=rightFuyoNoStage3Type===type?" selected":"";const applied=rightFuyoNoStage3AppliedType===type?" applied":"";html+=`<div class="fuyo-stage-choice-item"><button type="button" class="fuyo-stage-choice-btn${selected}" onclick="selectRightFuyoNoStage3Type('${type}',event)">${type}</button></div>`;});
     html+=`</div>`;
-    if(rightFuyoNoStage3Type==="付与石"){
-      html+=`<div class="fuyo-mystic-limit-row"><div class="fuyo-stage2-row-title">付与限界</div>`;
-      [["lifeKi","生・気"],["ability","能力"]].forEach(([key,label])=>{const active=rightFuyoNoLimitKey===key?" active":"";html+=`<button type="button" class="fuyo-mystic-limit-btn${active}" onclick="selectRightFuyoNoStage3Limit('${key}',event)">${label}<span>${rightFuyoNoLimits[key]||0}</span></button>`;});
-      html+=`</div>`;
-    }
     const rows=getRightNoStage3Rows();if(rows.length){html+=`<div class="fuyo-stage2-detail">`;rows.forEach((row,rowIndex)=>{html+=`<div class="fuyo-stage2-row"><div class="fuyo-stage2-row-title">${row.title}</div><div class="fuyo-stage2-stat-grid">`;KASHIN_ALL_STATS.forEach((stat,statIndex)=>{const value=getRightFuyoValue(row.key,stat);const active=rightFuyoNoStage3RowIndex===rowIndex&&rightFuyoNoStage3StatIndex===statIndex&&!rightFuyoNoLimitKey?" active":"";html+=`<button type="button" class="fuyo-stage2-stat-btn${active}" style="color:${fuyosekiStatColor(stat)}" onclick="selectRightFuyoNoStage3Stat(${rowIndex},${statIndex},event)">${stat}<span>${value||0}</span></button>`;});html+=`</div></div>`;});html+=`</div>`;}
     html+=`</section>`;
   }else{
@@ -3578,6 +3573,7 @@ function applyRightFuyoSelected(){
   const mainTotal=rightFuyoTenroEnabled?makeRightTenroTotal():makeRightFuyoRowTotal(RIGHT_FUYO_NO_BASE_ROW_KEY);const detail1=makeKashinFuyoTotal();const detail2=makeKashinFuyoTotal();
   if(rightFuyoTenroEnabled){addKashinFuyoTotals(mainTotal,makeRightFuyoRowTotal("right_double_refine"));Object.assign(detail1,cloneRightFuyoTotal(makeRightFuyoRowTotal("right_slot1_fuyo")));Object.assign(detail2,cloneRightFuyoTotal(makeRightFuyoRowTotal("right_slot2_fuyo")));}
   else{
+    if(["付与石","双晶石"].includes(rightFuyoNoStage3Type))applyRightFuyoNoStage3Type(rightFuyoNoStage3Type);
     const snap=rightFuyoNoStage3AppliedSnapshot;
     if(snap?.type==="付与石"){
       KASHIN_ALL_STATS.forEach(stat=>{mainTotal[stat]=Math.min(mainTotal[stat]||0,getRightNoLimitForStat(stat,snap.limits));});const effective=getRightNoStoneEffectiveDetails(snap);Object.assign(detail1,effective.detail1);Object.assign(detail2,effective.detail2);
@@ -3714,7 +3710,8 @@ let fuyosekiMysticLimitTarget = "lifeKi";
 let fuyosekiStage2LimitKey = "";
 
 function areFuyoMysticLimitsReady(){
-  return !!(fuyosekiMysticLimitSet.lifeKi && fuyosekiMysticLimitSet.ability);
+  // 付与限界が未入力でも、付与石／神秘石のステータス欄は最初から表示する
+  return true;
 }
 function getFuyoStage2Rows(){
   if(fuyosekiStage2Type === "付与石" && areFuyoMysticLimitsReady()) return [
@@ -3789,8 +3786,8 @@ function getFuyoTargetEquipmentType(){
   return (fuyosekiTargetSection === "right" || fuyosekiTargetSection === "left") ? "武器" : "防具";
 }
 function getFuyoMysticLimitForStat(stat, limits){
-  const source = limits || fuyosekiMysticLimits;
-  return (stat === "生命" || stat === "気合") ? (source.lifeKi || 0) : (source.ability || 0);
+  // 付与限界は使用しない（常に上限なし）
+  return Infinity;
 }
 function getFuyoMysticEffectiveContribution(sourceSnapshot){
   const total = makeKashinFuyoTotal();
@@ -4077,12 +4074,12 @@ function renderFuyoStageArea(){
     html += `</div></div></div></section>`;
   }else if(fuyosekiWorkflowStep === 2){
     html += `<section class="fuyo-stage-card active">`;
-    html += `<div class="fuyo-stage-head"><div class="fuyo-stage-title">工程②　付与</div><div class="fuyo-stage-head-right"><span class="fuyo-stage-guide">適用ボタンで反映されます</span><button type="button" class="fuyo-stage-skip" onclick="resetFuyoStage2Only(event)">リセット</button></div></div>`;
+    html += `<div class="fuyo-stage-head"><div class="fuyo-stage-title">工程②　付与</div><div class="fuyo-stage-head-right"><span class="fuyo-stage-guide">「表に反映」で反映されます</span><button type="button" class="fuyo-stage-skip" onclick="resetFuyoStage2Only(event)">リセット</button></div></div>`;
     html += `<div class="fuyo-stage-choice-row">`;
     ["付与石","双晶石","神秘石"].forEach(type=>{
       const selected = fuyosekiStage2Type===type ? " selected" : "";
       const applied = fuyosekiStage2AppliedType===type ? " applied" : "";
-      html += `<div class="fuyo-stage-choice-item"><button type="button" class="fuyo-stage-choice-btn${selected}" onclick="selectFuyoStage2Type('${type}',event)">${type}</button><button type="button" class="fuyo-stage-apply-btn${applied}" onclick="applyFuyoStage2Type('${type}',event)">${applied?"適用中":"適用"}</button></div>`;
+      html += `<div class="fuyo-stage-choice-item"><button type="button" class="fuyo-stage-choice-btn${selected}" onclick="selectFuyoStage2Type('${type}',event)">${type}</button></div>`;
     });
     html += `</div>`;
     if(fuyosekiStage2Type === "双晶石"){
@@ -4098,12 +4095,6 @@ function renderFuyoStageArea(){
       });
       html += `</div>`;
     }else if(fuyosekiStage2Type === "付与石" || fuyosekiStage2Type === "神秘石"){
-      html += `<div class="fuyo-mystic-limit-row"><div class="fuyo-stage2-row-title">付与限界</div>`;
-      [["lifeKi","生・気"],["ability","能力"]].forEach(([key,label])=>{
-        const active=fuyosekiStage2LimitKey===key ? " active" : "";
-        html += `<button type="button" class="fuyo-mystic-limit-btn${active}" onclick="selectFuyoMysticLimit('${key}',event)">${label}<span>${fuyosekiMysticLimits[key]||0}</span></button>`;
-      });
-      html += `</div>`;
       if(areFuyoMysticLimitsReady()){
         html += `<div class="fuyo-stage2-detail">`;
         getFuyoStage2Rows().forEach((row,rowIndex)=>{
@@ -4161,7 +4152,7 @@ function renderFuyoNumberPane(){
   syncFuyoWorkflowTarget();
   if(!fuyosekiActiveTarget){
     const msg = ["付与石","神秘石"].includes(fuyosekiStage2Type)
-      ? `工程②の「生・気」「能力」または${fuyosekiStage2Type}のステータスを選択してください。`
+      ? `工程②の${fuyosekiStage2Type}のステータスを選択してください。`
       : "工程①のステータス、または工程②の入力欄を選択してください。";
     return `<section class="fuyo-number-pane"><div class="fuyo-number-disabled">${msg}</div></section>`;
   }
@@ -4366,6 +4357,10 @@ function applyFuyoSelected(){
   if(isLeftFuyoMode()){applyLeftFuyoSelected();return;}
   if(isRightFuyoMode()){applyRightFuyoSelected();return;}
 
+  if(["付与石","双晶石","神秘石"].includes(fuyosekiStage2Type)){
+    fuyosekiStage2AppliedType = fuyosekiStage2Type;
+    fuyosekiStage2AppliedSnapshot = makeFuyoStage2AppliedSnapshot(fuyosekiStage2Type);
+  }
   const mainOnlyTotal = makeKashinFuyoTotal();
   ["slot1_tenro", "slot1_other", "slot2_other"].forEach(rowKey => {
     addKashinFuyoTotals(mainOnlyTotal, makeFuyoRowTotal(rowKey));
