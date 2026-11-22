@@ -981,6 +981,9 @@
     "おすすめ陣法の第1＋第2合計Top500を事前生成（因縁数混在・陣形別）",
     "全MAX込み合計検索用ステータスsidecar＋おすすめTop500を事前生成"
   ],
+  "extended_bond_sets": [
+    []
+  ],
   "fullmax_stats": {
     "normal": {
       "7": {
