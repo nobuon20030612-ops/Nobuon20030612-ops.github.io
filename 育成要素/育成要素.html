@@ -3896,8 +3896,9 @@ body.ability-modal-open > #viewport{
     </div>
   </div>
 
-  <iframe id="tsukumoStandaloneFrame" class="tsukumo-standalone-frame" title="九十九／魔導結晶"></iframe>
+  <iframe id="tsukumoStandaloneFrame" class="tsukumo-standalone-frame" title="九十九／魔導結晶" sandbox="allow-same-origin allow-scripts allow-forms allow-modals allow-popups allow-downloads"></iframe>
   <div id="tsukumoIntegrationActions" class="tsukumo-integration-actions no-capture">
+    <button id="tsukumoIntegrationPrev" type="button" class="tsukumo-integration-apply" style="background:#222;border-color:#888;box-shadow:none" onclick="closeTsukumoPicker()">前の画面に戻る</button>
     <button id="tsukumoIntegrationApply" type="button" class="tsukumo-integration-apply" onclick="applyTsukumoSelection()">選択した情報を反映</button>
     <span id="tsukumoIntegrationCount" class="tsukumo-integration-count">選択数：0 / 8</span>
   </div>
@@ -7136,20 +7137,45 @@ window.ikSharedBaseFail=function(){
   }
 
   function bindStandaloneFrame(){
+    try{
+      const loc = frame && frame.contentWindow ? String(frame.contentWindow.location.pathname || "") : "";
+      if(loc && loc !== "blank" && !/about:blank/.test(loc) && !/九十九|%E4%B9%9D%E5%8D%81%E4%B9%9D|魔導結晶|%E9%AD%94%E5%B0%8E%E7%B5%90%E6%99%B6/.test(decodeURIComponent(loc)+loc)){
+        closeTsukumoPicker();
+        return;
+      }
+    }catch(e){}
     const doc = getFrameDoc();
     if(!doc) return;
     try{ installAcquisitionHover(doc); }catch(err){ console.warn('入手欄の表示調整に失敗', err); }
 
     ensureTsukumoModalZoomControls();
 
-    const back = doc.querySelector(".top-back");
-    if(back){
-      back.onclick = function(ev){
-        if(ev){ ev.preventDefault(); ev.stopPropagation(); }
-        closeTsukumoPicker();
-        return false;
-      };
-    }
+    /* 元の「戻る」（押すとトップページへ戻ってしまう）は非表示にして、押せないようにする。
+       代わりに、下の操作バーの「前の画面に戻る」を使う */
+    (function(){
+      function isOldBack(el){
+        if(!el || !el.closest) return false;
+        const t = el.closest(".top-back, .top-buttons button, .top-buttons div, .top-buttons a, a[href]");
+        if(!t) return false;
+        if(t.classList.contains("top-back")) return true;
+        if(String(t.textContent || "").trim() === "戻る") return true;
+        const h = t.getAttribute("href") || "";
+        return /index\.html|^\.\.?\/?$/.test(h);
+      }
+      const css = doc.createElement("style");
+      css.textContent = ".top-back{display:none !important;}";
+      (doc.head || doc.documentElement).appendChild(css);
+      Array.from(doc.querySelectorAll(".top-buttons button, .top-buttons div, .top-buttons a")).forEach(function(el){
+        if(String(el.textContent || "").trim() === "戻る") el.style.setProperty("display","none","important");
+      });
+      ["click","mousedown","mouseup","pointerdown","touchstart"].forEach(function(type){
+        doc.addEventListener(type, function(ev){
+          if(!isOldBack(ev.target)) return;
+          ev.preventDefault(); ev.stopImmediatePropagation(); ev.stopPropagation();
+          if(type === "click") closeTsukumoPicker();
+        }, true);
+      });
+    })();
 
     const table = doc.getElementById("selectedTable");
     if(frameObserver) frameObserver.disconnect();
