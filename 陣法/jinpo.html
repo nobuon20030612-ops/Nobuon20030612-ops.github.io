@@ -337,8 +337,7 @@ body.jinpoOpeningLocked{overflow:hidden!important}
 /* 起動演出のみ：人物・字幕を最初から表示、背後の操作を遮らない。 */
 #jinpoOpeningOverlay,#jinpoOpeningOverlay *{pointer-events:none!important;}
 #jinpoOpeningBackdrop,#jinpoOpeningLight,#jinpoOpeningRays,#jinpoOpeningFlash,#jinpoOpeningVignette{display:none!important;}
-#jinpoOpeningGuide{opacity:1!important;transform:none!important;animation:none!important;}
-#jinpoOpeningSubtitleWrap{opacity:1!important;transform:none!important;animation:none!important;}
+/* 人物画像と字幕の表示タイミングは元の陣法の指定を維持する。 */
 </style>
 
 
@@ -8887,56 +8886,76 @@ function observe(){
   var soundtrack=document.getElementById('jinpoOpeningSoundtrack');
   if(!overlay || !soundtrack) return;
 
-  // 元の音声ファイルに変更を加えず、セリフ区間だけを再生する。
-  var dialogueStart=1.20;
-  var dialogueEnd=4.25;
-  var played=false;
+  // 元ファイル: 効果音0.1～1.3秒、声1.43～4.08秒、後奏4.49秒以降。
+  // 声の開始は元演出（開いて約1.43秒後）と同じ。前後の効果音は再生しない。
+  var voiceStart=1.40;
+  var voiceEnd=4.12;
+  var startDelay=1400;
+  var started=false;
   var pending=false;
+  var closed=false;
+  var readyForGesture=false;
 
-  function stopAtDialogueEnd(){
-    if(soundtrack.currentTime>=dialogueEnd){
-      try{soundtrack.pause();}catch(e){}
-      soundtrack.removeEventListener('timeupdate',stopAtDialogueEnd);
-    }
-  }
-  function removeRetry(){
+  function removeGesture(){
     ['pointerdown','touchstart','keydown'].forEach(function(type){
       window.removeEventListener(type,onGesture,true);
     });
   }
-  function playDialogue(){
-    if(played || pending) return;
+  function hideOverlay(){
+    if(closed) return;
+    // 操作開始後に再生が許可された場合も、音声の途中で字幕・人物を消さない。
+    if(pending || (started && !soundtrack.paused && soundtrack.currentTime<voiceEnd)){
+      setTimeout(hideOverlay,150);
+      return;
+    }
+    closed=true;
+    overlay.style.display='none';
+    removeGesture();
+  }
+  function stopAtVoiceEnd(){
+    if(soundtrack.currentTime>=voiceEnd){
+      try{soundtrack.pause();}catch(e){}
+      soundtrack.removeEventListener('timeupdate',stopAtVoiceEnd);
+    }
+  }
+  function playVoice(){
+    if(closed || started || pending) return;
     pending=true;
     try{
       soundtrack.muted=false;
-      soundtrack.volume=1;
-      soundtrack.currentTime=dialogueStart;
+      soundtrack.volume=0.5;
+      soundtrack.currentTime=voiceStart;
       var p=soundtrack.play();
       if(p && typeof p.then==='function'){
         p.then(function(){
-          played=true;pending=false;removeRetry();
+          pending=false;started=true;readyForGesture=false;removeGesture();
         }).catch(function(){
-          pending=false; // 自動再生が禁止された場合は通常操作の最初の入力で再試行
+          pending=false;readyForGesture=true;
         });
       }else{
-        played=true;pending=false;removeRetry();
+        pending=false;started=true;readyForGesture=false;removeGesture();
       }
-    }catch(e){pending=false;}
+    }catch(e){pending=false;readyForGesture=true;}
   }
-  function onGesture(){playDialogue();}
-  soundtrack.addEventListener('timeupdate',stopAtDialogueEnd);
+  function onGesture(){
+    if(readyForGesture && !closed) playVoice();
+  }
+
+  soundtrack.addEventListener('timeupdate',stopAtVoiceEnd);
   ['pointerdown','touchstart','keydown'].forEach(function(type){
     window.addEventListener(type,onGesture,{capture:true,passive:true});
   });
-  function start(){
+
+  function startOpening(){
+    // 音・暗転を伴う演出は行わず、元の人物画像と字幕だけを元のタイミングで出す。
+    overlay.classList.add('isPlaying');
     try{soundtrack.load();}catch(e){}
-    playDialogue();
-    // 表示時間だけは従来の5.5秒を維持。音声再生は停止しない。
-    setTimeout(function(){overlay.style.display='none';},5500);
+    setTimeout(playVoice,startDelay);
+    setTimeout(hideOverlay,5500);
   }
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',start,{once:true});
-  }else{start();}
+    document.addEventListener('DOMContentLoaded',startOpening,{once:true});
+  }else{startOpening();}
 })();
 </script>
 
