@@ -333,6 +333,12 @@ body.jinpoOpeningLocked{overflow:hidden!important}
   }
   #jinpoOpeningSubtitleWrap{bottom:2vh}
 }
+
+/* 起動演出のみ：人物・字幕を最初から表示、背後の操作を遮らない。 */
+#jinpoOpeningOverlay,#jinpoOpeningOverlay *{pointer-events:none!important;}
+#jinpoOpeningBackdrop,#jinpoOpeningLight,#jinpoOpeningRays,#jinpoOpeningFlash,#jinpoOpeningVignette{display:none!important;}
+#jinpoOpeningGuide{opacity:1!important;transform:none!important;animation:none!important;}
+#jinpoOpeningSubtitleWrap{opacity:1!important;transform:none!important;animation:none!important;}
 </style>
 
 
@@ -8876,107 +8882,61 @@ function observe(){
 (function(){
   'use strict';
   if(window.__jinpoOpeningSequenceInstalled) return;
-  window.__jinpoOpeningSequenceInstalled = true;
-
+  window.__jinpoOpeningSequenceInstalled=true;
   var overlay=document.getElementById('jinpoOpeningOverlay');
   var soundtrack=document.getElementById('jinpoOpeningSoundtrack');
-  var guide=document.getElementById('jinpoOpeningGuide');
-  if(!overlay||!soundtrack) return;
+  if(!overlay || !soundtrack) return;
 
-  document.documentElement.classList.add('jinpoOpeningLocked');
-  if(document.body) document.body.classList.add('jinpoOpeningLocked');
+  // 元の音声ファイルに変更を加えず、セリフ区間だけを再生する。
+  var dialogueStart=1.20;
+  var dialogueEnd=4.25;
+  var played=false;
+  var pending=false;
 
-  var started=false;
-  var startedAt=0;
-  var autoplayAudioBlocked=false;
-
-  function unlockPage(){
-    document.documentElement.classList.remove('jinpoOpeningLocked');
-    if(document.body) document.body.classList.remove('jinpoOpeningLocked');
+  function stopAtDialogueEnd(){
+    if(soundtrack.currentTime>=dialogueEnd){
+      try{soundtrack.pause();}catch(e){}
+      soundtrack.removeEventListener('timeupdate',stopAtDialogueEnd);
+    }
   }
-
-  function finish(){
-    overlay.style.display='none';
-    unlockPage();
-    try{soundtrack.pause();}catch(e){}
+  function removeRetry(){
+    ['pointerdown','touchstart','keydown'].forEach(function(type){
+      window.removeEventListener(type,onGesture,true);
+    });
   }
-
-  function startOpening(){
-    if(started) return;
-    started=true;
-    startedAt=performance.now();
-
+  function playDialogue(){
+    if(played || pending) return;
+    pending=true;
     try{
-      soundtrack.currentTime=0;
+      soundtrack.muted=false;
       soundtrack.volume=1;
+      soundtrack.currentTime=dialogueStart;
       var p=soundtrack.play();
-      if(p&&typeof p.catch==='function'){
-        p.catch(function(err){
-          autoplayAudioBlocked=true;
-          console.warn('陣法オープニング音声の自動再生がブラウザに制限されました',err);
+      if(p && typeof p.then==='function'){
+        p.then(function(){
+          played=true;pending=false;removeRetry();
+        }).catch(function(){
+          pending=false; // 自動再生が禁止された場合は通常操作の最初の入力で再試行
         });
+      }else{
+        played=true;pending=false;removeRetry();
       }
-    }catch(e){
-      autoplayAudioBlocked=true;
-      console.warn('陣法オープニング音声自動再生失敗',e);
-    }
-
-    overlay.classList.add('isPlaying');
-
-    /*
-      演出用のモード画像・複製DOMは一切表示しない。
-      暗闇・光が薄くなると、背後にある実サイト本体の
-      本物のモードボタンがそのまま見える。
-    */
-    setTimeout(function(){
-      overlay.classList.add('isReveal');
-    },3720);
-
-    setTimeout(function(){
-      overlay.classList.add('isGuideOut');
-    },4480);
-
-    setTimeout(finish,5500);
+    }catch(e){pending=false;}
   }
-
-  function resumeBlockedAudioOnGesture(){
-    if(!started||!autoplayAudioBlocked||overlay.style.display==='none') return;
-    autoplayAudioBlocked=false;
-    try{
-      var elapsed=Math.max(0,(performance.now()-startedAt)/1000);
-      soundtrack.currentTime=Math.min(elapsed,Math.max(0,(soundtrack.duration||6)-0.05));
-      soundtrack.volume=1;
-      var p=soundtrack.play();
-      if(p&&typeof p.catch==='function') p.catch(function(){autoplayAudioBlocked=true;});
-    }catch(e){
-      autoplayAudioBlocked=true;
-    }
-  }
-
+  function onGesture(){playDialogue();}
+  soundtrack.addEventListener('timeupdate',stopAtDialogueEnd);
   ['pointerdown','touchstart','keydown'].forEach(function(type){
-    window.addEventListener(type,resumeBlockedAudioOnGesture,{capture:true,passive:true});
+    window.addEventListener(type,onGesture,{capture:true,passive:true});
   });
-
-  try{
-    soundtrack.load();
-    if(guide) guide.decoding='async';
-  }catch(e){}
-
-  /* 陣法ページを開いたら自動開始 */
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){
-      requestAnimationFrame(startOpening);
-    },{once:true});
-  }else{
-    requestAnimationFrame(startOpening);
+  function start(){
+    try{soundtrack.load();}catch(e){}
+    playDialogue();
+    // 表示時間だけは従来の5.5秒を維持。音声再生は停止しない。
+    setTimeout(function(){overlay.style.display='none';},5500);
   }
-
-  setTimeout(function(){
-    if(started&&overlay.style.display!=='none'){
-      overlay.style.display='none';
-      unlockPage();
-    }
-  },9000);
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',start,{once:true});
+  }else{start();}
 })();
 </script>
 
